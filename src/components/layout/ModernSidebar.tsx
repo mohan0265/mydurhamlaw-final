@@ -1,5 +1,8 @@
 'use client'
 
+// Sidebar disabled via feature flag
+const ENABLE_SIDEBAR = process.env.NEXT_PUBLIC_ENABLE_SIDEBAR === 'true'
+
 import { useState, useEffect, useContext, ReactNode } from 'react'
 import { useRouter } from 'next/router'
 import Link from 'next/link'
@@ -30,6 +33,8 @@ interface ModernSidebarProps {
 }
 
 export default function ModernSidebar({ isCollapsed = false, onToggle, children }: ModernSidebarProps) {
+  if (!ENABLE_SIDEBAR) return null
+  
   const router = useRouter()
   const { getDashboardRoute } = useContext(AuthContext)
   const [user, setUser] = useState<any>(null)

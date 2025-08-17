@@ -5,8 +5,6 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/router'
 import { validateEnv } from '@/lib/env'
 import { AuthProvider } from '@/lib/supabase/AuthContext'
-// Voice system now consolidated into DurmahContext
-// import { VoiceManagerProvider } from '@/lib/context/VoiceManagerContext' // Removed - using DurmahContext
 import { Toaster } from 'react-hot-toast'
 import dynamic from 'next/dynamic'
 import { DurmahProvider } from '@/context/DurmahContext'
@@ -60,63 +58,38 @@ export default function App({ Component, pageProps }: AppProps) {
     }
   }, [router.events])
 
-  // Determine if we should use LayoutShell for this page
-  const shouldUseLayout = () => {
-    const pathname = router.pathname
-    
-    // Pages that should NOT use the global layout (they handle their own layout)
-    const noLayoutPages = [
-      '/dashboard/year1',
-      '/dashboard/year2', 
-      '/dashboard/year3',
-      '/dashboard/foundation',
-      '/dashboard'
-    ]
-    
-    // Check if the current page is in the no-layout list
-    return !noLayoutPages.some(page => pathname === page || pathname.startsWith(page + '/'))
-  }
-
-  const ComponentWithLayout = shouldUseLayout() ? (
-    <LayoutShell showSidebar={false}>
-      <Component {...pageProps} />
-    </LayoutShell>
-  ) : (
-    <Component {...pageProps} />
-  )
-
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <DurmahProvider>
-          <>
-            {ComponentWithLayout}
-            <Toaster
-              position="top-right"
-              toastOptions={{
-                duration: 4000,
-                style: {
-                  background: '#363636',
-                  color: '#fff',
+          <LayoutShell>
+            <Component {...pageProps} />
+          </LayoutShell>
+          <Toaster
+            position="top-right"
+            toastOptions={{
+              duration: 4000,
+              style: {
+                background: '#363636',
+                color: '#fff',
+              },
+              success: {
+                duration: 3000,
+                iconTheme: {
+                  primary: '#10b981',
+                  secondary: '#fff',
                 },
-                success: {
-                  duration: 3000,
-                  iconTheme: {
-                    primary: '#10b981',
-                    secondary: '#fff',
-                  },
+              },
+              error: {
+                duration: 5000,
+                iconTheme: {
+                  primary: '#ef4444',
+                  secondary: '#fff',
                 },
-                error: {
-                  duration: 5000,
-                  iconTheme: {
-                    primary: '#ef4444',
-                    secondary: '#fff',
-                  },
-                },
-              }}
-            />
-            <DynamicDurmahWidget />
-          </>
+              },
+            }}
+          />
+          <DynamicDurmahWidget />
         </DurmahProvider>
       </AuthProvider>
     </QueryClientProvider>

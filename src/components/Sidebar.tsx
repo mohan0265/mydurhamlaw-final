@@ -1,10 +1,14 @@
 'use client'
 
+// Sidebar disabled via feature flag
+const ENABLE_SIDEBAR = process.env.NEXT_PUBLIC_ENABLE_SIDEBAR === 'true'
+
 import Link from 'next/link'
 import { useState, useContext } from 'react'
 import { AuthContext } from '@/lib/supabase/AuthContext'
 
 export default function Sidebar() {
+  if (!ENABLE_SIDEBAR) return null
   const [isOpen, setIsOpen] = useState(true)
   const { getDashboardRoute } = useContext(AuthContext)
 

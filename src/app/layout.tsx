@@ -24,7 +24,7 @@ function AppLayoutContent({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <LayoutShell showSidebar={shouldShowSidebar()}>
+    <LayoutShell>
       {children}
       {/* Floating widgets with high z-index to stay above all content */}
       <div style={{ zIndex: 60 }}>

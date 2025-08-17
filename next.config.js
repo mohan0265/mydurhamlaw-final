@@ -50,6 +50,41 @@ const nextConfig = {
         destination: '/wellbeing',
         permanent: false,
       },
+      {
+        source: '/calendar/main',
+        destination: '/calendar',
+        permanent: false,
+      },
+      {
+        source: '/news',
+        destination: '/legal/tools/legal-news-feed',
+        permanent: false,
+      },
+      {
+        source: '/ai-tools',
+        destination: '/wellbeing',
+        permanent: false,
+      },
+      {
+        source: '/resources',
+        destination: '/study-materials',
+        permanent: false,
+      },
+      {
+        source: '/voice',
+        destination: '/wellbeing',
+        permanent: false,
+      },
+      {
+        source: '/student-lounge',
+        destination: '/lounge',
+        permanent: false,
+      },
+      {
+        source: '/community',
+        destination: '/community-network',
+        permanent: false,
+      },
       // Add more aliases as needed
     ];
   },

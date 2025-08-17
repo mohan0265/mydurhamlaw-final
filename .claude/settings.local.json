@@ -13,7 +13,12 @@
       "Bash(cp:*)",
       "Bash(git add:*)",
       "Bash(npm run type-check:*)",
-      "Bash(npm run dev:*)"
+      "Bash(npm run dev:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(npm run lint)",
+      "Bash(PORT=3001 npm run start)",
+      "Bash(PORT=3002 npm run dev)"
     ],
     "deny": [],
     "ask": []

@@ -1,5 +1,8 @@
 'use client'
 
+// Sidebar disabled via feature flag
+const ENABLE_SIDEBAR = process.env.NEXT_PUBLIC_ENABLE_SIDEBAR === 'true'
+
 import { useState, useEffect, useContext, useRef } from 'react'
 import { useRouter } from 'next/router'
 import Link from 'next/link'
@@ -31,6 +34,8 @@ interface ResponsiveSidebarProps {
 }
 
 export default function ResponsiveSidebar({ className }: ResponsiveSidebarProps) {
+  if (!ENABLE_SIDEBAR) return null
+  
   const router = useRouter()
   const { getDashboardRoute } = useContext(AuthContext)
   const [user, setUser] = useState<any>(null)
