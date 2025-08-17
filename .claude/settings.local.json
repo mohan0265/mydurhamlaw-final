@@ -22,7 +22,15 @@
       "Bash(git checkout:*)",
       "Bash(npm i)",
       "Bash(npm i:*)",
-      "Bash(true)"
+      "Bash(true)",
+      "Bash(git mv:*)",
+      "Bash(git grep:*)",
+      "Bash(for file in src/pages/dashboard/year{1,2,3}.tsx)",
+      "Bash(do echo \"=== $file ===\")",
+      "Bash(sed:*)",
+      "Bash(done)",
+      "Bash(for file in src/pages/assignments.tsx src/pages/memory-journal.tsx)",
+      "Bash(do sed -i 's/import LegalFooter.*;//' \"$file\")"
     ],
     "deny": [],
     "ask": []

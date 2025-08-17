@@ -1,7 +1,6 @@
 import React, { useContext } from 'react'
 import { useRouter } from 'next/router'
 import { AuthContext } from '@/lib/supabase/AuthContext'
-import Header from '@/components/Header'
 import { Button } from '@/components/ui/Button'
 import { ArrowLeft } from 'lucide-react'
 
@@ -11,9 +10,7 @@ export default function AttendancePage() {
   const { getDashboardRoute } = authContext || { getDashboardRoute: () => '/dashboard' }
   
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Header />
-      <main className="max-w-4xl mx-auto py-16 px-4">
+    <div className="max-w-4xl mx-auto py-8 sm:py-16 px-3 sm:px-4">
         <Button
           onClick={() => router.push(getDashboardRoute())}
           variant="ghost"
@@ -23,8 +20,7 @@ export default function AttendancePage() {
           Back to Dashboard
         </Button>
         <h1 className="text-2xl font-bold mb-4">📅 Attendance Tracker</h1>
-        <p className="text-gray-700">Track your class attendance here. We&apos;ll show percentage and alert you if you fall behind.</p>
-      </main>
+        <p className="text-sm sm:text-base text-gray-700">Track your class attendance here. We&apos;ll show percentage and alert you if you fall behind.</p>
     </div>
   )
 }

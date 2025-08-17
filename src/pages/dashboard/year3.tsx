@@ -1,7 +1,7 @@
 import React from 'react';
 import DashboardLayout from '../../components/dashboard/DashboardLayout';
 import { withAuthProtection } from '../../lib/withAuthProtection';
-import GlobalLayout from '../../components/layout/GlobalLayout';
+
 import { getModulesForYear } from '../../lib/academic/academicData';
 import ModuleList from '../../components/modules/ModuleList';
 import YearPreviewSwitcher from '../../components/trial/YearPreviewSwitcher';
@@ -29,7 +29,6 @@ const Year3Dashboard = () => {
   };
 
   return (
-    <GlobalLayout>
       <DashboardLayout>
         {/* Trial preview switcher removed to eliminate gating */}
         
@@ -46,7 +45,6 @@ const Year3Dashboard = () => {
         
         <ModuleList modules={modules} year={getYearDisplayName(activeYear)} />
       </DashboardLayout>
-    </GlobalLayout>
   );
 };
 

@@ -1,7 +1,6 @@
 import React from 'react';
 import DashboardLayout from '../../components/dashboard/DashboardLayout';
 import { withAuthProtection } from '../../lib/withAuthProtection';
-import GlobalLayout from '../../components/layout/GlobalLayout';
 import { getModulesForYear } from '../../lib/academic/academicData';
 import ModuleList from '../../components/modules/ModuleList';
 import YearPreviewSwitcher from '../../components/trial/YearPreviewSwitcher';
@@ -29,8 +28,7 @@ const FoundationDashboard = () => {
   };
 
   return (
-    <GlobalLayout>
-      <DashboardLayout>
+    <DashboardLayout>
         {/* Trial preview switcher removed to eliminate gating */}
         
         {/* Year-specific guidance */}
@@ -45,8 +43,7 @@ const FoundationDashboard = () => {
         </div>
         
         <ModuleList modules={modules} year={getYearDisplayName(activeYear)} />
-      </DashboardLayout>
-    </GlobalLayout>
+    </DashboardLayout>
   );
 };
 

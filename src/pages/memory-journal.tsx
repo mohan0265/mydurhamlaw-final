@@ -7,7 +7,6 @@ import { AuthContext } from '@/lib/supabase/AuthContext'
 import ModernSidebar from '@/components/layout/ModernSidebar'
 import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/Card'
 
-import LegalFooter from '@/components/layout/LegalFooter'
 import { BookOpen, ArrowLeft } from 'lucide-react'
 
 export default function MemoryJournalPage() {
@@ -86,7 +85,7 @@ export default function MemoryJournalPage() {
 
           </div>
         </main>
-        <LegalFooter />
+
       </div>
     </div>
   )
