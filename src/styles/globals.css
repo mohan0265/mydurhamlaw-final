@@ -4,12 +4,6 @@
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
-/* Layout CSS Variables */
-:root {
-  --sidebar-width: 16rem; /* Default sidebar width */
-  --header-height: 64px;  /* Header height for positioning */
-}
-
 html,
 body {
   padding: 0;
