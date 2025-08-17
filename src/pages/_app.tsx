@@ -9,7 +9,7 @@ import { Toaster } from 'react-hot-toast'
 import dynamic from 'next/dynamic'
 import { DurmahProvider } from '@/context/DurmahContext'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import LayoutShell from '@/components/layout/LayoutShell'
+import LayoutShell from '@/layout/LayoutShell'
 
 // Initialize RSS system on server startup
 if (typeof window === 'undefined') {

@@ -1,8 +1,9 @@
-// src/components/LayoutShell.tsx
-import GlobalHeader from '../GlobalHeader'
-import GlobalFooter from '../GlobalFooter'
-import FloatingDurmah from '../FloatingDurmah'
-import FloatingAWY from '../FloatingAWY'
+// src/layout/LayoutShell.tsx
+import React from 'react';
+import GlobalHeader from '@/components/GlobalHeader';
+import GlobalFooter from '@/components/GlobalFooter';
+import FloatingDurmah from '@/components/FloatingDurmah';
+import FloatingAWY from '@/components/FloatingAWY';
 
 export default function LayoutShell({ children }: { children: React.ReactNode }) {
   return (

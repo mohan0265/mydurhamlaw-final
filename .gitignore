@@ -11,6 +11,10 @@ coverage/
 playwright-report/
 test-results/
 
+# --- Build artifacts ---
+*.tsbuildinfo
+uv.lock
+
 # --- Env & secrets (keep only templates) ---
 .env*
 !.env.example

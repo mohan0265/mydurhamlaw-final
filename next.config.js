@@ -46,11 +46,6 @@ const nextConfig = {
       },
       // Route aliases for old links
       {
-        source: '/wellbeing/main',
-        destination: '/wellbeing',
-        permanent: false,
-      },
-      {
         source: '/calendar/main',
         destination: '/calendar',
         permanent: false,

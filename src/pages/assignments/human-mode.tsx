@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { withAuthProtection } from '@/lib/withAuthProtection';
 import { useAuth } from '@/lib/supabase/AuthContext';
 import ModernSidebar from '@/components/layout/ModernSidebar';
-import Header from '@/components/Header';
 import IntegrityPledge from '@/components/integrity/IntegrityPledge';
 import HumanModeDrafting from '@/components/integrity/HumanModeDrafting';
 import DisclosureBanner from '@/components/integrity/DisclosureBanner';
@@ -73,7 +72,6 @@ const HumanModePage: React.FC = () => {
         <ModernSidebar />
         
         <div className="flex-1 flex flex-col overflow-hidden">
-          <Header />
           
           {/* Disclosure Banner */}
           {shouldShowDisclosure && (

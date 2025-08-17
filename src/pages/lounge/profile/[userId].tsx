@@ -4,8 +4,6 @@ import { useRouter } from "next/router";
 import Head from "next/head";
 import Link from "next/link";
 import { AuthContext } from "@/lib/supabase/AuthContext";
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
 import LoungePostCard, { LoungePost } from "@/components/lounge/LoungePostCard";
 import SectionCard from "@/components/lounge/SectionCard";
 
@@ -110,7 +108,6 @@ export default function UserProfilePage() {
   if (authLoading || loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50">
-        <Header />
         <main className="container mx-auto px-4 py-8 max-w-4xl">
           <div className="flex items-center justify-center min-h-[400px]">
             <div className="text-center">
@@ -119,7 +116,6 @@ export default function UserProfilePage() {
             </div>
           </div>
         </main>
-        <Footer />
       </div>
     );
   }
@@ -127,7 +123,6 @@ export default function UserProfilePage() {
   if (error) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50">
-        <Header />
         <main className="container mx-auto px-4 py-8 max-w-4xl">
           <SectionCard className="text-center py-12">
             <div className="text-6xl mb-4">😔</div>
@@ -142,7 +137,6 @@ export default function UserProfilePage() {
             </Link>
           </SectionCard>
         </main>
-        <Footer />
       </div>
     );
   }
@@ -166,7 +160,6 @@ export default function UserProfilePage() {
       </Head>
 
       <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50">
-        <Header />
         
         <main className="container mx-auto px-4 py-4 sm:py-8 max-w-4xl">
           {/* Back to Lounge */}
@@ -280,7 +273,6 @@ export default function UserProfilePage() {
           </div>
         </main>
 
-        <Footer />
       </div>
     </>
   );

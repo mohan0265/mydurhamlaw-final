@@ -2,7 +2,6 @@ import { useState, useEffect, useContext, useCallback, useRef } from 'react'
 import { useRouter } from 'next/router'
 import { AuthContext } from '@/lib/supabase/AuthContext'
 import YearSelectionPrompt from '@/components/academic/YearSelectionPrompt'
-import GlobalLayout from '@/components/layout/GlobalLayout'
 
 const DEBUG = process.env.NODE_ENV !== 'production' || process.env.NEXT_PUBLIC_DEBUG === 'true'
 
@@ -130,12 +129,10 @@ export default function DashboardRedirect() {
   // Show year selection modal if needed
   if (showYearSelection && user) {
     return (
-      <GlobalLayout>
-        <YearSelectionPrompt
-          onYearSelected={handleYearSelected}
-          userId={user.id}
-        />
-      </GlobalLayout>
+      <YearSelectionPrompt
+        onYearSelected={handleYearSelected}
+        userId={user.id}
+      />
     )
   }
 

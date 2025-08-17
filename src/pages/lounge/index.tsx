@@ -3,8 +3,6 @@ import React, { useContext, useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import Head from "next/head";
 import { AuthContext } from "@/lib/supabase/AuthContext";
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
 import LoungeFeed from "@/components/lounge/LoungeFeed";
 import LoungeComposer from "@/components/lounge/LoungeComposer";
 import { LoungePost } from "@/components/lounge/LoungePostCard";
@@ -50,7 +48,6 @@ export default function LoungePage() {
       </Head>
 
       <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50">
-        <Header />
         
         <main className="container mx-auto px-4 py-4 sm:py-8 max-w-4xl">
           {/* Welcome Header */}
@@ -206,7 +203,6 @@ export default function LoungePage() {
           </div>
         </main>
 
-        <Footer />
       </div>
     </>
   );

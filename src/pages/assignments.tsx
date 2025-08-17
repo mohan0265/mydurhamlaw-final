@@ -7,7 +7,6 @@ import { getSupabaseClient } from '@/lib/supabase/client'
 import { AuthContext } from '@/lib/supabase/AuthContext'
 import ModernSidebar from '@/components/layout/ModernSidebar'
 import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/Card'
-import LegalFooter from '@/components/layout/LegalFooter'
 import BackToHomeButton from '@/components/ui/BackToHomeButton'
 import { useScrollToTop } from '@/hooks/useScrollToTop'
 import { FileText, ArrowLeft, BookOpen, Clock } from 'lucide-react'
@@ -186,7 +185,7 @@ export default function AssignmentsPage() {
         </main>
 
 
-        <LegalFooter />
+
       </div>
     </div>
   )

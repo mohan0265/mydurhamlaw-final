@@ -3,7 +3,6 @@
 import React from 'react'
 import Head from 'next/head'
 import Link from 'next/link'
-import Header from '@/components/Header'
 import { ArrowRight, Play, Brain, Heart, Shield, BookOpen, Clock, MessageCircle } from 'lucide-react'
 
 export default function TourPage() {
@@ -14,7 +13,6 @@ export default function TourPage() {
         <meta name="description" content="Discover how MyDurhamLaw's AI-powered platform supports Durham University law students" />
       </Head>
 
-      <Header />
 
       {/* Hero Section */}
       <section className="relative py-20 bg-gradient-to-br from-purple-900 via-blue-900 to-pink-900">
