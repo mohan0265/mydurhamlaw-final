@@ -1,148 +1,120 @@
-import { useState, useEffect, useContext, useCallback, useRef } from 'react'
+// src/pages/dashboard/index.tsx
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/router'
-import { AuthContext } from '@/lib/supabase/AuthContext'
+import { useAuth } from '@/lib/supabase/AuthContext'
 import YearSelectionPrompt from '@/components/academic/YearSelectionPrompt'
 
-const DEBUG = process.env.NODE_ENV !== 'production' || process.env.NEXT_PUBLIC_DEBUG === 'true'
+const DEBUG =
+  process.env.NODE_ENV !== 'production' || process.env.NEXT_PUBLIC_DEBUG === 'true'
 
-interface Profile {
+type YearGroup = 'foundation' | 'year1' | 'year2' | 'year3'
+type Profile = {
   user_id: string
-  year_group: string | null
+  year_group: YearGroup | null
   display_name: string | null
   created_at: string
   updated_at: string
 }
 
-export default function DashboardRedirect() {
-  const router = useRouter()
-  const { user, userType, getDashboardRoute } = useContext(AuthContext)
-  const [showYearSelection, setShowYearSelection] = useState(false)
-  const [profile, setProfile] = useState<Profile | null>(null)
-  const [isEnsuring, setIsEnsuring] = useState(false)
-  const ensureCalledRef = useRef(false)
+const isYearGroup = (val: string): val is YearGroup =>
+  val === 'foundation' || val === 'year1' || val === 'year2' || val === 'year3'
 
-  // Ensure profile exists on mount (once per user session)
+const yearToRoute = (year: YearGroup) => `/dashboard/${year}`
+
+export default function DashboardIndex() {
+  const router = useRouter()
+  const { user, userType, getDashboardRoute } = useAuth()
+
+  const [profile, setProfile] = useState<Profile | null>(null)
+  const [showYearSelection, setShowYearSelection] = useState(false)
+  const [isEnsuring, setIsEnsuring] = useState(false)
+  const ensureOnce = useRef(false)
+
   const ensureProfile = useCallback(async () => {
-    if (!user || isEnsuring || ensureCalledRef.current) return
-    
-    ensureCalledRef.current = true
+    if (!user || isEnsuring || ensureOnce.current) return
+    ensureOnce.current = true
     setIsEnsuring(true)
-    
+
     try {
-      if (DEBUG) console.debug('👤 Dashboard: Ensuring profile exists for user', user.id)
-      
-      const response = await fetch('/api/profile/ensure', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        }
-      })
-      
-      if (response.ok) {
-        const data = await response.json()
-        if (DEBUG) console.debug('✅ Dashboard: Profile ensured', data)
+      if (DEBUG) console.debug('👤 Ensuring profile for user', user.id)
+      const res = await fetch('/api/profile/ensure', { method: 'POST' })
+      if (res.ok) {
+        const data = (await res.json()) as { profile: Profile }
         setProfile(data.profile)
+        if (DEBUG) console.debug('✅ Profile ensured', data.profile)
       } else {
-        // Log error but don't block UI - AuthContext will handle fallback
-        console.error('🚨 Dashboard: Failed to ensure profile', response.status)
+        console.error('🚨 Failed to ensure profile', res.status)
       }
-    } catch (error) {
-      console.error('🚨 Dashboard: Error ensuring profile', error)
+    } catch (e) {
+      console.error('🚨 Error ensuring profile', e)
     } finally {
       setIsEnsuring(false)
     }
   }, [user, isEnsuring])
 
-  // Call ensure profile when user is available
   useEffect(() => {
-    if (user) {
-      ensureProfile()
-    }
+    if (user) ensureProfile()
   }, [user, ensureProfile])
 
-  // Handle dashboard routing logic
   useEffect(() => {
-    const handleRouting = () => {
-      if (!user) {
-        // No user, stay in loading state
-        return
-      }
+    if (!user) return
+    const effectiveYear: YearGroup | null =
+      (profile?.year_group as YearGroup | null) ?? (userType as YearGroup | null) ?? null
 
-      // Use profile data if available, fallback to userType from AuthContext
-      const yearGroup = profile?.year_group || userType
-      
-      if (!yearGroup) {
-        // No year group set, show selection modal
-        if (DEBUG) console.debug('🎯 Dashboard: No year group, showing selection modal')
-        setShowYearSelection(true)
-      } else {
-        // Year group exists, redirect to dashboard
-        if (DEBUG) console.debug('🎯 Dashboard: Year group found, redirecting', yearGroup)
-        const dashboardRoute = getDashboardRoute?.() || '/dashboard'
-        router.push(dashboardRoute)
-      }
+    if (!effectiveYear) {
+      if (DEBUG) console.debug('🎯 No year set → show selector')
+      setShowYearSelection(true)
+      return
     }
 
-    // Small delay to avoid flash and let profile load
-    const timeoutId = setTimeout(handleRouting, 100)
-    return () => clearTimeout(timeoutId)
+    const custom = getDashboardRoute?.()
+    const target = custom && custom !== '/dashboard' ? custom : yearToRoute(effectiveYear)
+    if (DEBUG) console.debug('➡️ Redirecting to', target)
+    router.replace(target)
   }, [user, userType, profile, getDashboardRoute, router])
 
-  // Handle year selection completion
-  const handleYearSelected = useCallback(async (year: string) => {
-    if (DEBUG) console.debug('🎯 Dashboard: Year selected', year)
-    
-    try {
-      const response = await fetch('/api/profile/update-year', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ year_group: year })
-      })
-
-      if (response.ok) {
-        const data = await response.json()
-        if (DEBUG) console.debug('✅ Dashboard: Year updated', data)
-        
-        // Update local profile state
+  // Accept string to match YearSelectionPrompt’s prop type
+  const handleYearSelected = useCallback((year: string): void => {
+    if (!isYearGroup(year)) {
+      console.warn('Invalid year selected:', year)
+      return
+    }
+    ;(async () => {
+      try {
+        const res = await fetch('/api/profile/update-year', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ year_group: year }),
+        })
+        if (!res.ok) {
+          console.error('🚨 Failed to update year', res.status)
+          return
+        }
+        const data = (await res.json()) as { profile: Profile }
+        if (DEBUG) console.debug('✅ Year updated', data.profile)
         setProfile(data.profile)
         setShowYearSelection(false)
-        
-        // Refresh page to update AuthContext with new profile
-        window.location.reload()
-      } else {
-        console.error('🚨 Dashboard: Failed to update year', response.status)
-        // Keep modal open, let user try again
+        router.replace(yearToRoute(year))
+      } catch (e) {
+        console.error('🚨 Error updating year', e)
       }
-    } catch (error) {
-      console.error('🚨 Dashboard: Error updating year', error)
-      // Keep modal open, let user try again
-    }
-  }, [])
+    })()
+  }, [router])
 
-  // Reset ensure flag when user changes
   useEffect(() => {
-    ensureCalledRef.current = false
+    ensureOnce.current = false
   }, [user?.id])
 
-  // Show year selection modal if needed
   if (showYearSelection && user) {
-    return (
-      <YearSelectionPrompt
-        onYearSelected={handleYearSelected}
-        userId={user.id}
-      />
-    )
+    return <YearSelectionPrompt userId={user.id} onYearSelected={handleYearSelected} />
   }
 
-  // Show loading state while determining route
   return (
     <div className="min-h-screen flex items-center justify-center">
       <div className="text-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4" />
         <p className="text-gray-600">
-          {isEnsuring ? 'Setting up your profile...' : 'Redirecting to your dashboard...'}
+          {isEnsuring ? 'Setting up your profile…' : 'Redirecting to your dashboard…'}
         </p>
       </div>
     </div>

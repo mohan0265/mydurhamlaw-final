@@ -1,5 +1,5 @@
-import React, { useState, useContext, useCallback } from 'react'
-import { GetServerSideProps } from 'next'
+// src/pages/year-at-a-glance/week.tsx
+import React, { useState, useContext, useCallback, useEffect } from 'react'
 import Head from 'next/head'
 import Link from 'next/link'
 import { AuthContext } from '@/lib/supabase/AuthContext'
@@ -9,91 +9,151 @@ import { CalendarViewMode } from '@/types/calendar'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
-import { ChevronDown, Calendar, Clock, Settings, Filter, Plus, Timer, Target } from 'lucide-react'
-import { format, startOfWeek, endOfWeek } from 'date-fns'
+import {
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  Calendar,
+  Clock,
+  Settings,
+  Filter,
+  Plus,
+  Timer,
+  Target,
+} from 'lucide-react'
+import { format, startOfWeek, endOfWeek, addDays } from 'date-fns'
 import toast from 'react-hot-toast'
+import { useCalendarCtx } from '@/context/CalendarContext'
 
 const WeekViewPage = () => {
-  const { session, userProfile } = useContext(AuthContext)
-  const [currentDate, setCurrentDate] = useState(new Date())
+  // Auth (guarded)
+  const auth = useContext(AuthContext)
+  const { session, userProfile } = auth || { session: null, userProfile: null }
+
+  // Shared calendar state from provider (anchor date for all calendar pages)
+  const { anchorDate, setAnchorDate, prevWeek, nextWeek } = useCalendarCtx()
+
+  // Local UI state
   const [viewMode] = useState<CalendarViewMode>('week')
   const [showFilters, setShowFilters] = useState(false)
   const [pomodoroActive, setPomodoroActive] = useState(false)
   const [weeklyGoal, setWeeklyGoal] = useState(25) // hours
 
-  // Get user info
-  const userId = session?.user?.id
+  // User/programme
+  const userId = session?.user?.id || ''
   const programme = userProfile?.user_type || 'LLB'
-  const yearOfStudy = userProfile?.year_group ? parseInt(userProfile.year_group.replace('year', '')) : 1
+  const yearOfStudy =
+    userProfile?.year_group
+      ? parseInt(userProfile.year_group.replace('year', ''), 10) || 1
+      : 1
 
-  // Calendar hooks
-  const {
-    useWeekData
-  } = useCalendarData({
-    userId: userId || '',
+  // Data hooks
+  const { useWeekData } = useCalendarData({
+    userId,
     programme,
-    yearOfStudy
+    yearOfStudy,
   })
 
   const {
     data: weekData,
     isLoading: weekLoading,
-    error: weekError
-  } = useWeekData(currentDate)
+    error: weekError,
+  } = useWeekData(anchorDate)
 
-  const { filter, updateFilter, resetFilter } = useCalendarFilter()
+  // Filters (guarded fallback)
+  const { filter, updateFilter, resetFilter } =
+    useCalendarFilter() || {
+      filter: { event_types: [], show_completed: false },
+      updateFilter: () => {},
+      resetFilter: () => {},
+    }
 
-  const handleDateChange = (date: Date) => {
-    setCurrentDate(date)
-  }
+  // Navigation helpers (fallback if provider doesn’t expose week nav yet)
+  const safePrevWeek = useCallback(() => {
+    if (prevWeek) return prevWeek()
+    setAnchorDate(addDays(anchorDate, -7))
+  }, [anchorDate, prevWeek, setAnchorDate])
+
+  const safeNextWeek = useCallback(() => {
+    if (nextWeek) return nextWeek()
+    setAnchorDate(addDays(anchorDate, 7))
+  }, [anchorDate, nextWeek, setAnchorDate])
+
+  const goToday = useCallback(() => setAnchorDate(new Date()), [setAnchorDate])
+
+  // Handlers required by <WeekView/>
+  const handleDateChange = (date: Date) => setAnchorDate(date)
 
   const handleEventClick = useCallback((event: any) => {
-    toast.success(`Opening ${event.title}`)
-    // TODO: Open event detail modal
+    toast.success(`Opening ${event?.title || 'event'}…`)
+    // TODO: open details
   }, [])
 
-  const handleCreateEvent = useCallback((startTime: string, endTime: string) => {
-    toast.success('Creating new study block...')
-    // TODO: Open event creation modal with pre-filled times
+  const handleCreateEvent = useCallback((startTimeISO: string, endTimeISO: string) => {
+    toast.success('Creating new study block…')
+    // TODO: open create modal with prefilled times
   }, [])
 
   const handleUpdateEvent = useCallback((eventId: string, updates: any) => {
     toast.success('Event updated!')
-    // TODO: Update event via API
+    // TODO: call API to persist updates
   }, [])
 
-  const startPomodoro = () => {
-    setPomodoroActive(true)
-    toast.success('Pomodoro timer started! 🍅')
-    // TODO: Implement actual pomodoro timer
-    setTimeout(() => {
-      setPomodoroActive(false)
-      toast.success('Pomodoro complete! Take a break.')
-    }, 25 * 60 * 1000) // 25 minutes
-  }
+  const weekStart = startOfWeek(anchorDate, { weekStartsOn: 1 })
+  const weekEnd = endOfWeek(anchorDate, { weekStartsOn: 1 })
 
   const calculateWeeklyStudyTime = () => {
     if (!weekData) return 0
-    return weekData.personal_items
+    return (weekData.personal_items || [])
       .filter((item: any) => item.type === 'study')
       .reduce((total: number, item: any) => {
-        const duration = item.end_at ? 
-          Math.abs(new Date(item.end_at).getTime() - new Date(item.start_at).getTime()) / (1000 * 60 * 60) : 1
-        return total + duration
+        const start = item.start_at ? new Date(item.start_at).getTime() : NaN
+        const end = item.end_at ? new Date(item.end_at).getTime() : NaN
+        const hours = Number.isFinite(start) && Number.isFinite(end)
+          ? Math.max(0, (end - start) / (1000 * 60 * 60))
+          : 1 // default 1h if missing end
+        return total + hours
       }, 0)
   }
+
+  const studyHours = calculateWeeklyStudyTime()
+  const goalProgress = Math.min((studyHours / weeklyGoal) * 100, 100)
 
   const getViewModeOptions = () => [
     { value: 'year', label: 'Year View', icon: Calendar, href: '/year-at-a-glance' },
     { value: 'month', label: 'Month View', icon: Calendar, href: '/year-at-a-glance/month' },
-    { value: 'week', label: 'Week View', icon: Clock, href: '/year-at-a-glance/week' }
+    { value: 'week', label: 'Week View', icon: Clock, href: '/year-at-a-glance/week' },
   ]
 
-  const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 })
-  const weekEnd = endOfWeek(currentDate, { weekStartsOn: 1 })
-  const studyHours = calculateWeeklyStudyTime()
-  const goalProgress = Math.min((studyHours / weeklyGoal) * 100, 100)
+  // Keyboard shortcuts: ←/→ week nav, T today, N new block, P pomodoro
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowLeft') safePrevWeek()
+      if (e.key === 'ArrowRight') safeNextWeek()
+      if (e.key.toLowerCase() === 't') goToday()
+      if (e.key.toLowerCase() === 'n') {
+        const start = new Date()
+        const end = new Date(start.getTime() + 2 * 60 * 60 * 1000)
+        handleCreateEvent(start.toISOString(), end.toISOString())
+      }
+      if (e.key.toLowerCase() === 'p') startPomodoro()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [safePrevWeek, safeNextWeek, goToday, handleCreateEvent])
 
+  const startPomodoro = () => {
+    if (pomodoroActive) return
+    setPomodoroActive(true)
+    toast.success('Pomodoro timer started! 🍅')
+    // Simple 25-min mock; replace with real timer later
+    setTimeout(() => {
+      setPomodoroActive(false)
+      toast.success('Pomodoro complete! Take a break.')
+    }, 25 * 60 * 1000)
+  }
+
+  // Auth gate
   if (!session) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -111,6 +171,7 @@ const WeekViewPage = () => {
     )
   }
 
+  // Loading / error
   if (weekLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -133,42 +194,52 @@ const WeekViewPage = () => {
           <p className="text-gray-600 mb-4">
             There was an issue loading your calendar data. Please try again.
           </p>
-          <Button onClick={() => window.location.reload()}>
-            Retry
-          </Button>
+          <Button onClick={() => window.location.reload()}>Retry</Button>
         </Card>
       </div>
     )
   }
 
+  const weekLabel = `${format(weekStart, 'MMM d')} - ${format(weekEnd, 'MMM d, yyyy')}`
+
   return (
     <>
       <Head>
         <title>Week View - My Year at a Glance - MyDurhamLaw</title>
-        <meta name="description" content="Weekly calendar view with hourly scheduling, study blocks, and productivity tools." />
+        <meta
+          name="description"
+          content="Weekly calendar view with hourly scheduling, study blocks, and productivity tools."
+        />
       </Head>
 
       <div className="min-h-screen bg-gray-50">
-        {/* Header */}
+        {/* Sticky header under global header */}
         <div className="bg-white border-b border-gray-200 sticky top-16 z-40">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex items-center justify-between h-16">
-              {/* Title */}
-              <div className="flex items-center space-x-4">
-                <div>
+              {/* Title + Nav */}
+              <div className="flex items-center gap-3">
+                <Button variant="outline" size="sm" onClick={safePrevWeek} aria-label="Previous week">
+                  <ChevronLeft className="w-4 h-4" />
+                </Button>
+                <div className="min-w-[12rem] text-center">
                   <h1 className="text-2xl font-bold text-gray-900">Week View</h1>
-                  <p className="text-sm text-gray-600">
-                    {format(weekStart, 'MMM d')} - {format(weekEnd, 'MMM d, yyyy')} • Detailed Weekly Planning
-                  </p>
+                  <p className="text-sm text-gray-600">{weekLabel} • Detailed Weekly Planning</p>
                 </div>
+                <Button variant="outline" size="sm" onClick={safeNextWeek} aria-label="Next week">
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
+                <Button variant="ghost" size="sm" onClick={goToday}>
+                  Today
+                </Button>
 
-                {/* Weekly Goal Progress */}
-                <div className="hidden md:flex items-center space-x-3">
-                  <div className="flex items-center space-x-2">
+                {/* Weekly Goal Progress (desktop) */}
+                <div className="hidden md:flex items-center gap-3 ml-6">
+                  <div className="flex items-center gap-2">
                     <Target className="w-4 h-4 text-purple-600" />
                     <span className="text-sm text-gray-600">Weekly Goal:</span>
                     <div className="w-24 bg-gray-200 rounded-full h-2">
-                      <div 
+                      <div
                         className="bg-purple-600 h-2 rounded-full transition-all duration-300"
                         style={{ width: `${goalProgress}%` }}
                       />
@@ -177,21 +248,18 @@ const WeekViewPage = () => {
                       {Math.round(studyHours)}/{weeklyGoal}h
                     </span>
                   </div>
-                  
                   {goalProgress >= 100 && (
-                    <Badge variant="success" size="sm">
-                      Goal Achieved! 🎉
-                    </Badge>
+                    <Badge variant="success" size="sm">Goal Achieved! 🎉</Badge>
                   )}
                 </div>
               </div>
 
               {/* Controls */}
               <div className="flex items-center space-x-3">
-                {/* Pomodoro Timer */}
+                {/* Pomodoro */}
                 <Button
                   onClick={startPomodoro}
-                  variant={pomodoroActive ? "secondary" : "outline"}
+                  variant={pomodoroActive ? 'secondary' : 'outline'}
                   size="sm"
                   className="flex items-center space-x-2"
                   disabled={pomodoroActive}
@@ -203,10 +271,11 @@ const WeekViewPage = () => {
 
                 {/* Add Study Block */}
                 <Button
-                  onClick={() => handleCreateEvent(
-                    new Date().toISOString(),
-                    new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString()
-                  )}
+                  onClick={() => {
+                    const start = new Date()
+                    const end = new Date(start.getTime() + 2 * 60 * 60 * 1000)
+                    handleCreateEvent(start.toISOString(), end.toISOString())
+                  }}
                   size="sm"
                   className="flex items-center space-x-2"
                 >
@@ -223,10 +292,14 @@ const WeekViewPage = () => {
                 >
                   <Filter className="w-4 h-4" />
                   <span>Filters</span>
-                  <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${showFilters ? 'rotate-180' : ''}`} />
+                  <ChevronDown
+                    className={`w-4 h-4 transition-transform duration-200 ${
+                      showFilters ? 'rotate-180' : ''
+                    }`}
+                  />
                 </Button>
 
-                {/* View Mode Switcher */}
+                {/* View Switcher */}
                 <div className="flex items-center bg-gray-100 rounded-lg p-1">
                   {getViewModeOptions().map((option) => (
                     <Link key={option.value} href={option.href}>
@@ -244,7 +317,7 @@ const WeekViewPage = () => {
                   ))}
                 </div>
 
-                {/* Settings */}
+                {/* Settings placeholder */}
                 <Button variant="ghost" size="sm">
                   <Settings className="w-4 h-4" />
                 </Button>
@@ -257,7 +330,7 @@ const WeekViewPage = () => {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-6">
                     <span className="text-sm font-medium text-gray-700">Show:</span>
-                    
+
                     {/* Event Type Filters */}
                     <div className="flex items-center space-x-3">
                       {['lectures', 'assessments', 'exams', 'personal'].map((type) => (
@@ -268,7 +341,7 @@ const WeekViewPage = () => {
                             onChange={(e) => {
                               const types = e.target.checked
                                 ? [...filter.event_types, type as any]
-                                : filter.event_types.filter(t => t !== type)
+                                : filter.event_types.filter((t) => t !== type)
                               updateFilter({ event_types: types })
                             }}
                             className="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
@@ -278,13 +351,10 @@ const WeekViewPage = () => {
                       ))}
                     </div>
 
-                    {/* Time Range Filter */}
+                    {/* Hours range (UI only for now) */}
                     <div className="flex items-center space-x-2">
                       <span className="text-sm text-gray-600">Hours:</span>
-                      <select 
-                        className="text-sm border border-gray-300 rounded px-2 py-1"
-                        defaultValue="7-21"
-                      >
+                      <select className="text-sm border border-gray-300 rounded px-2 py-1" defaultValue="7-21">
                         <option value="6-22">6 AM - 10 PM</option>
                         <option value="7-21">7 AM - 9 PM</option>
                         <option value="8-20">8 AM - 8 PM</option>
@@ -297,22 +367,17 @@ const WeekViewPage = () => {
                       <span className="text-sm text-gray-600">Weekly Goal:</span>
                       <input
                         type="number"
-                        min="1"
-                        max="60"
+                        min={1}
+                        max={60}
                         value={weeklyGoal}
-                        onChange={(e) => setWeeklyGoal(parseInt(e.target.value))}
+                        onChange={(e) => setWeeklyGoal(parseInt(e.target.value || '0', 10))}
                         className="w-16 text-sm border border-gray-300 rounded px-2 py-1"
                       />
                       <span className="text-sm text-gray-600">hours</span>
                     </div>
                   </div>
 
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={resetFilter}
-                    className="text-sm"
-                  >
+                  <Button variant="ghost" size="sm" onClick={resetFilter} className="text-sm">
                     Reset Filters
                   </Button>
                 </div>
@@ -326,7 +391,7 @@ const WeekViewPage = () => {
           {weekData ? (
             <WeekView
               weekData={weekData}
-              currentDate={currentDate}
+              currentDate={anchorDate}
               onDateChange={handleDateChange}
               onEventClick={handleEventClick}
               onCreateEvent={handleCreateEvent}
@@ -339,9 +404,7 @@ const WeekViewPage = () => {
               <p className="text-gray-600 mb-4">
                 Unable to load your weekly schedule data. Please try refreshing the page.
               </p>
-              <Button onClick={() => window.location.reload()}>
-                Retry
-              </Button>
+              <Button onClick={() => window.location.reload()}>Retry</Button>
             </div>
           )}
         </div>
@@ -351,21 +414,19 @@ const WeekViewPage = () => {
           <Card className="p-4 bg-white/95 backdrop-blur-sm shadow-lg">
             <div className="space-y-3">
               <div className="text-sm font-medium text-gray-900">Study Tools</div>
-              
+
               <div className="flex items-center space-x-2">
                 <Button
                   onClick={startPomodoro}
-                  variant={pomodoroActive ? "secondary" : "outline"}
+                  variant={pomodoroActive ? 'secondary' : 'outline'}
                   size="sm"
                   disabled={pomodoroActive}
                 >
                   <Timer className="w-4 h-4 mr-1" />
                   {pomodoroActive ? '25:00' : 'Start'}
                 </Button>
-                
-                <div className="text-xs text-gray-600">
-                  {studyHours.toFixed(1)}h this week
-                </div>
+
+                <div className="text-xs text-gray-600">{studyHours.toFixed(1)}h this week</div>
               </div>
 
               {pomodoroActive && (
@@ -381,23 +442,24 @@ const WeekViewPage = () => {
         <div className="fixed bottom-4 right-4 z-30">
           <Card className="p-3 text-xs text-gray-600 bg-white/95 backdrop-blur-sm">
             <div className="space-y-1">
-              <div><kbd className="px-1.5 py-0.5 bg-gray-100 rounded text-xs">←/→</kbd> Change week</div>
-              <div><kbd className="px-1.5 py-0.5 bg-gray-100 rounded text-xs">T</kbd> Go to today</div>
-              <div><kbd className="px-1.5 py-0.5 bg-gray-100 rounded text-xs">N</kbd> New study block</div>
-              <div><kbd className="px-1.5 py-0.5 bg-gray-100 rounded text-xs">P</kbd> Start pomodoro</div>
+              <div>
+                <kbd className="px-1.5 py-0.5 bg-gray-100 rounded text-xs">←/→</kbd> Change week
+              </div>
+              <div>
+                <kbd className="px-1.5 py-0.5 bg-gray-100 rounded text-xs">T</kbd> Go to today
+              </div>
+              <div>
+                <kbd className="px-1.5 py-0.5 bg-gray-100 rounded text-xs">N</kbd> New study block
+              </div>
+              <div>
+                <kbd className="px-1.5 py-0.5 bg-gray-100 rounded text-xs">P</kbd> Start pomodoro
+              </div>
             </div>
           </Card>
         </div>
       </div>
     </>
   )
-}
-
-export const getServerSideProps: GetServerSideProps = async (context) => {
-  // You can add server-side authentication and data prefetching here
-  return {
-    props: {}
-  }
 }
 
 export default WeekViewPage

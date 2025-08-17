@@ -1,5 +1,5 @@
-import React, { useState, useContext } from 'react'
-import { GetServerSideProps } from 'next'
+// src/pages/year-at-a-glance/month.tsx
+import React, { useContext, useEffect, useState } from 'react'
 import Head from 'next/head'
 import Link from 'next/link'
 import { AuthContext } from '@/lib/supabase/AuthContext'
@@ -8,66 +8,101 @@ import { MonthView } from '@/components/calendar/MonthView'
 import { CalendarViewMode } from '@/types/calendar'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
-import { ChevronDown, Calendar, Clock, Settings, Filter, Plus } from 'lucide-react'
+import {
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  Calendar,
+  Clock,
+  Settings,
+  Filter,
+  Plus,
+} from 'lucide-react'
 import toast from 'react-hot-toast'
+import { useCalendarCtx } from '@/context/CalendarContext'
 
 const MonthViewPage = () => {
-  const authContext = useContext(AuthContext)
-  const { session, userProfile } = authContext || { session: null, userProfile: null }
-  const [currentDate, setCurrentDate] = useState(new Date())
+  const auth = useContext(AuthContext)
+  const { session, userProfile } = auth || { session: null, userProfile: null }
+
+  // Shared calendar state (provided by CalendarProvider in LayoutShell)
+  const {
+    anchorDate,
+    setAnchorDate,
+    nextMonth,
+    prevMonth,
+  } = useCalendarCtx()
+
   const [viewMode] = useState<CalendarViewMode>('month')
   const [showFilters, setShowFilters] = useState(false)
 
-  // Get user info
-  const userId = session?.user?.id
+  // User/programme
+  const userId = session?.user?.id || ''
   const programme = userProfile?.user_type || 'LLB'
-  const yearOfStudy = userProfile?.year_group ? parseInt(userProfile.year_group.replace('year', '')) : 1
+  const yearOfStudy =
+    userProfile?.year_group
+      ? parseInt(userProfile.year_group.replace('year', ''), 10) || 1
+      : 1
 
-  // Calendar hooks
-  const {
-    useMonthData
-  } = useCalendarData({
-    userId: userId || '',
+  // Calendar data hooks
+  const { useMonthData } = useCalendarData({
+    userId,
     programme,
-    yearOfStudy
+    yearOfStudy,
   })
 
   const {
     data: monthData,
     isLoading: monthLoading,
-    error: monthError
-  } = useMonthData(currentDate.getFullYear(), currentDate.getMonth() + 1)
+    error: monthError,
+  } = useMonthData(anchorDate.getFullYear(), anchorDate.getMonth() + 1)
 
-  const {filter, updateFilter, resetFilter} = useCalendarFilter() || {
-    filter: { event_types: [], show_completed: false },
-    updateFilter: () => {},
-    resetFilter: () => {}
-  }
+  // Filters
+  const { filter, updateFilter, resetFilter } =
+    useCalendarFilter() || {
+      filter: { event_types: [], show_completed: false },
+      updateFilter: () => {},
+      resetFilter: () => {},
+    }
 
+  // Handlers
   const handleDateChange = (date: Date) => {
-    setCurrentDate(date)
+    // MonthView will call this when user navigates inside the component
+    setAnchorDate(date)
   }
 
   const handleEventClick = (event: any) => {
     toast.success('Event details coming soon!')
-    // TODO: Open event detail modal
   }
 
-  const handleDateClick = (date: string) => {
-    // The DayDrawer will handle this
+  const handleDateClick = (isoDate: string) => {
+    // Hook up a day drawer or route to week/day later
+    // For now we no-op
   }
 
-  const handleCreateEvent = (date: string) => {
+  const handleCreateEvent = (isoDate?: string) => {
     toast.success('Event creation coming soon!')
-    // TODO: Open event creation modal
   }
 
   const getViewModeOptions = () => [
     { value: 'year', label: 'Year View', icon: Calendar, href: '/year-at-a-glance' },
     { value: 'month', label: 'Month View', icon: Calendar, href: '/year-at-a-glance/month' },
-    { value: 'week', label: 'Week View', icon: Clock, href: '/year-at-a-glance/week' }
+    { value: 'week', label: 'Week View', icon: Clock, href: '/year-at-a-glance/week' },
   ]
 
+  // Keyboard shortcuts: ←/→, T (today), N (new event)
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowLeft') prevMonth()
+      if (e.key === 'ArrowRight') nextMonth()
+      if (e.key.toLowerCase() === 't') setAnchorDate(new Date())
+      if (e.key.toLowerCase() === 'n') handleCreateEvent()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [nextMonth, prevMonth, setAnchorDate])
+
+  // Auth gate
   if (!session) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -85,6 +120,7 @@ const MonthViewPage = () => {
     )
   }
 
+  // Loading / error
   if (monthLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -107,41 +143,57 @@ const MonthViewPage = () => {
           <p className="text-gray-600 mb-4">
             There was an issue loading your calendar data. Please try again.
           </p>
-          <Button onClick={() => window.location.reload()}>
-            Retry
-          </Button>
+          <Button onClick={() => window.location.reload()}>Retry</Button>
         </Card>
       </div>
     )
   }
 
+  // Header labels
+  const monthLabel = anchorDate.toLocaleString('en-GB', { month: 'long', year: 'numeric' })
+
   return (
     <>
       <Head>
         <title>Month View - My Year at a Glance - MyDurhamLaw</title>
-        <meta name="description" content="Monthly calendar view with detailed daily scheduling and event management." />
+        <meta
+          name="description"
+          content="Monthly calendar view with detailed daily scheduling and event management."
+        />
       </Head>
 
       <div className="min-h-screen bg-gray-50">
-        {/* Header */}
+        {/* Sticky header under the global header */}
         <div className="bg-white border-b border-gray-200 sticky top-16 z-40">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex items-center justify-between h-16">
-              {/* Title */}
-              <div className="flex items-center space-x-4">
-                <div>
-                  <h1 className="text-2xl font-bold text-gray-900">Month View</h1>
+              {/* Title & current month */}
+              <div className="flex items-center gap-3">
+                <Button variant="outline" size="sm" onClick={prevMonth} aria-label="Previous month">
+                  <ChevronLeft className="w-4 h-4" />
+                </Button>
+                <div className="min-w-[10rem] text-center">
+                  <h1 className="text-2xl font-bold text-gray-900">{monthLabel}</h1>
                   <p className="text-sm text-gray-600">
                     {programme} Year {yearOfStudy} • Detailed Monthly Planning
                   </p>
                 </div>
+                <Button variant="outline" size="sm" onClick={nextMonth} aria-label="Next month">
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
+                <Button variant="ghost" size="sm" onClick={() => setAnchorDate(new Date())}>
+                  Today
+                </Button>
               </div>
 
               {/* Controls */}
               <div className="flex items-center space-x-3">
-                {/* Add Event Button */}
+                {/* Add Event */}
                 <Button
-                  onClick={() => handleCreateEvent(new Date().toISOString().split('T')[0] || new Date().toLocaleDateString('en-CA'))}
+                  onClick={() =>
+                    handleCreateEvent(new Date().toISOString().split('T')[0] ||
+                      new Date().toLocaleDateString('en-CA'))
+                  }
                   size="sm"
                   className="flex items-center space-x-2"
                 >
@@ -158,10 +210,14 @@ const MonthViewPage = () => {
                 >
                   <Filter className="w-4 h-4" />
                   <span>Filters</span>
-                  <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${showFilters ? 'rotate-180' : ''}`} />
+                  <ChevronDown
+                    className={`w-4 h-4 transition-transform duration-200 ${
+                      showFilters ? 'rotate-180' : ''
+                    }`}
+                  />
                 </Button>
 
-                {/* View Mode Switcher */}
+                {/* View switcher */}
                 <div className="flex items-center bg-gray-100 rounded-lg p-1">
                   {getViewModeOptions().map((option) => (
                     <Link key={option.value} href={option.href}>
@@ -179,7 +235,7 @@ const MonthViewPage = () => {
                   ))}
                 </div>
 
-                {/* Settings */}
+                {/* Settings placeholder */}
                 <Button variant="ghost" size="sm">
                   <Settings className="w-4 h-4" />
                 </Button>
@@ -192,7 +248,7 @@ const MonthViewPage = () => {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-4">
                     <span className="text-sm font-medium text-gray-700">Show:</span>
-                    
+
                     {/* Event Type Filters */}
                     <div className="flex items-center space-x-2">
                       {['lectures', 'assessments', 'exams', 'personal'].map((type) => (
@@ -203,7 +259,7 @@ const MonthViewPage = () => {
                             onChange={(e) => {
                               const types = e.target.checked
                                 ? [...filter.event_types, type as any]
-                                : filter.event_types.filter(t => t !== type)
+                                : filter.event_types.filter((t) => t !== type)
                               updateFilter({ event_types: types })
                             }}
                             className="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
@@ -225,12 +281,7 @@ const MonthViewPage = () => {
                     </label>
                   </div>
 
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={resetFilter}
-                    className="text-sm"
-                  >
+                  <Button variant="ghost" size="sm" onClick={resetFilter} className="text-sm">
                     Reset Filters
                   </Button>
                 </div>
@@ -244,7 +295,7 @@ const MonthViewPage = () => {
           {monthData ? (
             <MonthView
               monthData={monthData}
-              currentDate={currentDate}
+              currentDate={anchorDate}
               onDateChange={handleDateChange}
               onEventClick={handleEventClick}
               onDateClick={handleDateClick}
@@ -257,9 +308,7 @@ const MonthViewPage = () => {
               <p className="text-gray-600 mb-4">
                 Unable to load your monthly calendar data. Please try refreshing the page.
               </p>
-              <Button onClick={() => window.location.reload()}>
-                Retry
-              </Button>
+              <Button onClick={() => window.location.reload()}>Retry</Button>
             </div>
           )}
         </div>
@@ -268,22 +317,21 @@ const MonthViewPage = () => {
         <div className="fixed bottom-4 right-4 z-30">
           <Card className="p-3 text-xs text-gray-600 bg-white/95 backdrop-blur-sm">
             <div className="space-y-1">
-              <div><kbd className="px-1.5 py-0.5 bg-gray-100 rounded text-xs">←/→</kbd> Change month</div>
-              <div><kbd className="px-1.5 py-0.5 bg-gray-100 rounded text-xs">T</kbd> Go to today</div>
-              <div><kbd className="px-1.5 py-0.5 bg-gray-100 rounded text-xs">N</kbd> New event</div>
+              <div>
+                <kbd className="px-1.5 py-0.5 bg-gray-100 rounded text-xs">←/→</kbd> Change month
+              </div>
+              <div>
+                <kbd className="px-1.5 py-0.5 bg-gray-100 rounded text-xs">T</kbd> Go to today
+              </div>
+              <div>
+                <kbd className="px-1.5 py-0.5 bg-gray-100 rounded text-xs">N</kbd> New event
+              </div>
             </div>
           </Card>
         </div>
       </div>
     </>
   )
-}
-
-export const getServerSideProps: GetServerSideProps = async (context) => {
-  // You can add server-side authentication and data prefetching here
-  return {
-    props: {}
-  }
 }
 
 export default MonthViewPage
