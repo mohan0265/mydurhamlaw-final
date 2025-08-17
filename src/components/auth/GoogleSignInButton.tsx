@@ -5,7 +5,7 @@ import { getSupabaseClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/Button'
 import toast from 'react-hot-toast'
 import { storeSignupMetadata, type SignupMetadata } from '@/lib/utils/metadata-storage'
-import { getOrigin } from '@/lib/utils/getOrigin'
+import { getAuthRedirect } from '@/lib/authRedirect'
 
 interface GoogleSignInButtonProps {
   agree: boolean
@@ -68,7 +68,7 @@ const GoogleSignInButton = ({ agree, displayName, yearGroup }: GoogleSignInButto
       }
 
       // ✅ Create OAuth redirect URL with metadata encoded
-      const baseRedirectUrl = `${getOrigin()}/auth/callback`
+      const baseRedirectUrl = getAuthRedirect()
       const metadataParam = encodeURIComponent(JSON.stringify({
         yg: yearGroup,
         dn: displayName.trim(),

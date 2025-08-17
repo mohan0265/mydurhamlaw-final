@@ -1,5 +1,6 @@
 
 import { supabase } from './client'
+import { getAuthRedirect } from '@/lib/authRedirect'
 
 export interface AuthError {
   message: string
@@ -17,7 +18,7 @@ export const signUp = async (email: string, password: string): Promise<AuthRespo
       email,
       password,
       options: {
-        emailRedirectTo: `${window.location.origin}/dashboard`,
+        emailRedirectTo: getAuthRedirect(),
         data: {
           created_at: new Date().toISOString(),
         }

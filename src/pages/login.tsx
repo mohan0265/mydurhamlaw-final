@@ -7,7 +7,7 @@ import { BookOpen } from 'lucide-react'
 import { getSupabaseClient } from '@/lib/supabase/client'
 import { BrandTitle } from '@/components/ui/BrandTitle'
 import toast from 'react-hot-toast'
-import { getOrigin } from '@/lib/utils/getOrigin'
+import { getAuthRedirect } from '@/lib/authRedirect'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -26,6 +26,7 @@ export default function LoginPage() {
         return;
       }
       
+      const redirectTo = getAuthRedirect()
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
@@ -33,8 +34,8 @@ export default function LoginPage() {
             access_type: 'offline',
             prompt: 'consent'
           },
-          redirectTo: `${getOrigin()}/auth/callback`, // ✅ Use consistent callback URL
-          scopes: 'openid email profile' // ✅ Include openid for better PKCE support
+          redirectTo,
+          scopes: 'openid email profile'
         }
       })
 

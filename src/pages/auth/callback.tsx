@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/router'
-import { supabase, debugAuthState, handleOAuthSession } from '@/lib/supabase/client'
+import { getSupabaseClient, debugAuthState, handleOAuthSession } from '@/lib/supabase/client'
 
 export default function AuthCallbackPage() {
   const router = useRouter()
@@ -69,6 +69,7 @@ export default function AuthCallbackPage() {
         await new Promise(resolve => setTimeout(resolve, 2000))
         
         // Get the session that should now be established
+        const supabase = getSupabaseClient()
         if (!supabase) {
           console.error('🚨 Supabase client not available');
           setError('Authentication service unavailable');

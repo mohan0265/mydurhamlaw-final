@@ -3,7 +3,7 @@
 
 import { useEffect, useState } from 'react'
 import { getSupabaseClient, debugAuthState } from '@/lib/supabase/client'
-import { getOrigin } from '@/lib/utils/getOrigin'
+import { getAuthRedirect } from '@/lib/authRedirect'
 
 export default function DebugAuthPage() {
   const [debugInfo, setDebugInfo] = useState<any>(null)
@@ -122,10 +122,11 @@ export default function DebugAuthPage() {
         return
       }
 
+      const redirectTo = getAuthRedirect()
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${getOrigin()}/auth/callback`,
+          redirectTo,
           queryParams: {
             access_type: 'offline',
             prompt: 'consent'

@@ -8,7 +8,7 @@ import { getSupabaseClient } from '@/lib/supabase/client'
 import toast from 'react-hot-toast'
 import { Logo } from '@/components/ui/Logo'
 import { BrandTitle } from '@/components/ui/BrandTitle'
-import { getOrigin } from '@/lib/utils/getOrigin'
+import { getAuthRedirect } from '@/lib/authRedirect'
 
 export default function SignUpPage() {
   const router = useRouter()
@@ -27,10 +27,11 @@ export default function SignUpPage() {
         return;
       }
 
+      const redirectTo = getAuthRedirect()
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${getOrigin()}/auth/callback`,
+          redirectTo,
           queryParams: {
             access_type: 'offline',
             prompt: 'consent'
