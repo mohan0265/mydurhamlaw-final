@@ -18,7 +18,11 @@
       "Bash(git push:*)",
       "Bash(npm run lint)",
       "Bash(PORT=3001 npm run start)",
-      "Bash(PORT=3002 npm run dev)"
+      "Bash(PORT=3002 npm run dev)",
+      "Bash(git checkout:*)",
+      "Bash(npm i)",
+      "Bash(npm i:*)",
+      "Bash(true)"
     ],
     "deny": [],
     "ask": []
