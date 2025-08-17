@@ -1,0 +1,39 @@
+# --- Node / Next.js ---
+node_modules/
+.next/
+out/
+dist/
+.vercel/
+.netlify/
+
+# --- Tests & local reports ---
+coverage/
+playwright-report/
+test-results/
+
+# --- Env & secrets (keep only templates) ---
+.env*
+!.env.example
+!.env.local.example
+
+# --- Logs ---
+*.log
+*.log.*
+
+# --- Editors / OS ---
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# --- Archives / backups ---
+*.zip
+.backups/
+_archive_minimax/
+
+# --- Supabase scratch ---
+supabase/.temp/
+supabase/.branches/

@@ -1,0 +1,107 @@
+✅ CLAUDE PROMPT FOR BUILDING HUMAN-MODE DRAFTING™
+You are now acting as the lead developer for the MyDurhamLaw legal study platform, with full access to a Supabase/Postgres backend, a Next.js + Tailwind frontend, and OpenAI/Claude API integration. Your task is to implement a deeply personalized assignment writing feature called:
+
+Human-Mode Drafting™ (Powered by Private Style Memory™)
+This feature ensures that every essay, assignment, or submission generated through the AI assistant is:
+
+Uniquely tailored to each student’s natural writing style
+
+Undetectable by AI plagiarism detectors (GPTZero, Turnitin AI, Originality.ai, etc.)
+
+Refined continually based on how the student writes and edits
+
+Follow these 5 core instructions below:
+
+1. Create the database schema
+Design and generate the SQL schema to store each student’s writing history and build their style fingerprint:
+
+sql
+Copy
+Edit
+-- writing_samples table to store student-authored or reviewed samples
+create table writing_samples (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references profiles(id) on delete cascade,
+  content text not null,
+  title text,
+  context jsonb, -- optional metadata (course, topic, etc.)
+  created_at timestamptz default now()
+);
+
+-- writing_embeddings table to store vector embeddings (1536-d for OpenAI, or as needed by Claude)
+create table writing_embeddings (
+  id uuid primary key default gen_random_uuid(),
+  writing_sample_id uuid references writing_samples(id) on delete cascade,
+  embedding vector(1536),
+  created_at timestamptz default now()
+);
+Create an insert_writing_sample_with_embedding(content, user_id) RPC that:
+
+Inserts a writing_samples row
+
+Calls OpenAI or Claude embedding API
+
+Stores the vector in writing_embeddings
+
+2. Integrate Private Style Memory™ into the Assignment Generator
+When a user submits a prompt to the Assignment Assistant:
+Query the 3 most relevant writing samples using vector similarity (e.g., pgvector’s cosine_distance)
+
+Retrieve those writing samples as reference documents
+
+Inject them into the GPT-4o or Claude system prompt like this:
+
+plaintext
+Copy
+Edit
+"You are generating a legal assignment for a student. Below are 3 prior writing samples from this student. Carefully analyze sentence structure, phrasing, vocabulary, and tone. Your goal is to write in this student’s unique style. Do not sound like an AI.
+
+[SAMPLE 1]
+{sample1}
+
+[SAMPLE 2]
+{sample2}
+
+[SAMPLE 3]
+{sample3}
+
+Now write the assignment below in the exact same human tone and voice. Do not be robotic or generic."
+Inject the user’s actual assignment question after that.
+
+3. Feedback Loop Learning
+After a user edits or revises a generated draft:
+
+Allow them to click “Save as my style”
+
+This saves the final version into writing_samples and updates their Private Style Memory
+
+Optionally prompt: “Was this AI-generated draft close to your natural voice?” with thumbs up/down → used for future weighting.
+
+4. Frontend UI Design for Student
+On the Assignment Assistant page:
+
+Add a section called “Private Style Memory™”
+
+Show the 3 most recent writing samples used
+
+Allow users to delete old samples
+
+Option to upload new samples (e.g. past essays in plain text)
+
+Toggle “Use Human-Mode Drafting™” on/off (default ON)
+
+Display a friendly note:
+
+"We’ll match how you write — every time. Your writing style is privately remembered and applied, so no two drafts are ever alike."
+
+5. Admin/Instructor Tooling (Optional for later)
+Create a dashboard to view per-user writing embeddings (to debug or improve models), but keep content private unless user consents.
+
+Final Notes:
+
+Default model should be GPT-4o (or Claude 3 Opus if preferred)
+
+The goal is non-AI-detectable, deeply personalized, plagiarism-free writing output
+
+The system must never reuse the same samples blindly — always retrieve embeddings by similarity
+

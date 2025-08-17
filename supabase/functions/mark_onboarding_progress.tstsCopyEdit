@@ -1,0 +1,16 @@
+import { createClient } from '@supabase/supabase-js'
+const supabase = createClient(process.env.SUPABASE_URL, process.env.SERVICE_ROLE_KEY)
+
+export async function markProgress(userId: string, uploadedDocs: any[], goal?: string) {
+  const status = uploadedDocs.length >= 4 && goal ? 'complete' : uploadedDocs.length > 0 ? 'partial' : 'incomplete'
+  const { error } = await supabase
+    .from('profiles')
+    .update({
+      onboarding_status: status,
+      uploaded_docs: uploadedDocs,
+      academic_goal: goal || null,
+    })
+    .eq('id', userId)
+
+  return { success: !error, error }
+}

@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background Circle with Gradient -->
+  <defs>
+    <linearGradient id="durmahIconGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#7c3aed;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#4f46e5;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#3730a3;stop-opacity:1" />
+    </linearGradient>
+    <filter id="iconShadow" x="-50%" y="-50%" width="200%" height="200%">
+      <feDropShadow dx="1" dy="2" stdDeviation="2" flood-color="#000" flood-opacity="0.25"/>
+    </filter>
+  </defs>
+  
+  <!-- Main Background Circle -->
+  <circle cx="32" cy="32" r="30" fill="url(#durmahIconGradient)" filter="url(#iconShadow)"/>
+  
+  <!-- Inner Border -->
+  <circle cx="32" cy="32" r="26" fill="none" stroke="#ffffff" stroke-width="0.5" opacity="0.3"/>
+  
+  <!-- Simple Scales Symbol -->
+  <g transform="translate(32, 20)">
+    <!-- Balance Point -->
+    <circle cx="0" cy="0" r="2" fill="#ffffff" opacity="0.9"/>
+    
+    <!-- Scale Arms -->
+    <line x1="-12" y1="0" x2="12" y2="0" stroke="#ffffff" stroke-width="1.5" opacity="0.8"/>
+    
+    <!-- Left Pan -->
+    <path d="M -10 2 L -6 2 L -5 5 L -11 5 Z" fill="#ffffff" opacity="0.7"/>
+    <line x1="-8" y1="0" x2="-8" y2="2" stroke="#ffffff" stroke-width="1" opacity="0.8"/>
+    
+    <!-- Right Pan -->
+    <path d="M 6 2 L 10 2 L 11 5 L 5 5 Z" fill="#ffffff" opacity="0.7"/>
+    <line x1="8" y1="0" x2="8" y2="2" stroke="#ffffff" stroke-width="1" opacity="0.8"/>
+  </g>
+  
+  <!-- Large "D" -->
+  <g transform="translate(32, 44)">
+    <text x="0" y="6" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="22" font-weight="700" fill="#ffffff" opacity="0.95">D</text>
+  </g>
+</svg>

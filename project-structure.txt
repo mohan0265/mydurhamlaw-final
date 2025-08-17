@@ -1,0 +1,260 @@
+Folder PATH listing for volume Windows
+Volume serial number is 3EFE-CDCB
+C:.
+¦   .bashrc
+¦   .env.example
+¦   .env.local
+¦   .eslintrc.json
+¦   .gitignore
+¦   .nvmrc
+¦   BACKEND_SYNC_DOCUMENTATION.md
+¦   CLAUDE.md
+¦   deploy-streamlined-signup.sh
+¦   favicon-instructions.md
+¦   FAVICON_OPTIMIZATION_COMPLETE.md
+¦   netlify.toml
+¦   NETLIFY_BUILD_FIX.md
+¦   next-env.d.ts
+¦   next.config.js
+¦   OAUTH_PRODUCTION_FIX_README.md
+¦   OPENAI_API_KEY_AUDIT_COMPLETE.md
+¦   package-lock.json
+¦   package.json
+¦   postcss.config.js
+¦   project-structure.txt
+¦   SECURITY.md
+¦   tailwind.config.js
+¦   tsconfig.json
+¦   tsconfig.tsbuildinfo
+¦   
++---.claude
+¦       settings.local.json
+¦       
++---public
+¦   ¦   favicon.ico
+¦   ¦   favicon.svg
+¦   ¦   manifest.json
+¦   ¦   site.webmanifest
+¦   ¦   
+¦   +---images
+¦           MyDurhamLawLogo.webp
+¦           
++---src
+¦   +---agents
+¦   ¦       voiceBuddyAgent.ts
+¦   ¦       
+¦   +---ClaudePrompts
+¦   ¦       HumanModeDrafting.txt
+¦   ¦       
+¦   +---components
+¦   ¦   ¦   AIChatBuddy.tsx
+¦   ¦   ¦   AIResearchAssistant.tsx
+¦   ¦   ¦   BackNavigation.tsx
+¦   ¦   ¦   ChatInterface.tsx
+¦   ¦   ¦   Footer.tsx
+¦   ¦   ¦   Header.tsx
+¦   ¦   ¦   ProfilePicturePreview.tsx
+¦   ¦   ¦   Sidebar.tsx
+¦   ¦   ¦   UploadProfilePicture.tsx
+¦   ¦   ¦   
+¦   ¦   +---agents
+¦   ¦   ¦       EnhancedMemoryManagerAgent.tsx
+¦   ¦   ¦       
+¦   ¦   +---assignment
+¦   ¦   ¦       AssignmentGenerator.tsx
+¦   ¦   ¦       HumanModeDrafting.tsx
+¦   ¦   ¦       
+¦   ¦   +---auth
+¦   ¦   ¦       GoogleSignInButton.tsx
+¦   ¦   ¦       
+¦   ¦   +---chat
+¦   ¦   ¦       ChatBubble.tsx
+¦   ¦   ¦       ChatInput.tsx
+¦   ¦   ¦       ChatLoading.tsx
+¦   ¦   ¦       VoiceBuddy.tsx
+¦   ¦   ¦       VoiceIndicator.tsx
+¦   ¦   ¦       
+¦   ¦   +---community
+¦   ¦   ¦       CategoryTabs.tsx
+¦   ¦   ¦       DiningSection.tsx
+¦   ¦   ¦       EventsCarousel.tsx
+¦   ¦   ¦       HeroSection.tsx
+¦   ¦   ¦       MapSection.tsx
+¦   ¦   ¦       ParentEssentials.tsx
+¦   ¦   ¦       
+¦   ¦   +---dashboard
+¦   ¦   ¦       ProgressWidget.tsx
+¦   ¦   ¦       QuickActionsWidget.tsx
+¦   ¦   ¦       StudyFocusWidget.tsx
+¦   ¦   ¦       WelcomeWidget.tsx
+¦   ¦   ¦       
+¦   ¦   +---layout
+¦   ¦   ¦       LegalFooter.tsx
+¦   ¦   ¦       ModernSidebar.tsx
+¦   ¦   ¦       
+¦   ¦   +---ui
+¦   ¦           BackToHomeButton.tsx
+¦   ¦           Badge.tsx
+¦   ¦           Button.tsx
+¦   ¦           Card.tsx
+¦   ¦           Input.tsx
+¦   ¦           Label.tsx
+¦   ¦           ProgressBar.tsx
+¦   ¦           Textarea.tsx
+¦   ¦           
+¦   +---constants
+¦   ¦       Routes.tsx
+¦   ¦       
+¦   +---hooks
+¦   ¦       useContextDetection.ts
+¦   ¦       useConversationManagement.ts
+¦   ¦       useScrollToTop.ts
+¦   ¦       useUserDisplayName.ts
+¦   ¦       useVoiceRecognition.ts
+¦   ¦       
+¦   +---lib
+¦   ¦   ¦   buildUserSystemPrompt.ts
+¦   ¦   ¦   env.ts
+¦   ¦   ¦   openai.ts
+¦   ¦   ¦   types.ts
+¦   ¦   ¦   utils.ts
+¦   ¦   ¦   withAuthProtection.tsx
+¦   ¦   ¦   
+¦   ¦   +---client
+¦   ¦   ¦       apiClient.ts
+¦   ¦   ¦       
+¦   ¦   +---durham
+¦   ¦   ¦       academicCalendar.ts
+¦   ¦   ¦       activities.ts
+¦   ¦   ¦       delsa.ts
+¦   ¦   ¦       modules.ts
+¦   ¦   ¦       
+¦   ¦   +---hooks
+¦   ¦   ¦       useBookmarks.ts
+¦   ¦   ¦       useMemory.ts
+¦   ¦   ¦       useUserType.ts
+¦   ¦   ¦       
+¦   ¦   +---middleware
+¦   ¦   ¦       rateLimiter.ts
+¦   ¦   ¦       
+¦   ¦   +---prompts
+¦   ¦   ¦   +---MemoryManagerAgent
+¦   ¦   ¦           prompt.ts
+¦   ¦   ¦           
+¦   ¦   +---security
+¦   ¦   ¦       apiSecurity.ts
+¦   ¦   ¦       encryption.ts
+¦   ¦   ¦       
+¦   ¦   +---server
+¦   ¦   ¦       embeddings.ts
+¦   ¦   ¦       openai.ts
+¦   ¦   ¦       
+¦   ¦   +---supabase
+¦   ¦   ¦       aiHistory.ts
+¦   ¦   ¦       auth.ts
+¦   ¦   ¦       AuthContext.tsx
+¦   ¦   ¦       client.ts
+¦   ¦   ¦       voiceChat.ts
+¦   ¦   ¦       
+¦   ¦   +---utils
+¦   ¦           logger.ts
+¦   ¦           metadata-storage.ts
+¦   ¦           
+¦   +---pages
+¦   ¦   ¦   ai-assistant.tsx
+¦   ¦   ¦   ai-buddy.tsx
+¦   ¦   ¦   assignment-generator.tsx
+¦   ¦   ¦   assignments.tsx
+¦   ¦   ¦   calendar.tsx
+¦   ¦   ¦   community-hub.tsx
+¦   ¦   ¦   complete-profile.tsx
+¦   ¦   ¦   debug-auth.tsx
+¦   ¦   ¦   index.tsx
+¦   ¦   ¦   lectures.tsx
+¦   ¦   ¦   login.tsx
+¦   ¦   ¦   LoginRedirectPage.tsx
+¦   ¦   ¦   memory-journal.tsx
+¦   ¦   ¦   mental-health.tsx
+¦   ¦   ¦   references.tsx
+¦   ¦   ¦   research-hub.tsx
+¦   ¦   ¦   settings.tsx
+¦   ¦   ¦   signup.tsx
+¦   ¦   ¦   study-materials.tsx
+¦   ¦   ¦   study-schedule.tsx
+¦   ¦   ¦   wellbeing.tsx
+¦   ¦   ¦   _app.tsx
+¦   ¦   ¦   _document.tsx
+¦   ¦   ¦   
+¦   ¦   +---api
+¦   ¦   ¦   ¦   assignment-generator.ts
+¦   ¦   ¦   ¦   chat.ts
+¦   ¦   ¦   ¦   tts.ts
+¦   ¦   ¦   ¦   wellbeing-coach.ts
+¦   ¦   ¦   ¦   
+¦   ¦   ¦   +---stream
+¦   ¦   ¦   ¦       gpt4.ts
+¦   ¦   ¦   ¦       
+¦   ¦   ¦   +---writing-samples
+¦   ¦   ¦           index.ts
+¦   ¦   ¦           similar.ts
+¦   ¦   ¦           [id].ts
+¦   ¦   ¦           
+¦   ¦   +---auth
+¦   ¦   ¦       callback.tsx
+¦   ¦   ¦       
+¦   ¦   +---dashboard
+¦   ¦   ¦       foundation.tsx
+¦   ¦   ¦       index.tsx
+¦   ¦   ¦       year1.tsx
+¦   ¦   ¦       year2.tsx
+¦   ¦   ¦       year3.tsx
+¦   ¦   ¦       
+¦   ¦   +---legal
+¦   ¦   ¦       cookie-policy.tsx
+¦   ¦   ¦       ethics.tsx
+¦   ¦   ¦       privacy-policy.tsx
+¦   ¦   ¦       terms-of-use.tsx
+¦   ¦   ¦       
+¦   ¦   +---signup
+¦   ¦   ¦       year-selection.tsx
+¦   ¦   ¦       
+¦   ¦   +---tools
+¦   ¦   ¦       attendance.tsx
+¦   ¦   ¦       memory-manager.tsx
+¦   ¦   ¦       memory.tsx
+¦   ¦   ¦       
+¦   ¦   +---wellbeing
+¦   ¦           WellbeingPage.tsx
+¦   ¦           
+¦   +---styles
+¦   ¦       globals.css
+¦   ¦       
+¦   +---types
+¦           chat.ts
+¦           speech.d.ts
+¦           supabase.ts
+¦           
++---supabase
+    ¦   .gitignore
+    ¦   config.toml
+    ¦   
+    +---.temp
+    ¦       cli-latest
+    ¦       gotrue-version
+    ¦       pooler-url
+    ¦       postgres-version
+    ¦       project-ref
+    ¦       rest-version
+    ¦       storage-version
+    ¦       
+    +---migrations
+            20250731121300_remote_schema.sql
+            20250731122642_fix_profiles_table_schema.sql
+            20250731124121_add_missing_tables_only.sql
+            20250731124928_fix_existing_tables_rls.sql
+            20250731131500_update_handle_new_user_function.sql
+            20250801000000_fix_oauth_profile_creation.sql
+            20250801010000_streamline_signup_flow.sql
+            20250801020000_complete_backend_sync.sql
+            20250801030000_enhanced_rls_policies.sql
+            

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="monogramGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#7c3aed;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#4f46e5;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#3730a3;stop-opacity:1" />
+    </linearGradient>
+    <filter id="monogramShadow" x="-50%" y="-50%" width="200%" height="200%">
+      <feDropShadow dx="1" dy="2" stdDeviation="1.5" flood-color="#000" flood-opacity="0.3"/>
+    </filter>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="48" height="48" rx="12" fill="url(#monogramGradient)" filter="url(#monogramShadow)"/>
+  
+  <!-- Inner Border -->
+  <rect x="2" y="2" width="44" height="44" rx="10" fill="none" stroke="#ffffff" stroke-width="0.5" opacity="0.3"/>
+  
+  <!-- Stylized "D" with Legal Elements -->
+  <g transform="translate(24, 24)">
+    <!-- Main "D" Letter -->
+    <text x="0" y="6" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="28" font-weight="800" fill="#ffffff" opacity="0.95">D</text>
+    
+    <!-- Tiny Scale Symbol Above -->
+    <g transform="translate(0, -12)">
+      <line x1="-6" y1="0" x2="6" y2="0" stroke="#ffffff" stroke-width="1" opacity="0.6"/>
+      <circle cx="0" cy="0" r="1" fill="#ffffff" opacity="0.6"/>
+      <path d="M -5 1 L -3 1 L -2.5 3 L -5.5 3 Z" fill="#ffffff" opacity="0.5"/>
+      <path d="M 3 1 L 5 1 L 5.5 3 L 2.5 3 Z" fill="#ffffff" opacity="0.5"/>
+    </g>
+  </g>
+</svg>

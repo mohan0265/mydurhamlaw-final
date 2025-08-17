@@ -1,0 +1,98 @@
+{
+  "foundation_year": {
+    "modules": [
+      {
+        "name": "Introduction to Legal Skills",
+        "description": "Covers the basics of legal study, research methods, and academic writing. Focuses on building skills in critical thinking and legal referencing.",
+        "assessment": "Coursework and oral presentation"
+      },
+      {
+        "name": "English Legal System",
+        "description": "Explores the structure of courts, roles of judges and lawyers, sources of law, and key legal institutions.",
+        "assessment": "Written exam"
+      },
+      {
+        "name": "Introduction to Contract Law",
+        "description": "Provides a basic understanding of contract formation, terms, and breach.",
+        "assessment": "Coursework essay"
+      }
+    ]
+  },
+  "year_1": {
+    "modules": [
+      {
+        "name": "Contract Law",
+        "description": "Detailed study of contract formation, terms, misrepresentation, duress, and remedies.",
+        "assessment": "3-hour exam"
+      },
+      {
+        "name": "Tort Law",
+        "description": "Covers negligence, duty of care, causation, and liability for psychiatric harm, nuisance, and occupiers’ liability.",
+        "assessment": "3-hour exam"
+      },
+      {
+        "name": "UK Constitutional Law",
+        "description": "Examines parliamentary sovereignty, separation of powers, rule of law, and judicial review.",
+        "assessment": "3-hour exam"
+      },
+      {
+        "name": "EU Law",
+        "description": "Introduces EU institutions, legislation, supremacy, and direct effect.",
+        "assessment": "2-hour exam and coursework"
+      },
+      {
+        "name": "Legal Skills",
+        "description": "Training in legal research, mooting, legal writing, and citation using OSCOLA.",
+        "assessment": "Portfolio submission"
+      }
+    ]
+  },
+  "year_2": {
+    "modules": [
+      {
+        "name": "Land Law",
+        "description": "Focuses on ownership, interests in land, co-ownership, leases, mortgages, easements, and covenants.",
+        "assessment": "3-hour exam"
+      },
+      {
+        "name": "Equity and Trusts",
+        "description": "Covers the nature of equity, fiduciary duties, charitable trusts, resulting and constructive trusts.",
+        "assessment": "3-hour exam"
+      },
+      {
+        "name": "Criminal Law",
+        "description": "Examines actus reus, mens rea, defences, and specific offences like homicide and theft.",
+        "assessment": "3-hour exam"
+      },
+      {
+        "name": "Administrative Law",
+        "description": "Judicial review procedures, human rights in administrative decisions, and public body accountability.",
+        "assessment": "Coursework and exam"
+      }
+    ]
+  },
+  "year_3": {
+    "modules": [
+      {
+        "name": "Company Law",
+        "description": "Study of company formation, directors’ duties, shareholder rights, and insolvency.",
+        "assessment": "3-hour exam"
+      },
+      {
+        "name": "Commercial Law",
+        "description": "Covers sale of goods, agency, and secured transactions.",
+        "assessment": "Coursework and exam"
+      },
+      {
+        "name": "Optional Dissertation",
+        "description": "Research-based project on an approved topic in law.",
+        "assessment": "10,000-word dissertation"
+      },
+      {
+        "name": "Optional Specialist Modules",
+        "description": "Examples: International Law, Human Rights Law, Employment Law, Family Law, Intellectual Property Law.",
+        "assessment": "Varies by module"
+      }
+    ]
+  }
+}
