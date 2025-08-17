@@ -37,8 +37,8 @@ export default function ResponsiveSidebar({ className }: ResponsiveSidebarProps)
   const [onboardingStatus, setOnboardingStatus] = useState<string | null>(null)
   const [onboardingProgress, setOnboardingProgress] = useState<number>(0)
   
-  // Desktop collapse state
-  const [isCollapsed, setIsCollapsed] = useState(false)
+  // Desktop collapse state - default to true (closed)
+  const [isCollapsed, setIsCollapsed] = useState(true)
   // Mobile overlay state
   const [isMobileOpen, setIsMobileOpen] = useState(false)
   
@@ -51,6 +51,18 @@ export default function ResponsiveSidebar({ className }: ResponsiveSidebarProps)
       setIsCollapsed(JSON.parse(saved))
     }
   }, [])
+
+  // Auto-close mobile sidebar on route changes
+  useEffect(() => {
+    const handleRouteChangeStart = () => {
+      setIsMobileOpen(false)
+    }
+    
+    router.events.on('routeChangeStart', handleRouteChangeStart)
+    return () => {
+      router.events.off('routeChangeStart', handleRouteChangeStart)
+    }
+  }, [router])
 
   // Save collapsed state to localStorage
   useEffect(() => {
@@ -147,17 +159,11 @@ export default function ResponsiveSidebar({ className }: ResponsiveSidebarProps)
   }
 
   const shouldShowOnboardingBadge = () => {
-    return user && onboardingStatus !== 'complete'
+    return false // Always hide onboarding badges to remove gating
   }
 
   const getOnboardingBadgeText = () => {
-    if (!user || onboardingStatus === 'complete') return null
-    
-    if (onboardingStatus === 'partial' && onboardingProgress > 0) {
-      return `🟡 ${onboardingProgress}%`
-    }
-    
-    return '🚨 ⚠️'
+    return null // Always return null to remove trial/incomplete gating
   }
 
   const getOnboardingBadgeColor = () => {

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/router'
-import { supabase, debugAuthState } from '@/lib/supabase/client'
+import { getSupabaseClient, debugAuthState } from '@/lib/supabase/client'
 import { getDashboardRoute } from '@/lib/utils/metadata-storage'
 
 export default function LoginRedirectPage() {
@@ -45,6 +45,7 @@ export default function LoginRedirectPage() {
         // ✅ Wait a moment for any database triggers to complete
         await new Promise(resolve => setTimeout(resolve, 1500))
 
+        const supabase = getSupabaseClient()
         if (!supabase) {
           console.error('🚨 Supabase client not available')
           setDebugInfo('Database connection not available')

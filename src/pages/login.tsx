@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/router'
 import Link from 'next/link'
 import { BookOpen } from 'lucide-react'
@@ -12,6 +12,18 @@ import { getAuthRedirect } from '@/lib/authRedirect'
 export default function LoginPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
+
+  // Skip login page if already authenticated
+  useEffect(() => {
+    const supabase = getSupabaseClient()
+    if (!supabase) return
+    
+    supabase.auth.getSession().then(({ data }) => {
+      if (data.session) {
+        router.replace('/dashboard')
+      }
+    })
+  }, [router])
 
   const handleGoogleSignIn = async () => {
     setLoading(true)

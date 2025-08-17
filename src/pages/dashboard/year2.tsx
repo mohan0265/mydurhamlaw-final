@@ -31,12 +31,7 @@ const Year2Dashboard = () => {
   return (
     <GlobalLayout>
       <DashboardLayout>
-        {/* Year Preview Switcher */}
-        {trialStatus?.trialActive && (
-          <div className="mb-6">
-            <YearPreviewSwitcher />
-          </div>
-        )}
+        {/* Trial preview switcher removed to eliminate gating */}
         
         {/* Year-specific guidance */}
         <div className="bg-purple-100 border-l-4 border-purple-500 text-purple-700 p-4 mt-6" role="alert">

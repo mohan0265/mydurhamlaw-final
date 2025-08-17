@@ -44,6 +44,13 @@ const nextConfig = {
         destination: '/year-at-a-glance',
         permanent: false,
       },
+      // Route aliases for old links
+      {
+        source: '/wellbeing/main',
+        destination: '/wellbeing',
+        permanent: false,
+      },
+      // Add more aliases as needed
     ];
   },
 };

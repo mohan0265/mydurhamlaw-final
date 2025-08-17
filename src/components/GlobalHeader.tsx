@@ -137,6 +137,22 @@ const GlobalHeader = () => {
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
+  // Auto-close mobile menu and dropdowns on route changes
+  useEffect(() => {
+    const handleRouteChangeStart = () => {
+      setMobileMenuOpen(false)
+      setAiToolsDropdownOpen(false)
+      setStudyResourcesDropdownOpen(false)
+      setAboutDropdownOpen(false)
+      setDropdownOpen(false)
+    }
+    
+    router.events.on('routeChangeStart', handleRouteChangeStart)
+    return () => {
+      router.events.off('routeChangeStart', handleRouteChangeStart)
+    }
+  }, [router])
+
   const getDashboardPath = () => {
     const userType = userProfile?.user_type || userProfile?.year_group || user?.user_metadata?.year_group || 'year1'
     switch (userType) {
@@ -179,17 +195,11 @@ const GlobalHeader = () => {
   }
 
   const shouldShowOnboardingBadge = () => {
-    return user && onboardingStatus !== 'complete'
+    return false // Always hide onboarding badges to remove gating
   }
 
   const getOnboardingBadgeText = () => {
-    if (!user || onboardingStatus === 'complete') return null
-    
-    if (onboardingStatus === 'partial' && onboardingProgress > 0) {
-      return `🟡 ${onboardingProgress}% Complete`
-    }
-    
-    return '🚨 ⚠️ Incomplete'
+    return null // Always return null to remove trial/incomplete gating
   }
 
   const getOnboardingBadgeColor = () => {

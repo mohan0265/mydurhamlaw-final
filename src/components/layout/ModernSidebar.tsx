@@ -76,7 +76,7 @@ export default function ModernSidebar({ isCollapsed = false, onToggle, children 
   }
 
   const shouldShowOnboardingBadge = () => {
-    return user && onboardingStatus !== 'complete'
+    return false // Always hide onboarding badges to remove gating
   }
 
   const getOnboardingBadgeText = () => {

@@ -21,10 +21,8 @@ const TrialPreviewBanner: React.FC<TrialPreviewBannerProps> = ({
   const router = useRouter();
   const [isVisible, setIsVisible] = useState(true);
 
-  // Don't show banner if not previewing or not in trial
-  if (!isPreview || !inTrial || !isVisible) {
-    return null;
-  }
+  // Always hide trial banner to remove gating
+  return null;
 
   const handleReturnToMyYear = () => {
     // Remove preview parameter and redirect to real year dashboard
