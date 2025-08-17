@@ -6,27 +6,27 @@ const nextConfig = {
   poweredByHeader: false,
 
   // Enable strict TypeScript and ESLint checking
-  eslint: { 
+  eslint: {
     ignoreDuringBuilds: false,
-    dirs: ['src']
+    dirs: ['src'],
   },
-  typescript: { 
-    ignoreBuildErrors: false
+  typescript: {
+    ignoreBuildErrors: false,
   },
 
   // Optimize for production builds
   swcMinify: true,
-  
+
   // Enable experimental features for better performance
   experimental: {
-    optimizePackageImports: ['@headlessui/react', 'lucide-react']
+    optimizePackageImports: ['@headlessui/react', 'lucide-react'],
   },
 
   images: {
     // Let the Next plugin handle images; no unoptimized static export mode
     unoptimized: false,
     domains: ['localhost'],
-    formats: ['image/webp', 'image/avif']
+    formats: ['image/webp', 'image/avif'],
   },
 
   env: {
@@ -34,6 +34,17 @@ const nextConfig = {
     NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
     NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
+  },
+
+  // 🔧 Unify react-query across the app (fixes “No QueryClient set” at build)
+  webpack: (config) => {
+    config.resolve = config.resolve || {};
+    config.resolve.alias = {
+      ...(config.resolve.alias || {}),
+      'react-query': '@tanstack/react-query',
+      'react-query/devtools': '@tanstack/react-query-devtools',
+    };
+    return config;
   },
 
   // Configure redirects and rewrites for better SEO
@@ -45,42 +56,13 @@ const nextConfig = {
         permanent: false,
       },
       // Route aliases for old links
-      {
-        source: '/calendar/main',
-        destination: '/calendar',
-        permanent: false,
-      },
-      {
-        source: '/news',
-        destination: '/legal/tools/legal-news-feed',
-        permanent: false,
-      },
-      {
-        source: '/ai-tools',
-        destination: '/wellbeing',
-        permanent: false,
-      },
-      {
-        source: '/resources',
-        destination: '/study-materials',
-        permanent: false,
-      },
-      {
-        source: '/voice',
-        destination: '/wellbeing',
-        permanent: false,
-      },
-      {
-        source: '/student-lounge',
-        destination: '/lounge',
-        permanent: false,
-      },
-      {
-        source: '/community',
-        destination: '/community-network',
-        permanent: false,
-      },
-      // Add more aliases as needed
+      { source: '/calendar/main', destination: '/calendar', permanent: false },
+      { source: '/news', destination: '/legal/tools/legal-news-feed', permanent: false },
+      { source: '/ai-tools', destination: '/wellbeing', permanent: false },
+      { source: '/resources', destination: '/study-materials', permanent: false },
+      { source: '/voice', destination: '/wellbeing', permanent: false },
+      { source: '/student-lounge', destination: '/lounge', permanent: false },
+      { source: '/community', destination: '/community-network', permanent: false },
     ];
   },
 };
