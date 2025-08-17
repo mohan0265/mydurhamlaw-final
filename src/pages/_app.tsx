@@ -11,6 +11,7 @@ import { Toaster } from 'react-hot-toast'
 import dynamic from 'next/dynamic'
 import { DurmahProvider } from '@/context/DurmahContext'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import LayoutShell from '@/components/layout/LayoutShell'
 
 // Initialize RSS system on server startup
 if (typeof window === 'undefined') {
@@ -59,12 +60,37 @@ export default function App({ Component, pageProps }: AppProps) {
     }
   }, [router.events])
 
+  // Determine if we should use LayoutShell for this page
+  const shouldUseLayout = () => {
+    const pathname = router.pathname
+    
+    // Pages that should NOT use the global layout (they handle their own layout)
+    const noLayoutPages = [
+      '/dashboard/year1',
+      '/dashboard/year2', 
+      '/dashboard/year3',
+      '/dashboard/foundation',
+      '/dashboard'
+    ]
+    
+    // Check if the current page is in the no-layout list
+    return !noLayoutPages.some(page => pathname === page || pathname.startsWith(page + '/'))
+  }
+
+  const ComponentWithLayout = shouldUseLayout() ? (
+    <LayoutShell showSidebar={false}>
+      <Component {...pageProps} />
+    </LayoutShell>
+  ) : (
+    <Component {...pageProps} />
+  )
+
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <DurmahProvider>
           <>
-            <Component {...pageProps} />
+            {ComponentWithLayout}
             <Toaster
               position="top-right"
               toastOptions={{
