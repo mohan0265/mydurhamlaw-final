@@ -15,10 +15,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   try {
     const { programme = 'LLB', year = '1' } = req.query
 
-    // Get user from session
+    // --- DEMO MODE GUARD ---
+    const isDemoMode = process.env.NEXT_PUBLIC_DEMO_CALENDAR === 'true'
     const supabase = getServerSupabase(req, res)
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     
+    if ((authError || !user) && isDemoMode) {
+      // Return typed empty payload for demo mode if unauthenticated
+      return res.status(200).json([])
+    }
+    // --- END DEMO MODE GUARD ---
+
+    // Get user from session
     if (authError || !user) {
       return res.status(401).json({ message: 'Unauthorized' })
     }

@@ -30,10 +30,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(400).json({ message: 'Missing from or to date parameters' })
     }
 
-    // Get user from session
+    // --- DEMO MODE GUARD ---
+    const isDemoMode = process.env.NEXT_PUBLIC_DEMO_CALENDAR === 'true'
     const supabase = getServerSupabase(req, res)
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     
+    if ((authError || !user) && isDemoMode) {
+      // Return typed empty payload for demo mode if unauthenticated
+      return res.status(200).json({ events: [], personal_items: [] })
+    }
+    // --- END DEMO MODE GUARD ---
+
+    // Get user from session
     if (authError || !user) {
       return res.status(401).json({ message: 'Unauthorized' })
     }

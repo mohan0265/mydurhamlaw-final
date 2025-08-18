@@ -20,10 +20,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(400).json({ message: 'Missing date parameter' })
     }
 
-    // Get user from session
+    // --- DEMO MODE GUARD ---
+    const isDemoMode = process.env.NEXT_PUBLIC_DEMO_CALENDAR === 'true'
     const supabase = getServerSupabase(req, res)
     const { data: { user }, error: authError } = await supabase.auth.getUser()
-    
+
+    if ((authError || !user) && isDemoMode) {
+      // Return typed empty payload for demo mode if unauthenticated
+      const selectedDate = new Date(date as string)
+      const dateStr = format(selectedDate, 'yyyy-MM-dd')
+      return res.status(200).json({ date: dateStr, items: [] })
+    }
+    // --- END DEMO MODE GUARD ---
+
     if (authError || !user) {
       return res.status(401).json({ message: 'Unauthorized' })
     }

@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import Head from "next/head";
 import MemberCard, { Member } from "@/components/community-network/MemberCard";
 import StatusControls from "@/components/community-network/StatusControls";
+import { useAuth } from "@/lib/supabase/AuthContext"; // Import useAuth
 
 type CommunityMember = Member & {
   show_presence: boolean | null;
@@ -13,35 +14,16 @@ const STALE_MS = 120_000;      // consider online if last_seen < 2 min
 const REEVAL_MS = 130_000;     // UI refresh cadence to flip stale users
 
 export default function CommunityNetworkPage() {
-  const [authed, setAuthed] = useState(false);
+  const { session } = useAuth(); // Use AuthContext directly
   const [members, setMembers] = useState<CommunityMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [filterYear, setFilterYear] = useState("all");
   const [onlyOnline, setOnlyOnline] = useState(false);
 
-  // Auth gate
-  useEffect(() => {
-    (async () => {
-      const { supabase } = await import("@/lib/supabase-browser");
-      const { data } = await supabase.auth.getSession();
-      setAuthed(!!data.session?.user);
-    })();
-    
-    // Set up auth listener with dynamic import
-    let subscription: any;
-    (async () => {
-      const { supabase } = await import("@/lib/supabase-browser");
-      const sub = supabase.auth.onAuthStateChange((_e, s) => setAuthed(!!s?.user));
-      subscription = sub;
-    })();
-    
-    return () => subscription?.data.subscription.unsubscribe();
-  }, []);
-
   // Initial load
   useEffect(() => {
-    if (!authed) return;
+    if (!session) return; // Use session directly
     let mounted = true;
     (async () => {
       setLoading(true);
@@ -60,11 +42,11 @@ export default function CommunityNetworkPage() {
       setLoading(false);
     })();
     return () => { mounted = false; };
-  }, [authed]);
+  }, [session]); // Depend on session
 
   // Realtime
   useEffect(() => {
-    if (!authed) return;
+    if (!session) return; // Use session directly
     let channel: any;
     
     (async () => {
@@ -94,11 +76,11 @@ export default function CommunityNetworkPage() {
         })();
       }
     };
-  }, [authed]);
+  }, [session]); // Depend on session
 
   // Heartbeat presence
   useEffect(() => {
-    if (!authed) return;
+    if (!session) return; // Use session directly
 
     const beat = async () => {
       try { 
@@ -126,7 +108,7 @@ export default function CommunityNetworkPage() {
       window.removeEventListener("beforeunload", off);
       document.removeEventListener("visibilitychange", vis);
     };
-  }, [authed]);
+  }, [session]); // Depend on session
 
   // Local UI re-eval (flip stale to offline without server roundtrip)
   useEffect(() => {
@@ -153,7 +135,7 @@ export default function CommunityNetworkPage() {
       });
   }, [members, search, filterYear, onlyOnline]);
 
-  if (!authed) {
+  if (!session) { // Use session directly
     return (
       <>
         <Head><title>Community Network | MyDurhamLaw</title></Head>
