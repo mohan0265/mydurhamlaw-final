@@ -15,6 +15,28 @@ import {
 } from '@/types/calendar'
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from 'date-fns'
 
+// add near the top
+async function authHeaders(): Promise<Record<string, string>> { // Explicitly define return type
+  const supabase = getSupabaseClient();
+  if (!supabase) { // Add null check here
+    console.warn("Supabase client not available in authHeaders.");
+    return {};
+  }
+  try {
+    const { data, error } = await supabase.auth.getSession();
+    if (error) {
+      console.error("Error getting Supabase session:", error);
+      return {};
+    }
+    const token = data.session?.access_token;
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  } catch (e) {
+    console.error("Unexpected error in authHeaders:", e);
+    return {};
+  }
+}
+
+
 interface UseCalendarDataProps {
   userId: string
   programme?: string
@@ -43,7 +65,7 @@ export const useCalendarData = ({
     queryFn: async () => {
       const res = await fetch(
         `/api/calendar/year?programme=${programme}&year=${yearOfStudy}&academicYear=${academicYear}`,
-        { credentials: 'include' },
+        { headers: await authHeaders(), credentials: 'include' },
       )
       if (!res.ok) throw new Error('Failed to fetch year overview')
       return res.json()
@@ -61,9 +83,10 @@ export const useCalendarData = ({
     staleTime: 10 * 60 * 1000,
     gcTime: 20 * 60 * 1000,
     queryFn: async () => {
+      const headers = await authHeaders();
       const res = await fetch(
         `/api/calendar/multi-year?programme=${programme}&academicYear=${academicYear}`,
-        { credentials: 'include' },
+        { headers, credentials: 'include' },
       )
       if (!res.ok) throw new Error('Failed to fetch multi-year overview')
       return res.json()
@@ -74,8 +97,9 @@ export const useCalendarData = ({
   const fetchMonthData = useCallback(async (year: number, month: number): Promise<MonthData> => {
     const startDate = format(startOfMonth(new Date(year, month - 1)), 'yyyy-MM-dd')
     const endDate = format(endOfMonth(new Date(year, month - 1)), 'yyyy-MM-dd')
+    const headers = await authHeaders();
     const res = await fetch(`/api/calendar/month?from=${startDate}&to=${endDate}`, {
-      credentials: 'include',
+      headers, credentials: 'include',
     })
     if (!res.ok) throw new Error('Failed to fetch month data')
     return res.json()
@@ -93,8 +117,9 @@ export const useCalendarData = ({
   const fetchWeekData = useCallback(async (date: Date) => {
     const startDate = format(startOfWeek(date, { weekStartsOn: 1 }), 'yyyy-MM-dd')
     const endDate = format(endOfWeek(date, { weekStartsOn: 1 }), 'yyyy-MM-dd')
+    const headers = await authHeaders();
     const res = await fetch(`/api/calendar/week?from=${startDate}&to=${endDate}`, {
-      credentials: 'include',
+      headers, credentials: 'include',
     })
     if (!res.ok) throw new Error('Failed to fetch week data')
     return res.json()
@@ -110,7 +135,8 @@ export const useCalendarData = ({
 
   // —— Day detail (factory hook)
   const fetchDayDetail = useCallback(async (date: string): Promise<DayDetail> => {
-    const res = await fetch(`/api/calendar/day?date=${date}`, { credentials: 'include' })
+    const headers = await authHeaders();
+    const res = await fetch(`/api/calendar/day?date=${date}`, { headers, credentials: 'include' })
     if (!res.ok) throw new Error('Failed to fetch day detail')
     return res.json()
   }, [])
@@ -129,8 +155,9 @@ export const useCalendarData = ({
     enabled: !!userId,
     staleTime: 2 * 60 * 1000,
     queryFn: async () => {
+      const headers = await authHeaders();
       const res = await fetch(`/api/calendar/progress?programme=${programme}&year=${yearOfStudy}`, {
-        credentials: 'include',
+        headers, credentials: 'include',
       })
       if (!res.ok) throw new Error('Failed to fetch module progress')
       return res.json()
