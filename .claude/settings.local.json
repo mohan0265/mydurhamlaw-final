@@ -30,7 +30,10 @@
       "Bash(sed:*)",
       "Bash(done)",
       "Bash(for file in src/pages/assignments.tsx src/pages/memory-journal.tsx)",
-      "Bash(do sed -i 's/import LegalFooter.*;//' \"$file\")"
+      "Bash(do sed -i 's/import LegalFooter.*;//' \"$file\")",
+      "Bash(npm remove:*)",
+      "Bash(mv:*)",
+      "Bash(rmdir:*)"
     ],
     "deny": [],
     "ask": []

@@ -39,9 +39,14 @@ export default function DashboardIndex() {
       if (DEBUG) console.debug('👤 Ensuring profile for user', user.id)
       const res = await fetch('/api/profile/ensure', { method: 'POST' })
       if (res.ok) {
-        const data = (await res.json()) as { profile: Profile }
-        setProfile(data.profile)
-        if (DEBUG) console.debug('✅ Profile ensured', data.profile)
+        const text = await res.text()
+        const data = text.trim() ? JSON.parse(text) : null
+        if (data && data.profile) {
+          setProfile(data.profile)
+          if (DEBUG) console.debug('✅ Profile ensured', data.profile)
+        } else {
+          console.warn('⚠️ Empty or invalid profile response')
+        }
       } else {
         console.error('🚨 Failed to ensure profile', res.status)
       }
@@ -90,11 +95,16 @@ export default function DashboardIndex() {
           console.error('🚨 Failed to update year', res.status)
           return
         }
-        const data = (await res.json()) as { profile: Profile }
-        if (DEBUG) console.debug('✅ Year updated', data.profile)
-        setProfile(data.profile)
-        setShowYearSelection(false)
-        router.replace(yearToRoute(year))
+        const text = await res.text()
+        const data = text.trim() ? JSON.parse(text) : null
+        if (data && data.profile) {
+          if (DEBUG) console.debug('✅ Year updated', data.profile)
+          setProfile(data.profile)
+          setShowYearSelection(false)
+          router.replace(yearToRoute(year))
+        } else {
+          console.warn('⚠️ Empty or invalid year update response')
+        }
       } catch (e) {
         console.error('🚨 Error updating year', e)
       }

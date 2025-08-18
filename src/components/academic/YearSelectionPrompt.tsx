@@ -5,9 +5,9 @@ import { Button } from '@/components/ui/Button'
 
 export type YearGroup = 'foundation' | 'year1' | 'year2' | 'year3'
 
-type Props = {
+interface YearSelectionPromptProps {
   userId: string
-  onYearSelected: (year: YearGroup) => void
+  onYearSelected: (year: 'foundation'|'year1'|'year2'|'year3') => void
 }
 
 const OPTIONS: Array<{
@@ -47,7 +47,7 @@ const OPTIONS: Array<{
   },
 ]
 
-export default function YearSelectionPrompt({ userId, onYearSelected }: Props) {
+export default function YearSelectionPrompt({ userId, onYearSelected }: YearSelectionPromptProps) {
   const [selected, setSelected] = useState<YearGroup | null>(null)
   const canContinue = Boolean(selected)
 

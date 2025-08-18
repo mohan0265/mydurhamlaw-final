@@ -15,10 +15,15 @@ type Ctx = {
 
 const CalendarCtx = createContext<Ctx | null>(null)
 
+const safeDate = (iso?: string) => {
+  const d = iso ? new Date(iso) : new Date()
+  return isNaN(d.getTime()) ? new Date() : d
+}
+
 export function CalendarProvider({ children }: { children: React.ReactNode }) {
   const [academicYear, setAcademicYear] = useState('2025/26')
   const [anchorISO] = useState<string>(() => new Date().toISOString())
-  const [anchorDate, setAnchorDate] = useState<Date>(() => new Date(anchorISO))
+  const [anchorDate, setAnchorDate] = useState<Date>(() => safeDate(anchorISO))
 
   const value = useMemo<Ctx>(() => ({
     academicYear,

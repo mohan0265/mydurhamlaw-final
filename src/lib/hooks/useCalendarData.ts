@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
-import { useQuery, useMutation, useQueryClient } from 'react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { getSupabaseClient } from '@/lib/supabase/client'
 import { 
   CalendarData, 
@@ -47,7 +47,7 @@ export const useCalendarData = ({
     {
       enabled: !!userId,
       staleTime: 5 * 60 * 1000, // 5 minutes
-      cacheTime: 10 * 60 * 1000, // 10 minutes
+      gcTime: 10 * 60 * 1000, // 10 minutes
     }
   )
 
@@ -68,7 +68,7 @@ export const useCalendarData = ({
     {
       enabled: !!userId,
       staleTime: 10 * 60 * 1000, // 10 minutes
-      cacheTime: 20 * 60 * 1000, // 20 minutes
+      gcTime: 20 * 60 * 1000, // 20 minutes
     }
   )
 

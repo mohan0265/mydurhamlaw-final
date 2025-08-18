@@ -1,3 +1,5 @@
+'use client'
+
 // src/features/calendar/MonthPageClient.tsx
 import React, { useState, useContext } from 'react'
 import Head from 'next/head'

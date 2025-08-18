@@ -1,3 +1,5 @@
+'use client'
+
 // src/features/calendar/WeekPageClient.tsx
 import React, { useState, useContext, useCallback } from 'react'
 import Head from 'next/head'
@@ -12,6 +14,12 @@ import { Badge } from '@/components/ui/Badge'
 import { ChevronDown, Calendar, Clock, Settings, Filter, Plus, Timer, Target } from 'lucide-react'
 import { format, startOfWeek, endOfWeek } from 'date-fns'
 import toast from 'react-hot-toast'
+
+// Minimal shape we rely on for week data
+type WeekData = {
+  events?: any[]
+  personal_items?: any[]
+}
 
 const WeekPageClient = () => {
   const { session, userProfile } = useContext(AuthContext)
@@ -31,11 +39,11 @@ const WeekPageClient = () => {
     yearOfStudy
   })
 
-  const {
-    data: weekData,
-    isLoading: weekLoading,
-    error: weekError
-  } = useWeekData(currentDate)
+  // Read query result first, then cast its data to the minimal shape we use
+  const weekQuery: any = useWeekData(currentDate)
+  const weekData = (weekQuery?.data as WeekData | undefined) || undefined
+  const weekLoading: boolean = !!weekQuery?.isLoading
+  const weekError = weekQuery?.error
 
   const { filter, updateFilter, resetFilter } = useCalendarFilter()
 
@@ -63,11 +71,11 @@ const WeekPageClient = () => {
   }
 
   const calculateWeeklyStudyTime = () => {
-    if (!weekData) return 0
-    return weekData.personal_items
-      .filter((item: any) => item.type === 'study')
+    if (!weekData?.personal_items) return 0
+    return (weekData.personal_items || [])
+      .filter((item: any) => item?.type === 'study')
       .reduce((total: number, item: any) => {
-        const duration = item.end_at
+        const duration = item?.end_at
           ? Math.abs(new Date(item.end_at).getTime() - new Date(item.start_at).getTime()) / (1000 * 60 * 60)
           : 1
         return total + duration
@@ -91,9 +99,7 @@ const WeekPageClient = () => {
         <Card className="p-8 text-center max-w-md">
           <Calendar className="w-16 h-16 text-gray-400 mx-auto mb-4" />
           <h2 className="text-xl font-bold text-gray-900 mb-2">Sign In Required</h2>
-          <p className="text-gray-600 mb-4">
-            Please sign in to access your weekly calendar view.
-          </p>
+          <p className="text-gray-600 mb-4">Please sign in to access your weekly calendar view.</p>
           <Link href="/login">
             <Button>Sign In</Button>
           </Link>
@@ -106,7 +112,7 @@ const WeekPageClient = () => {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin w-8 h-8 border-4 border-purple-600 border-t-transparent rounded-full mx-auto mb-4"></div>
+          <div className="animate-spin w-8 h-8 border-4 border-purple-600 border-t-transparent rounded-full mx-auto mb-4" />
           <p className="text-gray-600">Loading your weekly schedule...</p>
         </div>
       </div>
@@ -121,9 +127,7 @@ const WeekPageClient = () => {
             <Calendar className="w-8 h-8" />
           </div>
           <h2 className="text-xl font-bold text-gray-900 mb-2">Unable to Load Calendar</h2>
-          <p className="text-gray-600 mb-4">
-            There was an issue loading your calendar data. Please try again.
-          </p>
+          <p className="text-gray-600 mb-4">There was an issue loading your calendar data. Please try again.</p>
           <Button onClick={() => window.location.reload()}>Retry</Button>
         </Card>
       </div>
@@ -134,7 +138,10 @@ const WeekPageClient = () => {
     <>
       <Head>
         <title>Week View - My Year at a Glance - MyDurhamLaw</title>
-        <meta name="description" content="Weekly calendar view with hourly scheduling, study blocks, and productivity tools." />
+        <meta
+          name="description"
+          content="Weekly calendar view with hourly scheduling, study blocks, and productivity tools."
+        />
       </Head>
 
       <div className="min-h-screen bg-gray-50">
@@ -212,9 +219,7 @@ const WeekPageClient = () => {
                   <Filter className="w-4 h-4" />
                   <span>Filters</span>
                   <ChevronDown
-                    className={`w-4 h-4 transition-transform duration-200 ${
-                      showFilters ? 'rotate-180' : ''
-                    }`}
+                    className={`w-4 h-4 transition-transform duration-200 ${showFilters ? 'rotate-180' : ''}`}
                   />
                 </Button>
 
@@ -304,7 +309,7 @@ const WeekPageClient = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           {weekData ? (
             <WeekView
-              weekData={weekData}
+              weekData={weekData as any}
               currentDate={currentDate}
               onDateChange={handleDateChange}
               onEventClick={handleEventClick}
@@ -340,9 +345,7 @@ const WeekPageClient = () => {
                   {pomodoroActive ? '25:00' : 'Start'}
                 </Button>
 
-                <div className="text-xs text-gray-600">
-                  {studyHours.toFixed(1)}h this week
-                </div>
+                <div className="text-xs text-gray-600">{studyHours.toFixed(1)}h this week</div>
               </div>
 
               {pomodoroActive && (
@@ -358,10 +361,18 @@ const WeekPageClient = () => {
         <div className="fixed bottom-4 right-4 z-30">
           <Card className="p-3 text-xs text-gray-600 bg-white/95 backdrop-blur-sm">
             <div className="space-y-1">
-              <div><kbd className="px-1.5 py-0.5 bg-gray-100 rounded text-xs">←/→</kbd> Change week</div>
-              <div><kbd className="px-1.5 py-0.5 bg-gray-100 rounded text-xs">T</kbd> Go to today</div>
-              <div><kbd className="px-1.5 py-0.5 bg-gray-100 rounded text-xs">N</kbd> New study block</div>
-              <div><kbd className="px-1.5 py-0.5 bg-gray-100 rounded text-xs">P</kbd> Start pomodoro</div>
+              <div>
+                <kbd className="px-1.5 py-0.5 bg-gray-100 rounded text-xs">←/→</kbd> Change week
+              </div>
+              <div>
+                <kbd className="px-1.5 py-0.5 bg-gray-100 rounded text-xs">T</kbd> Go to today
+              </div>
+              <div>
+                <kbd className="px-1.5 py-0.5 bg-gray-100 rounded text-xs">N</kbd> New study block
+              </div>
+              <div>
+                <kbd className="px-1.5 py-0.5 bg-gray-100 rounded text-xs">P</kbd> Start pomodoro
+              </div>
             </div>
           </Card>
         </div>
