@@ -12,9 +12,10 @@ import { validateEnv } from '@/lib/env'
 // NOTE: AuthContext lives in src/supabase/AuthContext.tsx
 import { AuthProvider } from '@/lib/supabase/AuthContext'
 
-import { DurmahProvider } from '@/context/DurmahContext'
+// DurmahProvider removed
 import LayoutShell from '@/layout/LayoutShell'
 import { Toaster } from 'react-hot-toast'
+import AWYUnregisterer from '@/components/AWYUnregisterer'
 
 // Server-only RSS boot (no-op in browser)
 if (typeof window === 'undefined') {
@@ -27,11 +28,7 @@ if (typeof window === 'undefined') {
     })
 }
 
-// Durmah Voice widget: client-side only
-const DynamicDurmahWidget = dynamic(
-  () => import('@/components/voice/DurmahWidget').then((mod) => ({ default: mod.DurmahWidget })),
-  { ssr: false }
-)
+// Durmah Voice widget removed
 
 export default function App({ Component, pageProps }: AppProps) {
   const router = useRouter()
@@ -71,23 +68,21 @@ export default function App({ Component, pageProps }: AppProps) {
       <AuthProvider>
         <QueryClientProvider client={queryClient}>
           <HydrationBoundary state={(pageProps as any)?.dehydratedState}>
-            <DurmahProvider>
-              <LayoutShell>
-                <Component {...pageProps} />
-              </LayoutShell>
+            <LayoutShell>
+              <Component {...pageProps} />
+            </LayoutShell>
 
-              <Toaster
-                position="top-right"
-                toastOptions={{
-                  duration: 4000,
-                  style: { background: '#363636', color: '#fff' },
-                  success: { duration: 3000, iconTheme: { primary: '#10b981', secondary: '#fff' } },
-                  error: { duration: 5000, iconTheme: { primary: '#ef4444', secondary: '#fff' } },
-                }}
-              />
+            <Toaster
+              position="top-right"
+              toastOptions={{
+                duration: 4000,
+                style: { background: '#363636', color: '#fff' },
+                success: { duration: 3000, iconTheme: { primary: '#10b981', secondary: '#fff' } },
+                error: { duration: 5000, iconTheme: { primary: '#ef4444', secondary: '#fff' } },
+              }}
+            />
 
-              <DynamicDurmahWidget />
-            </DurmahProvider>
+            <AWYUnregisterer />
           </HydrationBoundary>
         </QueryClientProvider>
       </AuthProvider>

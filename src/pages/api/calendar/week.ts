@@ -1,66 +1,59 @@
+// src/pages/api/calendar/week.ts
 import { NextApiRequest, NextApiResponse } from 'next'
 import { getServerSupabase } from '@/lib/supabase/server'
 import { CalendarEvent, PersonalItem } from '@/types/calendar'
-import { format, addDays, isSameWeek, startOfWeek } from 'date-fns'
-
-// Local helpers to replace fragile date-fns imports
-const daysInInterval = (start: Date, end: Date): Date[] => {
-  const out: Date[] = [];
-  const d = new Date(start); d.setHours(0,0,0,0);
-  const last = new Date(end); last.setHours(0,0,0,0);
-  while (d.getTime() <= last.getTime()) { out.push(new Date(d)); d.setDate(d.getDate() + 1); }
-  return out;
-};
-const parseIso = (s: string) => new Date(s);
+import { format, addDays, startOfWeek } from 'date-fns'
 
 // Force this API to use Node.js runtime instead of Edge Runtime
-export const config = {
-  runtime: 'nodejs'
-}
+export const config = { runtime: 'nodejs' }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'GET') {
+    res.setHeader('Allow', 'GET')
     return res.status(405).json({ message: 'Method not allowed' })
   }
 
   try {
     const { from, to } = req.query
-
-    if (!from || !to) {
+    if (!from || !to || typeof from !== 'string' || typeof to !== 'string') {
       return res.status(400).json({ message: 'Missing from or to date parameters' })
     }
 
-    // --- DEMO MODE GUARD ---
     const isDemoMode = process.env.NEXT_PUBLIC_DEMO_CALENDAR === 'true'
+
+    // --- AUTH (supports Bearer token or cookie) ---
+    const authHeader = String(req.headers.authorization || '')
+    const token = authHeader.startsWith('Bearer ') ? authHeader.slice('Bearer '.length) : undefined
+
     const supabase = getServerSupabase(req, res)
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    
-    if ((authError || !user) && isDemoMode) {
-      // Return typed empty payload for demo mode if unauthenticated
+    const { data: userData, error: authError } = token
+      ? await supabase.auth.getUser(token)
+      : await supabase.auth.getUser()
+    const user = userData?.user
+
+    // DEMO MODE: unauthenticated → return a valid, typed empty payload
+    if ((!user || authError) && isDemoMode) {
       return res.status(200).json({ events: [], personal_items: [] })
     }
-    // --- END DEMO MODE GUARD ---
 
-    // Get user from session
-    if (authError || !user) {
+    // Normal auth required when not in demo mode
+    if (!user || authError) {
       return res.status(401).json({ message: 'Unauthorized' })
     }
+    // --- END AUTH ---
 
-    const fromDate = parseIso(from as string)
-    const toDate = parseIso(to as string)
+    const fromDate = new Date(from)
+    const weekStart = startOfWeek(fromDate, { weekStartsOn: 1 })
 
     // Mock university fixed events
-    const mockEvents: CalendarEvent[] = []
-    const weekStart = startOfWeek(fromDate, { weekStartsOn: 1 })
-    
-    // Generate some weekly recurring lectures
+    const events: CalendarEvent[] = []
     for (let i = 0; i < 7; i++) {
       const day = addDays(weekStart, i)
       const dateStr = format(day, 'yyyy-MM-dd')
-      
+
       // Monday, Wednesday, Friday - Contract Law
       if ([1, 3, 5].includes(day.getDay())) {
-        mockEvents.push({
+        events.push({
           id: `lecture-contract-${dateStr}`,
           title: 'Contract Law Lecture',
           description: 'Formation and Terms of Contracts',
@@ -70,13 +63,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           type: 'lecture',
           module_id: '3',
           is_university_fixed: true,
-          is_all_day: false
+          is_all_day: false,
         })
       }
 
       // Tuesday, Thursday - Constitutional Law
       if ([2, 4].includes(day.getDay())) {
-        mockEvents.push({
+        events.push({
           id: `lecture-constitutional-${dateStr}`,
           title: 'Constitutional Law Lecture',
           description: 'Parliamentary Sovereignty and Rule of Law',
@@ -86,13 +79,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           type: 'lecture',
           module_id: '2',
           is_university_fixed: true,
-          is_all_day: false
+          is_all_day: false,
         })
       }
 
       // Wednesday - Tutorial
       if (day.getDay() === 3) {
-        mockEvents.push({
+        events.push({
           id: `tutorial-${dateStr}`,
           title: 'Legal Research Tutorial',
           description: 'Small group tutorial on legal research methods',
@@ -102,13 +95,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           type: 'tutorial',
           module_id: '1',
           is_university_fixed: true,
-          is_all_day: false
+          is_all_day: false,
         })
       }
 
       // Friday - Seminar
       if (day.getDay() === 5) {
-        mockEvents.push({
+        events.push({
           id: `seminar-${dateStr}`,
           title: 'Legal Ethics Seminar',
           description: 'Discussion on professional conduct and ethics',
@@ -118,13 +111,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           type: 'seminar',
           module_id: '1',
           is_university_fixed: true,
-          is_all_day: false
+          is_all_day: false,
         })
       }
     }
 
     // Mock personal study items
-    const mockPersonalItems: PersonalItem[] = [
+    const personal_items: PersonalItem[] = [
       {
         id: 'study-1',
         user_id: user.id,
@@ -136,7 +129,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         is_all_day: false,
         module_id: '3',
         priority: 'medium',
-        completed: false
+        completed: false,
       },
       {
         id: 'study-2',
@@ -149,7 +142,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         is_all_day: false,
         module_id: '2',
         priority: 'high',
-        completed: false
+        completed: false,
       },
       {
         id: 'task-1',
@@ -162,7 +155,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         is_all_day: false,
         module_id: '2',
         priority: 'high',
-        completed: false
+        completed: false,
       },
       {
         id: 'study-3',
@@ -175,7 +168,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         is_all_day: false,
         module_id: '1',
         priority: 'medium',
-        completed: false
+        completed: false,
       },
       {
         id: 'study-4',
@@ -188,18 +181,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         is_all_day: false,
         module_id: '',
         priority: 'low',
-        completed: false
-      }
+        completed: false,
+      },
     ]
 
-    const weekData = {
-      events: mockEvents,
-      personal_items: mockPersonalItems
-    }
-
-    res.status(200).json(weekData)
+    return res.status(200).json({ events, personal_items })
   } catch (error) {
     console.error('Error fetching week data:', error)
-    res.status(500).json({ message: 'Internal server error' })
+    return res.status(500).json({ message: 'Internal server error' })
   }
 }

@@ -202,7 +202,7 @@ export interface YearOverview {
 export interface MultiYearData {
   current_year_index: number
   years: {
-    [key: string]: YearOverview
+    [key: string]: YearOverview | null
   }
   year_labels: string[]
   programme: string

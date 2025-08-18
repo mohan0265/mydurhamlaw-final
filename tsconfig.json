@@ -41,7 +41,21 @@
       ],
       "@/constants/*": [
         "./src/constants/*"
-      ]
+      ],
+      "@/components/DurmahWidget": ["./src/stubs/NullWidget.tsx"],
+      "@/components/LegalEagleBuddy": ["./src/stubs/NullWidget.tsx"],
+      "@/components/FloatingDurmah": ["./src/stubs/NullWidget.tsx"],
+      "@/components/FloatingAWY": ["./src/stubs/NullWidget.tsx"],
+      "@/components/AWYBootstrap": ["./src/stubs/NullWidget.tsx"],
+      "@/components/ui/DurmahLogo": ["./src/stubs/NullWidget.tsx"],
+      "@/context/DurmahContext": ["./src/stubs/awy.ts"],
+      "durmah": ["./src/stubs/NullWidget.tsx"],
+      "@/durmah": ["./src/stubs/NullWidget.tsx"],
+      "@durmah": ["./src/stubs/NullWidget.tsx"],
+      "@/awy": ["./src/stubs/awy.ts"],
+      "@awy": ["./src/stubs/awy.ts"],
+      "@/lib/awy": ["./src/stubs/awy.ts"],
+      "awy": ["./src/stubs/awy.ts"]
     },
     "plugins": [
       {

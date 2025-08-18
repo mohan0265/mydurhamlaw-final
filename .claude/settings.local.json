@@ -33,7 +33,9 @@
       "Bash(do sed -i 's/import LegalFooter.*;//' \"$file\")",
       "Bash(npm remove:*)",
       "Bash(mv:*)",
-      "Bash(rmdir:*)"
+      "Bash(rmdir:*)",
+      "Bash(rg:*)",
+      "Bash(rm:*)"
     ],
     "deny": [],
     "ask": []

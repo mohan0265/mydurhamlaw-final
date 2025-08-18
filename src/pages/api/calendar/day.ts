@@ -1,11 +1,28 @@
+// src/pages/api/calendar/day.ts
 import { NextApiRequest, NextApiResponse } from 'next'
 import { getServerSupabase } from '@/lib/supabase/server'
 import { DayDetail } from '@/types/calendar'
 import { format } from 'date-fns'
 
-// Force this API to use Node.js runtime instead of Edge Runtime
-export const config = {
-  runtime: 'nodejs'
+// Force Node.js runtime (Netlify/Next)
+export const config = { runtime: 'nodejs' }
+
+/** Build a typed-empty DayDetail for demo mode / unauthenticated */
+function emptyDayDetail(dateISO: string): DayDetail {
+  const d = new Date(dateISO)
+  const dateStr = format(d, 'yyyy-MM-dd')
+  const isToday = format(new Date(), 'yyyy-MM-dd') === dateStr
+
+  return {
+    date: dateStr,
+    day_name: format(d, 'EEEE'),
+    is_today: isToday,
+    events: [],
+    assessments_due: [],
+    exams: [],
+    personal_items: [],
+    study_time_blocks: [],
+  }
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -13,37 +30,46 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(405).json({ message: 'Method not allowed' })
   }
 
+  const { date } = req.query
+  if (!date || typeof date !== 'string') {
+    return res.status(400).json({ message: 'Missing date parameter' })
+  }
+
+  const isDemoMode = process.env.NEXT_PUBLIC_DEMO_CALENDAR === 'true'
+
   try {
-    const { date } = req.query
+    // Accept Authorization: Bearer <token> from the client
+    const authHeader = String(req.headers.authorization || '')
+    const bearerPrefix = 'Bearer '
+    const token = authHeader.startsWith(bearerPrefix) ? authHeader.slice(bearerPrefix.length) : undefined
 
-    if (!date) {
-      return res.status(400).json({ message: 'Missing date parameter' })
-    }
-
-    // --- DEMO MODE GUARD ---
-    const isDemoMode = process.env.NEXT_PUBLIC_DEMO_CALENDAR === 'true'
     const supabase = getServerSupabase(req, res)
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
 
-    if ((authError || !user) && isDemoMode) {
-      // Return typed empty payload for demo mode if unauthenticated
-      const selectedDate = new Date(date as string)
-      const dateStr = format(selectedDate, 'yyyy-MM-dd')
-      return res.status(200).json({ date: dateStr, items: [] })
+    // If a token is present, ask Supabase to resolve the user with it.
+    // (auth.getUser(token) works even if there is no cookie session.)
+    const { data: userData, error: userErr } = token
+      ? await supabase.auth.getUser(token)
+      : await supabase.auth.getUser()
+
+    const user = userData?.user
+
+    // DEMO MODE: if unauthenticated + demo enabled, return typed empty day
+    if ((!user || userErr) && isDemoMode) {
+      return res.status(200).json(emptyDayDetail(date))
     }
-    // --- END DEMO MODE GUARD ---
 
-    if (authError || !user) {
+    // Otherwise require auth
+    if (!user || userErr) {
       return res.status(401).json({ message: 'Unauthorized' })
     }
 
-    const selectedDate = new Date(date as string)
-    const dateStr = format(selectedDate, 'yyyy-MM-dd')
-    const dayName = format(selectedDate, 'EEEE')
+    // ----- Mock real data (typed) -----
+    const d = new Date(date)
+    const dateStr = format(d, 'yyyy-MM-dd')
+    const dayName = format(d, 'EEEE')
     const isToday = format(new Date(), 'yyyy-MM-dd') === dateStr
 
-    // Mock day detail data
-    const mockDayDetail: DayDetail = {
+    const detail: DayDetail = {
       date: dateStr,
       day_name: dayName,
       is_today: isToday,
@@ -58,7 +84,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           type: 'lecture',
           module_id: '3',
           is_university_fixed: true,
-          is_all_day: false
+          is_all_day: false,
         },
         {
           id: `seminar-${dateStr}`,
@@ -70,21 +96,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           type: 'seminar',
           module_id: '2',
           is_university_fixed: true,
-          is_all_day: false
-        }
+          is_all_day: false,
+        },
       ],
-      assessments_due: isToday ? [
-        {
-          id: 'assessment-due',
-          module_id: '2',
-          title: 'Constitutional Law Essay',
-          type: 'essay',
-          due_at: `${dateStr}T23:59:59Z`,
-          weight_percentage: 40,
-          description: 'Analyse the concept of parliamentary sovereignty in the UK constitution',
-          status: 'not_started'
-        }
-      ] : [],
+      assessments_due: isToday
+        ? [
+            {
+              id: 'assessment-due',
+              module_id: '2',
+              title: 'Constitutional Law Essay',
+              type: 'essay',
+              due_at: `${dateStr}T23:59:59Z`,
+              weight_percentage: 40,
+              description:
+                'Analyse the concept of parliamentary sovereignty in the UK constitution',
+              status: 'not_started',
+            },
+          ]
+        : [],
       exams: [],
       personal_items: [
         {
@@ -98,7 +127,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           is_all_day: false,
           module_id: '3',
           priority: 'medium',
-          completed: false
+          completed: false,
         },
         {
           id: 'personal-2',
@@ -111,28 +140,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           is_all_day: false,
           module_id: '2',
           priority: 'high',
-          completed: false
-        }
+          completed: false,
+        },
       ],
       study_time_blocks: [
-        {
-          start_time: '09:00',
-          end_time: '10:00',
-          title: 'Morning Reading',
-          module_id: '1'
-        },
-        {
-          start_time: '19:00',
-          end_time: '21:00',
-          title: 'Evening Study Session',
-          module_id: '3'
-        }
-      ]
+        { start_time: '09:00', end_time: '10:00', title: 'Morning Reading', module_id: '1' },
+        { start_time: '19:00', end_time: '21:00', title: 'Evening Study Session', module_id: '3' },
+      ],
     }
 
-    res.status(200).json(mockDayDetail)
-  } catch (error) {
-    console.error('Error fetching day detail:', error)
-    res.status(500).json({ message: 'Internal server error' })
+    return res.status(200).json(detail)
+  } catch (err) {
+    console.error('Error fetching day detail:', err)
+    return res.status(500).json({ message: 'Internal server error' })
   }
 }

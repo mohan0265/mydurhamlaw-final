@@ -1,4 +1,6 @@
 /** @type {import('next').NextConfig} */
+const path = require('path')
+
 const nextConfig = {
   reactStrictMode: true,
 
@@ -36,14 +38,34 @@ const nextConfig = {
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
   },
 
-  // 🔧 Unify react-query across the app (fixes “No QueryClient set” at build)
+  // 🔧 Unify react-query across the app (fixes "No QueryClient set" at build)
+  // 🧹 Durmah/AWY cleanup aliases - redirect imports to stubs
   webpack: (config) => {
     config.resolve = config.resolve || {};
-    config.resolve.alias = {
-      ...(config.resolve.alias || {}),
+    const alias = config.resolve.alias || {}
+    const stub = (p) => path.resolve(process.cwd(), p)
+    
+    Object.assign(alias, {
       'react-query': '@tanstack/react-query',
       'react-query/devtools': '@tanstack/react-query-devtools',
-    };
+      // Durmah/AWY stub aliases
+      '@/components/DurmahWidget': stub('src/stubs/NullWidget.tsx'),
+      '@/components/LegalEagleBuddy': stub('src/stubs/NullWidget.tsx'),
+      '@/components/FloatingDurmah': stub('src/stubs/NullWidget.tsx'),
+      '@/components/FloatingAWY': stub('src/stubs/NullWidget.tsx'),
+      '@/components/AWYBootstrap': stub('src/stubs/NullWidget.tsx'),
+      '@/components/ui/DurmahLogo': stub('src/stubs/NullWidget.tsx'),
+      '@/context/DurmahContext': stub('src/stubs/awy.ts'),
+      'durmah': stub('src/stubs/NullWidget.tsx'),
+      '@/durmah': stub('src/stubs/NullWidget.tsx'),
+      '@durmah': stub('src/stubs/NullWidget.tsx'),
+      '@/awy': stub('src/stubs/awy.ts'),
+      '@awy': stub('src/stubs/awy.ts'),
+      '@/lib/awy': stub('src/stubs/awy.ts'),
+      'awy': stub('src/stubs/awy.ts'),
+    })
+    
+    config.resolve.alias = alias
     return config;
   },
 
