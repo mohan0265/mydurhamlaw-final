@@ -1,7 +1,7 @@
 'use client'
 
 // src/features/calendar/MonthPageClient.tsx
-import React, { useState, useContext } from 'react'
+import React, { useState, useContext, useCallback } from 'react'
 import Head from 'next/head'
 import Link from 'next/link'
 import { AuthContext } from '@/lib/supabase/AuthContext'
@@ -13,66 +13,76 @@ import { Card } from '@/components/ui/Card'
 import { ChevronDown, Calendar, Clock, Settings, Filter, Plus } from 'lucide-react'
 import toast from 'react-hot-toast'
 
+// Minimal shape we rely on for month data
+type MonthData = {
+  year: number
+  month: number // 1-12
+  weeks: any[]  // whatever your MonthView expects internally
+}
+
 const MonthPageClient = () => {
-  const authContext = useContext(AuthContext)
-  const { session, userProfile } = authContext || { session: null, userProfile: null }
+  const auth = useContext(AuthContext)
+  const { session, userProfile } = auth || { session: null, userProfile: null }
+
   const [currentDate, setCurrentDate] = useState(new Date())
   const [viewMode] = useState<CalendarViewMode>('month')
   const [showFilters, setShowFilters] = useState(false)
 
   // Get user info
-  const userId = session?.user?.id
+  const userId = session?.user?.id || ''
   const programme = userProfile?.user_type || 'LLB'
-  const yearOfStudy = userProfile?.year_group ? parseInt(userProfile.year_group.replace('year', '')) : 1
+  const yearOfStudy = userProfile?.year_group
+    ? parseInt(userProfile.year_group.replace('year', ''))
+    : 1
 
-  // Calendar hooks
+  // Hooks
   const { useMonthData } = useCalendarData({
-    userId: userId || '',
+    userId,
     programme,
-    yearOfStudy
+    yearOfStudy,
   })
 
-  const {
-    data: monthData,
-    isLoading: monthLoading,
-    error: monthError
-  } = useMonthData(currentDate.getFullYear(), currentDate.getMonth() + 1)
+  // Read query result first, then cast the data to the minimal shape we use
+  const monthQuery: any = useMonthData(currentDate.getFullYear(), currentDate.getMonth() + 1)
+  const monthData = (monthQuery?.data as MonthData | undefined) || undefined
+  const monthLoading: boolean = !!monthQuery?.isLoading
+  const monthError = monthQuery?.error
 
   const { filter, updateFilter, resetFilter } = useCalendarFilter() || {
     filter: { event_types: [], show_completed: false },
     updateFilter: () => {},
-    resetFilter: () => {}
+    resetFilter: () => {},
   }
 
+  // Handlers
   const handleDateChange = (date: Date) => setCurrentDate(date)
 
-  const handleEventClick = (event: any) => {
+  const handleEventClick = useCallback((_event: any) => {
     toast.success('Event details coming soon!')
-  }
+  }, [])
 
-  const handleDateClick = (_date: string) => {
-    // Day drawer would handle this in the full build
-  }
+  const handleDateClick = useCallback((_isoDate: string) => {
+    // Day drawer / details can hook in here
+  }, [])
 
-  const handleCreateEvent = (_date: string) => {
+  const handleCreateEvent = useCallback((_isoDate: string) => {
     toast.success('Event creation coming soon!')
-  }
+  }, [])
 
   const getViewModeOptions = () => [
     { value: 'year', label: 'Year View', icon: Calendar, href: '/year-at-a-glance' },
     { value: 'month', label: 'Month View', icon: Calendar, href: '/year-at-a-glance/month' },
-    { value: 'week', label: 'Week View', icon: Clock, href: '/year-at-a-glance/week' }
+    { value: 'week', label: 'Week View', icon: Clock, href: '/year-at-a-glance/week' },
   ]
 
+  // Guards
   if (!session) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <Card className="p-8 text-center max-w-md">
           <Calendar className="w-16 h-16 text-gray-400 mx-auto mb-4" />
           <h2 className="text-xl font-bold text-gray-900 mb-2">Sign In Required</h2>
-          <p className="text-gray-600 mb-4">
-            Please sign in to access your monthly calendar view.
-          </p>
+          <p className="text-gray-600 mb-4">Please sign in to access your monthly calendar view.</p>
           <Link href="/login">
             <Button>Sign In</Button>
           </Link>
@@ -85,7 +95,7 @@ const MonthPageClient = () => {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin w-8 h-8 border-4 border-purple-600 border-t-transparent rounded-full mx-auto mb-4"></div>
+          <div className="animate-spin w-8 h-8 border-4 border-purple-600 border-t-transparent rounded-full mx-auto mb-4" />
           <p className="text-gray-600">Loading your monthly calendar...</p>
         </div>
       </div>
@@ -100,22 +110,22 @@ const MonthPageClient = () => {
             <Calendar className="w-8 h-8" />
           </div>
           <h2 className="text-xl font-bold text-gray-900 mb-2">Unable to Load Calendar</h2>
-          <p className="text-gray-600 mb-4">
-            There was an issue loading your calendar data. Please try again.
-          </p>
-          <Button onClick={() => window.location.reload()}>
-            Retry
-          </Button>
+          <p className="text-gray-600 mb-4">There was an issue loading your calendar data. Please try again.</p>
+          <Button onClick={() => window.location.reload()}>Retry</Button>
         </Card>
       </div>
     )
   }
 
+  // UI
   return (
     <>
       <Head>
         <title>Month View - My Year at a Glance - MyDurhamLaw</title>
-        <meta name="description" content="Monthly calendar view with detailed daily scheduling and event management." />
+        <meta
+          name="description"
+          content="Monthly calendar view with detailed daily scheduling and event management."
+        />
       </Head>
 
       <div className="min-h-screen bg-gray-50">
@@ -135,13 +145,9 @@ const MonthPageClient = () => {
 
               {/* Controls */}
               <div className="flex items-center space-x-3">
+                {/* Add Event Button */}
                 <Button
-                  onClick={() =>
-                    handleCreateEvent(
-                      new Date().toISOString().split('T')[0] ||
-                        new Date().toLocaleDateString('en-CA')
-                    )
-                  }
+                  onClick={() => handleCreateEvent(new Date().toISOString().slice(0, 10))}
                   size="sm"
                   className="flex items-center space-x-2"
                 >
@@ -149,6 +155,7 @@ const MonthPageClient = () => {
                   <span>Add Event</span>
                 </Button>
 
+                {/* Filter Toggle */}
                 <Button
                   variant="outline"
                   size="sm"
@@ -158,12 +165,11 @@ const MonthPageClient = () => {
                   <Filter className="w-4 h-4" />
                   <span>Filters</span>
                   <ChevronDown
-                    className={`w-4 h-4 transition-transform duration-200 ${
-                      showFilters ? 'rotate-180' : ''
-                    }`}
+                    className={`w-4 h-4 transition-transform duration-200 ${showFilters ? 'rotate-180' : ''}`}
                   />
                 </Button>
 
+                {/* View Mode Switcher */}
                 <div className="flex items-center bg-gray-100 rounded-lg p-1">
                   {getViewModeOptions().map((option) => (
                     <Link key={option.value} href={option.href}>
@@ -181,6 +187,7 @@ const MonthPageClient = () => {
                   ))}
                 </div>
 
+                {/* Settings */}
                 <Button variant="ghost" size="sm">
                   <Settings className="w-4 h-4" />
                 </Button>
@@ -194,6 +201,7 @@ const MonthPageClient = () => {
                   <div className="flex items-center space-x-4">
                     <span className="text-sm font-medium text-gray-700">Show:</span>
 
+                    {/* Event Type Filters */}
                     <div className="flex items-center space-x-2">
                       {['lectures', 'assessments', 'exams', 'personal'].map((type) => (
                         <label key={type} className="flex items-center space-x-2">
@@ -213,6 +221,7 @@ const MonthPageClient = () => {
                       ))}
                     </div>
 
+                    {/* Show Completed Toggle */}
                     <label className="flex items-center space-x-2">
                       <input
                         type="checkbox"
@@ -237,7 +246,7 @@ const MonthPageClient = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {monthData ? (
             <MonthView
-              monthData={monthData}
+              monthData={monthData as any}
               currentDate={currentDate}
               onDateChange={handleDateChange}
               onEventClick={handleEventClick}
@@ -248,29 +257,11 @@ const MonthPageClient = () => {
             <div className="text-center py-12">
               <Calendar className="w-16 h-16 text-gray-400 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-gray-900 mb-2">No Data Available</h3>
-              <p className="text-gray-600 mb-4">
+              <p className="text-gray-600">
                 Unable to load your monthly calendar data. Please try refreshing the page.
               </p>
-              <Button onClick={() => window.location.reload()}>Retry</Button>
             </div>
           )}
-        </div>
-
-        {/* Keyboard Shortcuts Help */}
-        <div className="fixed bottom-4 right-4 z-30">
-          <Card className="p-3 text-xs text-gray-600 bg-white/95 backdrop-blur-sm">
-            <div className="space-y-1">
-              <div>
-                <kbd className="px-1.5 py-0.5 bg-gray-100 rounded text-xs">←/→</kbd> Change month
-              </div>
-              <div>
-                <kbd className="px-1.5 py-0.5 bg-gray-100 rounded text-xs">T</kbd> Go to today
-              </div>
-              <div>
-                <kbd className="px-1.5 py-0.5 bg-gray-100 rounded text-xs">N</kbd> New event
-              </div>
-            </div>
-          </Card>
         </div>
       </div>
     </>
