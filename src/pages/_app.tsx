@@ -15,7 +15,6 @@ import { AuthProvider } from '@/lib/supabase/AuthContext'
 // DurmahProvider removed
 import LayoutShell from '@/layout/LayoutShell'
 import { Toaster } from 'react-hot-toast'
-import AWYUnregisterer from '@/components/AWYUnregisterer'
 
 // Server-only RSS boot (no-op in browser)
 if (typeof window === 'undefined') {
@@ -81,8 +80,6 @@ export default function App({ Component, pageProps }: AppProps) {
                 error: { duration: 5000, iconTheme: { primary: '#ef4444', secondary: '#fff' } },
               }}
             />
-
-            <AWYUnregisterer />
           </HydrationBoundary>
         </QueryClientProvider>
       </AuthProvider>

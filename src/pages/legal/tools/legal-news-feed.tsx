@@ -21,7 +21,7 @@ import { SmartNewsAgent } from '@/components/news/SmartNewsAgent'
 import { useAuth } from '@/lib/supabase/AuthContext'
 import { CollapsibleText } from '@/components/ui/CollapsibleText'
 import { getSupabaseClient } from '@/lib/supabase/client'
-import durmahConfig, { getDynamicAudioConfig } from '@/lib/durmahConfig'
+// Durmah config removed - using default audio settings
 // import { useVoiceManager } from '@/lib/context/VoiceManagerContext' // Removed - using DurmahContext
 
 interface RSSNewsItem {
@@ -332,7 +332,8 @@ export default function LegalNewsFeedPage() {
         "Click the link above to read the full article from the original source."
       ].join('. ')
       
-      const audioConfig = getDynamicAudioConfig(userProfile)
+      // Use default audio config
+      const audioConfig = { voice: 'nova', speed: 1.0, volume: 0.8 }
       
       console.log('🔊 Generating audio for:', article.title.substring(0, 50) + '...')
       

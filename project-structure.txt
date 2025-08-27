@@ -1,1219 +1,1216 @@
 Folder PATH listing for volume Windows
 Volume serial number is 3EFE-CDCB
 C:.
-¦   .env.example
-¦   .env.local
-¦   .env.local.example
-¦   .gitignore
-¦   .python-version
-¦   BACKEND_SYNC_DOCUMENTATION.md
-¦   build-with-errors.js
-¦   CHANGELOG.md
-¦   CHANGELOG_M2.md
-¦   CHANGELOG_M3.md
-¦   CHANGELOG_M4.md
-¦   CLAUDE.md
-¦   CONTEXT.md
-¦   deploy-streamlined-signup.sh
-¦   DEPLOYMENT_GUIDE.md
-¦   DURMAH_VOICE_MVP_COMPLETE.md
-¦   DURMAH_VOICE_RUNBOOK.md
-¦   DURMAH_VOICE_V1.5_RUNBOOK.md
-¦   EMAIL-SETUP.md
-¦   favicon-instructions.md
-¦   FAVICON_OPTIMIZATION_COMPLETE.md
-¦   fix_profiles_complete.sql
-¦   fix_profiles_schema.sql
-¦   fix_supabase_imports.sh
-¦   GOLD_ICON_UPDATE_SUMMARY.md
-¦   lm_local_edit.py
-¦   middleware.ts
-¦   MILESTONE_1_COMPLETE.md
-¦   MILESTONE_3_HEADER_NAVIGATION_COMPLETE.md
-¦   mmx-patch-info.md
-¦   netlify.toml
-¦   NETLIFY_BUILD_FIX.md
-¦   next-env.d.ts
-¦   next.config.js
-¦   OAUTH_PRODUCTION_FIX_README.md
-¦   OPENAI_API_KEY_AUDIT_COMPLETE.md
-¦   package-lock.json
-¦   package.json
-¦   playwright.config.ts
-¦   podcast_and_durmah_schema.sql
-¦   POST-APPLY.md
-¦   POST-APPLY_M2.md
-¦   POST-APPLY_M3.md
-¦   POST-APPLY_M4.md
-¦   postcss.config.js
-¦   PRODUCTION_CHECKLIST.md
-¦   project-structure.txt
-¦   pyproject.toml
-¦   README-ADMIN-CRM.md
-¦   README.md
-¦   SECURITY.md
-¦   supabase_migration_premier_lounge.sql
-¦   tailwind.config.js
-¦   tsconfig.json
-¦   tsconfig.tsbuildinfo
-¦   uv.lock
-¦   VERSION_SUMMARY.md
-¦   vitest.config.ts
-¦   _ul
-¦   
+ï¿½   .env.example
+ï¿½   .env.local
+ï¿½   .env.local.example
+ï¿½   .gitignore
+ï¿½   .python-version
+ï¿½   BACKEND_SYNC_DOCUMENTATION.md
+ï¿½   build-with-errors.js
+ï¿½   CHANGELOG.md
+ï¿½   CHANGELOG_M2.md
+ï¿½   CHANGELOG_M3.md
+ï¿½   CHANGELOG_M4.md
+ï¿½   CLAUDE.md
+ï¿½   CONTEXT.md
+ï¿½   deploy-streamlined-signup.sh
+ï¿½   DEPLOYMENT_GUIDE.md
+ï¿½   DURMAH_VOICE_MVP_COMPLETE.md
+ï¿½   DURMAH_VOICE_RUNBOOK.md
+ï¿½   DURMAH_VOICE_V1.5_RUNBOOK.md
+ï¿½   EMAIL-SETUP.md
+ï¿½   favicon-instructions.md
+ï¿½   FAVICON_OPTIMIZATION_COMPLETE.md
+ï¿½   fix_profiles_complete.sql
+ï¿½   fix_profiles_schema.sql
+ï¿½   fix_supabase_imports.sh
+ï¿½   GOLD_ICON_UPDATE_SUMMARY.md
+ï¿½   lm_local_edit.py
+ï¿½   middleware.ts
+ï¿½   MILESTONE_1_COMPLETE.md
+ï¿½   MILESTONE_3_HEADER_NAVIGATION_COMPLETE.md
+ï¿½   mmx-patch-info.md
+ï¿½   netlify.toml
+ï¿½   NETLIFY_BUILD_FIX.md
+ï¿½   next-env.d.ts
+ï¿½   next.config.js
+ï¿½   OAUTH_PRODUCTION_FIX_README.md
+ï¿½   OPENAI_API_KEY_AUDIT_COMPLETE.md
+ï¿½   package-lock.json
+ï¿½   package.json
+ï¿½   playwright.config.ts
+ï¿½   podcast_and_durmah_schema.sql
+ï¿½   POST-APPLY.md
+ï¿½   POST-APPLY_M2.md
+ï¿½   POST-APPLY_M3.md
+ï¿½   POST-APPLY_M4.md
+ï¿½   postcss.config.js
+ï¿½   PRODUCTION_CHECKLIST.md
+ï¿½   project-structure.txt
+ï¿½   pyproject.toml
+ï¿½   README-ADMIN-CRM.md
+ï¿½   README.md
+ï¿½   SECURITY.md
+ï¿½   supabase_migration_premier_lounge.sql
+ï¿½   tailwind.config.js
+ï¿½   tsconfig.json
+ï¿½   tsconfig.tsbuildinfo
+ï¿½   uv.lock
+ï¿½   VERSION_SUMMARY.md
+ï¿½   vitest.config.ts
+ï¿½   _ul
+ï¿½   
 +---.backups
 +---.claude
-¦       settings.local.json
-¦       
+ï¿½       settings.local.json
+ï¿½       
 +---.next
-¦   ¦   app-build-manifest.json
-¦   ¦   app-path-routes-manifest.json
-¦   ¦   build-manifest.json
-¦   ¦   BUILD_ID
-¦   ¦   export-marker.json
-¦   ¦   images-manifest.json
-¦   ¦   next-minimal-server.js.nft.json
-¦   ¦   next-server.js.nft.json
-¦   ¦   package.json
-¦   ¦   prerender-manifest.json
-¦   ¦   react-loadable-manifest.json
-¦   ¦   required-server-files.json
-¦   ¦   routes-manifest.json
-¦   ¦   trace
-¦   ¦   
-¦   +---cache
-¦   ¦   ¦   .tsbuildinfo
-¦   ¦   ¦   
-¦   ¦   +---swc
-¦   ¦   ¦   +---plugins
-¦   ¦   ¦       +---v7_windows_x86_64_0.106.15
-¦   ¦   +---webpack
-¦   ¦       +---client-development
-¦   ¦       ¦       0.pack.gz
-¦   ¦       ¦       index.pack.gz
-¦   ¦       ¦       
-¦   ¦       +---client-production
-¦   ¦       ¦       0.pack
-¦   ¦       ¦       1.pack
-¦   ¦       ¦       10.pack
-¦   ¦       ¦       11.pack
-¦   ¦       ¦       12.pack
-¦   ¦       ¦       13.pack
-¦   ¦       ¦       14.pack
-¦   ¦       ¦       15.pack
-¦   ¦       ¦       16.pack
-¦   ¦       ¦       17.pack
-¦   ¦       ¦       2.pack
-¦   ¦       ¦       3.pack
-¦   ¦       ¦       4.pack
-¦   ¦       ¦       5.pack
-¦   ¦       ¦       6.pack
-¦   ¦       ¦       7.pack
-¦   ¦       ¦       8.pack
-¦   ¦       ¦       9.pack
-¦   ¦       ¦       index.pack
-¦   ¦       ¦       index.pack.old
-¦   ¦       ¦       
-¦   ¦       +---edge-server-production
-¦   ¦       ¦       0.pack
-¦   ¦       ¦       index.pack
-¦   ¦       ¦       
-¦   ¦       +---server-production
-¦   ¦               0.pack
-¦   ¦               1.pack
-¦   ¦               10.pack
-¦   ¦               11.pack
-¦   ¦               12.pack
-¦   ¦               13.pack
-¦   ¦               2.pack
-¦   ¦               3.pack
-¦   ¦               4.pack
-¦   ¦               5.pack
-¦   ¦               6.pack
-¦   ¦               7.pack
-¦   ¦               8.pack
-¦   ¦               9.pack
-¦   ¦               index.pack
-¦   ¦               index.pack.old
-¦   ¦               
-¦   +---server
-¦   ¦   ¦   app-paths-manifest.json
-¦   ¦   ¦   font-manifest.json
-¦   ¦   ¦   functions-config-manifest.json
-¦   ¦   ¦   interception-route-rewrite-manifest.js
-¦   ¦   ¦   middleware-build-manifest.js
-¦   ¦   ¦   middleware-manifest.json
-¦   ¦   ¦   middleware-react-loadable-manifest.js
-¦   ¦   ¦   next-font-manifest.js
-¦   ¦   ¦   next-font-manifest.json
-¦   ¦   ¦   pages-manifest.json
-¦   ¦   ¦   server-reference-manifest.js
-¦   ¦   ¦   server-reference-manifest.json
-¦   ¦   ¦   webpack-api-runtime.js
-¦   ¦   ¦   webpack-runtime.js
-¦   ¦   ¦   
-¦   ¦   +---chunks
-¦   ¦   ¦       1255.js
-¦   ¦   ¦       1764.js
-¦   ¦   ¦       1796.js
-¦   ¦   ¦       2400.js
-¦   ¦   ¦       2665.js
-¦   ¦   ¦       3247.js
-¦   ¦   ¦       3534.js
-¦   ¦   ¦       4146.js
-¦   ¦   ¦       4163.js
-¦   ¦   ¦       4194.js
-¦   ¦   ¦       4267.js
-¦   ¦   ¦       5675.js
-¦   ¦   ¦       6012.js
-¦   ¦   ¦       6309.js
-¦   ¦   ¦       6817.js
-¦   ¦   ¦       6859.js
-¦   ¦   ¦       6928.js
-¦   ¦   ¦       715.js
-¦   ¦   ¦       7654.js
-¦   ¦   ¦       7976.js
-¦   ¦   ¦       9045.js
-¦   ¦   ¦       9758.js
-¦   ¦   ¦       9989.js
-¦   ¦   ¦       font-manifest.json
-¦   ¦   ¦       
-¦   ¦   +---pages
-¦   ¦       ¦   404.html
-¦   ¦       ¦   500.html
-¦   ¦       ¦   about.js
-¦   ¦       ¦   about.js.nft.json
-¦   ¦       ¦   assignment-generator.html
-¦   ¦       ¦   assignment-generator.js.nft.json
-¦   ¦       ¦   assignments.html
-¦   ¦       ¦   assignments.js.nft.json
-¦   ¦       ¦   calendar.html
-¦   ¦       ¦   calendar.js.nft.json
-¦   ¦       ¦   colonaive-demo.html
-¦   ¦       ¦   colonaive-demo.js.nft.json
-¦   ¦       ¦   community-hub.html
-¦   ¦       ¦   community-hub.js.nft.json
-¦   ¦       ¦   community-network.html
-¦   ¦       ¦   community-network.js.nft.json
-¦   ¦       ¦   complete-profile.html
-¦   ¦       ¦   complete-profile.js.nft.json
-¦   ¦       ¦   csr-showcase.html
-¦   ¦       ¦   csr-showcase.js.nft.json
-¦   ¦       ¦   dashboard.html
-¦   ¦       ¦   dashboard.js.nft.json
-¦   ¦       ¦   debug-auth.js
-¦   ¦       ¦   debug-auth.js.nft.json
-¦   ¦       ¦   ethics.html
-¦   ¦       ¦   ethics.js.nft.json
-¦   ¦       ¦   index.html
-¦   ¦       ¦   index.js.nft.json
-¦   ¦       ¦   lectures.html
-¦   ¦       ¦   lectures.js.nft.json
-¦   ¦       ¦   login.html
-¦   ¦       ¦   login.js.nft.json
-¦   ¦       ¦   LoginRedirectPage.html
-¦   ¦       ¦   LoginRedirectPage.js.nft.json
-¦   ¦       ¦   lounge.html
-¦   ¦       ¦   lounge.js.nft.json
-¦   ¦       ¦   loved-one-dashboard.html
-¦   ¦       ¦   loved-one-dashboard.js.nft.json
-¦   ¦       ¦   loved-one-login.html
-¦   ¦       ¦   loved-one-login.js.nft.json
-¦   ¦       ¦   memory-journal.html
-¦   ¦       ¦   memory-journal.js.nft.json
-¦   ¦       ¦   movement-pillars.html
-¦   ¦       ¦   movement-pillars.js.nft.json
-¦   ¦       ¦   onboarding.html
-¦   ¦       ¦   onboarding.js.nft.json
-¦   ¦       ¦   references.js
-¦   ¦       ¦   references.js.nft.json
-¦   ¦       ¦   research-hub.html
-¦   ¦       ¦   research-hub.js.nft.json
-¦   ¦       ¦   settings.js
-¦   ¦       ¦   settings.js.nft.json
-¦   ¦       ¦   signup.html
-¦   ¦       ¦   signup.js.nft.json
-¦   ¦       ¦   study-materials.html
-¦   ¦       ¦   study-materials.js.nft.json
-¦   ¦       ¦   study-schedule.html
-¦   ¦       ¦   study-schedule.js.nft.json
-¦   ¦       ¦   tour.html
-¦   ¦       ¦   tour.js.nft.json
-¦   ¦       ¦   vision-2035.html
-¦   ¦       ¦   vision-2035.js.nft.json
-¦   ¦       ¦   voice-debug.html
-¦   ¦       ¦   voice-debug.js.nft.json
-¦   ¦       ¦   wellbeing.html
-¦   ¦       ¦   wellbeing.js.nft.json
-¦   ¦       ¦   year-at-a-glance.js
-¦   ¦       ¦   year-at-a-glance.js.nft.json
-¦   ¦       ¦   _app.js
-¦   ¦       ¦   _app.js.nft.json
-¦   ¦       ¦   _document.js
-¦   ¦       ¦   _document.js.nft.json
-¦   ¦       ¦   _error.js
-¦   ¦       ¦   _error.js.nft.json
-¦   ¦       ¦   
-¦   ¦       +---admin
-¦   ¦       ¦       SuperAdminDashboard.html
-¦   ¦       ¦       SuperAdminDashboard.js.nft.json
-¦   ¦       ¦       
-¦   ¦       +---api
-¦   ¦       ¦   ¦   assignment-generator.js
-¦   ¦       ¦   ¦   assignment-generator.js.nft.json
-¦   ¦       ¦   ¦   chat-stream.js
-¦   ¦       ¦   ¦   chat-stream.js.nft.json
-¦   ¦       ¦   ¦   chat.js
-¦   ¦       ¦   ¦   chat.js.nft.json
-¦   ¦       ¦   ¦   contact.js
-¦   ¦       ¦   ¦   contact.js.nft.json
-¦   ¦       ¦   ¦   preview-state.js
-¦   ¦       ¦   ¦   preview-state.js.nft.json
-¦   ¦       ¦   ¦   rss-news.js
-¦   ¦       ¦   ¦   rss-news.js.nft.json
-¦   ¦       ¦   ¦   rss-scheduler.js
-¦   ¦       ¦   ¦   rss-scheduler.js.nft.json
-¦   ¦       ¦   ¦   rss-test.js
-¦   ¦       ¦   ¦   rss-test.js.nft.json
-¦   ¦       ¦   ¦   tts.js
-¦   ¦       ¦   ¦   tts.js.nft.json
-¦   ¦       ¦   ¦   wellbeing-coach.js
-¦   ¦       ¦   ¦   wellbeing-coach.js.nft.json
-¦   ¦       ¦   ¦   whisper.js
-¦   ¦       ¦   ¦   whisper.js.nft.json
-¦   ¦       ¦   ¦   writing-samples.js
-¦   ¦       ¦   ¦   writing-samples.js.nft.json
-¦   ¦       ¦   ¦   
-¦   ¦       ¦   +---assistant
-¦   ¦       ¦   ¦       human-mode.js
-¦   ¦       ¦   ¦       human-mode.js.nft.json
-¦   ¦       ¦   ¦       
-¦   ¦       ¦   +---awy
-¦   ¦       ¦   ¦       signaling.js
-¦   ¦       ¦   ¦       signaling.js.nft.json
-¦   ¦       ¦   ¦       
-¦   ¦       ¦   +---calendar
-¦   ¦       ¦   ¦       day.js
-¦   ¦       ¦   ¦       day.js.nft.json
-¦   ¦       ¦   ¦       month.js
-¦   ¦       ¦   ¦       month.js.nft.json
-¦   ¦       ¦   ¦       multi-year.js
-¦   ¦       ¦   ¦       multi-year.js.nft.json
-¦   ¦       ¦   ¦       progress.js
-¦   ¦       ¦   ¦       progress.js.nft.json
-¦   ¦       ¦   ¦       week.js
-¦   ¦       ¦   ¦       week.js.nft.json
-¦   ¦       ¦   ¦       year.js
-¦   ¦       ¦   ¦       year.js.nft.json
-¦   ¦       ¦   ¦       
-¦   ¦       ¦   +---durmah
-¦   ¦       ¦   ¦       chat-stream.js
-¦   ¦       ¦   ¦       chat-stream.js.nft.json
-¦   ¦       ¦   ¦       chat.js
-¦   ¦       ¦   ¦       chat.js.nft.json
-¦   ¦       ¦   ¦       delete-transcript.js
-¦   ¦       ¦   ¦       delete-transcript.js.nft.json
-¦   ¦       ¦   ¦       save-transcript.js
-¦   ¦       ¦   ¦       save-transcript.js.nft.json
-¦   ¦       ¦   ¦       transcribe.js
-¦   ¦       ¦   ¦       transcribe.js.nft.json
-¦   ¦       ¦   ¦       tts.js
-¦   ¦       ¦   ¦       tts.js.nft.json
-¦   ¦       ¦   ¦       
-¦   ¦       ¦   +---news
-¦   ¦       ¦   ¦       analyze.js
-¦   ¦       ¦   ¦       analyze.js.nft.json
-¦   ¦       ¦   ¦       
-¦   ¦       ¦   +---podcast
-¦   ¦       ¦   ¦       generate.js
-¦   ¦       ¦   ¦       generate.js.nft.json
-¦   ¦       ¦   ¦       
-¦   ¦       ¦   +---profile
-¦   ¦       ¦   ¦       ensure.js
-¦   ¦       ¦   ¦       ensure.js.nft.json
-¦   ¦       ¦   ¦       update-year.js
-¦   ¦       ¦   ¦       update-year.js.nft.json
-¦   ¦       ¦   ¦       
-¦   ¦       ¦   +---push
-¦   ¦       ¦   ¦       subscribe.js
-¦   ¦       ¦   ¦       subscribe.js.nft.json
-¦   ¦       ¦   ¦       
-¦   ¦       ¦   +---stream
-¦   ¦       ¦   ¦       gpt4.js
-¦   ¦       ¦   ¦       gpt4.js.nft.json
-¦   ¦       ¦   ¦       
-¦   ¦       ¦   +---trial
-¦   ¦       ¦   ¦       activateYear.js
-¦   ¦       ¦   ¦       activateYear.js.nft.json
-¦   ¦       ¦   ¦       clear.js
-¦   ¦       ¦   ¦       clear.js.nft.json
-¦   ¦       ¦   ¦       persona.js
-¦   ¦       ¦   ¦       persona.js.nft.json
-¦   ¦       ¦   ¦       status.js
-¦   ¦       ¦   ¦       status.js.nft.json
-¦   ¦       ¦   ¦       
-¦   ¦       ¦   +---tts
-¦   ¦       ¦   ¦       elevenlabs.js
-¦   ¦       ¦   ¦       elevenlabs.js.nft.json
-¦   ¦       ¦   ¦       stream.js
-¦   ¦       ¦   ¦       stream.js.nft.json
-¦   ¦       ¦   ¦       
-¦   ¦       ¦   +---voice
-¦   ¦       ¦   ¦       chat.js
-¦   ¦       ¦   ¦       chat.js.nft.json
-¦   ¦       ¦   ¦       transcribe.js
-¦   ¦       ¦   ¦       transcribe.js.nft.json
-¦   ¦       ¦   ¦       tts.js
-¦   ¦       ¦   ¦       tts.js.nft.json
-¦   ¦       ¦   ¦       
-¦   ¦       ¦   +---writing-samples
-¦   ¦       ¦           similar.js
-¦   ¦       ¦           similar.js.nft.json
-¦   ¦       ¦           [id].js
-¦   ¦       ¦           [id].js.nft.json
-¦   ¦       ¦           
-¦   ¦       +---assignments
-¦   ¦       ¦       human-mode.js
-¦   ¦       ¦       human-mode.js.nft.json
-¦   ¦       ¦       
-¦   ¦       +---auth
-¦   ¦       ¦       callback.html
-¦   ¦       ¦       callback.js.nft.json
-¦   ¦       ¦       
-¦   ¦       +---dashboard
-¦   ¦       ¦       foundation.js
-¦   ¦       ¦       foundation.js.nft.json
-¦   ¦       ¦       year1.js
-¦   ¦       ¦       year1.js.nft.json
-¦   ¦       ¦       year2.js
-¦   ¦       ¦       year2.js.nft.json
-¦   ¦       ¦       year3.js
-¦   ¦       ¦       year3.js.nft.json
-¦   ¦       ¦       
-¦   ¦       +---legal
-¦   ¦       ¦   ¦   cookie-policy.html
-¦   ¦       ¦   ¦   cookie-policy.js.nft.json
-¦   ¦       ¦   ¦   ethics.html
-¦   ¦       ¦   ¦   ethics.js.nft.json
-¦   ¦       ¦   ¦   privacy-policy.html
-¦   ¦       ¦   ¦   privacy-policy.js.nft.json
-¦   ¦       ¦   ¦   terms-of-use.html
-¦   ¦       ¦   ¦   terms-of-use.js.nft.json
-¦   ¦       ¦   ¦   
-¦   ¦       ¦   +---tools
-¦   ¦       ¦           legal-news-feed.html
-¦   ¦       ¦           legal-news-feed.js.nft.json
-¦   ¦       ¦           legal-news-settings.html
-¦   ¦       ¦           legal-news-settings.js.nft.json
-¦   ¦       ¦           
-¦   ¦       +---lounge
-¦   ¦       ¦   +---profile
-¦   ¦       ¦           [userId].html
-¦   ¦       ¦           [userId].js.nft.json
-¦   ¦       ¦           
-¦   ¦       +---onboarding
-¦   ¦       ¦       OnboardingPage.html
-¦   ¦       ¦       OnboardingPage.js.nft.json
-¦   ¦       ¦       
-¦   ¦       +---planner
-¦   ¦       ¦   ¦   year-at-a-glance.html
-¦   ¦       ¦   ¦   year-at-a-glance.js.nft.json
-¦   ¦       ¦   ¦   [year].html
-¦   ¦       ¦   ¦   [year].js.nft.json
-¦   ¦       ¦   ¦   
-¦   ¦       ¦   +---[year]
-¦   ¦       ¦       ¦   contribute.html
-¦   ¦       ¦       ¦   contribute.js.nft.json
-¦   ¦       ¦       ¦   [term].html
-¦   ¦       ¦       ¦   [term].js.nft.json
-¦   ¦       ¦       ¦   
-¦   ¦       ¦       +---[term]
-¦   ¦       ¦           +---week
-¦   ¦       ¦                   [n].html
-¦   ¦       ¦                   [n].js.nft.json
-¦   ¦       ¦                   
-¦   ¦       +---tools
-¦   ¦       ¦       attendance.html
-¦   ¦       ¦       attendance.js.nft.json
-¦   ¦       ¦       memory-manager.js
-¦   ¦       ¦       memory-manager.js.nft.json
-¦   ¦       ¦       memory.html
-¦   ¦       ¦       memory.js.nft.json
-¦   ¦       ¦       
-¦   ¦       +---year-at-a-glance
-¦   ¦               month.js
-¦   ¦               month.js.nft.json
-¦   ¦               week.js
-¦   ¦               week.js.nft.json
-¦   ¦               
-¦   +---static
-¦   ¦   +---chunks
-¦   ¦   ¦   ¦   1115-5f0ec0c16a50e07d.js
-¦   ¦   ¦   ¦   167-b338ba88577728cf.js
-¦   ¦   ¦   ¦   2187-68c72dcc7943fdc9.js
-¦   ¦   ¦   ¦   2486-8ef8562c83cd59fc.js
-¦   ¦   ¦   ¦   4375.ca6fefa0ce70a293.js
-¦   ¦   ¦   ¦   4527-dc47e3d3a453f05d.js
-¦   ¦   ¦   ¦   5169-f835bbe50f46b1b1.js
-¦   ¦   ¦   ¦   5675-bb35cd0386645cd0.js
-¦   ¦   ¦   ¦   6928.df744d08bda3f8d0.js
-¦   ¦   ¦   ¦   715.f2b85a702a7900c1.js
-¦   ¦   ¦   ¦   7217-6676421dca550509.js
-¦   ¦   ¦   ¦   7473-03d6294a5dafdf78.js
-¦   ¦   ¦   ¦   7533-a59b446e1b474139.js
-¦   ¦   ¦   ¦   7654.48045a06ac4de638.js
-¦   ¦   ¦   ¦   7668-aab195d6e310e390.js
-¦   ¦   ¦   ¦   8159-aa846f61c6cfc077.js
-¦   ¦   ¦   ¦   8295-bc6186c0dc204579.js
-¦   ¦   ¦   ¦   8384-ef678cdeec59c022.js
-¦   ¦   ¦   ¦   8634-75cecfa6f28efe22.js
-¦   ¦   ¦   ¦   8949-b4c5d10f6010e1e0.js
-¦   ¦   ¦   ¦   9141-46e8de73092205af.js
-¦   ¦   ¦   ¦   9989-b9040d415be00864.js
-¦   ¦   ¦   ¦   fd9d1056-5a6daf7e202c9ecc.js
-¦   ¦   ¦   ¦   framework-cd6601bebc0b6f1f.js
-¦   ¦   ¦   ¦   main-8105a0436eadb746.js
-¦   ¦   ¦   ¦   main-app-4b18378186ed9bbc.js
-¦   ¦   ¦   ¦   polyfills-42372ed130431b0a.js
-¦   ¦   ¦   ¦   webpack-8cb1d151c416a5f1.js
-¦   ¦   ¦   ¦   
-¦   ¦   ¦   +---pages
-¦   ¦   ¦       ¦   about-00d307becb8a0882.js
-¦   ¦   ¦       ¦   assignment-generator-ad8cbcb60286949a.js
-¦   ¦   ¦       ¦   assignments-9b8a5a240cada0cb.js
-¦   ¦   ¦       ¦   calendar-89b21229274dab23.js
-¦   ¦   ¦       ¦   colonaive-demo-f3b950b632230f4c.js
-¦   ¦   ¦       ¦   community-hub-d1a2b13cf4a0aac8.js
-¦   ¦   ¦       ¦   community-network-a4c974f7a5b6c758.js
-¦   ¦   ¦       ¦   complete-profile-451703f8011e786c.js
-¦   ¦   ¦       ¦   csr-showcase-5f97d2b9442c27dc.js
-¦   ¦   ¦       ¦   dashboard-a5aa7b93b5d0b652.js
-¦   ¦   ¦       ¦   debug-auth-1eb927d401fdd67f.js
-¦   ¦   ¦       ¦   ethics-2c33e2642ae68ef1.js
-¦   ¦   ¦       ¦   index-095d7382cfdb08d6.js
-¦   ¦   ¦       ¦   lectures-b35500a5dc886f94.js
-¦   ¦   ¦       ¦   login-177df3fbb775c1c7.js
-¦   ¦   ¦       ¦   LoginRedirectPage-4191cc4589345318.js
-¦   ¦   ¦       ¦   lounge-0c3fbeed09d212a6.js
-¦   ¦   ¦       ¦   loved-one-dashboard-27a67b38fad31a2f.js
-¦   ¦   ¦       ¦   loved-one-login-c0d7176fe2b0cc79.js
-¦   ¦   ¦       ¦   memory-journal-5da6c70bc4afcc10.js
-¦   ¦   ¦       ¦   movement-pillars-c4199f8110aa3949.js
-¦   ¦   ¦       ¦   onboarding-ce55564864de75d6.js
-¦   ¦   ¦       ¦   references-caaee1fdcac36879.js
-¦   ¦   ¦       ¦   research-hub-c0d4e358a178913c.js
-¦   ¦   ¦       ¦   settings-14e72e289c53ad48.js
-¦   ¦   ¦       ¦   signup-4b5465d2dc0fa49e.js
-¦   ¦   ¦       ¦   study-materials-05bd09f8cbcd1fac.js
-¦   ¦   ¦       ¦   study-schedule-f288236be2ab34fe.js
-¦   ¦   ¦       ¦   tour-5360f8b3ded423ab.js
-¦   ¦   ¦       ¦   vision-2035-ad6f80f6386f7c9b.js
-¦   ¦   ¦       ¦   voice-debug-3e6872ed15712aba.js
-¦   ¦   ¦       ¦   wellbeing-17cc68b8ce4841af.js
-¦   ¦   ¦       ¦   year-at-a-glance-c016115461f4702e.js
-¦   ¦   ¦       ¦   _app-747abe12a77ae712.js
-¦   ¦   ¦       ¦   _error-cf5ca766ac8f493f.js
-¦   ¦   ¦       ¦   
-¦   ¦   ¦       +---admin
-¦   ¦   ¦       ¦       SuperAdminDashboard-fa25602ca6176b1d.js
-¦   ¦   ¦       ¦       
-¦   ¦   ¦       +---assignments
-¦   ¦   ¦       ¦       human-mode-6670bb39dfacf1c3.js
-¦   ¦   ¦       ¦       
-¦   ¦   ¦       +---auth
-¦   ¦   ¦       ¦       callback-10b8ec1c064ebc96.js
-¦   ¦   ¦       ¦       
-¦   ¦   ¦       +---dashboard
-¦   ¦   ¦       ¦       foundation-92358ebd02227a66.js
-¦   ¦   ¦       ¦       year1-6b56ef12ec057d40.js
-¦   ¦   ¦       ¦       year2-3a85a50e3563cf8a.js
-¦   ¦   ¦       ¦       year3-9e9b5585d6068510.js
-¦   ¦   ¦       ¦       
-¦   ¦   ¦       +---legal
-¦   ¦   ¦       ¦   ¦   cookie-policy-374b3785434d1b99.js
-¦   ¦   ¦       ¦   ¦   ethics-0f2095220c4e9ca0.js
-¦   ¦   ¦       ¦   ¦   privacy-policy-db1c45104a760485.js
-¦   ¦   ¦       ¦   ¦   terms-of-use-f68fc39442202968.js
-¦   ¦   ¦       ¦   ¦   
-¦   ¦   ¦       ¦   +---tools
-¦   ¦   ¦       ¦           legal-news-feed-779ae722bef296c9.js
-¦   ¦   ¦       ¦           legal-news-settings-636300fc7a6bd3f5.js
-¦   ¦   ¦       ¦           
-¦   ¦   ¦       +---lounge
-¦   ¦   ¦       ¦   +---profile
-¦   ¦   ¦       ¦           [userId]-26299c7c85382059.js
-¦   ¦   ¦       ¦           
-¦   ¦   ¦       +---onboarding
-¦   ¦   ¦       ¦       OnboardingPage-a04457da9a48a164.js
-¦   ¦   ¦       ¦       
-¦   ¦   ¦       +---planner
-¦   ¦   ¦       ¦   ¦   year-at-a-glance-827b7f16fbfa9950.js
-¦   ¦   ¦       ¦   ¦   [year]-0269e8d399a31ad6.js
-¦   ¦   ¦       ¦   ¦   
-¦   ¦   ¦       ¦   +---[year]
-¦   ¦   ¦       ¦       ¦   contribute-a4f16ae8aca89c06.js
-¦   ¦   ¦       ¦       ¦   [term]-60dfbd7db42a2c89.js
-¦   ¦   ¦       ¦       ¦   
-¦   ¦   ¦       ¦       +---[term]
-¦   ¦   ¦       ¦           +---week
-¦   ¦   ¦       ¦                   [n]-c777083cc549df7a.js
-¦   ¦   ¦       ¦                   
-¦   ¦   ¦       +---tools
-¦   ¦   ¦       ¦       attendance-98022da7f78d547b.js
-¦   ¦   ¦       ¦       memory-a0a8e36db96a010b.js
-¦   ¦   ¦       ¦       memory-manager-516c832093c69881.js
-¦   ¦   ¦       ¦       
-¦   ¦   ¦       +---year-at-a-glance
-¦   ¦   ¦               month-8e9037452990b4c3.js
-¦   ¦   ¦               week-2d398950f5fd34e5.js
-¦   ¦   ¦               
-¦   ¦   +---css
-¦   ¦   ¦       46d2f1b70d0e73f2.css
-¦   ¦   ¦       a61f0ec4ac58e00f.css
-¦   ¦   ¦       
-¦   ¦   +---iuju5DGAt_IvgJoZU__eq
-¦   ¦           _buildManifest.js
-¦   ¦           _ssgManifest.js
-¦   ¦           
-¦   +---types
-¦           package.json
-¦           
+ï¿½   ï¿½   app-build-manifest.json
+ï¿½   ï¿½   app-path-routes-manifest.json
+ï¿½   ï¿½   build-manifest.json
+ï¿½   ï¿½   BUILD_ID
+ï¿½   ï¿½   export-marker.json
+ï¿½   ï¿½   images-manifest.json
+ï¿½   ï¿½   next-minimal-server.js.nft.json
+ï¿½   ï¿½   next-server.js.nft.json
+ï¿½   ï¿½   package.json
+ï¿½   ï¿½   prerender-manifest.json
+ï¿½   ï¿½   react-loadable-manifest.json
+ï¿½   ï¿½   required-server-files.json
+ï¿½   ï¿½   routes-manifest.json
+ï¿½   ï¿½   trace
+ï¿½   ï¿½   
+ï¿½   +---cache
+ï¿½   ï¿½   ï¿½   .tsbuildinfo
+ï¿½   ï¿½   ï¿½   
+ï¿½   ï¿½   +---swc
+ï¿½   ï¿½   ï¿½   +---plugins
+ï¿½   ï¿½   ï¿½       +---v7_windows_x86_64_0.106.15
+ï¿½   ï¿½   +---webpack
+ï¿½   ï¿½       +---client-development
+ï¿½   ï¿½       ï¿½       0.pack.gz
+ï¿½   ï¿½       ï¿½       index.pack.gz
+ï¿½   ï¿½       ï¿½       
+ï¿½   ï¿½       +---client-production
+ï¿½   ï¿½       ï¿½       0.pack
+ï¿½   ï¿½       ï¿½       1.pack
+ï¿½   ï¿½       ï¿½       10.pack
+ï¿½   ï¿½       ï¿½       11.pack
+ï¿½   ï¿½       ï¿½       12.pack
+ï¿½   ï¿½       ï¿½       13.pack
+ï¿½   ï¿½       ï¿½       14.pack
+ï¿½   ï¿½       ï¿½       15.pack
+ï¿½   ï¿½       ï¿½       16.pack
+ï¿½   ï¿½       ï¿½       17.pack
+ï¿½   ï¿½       ï¿½       2.pack
+ï¿½   ï¿½       ï¿½       3.pack
+ï¿½   ï¿½       ï¿½       4.pack
+ï¿½   ï¿½       ï¿½       5.pack
+ï¿½   ï¿½       ï¿½       6.pack
+ï¿½   ï¿½       ï¿½       7.pack
+ï¿½   ï¿½       ï¿½       8.pack
+ï¿½   ï¿½       ï¿½       9.pack
+ï¿½   ï¿½       ï¿½       index.pack
+ï¿½   ï¿½       ï¿½       index.pack.old
+ï¿½   ï¿½       ï¿½       
+ï¿½   ï¿½       +---edge-server-production
+ï¿½   ï¿½       ï¿½       0.pack
+ï¿½   ï¿½       ï¿½       index.pack
+ï¿½   ï¿½       ï¿½       
+ï¿½   ï¿½       +---server-production
+ï¿½   ï¿½               0.pack
+ï¿½   ï¿½               1.pack
+ï¿½   ï¿½               10.pack
+ï¿½   ï¿½               11.pack
+ï¿½   ï¿½               12.pack
+ï¿½   ï¿½               13.pack
+ï¿½   ï¿½               2.pack
+ï¿½   ï¿½               3.pack
+ï¿½   ï¿½               4.pack
+ï¿½   ï¿½               5.pack
+ï¿½   ï¿½               6.pack
+ï¿½   ï¿½               7.pack
+ï¿½   ï¿½               8.pack
+ï¿½   ï¿½               9.pack
+ï¿½   ï¿½               index.pack
+ï¿½   ï¿½               index.pack.old
+ï¿½   ï¿½               
+ï¿½   +---server
+ï¿½   ï¿½   ï¿½   app-paths-manifest.json
+ï¿½   ï¿½   ï¿½   font-manifest.json
+ï¿½   ï¿½   ï¿½   functions-config-manifest.json
+ï¿½   ï¿½   ï¿½   interception-route-rewrite-manifest.js
+ï¿½   ï¿½   ï¿½   middleware-build-manifest.js
+ï¿½   ï¿½   ï¿½   middleware-manifest.json
+ï¿½   ï¿½   ï¿½   middleware-react-loadable-manifest.js
+ï¿½   ï¿½   ï¿½   next-font-manifest.js
+ï¿½   ï¿½   ï¿½   next-font-manifest.json
+ï¿½   ï¿½   ï¿½   pages-manifest.json
+ï¿½   ï¿½   ï¿½   server-reference-manifest.js
+ï¿½   ï¿½   ï¿½   server-reference-manifest.json
+ï¿½   ï¿½   ï¿½   webpack-api-runtime.js
+ï¿½   ï¿½   ï¿½   webpack-runtime.js
+ï¿½   ï¿½   ï¿½   
+ï¿½   ï¿½   +---chunks
+ï¿½   ï¿½   ï¿½       1255.js
+ï¿½   ï¿½   ï¿½       1764.js
+ï¿½   ï¿½   ï¿½       1796.js
+ï¿½   ï¿½   ï¿½       2400.js
+ï¿½   ï¿½   ï¿½       2665.js
+ï¿½   ï¿½   ï¿½       3247.js
+ï¿½   ï¿½   ï¿½       3534.js
+ï¿½   ï¿½   ï¿½       4146.js
+ï¿½   ï¿½   ï¿½       4163.js
+ï¿½   ï¿½   ï¿½       4194.js
+ï¿½   ï¿½   ï¿½       4267.js
+ï¿½   ï¿½   ï¿½       5675.js
+ï¿½   ï¿½   ï¿½       6012.js
+ï¿½   ï¿½   ï¿½       6309.js
+ï¿½   ï¿½   ï¿½       6817.js
+ï¿½   ï¿½   ï¿½       6859.js
+ï¿½   ï¿½   ï¿½       6928.js
+ï¿½   ï¿½   ï¿½       715.js
+ï¿½   ï¿½   ï¿½       7654.js
+ï¿½   ï¿½   ï¿½       7976.js
+ï¿½   ï¿½   ï¿½       9045.js
+ï¿½   ï¿½   ï¿½       9758.js
+ï¿½   ï¿½   ï¿½       9989.js
+ï¿½   ï¿½   ï¿½       font-manifest.json
+ï¿½   ï¿½   ï¿½       
+ï¿½   ï¿½   +---pages
+ï¿½   ï¿½       ï¿½   404.html
+ï¿½   ï¿½       ï¿½   500.html
+ï¿½   ï¿½       ï¿½   about.js
+ï¿½   ï¿½       ï¿½   about.js.nft.json
+ï¿½   ï¿½       ï¿½   assignment-generator.html
+ï¿½   ï¿½       ï¿½   assignment-generator.js.nft.json
+ï¿½   ï¿½       ï¿½   assignments.html
+ï¿½   ï¿½       ï¿½   assignments.js.nft.json
+ï¿½   ï¿½       ï¿½   calendar.html
+ï¿½   ï¿½       ï¿½   calendar.js.nft.json
+ï¿½   ï¿½       ï¿½   colonaive-demo.html
+ï¿½   ï¿½       ï¿½   colonaive-demo.js.nft.json
+ï¿½   ï¿½       ï¿½   community-hub.html
+ï¿½   ï¿½       ï¿½   community-hub.js.nft.json
+ï¿½   ï¿½       ï¿½   community-network.html
+ï¿½   ï¿½       ï¿½   community-network.js.nft.json
+ï¿½   ï¿½       ï¿½   complete-profile.html
+ï¿½   ï¿½       ï¿½   complete-profile.js.nft.json
+ï¿½   ï¿½       ï¿½   csr-showcase.html
+ï¿½   ï¿½       ï¿½   csr-showcase.js.nft.json
+ï¿½   ï¿½       ï¿½   dashboard.html
+ï¿½   ï¿½       ï¿½   dashboard.js.nft.json
+ï¿½   ï¿½       ï¿½   debug-auth.js
+ï¿½   ï¿½       ï¿½   debug-auth.js.nft.json
+ï¿½   ï¿½       ï¿½   ethics.html
+ï¿½   ï¿½       ï¿½   ethics.js.nft.json
+ï¿½   ï¿½       ï¿½   index.html
+ï¿½   ï¿½       ï¿½   index.js.nft.json
+ï¿½   ï¿½       ï¿½   lectures.html
+ï¿½   ï¿½       ï¿½   lectures.js.nft.json
+ï¿½   ï¿½       ï¿½   login.html
+ï¿½   ï¿½       ï¿½   login.js.nft.json
+ï¿½   ï¿½       ï¿½   LoginRedirectPage.html
+ï¿½   ï¿½       ï¿½   LoginRedirectPage.js.nft.json
+ï¿½   ï¿½       ï¿½   lounge.html
+ï¿½   ï¿½       ï¿½   lounge.js.nft.json
+ï¿½   ï¿½       ï¿½   loved-one-dashboard.html
+ï¿½   ï¿½       ï¿½   loved-one-dashboard.js.nft.json
+ï¿½   ï¿½       ï¿½   loved-one-login.html
+ï¿½   ï¿½       ï¿½   loved-one-login.js.nft.json
+ï¿½   ï¿½       ï¿½   memory-journal.html
+ï¿½   ï¿½       ï¿½   memory-journal.js.nft.json
+ï¿½   ï¿½       ï¿½   movement-pillars.html
+ï¿½   ï¿½       ï¿½   movement-pillars.js.nft.json
+ï¿½   ï¿½       ï¿½   onboarding.html
+ï¿½   ï¿½       ï¿½   onboarding.js.nft.json
+ï¿½   ï¿½       ï¿½   references.js
+ï¿½   ï¿½       ï¿½   references.js.nft.json
+ï¿½   ï¿½       ï¿½   research-hub.html
+ï¿½   ï¿½       ï¿½   research-hub.js.nft.json
+ï¿½   ï¿½       ï¿½   settings.js
+ï¿½   ï¿½       ï¿½   settings.js.nft.json
+ï¿½   ï¿½       ï¿½   signup.html
+ï¿½   ï¿½       ï¿½   signup.js.nft.json
+ï¿½   ï¿½       ï¿½   study-materials.html
+ï¿½   ï¿½       ï¿½   study-materials.js.nft.json
+ï¿½   ï¿½       ï¿½   study-schedule.html
+ï¿½   ï¿½       ï¿½   study-schedule.js.nft.json
+ï¿½   ï¿½       ï¿½   tour.html
+ï¿½   ï¿½       ï¿½   tour.js.nft.json
+ï¿½   ï¿½       ï¿½   vision-2035.html
+ï¿½   ï¿½       ï¿½   vision-2035.js.nft.json
+ï¿½   ï¿½       ï¿½   voice-debug.html
+ï¿½   ï¿½       ï¿½   voice-debug.js.nft.json
+ï¿½   ï¿½       ï¿½   wellbeing.html
+ï¿½   ï¿½       ï¿½   wellbeing.js.nft.json
+ï¿½   ï¿½       ï¿½   year-at-a-glance.js
+ï¿½   ï¿½       ï¿½   year-at-a-glance.js.nft.json
+ï¿½   ï¿½       ï¿½   _app.js
+ï¿½   ï¿½       ï¿½   _app.js.nft.json
+ï¿½   ï¿½       ï¿½   _document.js
+ï¿½   ï¿½       ï¿½   _document.js.nft.json
+ï¿½   ï¿½       ï¿½   _error.js
+ï¿½   ï¿½       ï¿½   _error.js.nft.json
+ï¿½   ï¿½       ï¿½   
+ï¿½   ï¿½       +---admin
+ï¿½   ï¿½       ï¿½       SuperAdminDashboard.html
+ï¿½   ï¿½       ï¿½       SuperAdminDashboard.js.nft.json
+ï¿½   ï¿½       ï¿½       
+ï¿½   ï¿½       +---api
+ï¿½   ï¿½       ï¿½   ï¿½   assignment-generator.js
+ï¿½   ï¿½       ï¿½   ï¿½   assignment-generator.js.nft.json
+ï¿½   ï¿½       ï¿½   ï¿½   chat-stream.js
+ï¿½   ï¿½       ï¿½   ï¿½   chat-stream.js.nft.json
+ï¿½   ï¿½       ï¿½   ï¿½   chat.js
+ï¿½   ï¿½       ï¿½   ï¿½   chat.js.nft.json
+ï¿½   ï¿½       ï¿½   ï¿½   contact.js
+ï¿½   ï¿½       ï¿½   ï¿½   contact.js.nft.json
+ï¿½   ï¿½       ï¿½   ï¿½   preview-state.js
+ï¿½   ï¿½       ï¿½   ï¿½   preview-state.js.nft.json
+ï¿½   ï¿½       ï¿½   ï¿½   rss-news.js
+ï¿½   ï¿½       ï¿½   ï¿½   rss-news.js.nft.json
+ï¿½   ï¿½       ï¿½   ï¿½   rss-scheduler.js
+ï¿½   ï¿½       ï¿½   ï¿½   rss-scheduler.js.nft.json
+ï¿½   ï¿½       ï¿½   ï¿½   rss-test.js
+ï¿½   ï¿½       ï¿½   ï¿½   rss-test.js.nft.json
+ï¿½   ï¿½       ï¿½   ï¿½   tts.js
+ï¿½   ï¿½       ï¿½   ï¿½   tts.js.nft.json
+ï¿½   ï¿½       ï¿½   ï¿½   wellbeing-coach.js
+ï¿½   ï¿½       ï¿½   ï¿½   wellbeing-coach.js.nft.json
+ï¿½   ï¿½       ï¿½   ï¿½   whisper.js
+ï¿½   ï¿½       ï¿½   ï¿½   whisper.js.nft.json
+ï¿½   ï¿½       ï¿½   ï¿½   writing-samples.js
+ï¿½   ï¿½       ï¿½   ï¿½   writing-samples.js.nft.json
+ï¿½   ï¿½       ï¿½   ï¿½   
+ï¿½   ï¿½       ï¿½   +---assistant
+ï¿½   ï¿½       ï¿½   ï¿½       human-mode.js
+ï¿½   ï¿½       ï¿½   ï¿½       human-mode.js.nft.json
+ï¿½   ï¿½       ï¿½   ï¿½       
+ï¿½   ï¿½       ï¿½   +---awy
+ï¿½   ï¿½       ï¿½   ï¿½       signaling.js
+ï¿½   ï¿½       ï¿½   ï¿½       signaling.js.nft.json
+ï¿½   ï¿½       ï¿½   ï¿½       
+ï¿½   ï¿½       ï¿½   +---calendar
+ï¿½   ï¿½       ï¿½   ï¿½       day.js
+ï¿½   ï¿½       ï¿½   ï¿½       day.js.nft.json
+ï¿½   ï¿½       ï¿½   ï¿½       month.js
+ï¿½   ï¿½       ï¿½   ï¿½       month.js.nft.json
+ï¿½   ï¿½       ï¿½   ï¿½       multi-year.js
+ï¿½   ï¿½       ï¿½   ï¿½       multi-year.js.nft.json
+ï¿½   ï¿½       ï¿½   ï¿½       progress.js
+ï¿½   ï¿½       ï¿½   ï¿½       progress.js.nft.json
+ï¿½   ï¿½       ï¿½   ï¿½       week.js
+ï¿½   ï¿½       ï¿½   ï¿½       week.js.nft.json
+ï¿½   ï¿½       ï¿½   ï¿½       year.js
+ï¿½   ï¿½       ï¿½   ï¿½       year.js.nft.json
+ï¿½   ï¿½       ï¿½   ï¿½       
+ï¿½   ï¿½       ï¿½   +---durmah
+ï¿½   ï¿½       ï¿½   ï¿½       chat-stream.js
+ï¿½   ï¿½       ï¿½   ï¿½       chat-stream.js.nft.json
+ï¿½   ï¿½       ï¿½   ï¿½       chat.js
+ï¿½   ï¿½       ï¿½   ï¿½       chat.js.nft.json
+ï¿½   ï¿½       ï¿½   ï¿½       delete-transcript.js
+ï¿½   ï¿½       ï¿½   ï¿½       delete-transcript.js.nft.json
+ï¿½   ï¿½       ï¿½   ï¿½       save-transcript.js
+ï¿½   ï¿½       ï¿½   ï¿½       save-transcript.js.nft.json
+ï¿½   ï¿½       ï¿½   ï¿½       transcribe.js
+ï¿½   ï¿½       ï¿½   ï¿½       transcribe.js.nft.json
+ï¿½   ï¿½       ï¿½   ï¿½       tts.js
+ï¿½   ï¿½       ï¿½   ï¿½       tts.js.nft.json
+ï¿½   ï¿½       ï¿½   ï¿½       
+ï¿½   ï¿½       ï¿½   +---news
+ï¿½   ï¿½       ï¿½   ï¿½       analyze.js
+ï¿½   ï¿½       ï¿½   ï¿½       analyze.js.nft.json
+ï¿½   ï¿½       ï¿½   ï¿½       
+ï¿½   ï¿½       ï¿½   +---podcast
+ï¿½   ï¿½       ï¿½   ï¿½       generate.js
+ï¿½   ï¿½       ï¿½   ï¿½       generate.js.nft.json
+ï¿½   ï¿½       ï¿½   ï¿½       
+ï¿½   ï¿½       ï¿½   +---profile
+ï¿½   ï¿½       ï¿½   ï¿½       ensure.js
+ï¿½   ï¿½       ï¿½   ï¿½       ensure.js.nft.json
+ï¿½   ï¿½       ï¿½   ï¿½       update-year.js
+ï¿½   ï¿½       ï¿½   ï¿½       update-year.js.nft.json
+ï¿½   ï¿½       ï¿½   ï¿½       
+ï¿½   ï¿½       ï¿½   +---push
+ï¿½   ï¿½       ï¿½   ï¿½       subscribe.js
+ï¿½   ï¿½       ï¿½   ï¿½       subscribe.js.nft.json
+ï¿½   ï¿½       ï¿½   ï¿½       
+ï¿½   ï¿½       ï¿½   +---stream
+ï¿½   ï¿½       ï¿½   ï¿½       gpt4.js
+ï¿½   ï¿½       ï¿½   ï¿½       gpt4.js.nft.json
+ï¿½   ï¿½       ï¿½   ï¿½       
+ï¿½   ï¿½       ï¿½   +---trial
+ï¿½   ï¿½       ï¿½   ï¿½       activateYear.js
+ï¿½   ï¿½       ï¿½   ï¿½       activateYear.js.nft.json
+ï¿½   ï¿½       ï¿½   ï¿½       clear.js
+ï¿½   ï¿½       ï¿½   ï¿½       clear.js.nft.json
+ï¿½   ï¿½       ï¿½   ï¿½       persona.js
+ï¿½   ï¿½       ï¿½   ï¿½       persona.js.nft.json
+ï¿½   ï¿½       ï¿½   ï¿½       status.js
+ï¿½   ï¿½       ï¿½   ï¿½       status.js.nft.json
+ï¿½   ï¿½       ï¿½   ï¿½       
+ï¿½   ï¿½       ï¿½   +---tts
+ï¿½   ï¿½       ï¿½   ï¿½       elevenlabs.js
+ï¿½   ï¿½       ï¿½   ï¿½       elevenlabs.js.nft.json
+ï¿½   ï¿½       ï¿½   ï¿½       stream.js
+ï¿½   ï¿½       ï¿½   ï¿½       stream.js.nft.json
+ï¿½   ï¿½       ï¿½   ï¿½       
+ï¿½   ï¿½       ï¿½   +---voice
+ï¿½   ï¿½       ï¿½   ï¿½       chat.js
+ï¿½   ï¿½       ï¿½   ï¿½       chat.js.nft.json
+ï¿½   ï¿½       ï¿½   ï¿½       transcribe.js
+ï¿½   ï¿½       ï¿½   ï¿½       transcribe.js.nft.json
+ï¿½   ï¿½       ï¿½   ï¿½       tts.js
+ï¿½   ï¿½       ï¿½   ï¿½       tts.js.nft.json
+ï¿½   ï¿½       ï¿½   ï¿½       
+ï¿½   ï¿½       ï¿½   +---writing-samples
+ï¿½   ï¿½       ï¿½           similar.js
+ï¿½   ï¿½       ï¿½           similar.js.nft.json
+ï¿½   ï¿½       ï¿½           [id].js
+ï¿½   ï¿½       ï¿½           [id].js.nft.json
+ï¿½   ï¿½       ï¿½           
+ï¿½   ï¿½       +---assignments
+ï¿½   ï¿½       ï¿½       human-mode.js
+ï¿½   ï¿½       ï¿½       human-mode.js.nft.json
+ï¿½   ï¿½       ï¿½       
+ï¿½   ï¿½       +---auth
+ï¿½   ï¿½       ï¿½       callback.html
+ï¿½   ï¿½       ï¿½       callback.js.nft.json
+ï¿½   ï¿½       ï¿½       
+ï¿½   ï¿½       +---dashboard
+ï¿½   ï¿½       ï¿½       foundation.js
+ï¿½   ï¿½       ï¿½       foundation.js.nft.json
+ï¿½   ï¿½       ï¿½       year1.js
+ï¿½   ï¿½       ï¿½       year1.js.nft.json
+ï¿½   ï¿½       ï¿½       year2.js
+ï¿½   ï¿½       ï¿½       year2.js.nft.json
+ï¿½   ï¿½       ï¿½       year3.js
+ï¿½   ï¿½       ï¿½       year3.js.nft.json
+ï¿½   ï¿½       ï¿½       
+ï¿½   ï¿½       +---legal
+ï¿½   ï¿½       ï¿½   ï¿½   cookie-policy.html
+ï¿½   ï¿½       ï¿½   ï¿½   cookie-policy.js.nft.json
+ï¿½   ï¿½       ï¿½   ï¿½   ethics.html
+ï¿½   ï¿½       ï¿½   ï¿½   ethics.js.nft.json
+ï¿½   ï¿½       ï¿½   ï¿½   privacy-policy.html
+ï¿½   ï¿½       ï¿½   ï¿½   privacy-policy.js.nft.json
+ï¿½   ï¿½       ï¿½   ï¿½   terms-of-use.html
+ï¿½   ï¿½       ï¿½   ï¿½   terms-of-use.js.nft.json
+ï¿½   ï¿½       ï¿½   ï¿½   
+ï¿½   ï¿½       ï¿½   +---tools
+ï¿½   ï¿½       ï¿½           legal-news-feed.html
+ï¿½   ï¿½       ï¿½           legal-news-feed.js.nft.json
+ï¿½   ï¿½       ï¿½           legal-news-settings.html
+ï¿½   ï¿½       ï¿½           legal-news-settings.js.nft.json
+ï¿½   ï¿½       ï¿½           
+ï¿½   ï¿½       +---lounge
+ï¿½   ï¿½       ï¿½   +---profile
+ï¿½   ï¿½       ï¿½           [userId].html
+ï¿½   ï¿½       ï¿½           [userId].js.nft.json
+ï¿½   ï¿½       ï¿½           
+ï¿½   ï¿½       +---onboarding
+ï¿½   ï¿½       ï¿½       OnboardingPage.html
+ï¿½   ï¿½       ï¿½       OnboardingPage.js.nft.json
+ï¿½   ï¿½       ï¿½       
+ï¿½   ï¿½       +---planner
+ï¿½   ï¿½       ï¿½   ï¿½   year-at-a-glance.html
+ï¿½   ï¿½       ï¿½   ï¿½   year-at-a-glance.js.nft.json
+ï¿½   ï¿½       ï¿½   ï¿½   [year].html
+ï¿½   ï¿½       ï¿½   ï¿½   [year].js.nft.json
+ï¿½   ï¿½       ï¿½   ï¿½   
+ï¿½   ï¿½       ï¿½   +---[year]
+ï¿½   ï¿½       ï¿½       ï¿½   contribute.html
+ï¿½   ï¿½       ï¿½       ï¿½   contribute.js.nft.json
+ï¿½   ï¿½       ï¿½       ï¿½   [term].html
+ï¿½   ï¿½       ï¿½       ï¿½   [term].js.nft.json
+ï¿½   ï¿½       ï¿½       ï¿½   
+ï¿½   ï¿½       ï¿½       +---[term]
+ï¿½   ï¿½       ï¿½           +---week
+ï¿½   ï¿½       ï¿½                   [n].html
+ï¿½   ï¿½       ï¿½                   [n].js.nft.json
+ï¿½   ï¿½       ï¿½                   
+ï¿½   ï¿½       +---tools
+ï¿½   ï¿½       ï¿½       attendance.html
+ï¿½   ï¿½       ï¿½       attendance.js.nft.json
+ï¿½   ï¿½       ï¿½       memory-manager.js
+ï¿½   ï¿½       ï¿½       memory-manager.js.nft.json
+ï¿½   ï¿½       ï¿½       memory.html
+ï¿½   ï¿½       ï¿½       memory.js.nft.json
+ï¿½   ï¿½       ï¿½       
+ï¿½   ï¿½       +---year-at-a-glance
+ï¿½   ï¿½               month.js
+ï¿½   ï¿½               month.js.nft.json
+ï¿½   ï¿½               week.js
+ï¿½   ï¿½               week.js.nft.json
+ï¿½   ï¿½               
+ï¿½   +---static
+ï¿½   ï¿½   +---chunks
+ï¿½   ï¿½   ï¿½   ï¿½   1115-5f0ec0c16a50e07d.js
+ï¿½   ï¿½   ï¿½   ï¿½   167-b338ba88577728cf.js
+ï¿½   ï¿½   ï¿½   ï¿½   2187-68c72dcc7943fdc9.js
+ï¿½   ï¿½   ï¿½   ï¿½   2486-8ef8562c83cd59fc.js
+ï¿½   ï¿½   ï¿½   ï¿½   4375.ca6fefa0ce70a293.js
+ï¿½   ï¿½   ï¿½   ï¿½   4527-dc47e3d3a453f05d.js
+ï¿½   ï¿½   ï¿½   ï¿½   5169-f835bbe50f46b1b1.js
+ï¿½   ï¿½   ï¿½   ï¿½   5675-bb35cd0386645cd0.js
+ï¿½   ï¿½   ï¿½   ï¿½   6928.df744d08bda3f8d0.js
+ï¿½   ï¿½   ï¿½   ï¿½   715.f2b85a702a7900c1.js
+ï¿½   ï¿½   ï¿½   ï¿½   7217-6676421dca550509.js
+ï¿½   ï¿½   ï¿½   ï¿½   7473-03d6294a5dafdf78.js
+ï¿½   ï¿½   ï¿½   ï¿½   7533-a59b446e1b474139.js
+ï¿½   ï¿½   ï¿½   ï¿½   7654.48045a06ac4de638.js
+ï¿½   ï¿½   ï¿½   ï¿½   7668-aab195d6e310e390.js
+ï¿½   ï¿½   ï¿½   ï¿½   8159-aa846f61c6cfc077.js
+ï¿½   ï¿½   ï¿½   ï¿½   8295-bc6186c0dc204579.js
+ï¿½   ï¿½   ï¿½   ï¿½   8384-ef678cdeec59c022.js
+ï¿½   ï¿½   ï¿½   ï¿½   8634-75cecfa6f28efe22.js
+ï¿½   ï¿½   ï¿½   ï¿½   8949-b4c5d10f6010e1e0.js
+ï¿½   ï¿½   ï¿½   ï¿½   9141-46e8de73092205af.js
+ï¿½   ï¿½   ï¿½   ï¿½   9989-b9040d415be00864.js
+ï¿½   ï¿½   ï¿½   ï¿½   fd9d1056-5a6daf7e202c9ecc.js
+ï¿½   ï¿½   ï¿½   ï¿½   framework-cd6601bebc0b6f1f.js
+ï¿½   ï¿½   ï¿½   ï¿½   main-8105a0436eadb746.js
+ï¿½   ï¿½   ï¿½   ï¿½   main-app-4b18378186ed9bbc.js
+ï¿½   ï¿½   ï¿½   ï¿½   polyfills-42372ed130431b0a.js
+ï¿½   ï¿½   ï¿½   ï¿½   webpack-8cb1d151c416a5f1.js
+ï¿½   ï¿½   ï¿½   ï¿½   
+ï¿½   ï¿½   ï¿½   +---pages
+ï¿½   ï¿½   ï¿½       ï¿½   about-00d307becb8a0882.js
+ï¿½   ï¿½   ï¿½       ï¿½   assignment-generator-ad8cbcb60286949a.js
+ï¿½   ï¿½   ï¿½       ï¿½   assignments-9b8a5a240cada0cb.js
+ï¿½   ï¿½   ï¿½       ï¿½   calendar-89b21229274dab23.js
+ï¿½   ï¿½   ï¿½       ï¿½   colonaive-demo-f3b950b632230f4c.js
+ï¿½   ï¿½   ï¿½       ï¿½   community-hub-d1a2b13cf4a0aac8.js
+ï¿½   ï¿½   ï¿½       ï¿½   community-network-a4c974f7a5b6c758.js
+ï¿½   ï¿½   ï¿½       ï¿½   complete-profile-451703f8011e786c.js
+ï¿½   ï¿½   ï¿½       ï¿½   csr-showcase-5f97d2b9442c27dc.js
+ï¿½   ï¿½   ï¿½       ï¿½   dashboard-a5aa7b93b5d0b652.js
+ï¿½   ï¿½   ï¿½       ï¿½   debug-auth-1eb927d401fdd67f.js
+ï¿½   ï¿½   ï¿½       ï¿½   ethics-2c33e2642ae68ef1.js
+ï¿½   ï¿½   ï¿½       ï¿½   index-095d7382cfdb08d6.js
+ï¿½   ï¿½   ï¿½       ï¿½   lectures-b35500a5dc886f94.js
+ï¿½   ï¿½   ï¿½       ï¿½   login-177df3fbb775c1c7.js
+ï¿½   ï¿½   ï¿½       ï¿½   LoginRedirectPage-4191cc4589345318.js
+ï¿½   ï¿½   ï¿½       ï¿½   lounge-0c3fbeed09d212a6.js
+ï¿½   ï¿½   ï¿½       ï¿½   loved-one-dashboard-27a67b38fad31a2f.js
+ï¿½   ï¿½   ï¿½       ï¿½   loved-one-login-c0d7176fe2b0cc79.js
+ï¿½   ï¿½   ï¿½       ï¿½   memory-journal-5da6c70bc4afcc10.js
+ï¿½   ï¿½   ï¿½       ï¿½   movement-pillars-c4199f8110aa3949.js
+ï¿½   ï¿½   ï¿½       ï¿½   onboarding-ce55564864de75d6.js
+ï¿½   ï¿½   ï¿½       ï¿½   references-caaee1fdcac36879.js
+ï¿½   ï¿½   ï¿½       ï¿½   research-hub-c0d4e358a178913c.js
+ï¿½   ï¿½   ï¿½       ï¿½   settings-14e72e289c53ad48.js
+ï¿½   ï¿½   ï¿½       ï¿½   signup-4b5465d2dc0fa49e.js
+ï¿½   ï¿½   ï¿½       ï¿½   study-materials-05bd09f8cbcd1fac.js
+ï¿½   ï¿½   ï¿½       ï¿½   study-schedule-f288236be2ab34fe.js
+ï¿½   ï¿½   ï¿½       ï¿½   tour-5360f8b3ded423ab.js
+ï¿½   ï¿½   ï¿½       ï¿½   vision-2035-ad6f80f6386f7c9b.js
+ï¿½   ï¿½   ï¿½       ï¿½   voice-debug-3e6872ed15712aba.js
+ï¿½   ï¿½   ï¿½       ï¿½   wellbeing-17cc68b8ce4841af.js
+ï¿½   ï¿½   ï¿½       ï¿½   year-at-a-glance-c016115461f4702e.js
+ï¿½   ï¿½   ï¿½       ï¿½   _app-747abe12a77ae712.js
+ï¿½   ï¿½   ï¿½       ï¿½   _error-cf5ca766ac8f493f.js
+ï¿½   ï¿½   ï¿½       ï¿½   
+ï¿½   ï¿½   ï¿½       +---admin
+ï¿½   ï¿½   ï¿½       ï¿½       SuperAdminDashboard-fa25602ca6176b1d.js
+ï¿½   ï¿½   ï¿½       ï¿½       
+ï¿½   ï¿½   ï¿½       +---assignments
+ï¿½   ï¿½   ï¿½       ï¿½       human-mode-6670bb39dfacf1c3.js
+ï¿½   ï¿½   ï¿½       ï¿½       
+ï¿½   ï¿½   ï¿½       +---auth
+ï¿½   ï¿½   ï¿½       ï¿½       callback-10b8ec1c064ebc96.js
+ï¿½   ï¿½   ï¿½       ï¿½       
+ï¿½   ï¿½   ï¿½       +---dashboard
+ï¿½   ï¿½   ï¿½       ï¿½       foundation-92358ebd02227a66.js
+ï¿½   ï¿½   ï¿½       ï¿½       year1-6b56ef12ec057d40.js
+ï¿½   ï¿½   ï¿½       ï¿½       year2-3a85a50e3563cf8a.js
+ï¿½   ï¿½   ï¿½       ï¿½       year3-9e9b5585d6068510.js
+ï¿½   ï¿½   ï¿½       ï¿½       
+ï¿½   ï¿½   ï¿½       +---legal
+ï¿½   ï¿½   ï¿½       ï¿½   ï¿½   cookie-policy-374b3785434d1b99.js
+ï¿½   ï¿½   ï¿½       ï¿½   ï¿½   ethics-0f2095220c4e9ca0.js
+ï¿½   ï¿½   ï¿½       ï¿½   ï¿½   privacy-policy-db1c45104a760485.js
+ï¿½   ï¿½   ï¿½       ï¿½   ï¿½   terms-of-use-f68fc39442202968.js
+ï¿½   ï¿½   ï¿½       ï¿½   ï¿½   
+ï¿½   ï¿½   ï¿½       ï¿½   +---tools
+ï¿½   ï¿½   ï¿½       ï¿½           legal-news-feed-779ae722bef296c9.js
+ï¿½   ï¿½   ï¿½       ï¿½           legal-news-settings-636300fc7a6bd3f5.js
+ï¿½   ï¿½   ï¿½       ï¿½           
+ï¿½   ï¿½   ï¿½       +---lounge
+ï¿½   ï¿½   ï¿½       ï¿½   +---profile
+ï¿½   ï¿½   ï¿½       ï¿½           [userId]-26299c7c85382059.js
+ï¿½   ï¿½   ï¿½       ï¿½           
+ï¿½   ï¿½   ï¿½       +---onboarding
+ï¿½   ï¿½   ï¿½       ï¿½       OnboardingPage-a04457da9a48a164.js
+ï¿½   ï¿½   ï¿½       ï¿½       
+ï¿½   ï¿½   ï¿½       +---planner
+ï¿½   ï¿½   ï¿½       ï¿½   ï¿½   year-at-a-glance-827b7f16fbfa9950.js
+ï¿½   ï¿½   ï¿½       ï¿½   ï¿½   [year]-0269e8d399a31ad6.js
+ï¿½   ï¿½   ï¿½       ï¿½   ï¿½   
+ï¿½   ï¿½   ï¿½       ï¿½   +---[year]
+ï¿½   ï¿½   ï¿½       ï¿½       ï¿½   contribute-a4f16ae8aca89c06.js
+ï¿½   ï¿½   ï¿½       ï¿½       ï¿½   [term]-60dfbd7db42a2c89.js
+ï¿½   ï¿½   ï¿½       ï¿½       ï¿½   
+ï¿½   ï¿½   ï¿½       ï¿½       +---[term]
+ï¿½   ï¿½   ï¿½       ï¿½           +---week
+ï¿½   ï¿½   ï¿½       ï¿½                   [n]-c777083cc549df7a.js
+ï¿½   ï¿½   ï¿½       ï¿½                   
+ï¿½   ï¿½   ï¿½       +---tools
+ï¿½   ï¿½   ï¿½       ï¿½       attendance-98022da7f78d547b.js
+ï¿½   ï¿½   ï¿½       ï¿½       memory-a0a8e36db96a010b.js
+ï¿½   ï¿½   ï¿½       ï¿½       memory-manager-516c832093c69881.js
+ï¿½   ï¿½   ï¿½       ï¿½       
+ï¿½   ï¿½   ï¿½       +---year-at-a-glance
+ï¿½   ï¿½   ï¿½               month-8e9037452990b4c3.js
+ï¿½   ï¿½   ï¿½               week-2d398950f5fd34e5.js
+ï¿½   ï¿½   ï¿½               
+ï¿½   ï¿½   +---css
+ï¿½   ï¿½   ï¿½       46d2f1b70d0e73f2.css
+ï¿½   ï¿½   ï¿½       a61f0ec4ac58e00f.css
+ï¿½   ï¿½   ï¿½       
+ï¿½   ï¿½   +---iuju5DGAt_IvgJoZU__eq
+ï¿½   ï¿½           _buildManifest.js
+ï¿½   ï¿½           _ssgManifest.js
+ï¿½   ï¿½           
+ï¿½   +---types
+ï¿½           package.json
+ï¿½           
 +---data
-¦       assessments.csv
-¦       modules.csv
-¦       module_terms.csv
-¦       terms.csv
-¦       
+ï¿½       assessments.csv
+ï¿½       modules.csv
+ï¿½       module_terms.csv
+ï¿½       terms.csv
+ï¿½       
 +---database-schema
-¦       ai_feedback_table.sql
-¦       
+ï¿½       ai_feedback_table.sql
+ï¿½       
 +---external_api
-¦   ¦   function_utils.py
-¦   ¦   mcp_function_list.json
-¦   ¦   __init__.py
-¦   ¦   
-¦   +---data_sources
-¦           base.py
-¦           booking_source.py
-¦           client.py
-¦           commodities_source.py
-¦           metal_source.py
-¦           patents_source.py
-¦           pinterest_source.py
-¦           scholar_source.py
-¦           tripadvisor_source.py
-¦           twitter_source.py
-¦           yahoo_source.py
-¦           __init__.py
-¦           
+ï¿½   ï¿½   function_utils.py
+ï¿½   ï¿½   mcp_function_list.json
+ï¿½   ï¿½   __init__.py
+ï¿½   ï¿½   
+ï¿½   +---data_sources
+ï¿½           base.py
+ï¿½           booking_source.py
+ï¿½           client.py
+ï¿½           commodities_source.py
+ï¿½           metal_source.py
+ï¿½           patents_source.py
+ï¿½           pinterest_source.py
+ï¿½           scholar_source.py
+ï¿½           tripadvisor_source.py
+ï¿½           twitter_source.py
+ï¿½           yahoo_source.py
+ï¿½           __init__.py
+ï¿½           
 +---netlify
-¦   +---functions
-¦           generate-post-podcast.ts
-¦           generate-pre-podcast.ts
-¦           
+ï¿½   +---functions
+ï¿½           generate-post-podcast.ts
+ï¿½           generate-pre-podcast.ts
+ï¿½           
 +---playwright-report
-¦       index.html
-¦       
+ï¿½       index.html
+ï¿½       
 +---public
-¦   ¦   favicon.ico
-¦   ¦   manifest.json
-¦   ¦   robots.txt
-¦   ¦   site.webmanifest
-¦   ¦   sitemap.xml
-¦   ¦   sw.js
-¦   ¦   _headers
-¦   ¦   
-¦   +---assets
-¦   ¦   +---images
-¦   ¦   ¦       hero-supreme-court-uk.webp
-¦   ¦   ¦       
-¦   ¦   +---logo
-¦   ¦           durmah-icon.svg
-¦   ¦           durmah-logo.svg
-¦   ¦           durmah-monogram.svg
-¦   ¦           durmah-wordmark.svg
-¦   ¦           DURMAH_BRAND_GUIDE.md
-¦   ¦           README.md
-¦   ¦           scale-icon-gold.svg
-¦   ¦           scale-icon-gold.webp
-¦   ¦           scale-icon.webp
-¦   ¦           
-¦   +---data
-¦   ¦       academic_data.json
-¦   ¦       
-¦   +---icons
-¦           scale-icon.webp
-¦           
+ï¿½   ï¿½   favicon.ico
+ï¿½   ï¿½   manifest.json
+ï¿½   ï¿½   robots.txt
+ï¿½   ï¿½   site.webmanifest
+ï¿½   ï¿½   sitemap.xml
+ï¿½   ï¿½   sw.js
+ï¿½   ï¿½   _headers
+ï¿½   ï¿½   
+ï¿½   +---assets
+ï¿½   ï¿½   +---images
+ï¿½   ï¿½   ï¿½       hero-supreme-court-uk.webp
+ï¿½   ï¿½   ï¿½       
+ï¿½   ï¿½   +---logo
+ï¿½   ï¿½           durmah-icon.svg
+ï¿½   ï¿½           durmah-logo.svg
+ï¿½   ï¿½           durmah-monogram.svg
+ï¿½   ï¿½           durmah-wordmark.svg
+ï¿½   ï¿½           DURMAH_BRAND_GUIDE.md
+ï¿½   ï¿½           README.md
+ï¿½   ï¿½           scale-icon-gold.svg
+ï¿½   ï¿½           scale-icon-gold.webp
+ï¿½   ï¿½           scale-icon.webp
+ï¿½   ï¿½           
+ï¿½   +---data
+ï¿½   ï¿½       academic_data.json
+ï¿½   ï¿½       
+ï¿½   +---icons
+ï¿½           scale-icon.webp
+ï¿½           
 +---scripts
-¦       seedModules.mjs
-¦       seedModules.ts
-¦       
+ï¿½       seedModules.mjs
+ï¿½       seedModules.ts
+ï¿½       
 +---src
-¦   ¦   declarations.d.ts
-¦   ¦   
-¦   +---app
-¦   ¦       layout.tsx
-¦   ¦       providers.tsx
-¦   ¦       
-¦   +---ClaudePrompts
-¦   ¦       HumanModeDrafting.txt
-¦   ¦       
-¦   +---components
-¦   ¦   ¦   AIResearchAssistant.tsx
-¦   ¦   ¦   AWYBootstrap.tsx
-¦   ¦   ¦   BackNavigation.tsx
-¦   ¦   ¦   ContactForm.tsx
-¦   ¦   ¦   DurmahChat.tsx
-¦   ¦   ¦   DurmahTranscriptModal.tsx
-¦   ¦   ¦   DurmahVoiceOverlay.tsx
-¦   ¦   ¦   DurmahWidget.tsx
-¦   ¦   ¦   DurmahWidgetClean.tsx
-¦   ¦   ¦   DurmahWidget_BACKUP.tsx
-¦   ¦   ¦   FeedbackForm.tsx
-¦   ¦   ¦   FloatingAWY.tsx
-¦   ¦   ¦   FloatingDurmah.tsx
-¦   ¦   ¦   Footer.tsx
-¦   ¦   ¦   GlobalFooter.tsx
-¦   ¦   ¦   GlobalHeader.tsx
-¦   ¦   ¦   Header.tsx
-¦   ¦   ¦   HeroSection.tsx
-¦   ¦   ¦   PresenceBadge.tsx
-¦   ¦   ¦   ProfilePicturePreview.tsx
-¦   ¦   ¦   Sidebar.tsx
-¦   ¦   ¦   TriageAssessment.tsx
-¦   ¦   ¦   UploadProfilePicture.tsx
-¦   ¦   ¦   WellbeingChat.tsx
-¦   ¦   ¦   
-¦   ¦   +---academic
-¦   ¦   ¦       YearSelectionPrompt.tsx
-¦   ¦   ¦       
-¦   ¦   +---agents
-¦   ¦   ¦       EnhancedMemoryManagerAgent.tsx
-¦   ¦   ¦       
-¦   ¦   +---alwaysWithYou
-¦   ¦   ¦       AlwaysWithYouWidget.tsx
-¦   ¦   ¦       VideoCallModal.tsx
-¦   ¦   ¦       
-¦   ¦   +---assignment
-¦   ¦   ¦       AssignmentGenerator.tsx
-¦   ¦   ¦       HumanModeDrafting.tsx
-¦   ¦   ¦       
-¦   ¦   +---auth
-¦   ¦   ¦       GoogleSignInButton.tsx
-¦   ¦   ¦       
-¦   ¦   +---calendar
-¦   ¦   ¦       DayDrawer.tsx
-¦   ¦   ¦       ModuleGroup.tsx
-¦   ¦   ¦       MonthView.tsx
-¦   ¦   ¦       SemesterColumn.tsx
-¦   ¦   ¦       TimeBlock.tsx
-¦   ¦   ¦       TopicItem.tsx
-¦   ¦   ¦       WeekView.tsx
-¦   ¦   ¦       YearView.tsx
-¦   ¦   ¦       
-¦   ¦   +---chat
-¦   ¦   ¦       ChatBubble.tsx
-¦   ¦   ¦       ChatInput.tsx
-¦   ¦   ¦       ChatLoading.tsx
-¦   ¦   ¦       
-¦   ¦   +---community
-¦   ¦   ¦       CategoryTabs.tsx
-¦   ¦   ¦       DiningSection.tsx
-¦   ¦   ¦       EventsCarousel.tsx
-¦   ¦   ¦       HeroSection.tsx
-¦   ¦   ¦       MapSection.tsx
-¦   ¦   ¦       ParentEssentials.tsx
-¦   ¦   ¦       
-¦   ¦   +---community-network
-¦   ¦   ¦       MemberCard.tsx
-¦   ¦   ¦       StatusControls.tsx
-¦   ¦   ¦       
-¦   ¦   +---dashboard
-¦   ¦   ¦       DashboardLayout.tsx
-¦   ¦   ¦       GreetingWidget.tsx
-¦   ¦   ¦       MemoryJournalWidget.tsx
-¦   ¦   ¦       ProgressWidget.tsx
-¦   ¦   ¦       QuickActionsWidget.tsx
-¦   ¦   ¦       StudyFocusWidget.tsx
-¦   ¦   ¦       TodaysTasksWidget.tsx
-¦   ¦   ¦       TrialPreviewBanner.tsx
-¦   ¦   ¦       UpcomingDeadlinesWidget.tsx
-¦   ¦   ¦       WelcomeWidget.tsx
-¦   ¦   ¦       WellbeingTipWidget.tsx
-¦   ¦   ¦       
-¦   ¦   +---ethics
-¦   ¦   ¦       AIDisclaimer.tsx
-¦   ¦   ¦       
-¦   ¦   +---feedback
-¦   ¦   ¦       AIFeedbackButton.tsx
-¦   ¦   ¦       
-¦   ¦   +---homepage
-¦   ¦   ¦       EnhancedFooter.tsx
-¦   ¦   ¦       EnhancedHeroSection.tsx
-¦   ¦   ¦       EthicsReassurance.tsx
-¦   ¦   ¦       FeatureShowcase.tsx
-¦   ¦   ¦       TrialInvitation.tsx
-¦   ¦   ¦       
-¦   ¦   +---integrity
-¦   ¦   ¦       AssistanceLevel.tsx
-¦   ¦   ¦       DisclosureBanner.tsx
-¦   ¦   ¦       HumanModeDrafting.tsx
-¦   ¦   ¦       IntegrityPledge.tsx
-¦   ¦   ¦       
-¦   ¦   +---layout
-¦   ¦   ¦       AppFooter.tsx
-¦   ¦   ¦       GlobalLayout.tsx
-¦   ¦   ¦       LayoutShell.tsx
-¦   ¦   ¦       LegalFooter.tsx
-¦   ¦   ¦       MarketingFooter.tsx
-¦   ¦   ¦       ModernSidebar.tsx
-¦   ¦   ¦       ResponsiveSidebar.tsx
-¦   ¦   ¦       
-¦   ¦   +---lounge
-¦   ¦   ¦       EmptyState.tsx
-¦   ¦   ¦       FirstPostCelebration.tsx
-¦   ¦   ¦       LoungeComposer.tsx
-¦   ¦   ¦       LoungeFeed.tsx
-¦   ¦   ¦       LoungePostCard.tsx
-¦   ¦   ¦       MiniTweetBar.tsx
-¦   ¦   ¦       SectionCard.tsx
-¦   ¦   ¦       
-¦   ¦   +---modules
-¦   ¦   ¦       ModuleList.tsx
-¦   ¦   ¦       
-¦   ¦   +---nav
-¦   ¦   ¦       LoungeNavLink.tsx
-¦   ¦   ¦       Tooltip.tsx
-¦   ¦   ¦       
-¦   ¦   +---news
-¦   ¦   ¦       SmartNewsAgent.tsx
-¦   ¦   ¦       
-¦   ¦   +---onboarding
-¦   ¦   ¦       OnboardingGate.tsx
-¦   ¦   ¦       OnboardingReminder.tsx
-¦   ¦   ¦       
-¦   ¦   +---planner
-¦   ¦   ¦       Badges.tsx
-¦   ¦   ¦       EmptyState.tsx
-¦   ¦   ¦       EnhancedDayView.tsx
-¦   ¦   ¦       EnhancedMonthView.tsx
-¦   ¦   ¦       EnhancedWeekView.tsx
-¦   ¦   ¦       WeekDetails.tsx
-¦   ¦   ¦       YearAtAGlanceView.tsx
-¦   ¦   ¦       YearGlance.tsx
-¦   ¦   ¦       
-¦   ¦   +---podcast
-¦   ¦   ¦       TodayPodcastsCard.tsx
-¦   ¦   ¦       
-¦   ¦   +---trial
-¦   ¦   ¦       TrialExplainerModal.tsx
-¦   ¦   ¦       YearPreviewSwitcher.tsx
-¦   ¦   ¦       
-¦   ¦   +---ui
-¦   ¦   ¦       Accordion.tsx
-¦   ¦   ¦       BackToHomeButton.tsx
-¦   ¦   ¦       Badge.tsx
-¦   ¦   ¦       BrandTitle.tsx
-¦   ¦   ¦       Button.tsx
-¦   ¦   ¦       Card.tsx
-¦   ¦   ¦       CollapsibleText.tsx
-¦   ¦   ¦       DurmahLogo.tsx
-¦   ¦   ¦       GoldScaleIcon.tsx
-¦   ¦   ¦       Input.tsx
-¦   ¦   ¦       Label.tsx
-¦   ¦   ¦       Logo.tsx
-¦   ¦   ¦       LogoTestPage.tsx
-¦   ¦   ¦       ProgressBar.tsx
-¦   ¦   ¦       Switch.tsx
-¦   ¦   ¦       Textarea.tsx
-¦   ¦   ¦       UKTimeDisplay.tsx
-¦   ¦   ¦       
-¦   ¦   +---voice
-¦   ¦   ¦       DurmahVoiceCompanion.tsx
-¦   ¦   ¦       DurmahVoiceDock.tsx
-¦   ¦   ¦       DurmahWidget.tsx
-¦   ¦   ¦       TranscriptModal.tsx
-¦   ¦   ¦       
-¦   ¦   +---wellbeing
-¦   ¦           AssistanceLevelPopover.tsx
-¦   ¦           
-¦   +---config
-¦   ¦       nav.ts
-¦   ¦       
-¦   +---constants
-¦   ¦       Routes.ts
-¦   ¦       
-¦   +---context
-¦   ¦       DurmahContext.tsx
-¦   ¦       
-¦   +---data
-¦   ¦   +---durham
-¦   ¦       +---llb
-¦   ¦               academic_year_2025_26.ts
-¦   ¦               index.ts
-¦   ¦               
-¦   +---hooks
-¦   ¦       useContextDetection.ts
-¦   ¦       useConversationManagement.ts
-¦   ¦       useDurmahVoice.ts
-¦   ¦       usePreviewState.ts
-¦   ¦       useScrollToTop.ts
-¦   ¦       useUserDisplayName.ts
-¦   ¦       
-¦   +---lib
-¦   ¦   ¦   authRedirect.ts
-¦   ¦   ¦   buildUserSystemPrompt.ts
-¦   ¦   ¦   durmahConfig.ts
-¦   ¦   ¦   durmahPrompt.ts
-¦   ¦   ¦   elevenlabs.ts
-¦   ¦   ¦   env.ts
-¦   ¦   ¦   openai-basic.ts
-¦   ¦   ¦   openai.ts
-¦   ¦   ¦   supabase-browser.ts
-¦   ¦   ¦   types.ts
-¦   ¦   ¦   uploadToSupabase.ts
-¦   ¦   ¦   utils.ts
-¦   ¦   ¦   withAuthProtection.tsx
-¦   ¦   ¦   
-¦   ¦   +---academic
-¦   ¦   ¦       academicData.ts
-¦   ¦   ¦       preview.ts
-¦   ¦   ¦       
-¦   ¦   +---auth
-¦   ¦   ¦       dataWriteHelpers.ts
-¦   ¦   ¦       getUserProfile.ts
-¦   ¦   ¦       
-¦   ¦   +---client
-¦   ¦   ¦       apiClient.ts
-¦   ¦   ¦       
-¦   ¦   +---date
-¦   ¦   ¦       format.ts
-¦   ¦   ¦       
-¦   ¦   +---durham
-¦   ¦   ¦       academicCalendar.ts
-¦   ¦   ¦       activities.ts
-¦   ¦   ¦       delsa.ts
-¦   ¦   ¦       modules.ts
-¦   ¦   ¦       
-¦   ¦   +---hooks
-¦   ¦   ¦       useBookmarks.ts
-¦   ¦   ¦       useCalendarData.ts
-¦   ¦   ¦       useDurmahSpeech.ts
-¦   ¦   ¦       useDurmahVoiceMode.ts
-¦   ¦   ¦       useDurmahVoiceSession.ts
-¦   ¦   ¦       useMemory.ts
-¦   ¦   ¦       useUserType.ts
-¦   ¦   ¦       
-¦   ¦   +---ics
-¦   ¦   ¦       export.ts
-¦   ¦   ¦       
-¦   ¦   +---integrity
-¦   ¦   ¦       humanMode.ts
-¦   ¦   ¦       originality.ts
-¦   ¦   ¦       provenance.ts
-¦   ¦   ¦       
-¦   ¦   +---middleware
-¦   ¦   ¦       rateLimiter.ts
-¦   ¦   ¦       
-¦   ¦   +---news
-¦   ¦   ¦       fetchLatestLegalNews.ts
-¦   ¦   ¦       fetchRealLegalNews.ts
-¦   ¦   ¦       
-¦   ¦   +---planner
-¦   ¦   ¦       links.ts
-¦   ¦   ¦       
-¦   ¦   +---podcast
-¦   ¦   ¦       prompt.ts
-¦   ¦   ¦       
-¦   ¦   +---prompts
-¦   ¦   ¦   +---MemoryManagerAgent
-¦   ¦   ¦           prompt.ts
-¦   ¦   ¦           
-¦   ¦   +---rss
-¦   ¦   ¦       cronScheduler.ts
-¦   ¦   ¦       init.ts
-¦   ¦   ¦       logger.ts
-¦   ¦   ¦       README.md
-¦   ¦   ¦       rssScheduler.ts
-¦   ¦   ¦       schema.sql
-¦   ¦   ¦       
-¦   ¦   +---security
-¦   ¦   ¦       apiSecurity.ts
-¦   ¦   ¦       encryption.ts
-¦   ¦   ¦       
-¦   ¦   +---server
-¦   ¦   ¦       embeddings.ts
-¦   ¦   ¦       openai.ts
-¦   ¦   ¦       supabaseAdmin.ts
-¦   ¦   ¦       
-¦   ¦   +---services
-¦   ¦   ¦       presenceService.ts
-¦   ¦   ¦       videoCallService.ts
-¦   ¦   ¦       
-¦   ¦   +---session
-¦   ¦   ¦       getActiveYear.ts
-¦   ¦   ¦       
-¦   ¦   +---supabase
-¦   ¦   ¦       aiHistory.ts
-¦   ¦   ¦       alwaysWithYouSchema.sql
-¦   ¦   ¦       auth.ts
-¦   ¦   ¦       AuthContext.tsx
-¦   ¦   ¦       browser.ts
-¦   ¦   ¦       client.ts
-¦   ¦   ¦       feedback.ts
-¦   ¦   ¦       onboardingSchema.sql
-¦   ¦   ¦       server.ts
-¦   ¦   ¦       storage.ts
-¦   ¦   ¦       
-¦   ¦   +---syllabus
-¦   ¦   ¦       fetch.ts
-¦   ¦   ¦       schema.ts
-¦   ¦   ¦       
-¦   ¦   +---tts
-¦   ¦   ¦       elevenLabsClient.ts
-¦   ¦   ¦       
-¦   ¦   +---types
-¦   ¦   ¦       alwaysWithYou.ts
-¦   ¦   ¦       
-¦   ¦   +---utils
-¦   ¦   ¦       getOrigin.ts
-¦   ¦   ¦       logger.ts
-¦   ¦   ¦       metadata-storage.ts
-¦   ¦   ¦       
-¦   ¦   +---voice
-¦   ¦           guardrails.ts
-¦   ¦           llmRouter.ts
-¦   ¦           queuePlayer.ts
-¦   ¦           supabaseStore.ts
-¦   ¦           ttsController.ts
-¦   ¦           ttsEleven.ts
-¦   ¦           
-¦   +---pages
-¦   ¦   ¦   about.tsx
-¦   ¦   ¦   assignment-generator.tsx
-¦   ¦   ¦   assignments.tsx
-¦   ¦   ¦   calendar.tsx
-¦   ¦   ¦   colonaive-demo.tsx
-¦   ¦   ¦   community-hub.tsx
-¦   ¦   ¦   community-network.tsx
-¦   ¦   ¦   complete-profile.tsx
-¦   ¦   ¦   csr-showcase.tsx
-¦   ¦   ¦   debug-auth.tsx
-¦   ¦   ¦   ethics.tsx
-¦   ¦   ¦   index.tsx
-¦   ¦   ¦   lectures.tsx
-¦   ¦   ¦   login.tsx
-¦   ¦   ¦   LoginRedirectPage.tsx
-¦   ¦   ¦   loved-one-dashboard.tsx
-¦   ¦   ¦   loved-one-login.tsx
-¦   ¦   ¦   memory-journal.tsx
-¦   ¦   ¦   movement-pillars.tsx
-¦   ¦   ¦   references.tsx
-¦   ¦   ¦   research-hub.tsx
-¦   ¦   ¦   settings.tsx
-¦   ¦   ¦   signup.tsx
-¦   ¦   ¦   study-materials.tsx
-¦   ¦   ¦   study-schedule.tsx
-¦   ¦   ¦   tour.tsx
-¦   ¦   ¦   vision-2035.tsx
-¦   ¦   ¦   voice-debug.tsx
-¦   ¦   ¦   wellbeing.tsx
-¦   ¦   ¦   _app.tsx
-¦   ¦   ¦   _document.tsx
-¦   ¦   ¦   
-¦   ¦   +---admin
-¦   ¦   ¦       SuperAdminDashboard.tsx
-¦   ¦   ¦       
-¦   ¦   +---api
-¦   ¦   ¦   ¦   assignment-generator.ts
-¦   ¦   ¦   ¦   chat-stream.ts
-¦   ¦   ¦   ¦   chat.ts
-¦   ¦   ¦   ¦   contact.ts
-¦   ¦   ¦   ¦   preview-state.ts
-¦   ¦   ¦   ¦   rss-news.ts
-¦   ¦   ¦   ¦   rss-scheduler.ts
-¦   ¦   ¦   ¦   rss-test.ts
-¦   ¦   ¦   ¦   tts.ts
-¦   ¦   ¦   ¦   wellbeing-coach.ts
-¦   ¦   ¦   ¦   whisper.ts
-¦   ¦   ¦   ¦   
-¦   ¦   ¦   +---assistant
-¦   ¦   ¦   ¦       human-mode.ts
-¦   ¦   ¦   ¦       
-¦   ¦   ¦   +---awy
-¦   ¦   ¦   ¦       signaling.ts
-¦   ¦   ¦   ¦       
-¦   ¦   ¦   +---calendar
-¦   ¦   ¦   ¦       day.ts
-¦   ¦   ¦   ¦       month.ts
-¦   ¦   ¦   ¦       multi-year.ts
-¦   ¦   ¦   ¦       progress.ts
-¦   ¦   ¦   ¦       week.ts
-¦   ¦   ¦   ¦       year.ts
-¦   ¦   ¦   ¦       
-¦   ¦   ¦   +---durmah
-¦   ¦   ¦   ¦       chat-stream.ts
-¦   ¦   ¦   ¦       chat.ts
-¦   ¦   ¦   ¦       delete-transcript.ts
-¦   ¦   ¦   ¦       save-transcript.ts
-¦   ¦   ¦   ¦       transcribe.ts
-¦   ¦   ¦   ¦       tts.ts
-¦   ¦   ¦   ¦       
-¦   ¦   ¦   +---news
-¦   ¦   ¦   ¦       analyze.ts
-¦   ¦   ¦   ¦       
-¦   ¦   ¦   +---podcast
-¦   ¦   ¦   ¦       generate.ts
-¦   ¦   ¦   ¦       
-¦   ¦   ¦   +---profile
-¦   ¦   ¦   ¦       ensure.ts
-¦   ¦   ¦   ¦       update-year.ts
-¦   ¦   ¦   ¦       
-¦   ¦   ¦   +---push
-¦   ¦   ¦   ¦       subscribe.ts
-¦   ¦   ¦   ¦       
-¦   ¦   ¦   +---stream
-¦   ¦   ¦   ¦       gpt4.ts
-¦   ¦   ¦   ¦       
-¦   ¦   ¦   +---trial
-¦   ¦   ¦   ¦       activateYear.ts
-¦   ¦   ¦   ¦       clear.ts
-¦   ¦   ¦   ¦       persona.ts
-¦   ¦   ¦   ¦       status.ts
-¦   ¦   ¦   ¦       
-¦   ¦   ¦   +---tts
-¦   ¦   ¦   ¦       elevenlabs.ts
-¦   ¦   ¦   ¦       stream.ts
-¦   ¦   ¦   ¦       
-¦   ¦   ¦   +---voice
-¦   ¦   ¦   ¦       chat.ts
-¦   ¦   ¦   ¦       transcribe.ts
-¦   ¦   ¦   ¦       tts.ts
-¦   ¦   ¦   ¦       
-¦   ¦   ¦   +---writing-samples
-¦   ¦   ¦           index.ts
-¦   ¦   ¦           similar.ts
-¦   ¦   ¦           [id].ts
-¦   ¦   ¦           
-¦   ¦   +---assignments
-¦   ¦   ¦       human-mode.tsx
-¦   ¦   ¦       
-¦   ¦   +---auth
-¦   ¦   ¦       callback.tsx
-¦   ¦   ¦       
-¦   ¦   +---dashboard
-¦   ¦   ¦       foundation.tsx
-¦   ¦   ¦       index.tsx
-¦   ¦   ¦       year1.tsx
-¦   ¦   ¦       year2.tsx
-¦   ¦   ¦       year3.tsx
-¦   ¦   ¦       
-¦   ¦   +---legal
-¦   ¦   ¦   ¦   cookie-policy.tsx
-¦   ¦   ¦   ¦   ethics.tsx
-¦   ¦   ¦   ¦   privacy-policy.tsx
-¦   ¦   ¦   ¦   terms-of-use.tsx
-¦   ¦   ¦   ¦   
-¦   ¦   ¦   +---tools
-¦   ¦   ¦           legal-news-feed.tsx
-¦   ¦   ¦           legal-news-settings.tsx
-¦   ¦   ¦           
-¦   ¦   +---lounge
-¦   ¦   ¦   ¦   index.tsx
-¦   ¦   ¦   ¦   
-¦   ¦   ¦   +---profile
-¦   ¦   ¦           [userId].tsx
-¦   ¦   ¦           
-¦   ¦   +---onboarding
-¦   ¦   ¦       index.tsx
-¦   ¦   ¦       OnboardingPage.tsx
-¦   ¦   ¦       README.md
-¦   ¦   ¦       
-¦   ¦   +---planner
-¦   ¦   ¦   ¦   year-at-a-glance.tsx
-¦   ¦   ¦   ¦   
-¦   ¦   ¦   +---year-at-a-glance
-¦   ¦   ¦   ¦       index.tsx
-¦   ¦   ¦   ¦       
-¦   ¦   ¦   +---[year]
-¦   ¦   ¦       ¦   contribute.tsx
-¦   ¦   ¦       ¦   index.tsx
-¦   ¦   ¦       ¦   
-¦   ¦   ¦       +---[term]
-¦   ¦   ¦           ¦   index.tsx
-¦   ¦   ¦           ¦   
-¦   ¦   ¦           +---week
-¦   ¦   ¦                   [n].tsx
-¦   ¦   ¦                   
-¦   ¦   +---tools
-¦   ¦   ¦       attendance.tsx
-¦   ¦   ¦       memory-manager.tsx
-¦   ¦   ¦       memory.tsx
-¦   ¦   ¦       
-¦   ¦   +---year-at-a-glance
-¦   ¦           index.tsx
-¦   ¦           month.tsx
-¦   ¦           week.tsx
-¦   ¦           
-¦   +---server
-¦   ¦       openai.ts
-¦   ¦       
-¦   +---sql
-¦   ¦       admin-crm-tables.sql
-¦   ¦       supabase_migration_premier_lounge.sql
-¦   ¦       supabase_migration_premier_lounge_final.sql
-¦   ¦       supabase_migration_premier_lounge_patch.sql
-¦   ¦       supabase_storage_bucket_fallback.sql
-¦   ¦       
-¦   +---styles
-¦   ¦       globals.css
-¦   ¦       
-¦   +---types
-¦           calendar.ts
-¦           chat.ts
-¦           speech.d.ts
-¦           supabase.ts
-¦           voice.ts
-¦           
+ï¿½   ï¿½   declarations.d.ts
+ï¿½   ï¿½   
+ï¿½   +---app
+ï¿½   ï¿½       layout.tsx
+ï¿½   ï¿½       providers.tsx
+ï¿½   ï¿½       
+ï¿½   +---ClaudePrompts
+ï¿½   ï¿½       HumanModeDrafting.txt
+ï¿½   ï¿½       
+ï¿½   +---components
+ï¿½   ï¿½   ï¿½   AIResearchAssistant.tsx
+ï¿½   ï¿½   ï¿½   AWYBootstrap.tsx
+ï¿½   ï¿½   ï¿½   BackNavigation.tsx
+ï¿½   ï¿½   ï¿½   ContactForm.tsx
+ï¿½   ï¿½   ï¿½   DurmahChat.tsx
+ï¿½   ï¿½   ï¿½   DurmahTranscriptModal.tsx
+ï¿½   ï¿½   ï¿½   DurmahVoiceOverlay.tsx
+ï¿½   ï¿½   ï¿½   FeedbackForm.tsx
+ï¿½   ï¿½   ï¿½   FloatingAWY.tsx
+ï¿½   ï¿½   ï¿½   FloatingDurmah.tsx
+ï¿½   ï¿½   ï¿½   Footer.tsx
+ï¿½   ï¿½   ï¿½   GlobalFooter.tsx
+ï¿½   ï¿½   ï¿½   GlobalHeader.tsx
+ï¿½   ï¿½   ï¿½   Header.tsx
+ï¿½   ï¿½   ï¿½   HeroSection.tsx
+ï¿½   ï¿½   ï¿½   PresenceBadge.tsx
+ï¿½   ï¿½   ï¿½   ProfilePicturePreview.tsx
+ï¿½   ï¿½   ï¿½   Sidebar.tsx
+ï¿½   ï¿½   ï¿½   TriageAssessment.tsx
+ï¿½   ï¿½   ï¿½   UploadProfilePicture.tsx
+ï¿½   ï¿½   ï¿½   WellbeingChat.tsx
+ï¿½   ï¿½   ï¿½   
+ï¿½   ï¿½   +---academic
+ï¿½   ï¿½   ï¿½       YearSelectionPrompt.tsx
+ï¿½   ï¿½   ï¿½       
+ï¿½   ï¿½   +---agents
+ï¿½   ï¿½   ï¿½       EnhancedMemoryManagerAgent.tsx
+ï¿½   ï¿½   ï¿½       
+ï¿½   ï¿½   +---alwaysWithYou
+ï¿½   ï¿½   ï¿½       AlwaysWithYouWidget.tsx
+ï¿½   ï¿½   ï¿½       VideoCallModal.tsx
+ï¿½   ï¿½   ï¿½       
+ï¿½   ï¿½   +---assignment
+ï¿½   ï¿½   ï¿½       AssignmentGenerator.tsx
+ï¿½   ï¿½   ï¿½       HumanModeDrafting.tsx
+ï¿½   ï¿½   ï¿½       
+ï¿½   ï¿½   +---auth
+ï¿½   ï¿½   ï¿½       GoogleSignInButton.tsx
+ï¿½   ï¿½   ï¿½       
+ï¿½   ï¿½   +---calendar
+ï¿½   ï¿½   ï¿½       DayDrawer.tsx
+ï¿½   ï¿½   ï¿½       ModuleGroup.tsx
+ï¿½   ï¿½   ï¿½       MonthView.tsx
+ï¿½   ï¿½   ï¿½       SemesterColumn.tsx
+ï¿½   ï¿½   ï¿½       TimeBlock.tsx
+ï¿½   ï¿½   ï¿½       TopicItem.tsx
+ï¿½   ï¿½   ï¿½       WeekView.tsx
+ï¿½   ï¿½   ï¿½       YearView.tsx
+ï¿½   ï¿½   ï¿½       
+ï¿½   ï¿½   +---chat
+ï¿½   ï¿½   ï¿½       ChatBubble.tsx
+ï¿½   ï¿½   ï¿½       ChatInput.tsx
+ï¿½   ï¿½   ï¿½       ChatLoading.tsx
+ï¿½   ï¿½   ï¿½       
+ï¿½   ï¿½   +---community
+ï¿½   ï¿½   ï¿½       CategoryTabs.tsx
+ï¿½   ï¿½   ï¿½       DiningSection.tsx
+ï¿½   ï¿½   ï¿½       EventsCarousel.tsx
+ï¿½   ï¿½   ï¿½       HeroSection.tsx
+ï¿½   ï¿½   ï¿½       MapSection.tsx
+ï¿½   ï¿½   ï¿½       ParentEssentials.tsx
+ï¿½   ï¿½   ï¿½       
+ï¿½   ï¿½   +---community-network
+ï¿½   ï¿½   ï¿½       MemberCard.tsx
+ï¿½   ï¿½   ï¿½       StatusControls.tsx
+ï¿½   ï¿½   ï¿½       
+ï¿½   ï¿½   +---dashboard
+ï¿½   ï¿½   ï¿½       DashboardLayout.tsx
+ï¿½   ï¿½   ï¿½       GreetingWidget.tsx
+ï¿½   ï¿½   ï¿½       MemoryJournalWidget.tsx
+ï¿½   ï¿½   ï¿½       ProgressWidget.tsx
+ï¿½   ï¿½   ï¿½       QuickActionsWidget.tsx
+ï¿½   ï¿½   ï¿½       StudyFocusWidget.tsx
+ï¿½   ï¿½   ï¿½       TodaysTasksWidget.tsx
+ï¿½   ï¿½   ï¿½       TrialPreviewBanner.tsx
+ï¿½   ï¿½   ï¿½       UpcomingDeadlinesWidget.tsx
+ï¿½   ï¿½   ï¿½       WelcomeWidget.tsx
+ï¿½   ï¿½   ï¿½       WellbeingTipWidget.tsx
+ï¿½   ï¿½   ï¿½       
+ï¿½   ï¿½   +---ethics
+ï¿½   ï¿½   ï¿½       AIDisclaimer.tsx
+ï¿½   ï¿½   ï¿½       
+ï¿½   ï¿½   +---feedback
+ï¿½   ï¿½   ï¿½       AIFeedbackButton.tsx
+ï¿½   ï¿½   ï¿½       
+ï¿½   ï¿½   +---homepage
+ï¿½   ï¿½   ï¿½       EnhancedFooter.tsx
+ï¿½   ï¿½   ï¿½       EnhancedHeroSection.tsx
+ï¿½   ï¿½   ï¿½       EthicsReassurance.tsx
+ï¿½   ï¿½   ï¿½       FeatureShowcase.tsx
+ï¿½   ï¿½   ï¿½       TrialInvitation.tsx
+ï¿½   ï¿½   ï¿½       
+ï¿½   ï¿½   +---integrity
+ï¿½   ï¿½   ï¿½       AssistanceLevel.tsx
+ï¿½   ï¿½   ï¿½       DisclosureBanner.tsx
+ï¿½   ï¿½   ï¿½       HumanModeDrafting.tsx
+ï¿½   ï¿½   ï¿½       IntegrityPledge.tsx
+ï¿½   ï¿½   ï¿½       
+ï¿½   ï¿½   +---layout
+ï¿½   ï¿½   ï¿½       AppFooter.tsx
+ï¿½   ï¿½   ï¿½       GlobalLayout.tsx
+ï¿½   ï¿½   ï¿½       LayoutShell.tsx
+ï¿½   ï¿½   ï¿½       LegalFooter.tsx
+ï¿½   ï¿½   ï¿½       MarketingFooter.tsx
+ï¿½   ï¿½   ï¿½       ModernSidebar.tsx
+ï¿½   ï¿½   ï¿½       ResponsiveSidebar.tsx
+ï¿½   ï¿½   ï¿½       
+ï¿½   ï¿½   +---lounge
+ï¿½   ï¿½   ï¿½       EmptyState.tsx
+ï¿½   ï¿½   ï¿½       FirstPostCelebration.tsx
+ï¿½   ï¿½   ï¿½       LoungeComposer.tsx
+ï¿½   ï¿½   ï¿½       LoungeFeed.tsx
+ï¿½   ï¿½   ï¿½       LoungePostCard.tsx
+ï¿½   ï¿½   ï¿½       MiniTweetBar.tsx
+ï¿½   ï¿½   ï¿½       SectionCard.tsx
+ï¿½   ï¿½   ï¿½       
+ï¿½   ï¿½   +---modules
+ï¿½   ï¿½   ï¿½       ModuleList.tsx
+ï¿½   ï¿½   ï¿½       
+ï¿½   ï¿½   +---nav
+ï¿½   ï¿½   ï¿½       LoungeNavLink.tsx
+ï¿½   ï¿½   ï¿½       Tooltip.tsx
+ï¿½   ï¿½   ï¿½       
+ï¿½   ï¿½   +---news
+ï¿½   ï¿½   ï¿½       SmartNewsAgent.tsx
+ï¿½   ï¿½   ï¿½       
+ï¿½   ï¿½   +---onboarding
+ï¿½   ï¿½   ï¿½       OnboardingGate.tsx
+ï¿½   ï¿½   ï¿½       OnboardingReminder.tsx
+ï¿½   ï¿½   ï¿½       
+ï¿½   ï¿½   +---planner
+ï¿½   ï¿½   ï¿½       Badges.tsx
+ï¿½   ï¿½   ï¿½       EmptyState.tsx
+ï¿½   ï¿½   ï¿½       EnhancedDayView.tsx
+ï¿½   ï¿½   ï¿½       EnhancedMonthView.tsx
+ï¿½   ï¿½   ï¿½       EnhancedWeekView.tsx
+ï¿½   ï¿½   ï¿½       WeekDetails.tsx
+ï¿½   ï¿½   ï¿½       YearAtAGlanceView.tsx
+ï¿½   ï¿½   ï¿½       YearGlance.tsx
+ï¿½   ï¿½   ï¿½       
+ï¿½   ï¿½   +---podcast
+ï¿½   ï¿½   ï¿½       TodayPodcastsCard.tsx
+ï¿½   ï¿½   ï¿½       
+ï¿½   ï¿½   +---trial
+ï¿½   ï¿½   ï¿½       TrialExplainerModal.tsx
+ï¿½   ï¿½   ï¿½       YearPreviewSwitcher.tsx
+ï¿½   ï¿½   ï¿½       
+ï¿½   ï¿½   +---ui
+ï¿½   ï¿½   ï¿½       Accordion.tsx
+ï¿½   ï¿½   ï¿½       BackToHomeButton.tsx
+ï¿½   ï¿½   ï¿½       Badge.tsx
+ï¿½   ï¿½   ï¿½       BrandTitle.tsx
+ï¿½   ï¿½   ï¿½       Button.tsx
+ï¿½   ï¿½   ï¿½       Card.tsx
+ï¿½   ï¿½   ï¿½       CollapsibleText.tsx
+ï¿½   ï¿½   ï¿½       DurmahLogo.tsx
+ï¿½   ï¿½   ï¿½       GoldScaleIcon.tsx
+ï¿½   ï¿½   ï¿½       Input.tsx
+ï¿½   ï¿½   ï¿½       Label.tsx
+ï¿½   ï¿½   ï¿½       Logo.tsx
+ï¿½   ï¿½   ï¿½       LogoTestPage.tsx
+ï¿½   ï¿½   ï¿½       ProgressBar.tsx
+ï¿½   ï¿½   ï¿½       Switch.tsx
+ï¿½   ï¿½   ï¿½       Textarea.tsx
+ï¿½   ï¿½   ï¿½       UKTimeDisplay.tsx
+ï¿½   ï¿½   ï¿½       
+ï¿½   ï¿½   +---voice
+ï¿½   ï¿½   ï¿½       DurmahVoiceCompanion.tsx
+ï¿½   ï¿½   ï¿½       DurmahVoiceDock.tsx
+ï¿½   ï¿½   ï¿½       DurmahWidget.tsx
+ï¿½   ï¿½   ï¿½       TranscriptModal.tsx
+ï¿½   ï¿½   ï¿½       
+ï¿½   ï¿½   +---wellbeing
+ï¿½   ï¿½           AssistanceLevelPopover.tsx
+ï¿½   ï¿½           
+ï¿½   +---config
+ï¿½   ï¿½       nav.ts
+ï¿½   ï¿½       
+ï¿½   +---constants
+ï¿½   ï¿½       Routes.ts
+ï¿½   ï¿½       
+ï¿½   +---context
+ï¿½   ï¿½       DurmahContext.tsx
+ï¿½   ï¿½       
+ï¿½   +---data
+ï¿½   ï¿½   +---durham
+ï¿½   ï¿½       +---llb
+ï¿½   ï¿½               academic_year_2025_26.ts
+ï¿½   ï¿½               index.ts
+ï¿½   ï¿½               
+ï¿½   +---hooks
+ï¿½   ï¿½       useContextDetection.ts
+ï¿½   ï¿½       useConversationManagement.ts
+ï¿½   ï¿½       useDurmahVoice.ts
+ï¿½   ï¿½       usePreviewState.ts
+ï¿½   ï¿½       useScrollToTop.ts
+ï¿½   ï¿½       useUserDisplayName.ts
+ï¿½   ï¿½       
+ï¿½   +---lib
+ï¿½   ï¿½   ï¿½   authRedirect.ts
+ï¿½   ï¿½   ï¿½   buildUserSystemPrompt.ts
+ï¿½   ï¿½   ï¿½   durmahConfig.ts
+ï¿½   ï¿½   ï¿½   durmahPrompt.ts
+ï¿½   ï¿½   ï¿½   elevenlabs.ts
+ï¿½   ï¿½   ï¿½   env.ts
+ï¿½   ï¿½   ï¿½   openai-basic.ts
+ï¿½   ï¿½   ï¿½   openai.ts
+ï¿½   ï¿½   ï¿½   supabase-browser.ts
+ï¿½   ï¿½   ï¿½   types.ts
+ï¿½   ï¿½   ï¿½   uploadToSupabase.ts
+ï¿½   ï¿½   ï¿½   utils.ts
+ï¿½   ï¿½   ï¿½   withAuthProtection.tsx
+ï¿½   ï¿½   ï¿½   
+ï¿½   ï¿½   +---academic
+ï¿½   ï¿½   ï¿½       academicData.ts
+ï¿½   ï¿½   ï¿½       preview.ts
+ï¿½   ï¿½   ï¿½       
+ï¿½   ï¿½   +---auth
+ï¿½   ï¿½   ï¿½       dataWriteHelpers.ts
+ï¿½   ï¿½   ï¿½       getUserProfile.ts
+ï¿½   ï¿½   ï¿½       
+ï¿½   ï¿½   +---client
+ï¿½   ï¿½   ï¿½       apiClient.ts
+ï¿½   ï¿½   ï¿½       
+ï¿½   ï¿½   +---date
+ï¿½   ï¿½   ï¿½       format.ts
+ï¿½   ï¿½   ï¿½       
+ï¿½   ï¿½   +---durham
+ï¿½   ï¿½   ï¿½       academicCalendar.ts
+ï¿½   ï¿½   ï¿½       activities.ts
+ï¿½   ï¿½   ï¿½       delsa.ts
+ï¿½   ï¿½   ï¿½       modules.ts
+ï¿½   ï¿½   ï¿½       
+ï¿½   ï¿½   +---hooks
+ï¿½   ï¿½   ï¿½       useBookmarks.ts
+ï¿½   ï¿½   ï¿½       useCalendarData.ts
+ï¿½   ï¿½   ï¿½       useDurmahSpeech.ts
+ï¿½   ï¿½   ï¿½       useDurmahVoiceMode.ts
+ï¿½   ï¿½   ï¿½       useDurmahVoiceSession.ts
+ï¿½   ï¿½   ï¿½       useMemory.ts
+ï¿½   ï¿½   ï¿½       useUserType.ts
+ï¿½   ï¿½   ï¿½       
+ï¿½   ï¿½   +---ics
+ï¿½   ï¿½   ï¿½       export.ts
+ï¿½   ï¿½   ï¿½       
+ï¿½   ï¿½   +---integrity
+ï¿½   ï¿½   ï¿½       humanMode.ts
+ï¿½   ï¿½   ï¿½       originality.ts
+ï¿½   ï¿½   ï¿½       provenance.ts
+ï¿½   ï¿½   ï¿½       
+ï¿½   ï¿½   +---middleware
+ï¿½   ï¿½   ï¿½       rateLimiter.ts
+ï¿½   ï¿½   ï¿½       
+ï¿½   ï¿½   +---news
+ï¿½   ï¿½   ï¿½       fetchLatestLegalNews.ts
+ï¿½   ï¿½   ï¿½       fetchRealLegalNews.ts
+ï¿½   ï¿½   ï¿½       
+ï¿½   ï¿½   +---planner
+ï¿½   ï¿½   ï¿½       links.ts
+ï¿½   ï¿½   ï¿½       
+ï¿½   ï¿½   +---podcast
+ï¿½   ï¿½   ï¿½       prompt.ts
+ï¿½   ï¿½   ï¿½       
+ï¿½   ï¿½   +---prompts
+ï¿½   ï¿½   ï¿½   +---MemoryManagerAgent
+ï¿½   ï¿½   ï¿½           prompt.ts
+ï¿½   ï¿½   ï¿½           
+ï¿½   ï¿½   +---rss
+ï¿½   ï¿½   ï¿½       cronScheduler.ts
+ï¿½   ï¿½   ï¿½       init.ts
+ï¿½   ï¿½   ï¿½       logger.ts
+ï¿½   ï¿½   ï¿½       README.md
+ï¿½   ï¿½   ï¿½       rssScheduler.ts
+ï¿½   ï¿½   ï¿½       schema.sql
+ï¿½   ï¿½   ï¿½       
+ï¿½   ï¿½   +---security
+ï¿½   ï¿½   ï¿½       apiSecurity.ts
+ï¿½   ï¿½   ï¿½       encryption.ts
+ï¿½   ï¿½   ï¿½       
+ï¿½   ï¿½   +---server
+ï¿½   ï¿½   ï¿½       embeddings.ts
+ï¿½   ï¿½   ï¿½       openai.ts
+ï¿½   ï¿½   ï¿½       supabaseAdmin.ts
+ï¿½   ï¿½   ï¿½       
+ï¿½   ï¿½   +---services
+ï¿½   ï¿½   ï¿½       presenceService.ts
+ï¿½   ï¿½   ï¿½       videoCallService.ts
+ï¿½   ï¿½   ï¿½       
+ï¿½   ï¿½   +---session
+ï¿½   ï¿½   ï¿½       getActiveYear.ts
+ï¿½   ï¿½   ï¿½       
+ï¿½   ï¿½   +---supabase
+ï¿½   ï¿½   ï¿½       aiHistory.ts
+ï¿½   ï¿½   ï¿½       alwaysWithYouSchema.sql
+ï¿½   ï¿½   ï¿½       auth.ts
+ï¿½   ï¿½   ï¿½       AuthContext.tsx
+ï¿½   ï¿½   ï¿½       browser.ts
+ï¿½   ï¿½   ï¿½       client.ts
+ï¿½   ï¿½   ï¿½       feedback.ts
+ï¿½   ï¿½   ï¿½       onboardingSchema.sql
+ï¿½   ï¿½   ï¿½       server.ts
+ï¿½   ï¿½   ï¿½       storage.ts
+ï¿½   ï¿½   ï¿½       
+ï¿½   ï¿½   +---syllabus
+ï¿½   ï¿½   ï¿½       fetch.ts
+ï¿½   ï¿½   ï¿½       schema.ts
+ï¿½   ï¿½   ï¿½       
+ï¿½   ï¿½   +---tts
+ï¿½   ï¿½   ï¿½       elevenLabsClient.ts
+ï¿½   ï¿½   ï¿½       
+ï¿½   ï¿½   +---types
+ï¿½   ï¿½   ï¿½       alwaysWithYou.ts
+ï¿½   ï¿½   ï¿½       
+ï¿½   ï¿½   +---utils
+ï¿½   ï¿½   ï¿½       getOrigin.ts
+ï¿½   ï¿½   ï¿½       logger.ts
+ï¿½   ï¿½   ï¿½       metadata-storage.ts
+ï¿½   ï¿½   ï¿½       
+ï¿½   ï¿½   +---voice
+ï¿½   ï¿½           guardrails.ts
+ï¿½   ï¿½           llmRouter.ts
+ï¿½   ï¿½           queuePlayer.ts
+ï¿½   ï¿½           supabaseStore.ts
+ï¿½   ï¿½           ttsController.ts
+ï¿½   ï¿½           ttsEleven.ts
+ï¿½   ï¿½           
+ï¿½   +---pages
+ï¿½   ï¿½   ï¿½   about.tsx
+ï¿½   ï¿½   ï¿½   assignment-generator.tsx
+ï¿½   ï¿½   ï¿½   assignments.tsx
+ï¿½   ï¿½   ï¿½   calendar.tsx
+ï¿½   ï¿½   ï¿½   colonaive-demo.tsx
+ï¿½   ï¿½   ï¿½   community-hub.tsx
+ï¿½   ï¿½   ï¿½   community-network.tsx
+ï¿½   ï¿½   ï¿½   complete-profile.tsx
+ï¿½   ï¿½   ï¿½   csr-showcase.tsx
+ï¿½   ï¿½   ï¿½   debug-auth.tsx
+ï¿½   ï¿½   ï¿½   ethics.tsx
+ï¿½   ï¿½   ï¿½   index.tsx
+ï¿½   ï¿½   ï¿½   lectures.tsx
+ï¿½   ï¿½   ï¿½   login.tsx
+ï¿½   ï¿½   ï¿½   LoginRedirectPage.tsx
+ï¿½   ï¿½   ï¿½   loved-one-dashboard.tsx
+ï¿½   ï¿½   ï¿½   loved-one-login.tsx
+ï¿½   ï¿½   ï¿½   memory-journal.tsx
+ï¿½   ï¿½   ï¿½   movement-pillars.tsx
+ï¿½   ï¿½   ï¿½   references.tsx
+ï¿½   ï¿½   ï¿½   research-hub.tsx
+ï¿½   ï¿½   ï¿½   settings.tsx
+ï¿½   ï¿½   ï¿½   signup.tsx
+ï¿½   ï¿½   ï¿½   study-materials.tsx
+ï¿½   ï¿½   ï¿½   study-schedule.tsx
+ï¿½   ï¿½   ï¿½   tour.tsx
+ï¿½   ï¿½   ï¿½   vision-2035.tsx
+ï¿½   ï¿½   ï¿½   voice-debug.tsx
+ï¿½   ï¿½   ï¿½   wellbeing.tsx
+ï¿½   ï¿½   ï¿½   _app.tsx
+ï¿½   ï¿½   ï¿½   _document.tsx
+ï¿½   ï¿½   ï¿½   
+ï¿½   ï¿½   +---admin
+ï¿½   ï¿½   ï¿½       SuperAdminDashboard.tsx
+ï¿½   ï¿½   ï¿½       
+ï¿½   ï¿½   +---api
+ï¿½   ï¿½   ï¿½   ï¿½   assignment-generator.ts
+ï¿½   ï¿½   ï¿½   ï¿½   chat-stream.ts
+ï¿½   ï¿½   ï¿½   ï¿½   chat.ts
+ï¿½   ï¿½   ï¿½   ï¿½   contact.ts
+ï¿½   ï¿½   ï¿½   ï¿½   preview-state.ts
+ï¿½   ï¿½   ï¿½   ï¿½   rss-news.ts
+ï¿½   ï¿½   ï¿½   ï¿½   rss-scheduler.ts
+ï¿½   ï¿½   ï¿½   ï¿½   rss-test.ts
+ï¿½   ï¿½   ï¿½   ï¿½   tts.ts
+ï¿½   ï¿½   ï¿½   ï¿½   wellbeing-coach.ts
+ï¿½   ï¿½   ï¿½   ï¿½   whisper.ts
+ï¿½   ï¿½   ï¿½   ï¿½   
+ï¿½   ï¿½   ï¿½   +---assistant
+ï¿½   ï¿½   ï¿½   ï¿½       human-mode.ts
+ï¿½   ï¿½   ï¿½   ï¿½       
+ï¿½   ï¿½   ï¿½   +---awy
+ï¿½   ï¿½   ï¿½   ï¿½       signaling.ts
+ï¿½   ï¿½   ï¿½   ï¿½       
+ï¿½   ï¿½   ï¿½   +---calendar
+ï¿½   ï¿½   ï¿½   ï¿½       day.ts
+ï¿½   ï¿½   ï¿½   ï¿½       month.ts
+ï¿½   ï¿½   ï¿½   ï¿½       multi-year.ts
+ï¿½   ï¿½   ï¿½   ï¿½       progress.ts
+ï¿½   ï¿½   ï¿½   ï¿½       week.ts
+ï¿½   ï¿½   ï¿½   ï¿½       year.ts
+ï¿½   ï¿½   ï¿½   ï¿½       
+ï¿½   ï¿½   ï¿½   +---durmah
+ï¿½   ï¿½   ï¿½   ï¿½       chat-stream.ts
+ï¿½   ï¿½   ï¿½   ï¿½       chat.ts
+ï¿½   ï¿½   ï¿½   ï¿½       delete-transcript.ts
+ï¿½   ï¿½   ï¿½   ï¿½       save-transcript.ts
+ï¿½   ï¿½   ï¿½   ï¿½       transcribe.ts
+ï¿½   ï¿½   ï¿½   ï¿½       tts.ts
+ï¿½   ï¿½   ï¿½   ï¿½       
+ï¿½   ï¿½   ï¿½   +---news
+ï¿½   ï¿½   ï¿½   ï¿½       analyze.ts
+ï¿½   ï¿½   ï¿½   ï¿½       
+ï¿½   ï¿½   ï¿½   +---podcast
+ï¿½   ï¿½   ï¿½   ï¿½       generate.ts
+ï¿½   ï¿½   ï¿½   ï¿½       
+ï¿½   ï¿½   ï¿½   +---profile
+ï¿½   ï¿½   ï¿½   ï¿½       ensure.ts
+ï¿½   ï¿½   ï¿½   ï¿½       update-year.ts
+ï¿½   ï¿½   ï¿½   ï¿½       
+ï¿½   ï¿½   ï¿½   +---push
+ï¿½   ï¿½   ï¿½   ï¿½       subscribe.ts
+ï¿½   ï¿½   ï¿½   ï¿½       
+ï¿½   ï¿½   ï¿½   +---stream
+ï¿½   ï¿½   ï¿½   ï¿½       gpt4.ts
+ï¿½   ï¿½   ï¿½   ï¿½       
+ï¿½   ï¿½   ï¿½   +---trial
+ï¿½   ï¿½   ï¿½   ï¿½       activateYear.ts
+ï¿½   ï¿½   ï¿½   ï¿½       clear.ts
+ï¿½   ï¿½   ï¿½   ï¿½       persona.ts
+ï¿½   ï¿½   ï¿½   ï¿½       status.ts
+ï¿½   ï¿½   ï¿½   ï¿½       
+ï¿½   ï¿½   ï¿½   +---tts
+ï¿½   ï¿½   ï¿½   ï¿½       elevenlabs.ts
+ï¿½   ï¿½   ï¿½   ï¿½       stream.ts
+ï¿½   ï¿½   ï¿½   ï¿½       
+ï¿½   ï¿½   ï¿½   +---voice
+ï¿½   ï¿½   ï¿½   ï¿½       chat.ts
+ï¿½   ï¿½   ï¿½   ï¿½       transcribe.ts
+ï¿½   ï¿½   ï¿½   ï¿½       tts.ts
+ï¿½   ï¿½   ï¿½   ï¿½       
+ï¿½   ï¿½   ï¿½   +---writing-samples
+ï¿½   ï¿½   ï¿½           index.ts
+ï¿½   ï¿½   ï¿½           similar.ts
+ï¿½   ï¿½   ï¿½           [id].ts
+ï¿½   ï¿½   ï¿½           
+ï¿½   ï¿½   +---assignments
+ï¿½   ï¿½   ï¿½       human-mode.tsx
+ï¿½   ï¿½   ï¿½       
+ï¿½   ï¿½   +---auth
+ï¿½   ï¿½   ï¿½       callback.tsx
+ï¿½   ï¿½   ï¿½       
+ï¿½   ï¿½   +---dashboard
+ï¿½   ï¿½   ï¿½       foundation.tsx
+ï¿½   ï¿½   ï¿½       index.tsx
+ï¿½   ï¿½   ï¿½       year1.tsx
+ï¿½   ï¿½   ï¿½       year2.tsx
+ï¿½   ï¿½   ï¿½       year3.tsx
+ï¿½   ï¿½   ï¿½       
+ï¿½   ï¿½   +---legal
+ï¿½   ï¿½   ï¿½   ï¿½   cookie-policy.tsx
+ï¿½   ï¿½   ï¿½   ï¿½   ethics.tsx
+ï¿½   ï¿½   ï¿½   ï¿½   privacy-policy.tsx
+ï¿½   ï¿½   ï¿½   ï¿½   terms-of-use.tsx
+ï¿½   ï¿½   ï¿½   ï¿½   
+ï¿½   ï¿½   ï¿½   +---tools
+ï¿½   ï¿½   ï¿½           legal-news-feed.tsx
+ï¿½   ï¿½   ï¿½           legal-news-settings.tsx
+ï¿½   ï¿½   ï¿½           
+ï¿½   ï¿½   +---lounge
+ï¿½   ï¿½   ï¿½   ï¿½   index.tsx
+ï¿½   ï¿½   ï¿½   ï¿½   
+ï¿½   ï¿½   ï¿½   +---profile
+ï¿½   ï¿½   ï¿½           [userId].tsx
+ï¿½   ï¿½   ï¿½           
+ï¿½   ï¿½   +---onboarding
+ï¿½   ï¿½   ï¿½       index.tsx
+ï¿½   ï¿½   ï¿½       OnboardingPage.tsx
+ï¿½   ï¿½   ï¿½       README.md
+ï¿½   ï¿½   ï¿½       
+ï¿½   ï¿½   +---planner
+ï¿½   ï¿½   ï¿½   ï¿½   year-at-a-glance.tsx
+ï¿½   ï¿½   ï¿½   ï¿½   
+ï¿½   ï¿½   ï¿½   +---year-at-a-glance
+ï¿½   ï¿½   ï¿½   ï¿½       index.tsx
+ï¿½   ï¿½   ï¿½   ï¿½       
+ï¿½   ï¿½   ï¿½   +---[year]
+ï¿½   ï¿½   ï¿½       ï¿½   contribute.tsx
+ï¿½   ï¿½   ï¿½       ï¿½   index.tsx
+ï¿½   ï¿½   ï¿½       ï¿½   
+ï¿½   ï¿½   ï¿½       +---[term]
+ï¿½   ï¿½   ï¿½           ï¿½   index.tsx
+ï¿½   ï¿½   ï¿½           ï¿½   
+ï¿½   ï¿½   ï¿½           +---week
+ï¿½   ï¿½   ï¿½                   [n].tsx
+ï¿½   ï¿½   ï¿½                   
+ï¿½   ï¿½   +---tools
+ï¿½   ï¿½   ï¿½       attendance.tsx
+ï¿½   ï¿½   ï¿½       memory-manager.tsx
+ï¿½   ï¿½   ï¿½       memory.tsx
+ï¿½   ï¿½   ï¿½       
+ï¿½   ï¿½   +---year-at-a-glance
+ï¿½   ï¿½           index.tsx
+ï¿½   ï¿½           month.tsx
+ï¿½   ï¿½           week.tsx
+ï¿½   ï¿½           
+ï¿½   +---server
+ï¿½   ï¿½       openai.ts
+ï¿½   ï¿½       
+ï¿½   +---sql
+ï¿½   ï¿½       admin-crm-tables.sql
+ï¿½   ï¿½       supabase_migration_premier_lounge.sql
+ï¿½   ï¿½       supabase_migration_premier_lounge_final.sql
+ï¿½   ï¿½       supabase_migration_premier_lounge_patch.sql
+ï¿½   ï¿½       supabase_storage_bucket_fallback.sql
+ï¿½   ï¿½       
+ï¿½   +---styles
+ï¿½   ï¿½       globals.css
+ï¿½   ï¿½       
+ï¿½   +---types
+ï¿½           calendar.ts
+ï¿½           chat.ts
+ï¿½           speech.d.ts
+ï¿½           supabase.ts
+ï¿½           voice.ts
+ï¿½           
 +---supabase
-¦   ¦   config.toml
-¦   ¦   schema_academic_planner.sql
-¦   ¦   
-¦   +---functions
-¦   ¦       mark_onboarding_progress.tstsCopyEdit
-¦   ¦       
-¦   +---migrations
-¦           20240808000001_year_lock.sql
-¦           20240808000002_integrityshield.sql
-¦           2025-08-10_fix_lounge_rpcs.sql
-¦           20250115000000_awy_push_and_signals.sql
-¦           20250731121300_remote_schema.sql
-¦           20250731122642_fix_profiles_table_schema.sql
-¦           20250731124121_add_missing_tables_only.sql
-¦           20250731124928_fix_existing_tables_rls.sql
-¦           20250731131500_update_handle_new_user_function.sql
-¦           20250801000000_fix_oauth_profile_creation.sql
-¦           20250801010000_streamline_signup_flow.sql
-¦           20250801020000_complete_backend_sync.sql
-¦           20250801030000_enhanced_rls_policies.sql
-¦           20250802120000_create_voice_journals_table.sql
-¦           20250802140000_create_news_tables.sql
-¦           20250808000003_trial_personas.sql
-¦           20250808000004_create_voice_sessions.sql
-¦           20250808000005_create_voice_messages.sql
-¦           20250808000006_create_voice_settings.sql
-¦           20250809000001_durmah_voice_system.sql
-¦           20250815_planner_core.sql
-¦           20250815_profiles_year_field.sql
-¦           20250816_create_specialists_table.sql
-¦           
+ï¿½   ï¿½   config.toml
+ï¿½   ï¿½   schema_academic_planner.sql
+ï¿½   ï¿½   
+ï¿½   +---functions
+ï¿½   ï¿½       mark_onboarding_progress.tstsCopyEdit
+ï¿½   ï¿½       
+ï¿½   +---migrations
+ï¿½           20240808000001_year_lock.sql
+ï¿½           20240808000002_integrityshield.sql
+ï¿½           2025-08-10_fix_lounge_rpcs.sql
+ï¿½           20250115000000_awy_push_and_signals.sql
+ï¿½           20250731121300_remote_schema.sql
+ï¿½           20250731122642_fix_profiles_table_schema.sql
+ï¿½           20250731124121_add_missing_tables_only.sql
+ï¿½           20250731124928_fix_existing_tables_rls.sql
+ï¿½           20250731131500_update_handle_new_user_function.sql
+ï¿½           20250801000000_fix_oauth_profile_creation.sql
+ï¿½           20250801010000_streamline_signup_flow.sql
+ï¿½           20250801020000_complete_backend_sync.sql
+ï¿½           20250801030000_enhanced_rls_policies.sql
+ï¿½           20250802120000_create_voice_journals_table.sql
+ï¿½           20250802140000_create_news_tables.sql
+ï¿½           20250808000003_trial_personas.sql
+ï¿½           20250808000004_create_voice_sessions.sql
+ï¿½           20250808000005_create_voice_messages.sql
+ï¿½           20250808000006_create_voice_settings.sql
+ï¿½           20250809000001_durmah_voice_system.sql
+ï¿½           20250815_planner_core.sql
+ï¿½           20250815_profiles_year_field.sql
+ï¿½           20250816_create_specialists_table.sql
+ï¿½           
 +---tests
     +---e2e
-    ¦       voice-dock.spec.ts
-    ¦       
+    ï¿½       voice-dock.spec.ts
+    ï¿½       
     +---setup
-    ¦       vitest.polyfills.ts
-    ¦       
+    ï¿½       vitest.polyfills.ts
+    ï¿½       
     +---unit
             ttsController.spec.ts
             

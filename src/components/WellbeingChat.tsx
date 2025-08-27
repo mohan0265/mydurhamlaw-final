@@ -12,7 +12,7 @@ import {
   streamGPT4oResponse, 
   interruptVoice, 
 } from '@/lib/openai'
-import durmahConfig, { detectSpeechEnd } from '@/lib/durmahConfig'
+// Durmah config removed - using fallback speech detection
 import { AssistanceLevel } from './wellbeing/AssistanceLevelPopover'
 import { speakWithElevenLabs, stop as stopTTS, isSpeaking } from '@/lib/tts/elevenLabsClient'
 import toast from 'react-hot-toast'
@@ -58,7 +58,6 @@ interface WellbeingChatProps {
   className?: string
   assistanceLevel: AssistanceLevel
   pledgedAt: string | null
-  onPledgeRequired: () => void
 }
 
 export const WellbeingChat: React.FC<WellbeingChatProps> = ({
@@ -74,7 +73,6 @@ export const WellbeingChat: React.FC<WellbeingChatProps> = ({
   className = "",
   assistanceLevel,
   pledgedAt,
-  onPledgeRequired,
 }) => {
   const { user, userProfile } = useAuth()
   const [messages, setMessages] = useState<Message[]>([])
@@ -83,6 +81,13 @@ export const WellbeingChat: React.FC<WellbeingChatProps> = ({
   const [isListening, setIsListening] = useState(false)
   const [isTTSSpeaking, setIsTTSSpeaking] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  
+  // Local function to handle pledge requirement
+  const onPledgeRequired = () => {
+    toast.error('Please acknowledge the academic integrity pledge before chatting.')
+    // Could redirect to pledge page or show modal
+    // For now, just show a toast notification
+  }
   
   // Voice recognition setup
   const recognitionRef = useRef<SpeechRecognition | null>(null)
@@ -166,7 +171,8 @@ export const WellbeingChat: React.FC<WellbeingChatProps> = ({
             }
             
             // Check if this looks like a complete thought
-            if (detectSpeechEnd(finalTranscript.trim())) {
+            // Simple speech end detection fallback
+            if (finalTranscript.trim().length > 3 && (finalTranscript.endsWith('.') || finalTranscript.endsWith('?') || finalTranscript.endsWith('!'))) {
               console.log('🏁 Detected speech end, stopping after delay')
               // Give a moment for any additional speech
               silenceTimerRef.current = setTimeout(() => {
@@ -355,7 +361,7 @@ export const WellbeingChat: React.FC<WellbeingChatProps> = ({
     } finally {
       setIsLoading(false)
     }
-  }, [messages, user, userProfile, isListening, handleVoiceStop, assistanceLevel, pledgedAt, onPledgeRequired])
+  }, [messages, user, userProfile, isListening, handleVoiceStop, assistanceLevel, pledgedAt])
 
   // Handle suggestion clicks
   const handleSuggestionClick = useCallback((suggestion: string) => {

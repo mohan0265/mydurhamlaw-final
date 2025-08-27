@@ -34,8 +34,7 @@ interface ResponsiveSidebarProps {
 }
 
 export default function ResponsiveSidebar({ className }: ResponsiveSidebarProps) {
-  if (!ENABLE_SIDEBAR) return null
-  
+  // Always call hooks before early returns
   const router = useRouter()
   const { getDashboardRoute } = useContext(AuthContext)
   const [user, setUser] = useState<any>(null)
@@ -142,6 +141,9 @@ export default function ResponsiveSidebar({ className }: ResponsiveSidebarProps)
     }
     getUser()
   }, [])
+
+  // Early return after all hooks are called
+  if (!ENABLE_SIDEBAR) return null
 
   const handleLogout = async () => {
     const supabase = getSupabaseClient()

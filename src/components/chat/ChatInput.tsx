@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { Send, Mic, Square } from 'lucide-react'
-import durmahConfig, { detectSpeechEnd, isInterruptionIntent } from '@/lib/durmahConfig'
+// Durmah config removed - using fallback speech detection
 
 interface ChatInputProps {
   onSendMessage?: (message: string) => void
@@ -73,8 +73,8 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   }, [inputValue, disabled, isVoicePlaying, onInterruptVoice, onSendMessage, externalInput, externalOnSubmit])
   
   const triggerAutoSubmit = useCallback(() => {
-    if (inputValue.trim() && durmahConfig.voice.autoSubmit && !disabled) {
-      if (durmahConfig.debug.enabled) {
+    if (inputValue.trim() && !disabled) {
+      if (process.env.NODE_ENV === 'development') {
         console.log('🚀 Auto-submitting after pause detection:', inputValue.slice(0, 30) + '...')
       }
       
@@ -97,7 +97,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     // Set new pause detection timer
     pauseTimerRef.current = setTimeout(() => {
       triggerAutoSubmit()
-    }, durmahConfig.voice.pauseDetectionMs)
+    }, 1500) // 1.5 second fallback
   }, [triggerAutoSubmit])
   
   // Handle transcript updates (for voice input)
@@ -117,7 +117,8 @@ export const ChatInput: React.FC<ChatInputProps> = ({
       lastTranscriptRef.current = newTranscript
       
       // Check for immediate submission triggers (punctuation)
-      if (detectSpeechEnd(newTranscript) && durmahConfig.voice.autoSubmit) {
+      // Simple speech end detection fallback
+      if (newTranscript.trim().length > 3 && (newTranscript.endsWith('.') || newTranscript.endsWith('?') || newTranscript.endsWith('!'))) {
         // Small delay to allow for additional speech
         setTimeout(() => {
           if (inputValue.trim()) {
@@ -173,7 +174,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 
   // Auto-focus and mobile optimization
   useEffect(() => {
-    if (inputRef.current && !disabled && durmahConfig.mobile.autoFocus) {
+    if (inputRef.current && !disabled) {
       // Small delay to ensure proper focus on mobile
       setTimeout(() => {
         inputRef.current?.focus()

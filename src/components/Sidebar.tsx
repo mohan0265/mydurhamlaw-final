@@ -8,9 +8,11 @@ import { useState, useContext } from 'react'
 import { AuthContext } from '@/lib/supabase/AuthContext'
 
 export default function Sidebar() {
-  if (!ENABLE_SIDEBAR) return null
+  // Always call hooks before early returns
   const [isOpen, setIsOpen] = useState(true)
   const { getDashboardRoute } = useContext(AuthContext)
+  
+  if (!ENABLE_SIDEBAR) return null
 
   // Provide a safe default function if getDashboardRoute is undefined
   const safeDashboardRoute = getDashboardRoute ? getDashboardRoute() : '/dashboard';

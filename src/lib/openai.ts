@@ -1,6 +1,6 @@
 import { Message } from '@/types/chat'
 import { buildUserSystemPrompt } from './buildUserSystemPrompt'
-import { getDurmahPrompt } from './durmahConfig'
+// Durmah prompts removed - using standard system prompts
 import { AssistanceLevel } from '@/components/wellbeing/AssistanceLevelPopover'
 
 export interface StreamResponse {
@@ -79,11 +79,12 @@ export async function streamGPT4oResponse(
   
   const lastUserMessage = messages[messages.length - 1]?.content || ''
   const baseSystemPrompt = await buildUserSystemPrompt(userId)
-  const durmahPrompt = getDurmahPrompt(lastUserMessage, mode)
+  // Standard wellbeing prompt for voice interactions
+  const wellbeingPrompt = 'You are a supportive AI companion for Durham Law students. Provide encouraging, helpful responses in a conversational tone.'
   const assistancePrompt = metadata ? getAssistanceLevelPrompt(metadata.assistanceLevel) : ''
 
   const apiMessages = [
-    { role: 'system', content: `${baseSystemPrompt}\n\n${assistancePrompt}\n\n${durmahPrompt}` },
+    { role: 'system', content: `${baseSystemPrompt}\n\n${assistancePrompt}` },
     ...messages.map(msg => ({ role: msg.role, content: msg.content }))
   ]
 

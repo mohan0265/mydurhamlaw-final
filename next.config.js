@@ -48,14 +48,8 @@ const nextConfig = {
     Object.assign(alias, {
       'react-query': '@tanstack/react-query',
       'react-query/devtools': '@tanstack/react-query-devtools',
-      // Durmah/AWY stub aliases
-      '@/components/DurmahWidget': stub('src/stubs/NullWidget.tsx'),
-      '@/components/LegalEagleBuddy': stub('src/stubs/NullWidget.tsx'),
-      '@/components/FloatingDurmah': stub('src/stubs/NullWidget.tsx'),
-      '@/components/FloatingAWY': stub('src/stubs/NullWidget.tsx'),
-      '@/components/AWYBootstrap': stub('src/stubs/NullWidget.tsx'),
-      '@/components/ui/DurmahLogo': stub('src/stubs/NullWidget.tsx'),
-      '@/context/DurmahContext': stub('src/stubs/awy.ts'),
+      // Cleaned — all Durmah/AWY stubs removed for standalone widget
+
       'durmah': stub('src/stubs/NullWidget.tsx'),
       '@/durmah': stub('src/stubs/NullWidget.tsx'),
       '@durmah': stub('src/stubs/NullWidget.tsx'),
