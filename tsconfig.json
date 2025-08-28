@@ -72,7 +72,7 @@
     "pages/**/*.ts",
     "pages/**/*.tsx",
     ".next/types/**/*.ts"
-  ],
+, "src/data/durham/llb"  ],
   "exclude": [
     "node_modules",
     "supabase/**/*",

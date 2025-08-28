@@ -256,6 +256,10 @@ export const useCalendarData = ({
     queryClient.invalidateQueries({ queryKey: ['calendar'] })
   }, [queryClient])
 
+  // ✅ Inject term dates from the academic calendar
+const { termDates } = useAcademicCalendar(academicYear)
+
+
   return {
     // Data
     yearOverview,
@@ -284,6 +288,9 @@ export const useCalendarData = ({
 
     // Utils
     refreshAllData,
+
+      // NEW: Academic calendar term boundaries
+  termDates,
   }
 }
 
