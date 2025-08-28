@@ -79,24 +79,36 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const assessments_due = plan.modules.flatMap((module, moduleIndex) =>
       module.assessments
         .map((assessment, assessmentIndex) => {
-          const assessmentDate = format(new Date(assessment.due), 'yyyy-MM-dd')
+          // Handle different assessment types with different due date formats
+          let assessmentDate: string | null = null
+          if ('due' in assessment) {
+            assessmentDate = format(new Date(assessment.due), 'yyyy-MM-dd')
+          } else if ('window' in assessment) {
+            // For exams, use the start of the window
+            assessmentDate = format(new Date(assessment.window.start), 'yyyy-MM-dd')
+          }
+          
           if (assessmentDate === dateStr) {
             return {
               id: `assessment-${moduleIndex}-${assessmentIndex}`,
               module_id: String(moduleIndex + 1),
               title: `${module.title} ${assessment.type}`,
-              type: assessment.type.toLowerCase() as 'essay' | 'problem_question' | 'presentation' | 'moot' | 'exam' | 'dissertation',
+              type: assessment.type === 'Problem Question' ? 'coursework' :
+                    assessment.type === 'Moot' ? 'oral' :
+                    assessment.type === 'Dissertation' ? 'coursework' :
+                    assessment.type.toLowerCase() as 'essay' | 'presentation' | 'exam',
               due_at: `${dateStr}T23:59:59Z`,
               weight_percentage: assessment.weight || 0,
               description: assessment.type === 'Essay' ? 'Essay submission' : 
                            assessment.type === 'Problem Question' ? 'Problem question submission' : 
+                           assessment.type === 'Exam' ? 'Examination' :
                            `${assessment.type} submission`,
               status: 'not_started' as const,
             }
           }
           return null
         })
-        .filter(Boolean)
+        .filter((item): item is NonNullable<typeof item> => item !== null)
     )
 
     const detail: DayDetail = {

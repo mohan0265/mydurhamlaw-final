@@ -1,7 +1,6 @@
 import React from 'react'
 import { ModuleProgress, Module } from '@/types/calendar'
 import { Clock, MapPin, ChevronDown, ChevronRight } from 'lucide-react'
-import { ProgressBar } from '@/components/ui/ProgressBar'
 
 type TermData = {
   name: string
@@ -82,11 +81,12 @@ export const SemesterColumn: React.FC<SemesterColumnProps> = ({
 
         {/* Progress Bar */}
         <div className="mt-3">
-          <ProgressBar 
-            progress={progress} 
-            className="bg-white/20"
-            barClassName="bg-white"
-          />
+          <div className="w-full bg-white/20 rounded-full h-3 overflow-hidden">
+            <div 
+              className="h-3 bg-white rounded-full transition-all duration-300"
+              style={{ width: `${Math.max(0, Math.min(100, progress))}%` }}
+            />
+          </div>
         </div>
 
         {/* Term Summary */}

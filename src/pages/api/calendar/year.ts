@@ -99,13 +99,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const assessments = plan.modules.flatMap((module, moduleIndex) =>
       module.assessments.map((assessment, assessmentIndex) => {
         if (assessment.type === 'Exam') return null // Skip exams for next_deadline
+        
+        // Only handle assessments with 'due' field, not 'window'
+        if (!('due' in assessment)) return null
+        
         const dueDate = new Date(assessment.due)
         if (dueDate >= today && dueDate <= nextMonth) {
           return {
             id: `assessment-${moduleIndex}-${assessmentIndex}`,
             module_id: String(moduleIndex + 1),
             title: `${module.title} ${assessment.type}`,
-            type: assessment.type.toLowerCase() as 'essay' | 'problem_question' | 'presentation',
+            type: assessment.type === 'Problem Question' ? 'coursework' : 
+                  assessment.type.toLowerCase() as 'essay' | 'presentation',
             due_at: assessment.due + 'T23:59:59Z',
             weight_percentage: assessment.weight || 0,
             status: 'not_started' as const,
@@ -113,7 +118,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         }
         return null
       })
-    ).filter(Boolean)[0] // Take first upcoming assessment
+    ).filter((item): item is NonNullable<typeof item> => item !== null)[0] // Take first upcoming assessment
 
     const yearOverview: YearOverview = {
       academic_year: academicYear as string,

@@ -125,16 +125,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           if (inMonth) {
             plan.modules.forEach((module, moduleIndex) => {
               module.assessments.forEach((assessment, assessmentIndex) => {
-                const assessmentDate = format(new Date(assessment.due), 'yyyy-MM-dd')
+                // Handle different assessment types with different due date formats
+                let assessmentDate: string | null = null
+                if ('due' in assessment) {
+                  assessmentDate = format(new Date(assessment.due), 'yyyy-MM-dd')
+                } else if ('window' in assessment) {
+                  // For exams, use the start of the window
+                  assessmentDate = format(new Date(assessment.window.start), 'yyyy-MM-dd')
+                }
+                
                 if (assessmentDate === dateStr) {
                   events.push({
                     id: `assessment-${moduleIndex}-${assessmentIndex}`,
                     title: `${module.title} ${assessment.type}`,
-                    description: `${assessment.type} due`,
+                    description: assessment.type === 'Exam' ? 'Examination' : `${assessment.type} due`,
                     start_at: `${dateStr}T23:59:00Z`,
                     end_at: `${dateStr}T23:59:00Z`,
                     location: '',
-                    type: 'assessment',
+                    type: assessment.type === 'Exam' ? 'exam' : 'assessment',
                     module_id: String(moduleIndex + 1),
                     is_university_fixed: true,
                     is_all_day: true,
