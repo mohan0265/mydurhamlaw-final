@@ -14,6 +14,7 @@ import {
   YearNavigationState,
 } from '@/types/calendar'
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from 'date-fns'
+import { DURHAM_LLB_2025_26, getDefaultPlanByStudentYear } from '@/data/durham/llb'
 
 // add near the top
 async function authHeaders(): Promise<Record<string, string>> { // Explicitly define return type
@@ -257,7 +258,7 @@ export const useCalendarData = ({
   }, [queryClient])
 
   // ✅ Inject term dates from the academic calendar
-const { termDates } = useAcademicCalendar(academicYear)
+const { termDates } = useAcademicCalendar(academicYear, yearOfStudy)
 
 
   return {
@@ -326,13 +327,21 @@ export const useCalendarFilter = () => {
 }
 
 // —— Academic calendar helpers
-export const useAcademicCalendar = (academicYear: string = '2025/26') => {
+export const useAcademicCalendar = (academicYear: string = '2025/26', yearOfStudy: number = 1) => {
   const [currentTerm, setCurrentTerm] = useState<1 | 2 | 3 | 'vacation'>(1)
-  const [termDates] = useState({
-    term1: { start: '2025-10-07', end: '2025-12-06' },
-    term2: { start: '2026-01-13', end: '2026-03-14' },
-    term3: { start: '2026-04-26', end: '2026-06-17' },
-  })
+  
+  // Get term dates from the Durham dataset based on year of study
+  const termDates = useMemo(() => {
+    const normalizedYearGroup = yearOfStudy === 0 ? 'foundation' : `year${yearOfStudy}` as 'foundation'|'year1'|'year2'|'year3'
+    const plan = getDefaultPlanByStudentYear(normalizedYearGroup)
+    return {
+      term1: { start: plan.termDates.michaelmas.start, end: plan.termDates.michaelmas.end },
+      term2: { start: plan.termDates.epiphany.start, end: plan.termDates.epiphany.end },
+      term3: { start: plan.termDates.easter.start, end: plan.termDates.easter.end },
+      induction: plan.termDates.induction,
+      exams: plan.termDates.exams,
+    }
+  }, [yearOfStudy])
 
   useEffect(() => {
     const now = new Date()
