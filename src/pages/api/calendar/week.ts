@@ -2,7 +2,8 @@
 import { NextApiRequest, NextApiResponse } from 'next'
 import { getServerSupabase } from '@/lib/supabase/server'
 import { CalendarEvent, PersonalItem } from '@/types/calendar'
-import { format, addDays, startOfWeek } from 'date-fns'
+import { format, addDays, startOfWeek, isWithinInterval } from 'date-fns'
+import { DURHAM_LLB_2025_26, getDefaultPlanByStudentYear } from '@/data/durham/llb'
 
 // Force this API to use Node.js runtime instead of Edge Runtime
 export const config = { runtime: 'nodejs' }
@@ -14,12 +15,26 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    const { from, to } = req.query
+    const { from, to, programme = 'LLB', year = '1' } = req.query
     if (!from || !to || typeof from !== 'string' || typeof to !== 'string') {
       return res.status(400).json({ message: 'Missing from or to date parameters' })
     }
 
     const isDemoMode = process.env.NEXT_PUBLIC_DEMO_CALENDAR === 'true'
+    
+    // Get term dates to filter events
+    const yearOfStudy = Number(year) || 1
+    const normalizedYearGroup = yearOfStudy === 0 ? 'foundation' : `year${yearOfStudy}` as 'foundation'|'year1'|'year2'|'year3'
+    const plan = getDefaultPlanByStudentYear(normalizedYearGroup)
+    
+    // Helper to check if a date is within any term
+    const isWithinTermTime = (date: Date) => {
+      return (
+        isWithinInterval(date, { start: new Date(plan.termDates.michaelmas.start), end: new Date(plan.termDates.michaelmas.end) }) ||
+        isWithinInterval(date, { start: new Date(plan.termDates.epiphany.start), end: new Date(plan.termDates.epiphany.end) }) ||
+        isWithinInterval(date, { start: new Date(plan.termDates.easter.start), end: new Date(plan.termDates.easter.end) })
+      )
+    }
 
     // --- AUTH (supports Bearer token or cookie) ---
     const authHeader = String(req.headers.authorization || '')
@@ -45,145 +60,39 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const fromDate = new Date(from)
     const weekStart = startOfWeek(fromDate, { weekStartsOn: 1 })
 
-    // Mock university fixed events
+    // Only generate events from dataset assessments within term time
     const events: CalendarEvent[] = []
     for (let i = 0; i < 7; i++) {
       const day = addDays(weekStart, i)
       const dateStr = format(day, 'yyyy-MM-dd')
 
-      // Monday, Wednesday, Friday - Contract Law
-      if ([1, 3, 5].includes(day.getDay())) {
-        events.push({
-          id: `lecture-contract-${dateStr}`,
-          title: 'Contract Law Lecture',
-          description: 'Formation and Terms of Contracts',
-          start_at: `${dateStr}T10:00:00Z`,
-          end_at: `${dateStr}T11:00:00Z`,
-          location: 'Lecture Hall A',
-          type: 'lecture',
-          module_id: '3',
-          is_university_fixed: true,
-          is_all_day: false,
+      // Only add assessment events that are due on this specific date
+      plan.modules.forEach((module, moduleIndex) => {
+        module.assessments.forEach((assessment, assessmentIndex) => {
+          const assessmentDate = format(new Date(assessment.due), 'yyyy-MM-dd')
+          if (assessmentDate === dateStr) {
+            events.push({
+              id: `assessment-${moduleIndex}-${assessmentIndex}`,
+              title: `${module.title} ${assessment.type}`,
+              description: `${assessment.type} due`,
+              start_at: `${dateStr}T23:59:00Z`,
+              end_at: `${dateStr}T23:59:00Z`,
+              location: '',
+              type: 'assessment',
+              module_id: String(moduleIndex + 1),
+              is_university_fixed: true,
+              is_all_day: true,
+            })
+          }
         })
-      }
+      })
 
-      // Tuesday, Thursday - Constitutional Law
-      if ([2, 4].includes(day.getDay())) {
-        events.push({
-          id: `lecture-constitutional-${dateStr}`,
-          title: 'Constitutional Law Lecture',
-          description: 'Parliamentary Sovereignty and Rule of Law',
-          start_at: `${dateStr}T14:00:00Z`,
-          end_at: `${dateStr}T15:30:00Z`,
-          location: 'Lecture Hall B',
-          type: 'lecture',
-          module_id: '2',
-          is_university_fixed: true,
-          is_all_day: false,
-        })
-      }
-
-      // Wednesday - Tutorial
-      if (day.getDay() === 3) {
-        events.push({
-          id: `tutorial-${dateStr}`,
-          title: 'Legal Research Tutorial',
-          description: 'Small group tutorial on legal research methods',
-          start_at: `${dateStr}T16:00:00Z`,
-          end_at: `${dateStr}T17:00:00Z`,
-          location: 'Tutorial Room 5',
-          type: 'tutorial',
-          module_id: '1',
-          is_university_fixed: true,
-          is_all_day: false,
-        })
-      }
-
-      // Friday - Seminar
-      if (day.getDay() === 5) {
-        events.push({
-          id: `seminar-${dateStr}`,
-          title: 'Legal Ethics Seminar',
-          description: 'Discussion on professional conduct and ethics',
-          start_at: `${dateStr}T13:00:00Z`,
-          end_at: `${dateStr}T14:30:00Z`,
-          location: 'Seminar Room 2',
-          type: 'seminar',
-          module_id: '1',
-          is_university_fixed: true,
-          is_all_day: false,
-        })
-      }
+      // No longer generating mock lectures - these would come from official timetable data later
     }
 
-    // Mock personal study items
-    const personal_items: PersonalItem[] = [
-      {
-        id: 'study-1',
-        user_id: user.id,
-        title: 'Contract Law Reading',
-        type: 'study',
-        start_at: `${format(addDays(weekStart, 0), 'yyyy-MM-dd')}T19:00:00Z`,
-        end_at: `${format(addDays(weekStart, 0), 'yyyy-MM-dd')}T21:00:00Z`,
-        notes: 'Chapter 3: Consideration',
-        is_all_day: false,
-        module_id: '3',
-        priority: 'medium',
-        completed: false,
-      },
-      {
-        id: 'study-2',
-        user_id: user.id,
-        title: 'Constitutional Law Revision',
-        type: 'study',
-        start_at: `${format(addDays(weekStart, 1), 'yyyy-MM-dd')}T20:00:00Z`,
-        end_at: `${format(addDays(weekStart, 1), 'yyyy-MM-dd')}T22:00:00Z`,
-        notes: 'Review lecture notes and prepare for seminar',
-        is_all_day: false,
-        module_id: '2',
-        priority: 'high',
-        completed: false,
-      },
-      {
-        id: 'task-1',
-        user_id: user.id,
-        title: 'Essay Outline',
-        type: 'task',
-        start_at: `${format(addDays(weekStart, 2), 'yyyy-MM-dd')}T18:00:00Z`,
-        end_at: `${format(addDays(weekStart, 2), 'yyyy-MM-dd')}T19:30:00Z`,
-        notes: 'Create detailed outline for constitutional law essay',
-        is_all_day: false,
-        module_id: '2',
-        priority: 'high',
-        completed: false,
-      },
-      {
-        id: 'study-3',
-        user_id: user.id,
-        title: 'Legal Research Practice',
-        type: 'study',
-        start_at: `${format(addDays(weekStart, 3), 'yyyy-MM-dd')}T15:00:00Z`,
-        end_at: `${format(addDays(weekStart, 3), 'yyyy-MM-dd')}T17:00:00Z`,
-        notes: 'Practice using legal databases and citation',
-        is_all_day: false,
-        module_id: '1',
-        priority: 'medium',
-        completed: false,
-      },
-      {
-        id: 'study-4',
-        user_id: user.id,
-        title: 'Weekend Review Session',
-        type: 'study',
-        start_at: `${format(addDays(weekStart, 5), 'yyyy-MM-dd')}T10:00:00Z`,
-        end_at: `${format(addDays(weekStart, 5), 'yyyy-MM-dd')}T13:00:00Z`,
-        notes: 'Weekly review of all modules',
-        is_all_day: false,
-        module_id: '',
-        priority: 'low',
-        completed: false,
-      },
-    ]
+    // Fetch personal items from Supabase (real data, not mock)
+    // For now, return empty array - personal items will come from Supabase queries later
+    const personal_items: PersonalItem[] = []
 
     return res.status(200).json({ events, personal_items })
   } catch (error) {

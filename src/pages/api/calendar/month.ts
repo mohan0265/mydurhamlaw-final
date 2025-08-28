@@ -9,7 +9,9 @@ import {
   startOfWeek,
   endOfWeek,
   isSameMonth,
+  isWithinInterval,
 } from 'date-fns'
+import { DURHAM_LLB_2025_26, getDefaultPlanByStudentYear } from '@/data/durham/llb'
 
 // Force this API to run on Node (not Edge)
 export const config = { runtime: 'nodejs' }
@@ -33,13 +35,28 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    const { from, to } = req.query
+    const { from, to, programme = 'LLB', year = '1' } = req.query
     if (!from || !to || typeof from !== 'string' || typeof to !== 'string') {
       return res.status(400).json({ message: 'Missing from or to date parameters' })
     }
 
     const isDemoMode = process.env.NEXT_PUBLIC_DEMO_CALENDAR === 'true'
     const fromDate = new Date(from)
+    
+    // Get term dates to filter events
+    const yearOfStudy = Number(year) || 1
+    const normalizedYearGroup = yearOfStudy === 0 ? 'foundation' : `year${yearOfStudy}` as 'foundation'|'year1'|'year2'|'year3'
+    const plan = getDefaultPlanByStudentYear(normalizedYearGroup)
+    
+    // Helper to check if a date is within any term
+    const isWithinTermTime = (date: Date) => {
+      const dateStr = format(date, 'yyyy-MM-dd')
+      return (
+        isWithinInterval(date, { start: new Date(plan.termDates.michaelmas.start), end: new Date(plan.termDates.michaelmas.end) }) ||
+        isWithinInterval(date, { start: new Date(plan.termDates.epiphany.start), end: new Date(plan.termDates.epiphany.end) }) ||
+        isWithinInterval(date, { start: new Date(plan.termDates.easter.start), end: new Date(plan.termDates.easter.end) })
+      )
+    }
 
     // --- AUTH (supports Authorization: Bearer <token>) ---
     const authHeader = String(req.headers.authorization || '')
@@ -90,8 +107,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           const inMonth = isSameMonth(day, fromDate)
           const isToday = format(new Date(), 'yyyy-MM-dd') === dateStr
 
-          // Mock events (placeholder; replace with DB data later)
-          const mockEvents: Array<{
+          // Generate events only from dataset assessments and personal items
+          const events: Array<{
             id: string
             title: string
             description: string
@@ -104,44 +121,39 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             is_all_day: boolean
           }> = []
 
-          if (inMonth && Math.random() > 0.7) {
-            mockEvents.push({
-              id: `event-${dateStr}`,
-              title: 'Contract Law Lecture',
-              description: 'Weekly lecture',
-              start_at: `${dateStr}T10:00:00Z`,
-              end_at: `${dateStr}T11:00:00Z`,
-              location: 'Lecture Hall A',
-              type: 'lecture',
-              module_id: '3',
-              is_university_fixed: true,
-              is_all_day: false,
+          // Only add assessments that are due on this specific date
+          if (inMonth) {
+            plan.modules.forEach((module, moduleIndex) => {
+              module.assessments.forEach((assessment, assessmentIndex) => {
+                const assessmentDate = format(new Date(assessment.due), 'yyyy-MM-dd')
+                if (assessmentDate === dateStr) {
+                  events.push({
+                    id: `assessment-${moduleIndex}-${assessmentIndex}`,
+                    title: `${module.title} ${assessment.type}`,
+                    description: `${assessment.type} due`,
+                    start_at: `${dateStr}T23:59:00Z`,
+                    end_at: `${dateStr}T23:59:00Z`,
+                    location: '',
+                    type: 'assessment',
+                    module_id: String(moduleIndex + 1),
+                    is_university_fixed: true,
+                    is_all_day: true,
+                  })
+                }
+              })
             })
           }
 
-          if (inMonth && Math.random() > 0.9) {
-            mockEvents.push({
-              id: `assessment-${dateStr}`,
-              title: 'Essay Due',
-              description: 'Constitutional Law Essay',
-              start_at: `${dateStr}T23:59:00Z`,
-              end_at: `${dateStr}T23:59:00Z`,
-              location: '',
-              type: 'assessment',
-              module_id: '2',
-              is_university_fixed: true,
-              is_all_day: true,
-            })
-          }
+          // No longer generating random lecture events - they will come from Supabase personal items later
 
           return {
             date: dateStr,
-            events: mockEvents,
+            events: events,
             is_current_month: inMonth,
             is_today: isToday,
-            has_exam: mockEvents.some(e => e.type === 'exam'),
-            has_assessment: mockEvents.some(e => e.type === 'assessment'),
-            has_lecture: mockEvents.some(e => e.type === 'lecture'),
+            has_exam: events.some(e => e.type === 'exam'),
+            has_assessment: events.some(e => e.type === 'assessment'),
+            has_lecture: events.some(e => e.type === 'lecture'),
           }
         }),
       }
