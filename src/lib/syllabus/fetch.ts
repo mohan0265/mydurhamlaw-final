@@ -94,23 +94,26 @@ export async function getYear(year: number) {
   return { available: true as const, year: parsedY.data };
 }
 
-/** Student override creation (no effect if RLS not set or table missing) */
+/** Student topic contribution (saves to student_topics table as per YAAG cleanup plan) */
 export async function addStudentTopic(input: {
   userId: string; year: number; term: string; week: number;
   module_code: string; day: 'Mon'|'Tue'|'Wed'|'Thu'|'Fri'; title: string; notes?: string;
 }) {
   const supabase = getBrowserSupabase();
   if (!supabase) return { ok:false, reason:'missing-keys' as const };
-  const { error } = await supabase.from('user_syllabus_overrides').insert({
+  const { error } = await supabase.from('student_topics').insert({
     user_id: input.userId,
-    year_number: input.year,
-    term_slug: input.term,
-    week_no: input.week,
+    year: input.year,
+    term: input.term,
+    week: input.week,
     module_code: input.module_code,
     day: input.day,
     title: input.title,
     notes: input.notes ?? null
   });
-  if (error) return { ok:false, reason:'insert-error' as const };
+  if (error) { 
+    console.error('Error inserting student topic:', error);
+    return { ok:false, reason:'insert-error' as const };
+  }
   return { ok:true as const };
 }
