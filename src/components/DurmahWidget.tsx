@@ -127,8 +127,9 @@ export default function DurmahWidget({ context }: WidgetProps) {
     setSaving(true);
     try {
       // IMPORTANT: use same client/session as host app
-      const { data: auth } = await supabase.auth.getUser();
-      const authedUser = auth?.user ?? user;
+      const { data: { session } = { session: null } } = await supabase.auth.getSession();
+const authedUser = session?.user ?? user;
+
       if (!authedUser) {
         setSaveMsg("Please sign in to save notes.");
         setSaving(false);

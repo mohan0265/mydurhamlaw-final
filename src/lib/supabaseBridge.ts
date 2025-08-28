@@ -1,35 +1,32 @@
 // src/lib/supabaseBridge.ts
-// Bridge used by the widget: reuse the app’s Supabase browser client and expose a tiny useAuth hook.
+// One place the widget imports from. Uses the SAME Supabase client as the app
+// and exposes a tiny hook that always reflects the current signed-in user.
 
 import { useEffect, useState } from "react";
 import type { User } from "@supabase/supabase-js";
 import { supabase } from "./supabase-browser";
 
-/**
- * Minimal typed auth hook so the widget reads the signed-in user
- * (RLS will then apply correctly on inserts/updates).
- */
+/** Read the current user from the single app client. */
 export function useAuth(): { user: User | null } {
   const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
     let mounted = true;
 
-    // Get current user once
-    supabase.auth.getUser().then(({ data }) => {
-      if (mounted) setUser(data?.user ?? null);
+    // ✅ Most reliable: read the active session (works across all providers)
+    supabase.auth.getSession().then(({ data }) => {
+      if (mounted) setUser(data?.session?.user ?? null);
     });
 
-    // Keep in sync with future changes
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+    // Stay in sync with auth changes
+    const { data: sub } = supabase.auth.onAuthStateChange((_evt, session) => {
       if (mounted) setUser(session?.user ?? null);
     });
 
     return () => {
       mounted = false;
       try {
-        // supabase-js v2 shape
-        (listener as any)?.subscription?.unsubscribe?.();
+        (sub as any)?.subscription?.unsubscribe?.();
       } catch {}
     };
   }, []);
