@@ -1,61 +1,82 @@
 // src/pages/year-at-a-glance/week.tsx
-import React, { useEffect, useMemo, useState } from 'react';
+'use client';
+import React, { useCallback, useMemo } from 'react';
 import { useRouter } from 'next/router';
-import Link from 'next/link';
-import {
-  YEAR_LABEL, YearKey, parseYearKey, hrefYear, getStudentYear
+import Head from 'next/head';
+import dynamic from 'next/dynamic';
+import { 
+  YEAR_LABEL, 
+  YearKey, 
+  parseYearKey, 
+  getStudentYear,
+  parseWeekStartParam,
+  addWeeksISO,
+  hrefWeekWS,
+  hrefYear
 } from '@/lib/calendar/links';
+import { useWeekData } from '@/lib/calendar/useCalendarData';
+import { getDefaultPlanByStudentYear } from '@/data/durham/llb';
+
+const WeekGrid = dynamic(() => import('@/components/calendar/WeekGrid').then(m => ({ default: m.WeekGrid })), {
+  ssr: false,
+});
 
 const WeekPage: React.FC = () => {
   const router = useRouter();
-  const yParam = typeof router.query?.y === 'string' ? router.query.y : undefined;
+  const { y: yParam, ws: wsParam } = router.query;
 
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
+  // Parse year from query
+  const year: YearKey = useMemo(() => {
+    return parseYearKey(typeof yParam === 'string' ? yParam : undefined);
+  }, [yParam]);
 
-  const year: YearKey = useMemo(() => parseYearKey(yParam), [yParam]);
+  // Parse week start from query, default to first teaching week
+  const weekStartISO: string = useMemo(() => {
+    const plan = getDefaultPlanByStudentYear(year);
+    const firstTeachingWeek = plan.termDates.michaelmas.weeks[0] || '2025-10-06';
+    return parseWeekStartParam(firstTeachingWeek, typeof wsParam === 'string' ? wsParam : undefined);
+  }, [wsParam, year]);
+
   const studentYear = getStudentYear();
   const isOwnYear = year === studentYear;
 
-  if (!mounted) return null;
+  // Load events for the current week
+  const events = useWeekData(year, weekStartISO);
+
+  // Navigation handlers
+  const handlePrev = useCallback(() => {
+    const prevWeek = addWeeksISO(weekStartISO, -1);
+    router.push(hrefWeekWS(year, prevWeek));
+  }, [router, year, weekStartISO]);
+
+  const handleNext = useCallback(() => {
+    const nextWeek = addWeeksISO(weekStartISO, 1);
+    router.push(hrefWeekWS(year, nextWeek));
+  }, [router, year, weekStartISO]);
+
+  const handleBack = useCallback(() => {
+    router.push(hrefYear(year));
+  }, [router, year]);
+
+  const title = `${YEAR_LABEL[year]} • Week View`;
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-6">
-      <div className="flex items-center justify-between mb-4">
-        <Link href={hrefYear(year)} className="text-purple-700 hover:underline">← Back to Year</Link>
-        <div className="text-sm text-gray-500">{YEAR_LABEL[year]} • Week View</div>
-      </div>
+    <>
+      <Head>
+        <title>{title}</title>
+        <meta name="description" content={`Weekly calendar view for ${YEAR_LABEL[year]}`} />
+      </Head>
 
-      <h1 className="text-2xl md:text-3xl font-bold mb-2">Week View • {YEAR_LABEL[year]}</h1>
-
-      {!isOwnYear ? (
-        <div className="rounded-2xl border bg-white p-6">
-          <p className="font-semibold mb-2">Browse-only</p>
-          <p className="text-sm text-gray-600">
-            Detailed weekly schedules are visible only for your enrolled year
-            (<span className="font-semibold"> {YEAR_LABEL[studentYear]}</span>). Use the Year page to explore the outline.
-          </p>
-        </div>
-      ) : (
-        <div className="rounded-2xl border bg-white p-6">
-          <p className="font-semibold mb-4">Your weekly schedule</p>
-
-          {/* Replace this list with real data mapping from src/data/durham/llb/* when ready */}
-          <div className="space-y-3">
-            {Array.from({ length: 10 }).map((_, i) => (
-              <div key={i} className="rounded-xl border p-4">
-                <div className="font-medium mb-1">W{i + 1}</div>
-                <ul className="text-sm text-gray-700 space-y-1">
-                  <li>• Lectures: Tort / Contract / EU / UK Const / IELLM</li>
-                  <li>• Seminar: Problem question workshop</li>
-                  <li>• Task: Reading & outline</li>
-                </ul>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
+      <WeekGrid
+        year={year}
+        weekStartISO={weekStartISO}
+        events={events}
+        onPrev={handlePrev}
+        onNext={handleNext}
+        onBack={handleBack}
+        gated={!isOwnYear}
+      />
+    </>
   );
 };
 
