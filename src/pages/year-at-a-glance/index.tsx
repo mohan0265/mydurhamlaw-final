@@ -1,122 +1,98 @@
 // src/pages/year-at-a-glance/index.tsx
-import { useEffect, useMemo, useState } from "react";
-import Head from "next/head";
-import Link from "next/link";
-import { useRouter } from "next/router";
-import dynamic from "next/dynamic";
-import { ChevronLeft, ChevronRight, Calendar } from "lucide-react";
+import { useEffect } from 'react';
+import Head from 'next/head';
+import Link from 'next/link';
+import { useRouter } from 'next/router';
+import dynamic from 'next/dynamic';
+import { ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
 
 import {
   YEAR_LABEL,
-  type YearKey,
+  YearKey,
+  parseYearKey,
+  getPrevYearKey,
+  getNextYearKey,
   hrefMonth,
   hrefWeek,
   hrefYear,
-  parseYearKey,
-  readYearKey,
   persistYearKey,
-  getPrevYearKey,
-  getNextYearKey,
-} from "@/lib/calendar/links";
-import { DURHAM_LLB_2025_26 } from "@/data/durham/llb";
+  readYearKey,
+} from '@/lib/calendar/links';
 
-// NOTE: YearView uses browser-only bits; dynamic import with SSR disabled.
-// Also guard module shape so TS is happy whether default or named export.
-const YearView = dynamic<any>(
-  () =>
-    import("@/components/calendar/YearView").then((m: any) =>
-      "default" in m ? m.default : m.YearView
-    ),
-  { ssr: false }
-);
+const YearView = dynamic(() => import('@/components/calendar/YearView').then(m => m.default), {
+  ssr: false,
+});
 
-export default function YearAtAGlancePage() {
+function label(y: YearKey) {
+  return YEAR_LABEL[y];
+}
+
+function yearKeyToStudyNumber(y: YearKey): number {
+  switch (y) {
+    case 'foundation': return 0;
+    case 'year1': return 1;
+    case 'year2': return 2;
+    case 'year3': return 3;
+  }
+}
+
+export default function YearAtAGlanceIndex() {
   const router = useRouter();
+  const y: YearKey = parseYearKey(router.query.y ?? readYearKey());
 
-  // 1) decide which year to show
-  const queryYear = parseYearKey(router.query.y);
-  const [y, setY] = useState<YearKey>(() => queryYear || readYearKey());
+  useEffect(() => { persistYearKey(y); }, [y]);
 
-  useEffect(() => {
-    const want = parseYearKey(router.query.y);
-    const finalY = want || readYearKey();
-    setY(finalY);
-    persistYearKey(finalY);
-  }, [router.query.y]);
-
-  // 2) compute prev/next for header arrows
-  const prevY = useMemo(() => getPrevYearKey(y), [y]);
-  const nextY = useMemo(() => getNextYearKey(y), [y]);
-
-  const title = `My Year at a Glance • ${YEAR_LABEL[y]}`;
+  const prevY = getPrevYearKey(y);
+  const nextY = getNextYearKey(y);
 
   return (
     <>
       <Head>
-        <title>{title}</title>
+        <title>My Year at a Glance – {label(y)}</title>
       </Head>
 
-      <div className="max-w-7xl mx-auto px-4 py-6">
-        {/* Header row */}
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-semibold">My Year at a Glance</h1>
-            <span className="text-sm text-gray-500">{YEAR_LABEL[y]}</span>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div className="flex items-center justify-between gap-2 mb-4">
+          <div className="flex items-center gap-2">
+            <button
+              className="inline-flex items-center gap-2 rounded-md border px-3 py-2 hover:bg-gray-50"
+              onClick={() => { persistYearKey(prevY); router.push(hrefYear(prevY)); }}
+            >
+              <ChevronLeft className="w-4 h-4" />
+              <span>{label(prevY)}</span>
+            </button>
+
+            <h1 className="text-xl sm:text-2xl font-semibold px-2">
+              My Year at a Glance • <span className="text-purple-600">{label(y)}</span>
+            </h1>
+
+            <button
+              className="inline-flex items-center gap-2 rounded-md border px-3 py-2 hover:bg-gray-50"
+              onClick={() => { persistYearKey(nextY); router.push(hrefYear(nextY)); }}
+            >
+              <span>{label(nextY)}</span>
+              <ChevronRight className="w-4 h-4" />
+            </button>
           </div>
 
           <div className="flex items-center gap-2">
-            {/* Back to Month / Week quick links (open for current year) */}
-            <Link
-              href={hrefMonth(y)}
-              className="rounded-lg border px-3 py-1.5 text-sm hover:bg-gray-50"
-            >
+            <Link href={hrefMonth(y)} className="rounded-md bg-purple-600 text-white px-3 py-2 text-sm">
               Month View
             </Link>
-            <Link
-              href={hrefWeek(y)}
-              className="rounded-lg border px-3 py-1.5 text-sm hover:bg-gray-50"
-            >
+            <Link href={hrefWeek(y)} className="rounded-md bg-purple-600 text-white px-3 py-2 text-sm">
               Week View
             </Link>
-
-            {/* Year switchers */}
-            <Link
-              aria-label="Previous year"
-              href={hrefYear(prevY)}
-              className="inline-flex items-center rounded-lg border px-2 py-1.5 hover:bg-gray-50"
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </Link>
-            <Link
-              aria-label="Next year"
-              href={hrefYear(nextY)}
-              className="inline-flex items-center rounded-lg border px-2 py-1.5 hover:bg-gray-50"
-            >
-              <ChevronRight className="w-4 h-4" />
-            </Link>
           </div>
         </div>
 
-        {/* Body */}
-        <div className="mt-6">
-          <YearView
-            // YearView reads from our static Durham plan for now
-            yearOverview={DURHAM_LLB_2025_26[y]}
-            multiYearData={DURHAM_LLB_2025_26}
-            moduleProgress={null}
-            userYearOfStudy={y === "foundation" ? 0 : Number(y.replace("year", ""))}
-            onModuleClick={() => {}}
-            onEventClick={() => {}}
-          />
+        <div className="mb-4">
+          <div className="inline-flex items-center gap-2 text-sm text-gray-600">
+            <Calendar className="w-4 h-4" />
+            <span>Viewing: <b>{label(y)}</b></span>
+          </div>
         </div>
 
-        {/* Empty-state guard (if plan missing) */}
-        {!DURHAM_LLB_2025_26[y] && (
-          <div className="mt-10 text-center text-gray-600">
-            <Calendar className="w-10 h-10 mx-auto mb-2" />
-            Plan unavailable for {YEAR_LABEL[y]}.
-          </div>
-        )}
+        <YearView userYearOfStudy={yearKeyToStudyNumber(y)} />
       </div>
     </>
   );
