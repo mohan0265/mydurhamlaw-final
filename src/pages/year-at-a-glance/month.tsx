@@ -14,10 +14,11 @@ import {
   nextYM,
   hrefMonthYM,
   hrefYear,
-  getAcademicStartMonth
+  getAcademicStartMonth,
+  getAcademicYearFor
 } from '@/lib/calendar/links';
 import type { YM } from '@/lib/calendar/links';
-import { useMonthData } from '@/lib/calendar/useCalendarData';
+import { useMonthData, getAcademicYearFor as getAcademicYear } from '@/lib/calendar/useCalendarData';
 
 const MonthGrid = dynamic(() => import('@/components/calendar/MonthGrid').then(m => ({ default: m.MonthGrid })), {
   ssr: false,
@@ -35,9 +36,10 @@ const MonthPage: React.FC = () => {
   // Parse month from query, default to academic start month
   const ym: YM = useMemo(() => {
     const academicStartMonth = getAcademicStartMonth(year);
+    const academicYear = getAcademicYear(year);
     const fallback: YM = { 
-      year: 2025, 
-      month: academicStartMonth + 1 // Convert from 0-based to 1-based
+      year: academicYear, 
+      month: academicStartMonth
     };
     return parseYMParam(fallback, typeof ymParam === 'string' ? ymParam : undefined);
   }, [ymParam, year]);
@@ -73,7 +75,7 @@ const MonthPage: React.FC = () => {
       </Head>
 
       <MonthGrid
-        year={year}
+        yearKey={year}
         ym={ym}
         events={events}
         onPrev={handlePrev}

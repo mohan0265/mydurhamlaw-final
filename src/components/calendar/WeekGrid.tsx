@@ -1,19 +1,14 @@
 // src/components/calendar/WeekGrid.tsx
 import React, { useEffect } from 'react';
-import { format, addDays, parse } from 'date-fns';
-
-// Helper function to replace parseISO
-function parseISO(dateString: string): Date {
-  return new Date(dateString + 'T00:00:00.000Z');
-}
+import { format, addDays } from 'date-fns';
 import { ChevronLeft, ChevronRight, ArrowLeft, Clock } from 'lucide-react';
 import { YEAR_LABEL } from '@/lib/calendar/links';
 import type { YearKey } from '@/lib/calendar/links';
 import type { CalendarEvent } from '@/lib/calendar/useCalendarData';
 
 interface WeekGridProps {
-  year: YearKey;
-  weekStartISO: string;
+  yearKey: YearKey;
+  mondayISO: string;      // Monday of the week
   events: CalendarEvent[];
   onPrev: () => void;
   onNext: () => void;
@@ -26,13 +21,25 @@ const HOURS = Array.from({ length: 16 }, (_, i) => i + 6); // 6:00 to 21:00
 
 function getEventStyle(kind: CalendarEvent['kind']): string {
   switch (kind) {
-    case 'lecture': return 'bg-blue-500 text-white border-blue-600';
-    case 'seminar': return 'bg-green-500 text-white border-green-600';
-    case 'deadline': return 'bg-red-500 text-white border-red-600';
-    case 'exam': return 'bg-red-600 text-white border-red-700';
-    case 'task': return 'bg-gray-500 text-white border-gray-600';
-    case 'routine': return 'bg-purple-500 text-white border-purple-600';
-    default: return 'bg-gray-500 text-white border-gray-600';
+    case 'lecture': return 'bg-blue-500 text-white border-l-4 border-blue-600';
+    case 'seminar': return 'bg-green-500 text-white border-l-4 border-green-600';
+    case 'deadline': return 'bg-red-500 text-white border-l-4 border-red-600';
+    case 'exam': return 'bg-red-600 text-white border-l-4 border-red-700 font-medium';
+    case 'task': return 'bg-gray-500 text-white border-l-4 border-gray-600';
+    case 'all-day': return 'bg-purple-500 text-white border-l-4 border-purple-600';
+    default: return 'bg-gray-500 text-white border-l-4 border-gray-600';
+  }
+}
+
+function getAllDayStyle(kind: CalendarEvent['kind']): string {
+  switch (kind) {
+    case 'lecture': return 'bg-blue-100 text-blue-800 border-blue-200';
+    case 'seminar': return 'bg-green-100 text-green-800 border-green-200';
+    case 'deadline': return 'bg-red-100 text-red-800 border-red-200';
+    case 'exam': return 'bg-red-200 text-red-900 border-red-300 font-medium';
+    case 'task': return 'bg-gray-100 text-gray-800 border-gray-200';
+    case 'all-day': return 'bg-purple-100 text-purple-800 border-purple-200';
+    default: return 'bg-gray-100 text-gray-800 border-gray-200';
   }
 }
 
@@ -56,16 +63,21 @@ function calculateEventPosition(start: string, end?: string): { top: number; hei
   return { top, height };
 }
 
+// Helper to parse ISO date safely
+function parseISODate(dateString: string): Date {
+  return new Date(dateString + 'T00:00:00.000Z');
+}
+
 export const WeekGrid: React.FC<WeekGridProps> = ({
-  year,
-  weekStartISO,
+  yearKey,
+  mondayISO,
   events,
   onPrev,
   onNext,
   onBack,
   gated
 }) => {
-  const weekStart = parseISO(weekStartISO);
+  const weekStart = parseISODate(mondayISO);
   const weekEnd = addDays(weekStart, 6);
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
 
@@ -105,7 +117,7 @@ export const WeekGrid: React.FC<WeekGridProps> = ({
             Back to Year
           </button>
           <h1 className="text-xl font-semibold">
-            {YEAR_LABEL[year]} • Week of {format(weekStart, 'd MMM')}–{format(weekEnd, 'd MMM yyyy')}
+            {YEAR_LABEL[yearKey]} • Week of {format(weekStart, 'd MMM')}–{format(weekEnd, 'd MMM yyyy')}
           </h1>
         </div>
 
@@ -148,7 +160,7 @@ export const WeekGrid: React.FC<WeekGridProps> = ({
           </button>
           
           <h1 className="text-2xl font-semibold min-w-[300px] text-center">
-            {YEAR_LABEL[year]} • Week of {format(weekStart, 'd MMM')}–{format(weekEnd, 'd MMM yyyy')}
+            {YEAR_LABEL[yearKey]} • Week of {format(weekStart, 'd MMM')}–{format(weekEnd, 'd MMM yyyy')}
           </h1>
           
           <button
@@ -169,8 +181,8 @@ export const WeekGrid: React.FC<WeekGridProps> = ({
       <div className="bg-white rounded-2xl shadow border overflow-hidden">
         {/* Day Headers */}
         <div className="grid grid-cols-8 border-b bg-gray-50">
-          <div className="p-4 border-r">
-            <Clock className="w-5 h-5 text-gray-400 mx-auto" />
+          <div className="p-4 border-r flex items-center justify-center">
+            <Clock className="w-5 h-5 text-gray-400" />
           </div>
           {weekDays.map((day, index) => (
             <div key={index} className="p-4 text-center border-r last:border-r-0">
@@ -185,10 +197,10 @@ export const WeekGrid: React.FC<WeekGridProps> = ({
               {eventsByDate[format(day, 'yyyy-MM-dd')]?.filter(e => !e.start).map(event => (
                 <div
                   key={event.id}
-                  className={`mt-1 text-xs px-2 py-1 rounded ${getEventStyle(event.kind)} truncate`}
+                  className={`mt-1 text-xs px-2 py-1 rounded border ${getAllDayStyle(event.kind)} truncate`}
                   title={`${event.title}${event.details ? ' - ' + event.details : ''}`}
                 >
-                  {event.title}
+                  {event.title.length > 15 ? event.title.substring(0, 13) + '...' : event.title}
                 </div>
               ))}
             </div>
@@ -196,13 +208,15 @@ export const WeekGrid: React.FC<WeekGridProps> = ({
         </div>
 
         {/* Time Grid */}
-        <div className="relative">
-          <div className="grid grid-cols-8">
+        <div className="relative overflow-x-auto lg:overflow-x-visible">
+          <div className="grid grid-cols-8 min-w-[800px] lg:min-w-0">
             {/* Time Labels */}
-            <div className="border-r">
+            <div className="border-r bg-gray-50">
               {HOURS.map(hour => (
-                <div key={hour} className="h-[60px] p-2 border-b text-xs text-gray-500 flex items-start">
-                  {String(hour).padStart(2, '0')}:00
+                <div key={hour} className="h-[60px] p-2 border-b text-xs text-gray-500 flex items-start justify-end">
+                  <span className="bg-gray-50 px-1 -mt-2">
+                    {String(hour).padStart(2, '0')}:00
+                  </span>
                 </div>
               ))}
             </div>
@@ -218,12 +232,12 @@ export const WeekGrid: React.FC<WeekGridProps> = ({
                   {HOURS.map(hour => (
                     <div
                       key={hour}
-                      className="h-[60px] border-b border-gray-100 hover:bg-gray-50"
+                      className="h-[60px] border-b border-gray-100 hover:bg-gray-50 transition-colors"
                     />
                   ))}
 
-                  {/* Events */}
-                  {dayEvents.map(event => {
+                  {/* Timed Events */}
+                  {dayEvents.map((event, eventIndex) => {
                     if (!event.start) return null;
                     
                     const { top, height } = calculateEventPosition(event.start, event.end);
@@ -231,19 +245,29 @@ export const WeekGrid: React.FC<WeekGridProps> = ({
                     return (
                       <div
                         key={event.id}
-                        className={`absolute left-1 right-1 rounded border-l-4 px-2 py-1 text-xs z-10 cursor-pointer hover:opacity-90 ${getEventStyle(event.kind)}`}
-                        style={{ top: `${top}px`, height: `${height}px`, minHeight: '30px' }}
-                        title={`${event.start}${event.end ? '-' + event.end : ''} ${event.title}${event.details ? ' - ' + event.details : ''}`}
+                        className={`absolute left-1 right-1 rounded px-2 py-1 text-xs z-10 cursor-pointer hover:opacity-90 transition-opacity ${getEventStyle(event.kind)}`}
+                        style={{ 
+                          top: `${top}px`, 
+                          height: `${height}px`, 
+                          minHeight: '30px',
+                          // Offset multiple events slightly
+                          left: eventIndex > 0 ? `${4 + eventIndex * 2}px` : '4px',
+                          right: `${4}px`,
+                          zIndex: 10 + eventIndex
+                        }}
+                        title={`${event.start}${event.end ? '-' + event.end : ''}\n${event.title}${event.details ? '\n' + event.details : ''}`}
                       >
-                        <div className="font-medium truncate">
-                          {event.title}
+                        <div className="font-medium truncate leading-tight">
+                          {event.kind === 'lecture' || event.kind === 'seminar' 
+                            ? event.module?.split(' ').slice(0, 2).join(' ') || event.title
+                            : event.title}
                         </div>
-                        {event.module && (
-                          <div className="text-xs opacity-90 truncate">
-                            {event.module}
+                        {event.module && (event.kind === 'deadline' || event.kind === 'exam') && (
+                          <div className="text-xs opacity-90 truncate leading-tight">
+                            {event.module.split(' ').slice(0, 2).join(' ')}
                           </div>
                         )}
-                        <div className="text-xs opacity-80">
+                        <div className="text-xs opacity-80 leading-tight">
                           {event.start}{event.end && `-${event.end}`}
                         </div>
                       </div>
@@ -262,7 +286,7 @@ export const WeekGrid: React.FC<WeekGridProps> = ({
 
       {/* Mobile responsive hint */}
       <div className="lg:hidden mt-2 text-xs text-gray-500 text-center">
-        Scroll horizontally to see all days
+        Scroll horizontally to see all days of the week
       </div>
     </div>
   );

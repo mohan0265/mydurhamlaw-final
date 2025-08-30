@@ -1,35 +1,22 @@
 // src/components/calendar/MonthGrid.tsx
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { 
   format, 
   startOfMonth, 
   endOfMonth, 
   startOfWeek, 
   endOfWeek, 
+  addDays,
   isSameMonth, 
-  isToday, 
-  addDays
+  isToday
 } from 'date-fns';
-
-// Helper function to replace eachDayOfInterval
-function eachDayOfInterval(interval: { start: Date; end: Date }): Date[] {
-  const days: Date[] = [];
-  let currentDay = new Date(interval.start);
-  
-  while (currentDay <= interval.end) {
-    days.push(new Date(currentDay));
-    currentDay = addDays(currentDay, 1);
-  }
-  
-  return days;
-}
 import { ChevronLeft, ChevronRight, ArrowLeft } from 'lucide-react';
 import { YEAR_LABEL } from '@/lib/calendar/links';
 import type { YearKey, YM } from '@/lib/calendar/links';
 import type { CalendarEvent } from '@/lib/calendar/useCalendarData';
 
 interface MonthGridProps {
-  year: YearKey;
+  yearKey: YearKey;
   ym: YM;
   events: CalendarEvent[];
   onPrev: () => void;
@@ -45,15 +32,28 @@ function getEventBadgeStyle(kind: CalendarEvent['kind']): string {
     case 'lecture': return 'bg-blue-100 text-blue-800 border-blue-200';
     case 'seminar': return 'bg-green-100 text-green-800 border-green-200';
     case 'deadline': return 'bg-red-100 text-red-800 border-red-200';
-    case 'exam': return 'bg-red-200 text-red-900 border-red-300';
+    case 'exam': return 'bg-red-200 text-red-900 border-red-300 font-medium';
     case 'task': return 'bg-gray-100 text-gray-800 border-gray-200';
-    case 'routine': return 'bg-purple-50 text-purple-700 border-purple-100';
+    case 'all-day': return 'bg-purple-50 text-purple-700 border-purple-100';
     default: return 'bg-gray-100 text-gray-800 border-gray-200';
   }
 }
 
+// Helper function to generate calendar days
+function eachDayOfInterval(interval: { start: Date; end: Date }): Date[] {
+  const days: Date[] = [];
+  let currentDay = new Date(interval.start);
+  
+  while (currentDay <= interval.end) {
+    days.push(new Date(currentDay));
+    currentDay = addDays(currentDay, 1);
+  }
+  
+  return days;
+}
+
 export const MonthGrid: React.FC<MonthGridProps> = ({
-  year,
+  yearKey,
   ym,
   events,
   onPrev,
@@ -61,6 +61,8 @@ export const MonthGrid: React.FC<MonthGridProps> = ({
   onBack,
   gated
 }) => {
+  const [showOverflow, setShowOverflow] = useState<string | null>(null);
+
   const currentDate = new Date(ym.year, ym.month - 1);
   const monthStart = startOfMonth(currentDate);
   const monthEnd = endOfMonth(currentDate);
@@ -105,7 +107,7 @@ export const MonthGrid: React.FC<MonthGridProps> = ({
             Back to Year
           </button>
           <h1 className="text-xl font-semibold">
-            {YEAR_LABEL[year]} • {format(currentDate, 'MMMM yyyy')}
+            {YEAR_LABEL[yearKey]} • {format(currentDate, 'MMMM yyyy')}
           </h1>
         </div>
 
@@ -148,7 +150,7 @@ export const MonthGrid: React.FC<MonthGridProps> = ({
           </button>
           
           <h1 className="text-2xl font-semibold min-w-[200px] text-center">
-            {YEAR_LABEL[year]} • {format(currentDate, 'MMMM yyyy')}
+            {YEAR_LABEL[yearKey]} • {format(currentDate, 'MMMM yyyy')}
           </h1>
           
           <button
@@ -166,9 +168,9 @@ export const MonthGrid: React.FC<MonthGridProps> = ({
       </div>
 
       {/* Calendar Grid */}
-      <div className="bg-white rounded-2xl shadow border">
+      <div className="bg-white rounded-2xl shadow border overflow-hidden">
         {/* Weekday Headers */}
-        <div className="grid grid-cols-7 border-b">
+        <div className="grid grid-cols-7 border-b bg-gray-50">
           {WEEKDAYS.map(day => (
             <div key={day} className="p-4 text-center font-medium text-gray-600 border-r last:border-r-0">
               {day}
@@ -189,9 +191,9 @@ export const MonthGrid: React.FC<MonthGridProps> = ({
             return (
               <div
                 key={dayStr}
-                className={`min-h-[120px] p-3 border-r border-b last-in-row:border-r-0 ${
+                className={`min-h-[120px] p-3 border-r border-b last-in-row:border-r-0 relative group hover:bg-gray-50 transition-colors ${
                   isCurrentMonth ? 'bg-white' : 'bg-gray-50'
-                } ${isCurrentDay ? 'bg-blue-50 ring-2 ring-blue-200' : ''} hover:bg-gray-50 transition-colors`}
+                } ${isCurrentDay ? 'bg-blue-50 ring-2 ring-blue-200' : ''}`}
                 style={{ 
                   gridColumn: index % 7 + 1 
                 }}
@@ -205,7 +207,7 @@ export const MonthGrid: React.FC<MonthGridProps> = ({
                     {format(day, 'd')}
                   </span>
 
-                  {/* Event Indicators */}
+                  {/* Event Type Indicators */}
                   <div className="flex gap-1">
                     {dayEvents.some(e => e.kind === 'exam') && (
                       <div className="w-2 h-2 bg-red-500 rounded-full" title="Exam" />
@@ -224,22 +226,52 @@ export const MonthGrid: React.FC<MonthGridProps> = ({
                   {visibleEvents.map(event => (
                     <div
                       key={event.id}
-                      className={`text-xs px-2 py-1 rounded border ${getEventBadgeStyle(event.kind)} truncate`}
-                      title={`${event.title}${event.details ? ' - ' + event.details : ''}`}
+                      className={`text-xs px-2 py-1 rounded border ${getEventBadgeStyle(event.kind)} truncate cursor-pointer hover:opacity-80`}
+                      title={`${event.start ? event.start + ' - ' : ''}${event.title}${event.details ? '\n' + event.details : ''}`}
                     >
                       {event.start && (
-                        <span className="font-mono">{event.start} </span>
+                        <span className="font-mono text-xs">{event.start} </span>
                       )}
-                      {event.title}
+                      <span className="truncate">
+                        {event.kind === 'lecture' || event.kind === 'seminar' 
+                          ? event.module?.split(' ').slice(0, 2).join(' ') 
+                          : event.title.length > 20 
+                            ? event.title.substring(0, 18) + '...' 
+                            : event.title}
+                      </span>
                     </div>
                   ))}
                   
                   {overflowCount > 0 && (
-                    <div className="text-xs text-gray-500 font-medium">
+                    <button
+                      className="text-xs text-gray-500 font-medium hover:text-gray-700 w-full text-left"
+                      onMouseEnter={() => setShowOverflow(dayStr)}
+                      onMouseLeave={() => setShowOverflow(null)}
+                    >
                       +{overflowCount} more
-                    </div>
+                    </button>
                   )}
                 </div>
+
+                {/* Overflow Popup */}
+                {showOverflow === dayStr && overflowCount > 0 && (
+                  <div className="absolute z-50 left-0 top-full mt-1 bg-white border rounded-lg shadow-lg p-3 min-w-[200px]">
+                    <div className="text-sm font-medium mb-2">{format(day, 'MMM d')}</div>
+                    <div className="space-y-1 max-h-40 overflow-y-auto">
+                      {dayEvents.slice(3).map(event => (
+                        <div
+                          key={event.id}
+                          className={`text-xs px-2 py-1 rounded border ${getEventBadgeStyle(event.kind)}`}
+                        >
+                          {event.start && (
+                            <span className="font-mono">{event.start} </span>
+                          )}
+                          {event.title}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             );
           })}
@@ -247,7 +279,7 @@ export const MonthGrid: React.FC<MonthGridProps> = ({
       </div>
 
       <div className="mt-4 text-xs text-gray-500 text-center">
-        Tip: Click on events for more details • Use keyboard arrows to navigate months
+        Tip: Hover over "+N more" to see all events • Use keyboard arrows to navigate months
       </div>
     </div>
   );

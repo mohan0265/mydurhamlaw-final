@@ -127,7 +127,13 @@ export function hrefWeekWS(y: YearKey, mondayISO: string): string {
   return `/year-at-a-glance/week?y=${y}&ws=${mondayISO}`;
 }
 
+
 export function getAcademicStartMonth(year: YearKey): number {
-  // Returns 0-based month (9 = October)
-  return 9; // October for all years in 2025-26
+  // Returns month 1..12 (10 = October)
+  return 10; // October for all years in 2025-26
+}
+
+export function getAcademicYearFor(year: YearKey): number {
+  // Returns the calendar year for the academic start (2025 for 2025-26)
+  return 2025;
 }

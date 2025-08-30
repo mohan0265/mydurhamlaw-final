@@ -2,7 +2,12 @@
 import { NextApiRequest, NextApiResponse } from 'next'
 import { getServerSupabase } from '@/lib/supabase/server'
 import { CalendarEvent, PersonalItem } from '@/types/calendar'
-import { format, addDays, startOfWeek, isWithinInterval } from 'date-fns'
+import { format, addDays, startOfWeek } from 'date-fns'
+
+// Custom date utility to replace missing isWithinInterval
+function isWithinInterval(date: Date, interval: { start: Date; end: Date }): boolean {
+  return date >= interval.start && date <= interval.end;
+}
 import { DURHAM_LLB_2025_26, getDefaultPlanByStudentYear } from '@/data/durham/llb'
 
 // Force this API to use Node.js runtime instead of Edge Runtime

@@ -68,8 +68,8 @@ const WeekPage: React.FC = () => {
       </Head>
 
       <WeekGrid
-        year={year}
-        weekStartISO={weekStartISO}
+        yearKey={year}
+        mondayISO={weekStartISO}
         events={events}
         onPrev={handlePrev}
         onNext={handleNext}
