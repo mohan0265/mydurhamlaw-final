@@ -1,15 +1,12 @@
 // src/lib/calendar/useCalendarData.ts
 import { useMemo } from 'react';
-import { 
-  startOfMonth, 
-  endOfMonth, 
-  format, 
-  addDays, 
-  addWeeks,
-  startOfWeek,
-  isSameMonth
+import {
+  startOfMonth,
+  endOfMonth,
+  format,
+  addDays,
 } from 'date-fns';
-import { DURHAM_LLB_2025_26, getDefaultPlanByStudentYear } from '@/data/durham/llb';
+import { getDefaultPlanByStudentYear } from '@/data/durham/llb';
 import type { YearKey } from './links';
 
 export type EventKind = 'lecture' | 'seminar' | 'deadline' | 'exam' | 'task' | 'all-day';
@@ -18,18 +15,15 @@ export interface CalendarEvent {
   id: string;
   year: YearKey;
   date: string;        // 'YYYY-MM-DD'
-  start?: string;      // 'HH:mm' (optional)
-  end?: string;        // 'HH:mm' (optional)
+  start?: string;      // 'HH:mm' (ONLY if present in data)
+  end?: string;        // 'HH:mm'
   kind: EventKind;
   module?: string;     // e.g., 'Tort Law'
-  title: string;       // e.g., 'Duty of Care'
-  details?: string;    // optional
+  title: string;       // Prefer weekly topic/subtopic; fallback to safe label
+  details?: string;
 }
 
-export interface YM { 
-  year: number; 
-  month: number; // month: 1..12
-}
+export interface YM { year: number; month: number } // month: 1..12
 
 export interface YearPlan {
   terms: Array<{
@@ -45,286 +39,215 @@ export interface YearPlan {
   }>;
 }
 
-// Cache for computed events per year
-const eventCache = new Map<YearKey, CalendarEvent[]>();
+// ───────────────────────────────────────────────────────────────────────────────
+// helpers
+// ───────────────────────────────────────────────────────────────────────────────
 
-export function getAcademicStartMonth(y: YearKey): number {
-  // Returns month 1..12 (10 = October)
-  return 10;
+const cache = new Map<YearKey, CalendarEvent[]>();
+
+function parseISODate(d: string) {
+  // Force midnight UTC to avoid TZ drift
+  return new Date(d + 'T00:00:00.000Z');
 }
 
-export function getAcademicYearFor(y: YearKey): number {
-  // For 2025/26 academic year
-  return 2025;
+function iso(d: Date) {
+  return format(d, 'yyyy-MM-dd');
 }
 
-// Helper to compute Monday of a given week within term
-function computeWeekMonday(termStartWeeks: string[], weekIndex: number): string {
-  if (weekIndex < termStartWeeks.length) {
-    return termStartWeeks[weekIndex]!;
+function within(date: Date, start: Date, end: Date) {
+  return date >= start && date <= end;
+}
+
+/** Pick a weekly topic string if the plan exposes one; otherwise undefined. */
+function topicForWeek(
+  module: any,
+  termKey: 'michaelmas' | 'epiphany',
+  weekIndex: number
+): string | undefined {
+  // Try common shapes safely without depending on schema changes:
+  // 1) module.topics[weekIndex]
+  if (Array.isArray(module?.topics) && module.topics[weekIndex]) {
+    const t = module.topics[weekIndex];
+    if (typeof t === 'string') return t;
+    if (t && typeof t.title === 'string') return t.title;
   }
-  // Fallback: compute from first week
-  const firstWeek = termStartWeeks[0];
-  if (firstWeek) {
-    const firstDate = new Date(firstWeek + 'T00:00:00.000Z');
-    const targetDate = addWeeks(firstDate, weekIndex);
-    return format(targetDate, 'yyyy-MM-dd');
+  // 2) module.weeks[weekIndex].topic / .title
+  if (Array.isArray(module?.weeks) && module.weeks[weekIndex]) {
+    const w = module.weeks[weekIndex];
+    if (typeof w?.topic === 'string') return w.topic;
+    if (typeof w?.title === 'string') return w.title;
   }
-  return '2025-10-06'; // Safe fallback
+  // 3) module[termKey]?.topics[weekIndex]
+  const termBucket = module?.[termKey];
+  if (termBucket?.topics && Array.isArray(termBucket.topics)) {
+    const t = termBucket.topics[weekIndex];
+    if (typeof t === 'string') return t;
+    if (t && typeof t.title === 'string') return t.title;
+  }
+  return undefined;
 }
 
-// Helper to parse ISO date safely
-function parseISODate(dateString: string): Date {
-  return new Date(dateString + 'T00:00:00.000Z');
+function allowedInTerm(delivery: string, term: 'michaelmas' | 'epiphany') {
+  if (term === 'michaelmas') return delivery === 'Michaelmas' || delivery === 'Michaelmas+Epiphany';
+  return delivery === 'Epiphany' || delivery === 'Michaelmas+Epiphany';
 }
 
-// Helper to check if date is within interval
-function isDateWithinInterval(date: Date, interval: { start: Date; end: Date }): boolean {
-  return date >= interval.start && date <= interval.end;
+function addEvent(out: CalendarEvent[], seen: Set<string>, ev: Omit<CalendarEvent, 'id'>) {
+  const key = [ev.year, ev.date, ev.kind, ev.module ?? '', ev.title ?? ''].join('|');
+  if (seen.has(key)) return;
+  seen.add(key);
+  out.push({ ...ev, id: key });
 }
+
+// ───────────────────────────────────────────────────────────────────────────────
+// public API
+// ───────────────────────────────────────────────────────────────────────────────
+
+export function getAcademicStartMonth(_y: YearKey): number { return 10; } // October
+export function getAcademicYearFor(_y: YearKey): number { return 2025; } // 2025/26 AY
 
 export function loadEventsForYear(y: YearKey): CalendarEvent[] {
-  // Check cache first
-  if (eventCache.has(y)) {
-    return eventCache.get(y)!;
-  }
+  if (cache.has(y)) return cache.get(y)!;
 
   const plan = getDefaultPlanByStudentYear(y);
-  const events: CalendarEvent[] = [];
-  let eventId = 0;
+  const out: CalendarEvent[] = [];
+  const seen = new Set<string>();
 
-  // Generate regular teaching events for each term
-  const termConfigs = [
-    { key: 'michaelmas' as const, weeks: plan.termDates.michaelmas.weeks },
-    { key: 'epiphany' as const, weeks: plan.termDates.epiphany.weeks }
-  ];
+  // Teaching weeks → only add items when a weekly topic exists
+  ([
+    { term: 'michaelmas' as const, weeks: plan.termDates.michaelmas.weeks },
+    { term: 'epiphany'   as const, weeks: plan.termDates.epiphany.weeks   },
+  ]).forEach(({ term, weeks }) => {
+    weeks.forEach((weekStartISO: string, weekIndex: number) => {
+      const weekStart = parseISODate(weekStartISO);
 
-  termConfigs.forEach(({ key: termKey, weeks }) => {
-    weeks.forEach((weekStart, weekIndex) => {
-      const weekStartDate = parseISODate(weekStart);
-      
-      plan.modules.forEach((module) => {
-        const isModuleInTerm = 
-          (termKey === 'michaelmas' && (module.delivery === 'Michaelmas' || module.delivery === 'Michaelmas+Epiphany')) ||
-          (termKey === 'epiphany' && (module.delivery === 'Epiphany' || module.delivery === 'Michaelmas+Epiphany'));
+      for (const mod of plan.modules ?? []) {
+        if (!allowedInTerm(mod.delivery, term)) continue;
 
-        if (isModuleInTerm) {
-          // Monday lecture
-          events.push({
-            id: `lec-${eventId++}`,
-            year: y,
-            date: format(weekStartDate, 'yyyy-MM-dd'),
-            start: '10:00',
-            end: '11:00',
-            kind: 'lecture',
-            module: module.title,
-            title: `${module.title} Lecture`,
-            details: `Week ${weekIndex + 1} - ${module.code || 'N/A'}`
-          });
+        const topic = topicForWeek(mod, term, weekIndex);
+        if (!topic) continue; // ← no weekly topic? skip to avoid bland duplicates
 
-          // Wednesday lecture  
-          events.push({
-            id: `lec-${eventId++}`,
-            year: y,
-            date: format(addDays(weekStartDate, 2), 'yyyy-MM-dd'),
-            start: '14:00',
-            end: '15:00',
-            kind: 'lecture',
-            module: module.title,
-            title: `${module.title} Lecture`,
-            details: `Week ${weekIndex + 1} - ${module.code || 'N/A'}`
-          });
-
-          // Friday seminar
-          events.push({
-            id: `sem-${eventId++}`,
-            year: y,
-            date: format(addDays(weekStartDate, 4), 'yyyy-MM-dd'),
-            start: '11:00',
-            end: '12:00',
-            kind: 'seminar',
-            module: module.title,
-            title: `${module.title} Seminar`,
-            details: `Week ${weekIndex + 1} - Tutorial and discussion`
-          });
-        }
-      });
-    });
-  });
-
-  // Add assessment deadlines and exams
-  plan.modules.forEach((module) => {
-    module.assessments.forEach((assessment) => {
-      if ('due' in assessment && assessment.due) {
-        const assessmentDate = assessment.due;
-        events.push({
-          id: `deadline-${eventId++}`,
+        // We DO NOT fabricate times. These render as all-day chips.
+        addEvent(out, seen, {
           year: y,
-          date: assessmentDate,
-          kind: 'deadline',
-          module: module.title,
-          title: `${module.title} ${assessment.type}`,
-          details: `Due date - Weight: ${assessment.weight || 'N/A'}%`
+          date: iso(weekStart),               // Monday of the week (or whatever day your dataset indicates)
+          kind: 'lecture',
+          module: mod.title,
+          title: `${mod.title}: ${topic}`,
+          details: `W${weekIndex + 1}`,
         });
-      } else if ('window' in assessment && assessment.window) {
-        // Add exam as an all-day event on the start of the window
-        events.push({
-          id: `exam-${eventId++}`,
-          year: y,
-          date: assessment.window.start,
-          kind: 'exam',
-          module: module.title,
-          title: `${module.title} Exam`,
-          details: `Exam period: ${assessment.window.start} - ${assessment.window.end}`
-        });
+
+        // If your dataset actually gives a second lecture/seminar day, add it here
+        // by carrying through real day offsets / times. Otherwise, keep it as a single
+        // all-day "topic for the week" item to avoid repetition.
       }
     });
   });
 
-  // Add some routine planning events for better UX
-  const allTeachingWeeks = [
-    ...plan.termDates.michaelmas.weeks,
-    ...plan.termDates.epiphany.weeks
-  ];
-
-  allTeachingWeeks.forEach((weekStart, index) => {
-    if (index % 2 === 0) { // Every other week
-      const sundayDate = addDays(parseISODate(weekStart), 6);
-      events.push({
-        id: `routine-${eventId++}`,
-        year: y,
-        date: format(sundayDate, 'yyyy-MM-dd'),
-        start: '18:00',
-        end: '19:00',
-        kind: 'task',
-        title: 'Weekly Planning',
-        details: 'Review upcoming week and prepare study schedule'
-      });
+  // Assessments (deadlines / exams) — never invent times
+  for (const mod of plan.modules ?? []) {
+    for (const a of mod.assessments ?? []) {
+      if ('due' in a && a.due) {
+        addEvent(out, seen, {
+          year: y,
+          date: a.due,
+          kind: 'deadline',
+          module: mod.title,
+          title: `${mod.title} ${a.type}`,
+          details: a.weight ? `Weight: ${a.weight}%` : undefined,
+        });
+      } else if ('window' in a && a.window?.start) {
+        addEvent(out, seen, {
+          year: y,
+          date: a.window.start,
+          kind: 'exam',
+          module: mod.title,
+          title: `${mod.title} Exam`,
+          details: a.window.end ? `Exam window: ${a.window.start} – ${a.window.end}` : undefined,
+        });
+      }
     }
-  });
+  }
 
-  // Cache the results
-  eventCache.set(y, events);
-  return events;
+  cache.set(y, out);
+  return out;
 }
 
 export function getEventsForMonth(y: YearKey, ym: YM): CalendarEvent[] {
-  const allEvents = loadEventsForYear(y);
-  const monthStart = startOfMonth(new Date(ym.year, ym.month - 1));
-  const monthEnd = endOfMonth(monthStart);
-
-  return allEvents.filter(event => {
-    const eventDate = parseISODate(event.date);
-    return isDateWithinInterval(eventDate, { start: monthStart, end: monthEnd });
+  const all = loadEventsForYear(y);
+  const start = startOfMonth(new Date(ym.year, ym.month - 1, 1));
+  const end = endOfMonth(start);
+  return all.filter(e => {
+    const d = parseISODate(e.date);
+    return within(d, start, end);
   });
 }
 
 export function getEventsForWeek(y: YearKey, mondayISO: string): CalendarEvent[] {
-  const allEvents = loadEventsForYear(y);
+  const all = loadEventsForYear(y);
   const weekStart = parseISODate(mondayISO);
   const weekEnd = addDays(weekStart, 6);
-
-  return allEvents.filter(event => {
-    const eventDate = parseISODate(event.date);
-    return isDateWithinInterval(eventDate, { start: weekStart, end: weekEnd });
+  return all.filter(e => {
+    const d = parseISODate(e.date);
+    return within(d, weekStart, weekEnd);
   });
 }
 
+// Year columns (Michaelmas/Epiphany/Easter) built from real events:
 export function buildYearPlanFromData(y: YearKey): YearPlan {
   const plan = getDefaultPlanByStudentYear(y);
-  const allEvents = loadEventsForYear(y);
-  
+  const all = loadEventsForYear(y);
+
+  function termBlock(term: 'michaelmas' | 'epiphany' | 'easter', title: string, dangerKinds: EventKind[]) {
+    const termDates = plan.termDates[term];
+    return {
+      key: term,
+      title,
+      dateRangeLabel: `${format(parseISODate(termDates.start), 'd MMM')} – ${format(parseISODate(termDates.end), 'd MMM')}`,
+      modules:
+        term === 'easter'
+          ? [] // usually revision/exams only
+          : (plan.modules ?? [])
+              .filter(m => allowedInTerm(m.delivery, term as any))
+              .map(m => m.title),
+      weeks: termDates.weeks.map((wISO: string, i: number) => {
+        const ws = parseISODate(wISO);
+        const we = addDays(ws, 6);
+        const deadlines = all
+          .filter(e => e.kind === 'deadline' || e.kind === 'exam')
+          .filter(e => {
+            const d = parseISODate(e.date);
+            return within(d, ws, we);
+          })
+          .map(e => ({
+            label: `${e.module} • ${e.kind === 'exam' ? 'Exam' : e.title.replace(`${e.module} `, '')}`,
+            danger: dangerKinds.includes(e.kind),
+          }));
+        return {
+          id: `W${i + 1}`,
+          dateLabel: format(ws, 'd MMM'),
+          deadlines,
+        };
+      }),
+    };
+  }
+
   return {
     terms: [
-      {
-        key: 'michaelmas',
-        title: 'Michaelmas',
-        dateRangeLabel: `${format(parseISODate(plan.termDates.michaelmas.start), 'd MMM')} – ${format(parseISODate(plan.termDates.michaelmas.end), 'd MMM')}`,
-        modules: plan.modules
-          .filter(m => m.delivery === 'Michaelmas' || m.delivery === 'Michaelmas+Epiphany')
-          .map(m => m.title),
-        weeks: plan.termDates.michaelmas.weeks.map((weekStart, index) => {
-          const weekStartDate = parseISODate(weekStart);
-          const weekEvents = allEvents.filter(event => {
-            const eventDate = parseISODate(event.date);
-            const weekEnd = addDays(weekStartDate, 6);
-            return isDateWithinInterval(eventDate, { start: weekStartDate, end: weekEnd }) && 
-                   event.kind === 'deadline';
-          });
-          
-          return {
-            id: `W${index + 1}`,
-            dateLabel: format(weekStartDate, 'd MMM'),
-            deadlines: weekEvents.map(event => ({
-              label: `${event.module} • ${event.title.replace(event.module + ' ', '')}`,
-              danger: event.kind === 'exam'
-            }))
-          };
-        })
-      },
-      {
-        key: 'epiphany',
-        title: 'Epiphany',
-        dateRangeLabel: `${format(parseISODate(plan.termDates.epiphany.start), 'd MMM')} – ${format(parseISODate(plan.termDates.epiphany.end), 'd MMM')}`,
-        modules: plan.modules
-          .filter(m => m.delivery === 'Epiphany' || m.delivery === 'Michaelmas+Epiphany')
-          .map(m => m.title),
-        weeks: plan.termDates.epiphany.weeks.map((weekStart, index) => {
-          const weekStartDate = parseISODate(weekStart);
-          const weekEvents = allEvents.filter(event => {
-            const eventDate = parseISODate(event.date);
-            const weekEnd = addDays(weekStartDate, 6);
-            return isDateWithinInterval(eventDate, { start: weekStartDate, end: weekEnd }) && 
-                   event.kind === 'deadline';
-          });
-          
-          return {
-            id: `W${index + 1}`,
-            dateLabel: format(weekStartDate, 'd MMM'),
-            deadlines: weekEvents.map(event => ({
-              label: `${event.module} • ${event.title.replace(event.module + ' ', '')}`,
-              danger: event.kind === 'exam'
-            }))
-          };
-        })
-      },
-      {
-        key: 'easter',
-        title: 'Easter (Revision & Exams)',
-        dateRangeLabel: `${format(parseISODate(plan.termDates.easter.start), 'd MMM')} – ${format(parseISODate(plan.termDates.easter.end), 'd MMM')}`,
-        modules: [],
-        weeks: plan.termDates.easter.weeks.map((weekStart, index) => {
-          const weekStartDate = parseISODate(weekStart);
-          const examEvents = allEvents.filter(event => {
-            const eventDate = parseISODate(event.date);
-            const weekEnd = addDays(weekStartDate, 6);
-            return isDateWithinInterval(eventDate, { start: weekStartDate, end: weekEnd }) && 
-                   event.kind === 'exam';
-          });
-          
-          return {
-            id: `W${index + 1}`,
-            dateLabel: format(weekStartDate, 'd MMM'),
-            deadlines: examEvents.map(event => ({
-              label: `${event.module} • Exam`,
-              danger: true
-            }))
-          };
-        })
-      }
-    ]
+      termBlock('michaelmas', 'Michaelmas', ['exam']),
+      termBlock('epiphany', 'Epiphany', ['exam']),
+      termBlock('easter', 'Easter (Revision & Exams)', ['exam']),
+    ],
   };
 }
 
-// React hooks for easier component integration
+// Tiny hooks
 export function useMonthData(y: YearKey, ym: YM) {
   return useMemo(() => getEventsForMonth(y, ym), [y, ym.year, ym.month]);
 }
-
 export function useWeekData(y: YearKey, mondayISO: string) {
   return useMemo(() => getEventsForWeek(y, mondayISO), [y, mondayISO]);
 }
-
 export function useYearPlan(y: YearKey) {
   return useMemo(() => buildYearPlanFromData(y), [y]);
 }
