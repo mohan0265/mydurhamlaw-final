@@ -14,7 +14,8 @@ import {
 
 import { validateEnv } from "@/lib/env";
 // NOTE: AuthContext lives in src/supabase/AuthContext.tsx
-import { AuthProvider } from "@/lib/supabase/AuthContext";
+import { AuthProvider, useAuth } from "@/lib/supabase/AuthContext";
+import { setupDurmahContext } from "@/lib/supabaseBridge";
 
 import LayoutShell from "@/layout/LayoutShell";
 import { Toaster } from "react-hot-toast";
@@ -23,6 +24,17 @@ import { Toaster } from "react-hot-toast";
 const DurmahWidget = dynamic(() => import("../components/DurmahWidget"), {
   ssr: false,
 });
+
+// Component to set up Durmah context
+const DurmahContextSetup: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { session, userProfile } = useAuth();
+
+  useEffect(() => {
+    setupDurmahContext(session?.user || null, userProfile);
+  }, [session, userProfile]);
+
+  return <>{children}</>;
+};
 
 // Optional feature flag (Netlify → Environment → NEXT_PUBLIC_ENABLE_VOICE_FEATURES=true)
 const VOICE_ENABLED =
@@ -87,11 +99,12 @@ export default function App({ Component, pageProps }: AppProps) {
       <AuthProvider>
         <QueryClientProvider client={queryClient}>
           <HydrationBoundary state={(pageProps as any)?.dehydratedState}>
-            <LayoutShell>
-              <Component {...pageProps} />
-            </LayoutShell>
+            <DurmahContextSetup>
+              <LayoutShell>
+                <Component {...pageProps} />
+              </LayoutShell>
 
-            {/* Global Toaster */}
+              {/* Global Toaster */}
             <Toaster
               position="top-right"
               toastOptions={{
@@ -108,14 +121,15 @@ export default function App({ Component, pageProps }: AppProps) {
               }}
             />
 
-            {/* ⬇️ Floating Durmah widget */}
-            {VOICE_ENABLED && !hideWidget && (
-              <DurmahWidget
-                context={{
-                  route: router.asPath,
-                }}
-              />
-            )}
+              {/* ⬇️ Floating Durmah widget */}
+              {VOICE_ENABLED && !hideWidget && (
+                <DurmahWidget
+                  context={{
+                    route: router.asPath,
+                  }}
+                />
+              )}
+            </DurmahContextSetup>
           </HydrationBoundary>
         </QueryClientProvider>
       </AuthProvider>

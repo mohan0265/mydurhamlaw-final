@@ -16,6 +16,7 @@ import {
 } from '@/lib/calendar/links';
 import { useWeekData } from '@/lib/calendar/useCalendarData';
 import { getDefaultPlanByStudentYear } from '@/data/durham/llb';
+import { format } from 'date-fns';
 
 const WeekGrid = dynamic(() => import('@/components/calendar/WeekGrid').then(m => ({ default: m.WeekGrid })), {
   ssr: false,
@@ -30,10 +31,36 @@ const WeekPage: React.FC = () => {
     return parseYearKey(typeof yParam === 'string' ? yParam : undefined);
   }, [yParam]);
 
-  // Parse week start from query, default to first teaching week
+  // Parse week start from query, with vacation period handling
   const weekStartISO: string = useMemo(() => {
     const plan = getDefaultPlanByStudentYear(year);
     const firstTeachingWeek = plan.termDates.michaelmas.weeks[0] || '2025-10-06';
+    
+    // If no specific week requested, check if we're in vacation and jump to first teaching week
+    if (!wsParam) {
+      const now = new Date();
+      const today = format(now, 'yyyy-MM-dd');
+      
+      // Check if current date falls outside any teaching week
+      const allTeachingWeeks = [
+        ...plan.termDates.michaelmas.weeks,
+        ...plan.termDates.epiphany.weeks,
+        ...plan.termDates.easter.weeks
+      ];
+      
+      const isInTeachingWeek = allTeachingWeeks.some(weekStart => {
+        const weekStartDate = new Date(weekStart + 'T00:00:00.000Z');
+        const weekEndDate = new Date(weekStartDate.getTime() + 6 * 24 * 60 * 60 * 1000);
+        const todayDate = new Date(today + 'T00:00:00.000Z');
+        return todayDate >= weekStartDate && todayDate <= weekEndDate;
+      });
+      
+      // If not in any teaching week, default to first teaching week
+      if (!isInTeachingWeek) {
+        return firstTeachingWeek;
+      }
+    }
+    
     return parseWeekStartParam(firstTeachingWeek, typeof wsParam === 'string' ? wsParam : undefined);
   }, [wsParam, year]);
 

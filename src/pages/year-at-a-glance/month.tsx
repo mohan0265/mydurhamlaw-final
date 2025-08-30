@@ -19,6 +19,8 @@ import {
 } from '@/lib/calendar/links';
 import type { YM } from '@/lib/calendar/links';
 import { useMonthData, getAcademicYearFor as getAcademicYear } from '@/lib/calendar/useCalendarData';
+import { getDefaultPlanByStudentYear } from '@/data/durham/llb';
+import { format } from 'date-fns';
 
 const MonthGrid = dynamic(() => import('@/components/calendar/MonthGrid').then(m => ({ default: m.MonthGrid })), {
   ssr: false,
@@ -33,8 +35,22 @@ const MonthPage: React.FC = () => {
     return parseYearKey(typeof yParam === 'string' ? yParam : undefined);
   }, [yParam]);
 
-  // Parse month from query, default to academic start month
+  // Parse month from query, with vacation period handling
   const ym: YM = useMemo(() => {
+    // Get current date and term boundaries
+    const now = new Date();
+    const today = format(now, 'yyyy-MM-dd');
+    const plan = getDefaultPlanByStudentYear(year);
+    
+    // Check if we're in vacation period (outside all teaching terms)
+    const isInVacation = today < plan.termDates.michaelmas.start || today > plan.termDates.easter.end;
+    
+    // If no specific month requested and we're in vacation, default to October 2025
+    if (!ymParam && isInVacation) {
+      return { year: 2025, month: 10 }; // October 2025
+    }
+    
+    // Otherwise use academic year defaults
     const academicStartMonth = getAcademicStartMonth(year);
     const academicYear = getAcademicYear(year);
     const fallback: YM = { 

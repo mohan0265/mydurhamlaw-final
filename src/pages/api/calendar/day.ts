@@ -93,10 +93,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
               id: `assessment-${moduleIndex}-${assessmentIndex}`,
               module_id: String(moduleIndex + 1),
               title: `${module.title} ${assessment.type}`,
-              type: assessment.type === 'Problem Question' ? 'coursework' :
+              type: (assessment.type === 'Problem Question' ? 'coursework' :
                     assessment.type === 'Moot' ? 'oral' :
                     assessment.type === 'Dissertation' ? 'coursework' :
-                    assessment.type.toLowerCase() as 'essay' | 'presentation' | 'exam',
+                    assessment.type === 'Essay' ? 'essay' :
+                    assessment.type === 'Exam' ? 'exam' :
+                    assessment.type === 'Presentation' ? 'presentation' :
+                    'coursework') as 'essay' | 'exam' | 'coursework' | 'presentation' | 'oral',
               due_at: `${dateStr}T23:59:59Z`,
               weight_percentage: assessment.weight || 0,
               description: assessment.type === 'Essay' ? 'Essay submission' : 

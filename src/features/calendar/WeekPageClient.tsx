@@ -53,7 +53,7 @@ const WeekPageClient = () => {
     toast.success(`Opening ${event.title}`)
   }, [])
 
-  const handleCreateEvent = useCallback((startTime: string, endTime: string) => {
+  const handleCreateEvent = useCallback((dateISO: string) => {
     toast.success('Creating new study block...')
   }, [])
 
@@ -199,8 +199,7 @@ const WeekPageClient = () => {
                 <Button
                   onClick={() =>
                     handleCreateEvent(
-                      new Date().toISOString(),
-                      new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString()
+                      new Date().toISOString()
                     )
                   }
                   size="sm"
@@ -310,11 +309,10 @@ const WeekPageClient = () => {
           {weekData ? (
             <WeekView
               weekData={weekData as any}
-              currentDate={currentDate}
-              onDateChange={handleDateChange}
+              currentWeekDate={currentDate}
+              onWeekChange={handleDateChange}
               onEventClick={handleEventClick}
               onCreateEvent={handleCreateEvent}
-              onUpdateEvent={handleUpdateEvent}
             />
           ) : (
             <div className="text-center py-12">

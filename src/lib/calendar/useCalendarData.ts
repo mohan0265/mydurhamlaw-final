@@ -9,6 +9,20 @@ import {
 import { getDefaultPlanByStudentYear } from '@/data/durham/llb';
 import type { YearKey } from './links';
 
+// Map module families to stable weekdays (0=Mon..4=Fri)
+const MODULE_DAY_MAP: Record<string, number> = {
+  'Tort': 0,                             // Mon
+  'Contract': 1,                         // Tue
+  'European Union': 2,                   // Wed
+  'UK Constitutional': 3,                // Thu
+  'Introduction to English Law': 4,      // Fri
+};
+
+function dayOffsetForModule(title: string): number {
+  const key = Object.keys(MODULE_DAY_MAP).find(k => title.includes(k));
+  return key ? MODULE_DAY_MAP[key]! : 0; // default Monday
+}
+
 export type EventKind = 'lecture' | 'seminar' | 'deadline' | 'exam' | 'task' | 'all-day';
 
 export interface CalendarEvent {
@@ -126,7 +140,7 @@ export function loadEventsForYear(y: YearKey): CalendarEvent[] {
   const out: CalendarEvent[] = [];
   const seen = new Set<string>();
 
-  // Teaching weeks → only add items when a weekly topic exists
+  // Teaching weeks → distribute topics across weekdays (Mon-Fri)
   ([
     { term: 'michaelmas' as const, weeks: plan.termDates.michaelmas.weeks },
     { term: 'epiphany'   as const, weeks: plan.termDates.epiphany.weeks   },
@@ -140,19 +154,19 @@ export function loadEventsForYear(y: YearKey): CalendarEvent[] {
         const topic = topicForWeek(mod, term, weekIndex);
         if (!topic) continue; // ← no weekly topic? skip to avoid bland duplicates
 
+        // Calculate the actual day for this module (Mon=0, Tue=1, Wed=2, Thu=3, Fri=4)
+        const dayOffset = dayOffsetForModule(mod.title);
+        const topicDate = addDays(weekStart, dayOffset);
+
         // We DO NOT fabricate times. These render as all-day chips.
         addEvent(out, seen, {
           year: y,
-          date: iso(weekStart),               // Monday of the week (or whatever day your dataset indicates)
+          date: iso(topicDate),               // Specific weekday based on module
           kind: 'lecture',
           module: mod.title,
           title: `${mod.title}: ${topic}`,
           details: `W${weekIndex + 1}`,
         });
-
-        // If your dataset actually gives a second lecture/seminar day, add it here
-        // by carrying through real day offsets / times. Otherwise, keep it as a single
-        // all-day "topic for the week" item to avoid repetition.
       }
     });
   });
