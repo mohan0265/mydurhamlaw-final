@@ -8,48 +8,57 @@ export const YEAR_LABEL: Record<YearKey, string> = {
   year3: 'Year 3',
 };
 
-const ORDER: YearKey[] = ['foundation', 'year1', 'year2', 'year3'];
+// Readonly tuple gives us tight literal types
+export const YEAR_ORDER = ['foundation', 'year1', 'year2', 'year3'] as const;
 
-export function parseYearKey(input?: unknown): YearKey {
-  const raw =
-    typeof input === 'string' ? input :
-    Array.isArray(input) && input.length ? input[0] :
-    typeof window !== 'undefined' ? window.localStorage.getItem('yaag:y') : null;
+export function isYearKey(x: string | undefined): x is YearKey {
+  return x === 'foundation' || x === 'year1' || x === 'year2' || x === 'year3';
+}
 
-  const v = (raw || '').toLowerCase().trim();
-  if (v === 'foundation' || v === 'year1' || v === 'year2' || v === 'year3') return v;
+export function parseYearKey(q?: string): YearKey {
+  if (isYearKey(q)) return q;
   return 'year1';
 }
 
-export function persistYearKey(y: YearKey): void {
-  if (typeof window !== 'undefined') {
-    window.localStorage.setItem('yaag:y', y);
-  }
+export function persistYearKey(y: YearKey) {
+  try { localStorage.setItem('mdl.lastYear', y); } catch {}
 }
 
-export function readYearKey(): YearKey | null {
-  if (typeof window === 'undefined') return null;
-  const v = window.localStorage.getItem('yaag:y');
-  return v ? parseYearKey(v) : null;
+export function readYearKey(): YearKey {
+  try {
+    const v = localStorage.getItem('mdl.lastYear');
+    if (isYearKey(v ?? '')) return v as YearKey;
+  } catch {}
+  return 'year1';
 }
 
-export function hrefYear(y: YearKey): string {
+export function hrefYear(y: YearKey) {
   return `/year-at-a-glance?y=${y}`;
 }
-export function hrefMonth(y: YearKey): string {
+export function hrefMonth(y: YearKey) {
   return `/year-at-a-glance/month?y=${y}`;
 }
-export function hrefWeek(y: YearKey, w?: string | number): string {
-  const qs = new URLSearchParams({ y });
-  if (typeof w !== 'undefined') qs.set('w', String(w));
-  return `/year-at-a-glance/week?${qs.toString()}`;
+export function hrefWeek(y: YearKey) {
+  return `/year-at-a-glance/week?y=${y}`;
 }
 
-export function getPrevYearKey(current: YearKey): YearKey {
-  const i = ORDER.indexOf(current);
-  return i > 0 ? ORDER[i - 1]! : ORDER[0]!;
+export function getPrevYearKey(y: YearKey): YearKey | null {
+  const idx = YEAR_ORDER.indexOf(y);
+  if (idx > 0) return YEAR_ORDER[idx - 1] as YearKey;
+  return null; // <- ensure null, never undefined
 }
-export function getNextYearKey(current: YearKey): YearKey {
-  const i = ORDER.indexOf(current);
-  return i < ORDER.length - 1 ? ORDER[i + 1]! : ORDER[ORDER.length - 1]!;
+
+export function getNextYearKey(y: YearKey): YearKey | null {
+  const idx = YEAR_ORDER.indexOf(y);
+  if (idx >= 0 && idx < YEAR_ORDER.length - 1) return YEAR_ORDER[idx + 1] as YearKey;
+  return null; // <- ensure null, never undefined
+}
+
+/** Student’s own enrolled year (from profile or local fallback). */
+export function getStudentYear(): YearKey {
+  try {
+    const p = localStorage.getItem('mdl.studentYear');
+    if (isYearKey(p ?? '')) return p as YearKey;
+  } catch {}
+  return 'year1';
 }

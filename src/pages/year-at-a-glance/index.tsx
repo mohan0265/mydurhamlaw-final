@@ -1,99 +1,102 @@
 // src/pages/year-at-a-glance/index.tsx
-import { useEffect } from 'react';
-import Head from 'next/head';
-import Link from 'next/link';
+import React, { useEffect, useMemo } from 'react';
 import { useRouter } from 'next/router';
-import dynamic from 'next/dynamic';
-import { ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
-
+import Link from 'next/link';
 import {
-  YEAR_LABEL,
-  YearKey,
-  parseYearKey,
-  getPrevYearKey,
-  getNextYearKey,
-  hrefMonth,
-  hrefWeek,
-  hrefYear,
-  persistYearKey,
-  readYearKey,
+  YEAR_LABEL, YearKey, parseYearKey, persistYearKey, readYearKey,
+  hrefMonth, hrefWeek, getPrevYearKey, getNextYearKey, hrefYear
 } from '@/lib/calendar/links';
 
-const YearView = dynamic(() => import('@/components/calendar/YearView').then(m => m.default), {
-  ssr: false,
-});
+// Your existing 3-column Year component – kept simple here.
+// If you already have a nice component, import and use it instead.
+const ColumnCard: React.FC<{ title: string; children?: React.ReactNode }> = ({ title, children }) => (
+  <div className="rounded-2xl shadow p-4 bg-white border">
+    <div className="font-semibold mb-3">{title}</div>
+    <div>{children}</div>
+  </div>
+);
 
-function label(y: YearKey) {
-  return YEAR_LABEL[y];
-}
-
-function yearKeyToStudyNumber(y: YearKey): number {
-  switch (y) {
-    case 'foundation': return 0;
-    case 'year1': return 1;
-    case 'year2': return 2;
-    case 'year3': return 3;
-  }
-}
-
-export default function YearAtAGlanceIndex() {
+const YearAtAGlancePage: React.FC = () => {
   const router = useRouter();
-  const y: YearKey = parseYearKey(router.query.y ?? readYearKey());
+  const qYear = typeof router.query?.y === 'string' ? router.query.y : undefined;
 
-  useEffect(() => { persistYearKey(y); }, [y]);
+  // Resolve selected year from query or localStorage fallback
+  const year: YearKey = useMemo(() => {
+    return parseYearKey(qYear) || readYearKey();
+  }, [qYear]);
 
-  const prevY = getPrevYearKey(y);
-  const nextY = getNextYearKey(y);
+  useEffect(() => {
+    persistYearKey(year);
+  }, [year]);
+
+  const prev = getPrevYearKey(year);
+  const next = getNextYearKey(year);
 
   return (
-    <>
-      <Head>
-        <title>My Year at a Glance – {label(y)}</title>
-      </Head>
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="flex items-center justify-between gap-2 mb-4">
-          <div className="flex items-center gap-2">
-            <button
-              className="inline-flex items-center gap-2 rounded-md border px-3 py-2 hover:bg-gray-50"
-              onClick={() => { persistYearKey(prevY); router.push(hrefYear(prevY)); }}
-            >
-              <ChevronLeft className="w-4 h-4" />
-              <span>{label(prevY)}</span>
-            </button>
-
-            <h1 className="text-xl sm:text-2xl font-semibold px-2">
-              My Year at a Glance • <span className="text-purple-600">{label(y)}</span>
-            </h1>
-
-            <button
-              className="inline-flex items-center gap-2 rounded-md border px-3 py-2 hover:bg-gray-50"
-              onClick={() => { persistYearKey(nextY); router.push(hrefYear(nextY)); }}
-            >
-              <span>{label(nextY)}</span>
-              <ChevronRight className="w-4 h-4" />
-            </button>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <Link href={hrefMonth(y)} className="rounded-md bg-purple-600 text-white px-3 py-2 text-sm">
-              Month View
-            </Link>
-            <Link href={hrefWeek(y)} className="rounded-md bg-purple-600 text-white px-3 py-2 text-sm">
-              Week View
-            </Link>
-          </div>
+    <div className="max-w-6xl mx-auto px-4 py-6">
+      {/* Breadcrumb-ish header */}
+      <div className="flex items-center justify-between gap-3 mb-4">
+        <div className="text-sm text-gray-500">
+          <span className="opacity-70">Foundation</span>
+          <span className="mx-2">•</span>
+          <span className="opacity-70">My Year at a Glance</span>
+          <span className="mx-2">•</span>
+          <span className="font-semibold text-purple-700">{YEAR_LABEL[year]}</span>
         </div>
 
-        <div className="mb-4">
-          <div className="inline-flex items-center gap-2 text-sm text-gray-600">
-            <Calendar className="w-4 h-4" />
-            <span>Viewing: <b>{label(y)}</b></span>
-          </div>
+        <div className="flex items-center gap-2">
+          {prev && (
+            <Link href={hrefYear(prev)} className="px-3 py-2 rounded-xl border hover:bg-gray-50">
+              ← {YEAR_LABEL[prev]}
+            </Link>
+          )}
+          {next && (
+            <Link href={hrefYear(next)} className="px-3 py-2 rounded-xl border hover:bg-gray-50">
+              {YEAR_LABEL[next]} →
+            </Link>
+          )}
         </div>
-
-        <YearView userYearOfStudy={yearKeyToStudyNumber(y)} />
       </div>
-    </>
+
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl md:text-3xl font-bold">My Year at a Glance • {YEAR_LABEL[year]}</h1>
+
+        <div className="flex gap-2">
+          <Link href={hrefMonth(year)} className="px-4 py-2 rounded-xl bg-purple-700 text-white hover:opacity-95">
+            Month View
+          </Link>
+          <Link href={hrefWeek(year)} className="px-4 py-2 rounded-xl bg-purple-700 text-white hover:opacity-95">
+            Week View
+          </Link>
+        </div>
+      </div>
+
+      {/* 3 columns: Michaelmas / Epiphany / Easter (overview bullets) */}
+      <div className="grid md:grid-cols-3 gap-5">
+        <ColumnCard title="Michaelmas (Oct–Dec)">
+          <ul className="list-disc pl-5 text-sm leading-6">
+            <li>Core modules overview</li>
+            <li>Weeks W1–W10, essay checkpoints</li>
+          </ul>
+        </ColumnCard>
+        <ColumnCard title="Epiphany (Jan–Mar)">
+          <ul className="list-disc pl-5 text-sm leading-6">
+            <li>Core modules overview</li>
+            <li>Problem question deadlines</li>
+          </ul>
+        </ColumnCard>
+        <ColumnCard title="Easter (Apr–Jun)">
+          <ul className="list-disc pl-5 text-sm leading-6">
+            <li>Revision weeks & exam windows</li>
+          </ul>
+        </ColumnCard>
+      </div>
+
+      <p className="text-xs text-gray-500 mt-6">
+        Tip: Use the arrows at top-right to jump across Foundation ↔ Year 1 ↔ Year 2 ↔ Year 3.
+      </p>
+    </div>
   );
-}
+};
+
+export default YearAtAGlancePage;

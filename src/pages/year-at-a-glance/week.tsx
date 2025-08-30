@@ -1,77 +1,62 @@
 // src/pages/year-at-a-glance/week.tsx
-import Head from 'next/head';
-import Link from 'next/link';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/router';
-import dynamic from 'next/dynamic';
-import { useEffect, useContext } from 'react';
+import Link from 'next/link';
 import {
-  YEAR_LABEL, YearKey, parseYearKey, readYearKey, persistYearKey,
-  hrefYear, hrefWeek,
+  YEAR_LABEL, YearKey, parseYearKey, hrefYear, getStudentYear
 } from '@/lib/calendar/links';
-import { Calendar } from 'lucide-react';
-import { AuthContext } from '@/lib/supabase/AuthContext';
 
-const WeekViewClient = dynamic(() => import('@/components/calendar/WeekView').then(m => m.WeekView), {
-  ssr: false,
-});
+const WeekPage: React.FC = () => {
+  const router = useRouter();
+  const yParam = typeof router.query?.y === 'string' ? router.query.y : undefined;
 
-// Simple adapter component
-function WeekViewAdapter() {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
+  const year: YearKey = useMemo(() => parseYearKey(yParam), [yParam]);
+  const studentYear = getStudentYear();
+  const isOwnYear = year === studentYear;
+
+  if (!mounted) return null;
+
   return (
-    <div className="text-center py-8 text-gray-600">
-      <p>Week view is currently being developed.</p>
-      <p className="text-sm mt-2">This will show your detailed weekly schedule once completed.</p>
+    <div className="max-w-6xl mx-auto px-4 py-6">
+      <div className="flex items-center justify-between mb-4">
+        <Link href={hrefYear(year)} className="text-purple-700 hover:underline">← Back to Year</Link>
+        <div className="text-sm text-gray-500">{YEAR_LABEL[year]} • Week View</div>
+      </div>
+
+      <h1 className="text-2xl md:text-3xl font-bold mb-2">Week View • {YEAR_LABEL[year]}</h1>
+
+      {!isOwnYear ? (
+        <div className="rounded-2xl border bg-white p-6">
+          <p className="font-semibold mb-2">Browse-only</p>
+          <p className="text-sm text-gray-600">
+            Detailed weekly schedules are visible only for your enrolled year
+            (<span className="font-semibold"> {YEAR_LABEL[studentYear]}</span>). Use the Year page to explore the outline.
+          </p>
+        </div>
+      ) : (
+        <div className="rounded-2xl border bg-white p-6">
+          <p className="font-semibold mb-4">Your weekly schedule</p>
+
+          {/* Replace this list with real data mapping from src/data/durham/llb/* when ready */}
+          <div className="space-y-3">
+            {Array.from({ length: 10 }).map((_, i) => (
+              <div key={i} className="rounded-xl border p-4">
+                <div className="font-medium mb-1">W{i + 1}</div>
+                <ul className="text-sm text-gray-700 space-y-1">
+                  <li>• Lectures: Tort / Contract / EU / UK Const / IELLM</li>
+                  <li>• Seminar: Problem question workshop</li>
+                  <li>• Task: Reading & outline</li>
+                </ul>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
-}
+};
 
-function getStudentYearKey(userYearGroup?: string | null): YearKey {
-  const v = (userYearGroup || '').toLowerCase().replace(/\s+/g, '');
-  if (v === 'foundation' || v === 'year1' || v === 'year2' || v === 'year3') return v as YearKey;
-  return 'year1';
-}
-
-export default function WeekPage() {
-  const router = useRouter();
-  const { userProfile } = useContext(AuthContext);
-
-  const y: YearKey = parseYearKey(router.query.y ?? readYearKey());
-  useEffect(() => { persistYearKey(y); }, [y]);
-
-  const studentYear = getStudentYearKey(userProfile?.year_group);
-  const title = `Week View • ${YEAR_LABEL[y]}`;
-
-  return (
-    <>
-      <Head><title>{title}</title></Head>
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="flex items-center justify-between mb-4">
-          <h1 className="text-xl sm:text-2xl font-semibold">{title}</h1>
-          <Link href={hrefYear(y)} className="text-purple-600 underline">Back to Year</Link>
-        </div>
-
-        {y !== studentYear ? (
-          <div className="max-w-xl rounded-lg border p-6 bg-white">
-            <div className="flex items-center gap-2 text-gray-600 mb-2">
-              <Calendar className="w-5 h-5" />
-              <b>Browse-only</b>
-            </div>
-            <p className="text-gray-700 mb-4">
-              Detailed Week view is only available for your current study year
-              (<b>{YEAR_LABEL[studentYear]}</b>). You're browsing <b>{YEAR_LABEL[y]}</b>.
-            </p>
-            <div className="flex gap-2">
-              <Link href={hrefYear(y)} className="rounded-md border px-3 py-2">Back to Year</Link>
-              <Link href={hrefWeek(studentYear)} className="rounded-md bg-purple-600 text-white px-3 py-2">
-                Go to my Week view
-              </Link>
-            </div>
-          </div>
-        ) : (
-          <WeekViewAdapter />
-        )}
-      </div>
-    </>
-  );
-}
+export default WeekPage;
