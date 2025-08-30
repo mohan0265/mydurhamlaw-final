@@ -110,6 +110,19 @@ export function loadEventsForYear(y: YearKey): CalendarEvent[] {
   if (cache.has(y)) return cache.get(y)!;
 
   const plan = getDefaultPlanByStudentYear(y);
+  if (process.env.NODE_ENV !== 'production') {
+  const rows = (plan.modules ?? []).map((m: any) => ({
+    module: m.title || m.name,
+    delivery: m.delivery,           // 'Michaelmas' | 'Epiphany' | 'Michaelmas+Epiphany'
+    micTopics: (m?.michaelmas?.topics?.length) || (Array.isArray(m?.topics) ? m.topics.length : 0) || 0,
+    epiTopics: (m?.epiphany?.topics?.length) || 0,
+    exams: (m?.assessments?.filter((a: any) => 'window' in a)?.length) || 0,
+    deadlines: (m?.assessments?.filter((a: any) => 'due' in a)?.length) || 0,
+  }));
+  // eslint-disable-next-line no-console
+  console.table(rows);
+}
+
   const out: CalendarEvent[] = [];
   const seen = new Set<string>();
 
