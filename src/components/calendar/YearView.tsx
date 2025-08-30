@@ -11,7 +11,8 @@ import {
   DURHAM_LLB_2025_26,
   getDefaultPlanByStudentYear,
 } from '@/data/durham/llb'
-import SemesterColumn from './SemesterColumn'
+import SemesterColumn from "@/components/calendar/SemesterColumn";
+
 
 type YearViewProps = {
   /** 0 = Foundation, 1..3 = Y1..Y3 */
