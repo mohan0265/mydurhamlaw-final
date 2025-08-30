@@ -1,4 +1,7 @@
-import academicDataJson from '../../../public/data/academic_data.json';
+// Adapter to maintain compatibility with legacy academic data API
+// Now sources from canonical Durham LLB data
+
+import { DURHAM_LLB_2025_26, type YearKey, getDefaultPlanByStudentYear } from '@/data/durham/llb';
 
 export interface AcademicModule {
   name: string;
@@ -19,14 +22,53 @@ export interface AcademicData {
   year_3: YearData;
 }
 
-// Type-safe access to the JSON data
-const academicData: AcademicData = academicDataJson as AcademicData;
+// Convert from canonical YearKey to legacy AcademicYear format
+function convertYearKey(yearKey: YearKey): AcademicYear {
+  const yearMap: Record<YearKey, AcademicYear> = {
+    'foundation': 'foundation_year',
+    'year1': 'year_1',
+    'year2': 'year_2',
+    'year3': 'year_3',
+  };
+  return yearMap[yearKey];
+}
+
+// Convert from legacy AcademicYear to canonical YearKey format
+function convertAcademicYear(academicYear: AcademicYear): YearKey {
+  const yearMap: Record<AcademicYear, YearKey> = {
+    'foundation_year': 'foundation',
+    'year_1': 'year1',
+    'year_2': 'year2',
+    'year_3': 'year3',
+  };
+  return yearMap[academicYear];
+}
+
+// Generate compatible academic data from canonical source
+function generateAcademicData(): AcademicData {
+  const data: AcademicData = {} as AcademicData;
+  
+  for (const [yearKey, plan] of Object.entries(DURHAM_LLB_2025_26)) {
+    const academicYear = convertYearKey(yearKey as YearKey);
+    data[academicYear] = {
+      modules: (plan.modules || []).map(module => ({
+        name: module.title,
+        description: module.notes || `${module.credits} credit ${module.compulsory ? 'compulsory' : 'optional'} module`,
+        assessment: module.assessments?.map(a => a.type).join(', ') || 'TBA'
+      }))
+    };
+  }
+  
+  return data;
+}
+
+const academicData = generateAcademicData();
 
 /**
  * Get academic data for a specific year
  */
 export function getYearData(year: AcademicYear): YearData {
-  return academicData[year];
+  return academicData[year] || { modules: [] };
 }
 
 /**
