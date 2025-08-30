@@ -1,10 +1,49 @@
 // src/pages/year-at-a-glance/month.tsx
-import dynamic from 'next/dynamic'
+import Head from "next/head";
+import Link from "next/link";
+import dynamic from "next/dynamic";
+import { useRouter } from "next/router";
+import { Calendar, ChevronLeft } from "lucide-react";
 
-// Client-only: avoids SSR/prerender touching React Query/Auth
-const MonthPage = dynamic(() => import('@/features/calendar/MonthPageClient'), {
-  ssr: false,
-  loading: () => <div style={{ padding: 24 }}>Loading calendar…</div>,
-})
+import {
+  YEAR_LABEL,
+  type YearKey,
+  hrefYear,
+  parseYearKey,
+} from "@/lib/calendar/links";
 
-export default MonthPage
+// Safe dynamic import (works for default or named export)
+const MonthView = dynamic<any>(
+  () =>
+    import("@/components/calendar/MonthView").then((m: any) =>
+      "default" in m ? m.default : m.MonthView
+    ),
+  { ssr: false }
+);
+
+export default function MonthPage() {
+  const router = useRouter();
+  const y = parseYearKey(router.query.y) as YearKey;
+
+  const title = `Month View • ${YEAR_LABEL[y]}`;
+
+  return (
+    <>
+      <Head><title>{title}</title></Head>
+
+      <div className="sticky top-16 z-40 bg-white/80 backdrop-blur border-b">
+        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+          <div className="text-lg font-semibold">Month View</div>
+          <Link href={hrefYear(y)} className="inline-flex items-center gap-2 text-sm">
+            <ChevronLeft className="w-4 h-4" />
+            Back to Year
+          </Link>
+        </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-4 py-6">
+        <MonthView />
+      </div>
+    </>
+  );
+}
