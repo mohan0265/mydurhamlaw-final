@@ -20,6 +20,10 @@ export type ModulePlan = {
   delivery: "Michaelmas" | "Epiphany" | "Michaelmas+Epiphany";
   assessments: Assessment[];
   notes?: string;
+  // Weekly topics for calendar generation
+  michaelmas?: { topics: string[] }; // 10 weeks
+  epiphany?: { topics: string[] };   // 10 weeks  
+  topics?: string[];                 // fallback for year-long modules
 };
 
 export type AcademicYearPlan = {
@@ -150,6 +154,34 @@ export const DURHAM_LLB_2025_26_Y1: AcademicYearPlan = {
       credits: 20,
       compulsory: true,
       delivery: "Michaelmas+Epiphany",
+      michaelmas: {
+        topics: [
+          "Introduction to Tort: Purpose and Boundaries",
+          "Intentional Torts: Assault, Battery and False Imprisonment", 
+          "Trespass to Land and Goods",
+          "The Tort of Negligence: Duty of Care",
+          "Breach of Duty and Standard of Care",
+          "Factual Causation: But-for Test",
+          "Legal Causation: Remoteness of Damage",
+          "Psychiatric Harm: Primary Victims",
+          "Psychiatric Harm: Secondary Victims", 
+          "Economic Loss and Pure Economic Loss"
+        ]
+      },
+      epiphany: {
+        topics: [
+          "Occupiers' Liability: Visitors and Trespassers",
+          "Product Liability and Consumer Protection",
+          "Employers' Liability and Vicarious Liability",
+          "Nuisance: Private and Public",
+          "The Rule in Rylands v Fletcher",
+          "Defamation: Elements and Defenses",
+          "Privacy and Misuse of Private Information",
+          "Remedies in Tort: Damages",
+          "Remedies: Injunctions and Other Equitable Relief",
+          "Revision and Problem-Solving Techniques"
+        ]
+      },
       assessments: [
         { type: "Essay", due: M_W6, weight: 25 },
         { type: "Problem Question", due: E_W6, weight: 25 },
@@ -158,10 +190,38 @@ export const DURHAM_LLB_2025_26_Y1: AcademicYearPlan = {
     },
     {
       code: "LAW1071",
-      title: "Contract Law",
+      title: "Contract Law", 
       credits: 20,
       compulsory: true,
       delivery: "Michaelmas+Epiphany",
+      michaelmas: {
+        topics: [
+          "Formation: Offer and Invitation to Treat",
+          "Acceptance and Communication of Acceptance",
+          "Consideration: Adequacy and Past Consideration", 
+          "Promissory Estoppel and Reliance",
+          "Intention to Create Legal Relations",
+          "Certainty and Completeness of Terms",
+          "Express Terms and Parol Evidence Rule",
+          "Implied Terms: Business Efficacy",
+          "Statutory Implied Terms and UCTA",
+          "Misrepresentation: Types and Remedies"
+        ]
+      },
+      epiphany: {
+        topics: [
+          "Duress: Economic and Physical",
+          "Undue Influence and Unconscionable Bargains",
+          "Mistake: Common and Mutual Mistake",
+          "Frustration: Doctrine and Limits",
+          "Breach of Contract: Anticipatory and Actual",
+          "Remedies: Damages and Remoteness",
+          "Specific Performance and Injunctions",
+          "Exclusion Clauses: Construction and UCTA",
+          "Third Party Rights and Privity",
+          "Revision and Contract Problem Analysis"
+        ]
+      },
       assessments: [
         { type: "Essay", due: "2025-12-01", weight: 25 },
         { type: "Problem Question", due: "2026-03-02", weight: 25 },
@@ -174,6 +234,34 @@ export const DURHAM_LLB_2025_26_Y1: AcademicYearPlan = {
       credits: 20,
       compulsory: true,
       delivery: "Michaelmas+Epiphany",
+      michaelmas: {
+        topics: [
+          "History and Development of the EU",
+          "Institutions: Commission, Council, Parliament",
+          "Legislative Procedures and Decision-Making",
+          "Direct Effect: Van Gend en Loos and Development",
+          "Supremacy: Costa v ENEL and National Courts",
+          "State Liability: Francovich and Conditions",
+          "Fundamental Freedoms: Overview and Structure",
+          "Free Movement of Goods: Article 34 TFEU",
+          "Quantitative Restrictions and MEQRs",
+          "Justifications: Article 36 and Mandatory Requirements"
+        ]
+      },
+      epiphany: {
+        topics: [
+          "Free Movement of Persons: Workers and Citizens",
+          "Right of Establishment and Services",
+          "Competition Law: Article 101 TFEU",
+          "Abuse of Dominant Position: Article 102",
+          "State Aid and Internal Market",
+          "Fundamental Rights in EU Law",
+          "Judicial Review and Annulment Actions",
+          "Preliminary Reference Procedure",
+          "Enforcement Actions against Member States",
+          "Brexit and Future EU-UK Relations"
+        ]
+      },
       assessments: [
         { type: "Essay", due: "2025-11-24", weight: 30 },
         { type: "Exam", window: EXAM_WINDOW, weight: 70 }
@@ -185,6 +273,34 @@ export const DURHAM_LLB_2025_26_Y1: AcademicYearPlan = {
       credits: 20,
       compulsory: true,
       delivery: "Michaelmas+Epiphany",
+      michaelmas: {
+        topics: [
+          "Sources of the Constitution: Conventions and Law",
+          "Parliamentary Sovereignty: Theory and Practice",
+          "The Rule of Law: Dicey and Modern Interpretations",
+          "Separation of Powers in the UK System",
+          "The Crown and Royal Prerogative",
+          "Parliament: Structure and Procedures",
+          "Elections and the Democratic Process",
+          "Constitutional Role of the Judiciary",
+          "Judicial Review: Grounds and Remedies",
+          "Human Rights Act 1998: Implementation"
+        ]
+      },
+      epiphany: {
+        topics: [
+          "Freedom of Expression: Prior Restraint and Regulation",
+          "Freedom of Assembly and Association",
+          "Police Powers: Stop, Search and Arrest",
+          "Privacy Rights and State Surveillance",
+          "Administrative Law: Procedural Fairness",
+          "Illegality and Judicial Review",
+          "Irrationality: Wednesbury and Proportionality",
+          "Procedural Impropriety and Natural Justice",
+          "Constitutional Reform and Devolution",
+          "Future Constitutional Challenges"
+        ]
+      },
       assessments: [
         { type: "Essay", due: M_W6, weight: 30 },
         { type: "Exam", window: EXAM_WINDOW, weight: 70 }
@@ -196,6 +312,34 @@ export const DURHAM_LLB_2025_26_Y1: AcademicYearPlan = {
       credits: 20,
       compulsory: true,
       delivery: "Michaelmas+Epiphany",
+      michaelmas: {
+        topics: [
+          "Introduction to Public Law Principles",
+          "Administrative Decision-Making Processes",
+          "Natural Justice: Bias and Fair Hearing",
+          "Procedural Fairness in Administrative Action",
+          "Legitimate Expectations Doctrine",
+          "Proportionality in Administrative Law",
+          "Emergency Powers and Civil Liberties",
+          "Immigration Law and Human Rights",
+          "Data Protection and Privacy Rights",
+          "Freedom of Information and Transparency"
+        ]
+      },
+      epiphany: {
+        topics: [
+          "Discrimination Law: Protected Characteristics",
+          "Equality Act 2010: Direct and Indirect Discrimination",
+          "Harassment and Victimisation Claims",
+          "Reasonable Adjustments for Disability",
+          "Employment Equality and Workplace Rights",
+          "Public Sector Equality Duty",
+          "Remedies in Discrimination Law",
+          "International Human Rights Frameworks",
+          "European Convention on Human Rights",
+          "Contemporary Challenges in Individual Rights"
+        ]
+      },
       assessments: [
         { type: "Problem Question", due: "2026-03-09", weight: 40 },
         { type: "Exam", window: EXAM_WINDOW, weight: 60 }
@@ -207,6 +351,34 @@ export const DURHAM_LLB_2025_26_Y1: AcademicYearPlan = {
       credits: 20,
       compulsory: true,
       delivery: "Michaelmas+Epiphany",
+      michaelmas: {
+        topics: [
+          "The English Legal System: Courts and Hierarchy",
+          "Sources of Law: Statute and Common Law",
+          "Statutory Interpretation: Literal and Purposive Approaches",
+          "Precedent and the Doctrine of Stare Decisis",
+          "Case Law Development and Ratio Decidendi",
+          "Legal Research Methods and Databases",
+          "Legal Writing and Citation Conventions",
+          "Mooting and Oral Advocacy Skills",
+          "Professional Ethics and Conduct",
+          "Alternative Dispute Resolution Methods"
+        ]
+      },
+      epiphany: {
+        topics: [
+          "Legal Problem-Solving Techniques",
+          "IRAC Method: Issue, Rule, Application, Conclusion",
+          "Critical Analysis of Legal Arguments",
+          "Comparative Legal Systems: Civil vs Common Law",
+          "International Law and Domestic Courts",
+          "Law Reform: Agencies and Processes",
+          "Access to Justice and Legal Aid",
+          "Technology and the Future of Law",
+          "Clinical Legal Education and Pro Bono Work",
+          "Career Paths in Legal Practice"
+        ]
+      },
       assessments: [
         { type: "Essay", due: "2025-12-08", weight: 40 },
         { type: "Exam", window: EXAM_WINDOW, weight: 60 }
