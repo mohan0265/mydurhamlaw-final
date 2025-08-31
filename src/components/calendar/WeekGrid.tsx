@@ -1,6 +1,6 @@
 // src/components/calendar/WeekGrid.tsx
 import React, { useEffect } from 'react';
-import { format, addDays } from 'date-fns';
+import { format, addDays, parseISO, isBefore, isAfter, startOfWeek, endOfWeek } from 'date-fns';
 import { ChevronLeft, ChevronRight, ArrowLeft, Clock } from 'lucide-react';
 import { YEAR_LABEL } from '@/lib/calendar/links';
 import type { YearKey } from '@/lib/calendar/links';
@@ -81,13 +81,18 @@ export const WeekGrid: React.FC<WeekGridProps> = ({
   const weekEnd = addDays(weekStart, 6);
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
 
-  // Group events by date
+  // Group events by date, plus handle exam window ranges
   const eventsByDate = events.reduce((acc, event) => {
     const dateKey = event.date;
     if (!acc[dateKey]) acc[dateKey] = [];
     acc[dateKey]!.push(event);
     return acc;
   }, {} as Record<string, CalendarEvent[]>);
+
+  // Separate exam window events for special handling
+  const examWindowEvents = events.filter(ev => ev.subtype === 'exam_window');
+  const regularAllDayEvents = (date: string) => 
+    (eventsByDate[date] || []).filter(ev => !ev.start && ev.subtype !== 'exam_window');
 
   // Keyboard navigation
   useEffect(() => {
@@ -194,15 +199,44 @@ export const WeekGrid: React.FC<WeekGridProps> = ({
               </div>
               
               {/* All-day events */}
-              {eventsByDate[format(day, 'yyyy-MM-dd')]?.filter(e => !e.start).map(event => (
-                <div
-                  key={event.id}
-                  className={`mt-1 text-xs px-2 py-1 rounded border ${getAllDayStyle(event.kind)} truncate`}
-                  title={`${event.title}${event.details ? ' - ' + event.details : ''}`}
-                >
-                  {event.title.length > 15 ? event.title.substring(0, 13) + '...' : event.title}
-                </div>
-              ))}
+              {regularAllDayEvents(format(day, 'yyyy-MM-dd')).map(event => {
+                const label = event.title.length > 15 ? event.title.substring(0, 13) + '...' : event.title;
+                return (
+                  <div
+                    key={event.id}
+                    className={`mt-1 text-xs px-2 py-1 rounded border ${getAllDayStyle(event.kind)} truncate`}
+                    title={`${event.title}${event.details ? ' - ' + event.details : ''}`}
+                  >
+                    {label}
+                  </div>
+                );
+              })}
+              
+              {/* Exam windows - show once on Monday if intersects the week */}
+              {index === 0 && examWindowEvents.map(ev => {
+                if (!ev.endDate) return null;
+                
+                const isRange = !!ev.allDay && !!ev.date && !!ev.endDate;
+                const intersectsWeek =
+                  isRange &&
+                  isBefore(parseISO(ev.date), endOfWeek(weekStart, { weekStartsOn: 1 })) &&
+                  isAfter(parseISO(ev.endDate), startOfWeek(weekStart, { weekStartsOn: 1 }));
+
+                if (!intersectsWeek) return null;
+
+                const label = `${ev.title} (${format(parseISO(ev.date), "d MMM")}–${format(parseISO(ev.endDate), "d MMM")})`;
+                const shortLabel = label.length > 15 ? label.substring(0, 13) + '...' : label;
+                
+                return (
+                  <div
+                    key={ev.id}
+                    className={`mt-1 text-xs px-2 py-1 rounded border ${getAllDayStyle(ev.kind)} truncate`}
+                    title={`${label}${ev.details ? ' - ' + ev.details : ''}`}
+                  >
+                    {shortLabel}
+                  </div>
+                );
+              })}
             </div>
           ))}
         </div>

@@ -9,6 +9,7 @@ import {
   addDays,
   isSameMonth,
   isToday,
+  parseISO,
   } from 'date-fns';
 import { ChevronLeft, ChevronRight, ArrowLeft } from 'lucide-react';
 import { YEAR_LABEL } from '@/lib/calendar/links';
@@ -78,7 +79,13 @@ export const MonthGrid: React.FC<MonthGridProps> = ({
   const eventsByDate = useMemo(() => {
     const map: Record<string, CalendarEvent[]> = {};
     for (const ev of events) {
-      (map[ev.date] ||= []).push(ev);
+      // For exam_window events, only show on the start date
+      if (ev.subtype === 'exam_window') {
+        // Only add to the start date
+        (map[ev.date] ||= []).push(ev);
+      } else {
+        (map[ev.date] ||= []).push(ev);
+      }
     }
     // sort each day: all-day first (no start), then timed by HH:mm
     for (const k of Object.keys(map)) {
@@ -196,20 +203,29 @@ export const MonthGrid: React.FC<MonthGridProps> = ({
 
                 {/* Events list: all-day items render WITHOUT a time; timed items show HH:mm */}
                 <div className="space-y-1">
-                  {visible.map((ev) => (
-                    <div
-                      key={ev.id}
-                      className={[
-                        'text-[11px] px-2 py-1 rounded border truncate cursor-default',
-                        badgeStyle(ev.kind),
-                      ].join(' ')}
-                      title={[ev.start ? `${ev.start} — ` : '', ev.title, ev.details ? `\n${ev.details}` : ''].join('')}
-                    >
-                      {/* Only show a time if start exists */}
-                      {ev.start ? <span className="font-mono mr-1">{ev.start}</span> : null}
-                      <span className="truncate">{ev.title}</span>
-                    </div>
-                  ))}
+                  {visible.map((ev) => {
+                    // Build appropriate label for exam windows
+                    const isRange = !!ev?.allDay && !!ev?.date && !!ev?.endDate;
+                    const label =
+                      ev?.subtype === 'exam_window' && isRange
+                        ? `${ev.title} (${format(parseISO(ev.date), "d MMM")}–${format(parseISO(ev.endDate), "d MMM")})`
+                        : ev.title;
+                    
+                    return (
+                      <div
+                        key={ev.id}
+                        className={[
+                          'text-[11px] px-2 py-1 rounded border truncate cursor-default',
+                          badgeStyle(ev.kind),
+                        ].join(' ')}
+                        title={[ev.start ? `${ev.start} — ` : '', label, ev.details ? `\n${ev.details}` : ''].join('')}
+                      >
+                        {/* Only show a time if start exists */}
+                        {ev.start ? <span className="font-mono mr-1">{ev.start}</span> : null}
+                        <span className="truncate">{label}</span>
+                      </div>
+                    );
+                  })}
 
                   {overflow > 0 && (
                     <button
@@ -227,12 +243,21 @@ export const MonthGrid: React.FC<MonthGridProps> = ({
                   <div className="absolute z-50 left-0 top-full mt-1 bg-white border rounded-lg shadow-lg p-3 min-w-[220px]">
                     <div className="text-sm font-medium mb-2">{format(day, 'MMM d')}</div>
                     <div className="space-y-1 max-h-48 overflow-y-auto">
-                      {dayEvents.slice(4).map((ev) => (
-                        <div key={ev.id} className={['text-[11px] px-2 py-1 rounded border', badgeStyle(ev.kind)].join(' ')}>
-                          {ev.start ? <span className="font-mono mr-1">{ev.start}</span> : null}
-                          {ev.title}
-                        </div>
-                      ))}
+                      {dayEvents.slice(4).map((ev) => {
+                        // Build appropriate label for exam windows
+                        const isRange = !!ev?.allDay && !!ev?.date && !!ev?.endDate;
+                        const label =
+                          ev?.subtype === 'exam_window' && isRange
+                            ? `${ev.title} (${format(parseISO(ev.date), "d MMM")}–${format(parseISO(ev.endDate), "d MMM")})`
+                            : ev.title;
+                        
+                        return (
+                          <div key={ev.id} className={['text-[11px] px-2 py-1 rounded border', badgeStyle(ev.kind)].join(' ')}>
+                            {ev.start ? <span className="font-mono mr-1">{ev.start}</span> : null}
+                            {label}
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 )}
