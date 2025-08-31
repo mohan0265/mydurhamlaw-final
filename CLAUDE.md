@@ -292,3 +292,8 @@ If plan is missing (shouldn’t happen), show a friendly “plan unavailable” 
 If student submits Contribute without module_code, accept it but flag “(Unspecified module)” in the UI.
 
 End of CLAUDE.md
+### Data verification status
+
+- Durham LLB 2025/26: ✅ Verified and implemented (Europe/London TZ)
+- Commit: <fill-after-commit>
+- Date: 2025-08-31
