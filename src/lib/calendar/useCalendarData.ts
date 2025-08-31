@@ -28,11 +28,15 @@ export type EventKind = 'lecture' | 'seminar' | 'deadline' | 'exam' | 'task' | '
 export interface CalendarEvent {
   id: string;
   year: YearKey;
-  date: string;        // 'YYYY-MM-DD'
+  date: string;        // 'YYYY-MM-DD' (start date for events)
+  endDate?: string;    // 'YYYY-MM-DD' (end date for ranged events)
   start?: string;      // 'HH:mm' (ONLY if present in data)
   end?: string;        // 'HH:mm'
   kind: EventKind;
+  subtype?: string;    // e.g., 'exam_window'
+  allDay?: boolean;    // true for all-day events
   module?: string;     // e.g., 'Tort Law'
+  moduleCode?: string; // e.g., 'TORT'
   title: string;       // Prefer weekly topic/subtopic; fallback to safe label
   details?: string;
 }
@@ -183,13 +187,18 @@ export function loadEventsForYear(y: YearKey): CalendarEvent[] {
           title: `${mod.title} ${a.type}`,
           details: a.weight ? `Weight: ${a.weight}%` : undefined,
         });
-      } else if ('window' in a && a.window?.start) {
+      } else if ('window' in a && a.window?.start && a.type === 'Exam') {
+        // Create ONE ranged all-day banner per module; do not fabricate exact times
         addEvent(out, seen, {
           year: y,
           date: a.window.start,
-          kind: 'exam',
+          endDate: a.window.end,
+          allDay: true,
+          kind: 'assessment',
+          subtype: 'exam_window',
           module: mod.title,
-          title: `${mod.title} Exam`,
+          moduleCode: mod.code,
+          title: `${mod.title} • Exam window`,
           details: a.window.end ? `Exam window: ${a.window.start} – ${a.window.end}` : undefined,
         });
       }
