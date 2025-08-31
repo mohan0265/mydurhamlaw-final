@@ -1,7 +1,8 @@
 // src/components/calendar/WeekGrid.tsx
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { format, addDays, parseISO, isBefore, isAfter, startOfWeek, endOfWeek } from 'date-fns';
 import { ChevronLeft, ChevronRight, ArrowLeft, Clock } from 'lucide-react';
+import { Button } from '@/components/ui/Button';
 import { YEAR_LABEL } from '@/lib/calendar/links';
 import type { YearKey } from '@/lib/calendar/links';
 import type { CalendarEvent } from '@/lib/calendar/useCalendarData';
@@ -14,6 +15,7 @@ interface WeekGridProps {
   onNext: () => void;
   onBack: () => void;
   gated: boolean;
+  onEventClick?: (event: CalendarEvent) => void;
 }
 
 const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -75,8 +77,11 @@ export const WeekGrid: React.FC<WeekGridProps> = ({
   onPrev,
   onNext,
   onBack,
-  gated
+  gated,
+  onEventClick
 }) => {
+  const [expanded, setExpanded] = useState(false);
+  
   const weekStart = parseISODate(mondayISO);
   const weekEnd = addDays(weekStart, 6);
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
@@ -177,8 +182,17 @@ export const WeekGrid: React.FC<WeekGridProps> = ({
           </button>
         </div>
 
-        <div className="text-sm text-gray-500">
-          Use ← → keys to navigate
+        <div className="flex items-center gap-4">
+          <Button 
+            variant="outline" 
+            onClick={() => setExpanded(v => !v)}
+            size="sm"
+          >
+            {expanded ? "Collapse all" : "Expand all"}
+          </Button>
+          <div className="text-sm text-gray-500">
+            Use ← → keys to navigate
+          </div>
         </div>
       </div>
 
@@ -202,13 +216,15 @@ export const WeekGrid: React.FC<WeekGridProps> = ({
               {regularAllDayEvents(format(day, 'yyyy-MM-dd')).map(event => {
                 const label = event.title.length > 15 ? event.title.substring(0, 13) + '...' : event.title;
                 return (
-                  <div
+                  <button
                     key={event.id}
-                    className={`mt-1 text-xs px-2 py-1 rounded border ${getAllDayStyle(event.kind)} truncate`}
+                    type="button"
+                    onClick={() => onEventClick?.(event)}
+                    className={`mt-1 text-xs px-2 py-1 rounded border ${getAllDayStyle(event.kind)} truncate cursor-pointer hover:opacity-75 transition-opacity w-full text-left`}
                     title={`${event.title}${event.details ? ' - ' + event.details : ''}`}
                   >
                     {label}
-                  </div>
+                  </button>
                 );
               })}
               
@@ -228,13 +244,15 @@ export const WeekGrid: React.FC<WeekGridProps> = ({
                 const shortLabel = label.length > 15 ? label.substring(0, 13) + '...' : label;
                 
                 return (
-                  <div
+                  <button
                     key={ev.id}
-                    className={`mt-1 text-xs px-2 py-1 rounded border ${getAllDayStyle(ev.kind)} truncate`}
+                    type="button"
+                    onClick={() => onEventClick?.(ev)}
+                    className={`mt-1 text-xs px-2 py-1 rounded border ${getAllDayStyle(ev.kind)} truncate cursor-pointer hover:opacity-75 transition-opacity w-full text-left`}
                     title={`${label}${ev.details ? ' - ' + ev.details : ''}`}
                   >
                     {shortLabel}
-                  </div>
+                  </button>
                 );
               })}
             </div>
@@ -313,6 +331,65 @@ export const WeekGrid: React.FC<WeekGridProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Expanded event list */}
+      {expanded && (
+        <div className="mt-6 bg-white rounded-2xl shadow border p-6">
+          <h3 className="text-lg font-semibold mb-4">All Events This Week</h3>
+          <div className="space-y-3">
+            {events.length === 0 ? (
+              <p className="text-gray-500 text-sm">No events scheduled for this week</p>
+            ) : (
+              events.map(event => {
+                const isRange = !!event?.allDay && !!event?.date && !!event?.endDate;
+                const label =
+                  event?.subtype === 'exam_window' && isRange
+                    ? `${event.title} (${format(parseISO(event.date), "d MMM")}–${format(parseISO(event.endDate), "d MMM")})`
+                    : event.title;
+                
+                return (
+                  <button
+                    key={event.id}
+                    type="button"
+                    onClick={() => onEventClick?.(event)}
+                    className={`w-full text-left p-3 rounded border cursor-pointer hover:opacity-75 transition-opacity ${getAllDayStyle(event.kind)}`}
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="font-medium text-sm mb-1">{label}</div>
+                        <div className="text-xs opacity-75">
+                          {event.start ? (
+                            <>
+                              {format(parseISO(event.date), "EEE, MMM d")} • {event.start}
+                              {event.end && `–${event.end}`}
+                            </>
+                          ) : event.allDay ? (
+                            <>
+                              {isRange ? (
+                                `${format(parseISO(event.date), "EEE, MMM d")} – ${format(parseISO(event.endDate!), "EEE, MMM d")}`
+                              ) : (
+                                `${format(parseISO(event.date), "EEE, MMM d")} (all day)`
+                              )}
+                            </>
+                          ) : (
+                            format(parseISO(event.date), "EEE, MMM d")
+                          )}
+                        </div>
+                        {event.details && (
+                          <div className="text-xs opacity-60 mt-1">{event.details}</div>
+                        )}
+                      </div>
+                      <div className="ml-3 text-xs font-medium opacity-75">
+                        {event.module || event.moduleCode}
+                      </div>
+                    </div>
+                  </button>
+                );
+              })
+            )}
+          </div>
+        </div>
+      )}
 
       <div className="mt-4 text-xs text-gray-500 text-center">
         Tip: Hover over events for details • Use keyboard arrows to navigate weeks

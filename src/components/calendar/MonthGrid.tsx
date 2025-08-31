@@ -24,6 +24,7 @@ interface MonthGridProps {
   onNext: () => void;
   onBack: () => void;
   gated: boolean;
+  onEventClick?: (event: CalendarEvent) => void;
 }
 
 const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -65,6 +66,7 @@ export const MonthGrid: React.FC<MonthGridProps> = ({
   onNext,
   onBack,
   gated,
+  onEventClick,
 }) => {
   const [showOverflow, setShowOverflow] = useState<string | null>(null);
 
@@ -212,10 +214,12 @@ export const MonthGrid: React.FC<MonthGridProps> = ({
                         : ev.title;
                     
                     return (
-                      <div
+                      <button
                         key={ev.id}
+                        type="button"
+                        onClick={() => onEventClick?.(ev)}
                         className={[
-                          'text-[11px] px-2 py-1 rounded border truncate cursor-default',
+                          'text-[11px] px-2 py-1 rounded border truncate cursor-pointer hover:opacity-75 transition-opacity w-full text-left',
                           badgeStyle(ev.kind),
                         ].join(' ')}
                         title={[ev.start ? `${ev.start} — ` : '', label, ev.details ? `\n${ev.details}` : ''].join('')}
@@ -223,7 +227,7 @@ export const MonthGrid: React.FC<MonthGridProps> = ({
                         {/* Only show a time if start exists */}
                         {ev.start ? <span className="font-mono mr-1">{ev.start}</span> : null}
                         <span className="truncate">{label}</span>
-                      </div>
+                      </button>
                     );
                   })}
 
@@ -252,10 +256,15 @@ export const MonthGrid: React.FC<MonthGridProps> = ({
                             : ev.title;
                         
                         return (
-                          <div key={ev.id} className={['text-[11px] px-2 py-1 rounded border', badgeStyle(ev.kind)].join(' ')}>
+                          <button 
+                            key={ev.id} 
+                            type="button"
+                            onClick={() => onEventClick?.(ev)}
+                            className={['text-[11px] px-2 py-1 rounded border cursor-pointer hover:opacity-75 transition-opacity w-full text-left', badgeStyle(ev.kind)].join(' ')}
+                          >
                             {ev.start ? <span className="font-mono mr-1">{ev.start}</span> : null}
                             {label}
-                          </div>
+                          </button>
                         );
                       })}
                     </div>
