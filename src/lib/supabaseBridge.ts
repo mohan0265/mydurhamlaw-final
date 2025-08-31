@@ -8,7 +8,9 @@ import type { User } from "@supabase/supabase-js";
 import { supabase } from "./supabase-browser";
 import { getDefaultPlanByStudentYear } from "@/data/durham/llb";
 import type { AcademicYearPlan } from "@/data/durham/llb";
-import { parseISO, isAfter, isBefore, format, addDays } from "date-fns";
+import { isAfter, isBefore, format, addDays } from "date-fns";
+
+const parseISO = (date: string) => new Date(date + 'T00:00:00.000Z');
 
 // Durmah student context interface
 interface DurmahStudentContext {

@@ -23,7 +23,7 @@ function dayOffsetForModule(title: string): number {
   return key ? MODULE_DAY_MAP[key]! : 0; // default Monday
 }
 
-export type EventKind = 'lecture' | 'seminar' | 'deadline' | 'exam' | 'task' | 'all-day';
+export type EventKind = 'lecture' | 'seminar' | 'deadline' | 'exam' | 'assessment' | 'task' | 'all-day';
 
 export interface CalendarEvent {
   id: string;

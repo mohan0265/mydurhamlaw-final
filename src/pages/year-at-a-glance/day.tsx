@@ -2,8 +2,11 @@
 import React, { useCallback, useMemo } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
-import { parseISO, isValid, startOfDay, format, addDays } from 'date-fns';
-import { getEventsForWeek, getDefaultPlanByStudentYear } from '@/lib/calendar/useCalendarData';
+import { isValid, startOfDay, format, addDays } from 'date-fns';
+
+const parseISO = (date: string) => new Date(date + 'T00:00:00.000Z');
+import { getEventsForWeek } from '@/lib/calendar/useCalendarData';
+import { getDefaultPlanByStudentYear } from '@/data/durham/llb';
 import { getStudentYear, parseYearKey, YEAR_LABEL } from '@/lib/calendar/links';
 import type { YearKey } from '@/lib/calendar/links';
 import type { CalendarEvent } from '@/lib/calendar/useCalendarData';
@@ -206,7 +209,7 @@ export default function DayPage() {
                   const isRange = !!event?.allDay && !!event?.date && !!event?.endDate;
                   const label =
                     event?.subtype === 'exam_window' && isRange
-                      ? `${event.title} (${format(parseISO(event.date), "d MMM")}–${format(parseISO(event.endDate), "d MMM")})`
+                      ? `${event.title} (${format(parseISO(event.date), "d MMM")}–${format(parseISO(event.endDate!), "d MMM")})`
                       : event.title;
                   
                   return (

@@ -1,6 +1,8 @@
 // src/components/calendar/WeekGrid.tsx
 import React, { useEffect, useState } from 'react';
-import { format, addDays, parseISO, isBefore, isAfter, startOfWeek, endOfWeek } from 'date-fns';
+import { format, addDays, isBefore, isAfter, startOfWeek, endOfWeek } from 'date-fns';
+
+const parseISO = (date: string) => new Date(date + 'T00:00:00.000Z');
 import { ChevronLeft, ChevronRight, ArrowLeft, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { YEAR_LABEL } from '@/lib/calendar/links';
@@ -344,7 +346,7 @@ export const WeekGrid: React.FC<WeekGridProps> = ({
                 const isRange = !!event?.allDay && !!event?.date && !!event?.endDate;
                 const label =
                   event?.subtype === 'exam_window' && isRange
-                    ? `${event.title} (${format(parseISO(event.date), "d MMM")}–${format(parseISO(event.endDate), "d MMM")})`
+                    ? `${event.title} (${format(parseISO(event.date), "d MMM")}–${format(parseISO(event.endDate!), "d MMM")})`
                     : event.title;
                 
                 return (

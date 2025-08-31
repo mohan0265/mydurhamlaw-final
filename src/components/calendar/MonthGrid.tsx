@@ -9,8 +9,9 @@ import {
   addDays,
   isSameMonth,
   isToday,
-  parseISO,
   } from 'date-fns';
+
+const parseISO = (date: string) => new Date(date + 'T00:00:00.000Z');
 import { ChevronLeft, ChevronRight, ArrowLeft } from 'lucide-react';
 import { YEAR_LABEL } from '@/lib/calendar/links';
 import type { YearKey, YM } from '@/lib/calendar/links';
@@ -210,7 +211,7 @@ export const MonthGrid: React.FC<MonthGridProps> = ({
                     const isRange = !!ev?.allDay && !!ev?.date && !!ev?.endDate;
                     const label =
                       ev?.subtype === 'exam_window' && isRange
-                        ? `${ev.title} (${format(parseISO(ev.date), "d MMM")}–${format(parseISO(ev.endDate), "d MMM")})`
+                        ? `${ev.title} (${format(parseISO(ev.date), "d MMM")}–${format(parseISO(ev.endDate!), "d MMM")})`
                         : ev.title;
                     
                     return (
@@ -252,7 +253,7 @@ export const MonthGrid: React.FC<MonthGridProps> = ({
                         const isRange = !!ev?.allDay && !!ev?.date && !!ev?.endDate;
                         const label =
                           ev?.subtype === 'exam_window' && isRange
-                            ? `${ev.title} (${format(parseISO(ev.date), "d MMM")}–${format(parseISO(ev.endDate), "d MMM")})`
+                            ? `${ev.title} (${format(parseISO(ev.date), "d MMM")}–${format(parseISO(ev.endDate!), "d MMM")})`
                             : ev.title;
                         
                         return (
