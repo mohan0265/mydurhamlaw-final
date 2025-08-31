@@ -59,6 +59,12 @@ function timeSort(a?: string, b?: string) {
   return a.localeCompare(b, undefined, { numeric: true });
 }
 
+const occursOnDay = (ev: any, dayISO: string) => {
+  if (ev?.allDay && ev?.date) return ev.date === dayISO;
+  if (ev?.start_at) return ev.start_at.slice(0, 10) === dayISO;
+  return false;
+};
+
 export const MonthGrid: React.FC<MonthGridProps> = ({
   yearKey,
   ym,
@@ -82,19 +88,13 @@ export const MonthGrid: React.FC<MonthGridProps> = ({
   const eventsByDate = useMemo(() => {
     const map: Record<string, CalendarEvent[]> = {};
     for (const ev of events) {
-      // For exam_window events, only show on the start date
-      if (ev.subtype === 'exam_window') {
-        // Only add to the start date
-        (map[ev.date] ||= []).push(ev);
-      } else {
-        (map[ev.date] ||= []).push(ev);
-      }
+      (map[ev.date] ||= []).push(ev);
     }
     // sort each day: all-day first (no start), then timed by HH:mm
     for (const k of Object.keys(map)) {
-  const arr = map[k]!;              // assert non-null: key came from Object.keys(map)
-  arr.sort((a, b) => timeSort(a.start, b.start));
-}
+      const arr = map[k]!;              // assert non-null: key came from Object.keys(map)
+      arr.sort((a, b) => timeSort(a.start, b.start));
+    }
 
     return map;
   }, [events]);
@@ -175,12 +175,15 @@ export const MonthGrid: React.FC<MonthGridProps> = ({
           {days.map((day, idx) => {
             const isoDay = format(day, 'yyyy-MM-dd');
             const dayEvents = eventsByDate[isoDay] || [];
+            const allDayEventsForThisDay = events.filter((e: any) => e.allDay && occursOnDay(e, isoDay));
+            const timedEventsForThisDay = dayEvents.filter(e => !e.allDay);
+            const allEventsForThisDay = [...allDayEventsForThisDay, ...timedEventsForThisDay];
             const isCurMonth = isSameMonth(day, currentDate);
             const isCurDay = isToday(new Date(isoDay + 'T00:00:00Z'));
 
             // show up to 4 items, overflow into a hover card
-            const visible = dayEvents.slice(0, 4);
-            const overflow = dayEvents.length - visible.length;
+            const visible = allEventsForThisDay.slice(0, 4);
+            const overflow = allEventsForThisDay.length - visible.length;
 
             return (
               <div
@@ -198,9 +201,9 @@ export const MonthGrid: React.FC<MonthGridProps> = ({
                     {format(day, 'd')}
                   </span>
                   <div className="flex gap-1">
-                    {dayEvents.some(e => e.kind === 'exam')     && <span className="w-2 h-2 rounded-full bg-red-500"    title="Exam" />}
-                    {dayEvents.some(e => e.kind === 'deadline') && <span className="w-2 h-2 rounded-full bg-orange-500" title="Deadline" />}
-                    {dayEvents.some(e => e.kind === 'lecture')  && <span className="w-2 h-2 rounded-full bg-blue-500"   title="Lecture" />}
+                    {allEventsForThisDay.some(e => e.kind === 'exam')     && <span className="w-2 h-2 rounded-full bg-red-500"    title="Exam" />}
+                    {allEventsForThisDay.some(e => e.kind === 'deadline') && <span className="w-2 h-2 rounded-full bg-orange-500" title="Deadline" />}
+                    {allEventsForThisDay.some(e => e.kind === 'lecture')  && <span className="w-2 h-2 rounded-full bg-blue-500"   title="Lecture" />}
                   </div>
                 </div>
 
@@ -248,7 +251,7 @@ export const MonthGrid: React.FC<MonthGridProps> = ({
                   <div className="absolute z-50 left-0 top-full mt-1 bg-white border rounded-lg shadow-lg p-3 min-w-[220px]">
                     <div className="text-sm font-medium mb-2">{format(day, 'MMM d')}</div>
                     <div className="space-y-1 max-h-48 overflow-y-auto">
-                      {dayEvents.slice(4).map((ev) => {
+                      {allEventsForThisDay.slice(4).map((ev) => {
                         // Build appropriate label for exam windows
                         const isRange = !!ev?.allDay && !!ev?.date && !!ev?.endDate;
                         const label =

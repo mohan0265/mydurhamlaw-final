@@ -72,6 +72,12 @@ function parseISODate(dateString: string): Date {
   return new Date(dateString + 'T00:00:00.000Z');
 }
 
+const occursOnDay = (ev: any, dayISO: string) => {
+  if (ev?.allDay && ev?.date) return ev.date === dayISO;
+  if (ev?.start_at) return ev.start_at.slice(0, 10) === dayISO;
+  return false;
+};
+
 export const WeekGrid: React.FC<WeekGridProps> = ({
   yearKey,
   mondayISO,
@@ -214,49 +220,25 @@ export const WeekGrid: React.FC<WeekGridProps> = ({
                 {format(day, 'd MMM')}
               </div>
               
-              {/* All-day events */}
-              {regularAllDayEvents(format(day, 'yyyy-MM-dd')).map(event => {
-                const label = event.title.length > 15 ? event.title.substring(0, 13) + '...' : event.title;
-                return (
-                  <button
-                    key={event.id}
-                    type="button"
-                    onClick={() => onEventClick?.(event)}
-                    className={`mt-1 text-xs px-2 py-1 rounded border ${getAllDayStyle(event.kind)} truncate cursor-pointer hover:opacity-75 transition-opacity w-full text-left`}
-                    title={`${event.title}${event.details ? ' - ' + event.details : ''}`}
-                  >
-                    {label}
-                  </button>
-                );
-              })}
-              
-              {/* Exam windows - show once on Monday if intersects the week */}
-              {index === 0 && examWindowEvents.map(ev => {
-                if (!ev.endDate) return null;
-                
-                const isRange = !!ev.allDay && !!ev.date && !!ev.endDate;
-                const intersectsWeek =
-                  isRange &&
-                  isBefore(parseISO(ev.date), endOfWeek(weekStart, { weekStartsOn: 1 })) &&
-                  isAfter(parseISO(ev.endDate), startOfWeek(weekStart, { weekStartsOn: 1 }));
-
-                if (!intersectsWeek) return null;
-
-                const label = `${ev.title} (${format(parseISO(ev.date), "d MMM")}–${format(parseISO(ev.endDate), "d MMM")})`;
-                const shortLabel = label.length > 15 ? label.substring(0, 13) + '...' : label;
-                
-                return (
-                  <button
-                    key={ev.id}
-                    type="button"
-                    onClick={() => onEventClick?.(ev)}
-                    className={`mt-1 text-xs px-2 py-1 rounded border ${getAllDayStyle(ev.kind)} truncate cursor-pointer hover:opacity-75 transition-opacity w-full text-left`}
-                    title={`${label}${ev.details ? ' - ' + ev.details : ''}`}
-                  >
-                    {shortLabel}
-                  </button>
-                );
-              })}
+              {/* All-day events for this specific day */}
+              {(() => {
+                const dayISO = format(day, 'yyyy-MM-dd');
+                const allDayForThisDay = events.filter((e: any) => e.allDay && occursOnDay(e, dayISO));
+                return allDayForThisDay.map(event => {
+                  const label = event.title.length > 15 ? event.title.substring(0, 13) + '...' : event.title;
+                  return (
+                    <button
+                      key={event.id}
+                      type="button"
+                      onClick={() => onEventClick?.(event)}
+                      className={`mt-1 text-xs px-2 py-1 rounded border ${getAllDayStyle(event.kind)} truncate cursor-pointer hover:opacity-75 transition-opacity w-full text-left`}
+                      title={`${event.title}${event.details ? ' - ' + event.details : ''}`}
+                    >
+                      {label}
+                    </button>
+                  );
+                });
+              })()}
             </div>
           ))}
         </div>

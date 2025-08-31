@@ -8,6 +8,7 @@ import {
 } from 'date-fns';
 import { getDefaultPlanByStudentYear } from '@/data/durham/llb';
 import type { YearKey } from './links';
+import { expandExamWindowAssessments } from '@/lib/calendar/examWindow';
 
 // Map module families to stable weekdays (0=Mon..4=Fri)
 const MODULE_DAY_MAP: Record<string, number> = {
@@ -145,6 +146,7 @@ export function loadEventsForYear(y: YearKey): CalendarEvent[] {
   const seen = new Set<string>();
 
   // Teaching weeks → distribute topics across weekdays (Mon-Fri)
+  // NO teaching topics in Easter (Revision & Exams only)
   ([
     { term: 'michaelmas' as const, weeks: plan.termDates.michaelmas.weeks },
     { term: 'epiphany'   as const, weeks: plan.termDates.epiphany.weeks   },
@@ -204,6 +206,25 @@ export function loadEventsForYear(y: YearKey): CalendarEvent[] {
       }
     }
   }
+
+  // Injected: expand exam windows into daily all-day chips (Easter Revision)
+  const examEvents = plan.modules.flatMap(m =>
+    expandExamWindowAssessments(m.title, (m as any).assessments)
+  );
+  examEvents.forEach(examEv => {
+    addEvent(out, seen, {
+      year: y,
+      date: examEv.date!,
+      allDay: examEv.all_day,
+      kind: 'assessment',
+      subtype: examEv.meta?.kind,
+      module: examEv.meta?.module,
+      title: examEv.title,
+      details: examEv.meta?.kind === 'exam-window' 
+        ? `Exam window: ${examEv.meta.window?.start} – ${examEv.meta.window?.end}` 
+        : undefined,
+    });
+  });
 
   cache.set(y, out);
   return out;

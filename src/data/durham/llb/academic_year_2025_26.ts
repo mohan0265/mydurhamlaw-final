@@ -155,6 +155,7 @@ export const DURHAM_LLB_2025_26_FOUNDATION: AcademicYearPlan = {
 };
 
 // Year 1 — compulsory modules & term windows (see sources in header)
+// Year 1 exams use EXAM_WINDOW (Easter term). We render per-day all-day chips via calendar adapter.
 
 
 // ---------- Year 1 (all mandatory) ----------
