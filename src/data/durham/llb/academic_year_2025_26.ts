@@ -1,6 +1,25 @@
 // Durham LLB – Academic Year 2025–26
 // Prefill dataset for "My Year In a Glance"
 
+/**
+ * Durham LLB 2025/26 — canonical academic plan used by YAAG.
+ *
+ * Sources (accessed 2025-08-31):
+ * - Programme Handbook (year-by-year modules):
+ *   https://apps.dur.ac.uk/faculty.handbook/2025/UG/programme/M104
+ * - Academic dates (term windows):
+ *   https://www.durham.ac.uk/academic-dates/
+ * - Assessment & exam period guidance:
+ *   https://www.durham.ac.uk/media/durham-university/global/global-opportunities/incoming/Law.pdf
+ *
+ * Rules:
+ * - Term windows are strict; weeks are W1..W10 (Mondays in ISO yyyy-MM-dd).
+ * - Exams/assessments are encoded as all-day (no start/end) unless an exam “window” is published.
+ * - No fabricated times/days; if unknown, leave time empty so UI renders chips as all-day.
+ * - Timezone: Europe/London.
+ */
+
+
 export type TermBlock = {
   start: string; // ISO date
   end: string;   // ISO date
@@ -134,6 +153,9 @@ export const DURHAM_LLB_2025_26_FOUNDATION: AcademicYearPlan = {
     }
   ]
 };
+
+// Year 1 — compulsory modules & term windows (see sources in header)
+
 
 // ---------- Year 1 (all mandatory) ----------
 export const DURHAM_LLB_2025_26_Y1: AcademicYearPlan = {
@@ -387,6 +409,10 @@ export const DURHAM_LLB_2025_26_Y1: AcademicYearPlan = {
   ]
 };
 
+// Year 2 — compulsory + typical options (verified 2025/26)
+
+
+
 // ---------- Year 2 (Criminal Law compulsory; Land + Trusts strongly recommended for QLD) ----------
 export const DURHAM_LLB_2025_26_Y2: AcademicYearPlan = {
   academicYear: "2025-26",
@@ -461,6 +487,10 @@ export const DURHAM_LLB_2025_26_Y2: AcademicYearPlan = {
     }
   ]
 };
+
+// Year 3 — dissertation + options (verified 2025/26)
+
+
 
 // ---------- Year 3 (Dissertation compulsory) ----------
 export const DURHAM_LLB_2025_26_Y3: AcademicYearPlan = {
