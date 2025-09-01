@@ -1,7 +1,11 @@
 // src/components/durmah/Greeter.tsx
 import React from "react";
 import { useDurmah, yearLabel } from "@/lib/durmah/context";
-import { defaultMonthDeepLink, weekOneLink, formatTodayForDisplay } from "@/lib/durmah/phase";
+import {
+  defaultMonthDeepLink,
+  weekOneLink,
+  formatTodayForDisplay,
+} from "@/lib/durmah/phase";
 
 export default function Greeter() {
   const ctx = useDurmah();
@@ -33,8 +37,8 @@ export default function Greeter() {
       <h2 className="text-xl font-semibold mb-2">Hi {firstName} 👋</h2>
       <p className="text-gray-700 leading-relaxed">
         You’re {yearLabel(yearKey)} LLB (AY 2025/26).<br />
-        Today is {todayFriendly} — {daysUntil.induction} days to Induction (29 Sep) and{" "}
-        {daysUntil.teachingStart} days to Michaelmas teaching (6 Oct).
+        Today is {todayFriendly} — {daysUntil.induction} days to Induction (29
+        Sep) and {daysUntil.teachingStart} days to Michaelmas teaching (6 Oct).
       </p>
       <div className="mt-4 flex flex-wrap gap-2">
         <button
