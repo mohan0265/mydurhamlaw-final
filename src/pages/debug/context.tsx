@@ -1,7 +1,6 @@
 ﻿import dynamic from "next/dynamic";
 import React from "react";
-import { useDurmah } from "@lib/durmah/context";
-
+import { useDurmah } from "../../lib/durmah/context";
 function DebugContextInner() {
   const ctx = useDurmah();
   const winCtx =
