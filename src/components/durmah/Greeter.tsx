@@ -1,4 +1,4 @@
-﻿//// src/components/durmah/Greeter.tsx
+﻿// src/components/durmah/Greeter.tsx
 import React from "react";
 import { useDurmah, yearLabel } from "@/lib/durmah/context";
 import {
@@ -34,10 +34,10 @@ export default function Greeter() {
   return (
     <div className="w-full max-w-2xl rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
       <div className="text-sm text-gray-500 mb-1">Durmah</div>
-      <h2 className="text-xl font-semibold mb-2">Hi {firstName} </h2>
+      <h2 className="text-xl font-semibold mb-2">Hi {firstName} 👋</h2>
       <p className="text-gray-700 leading-relaxed">
-        Youre {yearLabel(yearKey)} LLB (AY 2025/26).<br />
-        Today is {todayFriendly}  {daysUntil.induction} days to Induction (29
+        You're {yearLabel(yearKey)} LLB (AY 2025/26).<br />
+        Today is {todayFriendly} — {daysUntil.induction} days to Induction (29
         Sep) and {daysUntil.teachingStart} days to Michaelmas teaching (6 Oct).
       </p>
       <div className="mt-4 flex flex-wrap gap-2">
@@ -51,7 +51,7 @@ export default function Greeter() {
           onClick={openWeekOne}
           className="px-3 py-2 rounded-xl bg-gray-100 text-gray-900 text-sm hover:bg-gray-200 transition"
         >
-          Week&nbsp;1 prep checklist
+          Week 1 prep checklist
         </button>
         <button
           onClick={addRoutine}

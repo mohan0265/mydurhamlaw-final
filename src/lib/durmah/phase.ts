@@ -1,4 +1,4 @@
-﻿//// src/lib/durmah/phase.ts
+﻿// src/lib/durmah/phase.ts
 export type KeyDates = {
   induction: string;
   michaelmasStart: string;
@@ -25,7 +25,8 @@ export function todayISOInTZ(timeZone: string = "Europe/London"): string {
     month: "2-digit",
     day: "2-digit",
   });
-  return fmt.format(new Date()); // YYYY-MM-DD
+  // en-CA yields YYYY-MM-DD already
+  return fmt.format(new Date());
 }
 
 export function parseISODate(d: string): Date {
@@ -73,14 +74,14 @@ export function toISO(d: Date): string {
 }
 
 export function addDays(d: Date, days: number): Date {
-  const dd = new Date(d);
-  dd.setDate(dd.getDate() + days);
-  return dd;
+  const copy = new Date(d);
+  copy.setDate(copy.getDate() + days);
+  return copy;
 }
 
 export function formatTodayForDisplay(
   tz: string = "Europe/London",
-  locale: string = undefined as any
+  locale?: string
 ): string {
   const fmt = new Intl.DateTimeFormat(locale || undefined, {
     timeZone: tz,
@@ -90,6 +91,7 @@ export function formatTodayForDisplay(
   return fmt.format(new Date());
 }
 
+// Canonical AY 2025/26
 export const KEY_DATES_2025_26: KeyDates = {
   induction: "2025-09-29",
   michaelmasStart: "2025-10-06",
@@ -113,7 +115,7 @@ export function defaultMonthDeepLink(
   key: KeyDates
 ) {
   const preInduction = nowISO < key.induction;
-  const ym = preInduction ? "2025-10" : `${nowISO.slice(0, 7)}`;
+  const ym = preInduction ? "2025-10" : nowISO.slice(0, 7);
   return `/year-at-a-glance/month?y=${yearKey}&ym=${ym}`;
 }
 
