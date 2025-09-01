@@ -69,7 +69,7 @@ export function toISO(d: Date): string {
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, "0");
   const day = String(d.getDate()).padStart(2, "0");
-  return ${y}--;
+  return `${y}-${m}-${day}`;
 }
 
 export function addDays(d: Date, days: number): Date {
@@ -113,13 +113,13 @@ export function defaultMonthDeepLink(
   key: KeyDates
 ) {
   const preInduction = nowISO < key.induction;
-  const ym = preInduction ? "2025-10" : ${nowISO.slice(0, 7)};
-  return /year-at-a-glance/month?y=&ym=;
+  const ym = preInduction ? "2025-10" : `${nowISO.slice(0, 7)}`;
+  return `/year-at-a-glance/month?y=${yearKey}&ym=${ym}`;
 }
 
 export function weekOneLink(
   yearKey: "foundation" | "year1" | "year2" | "year3",
   key: KeyDates
 ) {
-  return /year-at-a-glance/week?y=&start=;
+  return `/year-at-a-glance/week?y=${yearKey}&start=${key.michaelmasStart}`;
 }
