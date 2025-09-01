@@ -1,0 +1,31 @@
+{
+  "anchors": {
+    "university": "Durham University",
+    "programme": "LLB",
+    "academicYear": "2025/26",
+    "timezone": "Europe/London"
+  },
+  "keyDates": {
+    "induction": "2025-09-29",
+    "michaelmasStart": "2025-10-06",
+    "michaelmasEnd": "2025-12-12",
+    "epiphanyStart": "2026-01-12",
+    "epiphanyEnd": "2026-03-20",
+    "easterStart": "2026-04-27",
+    "easterEnd": "2026-06-26"
+  },
+  "faq": [
+    {
+      "q": "When does Michaelmas teaching begin?",
+      "a": "6 Oct 2025 for LLB years."
+    },
+    {
+      "q": "Which timezone drives logic?",
+      "a": "Europe/London."
+    },
+    {
+      "q": "What if my profile lacks a year?",
+      "a": "Default to Year 1 and prompt to update profile."
+    }
+  ]
+}

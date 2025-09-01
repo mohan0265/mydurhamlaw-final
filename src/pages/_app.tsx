@@ -15,7 +15,15 @@ import {
 import { validateEnv } from "@/lib/env";
 // NOTE: AuthContext lives in src/supabase/AuthContext.tsx
 import { AuthProvider, useAuth } from "@/lib/supabase/AuthContext";
-import { setupDurmahContext } from "@/lib/supabaseBridge";
+
+// ✅ NEW: Durmah context provider + tiny setup
+import {
+  DurmahProvider,
+  DurmahContextSetup,
+} from "@/lib/durmah/context";
+
+// ✅ NEW: helper that builds window.__mdlStudentContext from Supabase
+import { loadMDLStudentContext } from "@/lib/supabase/supabaseBridge";
 
 import LayoutShell from "@/layout/LayoutShell";
 import { Toaster } from "react-hot-toast";
@@ -25,13 +33,17 @@ const DurmahWidget = dynamic(() => import("../components/DurmahWidget"), {
   ssr: false,
 });
 
-// Component to set up Durmah context
-const DurmahContextSetup: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+// ✅ NEW: Bootstrap Durmah whenever auth changes
+const AppDurmahBootstrap: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { session, userProfile } = useAuth();
 
   useEffect(() => {
-    setupDurmahContext(session?.user || null, userProfile);
-  }, [session, userProfile]);
+    // Build/refresh the student context. Safe if user is null; it will fall back to anonymous.
+    loadMDLStudentContext(session?.user as any).catch((e) =>
+      console.error("loadMDLStudentContext failed:", e)
+    );
+    // Re-run if the user changes or their year/profile changes
+  }, [session?.user?.id, userProfile?.yearKey]);
 
   return <>{children}</>;
 };
@@ -99,37 +111,43 @@ export default function App({ Component, pageProps }: AppProps) {
       <AuthProvider>
         <QueryClientProvider client={queryClient}>
           <HydrationBoundary state={(pageProps as any)?.dehydratedState}>
-            <DurmahContextSetup>
-              <LayoutShell>
-                <Component {...pageProps} />
-              </LayoutShell>
+            {/* ✅ Durmah context is provided app-wide.
+                DurmahContextSetup ensures a context exists even before auth resolves,
+                and AppDurmahBootstrap refreshes it when the user/profile changes. */}
+            <DurmahProvider>
+              <DurmahContextSetup />
+              <AppDurmahBootstrap>
+                <LayoutShell>
+                  <Component {...pageProps} />
+                </LayoutShell>
 
-              {/* Global Toaster */}
-            <Toaster
-              position="top-right"
-              toastOptions={{
-                duration: 4000,
-                style: { background: "#363636", color: "#fff" },
-                success: {
-                  duration: 3000,
-                  iconTheme: { primary: "#10b981", secondary: "#fff" },
-                },
-                error: {
-                  duration: 5000,
-                  iconTheme: { primary: "#ef4444", secondary: "#fff" },
-                },
-              }}
-            />
-
-              {/* ⬇️ Floating Durmah widget */}
-              {VOICE_ENABLED && !hideWidget && (
-                <DurmahWidget
-                  context={{
-                    route: router.asPath,
+                {/* Global Toaster */}
+                <Toaster
+                  position="top-right"
+                  toastOptions={{
+                    duration: 4000,
+                    style: { background: "#363636", color: "#fff" },
+                    success: {
+                      duration: 3000,
+                      iconTheme: { primary: "#10b981", secondary: "#fff" },
+                    },
+                    error: {
+                      duration: 5000,
+                      iconTheme: { primary: "#ef4444", secondary: "#fff" },
+                    },
                   }}
                 />
-              )}
-            </DurmahContextSetup>
+
+                {/* ⬇️ Floating Durmah widget */}
+                {VOICE_ENABLED && !hideWidget && (
+                  <DurmahWidget
+                    context={{
+                      route: router.asPath,
+                    }}
+                  />
+                )}
+              </AppDurmahBootstrap>
+            </DurmahProvider>
           </HydrationBoundary>
         </QueryClientProvider>
       </AuthProvider>
