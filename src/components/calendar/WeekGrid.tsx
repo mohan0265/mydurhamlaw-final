@@ -223,7 +223,16 @@ export const WeekGrid: React.FC<WeekGridProps> = ({
               {/* All-day events for this specific day */}
               {(() => {
                 const dayISO = format(day, 'yyyy-MM-dd');
-                const allDayForThisDay = events.filter((e: any) => e.allDay && occursOnDay(e, dayISO));
+                // Filter events properly: exam windows only on start date, others as normal
+                const allDayForThisDay = events.filter(e => {
+                  if (e.meta?.range) {
+                    // only on start date for exam windows
+                    return day.toISOString().slice(0,10) === e.date;
+                  }
+                  // normal all-day items:
+                  if (e.allDay) return day.toISOString().slice(0,10) === e.date;
+                  return false;
+                });
                 return allDayForThisDay.map(event => {
                   const label = event.title.length > 15 ? event.title.substring(0, 13) + '...' : event.title;
                   return (

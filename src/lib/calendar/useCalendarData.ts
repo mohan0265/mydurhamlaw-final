@@ -26,6 +26,24 @@ function dayOffsetForModule(title: string): number {
 
 export type EventKind = 'lecture' | 'seminar' | 'deadline' | 'exam' | 'assessment' | 'task' | 'all-day';
 
+// --- add near other helpers in useCalendarData.ts ---
+type RawAssessment =
+  | { type: "Exam"; window: { start: string; end: string }; title?: string }
+  | { type: "Essay"; due: string; title?: string }
+  | { type: string; [k: string]: any };
+
+export type NormalizedEvent = {
+  id: string;
+  title: string;
+  date: string;          // YYYY-MM-DD for all-day events
+  start_at?: string;     // ISO for timed events
+  end_at?: string;       // ISO for timed events
+  allDay: boolean;
+  kind: "topic" | "assessment" | "exam" | "personal" | "student";
+  moduleCode?: string;
+  meta?: { range?: { start: string; end: string }; [k: string]: any };
+};
+
 export interface CalendarEvent {
   id: string;
   year: YearKey;
@@ -33,6 +51,8 @@ export interface CalendarEvent {
   endDate?: string;    // 'YYYY-MM-DD' (end date for ranged events)
   start?: string;      // 'HH:mm' (ONLY if present in data)
   end?: string;        // 'HH:mm'
+  start_at?: string;   // ISO for timed events
+  end_at?: string;     // ISO for timed events
   kind: EventKind;
   subtype?: string;    // e.g., 'exam_window'
   allDay?: boolean;    // true for all-day events
@@ -40,6 +60,7 @@ export interface CalendarEvent {
   moduleCode?: string; // e.g., 'TORT'
   title: string;       // Prefer weekly topic/subtopic; fallback to safe label
   details?: string;
+  meta?: { range?: { start: string; end: string }; [k: string]: any };
 }
 
 export interface YM { year: number; month: number } // month: 1..12
@@ -116,6 +137,69 @@ function addEvent(out: CalendarEvent[], seen: Set<string>, ev: Omit<CalendarEven
   if (seen.has(key)) return;
   seen.add(key);
   out.push({ ...ev, id: key });
+}
+
+const toISODate = (iso: string) => new Date(iso).toISOString().slice(0, 10); // YYYY-MM-DD
+
+function normalizeEvents(raw: any[]): NormalizedEvent[] {
+  const out: NormalizedEvent[] = [];
+  for (const r of raw ?? []) {
+    // If caller already produced normalized structure, keep it
+    if (r && (r.date || r.start_at || r.end_at)) {
+      const allDay = !!r.allDay || (!r.start_at && !r.end_at);
+      out.push({ ...r, allDay, date: r.date ?? (r.start_at ? r.start_at.slice(0,10) : (r.end_at ? r.end_at.slice(0,10) : "")) });
+      continue;
+    }
+
+    // Assessment shortcut
+    const a = r?.assessment as RawAssessment | undefined;
+
+    // Exam window -> single all-day chip on start date
+    if (a && a.type === "Exam" && (a as any).window?.start) {
+      const start = (a as any).window.start;
+      const end   = (a as any).window.end;
+      out.push({
+        id: r.id ?? `exam:${start}:${r.moduleCode ?? ""}`,
+        title: r.title ?? r.assessment?.title ?? `${r.moduleTitle ?? "Exam"}`,
+        date: toISODate(start),
+        allDay: true,
+        kind: "exam",
+        moduleCode: r.moduleCode,
+        meta: { range: { start, end }, ...r.meta },
+      });
+      continue;
+    }
+
+    // Essay due -> one all-day chip on due date
+    if (a && a.type === "Essay" && (a as any).due) {
+      const due = (a as any).due;
+      out.push({
+        id: r.id ?? `essay:${due}:${r.moduleCode ?? ""}`,
+        title: r.title ?? r.assessment?.title ?? `${r.moduleTitle ?? "Essay due"}`,
+        date: toISODate(due),
+        allDay: true,
+        kind: "assessment",
+        moduleCode: r.moduleCode,
+        meta: { ...r.meta },
+      });
+      continue;
+    }
+
+    // Topics & personal & student-provided: treat as all-day if no times
+    const dateCandidate = r.date ?? r.start_at ?? r.end_at;
+    out.push({
+      id: r.id ?? `evt:${dateCandidate ?? Math.random().toString(36).slice(2)}`,
+      title: r.title ?? r.moduleTitle ?? "Event",
+      date: dateCandidate ? toISODate(dateCandidate) : "",
+      start_at: r.start_at,
+      end_at: r.end_at,
+      allDay: !r.start_at && !r.end_at,
+      kind: r.kind ?? "topic",
+      moduleCode: r.moduleCode,
+      meta: { ...r.meta },
+    });
+  }
+  return out;
 }
 
 // ───────────────────────────────────────────────────────────────────────────────

@@ -59,6 +59,9 @@ function timeSort(a?: string, b?: string) {
   return a.localeCompare(b, undefined, { numeric: true });
 }
 
+const isSameISODate = (d: Date, isoYYYYMMDD: string) =>
+  d.toISOString().slice(0,10) === isoYYYYMMDD;
+
 const occursOnDay = (ev: any, dayISO: string) => {
   if (ev?.allDay && ev?.date) return ev.date === dayISO;
   if (ev?.start_at) return ev.start_at.slice(0, 10) === dayISO;
@@ -175,15 +178,25 @@ export const MonthGrid: React.FC<MonthGridProps> = ({
           {days.map((day, idx) => {
             const isoDay = format(day, 'yyyy-MM-dd');
             const dayEvents = eventsByDate[isoDay] || [];
-            const allDayEventsForThisDay = events.filter((e: any) => e.allDay && occursOnDay(e, isoDay));
-            const timedEventsForThisDay = dayEvents.filter(e => !e.allDay);
-            const allEventsForThisDay = [...allDayEventsForThisDay, ...timedEventsForThisDay];
+            
+            // Filter events properly: exam windows only on start date, others as normal
+            const todays = events.filter(e => {
+              if (e.meta?.range) {
+                // only on start date for exam windows
+                return isSameISODate(day, e.date);
+              }
+              // normal all-day or timed items:
+              if (e.allDay) return isSameISODate(day, e.date);
+              if (e.start_at) return e.start_at.slice(0,10) === day.toISOString().slice(0,10);
+              return false;
+            });
+            
             const isCurMonth = isSameMonth(day, currentDate);
             const isCurDay = isToday(new Date(isoDay + 'T00:00:00Z'));
 
             // show up to 4 items, overflow into a hover card
-            const visible = allEventsForThisDay.slice(0, 4);
-            const overflow = allEventsForThisDay.length - visible.length;
+            const visible = todays.slice(0, 4);
+            const overflow = todays.length - visible.length;
 
             return (
               <div
@@ -201,9 +214,9 @@ export const MonthGrid: React.FC<MonthGridProps> = ({
                     {format(day, 'd')}
                   </span>
                   <div className="flex gap-1">
-                    {allEventsForThisDay.some(e => e.kind === 'exam')     && <span className="w-2 h-2 rounded-full bg-red-500"    title="Exam" />}
-                    {allEventsForThisDay.some(e => e.kind === 'deadline') && <span className="w-2 h-2 rounded-full bg-orange-500" title="Deadline" />}
-                    {allEventsForThisDay.some(e => e.kind === 'lecture')  && <span className="w-2 h-2 rounded-full bg-blue-500"   title="Lecture" />}
+                    {todays.some(e => e.kind === 'exam')     && <span className="w-2 h-2 rounded-full bg-red-500"    title="Exam" />}
+                    {todays.some(e => e.kind === 'deadline') && <span className="w-2 h-2 rounded-full bg-orange-500" title="Deadline" />}
+                    {todays.some(e => e.kind === 'lecture')  && <span className="w-2 h-2 rounded-full bg-blue-500"   title="Lecture" />}
                   </div>
                 </div>
 
@@ -251,7 +264,7 @@ export const MonthGrid: React.FC<MonthGridProps> = ({
                   <div className="absolute z-50 left-0 top-full mt-1 bg-white border rounded-lg shadow-lg p-3 min-w-[220px]">
                     <div className="text-sm font-medium mb-2">{format(day, 'MMM d')}</div>
                     <div className="space-y-1 max-h-48 overflow-y-auto">
-                      {allEventsForThisDay.slice(4).map((ev) => {
+                      {todays.slice(4).map((ev) => {
                         // Build appropriate label for exam windows
                         const isRange = !!ev?.allDay && !!ev?.date && !!ev?.endDate;
                         const label =
