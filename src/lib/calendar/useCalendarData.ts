@@ -9,6 +9,7 @@ import {
 import { getDefaultPlanByStudentYear } from '@/data/durham/llb';
 import type { YearKey } from './links';
 import { expandExamWindowAssessments } from '@/lib/calendar/examWindow';
+import { normalizeEvents, type NormalizedEvent } from '@/lib/calendar/normalize';
 
 // Map module families to stable weekdays (0=Mon..4=Fri)
 const MODULE_DAY_MAP: Record<string, number> = {
@@ -32,17 +33,7 @@ type RawAssessment =
   | { type: "Essay"; due: string; title?: string }
   | { type: string; [k: string]: any };
 
-export type NormalizedEvent = {
-  id: string;
-  title: string;
-  date: string;          // YYYY-MM-DD for all-day events
-  start_at?: string;     // ISO for timed events
-  end_at?: string;       // ISO for timed events
-  allDay: boolean;
-  kind: "topic" | "assessment" | "exam" | "personal" | "student";
-  moduleCode?: string;
-  meta?: { range?: { start: string; end: string }; [k: string]: any };
-};
+// NormalizedEvent imported from normalize module
 
 export interface CalendarEvent {
   id: string;
@@ -141,66 +132,7 @@ function addEvent(out: CalendarEvent[], seen: Set<string>, ev: Omit<CalendarEven
 
 const toISODate = (iso: string) => new Date(iso).toISOString().slice(0, 10); // YYYY-MM-DD
 
-function normalizeEvents(raw: any[]): NormalizedEvent[] {
-  const out: NormalizedEvent[] = [];
-  for (const r of raw ?? []) {
-    // If caller already produced normalized structure, keep it
-    if (r && (r.date || r.start_at || r.end_at)) {
-      const allDay = !!r.allDay || (!r.start_at && !r.end_at);
-      out.push({ ...r, allDay, date: r.date ?? (r.start_at ? r.start_at.slice(0,10) : (r.end_at ? r.end_at.slice(0,10) : "")) });
-      continue;
-    }
-
-    // Assessment shortcut
-    const a = r?.assessment as RawAssessment | undefined;
-
-    // Exam window -> single all-day chip on start date
-    if (a && a.type === "Exam" && (a as any).window?.start) {
-      const start = (a as any).window.start;
-      const end   = (a as any).window.end;
-      out.push({
-        id: r.id ?? `exam:${start}:${r.moduleCode ?? ""}`,
-        title: r.title ?? r.assessment?.title ?? `${r.moduleTitle ?? "Exam"}`,
-        date: toISODate(start),
-        allDay: true,
-        kind: "exam",
-        moduleCode: r.moduleCode,
-        meta: { range: { start, end }, ...r.meta },
-      });
-      continue;
-    }
-
-    // Essay due -> one all-day chip on due date
-    if (a && a.type === "Essay" && (a as any).due) {
-      const due = (a as any).due;
-      out.push({
-        id: r.id ?? `essay:${due}:${r.moduleCode ?? ""}`,
-        title: r.title ?? r.assessment?.title ?? `${r.moduleTitle ?? "Essay due"}`,
-        date: toISODate(due),
-        allDay: true,
-        kind: "assessment",
-        moduleCode: r.moduleCode,
-        meta: { ...r.meta },
-      });
-      continue;
-    }
-
-    // Topics & personal & student-provided: treat as all-day if no times
-    const dateCandidate = r.date ?? r.start_at ?? r.end_at;
-    out.push({
-      id: r.id ?? `evt:${dateCandidate ?? Math.random().toString(36).slice(2)}`,
-      title: r.title ?? r.moduleTitle ?? "Event",
-      date: dateCandidate ? toISODate(dateCandidate) : "",
-      start_at: r.start_at,
-      end_at: r.end_at,
-      allDay: !r.start_at && !r.end_at,
-      kind: r.kind ?? "topic",
-      moduleCode: r.moduleCode,
-      meta: { ...r.meta },
-    });
-  }
-  return out;
-}
+// normalizeEvents function imported from normalize module
 
 // ───────────────────────────────────────────────────────────────────────────────
 // public API
@@ -314,23 +246,33 @@ export function loadEventsForYear(y: YearKey): CalendarEvent[] {
   return out;
 }
 
-export function getEventsForMonth(y: YearKey, ym: YM): CalendarEvent[] {
-  const all = loadEventsForYear(y);
-  const start = startOfMonth(new Date(ym.year, ym.month - 1, 1));
-  const end = endOfMonth(start);
-  return all.filter(e => {
-    const d = parseISODate(e.date);
-    return within(d, start, end);
+export function getEventsForMonth(y: YearKey, ym: YM): NormalizedEvent[] {
+  const plan = getDefaultPlanByStudentYear(y);
+  const monthStart = new Date(ym.year, ym.month - 1, 1);
+  const monthEnd = endOfMonth(monthStart);
+  
+  return normalizeEvents(y, {
+    tz: 'Europe/London',
+    clampStartISO: plan.termDates.michaelmas.start,
+    clampEndISO: plan.termDates.easter.end,
+    mode: 'month',
+    monthStartISO: format(monthStart, 'yyyy-MM-dd'),
+    monthEndISO: format(monthEnd, 'yyyy-MM-dd'),
   });
 }
 
-export function getEventsForWeek(y: YearKey, mondayISO: string): CalendarEvent[] {
-  const all = loadEventsForYear(y);
+export function getEventsForWeek(y: YearKey, mondayISO: string): NormalizedEvent[] {
+  const plan = getDefaultPlanByStudentYear(y);
   const weekStart = parseISODate(mondayISO);
   const weekEnd = addDays(weekStart, 6);
-  return all.filter(e => {
-    const d = parseISODate(e.date);
-    return within(d, weekStart, weekEnd);
+  
+  return normalizeEvents(y, {
+    tz: 'Europe/London',
+    clampStartISO: plan.termDates.michaelmas.start,
+    clampEndISO: plan.termDates.easter.end,
+    mode: 'week',
+    weekStartISO: mondayISO,
+    weekEndISO: format(weekEnd, 'yyyy-MM-dd'),
   });
 }
 

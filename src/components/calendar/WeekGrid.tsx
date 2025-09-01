@@ -8,41 +8,36 @@ import { Button } from '@/components/ui/Button';
 import { YEAR_LABEL } from '@/lib/calendar/links';
 import type { YearKey } from '@/lib/calendar/links';
 import type { CalendarEvent } from '@/lib/calendar/useCalendarData';
+import type { NormalizedEvent } from '@/lib/calendar/normalize';
 
 interface WeekGridProps {
   yearKey: YearKey;
   mondayISO: string;      // Monday of the week
-  events: CalendarEvent[];
+  events: NormalizedEvent[];
   onPrev: () => void;
   onNext: () => void;
   onBack: () => void;
   gated: boolean;
-  onEventClick?: (event: CalendarEvent) => void;
+  onEventClick?: (event: NormalizedEvent) => void;
 }
 
 const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const HOURS = Array.from({ length: 16 }, (_, i) => i + 6); // 6:00 to 21:00
 
-function getEventStyle(kind: CalendarEvent['kind']): string {
+function getEventStyle(kind: NormalizedEvent['kind']): string {
   switch (kind) {
-    case 'lecture': return 'bg-blue-500 text-white border-l-4 border-blue-600';
-    case 'seminar': return 'bg-green-500 text-white border-l-4 border-green-600';
-    case 'deadline': return 'bg-red-500 text-white border-l-4 border-red-600';
+    case 'topic': return 'bg-blue-500 text-white border-l-4 border-blue-600';
+    case 'assessment': return 'bg-red-500 text-white border-l-4 border-red-600';
     case 'exam': return 'bg-red-600 text-white border-l-4 border-red-700 font-medium';
-    case 'task': return 'bg-gray-500 text-white border-l-4 border-gray-600';
-    case 'all-day': return 'bg-purple-500 text-white border-l-4 border-purple-600';
     default: return 'bg-gray-500 text-white border-l-4 border-gray-600';
   }
 }
 
-function getAllDayStyle(kind: CalendarEvent['kind']): string {
+function getAllDayStyle(kind: NormalizedEvent['kind']): string {
   switch (kind) {
-    case 'lecture': return 'bg-blue-100 text-blue-800 border-blue-200';
-    case 'seminar': return 'bg-green-100 text-green-800 border-green-200';
-    case 'deadline': return 'bg-red-100 text-red-800 border-red-200';
+    case 'topic': return 'bg-blue-100 text-blue-800 border-blue-200';
+    case 'assessment': return 'bg-red-100 text-red-800 border-red-200';
     case 'exam': return 'bg-red-200 text-red-900 border-red-300 font-medium';
-    case 'task': return 'bg-gray-100 text-gray-800 border-gray-200';
-    case 'all-day': return 'bg-purple-100 text-purple-800 border-purple-200';
     default: return 'bg-gray-100 text-gray-800 border-gray-200';
   }
 }
@@ -94,18 +89,28 @@ export const WeekGrid: React.FC<WeekGridProps> = ({
   const weekEnd = addDays(weekStart, 6);
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
 
-  // Group events by date, plus handle exam window ranges
-  const eventsByDate = events.reduce((acc, event) => {
-    const dateKey = event.date;
-    if (!acc[dateKey]) acc[dateKey] = [];
-    acc[dateKey]!.push(event);
-    return acc;
-  }, {} as Record<string, CalendarEvent[]>);
+  // Helper for ISO date formatting
+  const iso = (d: Date) => d.toISOString().slice(0,10);
 
-  // Separate exam window events for special handling
-  const examWindowEvents = events.filter(ev => ev.subtype === 'exam_window');
-  const regularAllDayEvents = (date: string) => 
-    (eventsByDate[date] || []).filter(ev => !ev.start && ev.subtype !== 'exam_window');
+  // Group all-day events by date
+  const allDayByDate = new Map<string, NormalizedEvent[]>();
+  for (const d of weekDays) allDayByDate.set(iso(d), []);
+  for (const e of events) {
+    if (e.allDay && e.date) {
+      const bucket = allDayByDate.get(e.date);
+      if (bucket) bucket.push(e);
+    }
+  }
+
+  // Timed events by date
+  const timedEventsByDate = events.reduce((acc, event) => {
+    if (event.start && event.end) {
+      const dateKey = event.date;
+      if (!acc[dateKey]) acc[dateKey] = [];
+      acc[dateKey]!.push(event);
+    }
+    return acc;
+  }, {} as Record<string, NormalizedEvent[]>);
 
   // Keyboard navigation
   useEffect(() => {
@@ -222,28 +227,26 @@ export const WeekGrid: React.FC<WeekGridProps> = ({
               
               {/* All-day events for this specific day */}
               {(() => {
-                const dayISO = format(day, 'yyyy-MM-dd');
-                // Filter events properly: exam windows only on start date, others as normal
-                const allDayForThisDay = events.filter(e => {
-                  if (e.meta?.range) {
-                    // only on start date for exam windows
-                    return day.toISOString().slice(0,10) === e.date;
-                  }
-                  // normal all-day items:
-                  if (e.allDay) return day.toISOString().slice(0,10) === e.date;
-                  return false;
-                });
+                const dayKey = iso(day);
+                const allDayForThisDay = allDayByDate.get(dayKey) ?? [];
                 return allDayForThisDay.map(event => {
-                  const label = event.title.length > 15 ? event.title.substring(0, 13) + '...' : event.title;
+                  let label = event.title;
+                  // Format exam windows properly
+                  if (event.isWindow && event.windowStart && event.windowEnd) {
+                    const startDate = format(parseISODate(event.windowStart), 'd MMM');
+                    const endDate = format(parseISODate(event.windowEnd), 'd MMM');
+                    label = `${event.title} (${startDate} – ${endDate})`;
+                  }
+                  const displayLabel = label.length > 15 ? label.substring(0, 13) + '...' : label;
                   return (
                     <button
                       key={event.id}
                       type="button"
                       onClick={() => onEventClick?.(event)}
                       className={`mt-1 text-xs px-2 py-1 rounded border ${getAllDayStyle(event.kind)} truncate cursor-pointer hover:opacity-75 transition-opacity w-full text-left`}
-                      title={`${event.title}${event.details ? ' - ' + event.details : ''}`}
+                      title={label}
                     >
-                      {label}
+                      {displayLabel}
                     </button>
                   );
                 });
@@ -269,7 +272,7 @@ export const WeekGrid: React.FC<WeekGridProps> = ({
             {/* Day Columns */}
             {weekDays.map((day, dayIndex) => {
               const dayStr = format(day, 'yyyy-MM-dd');
-              const dayEvents = eventsByDate[dayStr]?.filter(e => e.start) || [];
+              const dayEvents = timedEventsByDate[dayStr] || [];
 
               return (
                 <div key={dayIndex} className="relative border-r last:border-r-0">
@@ -283,7 +286,7 @@ export const WeekGrid: React.FC<WeekGridProps> = ({
 
                   {/* Timed Events */}
                   {dayEvents.map((event, eventIndex) => {
-                    if (!event.start) return null;
+                    if (!event.start || !event.end) return null;
                     
                     const { top, height } = calculateEventPosition(event.start, event.end);
                     
@@ -300,16 +303,14 @@ export const WeekGrid: React.FC<WeekGridProps> = ({
                           right: `${4}px`,
                           zIndex: 10 + eventIndex
                         }}
-                        title={`${event.start}${event.end ? '-' + event.end : ''}\n${event.title}${event.details ? '\n' + event.details : ''}`}
+                        title={`${event.start}${event.end ? '-' + event.end : ''}\n${event.title}`}
                       >
                         <div className="font-medium truncate leading-tight">
-                          {event.kind === 'lecture' || event.kind === 'seminar' 
-                            ? event.module?.split(' ').slice(0, 2).join(' ') || event.title
-                            : event.title}
+                          {event.title}
                         </div>
-                        {event.module && (event.kind === 'deadline' || event.kind === 'exam') && (
+                        {event.moduleCode && (
                           <div className="text-xs opacity-90 truncate leading-tight">
-                            {event.module.split(' ').slice(0, 2).join(' ')}
+                            {event.moduleCode}
                           </div>
                         )}
                         <div className="text-xs opacity-80 leading-tight">

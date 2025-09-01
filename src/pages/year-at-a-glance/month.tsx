@@ -18,7 +18,7 @@ import {
   getAcademicYearFor
 } from '@/lib/calendar/links';
 import type { YM } from '@/lib/calendar/links';
-import { useMonthData, getAcademicYearFor as getAcademicYear } from '@/lib/calendar/useCalendarData';
+import { getEventsForMonth, getAcademicYearFor as getAcademicYear } from '@/lib/calendar/useCalendarData';
 import { getDefaultPlanByStudentYear } from '@/data/durham/llb';
 import { format } from 'date-fns';
 
@@ -64,7 +64,7 @@ const MonthPage: React.FC = () => {
   const isOwnYear = year === studentYear;
 
   // Load events for the current month
-  const events = useMonthData(year, ym);
+  const events = useMemo(() => getEventsForMonth(year, ym), [year, ym]);
 
   // Navigation handlers
   const handlePrev = useCallback(() => {

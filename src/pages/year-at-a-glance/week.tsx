@@ -14,7 +14,7 @@ import {
   hrefWeekWS,
   hrefYear
 } from '@/lib/calendar/links';
-import { useWeekData } from '@/lib/calendar/useCalendarData';
+import { getEventsForWeek } from '@/lib/calendar/useCalendarData';
 import { getDefaultPlanByStudentYear } from '@/data/durham/llb';
 import { format } from 'date-fns';
 
@@ -68,7 +68,7 @@ const WeekPage: React.FC = () => {
   const isOwnYear = year === studentYear;
 
   // Load events for the current week
-  const events = useWeekData(year, weekStartISO);
+  const events = useMemo(() => getEventsForWeek(year, weekStartISO), [year, weekStartISO]);
 
   // Navigation handlers
   const handlePrev = useCallback(() => {

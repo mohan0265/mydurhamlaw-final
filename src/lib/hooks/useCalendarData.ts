@@ -1,7 +1,9 @@
 // src/lib/hooks/useCalendarData.ts
-import { useState, useEffect, useCallback, useMemo } from 'react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { getSupabaseClient } from '@/lib/supabase/client'
+// src/lib/hooks/useCalendarData.ts
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { getSupabaseClient } from '@/lib/supabase/client';
+
 import {
   CalendarFilter,
   PersonalItem,

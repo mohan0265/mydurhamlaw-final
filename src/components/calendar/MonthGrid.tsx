@@ -16,29 +16,27 @@ import { ChevronLeft, ChevronRight, ArrowLeft } from 'lucide-react';
 import { YEAR_LABEL } from '@/lib/calendar/links';
 import type { YearKey, YM } from '@/lib/calendar/links';
 import type { CalendarEvent } from '@/lib/calendar/useCalendarData';
+import type { NormalizedEvent } from '@/lib/calendar/normalize';
 
 interface MonthGridProps {
   yearKey: YearKey;
   ym: YM;
-  events: CalendarEvent[];
+  events: NormalizedEvent[];
   onPrev: () => void;
   onNext: () => void;
   onBack: () => void;
   gated: boolean;
-  onEventClick?: (event: CalendarEvent) => void;
+  onEventClick?: (event: NormalizedEvent) => void;
 }
 
 const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
-function badgeStyle(kind: CalendarEvent['kind']): string {
+function badgeStyle(kind: NormalizedEvent['kind']): string {
   switch (kind) {
-    case 'lecture':   return 'bg-blue-50 text-blue-800 border-blue-100';
-    case 'seminar':   return 'bg-green-50 text-green-800 border-green-100';
-    case 'deadline':  return 'bg-red-50 text-red-700 border-red-100';
-    case 'exam':      return 'bg-red-100 text-red-900 border-red-200 font-medium';
-    case 'task':      return 'bg-gray-50 text-gray-800 border-gray-100';
-    case 'all-day':   return 'bg-purple-50 text-purple-700 border-purple-100';
-    default:          return 'bg-gray-50 text-gray-800 border-gray-100';
+    case 'topic':      return 'bg-blue-50 text-blue-800 border-blue-100';
+    case 'assessment': return 'bg-red-50 text-red-700 border-red-100';
+    case 'exam':       return 'bg-red-100 text-red-900 border-red-200 font-medium';
+    default:           return 'bg-gray-50 text-gray-800 border-gray-100';
   }
 }
 
@@ -89,7 +87,7 @@ export const MonthGrid: React.FC<MonthGridProps> = ({
 
   // Group by ISO date
   const eventsByDate = useMemo(() => {
-    const map: Record<string, CalendarEvent[]> = {};
+    const map: Record<string, NormalizedEvent[]> = {};
     for (const ev of events) {
       (map[ev.date] ||= []).push(ev);
     }
@@ -179,24 +177,12 @@ export const MonthGrid: React.FC<MonthGridProps> = ({
             const isoDay = format(day, 'yyyy-MM-dd');
             const dayEvents = eventsByDate[isoDay] || [];
             
-            // Filter events properly: exam windows only on start date, others as normal
-            const todays = events.filter(e => {
-              if (e.meta?.range) {
-                // only on start date for exam windows
-                return isSameISODate(day, e.date);
-              }
-              // normal all-day or timed items:
-              if (e.allDay) return isSameISODate(day, e.date);
-              if (e.start_at) return e.start_at.slice(0,10) === day.toISOString().slice(0,10);
-              return false;
-            });
-            
             const isCurMonth = isSameMonth(day, currentDate);
             const isCurDay = isToday(new Date(isoDay + 'T00:00:00Z'));
 
             // show up to 4 items, overflow into a hover card
-            const visible = todays.slice(0, 4);
-            const overflow = todays.length - visible.length;
+            const visible = dayEvents.slice(0, 4);
+            const overflow = dayEvents.length - visible.length;
 
             return (
               <div
@@ -214,9 +200,9 @@ export const MonthGrid: React.FC<MonthGridProps> = ({
                     {format(day, 'd')}
                   </span>
                   <div className="flex gap-1">
-                    {todays.some(e => e.kind === 'exam')     && <span className="w-2 h-2 rounded-full bg-red-500"    title="Exam" />}
-                    {todays.some(e => e.kind === 'deadline') && <span className="w-2 h-2 rounded-full bg-orange-500" title="Deadline" />}
-                    {todays.some(e => e.kind === 'lecture')  && <span className="w-2 h-2 rounded-full bg-blue-500"   title="Lecture" />}
+                    {dayEvents.some(e => e.kind === 'exam')       && <span className="w-2 h-2 rounded-full bg-red-500"    title="Exam" />}
+                    {dayEvents.some(e => e.kind === 'assessment') && <span className="w-2 h-2 rounded-full bg-orange-500" title="Assessment" />}
+                    {dayEvents.some(e => e.kind === 'topic')      && <span className="w-2 h-2 rounded-full bg-blue-500"   title="Topic" />}
                   </div>
                 </div>
 
@@ -224,11 +210,12 @@ export const MonthGrid: React.FC<MonthGridProps> = ({
                 <div className="space-y-1">
                   {visible.map((ev) => {
                     // Build appropriate label for exam windows
-                    const isRange = !!ev?.allDay && !!ev?.date && !!ev?.endDate;
-                    const label =
-                      ev?.subtype === 'exam_window' && isRange
-                        ? `${ev.title} (${format(parseISO(ev.date), "d MMM")}–${format(parseISO(ev.endDate!), "d MMM")})`
-                        : ev.title;
+                    let label = ev.title;
+                    if (ev.isWindow && ev.windowStart && ev.windowEnd) {
+                      const startDate = format(parseISO(ev.windowStart), 'd MMM');
+                      const endDate = format(parseISO(ev.windowEnd), 'd MMM');
+                      label = `${ev.title} (${startDate} – ${endDate})`;
+                    }
                     
                     return (
                       <button
@@ -239,7 +226,7 @@ export const MonthGrid: React.FC<MonthGridProps> = ({
                           'text-[11px] px-2 py-1 rounded border truncate cursor-pointer hover:opacity-75 transition-opacity w-full text-left',
                           badgeStyle(ev.kind),
                         ].join(' ')}
-                        title={[ev.start ? `${ev.start} — ` : '', label, ev.details ? `\n${ev.details}` : ''].join('')}
+                        title={[ev.start ? `${ev.start} — ` : '', label].join('')}
                       >
                         {/* Only show a time if start exists */}
                         {ev.start ? <span className="font-mono mr-1">{ev.start}</span> : null}
@@ -264,13 +251,14 @@ export const MonthGrid: React.FC<MonthGridProps> = ({
                   <div className="absolute z-50 left-0 top-full mt-1 bg-white border rounded-lg shadow-lg p-3 min-w-[220px]">
                     <div className="text-sm font-medium mb-2">{format(day, 'MMM d')}</div>
                     <div className="space-y-1 max-h-48 overflow-y-auto">
-                      {todays.slice(4).map((ev) => {
+                      {dayEvents.slice(4).map((ev) => {
                         // Build appropriate label for exam windows
-                        const isRange = !!ev?.allDay && !!ev?.date && !!ev?.endDate;
-                        const label =
-                          ev?.subtype === 'exam_window' && isRange
-                            ? `${ev.title} (${format(parseISO(ev.date), "d MMM")}–${format(parseISO(ev.endDate!), "d MMM")})`
-                            : ev.title;
+                        let label = ev.title;
+                        if (ev.isWindow && ev.windowStart && ev.windowEnd) {
+                          const startDate = format(parseISO(ev.windowStart), 'd MMM');
+                          const endDate = format(parseISO(ev.windowEnd), 'd MMM');
+                          label = `${ev.title} (${startDate} – ${endDate})`;
+                        }
                         
                         return (
                           <button 

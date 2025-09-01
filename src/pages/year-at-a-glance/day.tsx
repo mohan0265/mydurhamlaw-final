@@ -9,7 +9,7 @@ import { getEventsForWeek } from '@/lib/calendar/useCalendarData';
 import { getDefaultPlanByStudentYear } from '@/data/durham/llb';
 import { getStudentYear, parseYearKey, YEAR_LABEL } from '@/lib/calendar/links';
 import type { YearKey } from '@/lib/calendar/links';
-import type { CalendarEvent } from '@/lib/calendar/useCalendarData';
+import type { NormalizedEvent } from '@/lib/calendar/normalize';
 import { ArrowLeft, Calendar, Clock, MapPin, Book, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 
@@ -64,26 +64,20 @@ function getTermInfo(date: Date, yearKey: YearKey) {
   };
 }
 
-function getEventIcon(kind: CalendarEvent['kind']) {
+function getEventIcon(kind: NormalizedEvent['kind']) {
   switch (kind) {
-    case 'lecture': return <Book className="w-4 h-4 text-blue-600" />;
-    case 'seminar': return <Book className="w-4 h-4 text-green-600" />;
-    case 'deadline': return <AlertCircle className="w-4 h-4 text-red-600" />;
-    case 'exam': return <AlertCircle className="w-4 h-4 text-red-600" />;
+    case 'topic': return <Book className="w-4 h-4 text-blue-600" />;
     case 'assessment': return <AlertCircle className="w-4 h-4 text-orange-600" />;
-    case 'task': return <Calendar className="w-4 h-4 text-gray-600" />;
+    case 'exam': return <AlertCircle className="w-4 h-4 text-red-600" />;
     default: return <Calendar className="w-4 h-4 text-gray-600" />;
   }
 }
 
-function getEventStyle(kind: CalendarEvent['kind']) {
+function getEventStyle(kind: NormalizedEvent['kind']) {
   switch (kind) {
-    case 'lecture': return 'bg-blue-50 text-blue-800 border-blue-200';
-    case 'seminar': return 'bg-green-50 text-green-800 border-green-200';
-    case 'deadline': return 'bg-red-50 text-red-800 border-red-200';
-    case 'exam': return 'bg-red-100 text-red-900 border-red-300';
+    case 'topic': return 'bg-blue-50 text-blue-800 border-blue-200';
     case 'assessment': return 'bg-orange-50 text-orange-800 border-orange-200';
-    case 'task': return 'bg-gray-50 text-gray-800 border-gray-200';
+    case 'exam': return 'bg-red-100 text-red-900 border-red-300';
     default: return 'bg-gray-50 text-gray-800 border-gray-200';
   }
 }
@@ -114,7 +108,7 @@ export default function DayPage() {
   
   // Get next 7 days of upcoming deadlines/assessments
   const next7Days = useMemo(() => {
-    const upcoming: CalendarEvent[] = [];
+    const upcoming: NormalizedEvent[] = [];
     const plan = getDefaultPlanByStudentYear(yearKey);
     
     for (let i = 1; i <= 7; i++) {
@@ -130,7 +124,7 @@ export default function DayPage() {
       if (isWithinTerm) {
         const futureWeekEvents = getEventsForWeek(yearKey, futureDateISO);
         const futureAssessments = futureWeekEvents.filter(e => 
-          e.date === futureDateISO && (e.kind === 'deadline' || e.kind === 'exam' || e.kind === 'assessment')
+          e.date === futureDateISO && (e.kind === 'exam' || e.kind === 'assessment')
         );
         upcoming.push(...futureAssessments);
       }
