@@ -54,7 +54,7 @@ export function YearView({
   const mods = plan.modules
   const michaMods = forTerm(mods, 'Michaelmas')
   const epiphMods = forTerm(mods, 'Epiphany')
-  // Easter: typically revision/exams; we don’t list dedicated teaching modules
+  // Easter: typically revision/exams; we don't list dedicated teaching modules
 
   return (
     <div className="space-y-6">

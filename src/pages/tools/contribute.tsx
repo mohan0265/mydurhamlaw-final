@@ -123,7 +123,7 @@ export default function ContributeTool() {
         notes: [
           form.notes,
           form.location ? `Location: ${form.location}` : '',
-          form.start_time && form.end_time ? `Time: ${form.start_time}–${form.end_time}` : '',
+          form.start_time && form.end_time ? `Time: ${form.start_time}-${form.end_time}` : '',
           `(Submitted via Contribute • Scope: ${form.apply_scope})`
         ].filter(Boolean).join('\n')
       })
@@ -358,7 +358,7 @@ export default function ContributeTool() {
           {/* Right: preview */}
           <div className="bg-white rounded-xl border p-4 md:p-6">
             <h3 className="text-base font-semibold mb-2">Preview</h3>
-            <p className="text-sm text-gray-600 mb-3">This is what we’ll store with your submission.</p>
+            <p className="text-sm text-gray-600 mb-3">This is what we'll store with your submission.</p>
             <pre className="text-xs bg-gray-50 rounded-lg p-3 overflow-auto border">
 {JSON.stringify(preview, null, 2)}
             </pre>
@@ -372,14 +372,14 @@ export default function ContributeTool() {
           <div className="bg-white rounded-xl w-full max-w-lg p-5 border">
             <h3 className="text-lg font-semibold">Confirm cohort-wide submission</h3>
             <p className="text-sm text-gray-600 mt-2">
-              You’re proposing a change that may update the timetable/syllabus for other students once approved.
+              You're proposing a change that may update the timetable/syllabus for other students once approved.
               Continue?
             </p>
 
             <div className="mt-4 space-y-2 text-sm bg-gray-50 p-3 rounded border">
-              <div><b>Module:</b> {form.module_title || (form.module_code || '').toUpperCase() || '—'}</div>
+              <div><b>Module:</b> {form.module_title || (form.module_code || '').toUpperCase() || '-'}</div>
               <div><b>Type:</b> {form.kind}</div>
-              <div><b>Date:</b> {form.date || '—'} &nbsp; <b>Time:</b> {form.start_time || '--:--'}–{form.end_time || '--:--'}</div>
+              <div><b>Date:</b> {form.date || '-'} &nbsp; <b>Time:</b> {form.start_time || '--:--'}-{form.end_time || '--:--'}</div>
               {form.location && <div><b>Location:</b> {form.location}</div>}
             </div>
 

@@ -120,7 +120,7 @@ export const WeekGrid: React.FC<WeekGridProps> = ({
             Back to Year
           </button>
           <h1 className="text-xl font-semibold">
-            {YEAR_LABEL[yearKey]} • Week of {format(weekStart, 'd MMM')}–{format(weekEnd, 'd MMM yyyy')}
+            {YEAR_LABEL[yearKey]} • Week of {format(weekStart, 'd MMM')}-{format(weekEnd, 'd MMM yyyy')}
           </h1>
         </div>
 
@@ -155,7 +155,7 @@ export const WeekGrid: React.FC<WeekGridProps> = ({
             <ChevronLeft className="w-5 h-5" />
           </button>
           <h1 className="text-2xl font-semibold min-w-[300px] text-center">
-            {YEAR_LABEL[yearKey]} • Week of {format(weekStart, 'd MMM')}–{format(weekEnd, 'd MMM yyyy')}
+            {YEAR_LABEL[yearKey]} • Week of {format(weekStart, 'd MMM')}-{format(weekEnd, 'd MMM yyyy')}
           </h1>
           <button onClick={onNext} className="p-2 rounded-xl border hover:bg-gray-50" title="Next week (→)">
             <ChevronRight className="w-5 h-5" />
@@ -302,12 +302,12 @@ export const WeekGrid: React.FC<WeekGridProps> = ({
                           {event.start ? (
                             <>
                               {format(parseISOUTC(event.date), 'EEE, MMM d')} • {event.start}
-                              {event.end && `–${event.end}`}
+                              {event.end && `-${event.end}`}
                             </>
                           ) : event.allDay ? (
                             <>
                               {event.endDate
-                                ? `${format(parseISOUTC(event.date), 'EEE, MMM d')} – ${format(parseISOUTC(event.endDate), 'EEE, MMM d')}`
+                                ? `${format(parseISOUTC(event.date), 'EEE, MMM d')} - ${format(parseISOUTC(event.endDate), 'EEE, MMM d')}`
                                 : `${format(parseISOUTC(event.date), 'EEE, MMM d')} (all day)`}
                             </>
                           ) : (

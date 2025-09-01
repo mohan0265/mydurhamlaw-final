@@ -54,7 +54,7 @@ export const useCalendarData = ({
 }: UseCalendarDataProps) => {
   const queryClient = useQueryClient();
 
-  // —— Year overview (single year)
+  // -- Year overview (single year)
   const {
     data: yearOverview,
     isLoading: yearLoading,
@@ -74,7 +74,7 @@ export const useCalendarData = ({
     },
   });
 
-  // —— Multi-year data (for cross-year nav)
+  // -- Multi-year data (for cross-year nav)
   const {
     data: multiYearData,
     isLoading: multiYearLoading,
@@ -95,7 +95,7 @@ export const useCalendarData = ({
     },
   });
 
-  // —— Month data (factory hook)
+  // -- Month data (factory hook)
   const fetchMonthData = useCallback(async (year: number, month: number): Promise<MonthData> => {
     const startDate = format(startOfMonth(new Date(year, month - 1)), 'yyyy-MM-dd');
     const endDate = format(endOfMonth(new Date(year, month - 1)), 'yyyy-MM-dd');
@@ -116,7 +116,7 @@ export const useCalendarData = ({
       queryFn: () => fetchMonthData(year, month),
     });
 
-  // —— Week data (factory hook)
+  // -- Week data (factory hook)
   const fetchWeekData = useCallback(async (date: Date) => {
     const startDate = format(startOfWeek(date, { weekStartsOn: 1 }), 'yyyy-MM-dd');
     const endDate = format(endOfWeek(date, { weekStartsOn: 1 }), 'yyyy-MM-dd');
@@ -137,7 +137,7 @@ export const useCalendarData = ({
       queryFn: () => fetchWeekData(date),
     });
 
-  // —— Day detail (factory hook)
+  // -- Day detail (factory hook)
   const fetchDayDetail = useCallback(async (date: string): Promise<DayDetail> => {
     const headers = await authHeaders();
     const res = await fetch(`/api/calendar/day?date=${date}`, { headers, credentials: 'include' });
@@ -153,7 +153,7 @@ export const useCalendarData = ({
       queryFn: () => fetchDayDetail(date),
     });
 
-  // —— Module progress
+  // -- Module progress
   const { data: moduleProgress, isLoading: progressLoading } = useQuery<ModuleProgress[]>({
     queryKey: ['calendar', 'progress', userId, programme, yearOfStudy],
     enabled: !!userId,
@@ -169,7 +169,7 @@ export const useCalendarData = ({
     },
   });
 
-  // —— Personal items mutations
+  // -- Personal items mutations
   const createPersonalItem = useMutation({
     mutationFn: async (item: Omit<PersonalItem, 'id' | 'user_id'>) => {
       const supabase = getSupabaseClient();
@@ -224,7 +224,7 @@ export const useCalendarData = ({
     },
   });
 
-  // —— Progress checks
+  // -- Progress checks
   const updateTopicProgress = useMutation({
     mutationFn: async ({
       moduleId,
@@ -256,7 +256,7 @@ export const useCalendarData = ({
     },
   });
 
-  // —— Bulk refresh
+  // -- Bulk refresh
   const refreshAllData = useCallback(() => {
     queryClient.invalidateQueries({ queryKey: ['calendar'] });
   }, [queryClient]);
@@ -298,7 +298,7 @@ export const useCalendarData = ({
   };
 };
 
-// —— Filtering helpers
+// -- Filtering helpers
 export const useCalendarFilter = () => {
   const [filter, setFilter] = useState<CalendarFilter>({
     modules: [],
@@ -329,7 +329,7 @@ export const useCalendarFilter = () => {
   return { filter, updateFilter, resetFilter };
 };
 
-// —— Academic calendar helpers
+// -- Academic calendar helpers
 export const useAcademicCalendar = (academicYear: string = '2025/26', yearOfStudy: number = 1) => {
   const [currentTerm, setCurrentTerm] = useState<1 | 2 | 3 | 'vacation'>(1);
 
@@ -374,7 +374,7 @@ export const useAcademicCalendar = (academicYear: string = '2025/26', yearOfStud
   return { currentTerm, termDates, getTermProgress, isInTerm: currentTerm !== 'vacation' };
 };
 
-// —— Year navigation state
+// -- Year navigation state
 export const useYearNavigation = (userYearOfStudy: number, multiYearData?: MultiYearData) => {
   const [selectedYearIndex, setSelectedYearIndex] = useState<number>(0);
 

@@ -234,7 +234,7 @@ export default function DurhamLanding() {
             <FeatureCard icon="⚖️" title="Ask AI Legal Questions" description="Instant legal analysis with AI-powered context." />
             <FeatureCard icon="📅" title="Plan Deadlines" description="Schedule, track, and never miss an assignment." />
             <FeatureCard icon="📝" title="Summarise Lecture Notes" description="Turn walls of text into smart recall blocks." />
-            <FeatureCard icon="🧘‍♂️" title="Personal Wellbeing Support" description="Focus, recharge and maintain balance during your studies with Durmah." />
+            <FeatureCard icon="🧘♂️" title="Personal Wellbeing Support" description="Focus, recharge and maintain balance during your studies with Durmah." />
           </div>
         </div>
       </section>

@@ -11,7 +11,7 @@ import ParentEssentials from '@/components/community/ParentEssentials'
 import useUserType from '@/lib/hooks/useUserType'
 import { useBookmarks } from '@/lib/hooks/useBookmarks'
 
-// 🔧 Placeholder components for missing sections — you can replace these later
+// 🔧 Placeholder components for missing sections - you can replace these later
 const GrocerySection = () => <div className="p-4 text-center text-gray-500">Grocery section coming soon.</div>
 const TravelPlanner = () => <div className="p-4 text-center text-gray-500">Travel planner launching soon.</div>
 const DeliveryWidget = () => <div className="p-4 text-center text-gray-500">Delivery widget in progress.</div>
@@ -29,7 +29,7 @@ export default function CommunityHub() {
     { value: 'groceries', label: '🛒 Essentials', component: <GrocerySection /> },
     { value: 'travel', label: '✈️ Travel', component: <TravelPlanner /> },
     { value: 'deliver', label: '📦 Deliver', component: <DeliveryWidget /> },
-    { value: 'wellbeing', label: '🧘‍♀️ Wellbeing', component: <WellbeingCard /> },
+    { value: 'wellbeing', label: '🧘♀️ Wellbeing', component: <WellbeingCard /> },
   ]
 
   return (

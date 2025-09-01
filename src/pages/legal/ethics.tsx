@@ -20,7 +20,7 @@ const EthicsPage = () => {
 
       <h2 className="text-2xl font-semibold mt-8 mb-3">2. No Shortcut to Learning</h2>
       <p className="mb-4">
-        Our AI tutor is designed to strengthen your reasoning, writing, and reflection skills. It is not a replacement for reading cases, engaging with your lecturers, or understanding legal doctrines. We aim to enhance—not replace—your academic journey.
+        Our AI tutor is designed to strengthen your reasoning, writing, and reflection skills. It is not a replacement for reading cases, engaging with your lecturers, or understanding legal doctrines. We aim to enhance-not replace-your academic journey.
       </p>
 
       <h2 className="text-2xl font-semibold mt-8 mb-3">3. Transparent Use of AI</h2>

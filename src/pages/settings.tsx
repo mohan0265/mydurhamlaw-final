@@ -42,14 +42,14 @@ const VOICE_OPTIONS = [
     name: 'Nova', 
     description: 'Warm and encouraging female voice',
     personality: 'female_warm',
-    icon: '👩‍🎓'
+    icon: '👩🎓'
   },
   { 
     id: 'echo', 
     name: 'Echo', 
     description: 'Confident and supportive male mentor',
     personality: 'male_mentor',
-    icon: '👨‍🏫'
+    icon: '👨🏫'
   },
   { 
     id: 'shimmer', 

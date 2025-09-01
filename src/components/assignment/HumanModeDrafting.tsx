@@ -266,7 +266,7 @@ const HumanModeDrafting = ({
                   </Badge>
                 </CardTitle>
                 <p className="text-sm text-gray-600">
-                  We&apos;ll match how you write — every time. Your writing style is privately remembered and applied.
+                  We&apos;ll match how you write - every time. Your writing style is privately remembered and applied.
                 </p>
               </div>
             </div>

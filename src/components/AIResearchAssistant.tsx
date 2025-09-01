@@ -35,7 +35,7 @@ export default function AIResearchAssistant() {
       const data = await response.json()
       const assistantReply: Message = {
         role: 'assistant',
-        content: data.response || 'Sorry, I couldn’t find a useful answer.'
+        content: data.response || 'Sorry, I couldn't find a useful answer.'
       }
 
       setMessages([...newMessages, assistantReply])

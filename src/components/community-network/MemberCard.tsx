@@ -19,7 +19,7 @@ const PresenceDot = ({ status }: { status: string }) => (
 );
 
 export default function MemberCard({ member }: { member: Member }) {
-  const year = member.year_of_study || "—";
+  const year = member.year_of_study || "-";
 
   return (
     <div className="rounded-lg border p-4 flex items-center justify-between">

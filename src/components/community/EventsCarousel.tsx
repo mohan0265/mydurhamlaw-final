@@ -14,9 +14,9 @@ interface EventItem {
 const fetchEvents = async (): Promise<EventItem[]> => {
   // Replace with Eventbrite or Durham Uni API
   return [
-    { id: 1, title: 'Durham Lumiere Festival', date: 'Nov 15–18', loc: 'City Centre', link: '#' },
+    { id: 1, title: 'Durham Lumiere Festival', date: 'Nov 15-18', loc: 'City Centre', link: '#' },
     { id: 2, title: 'Law Society Ball', date: 'Dec 5', loc: 'Durham Castle', link: '#' },
-    { id: 3, title: 'Christmas Market', date: 'Dec 1–22', loc: 'Market Place', link: '#' },
+    { id: 3, title: 'Christmas Market', date: 'Dec 1-22', loc: 'Market Place', link: '#' },
   ]
 }
 

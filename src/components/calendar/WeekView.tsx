@@ -131,7 +131,7 @@ export const WeekView: React.FC<WeekViewProps> = ({
               <div className="text-xs mt-1 opacity-80 flex items-center gap-2">
                 <Clock className="w-3 h-3" />
                 <span>
-                  {format(new Date(evt.start_at), 'HH:mm')}–{format(new Date(evt.end_at), 'HH:mm')}
+                  {format(new Date(evt.start_at), 'HH:mm')}-{format(new Date(evt.end_at), 'HH:mm')}
                 </span>
                 {evt.location && (
                   <>
@@ -163,7 +163,7 @@ export const WeekView: React.FC<WeekViewProps> = ({
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-2xl font-bold">
-              {format(weekStart, 'dd MMM')} – {format(weekEnd, 'dd MMM, yyyy')}
+              {format(weekStart, 'dd MMM')} - {format(weekEnd, 'dd MMM, yyyy')}
             </h2>
             <div className="text-purple-100 text-sm">
               {count('classes')} classes • {count('deadlines')} deadlines

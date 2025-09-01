@@ -6,7 +6,7 @@ export default function ParentEssentials() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
           <h3 className="font-semibold">📅 Term Dates</h3>
-          <p className="text-sm text-gray-700">Michaelmas: Oct 5 – Dec 4 • Lent: Jan 10 – Mar 15</p>
+          <p className="text-sm text-gray-700">Michaelmas: Oct 5 - Dec 4 • Lent: Jan 10 - Mar 15</p>
         </div>
         <div>
           <h3 className="font-semibold">🏨 Approved Hotels</h3>

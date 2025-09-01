@@ -12,14 +12,14 @@ interface Eatery {
 }
 
 const fetchEateries = async (): Promise<Eatery[]> => {
-  // Simulate API call — replace with OpenTable or Zomato API
+  // Simulate API call - replace with OpenTable or Zomato API
   return [
     {
       id: 'tandoori-palace',
       name: 'Tandoori Palace',
       cuisine: 'Indian • Halal',
       price: '££',
-      hours: '12pm–11pm',
+      hours: '12pm-11pm',
       rating: 4.7,
       link: 'https://www.opentable.com/restref/client/?restId=28234&ref=123',
     },
@@ -28,7 +28,7 @@ const fetchEateries = async (): Promise<Eatery[]> => {
       name: 'Flat White',
       cuisine: 'Café • Vegan Options',
       price: '£',
-      hours: '8am–6pm',
+      hours: '8am-6pm',
       rating: 4.8,
       link: 'https://resy.com/cities/uk-durham-flat-white',
     },

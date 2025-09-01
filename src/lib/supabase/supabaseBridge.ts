@@ -1,4 +1,4 @@
-﻿// src/lib/supabase/supabaseBridge.ts
+// src/lib/supabase/supabaseBridge.ts
 import {
   KEY_DATES_2025_26,
   computeDaysUntil,

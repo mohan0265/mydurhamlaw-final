@@ -84,7 +84,7 @@ export const DayDrawer: React.FC<DayDrawerProps> = ({
             {(event as any)?.meta?.kind === "exam-window" && (
               <div className="mt-2 text-sm opacity-80">
                 This module's exam takes place during the official assessment window{" "}
-                <strong>{(event as any).meta.window?.start}</strong> –{" "}
+                <strong>{(event as any).meta.window?.start}</strong> -{" "}
                 <strong>{(event as any).meta.window?.end}</strong>. Exact sitting date/time is set by
                 the Law School and may be released later. This entry is shown per day to keep you revision-aware.
               </div>

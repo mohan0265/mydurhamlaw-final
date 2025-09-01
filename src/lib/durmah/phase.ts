@@ -1,4 +1,4 @@
-﻿// src/lib/durmah/phase.ts
+// src/lib/durmah/phase.ts
 export type KeyDates = {
   induction: string;
   michaelmasStart: string;

@@ -67,11 +67,11 @@ Please provide a helpful, context-aware response.`.trim();
 function getYearSpecificContext(year: 1 | 2 | 3): string {
   switch (year) {
     case 1:
-      return `1st Year Student – Focus on foundational legal concepts, develop strong habits.`;
+      return `1st Year Student - Focus on foundational legal concepts, develop strong habits.`;
     case 2:
-      return `2nd Year Student – Building on foundations with complex areas and career prep.`;
+      return `2nd Year Student - Building on foundations with complex areas and career prep.`;
     case 3:
-      return `Final Year Student – Dissertation writing and advanced modules. Stay focused.`;
+      return `Final Year Student - Dissertation writing and advanced modules. Stay focused.`;
     default:
       return '';
   }

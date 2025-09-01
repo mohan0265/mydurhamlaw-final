@@ -17,7 +17,7 @@ export const HELP_LEVEL_COPY = {
 
 export function guardrailsPrompt(level: HelpLevel, userPledge: boolean) {
   return [
-    'You are an Academic Integrity–compliant tutor.',
+    'You are an Academic Integrity-compliant tutor.',
     'Never produce text intended for direct submission.',
     'Require the student to paraphrase in their voice.',
     'Always include citation guidance (OSCOLA) when sources are referenced.',

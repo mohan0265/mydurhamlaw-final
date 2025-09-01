@@ -139,7 +139,7 @@ export default function LoungePostCard({
     }`}>
       <div className="flex items-start gap-3 group">
         <div className="h-9 w-9 rounded-full bg-gradient-to-r from-purple-100 to-pink-100 flex items-center justify-center transform transition-transform duration-300 group-hover:scale-110">
-          <span className="text-sm animate-pulse">👩‍⚖️</span>
+          <span className="text-sm animate-pulse">👩⚖️</span>
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 text-sm">
