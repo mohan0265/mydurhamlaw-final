@@ -1,4 +1,4 @@
-// src/lib/supabase/supabaseBridge.ts
+﻿//// src/lib/supabase/supabaseBridge.ts
 import {
   KEY_DATES_2025_26,
   computeDaysUntil,
@@ -29,7 +29,6 @@ export async function loadMDLStudentContext(
   let u = user;
 
   try {
-    // Use the same client as the rest of the app (this is your real browser client)
     const { supabase } = await import("@/lib/supabase/client");
     if (!u) {
       const sessionRes = await supabase.auth.getSession();

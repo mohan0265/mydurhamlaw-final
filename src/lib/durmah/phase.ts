@@ -1,4 +1,4 @@
-// src/lib/durmah/phase.ts
+﻿//// src/lib/durmah/phase.ts
 export type KeyDates = {
   induction: string;
   michaelmasStart: string;
@@ -69,7 +69,7 @@ export function toISO(d: Date): string {
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, "0");
   const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
+  return ${y}--;
 }
 
 export function addDays(d: Date, days: number): Date {
@@ -90,7 +90,6 @@ export function formatTodayForDisplay(
   return fmt.format(new Date());
 }
 
-// Canonical AY 2025/26
 export const KEY_DATES_2025_26: KeyDates = {
   induction: "2025-09-29",
   michaelmasStart: "2025-10-06",
@@ -114,13 +113,13 @@ export function defaultMonthDeepLink(
   key: KeyDates
 ) {
   const preInduction = nowISO < key.induction;
-  const ym = preInduction ? "2025-10" : `${nowISO.slice(0, 7)}`;
-  return `/year-at-a-glance/month?y=${yearKey}&ym=${ym}`;
+  const ym = preInduction ? "2025-10" : ${nowISO.slice(0, 7)};
+  return /year-at-a-glance/month?y=&ym=;
 }
 
 export function weekOneLink(
   yearKey: "foundation" | "year1" | "year2" | "year3",
   key: KeyDates
 ) {
-  return `/year-at-a-glance/week?y=${yearKey}&start=${key.michaelmasStart}`;
+  return /year-at-a-glance/week?y=&start=;
 }

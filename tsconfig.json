@@ -19,43 +19,11 @@
     "isolatedModules": true,
     "jsx": "preserve",
     "incremental": true,
-    "baseUrl": ".",
+    "baseUrl": "src",
     "paths": {
       "@/*": [
-        "./src/*"
-      ],
-      "@/components/*": [
-        "./src/components/*"
-      ],
-      "@/lib/*": [
-        "./src/lib/*"
-      ],
-      "@/pages/*": [
-        "./src/pages/*"
-      ],
-      "@/types/*": [
-        "./src/types/*"
-      ],
-      "@/hooks/*": [
-        "./src/hooks/*"
-      ],
-      "@/constants/*": [
-        "./src/constants/*"
-      ],
-      "@/components/DurmahWidget": ["./src/stubs/NullWidget.tsx"],
-      "@/components/LegalEagleBuddy": ["./src/stubs/NullWidget.tsx"],
-      "@/components/FloatingDurmah": ["./src/stubs/NullWidget.tsx"],
-      "@/components/FloatingAWY": ["./src/stubs/NullWidget.tsx"],
-      "@/components/AWYBootstrap": ["./src/stubs/NullWidget.tsx"],
-      "@/components/ui/DurmahLogo": ["./src/stubs/NullWidget.tsx"],
-      "@/context/DurmahContext": ["./src/stubs/awy.ts"],
-      "durmah": ["./src/stubs/NullWidget.tsx"],
-      "@/durmah": ["./src/stubs/NullWidget.tsx"],
-      "@durmah": ["./src/stubs/NullWidget.tsx"],
-      "@/awy": ["./src/stubs/awy.ts"],
-      "@awy": ["./src/stubs/awy.ts"],
-      "@/lib/awy": ["./src/stubs/awy.ts"],
-      "awy": ["./src/stubs/awy.ts"]
+        "*"
+      ]
     },
     "plugins": [
       {
@@ -71,8 +39,9 @@
     "src/**/*.tsx",
     "pages/**/*.ts",
     "pages/**/*.tsx",
-    ".next/types/**/*.ts"
-, "src/data/durham/llb"  ],
+    ".next/types/**/*.ts",
+    "src/data/durham/llb"
+  ],
   "exclude": [
     "node_modules",
     "supabase/**/*",
