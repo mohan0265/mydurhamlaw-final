@@ -36,7 +36,7 @@ const MovementPillars = () => {
               Our Movement
             </h2>
             <p className="text-lg text-gray-700 leading-relaxed">
-              MyDurhamLaw is more than a platform—it's a movement to revolutionize legal education. 
+              MyDurhamLaw is more than a platform-it's a movement to revolutionize legal education. 
               Our pillars represent the core values and principles that guide every decision, 
               every feature, and every interaction. Together, they form the foundation of 
               a new era in legal education that puts students first.
@@ -294,7 +294,7 @@ const MovementPillars = () => {
 
               <div className="bg-gradient-to-br from-blue-50 to-indigo-100 rounded-xl p-8">
                 <p className="text-gray-700 italic mb-4 text-lg">
-                  "The pillars aren't just words on a page—you can see them in action 
+                  "The pillars aren't just words on a page-you can see them in action 
                   every day. When I struggled with anxiety, the platform noticed and 
                   connected me with support resources immediately."
                 </p>

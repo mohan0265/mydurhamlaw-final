@@ -203,7 +203,7 @@ export default function DayPage() {
                   const isRange = !!event?.allDay && !!event?.date && !!event?.endDate;
                   const label =
                     event?.subtype === 'exam_window' && isRange
-                      ? `${event.title} (${format(parseISO(event.date), "d MMM")}–${format(parseISO(event.endDate!), "d MMM")})`
+                      ? `${event.title} (${format(parseISO(event.date), "d MMM")}-${format(parseISO(event.endDate!), "d MMM")})`
                       : event.title;
                   
                   return (
@@ -258,7 +258,7 @@ export default function DayPage() {
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-1">
                             <span className="font-mono text-sm font-medium">
-                              {event.start}{event.end && `–${event.end}`}
+                              {event.start}{event.end && `-${event.end}`}
                             </span>
                             <span className="font-medium text-sm">{event.title}</span>
                           </div>

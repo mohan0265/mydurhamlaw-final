@@ -27,7 +27,7 @@ export default function Document() {
         {/* SEO Meta Tags */}
         <meta
           name="description"
-          content="MyDurhamLaw AI Study Assistant – Your intelligent companion for UK law mastery. Built for Durham Law students."
+          content="MyDurhamLaw AI Study Assistant - Your intelligent companion for UK law mastery. Built for Durham Law students."
         />
         <meta name="keywords" content="law, study, Durham, AI, assistant, legal education, Durham University" />
         <meta name="author" content="MyDurhamLaw Team" />

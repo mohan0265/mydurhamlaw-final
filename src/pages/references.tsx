@@ -32,7 +32,7 @@ export default function ReferencesPage() {
       bgColor: 'bg-blue-50',
       resources: [
         {
-          name: 'BAILII – British and Irish Legal Information Institute',
+          name: 'BAILII - British and Irish Legal Information Institute',
           description: 'Free access to UK and Irish case law, legislation, and legal materials',
           url: 'https://www.bailii.org/',
           badge: 'Free'
@@ -95,7 +95,7 @@ export default function ReferencesPage() {
       badge: 'Durham'
     },
     {
-      name: 'Law Trove – Oxford University Press',
+      name: 'Law Trove - Oxford University Press',
       description: 'Access to hundreds of UK law textbooks',
       url: 'https://www.oxfordlawtrove.com/',
       badge: 'Academic'

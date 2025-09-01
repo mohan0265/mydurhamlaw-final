@@ -35,7 +35,7 @@ export function useRealtimeVoice() {
       setStatus("connecting");
 
       // Your server route that returns a temporary OpenAI Realtime session URL
-      // For Next.js, we’ll create /api/realtime-session in Step 4.5
+      // For Next.js, we'll create /api/realtime-session in Step 4.5
       const res = await fetch("/api/realtime-session");
       if (!res.ok) throw new Error("Failed to create realtime session");
       const { client_secret } = await res.json();

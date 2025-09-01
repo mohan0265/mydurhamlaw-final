@@ -209,7 +209,7 @@ export const MonthGrid: React.FC<MonthGridProps> = ({
                           'text-[11px] px-2 py-1 rounded border truncate cursor-pointer hover:opacity-75 transition-opacity w-full text-left',
                           badgeStyle(ev.kind),
                         ].join(' ')}
-                        title={[ev.start ? `${ev.start} — ` : '', label].join('')}
+                        title={[ev.start ? `${ev.start} - ` : '', label].join('')}
                       >
                         {ev.start ? <span className="font-mono mr-1">{ev.start}</span> : null}
                         <span className="truncate">{label}</span>
@@ -241,7 +241,7 @@ export const MonthGrid: React.FC<MonthGridProps> = ({
                             type="button"
                             onClick={() => onEventClick?.(ev)}
                             className={['text-[11px] px-2 py-1 rounded border cursor-pointer hover:opacity-75 transition-opacity w-full text-left', badgeStyle(ev.kind)].join(' ')}
-                            title={[ev.start ? `${ev.start} — ` : '', label].join('')}
+                            title={[ev.start ? `${ev.start} - ` : '', label].join('')}
                           >
                             {ev.start ? <span className="font-mono mr-1">{ev.start}</span> : null}
                             {label}
@@ -258,7 +258,7 @@ export const MonthGrid: React.FC<MonthGridProps> = ({
       </div>
 
       <div className="mt-4 text-xs text-gray-500 text-center">
-        Tip: Hover over “+N more” to see all events • Use keyboard arrows to navigate months
+        Tip: Hover over "+N more" to see all events • Use keyboard arrows to navigate months
       </div>
     </div>
   );

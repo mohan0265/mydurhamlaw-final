@@ -18,7 +18,7 @@ export const EthicsReassurance: React.FC = () => {
             </h2>
           </div>
           <p className="text-xl text-blue-100 max-w-4xl mx-auto leading-relaxed">
-            Built from day one with ethical AI principles. We don&apos;t just prevent plagiarism – 
+            Built from day one with ethical AI principles. We don&apos;t just prevent plagiarism - 
             we actively teach responsible AI use and transparent academic practices.
           </p>
         </div>

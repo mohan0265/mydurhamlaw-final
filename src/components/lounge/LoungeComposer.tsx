@@ -146,7 +146,7 @@ export default function LoungeComposer({
       return;
     }
     if (!body.trim()) {
-      setWarn("Share your thoughts—we'd love to hear from you!");
+      setWarn("Share your thoughts-we'd love to hear from you!");
       return;
     }
 

@@ -1,8 +1,8 @@
-// Durham LLB – Academic Year 2025–26
+// Durham LLB - Academic Year 2025-26
 // Prefill dataset for "My Year In a Glance"
 
 /**
- * Durham LLB 2025/26 — canonical academic plan used by YAAG.
+ * Durham LLB 2025/26 - canonical academic plan used by YAAG.
  *
  * Sources (accessed 2025-08-31):
  * - Programme Handbook (year-by-year modules):
@@ -14,7 +14,7 @@
  *
  * Rules:
  * - Term windows are strict; weeks are W1..W10 (Mondays in ISO yyyy-MM-dd).
- * - Exams/assessments are encoded as all-day (no start/end) unless an exam “window” is published.
+ * - Exams/assessments are encoded as all-day (no start/end) unless an exam "window" is published.
  * - No fabricated times/days; if unknown, leave time empty so UI renders chips as all-day.
  * - Timezone: Europe/London.
  */
@@ -59,7 +59,7 @@ export type AcademicYearPlan = {
   modules: ModulePlan[];
 };
 
-// ---- Term dates and weekly Mondays for 2025–26 (Durham) ----
+// ---- Term dates and weekly Mondays for 2025-26 (Durham) ----
 // Induction: 2025-09-29 .. 2025-10-05
 // Michaelmas teaching: 10 weeks from Mon 2025-10-06
 const MICHAELMAS_WEEKS = [
@@ -154,7 +154,7 @@ export const DURHAM_LLB_2025_26_FOUNDATION: AcademicYearPlan = {
   ]
 };
 
-// Year 1 — compulsory modules & term windows (see sources in header)
+// Year 1 - compulsory modules & term windows (see sources in header)
 // Year 1 exams use EXAM_WINDOW (Easter term). We render per-day all-day chips via calendar adapter.
 
 
@@ -410,7 +410,7 @@ export const DURHAM_LLB_2025_26_Y1: AcademicYearPlan = {
   ]
 };
 
-// Year 2 — compulsory + typical options (verified 2025/26)
+// Year 2 - compulsory + typical options (verified 2025/26)
 
 
 
@@ -489,7 +489,7 @@ export const DURHAM_LLB_2025_26_Y2: AcademicYearPlan = {
   ]
 };
 
-// Year 3 — dissertation + options (verified 2025/26)
+// Year 3 - dissertation + options (verified 2025/26)
 
 
 

@@ -29,7 +29,7 @@ export default function AboutPage() {
             </h1>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
               Your personal AI study companion, built with love for every Durham Law student. 
-              From Foundation Year to Finals — we&apos;re here to support your academic journey and wellbeing.
+              From Foundation Year to Finals - we&apos;re here to support your academic journey and wellbeing.
             </p>
           </div>
 
@@ -68,7 +68,7 @@ export default function AboutPage() {
               </p>
               <div className="bg-blue-100 p-4 rounded-lg border-l-4 border-blue-500">
                 <p className="text-sm text-blue-800 italic">
-                  <strong>Etymology:</strong> The name &quot;Durmah&quot; draws inspiration from the Sanskrit word &quot;Dharma&quot; — 
+                  <strong>Etymology:</strong> The name &quot;Durmah&quot; draws inspiration from the Sanskrit word &quot;Dharma&quot; - 
                   meaning law, truth, and righteous living. It embodies the principles of justice, balance, 
                   and ethical grounding that define the legal profession.
                 </p>
@@ -223,12 +223,12 @@ export default function AboutPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <p className="text-lg text-gray-700">
-                MyDurhamLaw began as a parent&apos;s gift to their child — a personalized AI study companion to help navigate 
+                MyDurhamLaw began as a parent&apos;s gift to their child - a personalized AI study companion to help navigate 
                 the challenges of law school. What started as a private project has grown into something much larger.
               </p>
               <p className="text-gray-600">
                 Recognizing that every Durham law student deserves this level of support, we&apos;ve opened MyDurhamLaw 
-                to the entire student body. This is our contribution to the Durham Law community — built with love, 
+                to the entire student body. This is our contribution to the Durham Law community - built with love, 
                 shared with purpose.
               </p>
               <div className="bg-rose-100 p-4 rounded-lg border-l-4 border-rose-500">
@@ -287,7 +287,7 @@ export default function AboutPage() {
               <h2 className="text-3xl font-bold mb-4">Ready to Begin Your Journey?</h2>
               <p className="text-xl text-purple-100 mb-6 max-w-2xl mx-auto">
                 Whether you&apos;re just starting in Foundation Year or preparing for Finals, 
-                MyDurhamLaw is here for you — one voice, one AI companion, one journey at a time.
+                MyDurhamLaw is here for you - one voice, one AI companion, one journey at a time.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
                 <div className="text-lg font-semibold text-purple-200">

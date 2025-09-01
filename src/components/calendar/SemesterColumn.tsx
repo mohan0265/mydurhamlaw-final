@@ -117,14 +117,14 @@ export default function SemesterColumn({
     const scan = (m: ModulePlan) => {
       m.assessments.forEach((a) => {
         if ('window' in a) {
-          // exam window — show in every overlapping week
+          // exam window - show in every overlapping week
           term.weeks.forEach((wkISO) => {
             if (overlapsWindow(a.window, wkISO)) {
               ;(map[wkISO] ||= []).push({ a, moduleTitle: m.title })
             }
           })
         } else {
-          // single due date — show in the week containing the due date
+          // single due date - show in the week containing the due date
           term.weeks.forEach((wkISO) => {
             const { start, end } = weekWindow(wkISO)
             if (betweenInclusive(asDate(a.due), start, end)) {
@@ -152,7 +152,7 @@ export default function SemesterColumn({
           </div>
           <h3 className="text-lg font-semibold">{title}</h3>
           <div className="text-xs text-gray-500">
-            {formatDMmm(asDate(term.start))} – {formatDMmm(asDate(term.end))}
+            {formatDMmm(asDate(term.start))} - {formatDMmm(asDate(term.end))}
           </div>
         </div>
         <BookOpen className="w-5 h-5 text-purple-500" />

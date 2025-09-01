@@ -135,7 +135,7 @@ export const SmartNewsAgent: React.FC<SmartNewsAgentProps> = ({
             </div>
             <div className="flex-1">
               <h3 className="text-white font-semibold text-sm sm:text-base">AI Legal Analysis</h3>
-              <p className="text-purple-100 text-xs sm:text-sm">Powered by GPT-4o – summarising legal news for student learning</p>
+              <p className="text-purple-100 text-xs sm:text-sm">Powered by GPT-4o - summarising legal news for student learning</p>
             </div>
           </div>
           {!autoAnalyze && !analysis && !isAnalyzing && (

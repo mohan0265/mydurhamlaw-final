@@ -194,7 +194,7 @@ export class DurhamAcademicCalendar {
     } else if (termWeek === 6) {
       return `Reading Week! Perfect time to catch up, review, and prepare for the final stretch. 📖`
     } else if (termWeek <= 8) {
-      return `${termName} Week ${termWeek} - you're in the final stretch! Stay focused and finish strong. 🏃‍♂️`
+      return `${termName} Week ${termWeek} - you're in the final stretch! Stay focused and finish strong. 🏃♂️`
     } else {
       return `Final weeks of ${termName}! You've got this - channel all your hard work into these crucial weeks. 🔥`
     }

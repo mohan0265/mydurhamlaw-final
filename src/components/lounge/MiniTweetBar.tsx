@@ -75,7 +75,7 @@ export default function MiniTweetBar() {
   function clientModerationCheck(t: string) {
     const low = t.toLowerCase();
     for (const w of BAD_WORDS) {
-      if (low.includes(w)) return `Please revise your text. “${w}” was detected.`;
+      if (low.includes(w)) return `Please revise your text. "${w}" was detected.`;
     }
     return null;
   }

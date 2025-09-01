@@ -149,7 +149,7 @@ export function useRealtimeWebRTC() {
 
       // soften & slow a touch (client-side)
       el.volume = TTS_VOLUME;   // 0.0 .. 1.0
-      el.playbackRate = TTS_RATE; // e.g. 0.85–1.05
+      el.playbackRate = TTS_RATE; // e.g. 0.85-1.05
 
       el.onended = () => {
         try { URL.revokeObjectURL(url); } catch {}

@@ -60,7 +60,7 @@ export interface YearPlan {
   terms: Array<{
     key: 'michaelmas' | 'epiphany' | 'easter';
     title: string;
-    dateRangeLabel: string; // e.g., '6 Oct – 12 Dec'
+    dateRangeLabel: string; // e.g., '6 Oct - 12 Dec'
     modules: string[];
     weeks: Array<{
       id: string;           // 'W1'
@@ -193,7 +193,7 @@ export function loadEventsForYear(y: YearKey): CalendarEvent[] {
     });
   });
 
-  // Assessments (deadlines / exams) — never invent times
+  // Assessments (deadlines / exams) - never invent times
   for (const mod of plan.modules ?? []) {
     for (const a of mod.assessments ?? []) {
       if ('due' in a && a.due) {
@@ -217,7 +217,7 @@ export function loadEventsForYear(y: YearKey): CalendarEvent[] {
           module: mod.title,
           moduleCode: mod.code,
           title: `${mod.title} • Exam window`,
-          details: a.window.end ? `Exam window: ${a.window.start} – ${a.window.end}` : undefined,
+          details: a.window.end ? `Exam window: ${a.window.start} - ${a.window.end}` : undefined,
         });
       }
     }
@@ -237,7 +237,7 @@ export function loadEventsForYear(y: YearKey): CalendarEvent[] {
       module: examEv.meta?.module,
       title: examEv.title,
       details: examEv.meta?.kind === 'exam-window' 
-        ? `Exam window: ${examEv.meta.window?.start} – ${examEv.meta.window?.end}` 
+        ? `Exam window: ${examEv.meta.window?.start} - ${examEv.meta.window?.end}` 
         : undefined,
     });
   });
@@ -286,7 +286,7 @@ export function buildYearPlanFromData(y: YearKey): YearPlan {
     return {
       key: term,
       title,
-      dateRangeLabel: `${format(parseISODate(termDates.start), 'd MMM')} – ${format(parseISODate(termDates.end), 'd MMM')}`,
+      dateRangeLabel: `${format(parseISODate(termDates.start), 'd MMM')} - ${format(parseISODate(termDates.end), 'd MMM')}`,
       modules:
         term === 'easter'
           ? [] // usually revision/exams only

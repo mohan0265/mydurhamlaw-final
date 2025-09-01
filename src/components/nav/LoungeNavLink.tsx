@@ -15,7 +15,7 @@ export default function LoungeNavLink({
   className = "" 
 }: LoungeNavLinkProps) {
   return (
-    <Tooltip content="Your Premier Student Lounge — Connect. Share. Grow.">
+    <Tooltip content="Your Premier Student Lounge - Connect. Share. Grow.">
       <Link 
         href={href}
         className={`group relative inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold 

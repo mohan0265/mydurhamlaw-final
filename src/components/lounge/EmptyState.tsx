@@ -154,7 +154,7 @@ export default function EmptyState({
 
           {/* Encouraging note */}
           <p className="mt-6 text-xs text-gray-500 italic">
-            &ldquo;The law is not just in books—it lives in the minds and hearts of those who study it together. Your journey begins with a single shared thought.&rdquo;
+            &ldquo;The law is not just in books-it lives in the minds and hearts of those who study it together. Your journey begins with a single shared thought.&rdquo;
           </p>
         </div>
       </div>

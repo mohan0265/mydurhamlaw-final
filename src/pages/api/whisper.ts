@@ -1,4 +1,4 @@
-// /pages/api/whisper.ts — Server-side Whisper API endpoint for audio transcription
+// /pages/api/whisper.ts - Server-side Whisper API endpoint for audio transcription
 
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { IncomingForm, File } from 'formidable'

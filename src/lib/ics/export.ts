@@ -10,7 +10,7 @@ export type IcsEvent = {
 
 function pad(n: number) { return n.toString().padStart(2, '0') }
 function toICSDate(d: Date) {
-  // Convert local -> “floating” ICS time (or use UTC with 'Z' if you prefer)
+  // Convert local -> "floating" ICS time (or use UTC with 'Z' if you prefer)
   const y = d.getFullYear()
   const m = pad(d.getMonth() + 1)
   const day = pad(d.getDate())

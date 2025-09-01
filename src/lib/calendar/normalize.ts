@@ -71,7 +71,7 @@ function isWithinRange(dateISO: string, startISO: string, endISO: string): boole
 }
 
 // Read from the canonical plan in src/data/durham/llb
-// Map teaching topics to their correct weekday (Mon–Fri) per existing plan logic.
+// Map teaching topics to their correct weekday (Mon-Fri) per existing plan logic.
 // Exams/assessments with unknown times => allDay=true.
 // Exam windows => emit ONE NormalizedEvent with isWindow=true, date=windowStart,
 //                 windowStart, windowEnd set; DO NOT expand to daily duplicates.
@@ -160,7 +160,7 @@ export function normalizeEvents(yearKey: YearKey, opts: NormalizeOptions): Norma
     });
   });
 
-  // Assessments (deadlines / exams) — never invent times
+  // Assessments (deadlines / exams) - never invent times
   for (const mod of plan.modules ?? []) {
     for (const a of (mod as any).assessments ?? []) {
       if ('due' in a && (a as any).due) {
@@ -203,7 +203,7 @@ export function normalizeEvents(yearKey: YearKey, opts: NormalizeOptions): Norma
         addEvent({
           date: windowStartISO,
           // clearer label includes the range
-          title: `${mod.title} • Exam window (${windowStartISO} – ${windowEndISO})`,
+          title: `${mod.title} • Exam window (${windowStartISO} - ${windowEndISO})`,
           allDay: true,
           kind: 'exam',
           isWindow: true,

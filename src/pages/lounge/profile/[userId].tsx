@@ -179,7 +179,7 @@ export default function UserProfilePage() {
               <SectionCard className="lg:sticky lg:top-6">
                 <div className="text-center">
                   <div className="h-16 w-16 sm:h-20 sm:w-20 rounded-full bg-gradient-to-r from-purple-600 to-blue-600 flex items-center justify-center mx-auto mb-3 sm:mb-4">
-                    <span className="text-lg sm:text-2xl">👩‍⚖️</span>
+                    <span className="text-lg sm:text-2xl">👩⚖️</span>
                   </div>
                   
                   <h1 className="text-lg sm:text-xl font-bold text-gray-900 mb-1">

@@ -50,7 +50,7 @@ const fmtTime = (d = new Date()) => {
 };
 
 export default function DurmahWidget({ context }: WidgetProps) {
-  // Use *host* app auth so RLS == student’s session
+  // Use *host* app auth so RLS == student's session
   const { user } = useAuth() || { user: null };
 
   // Your voice hook (works as-is)

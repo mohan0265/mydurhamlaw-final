@@ -36,8 +36,8 @@ export default function Greeter() {
       <div className="text-sm text-gray-500 mb-1">Durmah</div>
       <h2 className="text-xl font-semibold mb-2">Hi {firstName} 👋</h2>
       <p className="text-gray-700 leading-relaxed">
-        You’re {yearLabel(yearKey)} LLB (AY 2025/26).<br />
-        Today is {todayFriendly} — {daysUntil.induction} days to Induction (29
+        You're {yearLabel(yearKey)} LLB (AY 2025/26).<br />
+        Today is {todayFriendly} - {daysUntil.induction} days to Induction (29
         Sep) and {daysUntil.teachingStart} days to Michaelmas teaching (6 Oct).
       </p>
       <div className="mt-4 flex flex-wrap gap-2">
@@ -51,7 +51,7 @@ export default function Greeter() {
           onClick={openWeekOne}
           className="px-3 py-2 rounded-xl bg-gray-100 text-gray-900 text-sm hover:bg-gray-200 transition"
         >
-          Week&nbsp;1 prep checklist
+          Week 1 prep checklist
         </button>
         <button
           onClick={addRoutine}
