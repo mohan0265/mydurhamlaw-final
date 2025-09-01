@@ -9,13 +9,12 @@ import {
   addDays,
   isSameMonth,
   isToday,
-  } from 'date-fns';
+} from 'date-fns';
 
-const parseISO = (date: string) => new Date(date + 'T00:00:00.000Z');
+const parseISOUTC = (date: string) => new Date(date + 'T00:00:00.000Z');
 import { ChevronLeft, ChevronRight, ArrowLeft } from 'lucide-react';
 import { YEAR_LABEL } from '@/lib/calendar/links';
 import type { YearKey, YM } from '@/lib/calendar/links';
-import type { CalendarEvent } from '@/lib/calendar/useCalendarData';
 import type { NormalizedEvent } from '@/lib/calendar/normalize';
 
 interface MonthGridProps {
@@ -50,21 +49,13 @@ function eachDayOfInterval(interval: { start: Date; end: Date }): Date[] {
   return days;
 }
 
+/** Sorts with all-day (no start) FIRST, then timed ascending HH:mm */
 function timeSort(a?: string, b?: string) {
   if (!a && !b) return 0;
-  if (!a) return 1; // all-day first
-  if (!b) return -1;
-  return a.localeCompare(b, undefined, { numeric: true });
+  if (!a && b)  return -1; // a is all-day → before
+  if (a && !b)  return 1;  // b is all-day → a after
+  return a!.localeCompare(b!, undefined, { numeric: true });
 }
-
-const isSameISODate = (d: Date, isoYYYYMMDD: string) =>
-  d.toISOString().slice(0,10) === isoYYYYMMDD;
-
-const occursOnDay = (ev: any, dayISO: string) => {
-  if (ev?.allDay && ev?.date) return ev.date === dayISO;
-  if (ev?.start_at) return ev.start_at.slice(0, 10) === dayISO;
-  return false;
-};
 
 export const MonthGrid: React.FC<MonthGridProps> = ({
   yearKey,
@@ -91,12 +82,9 @@ export const MonthGrid: React.FC<MonthGridProps> = ({
     for (const ev of events) {
       (map[ev.date] ||= []).push(ev);
     }
-    // sort each day: all-day first (no start), then timed by HH:mm
     for (const k of Object.keys(map)) {
-      const arr = map[k]!;              // assert non-null: key came from Object.keys(map)
-      arr.sort((a, b) => timeSort(a.start, b.start));
+      map[k]!.sort((a, b) => timeSort(a.start, b.start));
     }
-
     return map;
   }, [events]);
 
@@ -176,9 +164,9 @@ export const MonthGrid: React.FC<MonthGridProps> = ({
           {days.map((day, idx) => {
             const isoDay = format(day, 'yyyy-MM-dd');
             const dayEvents = eventsByDate[isoDay] || [];
-            
+
             const isCurMonth = isSameMonth(day, currentDate);
-            const isCurDay = isToday(new Date(isoDay + 'T00:00:00Z'));
+            const isCurDay = isToday(parseISOUTC(isoDay));
 
             // show up to 4 items, overflow into a hover card
             const visible = dayEvents.slice(0, 4);
@@ -209,14 +197,9 @@ export const MonthGrid: React.FC<MonthGridProps> = ({
                 {/* Events list: all-day items render WITHOUT a time; timed items show HH:mm */}
                 <div className="space-y-1">
                   {visible.map((ev) => {
-                    // Build appropriate label for exam windows
-                    let label = ev.title;
-                    if (ev.isWindow && ev.windowStart && ev.windowEnd) {
-                      const startDate = format(parseISO(ev.windowStart), 'd MMM');
-                      const endDate = format(parseISO(ev.windowEnd), 'd MMM');
-                      label = `${ev.title} (${startDate} – ${endDate})`;
-                    }
-                    
+                    // Trust normalized titles; they already include exam window ranges if any
+                    const label = ev.title;
+
                     return (
                       <button
                         key={ev.id}
@@ -228,7 +211,6 @@ export const MonthGrid: React.FC<MonthGridProps> = ({
                         ].join(' ')}
                         title={[ev.start ? `${ev.start} — ` : '', label].join('')}
                       >
-                        {/* Only show a time if start exists */}
                         {ev.start ? <span className="font-mono mr-1">{ev.start}</span> : null}
                         <span className="truncate">{label}</span>
                       </button>
@@ -252,17 +234,10 @@ export const MonthGrid: React.FC<MonthGridProps> = ({
                     <div className="text-sm font-medium mb-2">{format(day, 'MMM d')}</div>
                     <div className="space-y-1 max-h-48 overflow-y-auto">
                       {dayEvents.slice(4).map((ev) => {
-                        // Build appropriate label for exam windows
-                        let label = ev.title;
-                        if (ev.isWindow && ev.windowStart && ev.windowEnd) {
-                          const startDate = format(parseISO(ev.windowStart), 'd MMM');
-                          const endDate = format(parseISO(ev.windowEnd), 'd MMM');
-                          label = `${ev.title} (${startDate} – ${endDate})`;
-                        }
-                        
+                        const label = ev.title; // already normalized
                         return (
-                          <button 
-                            key={ev.id} 
+                          <button
+                            key={ev.id}
                             type="button"
                             onClick={() => onEventClick?.(ev)}
                             className={['text-[11px] px-2 py-1 rounded border cursor-pointer hover:opacity-75 transition-opacity w-full text-left', badgeStyle(ev.kind)].join(' ')}

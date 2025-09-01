@@ -2,7 +2,7 @@
 // Single normalization for Month & Week views - reads from Durham LLB plan
 import { getDefaultPlanByStudentYear } from '@/data/durham/llb';
 import type { YearKey } from './links';
-import { format, addDays } from 'date-fns';
+import { addDays } from 'date-fns';
 
 export type NormalizedEvent = {
   id: string;
@@ -18,12 +18,12 @@ export type NormalizedEvent = {
   windowStart?: string; // YYYY-MM-DD
   windowEnd?: string;   // YYYY-MM-DD
   moduleCode?: string;
-  // Additional properties for compatibility
+  // Compatibility fields
   endDate?: string;     // YYYY-MM-DD for ranged events
   subtype?: string;     // e.g., 'exam_window'
   module?: string;      // module name for display
   details?: string;     // additional details
-  meta?: any;          // flexible metadata
+  meta?: any;           // flexible metadata
 };
 
 export type NormalizeOptions = {
@@ -56,17 +56,14 @@ function parseISODate(d: string): Date {
   return new Date(d + 'T00:00:00.000Z');
 }
 
+// TZ-safe YYYY-MM-DD (always UTC slice; avoids DST/locale drift)
 function iso(d: Date): string {
-  return format(d, 'yyyy-MM-dd');
+  return d.toISOString().slice(0, 10);
 }
 
 function allowedInTerm(delivery: string, term: 'michaelmas' | 'epiphany') {
   if (term === 'michaelmas') return delivery === 'Michaelmas' || delivery === 'Michaelmas+Epiphany';
   return delivery === 'Epiphany' || delivery === 'Michaelmas+Epiphany';
-}
-
-function within(date: Date, start: Date, end: Date) {
-  return date >= start && date <= end;
 }
 
 function isWithinRange(dateISO: string, startISO: string, endISO: string): boolean {
@@ -105,22 +102,21 @@ export function normalizeEvents(yearKey: YearKey, opts: NormalizeOptions): Norma
 
         // Try common shapes safely without depending on schema changes:
         let topic: string | undefined;
-        
+
         // 1) module.topics[weekIndex]
-        if (Array.isArray(mod?.topics) && mod.topics[weekIndex] !== undefined) {
-          const t = mod.topics[weekIndex];
-          if (typeof t === 'string') {
-            topic = t;
-          } else if (t && typeof t === 'object' && 'title' in t && typeof (t as any).title === 'string') {
+        if (Array.isArray((mod as any)?.topics) && (mod as any).topics[weekIndex] !== undefined) {
+          const t = (mod as any).topics[weekIndex];
+          if (typeof t === 'string') topic = t;
+          else if (t && typeof t === 'object' && 'title' in t && typeof (t as any).title === 'string') {
             topic = (t as any).title;
           }
         }
-        // 2) module.weeks[weekIndex].topic / .title (safely handle optional weeks)
+        // 2) module.weeks[weekIndex].topic / .title
         if (!topic && (mod as any)?.weeks && Array.isArray((mod as any).weeks) && (mod as any).weeks[weekIndex]) {
           const w = (mod as any).weeks[weekIndex];
           if (w && typeof w === 'object') {
-            if ('topic' in w && typeof w.topic === 'string') topic = w.topic;
-            else if ('title' in w && typeof w.title === 'string') topic = w.title;
+            if ('topic' in w && typeof (w as any).topic === 'string') topic = (w as any).topic;
+            else if ('title' in w && typeof (w as any).title === 'string') topic = (w as any).title;
           }
         }
         // 3) module[termKey]?.topics[weekIndex]
@@ -129,13 +125,13 @@ export function normalizeEvents(yearKey: YearKey, opts: NormalizeOptions): Norma
           if (termBucket?.topics && Array.isArray(termBucket.topics)) {
             const t = termBucket.topics[weekIndex];
             if (typeof t === 'string') topic = t;
-            if (t && typeof t.title === 'string') topic = t.title;
+            else if (t && typeof (t as any).title === 'string') topic = (t as any).title;
           }
         }
 
-        if (!topic) continue; // ← no weekly topic? skip to avoid bland duplicates
+        if (!topic) continue; // no weekly topic
 
-        // Calculate the actual day for this module (Mon=0, Tue=1, Wed=2, Thu=3, Fri=4)
+        // Calculate the actual day for this module (Mon=0..Fri=4)
         const dayOffset = dayOffsetForModule(mod.title);
         const topicDate = addDays(weekStart, dayOffset);
         const topicDateISO = iso(topicDate);
@@ -157,8 +153,8 @@ export function normalizeEvents(yearKey: YearKey, opts: NormalizeOptions): Norma
           title: `${mod.title}: ${topic}`,
           allDay: true,
           kind: 'topic',
-          moduleCode: mod.code,
-          module: mod.title,               // For display compatibility
+          moduleCode: (mod as any).code,
+          module: mod.title,
         });
       }
     });
@@ -166,10 +162,10 @@ export function normalizeEvents(yearKey: YearKey, opts: NormalizeOptions): Norma
 
   // Assessments (deadlines / exams) — never invent times
   for (const mod of plan.modules ?? []) {
-    for (const a of mod.assessments ?? []) {
-      if ('due' in a && a.due) {
-        const dueISO = a.due;
-        
+    for (const a of (mod as any).assessments ?? []) {
+      if ('due' in a && (a as any).due) {
+        const dueISO = (a as any).due as string;
+
         // Clamp to requested range
         if (!isWithinRange(dueISO, opts.clampStartISO, opts.clampEndISO)) continue;
 
@@ -183,21 +179,20 @@ export function normalizeEvents(yearKey: YearKey, opts: NormalizeOptions): Norma
 
         addEvent({
           date: dueISO,
-          title: `${mod.title} ${a.type}`,
+          title: `${mod.title} • ${(a as any).type}`,
           allDay: true,
           kind: 'assessment',
-          moduleCode: mod.code,
-          module: mod.title,               // For display compatibility
+          moduleCode: (mod as any).code,
+          module: mod.title,
         });
-      } else if ('window' in a && a.window?.start && a.type === 'Exam') {
+      } else if ('window' in a && (a as any).window?.start && (a as any).type === 'Exam') {
         // Create ONE exam window event on start date; do not fabricate exact times
-        const windowStartISO = a.window.start;
-        const windowEndISO = a.window.end;
-        
-        // Clamp to requested range - only check if window start is within range
+        const windowStartISO = (a as any).window.start as string;
+        const windowEndISO = (a as any).window.end as string;
+
+        // Clamp: include only if window start is within range
         if (!isWithinRange(windowStartISO, opts.clampStartISO, opts.clampEndISO)) continue;
 
-        // For month/week modes, only include if the window start falls within the target range
         if (opts.mode === 'month' && opts.monthStartISO && opts.monthEndISO) {
           if (!isWithinRange(windowStartISO, opts.monthStartISO, opts.monthEndISO)) continue;
         }
@@ -207,16 +202,17 @@ export function normalizeEvents(yearKey: YearKey, opts: NormalizeOptions): Norma
 
         addEvent({
           date: windowStartISO,
-          title: `${mod.title} • Exam window`,
+          // clearer label includes the range
+          title: `${mod.title} • Exam window (${windowStartISO} – ${windowEndISO})`,
           allDay: true,
           kind: 'exam',
           isWindow: true,
           windowStart: windowStartISO,
           windowEnd: windowEndISO,
-          moduleCode: mod.code,
-          module: mod.title,               // For display compatibility
-          subtype: 'exam_window',          // For backward compatibility
-          endDate: windowEndISO,           // For ranged events
+          moduleCode: (mod as any).code,
+          module: mod.title,
+          subtype: 'exam_window',
+          endDate: windowEndISO,
         });
       }
     }
