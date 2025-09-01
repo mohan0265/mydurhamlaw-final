@@ -1,62 +1,69 @@
 // src/lib/hooks/useStudentProfile.ts
-import { useQuery } from '@tanstack/react-query';
+import { useEffect, useState } from 'react';
 import { getSupabaseClient } from '@/lib/supabase/client';
+import type { YearKey } from '@/lib/calendar/links';
 
-export type YearKey = 'foundation' | 'year1' | 'year2' | 'year3';
-
-export type StudentProfile = {
-  id: string;
-  displayName: string | null;
-  avatarUrl: string | null;
-  yearKey: YearKey | null; // null if no row yet
+type ProfileRow = {
+  year_group?: string | null;
+  display_name?: string | null;
 };
 
-function toYearKey(raw?: string | null): YearKey | null {
-  if (!raw) return null;
-  const k = raw.toLowerCase();
-  return (['foundation', 'year1', 'year2', 'year3'] as const).includes(k as any)
-    ? (k as YearKey)
-    : null;
+function toYearKey(v?: string | null): YearKey | undefined {
+  const s = (v || '').toLowerCase();
+  if (s === 'foundation') return 'foundation';
+  if (s === 'year1') return 'year1';
+  if (s === 'year2') return 'year2';
+  if (s === 'year3') return 'year3';
+  return undefined;
 }
 
 export function useStudentProfile() {
-  return useQuery<StudentProfile | null>({
-    queryKey: ['student-profile'],
-    staleTime: 5 * 60 * 1000,
-    gcTime: 10 * 60 * 1000,
-    queryFn: async () => {
-      const supabase = getSupabaseClient();
-      if (!supabase) return null;
+  const supabase = getSupabaseClient();
+  const [loading, setLoading] = useState(true);
+  const [yearKey, setYearKey] = useState<YearKey | undefined>(undefined);
+  const [displayName, setDisplayName] = useState<string | undefined>(undefined);
 
-      // get current user
-      const { data: auth } = await supabase.auth.getUser();
-      const user = auth?.user;
-      if (!user) return null;
+  useEffect(() => {
+    let cancelled = false;
 
-      // fetch row from public.profiles
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('id, display_name, avatar_url, year_group')
-        .eq('id', user.id)
-        .single();
+    async function run() {
+      try {
+        if (!supabase) {
+          setLoading(false);
+          return;
+        }
+        const { data: userRes } = await supabase.auth.getUser();
+        const user = userRes?.user;
+        if (!user) {
+          setLoading(false);
+          return;
+        }
 
-      if (error) {
-        // If table is locked by RLS or row missing, fail softly
-        console.warn('profiles fetch error:', error.message);
-        return {
-          id: user.id,
-          displayName: user.user_metadata?.full_name ?? null,
-          avatarUrl: user.user_metadata?.avatar_url ?? null,
-          yearKey: null,
-        };
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('year_group, display_name')
+          .eq('id', user.id)
+          .single<ProfileRow>();
+
+        if (error) {
+          // fail soft
+          setLoading(false);
+          return;
+        }
+
+        if (!cancelled) {
+          setYearKey(toYearKey(data?.year_group));
+          setDisplayName(data?.display_name ?? undefined);
+          setLoading(false);
+        }
+      } catch {
+        if (!cancelled) setLoading(false);
       }
+    }
 
-      return {
-        id: data.id,
-        displayName: data.display_name ?? user.user_metadata?.full_name ?? null,
-        avatarUrl: data.avatar_url ?? user.user_metadata?.avatar_url ?? null,
-        yearKey: toYearKey(data.year_group),
-      };
-    },
-  });
+    run();
+    return () => { cancelled = true; };
+  }, [supabase]);
+
+  return { loading, yearKey, displayName };
 }

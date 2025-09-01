@@ -1,5 +1,5 @@
 // src/pages/year-at-a-glance/index.tsx
-import React, { useMemo, useEffect } from 'react';
+import React, { useMemo, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import {
@@ -19,7 +19,7 @@ import { getDefaultPlanByStudentYear } from '@/data/durham/llb';
 import { useStudentProfile } from '@/lib/hooks/useStudentProfile';
 import { format, addDays } from 'date-fns';
 
-// ---------- small pills ----------
+// ----- small pills -----
 function Pill({ text }: { text: string }) {
   return (
     <span className="inline-flex items-center rounded-full bg-purple-50 text-purple-800 text-xs px-2 py-1 border border-purple-100">
@@ -35,17 +35,9 @@ function DangerPill({ text }: { text: string }) {
   );
 }
 
-// ---------- types used only by this page ----------
-type Deadline = {
-  label: string;          // e.g. "Tort Law • Essay"
-  danger?: boolean;
-};
-type WeekRow = {
-  id: string;             // "W1", "W2"
-  dateLabel?: string;     // "6 Oct"
-  mondayISO?: string;     // Monday to preview topics
-  deadlines: Deadline[];
-};
+// ----- local types -----
+type Deadline = { label: string; danger?: boolean };
+type WeekRow = { id: string; dateLabel?: string; mondayISO?: string; deadlines: Deadline[] };
 type TermCard = {
   key: 'michaelmas' | 'epiphany' | 'easter';
   title: string;
@@ -54,14 +46,13 @@ type TermCard = {
   weeks: WeekRow[];
 };
 
-// ---------- single week row (with topic preview) ----------
+// ----- weekly row with topic preview -----
 function WeekRowView({ row, yearKey }: { row: WeekRow; yearKey: YearKey }) {
   const weeklyTopics = useMemo(() => {
     if (!row.mondayISO) return [];
     const plan = getDefaultPlanByStudentYear(yearKey);
     const mondayDate = new Date(row.mondayISO + 'T00:00:00.000Z');
     const weekEndDate = addDays(mondayDate, 6);
-
     const weekEvents = normalizeEvents(yearKey, {
       tz: 'Europe/London',
       clampStartISO: plan.termDates.michaelmas.start,
@@ -70,7 +61,6 @@ function WeekRowView({ row, yearKey }: { row: WeekRow; yearKey: YearKey }) {
       weekStartISO: row.mondayISO,
       weekEndISO: format(weekEndDate, 'yyyy-MM-dd'),
     });
-
     return weekEvents.filter(e => e.kind === 'topic');
   }, [row.mondayISO, yearKey]);
 
@@ -89,7 +79,7 @@ function WeekRowView({ row, yearKey }: { row: WeekRow; yearKey: YearKey }) {
         )}
       </div>
 
-      {weeklyTopics.length > 0 && (
+      {weeklyTopics.length > 0 ? (
         <div className="flex items-center gap-2 flex-wrap">
           <span className="text-xs text-gray-500">Topics:</span>
           {weeklyTopics.slice(0, 3).map(topic => (
@@ -105,16 +95,16 @@ function WeekRowView({ row, yearKey }: { row: WeekRow; yearKey: YearKey }) {
             <span className="text-[10px] text-gray-500">+{weeklyTopics.length - 3}</span>
           )}
         </div>
-      )}
-
-      {weeklyTopics.length === 0 && row.deadlines.length === 0 && (
-        <div className="text-xs text-gray-400 italic">No activities this week</div>
+      ) : (
+        row.deadlines.length === 0 && (
+          <div className="text-xs text-gray-400 italic">No activities this week</div>
+        )
       )}
     </div>
   );
 }
 
-// ---------- term card ----------
+// ----- term card -----
 function TermCardView({ t, yearKey }: { t: TermCard; yearKey: YearKey }) {
   return (
     <div className="rounded-2xl shadow-sm border bg-white p-5">
@@ -142,38 +132,65 @@ function TermCardView({ t, yearKey }: { t: TermCard; yearKey: YearKey }) {
   );
 }
 
-// ---------- page ----------
+// ----- page -----
 const YearAtAGlancePage: React.FC = () => {
   const router = useRouter();
+  const { loading: profileLoading, yearKey: profileYear } = useStudentProfile();
 
-  // 1) Read year from URL (if any)
-  const qYear = typeof router.query?.y === 'string' ? router.query.y : undefined;
-  const urlYear = useMemo(() => parseYearKey(qYear), [qYear]);
+  const urlYear: YearKey | null = useMemo(() => {
+    const q = typeof router.query?.y === 'string' ? router.query.y : undefined;
+    return q ? parseYearKey(q) : null;
+  }, [router.query?.y]);
 
-  // 2) Read logged-in student's year from Supabase
-  const { data: profile } = useStudentProfile();
-  const profileYear = profile?.yearKey ?? null;
+  // We wait until either URL has a year or the profile has loaded.
+  const [year, setYear] = useState<YearKey | null>(null);
 
-  // 3) Final selected year: URL -> profile -> fallback
-  const year: YearKey = urlYear ?? profileYear ?? 'year1';
-
-  // Keep URL consistent (nice for sharing): if no ?y but we have a profile year, inject it
+  // Decide selected year once (no early fallback persist)
   useEffect(() => {
-    if (!urlYear && profileYear) {
-      router.replace(
-        { pathname: router.pathname, query: { ...router.query, y: profileYear } },
-        undefined,
-        { shallow: true }
-      );
+    // URL wins
+    if (urlYear) {
+      setYear(urlYear);
+      return;
     }
-  }, [urlYear, profileYear, router]);
+    // If profile is loaded, choose profile year or last-resort year1
+    if (!profileLoading) {
+      const chosen: YearKey = (profileYear ?? 'year1') as YearKey;
+      setYear(chosen);
+      if (profileYear) {
+        // Keep URL shareable by injecting ?y=
+        router.replace(
+          { pathname: router.pathname, query: { ...router.query, y: profileYear } },
+          undefined,
+          { shallow: true }
+        );
+      }
+    }
+  }, [urlYear, profileLoading, profileYear, router]);
 
-  // Persist for local navigation convenience
+  // Persist only after we have a real selection
   useEffect(() => {
-    persistYearKey(year);
+    if (year) persistYearKey(year);
   }, [year]);
 
-  // Prev/next and plan for selected year
+  // Loading state: avoid flashing Year 1 before profile arrives
+  if (!year) {
+    return (
+      <div className="max-w-6xl mx-auto px-4 py-10">
+        <div className="h-6 w-60 bg-gray-200 rounded animate-pulse mb-6" />
+        <div className="grid md:grid-cols-3 gap-5">
+          {[0,1,2].map(i => (
+            <div key={i} className="rounded-2xl border bg-white p-5">
+              <div className="h-4 w-24 bg-gray-200 rounded mb-3" />
+              <div className="space-y-2">
+                {[...Array(6)].map((_,j) => <div key={j} className="h-3 bg-gray-100 rounded" />)}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   const prev = getPrevYearKey(year);
   const next = getNextYearKey(year);
   const yearPlan = buildYearPlanFromData(year);
