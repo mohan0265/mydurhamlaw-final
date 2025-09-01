@@ -266,6 +266,7 @@ export const MonthGrid: React.FC<MonthGridProps> = ({
                             type="button"
                             onClick={() => onEventClick?.(ev)}
                             className={['text-[11px] px-2 py-1 rounded border cursor-pointer hover:opacity-75 transition-opacity w-full text-left', badgeStyle(ev.kind)].join(' ')}
+                            title={[ev.start ? `${ev.start} — ` : '', label].join('')}
                           >
                             {ev.start ? <span className="font-mono mr-1">{ev.start}</span> : null}
                             {label}

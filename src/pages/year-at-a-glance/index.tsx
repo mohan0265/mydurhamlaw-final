@@ -14,6 +14,9 @@ import {
   getNextYearKey,
 } from '@/lib/calendar/links';
 import { buildYearPlanFromData } from '@/lib/calendar/useCalendarData';
+import { normalizeEvents } from '@/lib/calendar/normalize';
+import { getDefaultPlanByStudentYear } from '@/data/durham/llb';
+import { format, addDays } from 'date-fns';
 
 type Deadline = {
   label: string;   // e.g. "Tort Law • Essay"
@@ -22,6 +25,7 @@ type Deadline = {
 type WeekRow = {
   id: string;      // "W1", "W2"
   dateLabel?: string; // "6 Oct", etc. (optional)
+  mondayISO?: string; // For getting weekly topics
   deadlines: Deadline[];  // Required array
 };
 type TermCard = {
@@ -48,20 +52,69 @@ function DangerPill({ text }: { text: string }) {
   );
 }
 
-function WeekRowView({ row }: { row: WeekRow }) {
+function WeekRowView({ row, yearKey }: { row: WeekRow; yearKey: YearKey }) {
+  // Get weekly topic summary if we have the Monday date
+  const weeklyTopics = useMemo(() => {
+    if (!row.mondayISO) return [];
+    
+    const plan = getDefaultPlanByStudentYear(yearKey);
+    const mondayDate = new Date(row.mondayISO + 'T00:00:00.000Z');
+    const weekEndDate = addDays(mondayDate, 6);
+    
+    const weekEvents = normalizeEvents(yearKey, {
+      tz: 'Europe/London',
+      clampStartISO: plan.termDates.michaelmas.start,
+      clampEndISO: plan.termDates.easter.end,
+      mode: 'week',
+      weekStartISO: row.mondayISO,
+      weekEndISO: format(weekEndDate, 'yyyy-MM-dd'),
+    });
+    
+    const topics = weekEvents.filter(e => e.kind === 'topic');
+    return topics;
+  }, [row.mondayISO, yearKey]);
+
   return (
-    <div className="rounded-xl border px-3 py-2 flex items-center justify-between">
-      <div className="text-sm font-medium">{row.id}{row.dateLabel ? ` · ${row.dateLabel}` : ''}</div>
-      <div className="flex flex-wrap gap-2">
-        {row.deadlines.map((d, i) =>
-          d.danger ? <DangerPill key={i} text={d.label} /> : <Pill key={i} text={d.label} />
+    <div className="rounded-xl border px-3 py-2 space-y-2">
+      <div className="flex items-center justify-between">
+        <div className="text-sm font-medium">{row.id}{row.dateLabel ? ` · ${row.dateLabel}` : ''}</div>
+        {row.deadlines.length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            {row.deadlines.map((d, i) =>
+              d.danger ? <DangerPill key={i} text={d.label} /> : <Pill key={i} text={d.label} />
+            )}
+          </div>
         )}
       </div>
+      
+      {/* Weekly topic preview */}
+      {weeklyTopics.length > 0 && (
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-xs text-gray-500">Topics:</span>
+          {weeklyTopics.slice(0, 3).map(topic => (
+            <span 
+              key={topic.id} 
+              title={topic.title}
+              className="inline-block rounded bg-blue-50 text-blue-700 text-[10px] px-1.5 py-0.5 border border-blue-200"
+            >
+              {topic.moduleCode ?? topic.title.split(':')[0]}
+            </span>
+          ))}
+          {weeklyTopics.length > 3 && (
+            <span className="text-[10px] text-gray-500">+{weeklyTopics.length - 3}</span>
+          )}
+        </div>
+      )}
+      
+      {/* Show message when week has no activities */}
+      {weeklyTopics.length === 0 && row.deadlines.length === 0 && (
+        <div className="text-xs text-gray-400 italic">No activities this week</div>
+      )}
     </div>
   );
 }
 
-function TermCardView({ t }: { t: TermCard }) {
+function TermCardView({ t, yearKey }: { t: TermCard; yearKey: YearKey }) {
   return (
     <div className="rounded-2xl shadow-sm border bg-white p-5">
       <div className="text-sm uppercase tracking-wide text-gray-600 font-semibold mb-1">Semester</div>
@@ -80,7 +133,7 @@ function TermCardView({ t }: { t: TermCard }) {
       )}
 
       <div className="space-y-2">
-        {t.weeks.map((w) => <WeekRowView key={w.id} row={w} />)}
+        {t.weeks.map((w) => <WeekRowView key={w.id} row={w} yearKey={yearKey} />)}
       </div>
     </div>
   );
@@ -149,7 +202,7 @@ const YearAtAGlancePage: React.FC = () => {
 
       {/* Three-column academic plan */}
       <div className="grid md:grid-cols-3 gap-5">
-        {plan.map((t) => <TermCardView key={t.title} t={t} />)}
+        {plan.map((t) => <TermCardView key={t.title} t={t} yearKey={year} />)}
       </div>
 
       <p className="text-xs text-gray-500 mt-6">

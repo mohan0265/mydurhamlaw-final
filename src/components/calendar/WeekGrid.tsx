@@ -226,31 +226,45 @@ export const WeekGrid: React.FC<WeekGridProps> = ({
               </div>
               
               {/* All-day events for this specific day */}
-              {(() => {
-                const dayKey = iso(day);
-                const allDayForThisDay = allDayByDate.get(dayKey) ?? [];
-                return allDayForThisDay.map(event => {
-                  let label = event.title;
-                  // Format exam windows properly
-                  if (event.isWindow && event.windowStart && event.windowEnd) {
-                    const startDate = format(parseISODate(event.windowStart), 'd MMM');
-                    const endDate = format(parseISODate(event.windowEnd), 'd MMM');
-                    label = `${event.title} (${startDate} – ${endDate})`;
+              <div className="mt-2 space-y-1 min-h-[80px]">
+                {(() => {
+                  const dayKey = iso(day);
+                  const allDayForThisDay = allDayByDate.get(dayKey) ?? [];
+                  
+                  if (allDayForThisDay.length === 0) {
+                    return (
+                      <div className="text-xs text-gray-400 italic py-2">
+                        No events
+                      </div>
+                    );
                   }
-                  const displayLabel = label.length > 15 ? label.substring(0, 13) + '...' : label;
-                  return (
-                    <button
-                      key={event.id}
-                      type="button"
-                      onClick={() => onEventClick?.(event)}
-                      className={`mt-1 text-xs px-2 py-1 rounded border ${getAllDayStyle(event.kind)} truncate cursor-pointer hover:opacity-75 transition-opacity w-full text-left`}
-                      title={label}
-                    >
-                      {displayLabel}
-                    </button>
-                  );
-                });
-              })()}
+                  
+                  return allDayForThisDay.map(event => {
+                    let label = event.title;
+                    // Format exam windows properly
+                    if (event.isWindow && event.windowStart && event.windowEnd) {
+                      const startDate = format(parseISODate(event.windowStart), 'd MMM');
+                      const endDate = format(parseISODate(event.windowEnd), 'd MMM');
+                      label = `${event.title} (${startDate} – ${endDate})`;
+                    }
+                    const displayLabel = label.length > 20 ? label.substring(0, 18) + '...' : label;
+                    return (
+                      <button
+                        key={event.id}
+                        type="button"
+                        onClick={() => onEventClick?.(event)}
+                        className={`block w-full text-xs px-2 py-1.5 rounded-md border ${getAllDayStyle(event.kind)} cursor-pointer hover:opacity-75 transition-opacity text-left`}
+                        title={label}
+                      >
+                        <div className="font-medium">{displayLabel}</div>
+                        {event.moduleCode && (
+                          <div className="text-[10px] opacity-75 mt-0.5">{event.moduleCode}</div>
+                        )}
+                      </button>
+                    );
+                  });
+                })()}
+              </div>
             </div>
           ))}
         </div>

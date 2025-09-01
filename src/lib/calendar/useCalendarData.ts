@@ -309,6 +309,7 @@ export function buildYearPlanFromData(y: YearKey): YearPlan {
         return {
           id: `W${i + 1}`,
           dateLabel: format(ws, 'd MMM'),
+          mondayISO: wISO, // Add Monday date for topic lookup
           deadlines,
         };
       }),
