@@ -1,30 +1,21 @@
 // src/hooks/useRealtimeVoice.ts
-// Realtime + local SpeechRecognition with bullet-proof teardown.
-// Produces ONE merged transcript: [{ id, role: "user" | "assistant", text }]
-
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRealtimeWebRTC } from "./useRealtimeWebRTC";
 import { buildSystemPrompt, getMdlContextSafe } from "@/lib/assist/systemPrompt";
 
-/** -------------------- ENV -------------------- **/
-const viteEnv =
-  (typeof import.meta !== "undefined" && (import.meta as any).env) || undefined;
-
+const viteEnv = (typeof import.meta !== "undefined" && (import.meta as any).env) || undefined;
 const SESSION_ENDPOINT =
   (typeof process !== "undefined" && process.env.NEXT_PUBLIC_SESSION_ENDPOINT) ||
-  (viteEnv && (viteEnv as any).VITE_SESSION_ENDPOINT) ||
-  "/api/realtime-session";
-
+  (viteEnv && (viteEnv as any).VITE_SESSION_ENDPOINT) || "/api/realtime-session";
 const DEBUG =
   (typeof process !== "undefined" && process.env.NEXT_PUBLIC_DEBUG_VOICE === "true") ||
   (viteEnv && (viteEnv as any).VITE_DEBUG_VOICE === "true") ||
   (typeof window !== "undefined" && window.location.search.includes("debug=voice"));
 
-/** -------------------- GLOBAL HANDLES (for hard stop) -------------------- **/
 let __globalMediaStream: MediaStream | null = null;
 let __globalAudioCtx: AudioContext | null = null;
 let __globalPc: RTCPeerConnection | null = null;
-let __globalSpeechRec: any | null = null; // Web Speech API instance
+let __globalSpeechRec: any | null = null;
 let __globalIntervals: number[] = [];
 let __globalRafs: number[] = [];
 
@@ -36,8 +27,6 @@ const __patchState = {
 };
 
 function registerInterval(id: number) { __globalIntervals.push(id); }
-function registerRaf(id: number) { __globalRafs.push(id); }
-
 async function hardStopAllAudioPipelines() {
   try { __globalMediaStream?.getTracks().forEach(t => { try { t.stop(); } catch {} }); } catch {}
   __globalMediaStream = null;
@@ -68,33 +57,26 @@ async function hardStopAllAudioPipelines() {
 
   if (DEBUG && typeof window !== "undefined") {
     (window as any).__dbg = {
-      tracks:
-        ((window as any).__mediaStream &&
-          typeof (window as any).__mediaStream.getTracks === "function")
-          ? (window as any).__mediaStream.getTracks()
-          : [],
+      tracks: ((window as any).__mediaStream && (window as any).__mediaStream.getTracks?.()) || [],
       pcState: (__globalPc as any)?.connectionState ?? "closed",
     };
   }
 }
-
 function computeListeningFromStream(stream?: MediaStream | null) {
   const tracks = stream?.getAudioTracks?.() || [];
   return tracks.length > 0 && tracks.every(t => t.readyState === "live" && t.enabled);
 }
 
-/** -------------------- Types -------------------- **/
 type Line = { id: string; role: "user" | "assistant"; text: string };
 
-/** -------------------- Hook -------------------- **/
 export function useRealtimeVoice() {
   const {
     status,
     isConnected,
     isListening: webrtcIsListening,
     isSpeaking,
-    transcript: rtTranscript,       // assistant-side transcript (if any)
-    partialTranscript: rtPartial,   // (may be empty in some stacks)
+    transcript: rtTranscript,
+    partialTranscript: rtPartial,
     lastError,
     connect: rtConnect,
     disconnect: rtDisconnect,
@@ -103,48 +85,45 @@ export function useRealtimeVoice() {
 
   const [voiceModeActive, setVoiceModeActive] = useState(false);
   const [hardListening, setHardListening] = useState(false);
-  const cooldownRef = useRef(false);
   const unlockedRef = useRef(false);
-  const micHardDisabledRef = useRef(false); // blocks auto-resumes; explicit start flips it back
 
-  // Local ASR (browser) state
+  // ---- local SR state (Student) ----
   const [userPartial, setUserPartial] = useState<string>("");
   const [userFinals, setUserFinals] = useState<Line[]>([]);
+  const lastFinalNormRef = useRef<string>("");     // for de-dup
+  const lastFinalAtRef = useRef<number>(0);
 
-  // Merge assistant lines (from realtime) + local user lines into one transcript
+  // ---- merged transcript ----
   const mergedTranscript: Line[] = useMemo(() => {
     const a: Line[] = (rtTranscript || []).map((l: any) => ({
       id: String(l.id ?? Math.random()),
       role: (l.role as "user" | "assistant") ?? "assistant",
       text: (l.text || "").trim(),
     }));
+    // keep absolute order: assistant first (from realtime stream), then user finals we appended
     return [...a, ...userFinals];
   }, [rtTranscript, userFinals]);
 
-  const log = (...a: any[]) => { if (DEBUG) console.log("[useRealtimeVoice]", ...a); };
-
-  /** -------------------- Audio unlock (stores AudioContext so we can close) -------------------- **/
   const unlockAudio = () => {
     if (unlockedRef.current) return;
     try {
-      // @ts-ignore - webkit prefix for older Safari
+      // @ts-ignore
       const ACtx = (window as any).AudioContext || (window as any).webkitAudioContext;
       if (ACtx) {
         const ctx: AudioContext = new ACtx();
         __globalAudioCtx = ctx;
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        gain.gain.value = 0.0001;
-        osc.connect(gain).connect(ctx.destination);
-        osc.start();
-        osc.stop(ctx.currentTime + 0.02);
+        const o = ctx.createOscillator();
+        const g = ctx.createGain();
+        g.gain.value = 0.0001;
+        o.connect(g).connect(ctx.destination);
+        o.start();
+        o.stop(ctx.currentTime + 0.02);
         ctx.resume?.();
       }
     } catch {}
     unlockedRef.current = true;
   };
 
-  /** -------------------- Session & instructions -------------------- **/
   const getSession = useCallback(async () => {
     const resp = await fetch(SESSION_ENDPOINT, { method: "POST" });
     if (!resp.ok) throw new Error(`Session endpoint failed: ${await resp.text()}`);
@@ -165,11 +144,9 @@ export function useRealtimeVoice() {
     }
   }, []);
 
-  /** -------------------- Capture internals used by WebRTC layer -------------------- **/
   const patchMediaForCapture = useCallback(() => {
     if (typeof navigator !== "undefined" && navigator.mediaDevices && !__patchState.gumPatched) {
       __patchState.originalGetUserMedia = navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices);
-      // @ts-ignore
       navigator.mediaDevices.getUserMedia = async (constraints: MediaStreamConstraints) => {
         const stream = await __patchState.originalGetUserMedia!(constraints);
         __globalMediaStream = stream;
@@ -206,20 +183,20 @@ export function useRealtimeVoice() {
     }
   }, []);
 
-  /** -------------------- Local SpeechRecognition (browser) -------------------- **/
+  // ---- local SpeechRecognition (Student mic → text) ----
   const startLocalASR = useCallback(() => {
     const w: any = typeof window !== "undefined" ? window : undefined;
     if (!w) return;
     const SR = w.SpeechRecognition || w.webkitSpeechRecognition;
     if (!SR) {
-      log("SpeechRecognition not supported in this browser");
+      console.warn("SpeechRecognition not supported in this browser");
       return;
     }
     try {
       const rec = new SR();
       rec.continuous = true;
       rec.interimResults = true;
-      rec.lang = "en-GB"; // adjust as needed
+      rec.lang = "en-GB";
 
       rec.onresult = (ev: any) => {
         let interim = "";
@@ -228,25 +205,26 @@ export function useRealtimeVoice() {
           const t = (r[0]?.transcript || "").trim();
           if (!t) continue;
           if (r.isFinal) {
-            const id = `${Date.now()}_${Math.random()}`;
-            setUserFinals((prev) => [...prev, { id, role: "user", text: t }]);
+            // de-dupe repeated finals
+            const norm = t.replace(/\s+/g, " ").toLowerCase();
+            const now = Date.now();
+            if (norm !== lastFinalNormRef.current || now - lastFinalAtRef.current > 2500) {
+              const id = `${now}_${Math.random()}`;
+              setUserFinals((prev) => [...prev, { id, role: "user", text: t }]);
+              lastFinalNormRef.current = norm;
+              lastFinalAtRef.current = now;
+            }
             setUserPartial("");
           } else {
             interim += t + " ";
           }
         }
-        if (interim) setUserPartial(interim.trim());
+        setUserPartial(interim.trim());
       };
 
-      rec.onerror = (_e: any) => {
-        // keep going unless hard-stopped
-      };
-
+      rec.onerror = () => { /* keep calm and restart onend */ };
       rec.onend = () => {
-        // auto-restart while in voice mode and not hard-disabled
-        if (voiceModeActive && !micHardDisabledRef.current) {
-          try { rec.start(); } catch {}
-        }
+        if (voiceModeActive) { try { rec.start(); } catch {} }
       };
 
       __globalSpeechRec = rec;
@@ -256,58 +234,35 @@ export function useRealtimeVoice() {
     }
   }, [voiceModeActive]);
 
-  /** -------------------- Connect / Start -------------------- **/
+  // ---- connect/start/stop ----
   const connect = useCallback(async () => {
-    if (cooldownRef.current || status === "connecting" || status === "connected") return;
-    try {
-      const { token, model } = await getSession();
-      const instructions = buildInstructions();
-      await rtConnect({ token, model, instructions });
-    } catch (e) {
-      console.error(e);
-      cooldownRef.current = true;
-      setTimeout(() => { cooldownRef.current = false; }, 1500);
-      throw e;
-    }
-  }, [status, getSession, buildInstructions, rtConnect]);
+    const { token, model } = await getSession();
+    const instructions = buildInstructions();
+    await rtConnect({ token, model, instructions }); // make sure your useRealtimeWebRTC forwards session.update (see patch below)
+  }, [getSession, buildInstructions, rtConnect]);
 
   const startVoiceMode = useCallback(async () => {
-    // explicit user action → allow listening again
-    micHardDisabledRef.current = false;
-
     patchMediaForCapture();
     unlockAudio();
     if (!isConnected) await connect();
     setVoiceModeActive(true);
-
-    // start local ASR for the student's mic
     startLocalASR();
-
-    log("voice mode ON");
   }, [isConnected, connect, patchMediaForCapture, startLocalASR]);
 
-  /** -------------------- Stop (HARD) -------------------- **/
   const stopVoiceMode = useCallback(async () => {
     setVoiceModeActive(false);
-    micHardDisabledRef.current = true; // blocks ASR auto-restart; explicit start flips it back
     try { await rtDisconnect(); } catch {}
-
     await hardStopAllAudioPipelines();
     unpatchMedia();
-
-    log("voice mode OFF (hard)");
   }, [rtDisconnect, unpatchMedia]);
 
-  /** -------------------- Text sending -------------------- **/
-  const sendMessage = useCallback(
-    (text: string) => {
-      if (!text || !text.trim()) return;
-      sendText(text.trim());
-    },
-    [sendText]
-  );
+  // ---- send text (optional) ----
+  const sendMessage = useCallback((text: string) => {
+    if (!text?.trim()) return;
+    sendText(text.trim());
+  }, [sendText]);
 
-  /** -------------------- Derive real listening from mic track state -------------------- **/
+  // ---- detect true mic state ----
   useEffect(() => {
     const id = window.setInterval(() => {
       setHardListening(computeListeningFromStream(__globalMediaStream));
@@ -316,26 +271,17 @@ export function useRealtimeVoice() {
     return () => clearInterval(id);
   }, []);
 
-  const effectiveIsListening =
-    voiceModeActive && computeListeningFromStream(__globalMediaStream) && webrtcIsListening;
+  const effectiveIsListening = voiceModeActive && computeListeningFromStream(__globalMediaStream) && webrtcIsListening;
 
-  /** -------------------- Cleanup on unmount -------------------- **/
-  useEffect(() => {
-    return () => { stopVoiceMode(); };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  /** -------------------- API -------------------- **/
   return {
     status,
     isConnected,
     isListening: effectiveIsListening,
     isSpeaking,
     voiceModeActive,
-    lastError,
-    // 👇 merged transcript (assistant from realtime + user from local ASR)
+    // hide the noisy “cancellation failed” line from UI
+    lastError: String(lastError || "").includes("Cancellation failed") ? null : lastError,
     transcript: mergedTranscript,
-    // 👇 live student partial while speaking
     partialTranscript: userPartial || rtPartial || "",
     connect,
     startVoiceMode,

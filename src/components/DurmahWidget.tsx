@@ -8,6 +8,15 @@ import { useAuth } from "@/lib/supabase/AuthContext";
 import { useRealtimeVoice } from "@/hooks/useRealtimeVoice";
 import { useElevenLabsTTS } from "@/hooks/useElevenLabsTTS";
 
+const VOICE_OPTIONS = [
+  { id: "XrExE9yKIg1WjnnlVkGX", label: "Matilda" },
+  { id: "onwK4e9ZLuTAKqWW03F9", label: "Daniel" },
+  { id: "pFZP5JQG7iQjIQuC4Bku", label: "Lily" },
+  { id: "Xb7hH8MSUJpSbSDYk0k2", label: "Alice" },
+  { id: "CwhRBWXzGAHq8TQ4Fs17", label: "Roger" },
+  { id: "cgSgspJ2msm6clMCkdW9", label: "Jessica" },
+];
+
 type WidgetProps = {
   context?: {
     route?: string;
@@ -47,7 +56,14 @@ export default function DurmahWidget({ context }: WidgetProps) {
   } = useRealtimeVoice();
 
   // ElevenLabs TTS (assistant speech)
-  const { isSpeaking: ttsSpeaking, speak, stop: stopTTS } = useElevenLabsTTS();
+  const {
+    isSpeaking: ttsSpeaking,
+    speak,
+    stop: stopTTS,
+    provider,
+    voiceId,
+    setVoiceId,
+  } = useElevenLabsTTS();
 
   // Track session start for metadata
   const sessionStartRef = useRef<string | null>(null);
@@ -275,16 +291,51 @@ export default function DurmahWidget({ context }: WidgetProps) {
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-3 border-b bg-white/90 backdrop-blur">
               <div className="font-medium">Transcript</div>
-              <div className="flex items-center gap-2">
+
+              <div className="flex items-center gap-3 flex-wrap justify-end">
+                {/* status */}
                 <div className="text-sm text-gray-600">
                   {bubbleStatus} {lastError ? `• ${String(lastError)}` : ""}
                 </div>
+
+                {/* 🔊 Voice picker + Test button + provider tag */}
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-gray-500">Voice:</span>
+                  <select
+                    value={voiceId}
+                    onChange={(e) => setVoiceId(e.target.value)}
+                    className="text-sm border rounded px-2 py-1"
+                    title="Choose ElevenLabs voice"
+                  >
+                    {VOICE_OPTIONS.map((v) => (
+                      <option key={v.id} value={v.id}>{v.label}</option>
+                    ))}
+                  </select>
+                  <button
+                    onClick={() => {
+                      const name = VOICE_OPTIONS.find((v) => v.id === voiceId)?.label || "this";
+                      speak(
+                        `Hi! I'm ${name}, an ElevenLabs voice for MyDurhamLaw. How can I help today?`,
+                        { interrupt: true }
+                      );
+                    }}
+                    className="text-indigo-600 text-sm font-medium hover:underline"
+                    title="Play a short sample"
+                  >
+                    Test
+                  </button>
+                  <span className="text-xs text-gray-500">({provider})</span>
+                </div>
+
+                {/* actions toggle */}
                 <button
                   onClick={() => setShowActions((v) => !v)}
                   className="text-indigo-600 text-sm font-medium hover:underline"
                 >
                   {showActions ? "Hide actions" : "Actions"}
                 </button>
+
+                {/* close */}
                 <button
                   onClick={closeTranscript}
                   className="rounded px-2 py-1 text-sm hover:bg-gray-100"

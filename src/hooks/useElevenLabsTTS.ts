@@ -1,29 +1,24 @@
 // src/hooks/useElevenLabsTTS.ts
-// Lightweight ElevenLabs TTS hook with an interruptible queue.
-// Uses a secure Netlify Function proxy at /.netlify/functions/tts-elevenlabs
+// ElevenLabs TTS with selectable voice, provider indicator, and interruptible queue.
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
 export type UseElevenLabsTTSOptions = {
-  voiceId?: string;                 // ElevenLabs Voice ID
-  modelId?: string;                 // default "eleven_multilingual_v2"
-  optimizeStreamingLatency?: 0 | 1 | 2 | 3 | 4; // not used by proxy, kept for API parity
-  outputFormat?: "audio/mpeg" | "pcm_16000" | "wav" | string; // proxy returns audio/mpeg
-  stability?: number;               // 0..1
-  similarityBoost?: number;         // 0..1
-  style?: number;                   // 0..1
-  useSpeakerBoost?: boolean;        // default true
+  initialVoiceId?: string;           // default from env/localStorage if not provided
+  modelId?: string;                  // default "eleven_multilingual_v2"
+  stability?: number;                // 0..1
+  similarityBoost?: number;          // 0..1
+  style?: number;                    // 0..1
+  useSpeakerBoost?: boolean;         // default true
 };
 
 type QueueItem = { id: number; text: string };
 
+const STORE_KEY = "mdl_voice_id";
+
 export function useElevenLabsTTS(opts: UseElevenLabsTTSOptions = {}) {
   const {
-    // Read from public OR private env fallback (private one won’t be exposed unless you inline it)
-    voiceId =
-      (process.env.NEXT_PUBLIC_ELEVENLABS_VOICE_ID as string) ||
-      (process.env.ELEVENLABS_VOICE_ID as string) ||
-      "",
+    initialVoiceId,
     modelId = "eleven_multilingual_v2",
     stability = 0.45,
     similarityBoost = 0.85,
@@ -31,7 +26,25 @@ export function useElevenLabsTTS(opts: UseElevenLabsTTSOptions = {}) {
     useSpeakerBoost = true,
   } = opts;
 
+  const defaultEnvVoice =
+    (process.env.NEXT_PUBLIC_ELEVENLABS_VOICE_ID as string) ||
+    (process.env.ELEVENLABS_VOICE_ID as string) ||
+    "";
+
+  const [voiceId, setVoiceIdState] = useState<string>(() => {
+    if (typeof window !== "undefined") {
+      const saved = window.localStorage.getItem(STORE_KEY);
+      if (saved) return saved;
+    }
+    return initialVoiceId || defaultEnvVoice;
+  });
+  const setVoiceId = useCallback((v: string) => {
+    setVoiceIdState(v);
+    try { window.localStorage.setItem(STORE_KEY, v); } catch {}
+  }, []);
+
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [provider, setProvider] = useState<string>("unknown");
   const [queue, setQueue] = useState<QueueItem[]>([]);
   const idCounter = useRef(0);
 
@@ -50,12 +63,10 @@ export function useElevenLabsTTS(opts: UseElevenLabsTTSOptions = {}) {
     return audioCtxRef.current!;
   };
 
-  // ------- FETCH via Netlify Function (safe; server holds API key) -------
   const fetchAudioArrayBuffer = useCallback(
     async (text: string): Promise<ArrayBuffer> => {
-      if (!voiceId) throw new Error("Missing ElevenLabs voiceId. Set NEXT_PUBLIC_ELEVENLABS_VOICE_ID.");
+      if (!voiceId) throw new Error("Missing ElevenLabs voiceId");
 
-      // 🔴 IMPORTANT: use your Netlify Function endpoint (no query params)
       const url = "/.netlify/functions/tts-elevenlabs";
 
       const body = JSON.stringify({
@@ -80,12 +91,14 @@ export function useElevenLabsTTS(opts: UseElevenLabsTTSOptions = {}) {
         signal: abortRef.current.signal,
       });
 
+      // Provider headers (from our Netlify function)
+      setProvider(res.headers.get("x-tts-provider") || "elevenlabs");
+
       if (!res.ok) {
         const txt = await res.text().catch(() => "");
         throw new Error(`TTS failed: ${res.status} ${res.statusText} ${txt}`);
       }
 
-      // Netlify returns proper binary (we set isBase64Encoded=true server-side)
       return await res.arrayBuffer();
     },
     [voiceId, modelId, stability, similarityBoost, style, useSpeakerBoost]
@@ -104,7 +117,6 @@ export function useElevenLabsTTS(opts: UseElevenLabsTTSOptions = {}) {
 
     currentSourceRef.current = src;
     setIsSpeaking(true);
-
     await ctx.resume?.();
     src.start();
 
@@ -117,7 +129,6 @@ export function useElevenLabsTTS(opts: UseElevenLabsTTSOptions = {}) {
         resolve();
       };
     });
-
     setIsSpeaking(false);
   }, []);
 
@@ -176,6 +187,9 @@ export function useElevenLabsTTS(opts: UseElevenLabsTTSOptions = {}) {
 
   return {
     isSpeaking,
+    provider,          // "elevenlabs" if coming from proxy
+    voiceId,
+    setVoiceId,
     queueLength: queue.length,
     speak,
     stop,

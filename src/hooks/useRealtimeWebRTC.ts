@@ -29,9 +29,17 @@ const TTS_RATE = parseFloat(
     "0.95"
 );
 
-// -------------------------- Public hook --------------------------
+// -------------------------- Types --------------------------
 export type RoleLine = { id: string; role: "user" | "assistant"; text: string };
 
+type ConnectArgs = {
+  token: string;
+  model: string;
+  instructions?: string | null;
+  voiceId?: string | null; // optional (for OpenAI TTS through Realtime)
+};
+
+// -------------------------- Public hook --------------------------
 export function useRealtimeWebRTC() {
   // ---- internals / refs ----
   const pcRef = useRef<RTCPeerConnection | null>(null);
@@ -42,6 +50,7 @@ export function useRealtimeWebRTC() {
   const tokenRef = useRef<string | null>(null);
   const modelRef = useRef<string | null>(null);
   const instructionsRef = useRef<string | null>(null);
+  const voiceRef = useRef<string | null>(null);
 
   // visual “speaking” pulse for remote audio
   const audioCtxRef = useRef<any>(null);
@@ -50,10 +59,13 @@ export function useRealtimeWebRTC() {
   // whether assistant is actively replying (for barge-in cancel)
   const activeReplyRef = useRef<boolean>(false);
 
+  // track active response id for safe cancellation
+  const activeResponseIdRef = useRef<string | null>(null);
+
   // buffer for assistant streaming text (we keep user partial separate)
   const assistantBufRef = useRef<string>("");
 
-  // optional local TTS
+  // optional local TTS element (kept for future use)
   const localTTSRef = useRef<HTMLAudioElement | null>(null);
 
   // ---- public state ----
@@ -125,6 +137,18 @@ export function useRealtimeWebRTC() {
     try { msg = JSON.parse(evt.data as any); } catch { return; }
     DEBUG && log("recv:", msg.type, msg);
 
+    // response id tracking for safe cancellation
+    if (msg.type === "response.created") {
+      activeResponseIdRef.current = msg.response?.id ?? activeResponseIdRef.current;
+    }
+    if (
+      msg.type === "response.completed" ||
+      msg.type === "response.canceled" ||
+      msg.type === "response.errored"
+    ) {
+      activeResponseIdRef.current = null;
+    }
+
     // Track reply activity for barge-in
     if (msg.type === "output_audio_buffer.started") activeReplyRef.current = true;
     if (msg.type === "output_audio_buffer.stopped" || msg.type === "response.done" || msg.type === "response.completed")
@@ -132,6 +156,26 @@ export function useRealtimeWebRTC() {
 
     if (msg.type === "error") {
       setLastError(msg.error?.message || "Server error");
+      return;
+    }
+
+    // Session lifecycle: when session is created, push full config again (belt & braces)
+    if (msg.type === "session.created" && dcRef.current?.readyState === "open") {
+      try {
+        dcRef.current.send(
+          JSON.stringify({
+            type: "session.update",
+            session: {
+              model: modelRef.current || "gpt-4o-realtime-preview-2024-12-17",
+              instructions: instructionsRef.current || undefined,
+              turn_detection: { type: "server_vad", silence_duration_ms: 300 },
+              input_audio_format: { type: "wav", sample_rate_hz: 16000, channels: 1 },
+              output_audio_format: { type: "mp3" },
+              voice: voiceRef.current || "alloy",
+            },
+          })
+        );
+      } catch {}
       return;
     }
 
@@ -186,21 +230,14 @@ export function useRealtimeWebRTC() {
 
   // ---------- connect ----------
   const connect = useCallback(
-    async ({
-      token,
-      model,
-      instructions,
-    }: {
-      token: string;
-      model: string;
-      instructions?: string | null;
-    }) => {
+    async ({ token, model, instructions, voiceId }: ConnectArgs) => {
       if (isConnected || status === "connecting") return;
       setStatus("connecting");
       setLastError(null);
       tokenRef.current = token;
       modelRef.current = model;
       instructionsRef.current = instructions ?? null;
+      voiceRef.current = voiceId ?? null;
 
       try {
         const pc = new RTCPeerConnection();
@@ -234,18 +271,19 @@ export function useRealtimeWebRTC() {
         dcRef.current = pc.createDataChannel("oai-events");
         dcRef.current.onopen = () => {
           DEBUG && log("data channel open");
-          // Push session instructions once channel opens
-          const instr = instructionsRef.current;
-          if (instr && dcRef.current?.readyState === "open") {
-            try {
-              dcRef.current.send(
-                JSON.stringify({
-                  type: "session.update",
-                  session: { instructions: instr },
-                })
-              );
-            } catch {}
-          }
+          // Push full session config on open
+          const sessionMsg = {
+            type: "session.update",
+            session: {
+              model: modelRef.current || "gpt-4o-realtime-preview-2024-12-17",
+              instructions: instructionsRef.current || undefined,
+              turn_detection: { type: "server_vad", silence_duration_ms: 300 },
+              input_audio_format: { type: "wav", sample_rate_hz: 16000, channels: 1 },
+              output_audio_format: { type: "mp3" },
+              voice: voiceRef.current || "alloy",
+            },
+          };
+          try { dcRef.current?.send(JSON.stringify(sessionMsg)); } catch {}
         };
         dcRef.current.onmessage = handleServerEvent;
 
@@ -264,7 +302,7 @@ export function useRealtimeWebRTC() {
         stream.getTracks().forEach((t) => pc.addTrack(t, stream));
         setIsListening(true);
 
-        // Local barge-in: cancel only when a reply is active
+        // Local barge-in: cancel only when a reply is active and we have an active response id
         try {
           // @ts-ignore webkit prefix
           const ACtx = window.AudioContext || window.webkitAudioContext;
@@ -284,10 +322,19 @@ export function useRealtimeWebRTC() {
                 if (v > maxDev) maxDev = v;
               }
               const nowSpeaking = maxDev > 10;
-              if (!speaking && nowSpeaking && activeReplyRef.current && dcRef.current && dcRef.current.readyState === "open") {
-                try {
-                  dcRef.current.send(JSON.stringify({ type: "response.cancel" }));
-                } catch {}
+              if (
+                !speaking &&
+                nowSpeaking &&
+                activeReplyRef.current &&
+                dcRef.current &&
+                dcRef.current.readyState === "open"
+              ) {
+                const rid = activeResponseIdRef.current;
+                if (rid) {
+                  try {
+                    dcRef.current.send(JSON.stringify({ type: "response.cancel", response: { id: rid } }));
+                  } catch {}
+                }
               }
               speaking = nowSpeaking;
               requestAnimationFrame(tick);
@@ -340,6 +387,7 @@ export function useRealtimeWebRTC() {
       if (micStreamRef.current) { micStreamRef.current.getTracks().forEach((t) => t.stop()); micStreamRef.current = null; }
     } finally {
       activeReplyRef.current = false;
+      activeResponseIdRef.current = null;
       assistantBufRef.current = "";
       stopRemotePulse();
       setIsListening(false);
