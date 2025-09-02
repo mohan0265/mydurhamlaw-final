@@ -1,11 +1,4 @@
 ﻿// src/components/DurmahWidget.tsx
-// Host-aware voice widget that:
-// - shows BOTH roles (You/Durmah)
-// - saves JSON transcript with both roles
-// - has a reliable ✕ close and hard “End Chat” stop
-// - integrates ElevenLabs TTS for human-like speech
-// - guarantees teardown on unmount to prevent ghost re-activation
-
 "use client";
 
 import React, { useEffect, useMemo, useRef, useState, useCallback } from "react";
@@ -45,20 +38,16 @@ export default function DurmahWidget({ context }: WidgetProps) {
     isConnected,
     isListening,
     isSpeaking: webrtcSpeaking,
-    transcript,        // [{id, role, text}]
-    partialTranscript, // user live partial
+    transcript,        // NOW includes both student + assistant lines
+    partialTranscript, // live user partial
     connect,
     startVoiceMode,
     stopVoiceMode,
     lastError,
   } = useRealtimeVoice();
 
-  // ElevenLabs TTS (set your voice in env: NEXT_PUBLIC_ELEVENLABS_VOICE_ID)
-  const { isSpeaking: ttsSpeaking, speak, stop: stopTTS } = useElevenLabsTTS({
-    // You can hardcode voiceId here if you prefer:
-    // voiceId: "YOUR_ELEVENLABS_VOICE_ID",
-    // useDirectApi: false (recommended with /api/tts-elevenlabs proxy)
-  });
+  // ElevenLabs TTS (assistant speech)
+  const { isSpeaking: ttsSpeaking, speak, stop: stopTTS } = useElevenLabsTTS();
 
   // Track session start for metadata
   const sessionStartRef = useRef<string | null>(null);
@@ -73,15 +62,12 @@ export default function DurmahWidget({ context }: WidgetProps) {
     const newly = transcript.slice(lastCountRef.current);
     if (newly.length) {
       const mapped = newly
-        .map((l: any) => ({ role: l.role, content: (l.text || "").trim() }))
+        .map((l: any) => ({ role: l.role as "user" | "assistant", content: (l.text || "").trim() }))
         .filter((m: ChatMsg) => !!m.content);
 
-      // enqueue TTS for assistant lines only
+      // speak assistant lines
       mapped.forEach((m) => {
-        if (m.role === "assistant") {
-          // interrupt: false to let sentences play in order
-          speak(m.content);
-        }
+        if (m.role === "assistant") speak(m.content);
       });
 
       setMessages((prev) => [...prev, ...mapped]);
@@ -96,7 +82,6 @@ export default function DurmahWidget({ context }: WidgetProps) {
   const [saveMsg, setSaveMsg] = useState<string | null>(null);
   const [cloudId, setCloudId] = useState<string | null>(null);
   const [showSheet, setShowSheet] = useState(false);
-  const [micHardDisabled, setMicHardDisabled] = useState(false);
 
   // Show sheet whenever there is activity
   useEffect(() => {
@@ -105,7 +90,7 @@ export default function DurmahWidget({ context }: WidgetProps) {
   }, [isListening, webrtcSpeaking, ttsSpeaking, messages.length]);
 
   const transcriptText = useMemo(
-    () => messages.map((m) => `${m.role === "user" ? "You" : "Durmah"}: ${m.content}`).join("\n"),
+    () => messages.map((m) => `${m.role === "user" ? "Student" : "Durmah"}: ${m.content}`).join("\n"),
     [messages]
   );
 
@@ -147,7 +132,7 @@ export default function DurmahWidget({ context }: WidgetProps) {
     setShowSheet(false);
   };
 
-  // --- Save to Supabase (both roles as JSON) ---
+  // --- Save to Supabase (JSON of both roles) ---
   const saveToCloud = async () => {
     setSaveMsg(null);
     if (messages.length === 0) {
@@ -232,9 +217,8 @@ export default function DurmahWidget({ context }: WidgetProps) {
     }
   };
 
-  // --- Voice: start / hard stop ---
+  // --- Voice: start / hard stop (no more grey-lock) ---
   const hardStop = useCallback(() => {
-    setMicHardDisabled(true);
     try { stopTTS(); } catch {}
     try { stopVoiceMode(); } catch {}
   }, [stopTTS, stopVoiceMode]);
@@ -242,18 +226,17 @@ export default function DurmahWidget({ context }: WidgetProps) {
   const toggleVoice = async () => {
     setSaveMsg(null);
     if (!isConnected) {
-      try { await connect(); } catch { /* ignore */ }
+      try { await connect(); } catch {}
     }
     if (status === "connecting") return;
 
     if (webrtcSpeaking || isListening || ttsSpeaking) {
       hardStop();
     } else {
-      if (micHardDisabled) return; // never auto-resume after hard stop
       setShowActions(false);
       setShowSheet(true);
       sessionStartRef.current = new Date().toISOString();
-      try { await startVoiceMode(); } catch { /* ignore */ }
+      try { await startVoiceMode(); } catch {}
     }
   };
 
@@ -274,10 +257,9 @@ export default function DurmahWidget({ context }: WidgetProps) {
       {/* Floating Mic Button */}
       <button
         onClick={toggleVoice}
-        title={isListening || webrtcSpeaking || ttsSpeaking ? "End chat (stop mic/voice)" : micHardDisabled ? "Voice disabled this session" : "Start voice"}
+        title={isListening || webrtcSpeaking || ttsSpeaking ? "End chat (stop mic/voice)" : "Start voice"}
         className={`fixed right-6 bottom-6 z-50 rounded-full w-14 h-14 shadow-xl transition
-          ${isListening || webrtcSpeaking || ttsSpeaking ? "bg-red-500 hover:bg-red-600" : micHardDisabled ? "bg-gray-400" : "bg-indigo-600 hover:bg-indigo-700"}`}
-        disabled={micHardDisabled && !(isListening || webrtcSpeaking || ttsSpeaking)}
+          ${isListening || webrtcSpeaking || ttsSpeaking ? "bg-red-500 hover:bg-red-600" : "bg-indigo-600 hover:bg-indigo-700"}`}
       >
         <span className="sr-only">{isListening || webrtcSpeaking || ttsSpeaking ? "End Chat" : "Start Voice"}</span>
         <svg viewBox="0 0 24 24" className="w-8 h-8 m-auto fill-white">
