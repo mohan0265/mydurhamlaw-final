@@ -1,10 +1,9 @@
 ﻿// src/components/DurmahWidget.tsx
-// Final host-aware widget:
-// - Uses Supabase + user from the host app via supabaseBridge
-// - Saves transcripts to public.voice_conversations with optional academic context
-// - One client, one session (RLS-safe). No duplicate Supabase instances.
-// - Records BOTH roles (student=USER, Durmah=ASSISTANT).
-// - Close (✕) reliably hides transcript; bubbles for each role.
+// Host-aware voice widget that:
+// - shows BOTH roles (You/Durmah)
+// - saves JSON transcript with both roles
+// - has a reliable ✕ close
+// - pushes MDL instructions via useRealtimeVoice/useRealtimeWebRTC
 
 "use client";
 
@@ -12,35 +11,22 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Copy, Save, Trash2, FileText, X } from "lucide-react";
 import { supabase } from "@/lib/supabase/client";
 import { useAuth } from "@/lib/supabase/AuthContext";
-import { useRealtimeVoice } from "../hooks/useRealtimeVoice";
+import { useRealtimeVoice } from "@/hooks/useRealtimeVoice";
 
 type WidgetProps = {
-  /** Optional academic context: pass from YAAG, module pages, etc. */
   context?: {
     route?: string;
     term?: "Michaelmas" | "Epiphany" | "Easter" | string;
-    year_label?: string;      // e.g. "Year 1 (LLB)"
-    module_id?: string;       // your modules table id (uuid or text)
-    module_code?: string;     // e.g. "LAW1234"
-    week?: string;            // e.g. "Week 5"
-    tags?: string[];          // free-form labels
+    year_label?: string;
+    module_id?: string;
+    module_code?: string;
+    week?: string;
+    tags?: string[];
     extra?: Record<string, any>;
   };
 };
 
 type ChatMsg = { role: "user" | "assistant"; content: string };
-
-// We keep these to normalize the hook's transcript (assistant lines).
-type Line = { id: string; text: string };
-type AnyLine = { id?: string | number; text?: string } | string;
-
-function normalizeTranscript(arr: AnyLine[] | undefined | null): Line[] {
-  if (!arr) return [];
-  return arr.map((t, idx) => {
-    if (typeof t === "string") return { id: String(idx), text: t };
-    return { id: String(t.id ?? idx), text: String(t.text ?? "") };
-  });
-}
 
 const fmtTime = (d = new Date()) => {
   const pad = (n: number) => String(n).padStart(2, "0");
@@ -50,74 +36,44 @@ const fmtTime = (d = new Date()) => {
 };
 
 export default function DurmahWidget({ context }: WidgetProps) {
-  // Use *host* app auth so RLS == student's session
   const { user } = useAuth() || { user: null };
 
-  // ---- Conversation model (what we render & save) ----
-  const [messages, setMessages] = useState<ChatMsg[]>([]);
-
-  // ---- Voice hook (with user-final callback) ----
-  const onUserFinal = (text: string) => {
-    const trimmed = text.trim();
-    if (!trimmed) return;
-    // de-dupe identical immediate repeats
-    setMessages((prev) => {
-      const last = prev[prev.length - 1];
-      if (last && last.role === "user" && last.content === trimmed) return prev;
-      return [...prev, { role: "user", content: trimmed }];
-    });
-  };
-
   const {
-    status,              // "idle" | "connecting" | "connected"
+    status,
     isConnected,
     isListening,
     isSpeaking,
-    transcript,          // [{id,text}, ...] — typically assistant’s text
-    partialTranscript,   // student's live partial while speaking
+    transcript,        // [{id, role, text}]
+    partialTranscript, // user live partial
     connect,
     startVoiceMode,
     stopVoiceMode,
     lastError,
-  } = useRealtimeVoice({ onUserFinal });
+  } = useRealtimeVoice();
 
   // Track session start for metadata
   const sessionStartRef = useRef<string | null>(null);
 
-  // Keep a normalized view of the hook's transcript (assistant lines),
-  // so we can detect new assistant text and append to messages.
-  const [assistantLines, setAssistantLines] = useState<Line[]>([]);
+  // Conversation we render & save
+  const [messages, setMessages] = useState<ChatMsg[]>([]);
+  const lastCountRef = useRef<number>(0);
+
+  // On each transcript growth, append new items (respect role)
   useEffect(() => {
-    setAssistantLines(normalizeTranscript(transcript as unknown as AnyLine[]));
+    if (!transcript || transcript.length === lastCountRef.current) return;
+    const newly = transcript.slice(lastCountRef.current);
+    if (newly.length) {
+      setMessages((prev) => [
+        ...prev,
+        ...newly
+          .map((l) => ({ role: l.role, content: (l.text || "").trim() }))
+          .filter((m) => !!m.content),
+      ]);
+    }
+    lastCountRef.current = transcript.length;
   }, [transcript]);
 
-  // Track prior count to detect "new assistant lines"
-  const lastAssistantCount = useRef<number>(0);
-  useEffect(() => {
-    const count = assistantLines.length;
-    const prev = lastAssistantCount.current;
-    if (count > prev) {
-      const newlyAdded = assistantLines.slice(prev);
-      if (newlyAdded.length) {
-        setMessages((prevMsgs) => {
-          const next = [...prevMsgs];
-          for (const l of newlyAdded) {
-            const text = l.text.trim();
-            if (!text) continue;
-            const last = next[next.length - 1];
-            // de-dupe identical assistant line
-            if (!(last && last.role === "assistant" && last.content === text)) {
-              next.push({ role: "assistant", content: text });
-            }
-          }
-          return next;
-        });
-      }
-      lastAssistantCount.current = count;
-    }
-  }, [assistantLines]);
-
-  // ---- UI state ----
+  // UI state
   const [showActions, setShowActions] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveMsg, setSaveMsg] = useState<string | null>(null);
@@ -126,19 +82,12 @@ export default function DurmahWidget({ context }: WidgetProps) {
 
   // Show sheet whenever there is activity
   useEffect(() => {
-    if (isListening || isSpeaking || messages.length > 0) {
-      setShowSheet(true);
-    } else if (!isListening && !isSpeaking && messages.length === 0) {
-      setShowSheet(false);
-    }
+    if (isListening || isSpeaking || messages.length > 0) setShowSheet(true);
+    else if (!isListening && !isSpeaking && messages.length === 0) setShowSheet(false);
   }, [isListening, isSpeaking, messages.length]);
 
-  // Human-readable transcript for copy/.txt
   const transcriptText = useMemo(
-    () =>
-      messages
-        .map((m) => `${m.role === "user" ? "You" : "Durmah"}: ${m.content}`)
-        .join("\n"),
+    () => messages.map((m) => `${m.role === "user" ? "You" : "Durmah"}: ${m.content}`).join("\n"),
     [messages]
   );
 
@@ -170,14 +119,13 @@ export default function DurmahWidget({ context }: WidgetProps) {
     setSaveMsg(null);
     setMessages([]);
     setShowActions(false);
+    lastCountRef.current = 0;
   };
 
   const closeTranscript = () => {
-    setMessages([]);
-    setShowActions(false);
-    setSaveMsg(null);
+    deleteLocal();
     setCloudId(null);
-    setShowSheet(false); // hide sheet now
+    setShowSheet(false);
   };
 
   // --- Save to Supabase with RLS (store JSON for both roles) ---
@@ -210,7 +158,6 @@ export default function DurmahWidget({ context }: WidgetProps) {
       const payload = {
         user_id: authedUser.id,
         title: `Durmah conversation ${fmtTime()}`,
-        // store both roles as JSON
         content: JSON.stringify(messages),
         started_at,
         ended_at,
@@ -218,12 +165,7 @@ export default function DurmahWidget({ context }: WidgetProps) {
           status,
           last_partial: partialTranscript || null,
           context: context || null,
-          role_counts: {
-            user: messages.filter((m) => m.role === "user").length,
-            assistant: messages.filter((m) => m.role === "assistant").length,
-          },
         },
-        // Optional denormalized columns for easy filtering (also inside metadata)
         context_route: context?.route ?? null,
         context_term: context?.term ?? null,
         context_module_id: context?.module_id ?? null,
@@ -282,7 +224,7 @@ export default function DurmahWidget({ context }: WidgetProps) {
 
     if (isSpeaking || isListening) {
       stopVoiceMode();
-      // Keep transcript visible for actions
+      // keep transcript visible for actions
     } else {
       setShowActions(false);
       setShowSheet(true);
@@ -366,7 +308,7 @@ export default function DurmahWidget({ context }: WidgetProps) {
                 </div>
               )}
 
-              {/* show live partial while speaking */}
+              {/* live user partial */}
               {isListening && partialTranscript && (
                 <div className="mt-2 text-right">
                   <span className="inline-block px-3 py-2 rounded border text-gray-600 italic">

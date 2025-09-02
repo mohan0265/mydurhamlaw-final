@@ -1,15 +1,10 @@
 // src/hooks/useRealtimeVoice.ts
-// Small wrapper around the WebRTC hook + audio unlock on user gesture.
-// Works in BOTH Vite and Next.js. Adds MDL instructions to the Realtime session.
+// Wrapper around useRealtimeWebRTC: builds MDL instructions and unlocks audio on gesture.
 
 import { useCallback, useRef, useState } from "react";
 import { useRealtimeWebRTC } from "./useRealtimeWebRTC";
-import { getMdlContextSafe, buildSystemPrompt } from "@/lib/assist/systemPrompt";
+import { buildSystemPrompt, getMdlContextSafe } from "@/lib/assist/systemPrompt";
 
-/**
- * Env shim: supports both Vite (`import.meta.env`) and Next.js (`process.env`).
- * Default endpoint is a Next.js API route: /api/realtime-session
- */
 const viteEnv =
   (typeof import.meta !== "undefined" && (import.meta as any).env) || undefined;
 
@@ -23,7 +18,11 @@ const DEBUG =
   (viteEnv && (viteEnv as any).VITE_DEBUG_VOICE === "true") ||
   (typeof window !== "undefined" && window.location.search.includes("debug=voice"));
 
-export function useRealtimeVoice() {
+export type UseRealtimeVoiceOptions = {
+  onUserFinal?: (text: string) => void; // optional callback
+};
+
+export function useRealtimeVoice(opts: UseRealtimeVoiceOptions = {}) {
   const {
     status,
     isConnected,
@@ -54,7 +53,7 @@ export function useRealtimeVoice() {
         const ctx = new ACtx();
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
-        gain.gain.value = 0.0001; // inaudible blip to unlock
+        gain.gain.value = 0.0001;
         osc.connect(gain).connect(ctx.destination);
         osc.start();
         osc.stop(ctx.currentTime + 0.02);
@@ -75,18 +74,14 @@ export function useRealtimeVoice() {
     };
   }, []);
 
-  // Build MDL instructions once per connect
+  // Build MDL instructions once per connect attempt
   const buildInstructions = useCallback(() => {
     try {
-      const mdl = getMdlContextSafe();       // always returns a safe ctx
-      return buildSystemPrompt(mdl);         // <- REQUIRED arg provided here
+      const mdl = getMdlContextSafe();
+      return buildSystemPrompt(mdl);
     } catch {
-      // ultra-safe generic fallback if helpers explode for any reason
-      return [
-        "You are Durmah, a supportive voice mentor for a Durham law student.",
-        "Be friendly, concise, and helpful. If you don’t know, say so briefly.",
-        "Offer study tips and next actions. Keep responses under 5 sentences unless asked.",
-      ].join(" ");
+      // minimal fallback if helper missing
+      return "You are Durmah, a helpful, friendly study companion for Durham Law undergrads. Be concise and supportive.";
     }
   }, []);
 
@@ -94,7 +89,7 @@ export function useRealtimeVoice() {
     if (cooldownRef.current || status === "connecting" || status === "connected") return;
     try {
       const { token, model } = await getSession();
-      const instructions = buildInstructions(); // <- context-aware system prompt
+      const instructions = buildInstructions();
       await rtConnect({ token, model, instructions });
     } catch (e) {
       console.error(e);
@@ -102,10 +97,10 @@ export function useRealtimeVoice() {
       setTimeout(() => { cooldownRef.current = false; }, 1500);
       throw e;
     }
-  }, [status, getSession, rtConnect, buildInstructions]);
+  }, [status, getSession, buildInstructions, rtConnect]);
 
   const startVoiceMode = useCallback(async () => {
-    unlockAudio(); // ⟵ critical: ensures autoplay is allowed
+    unlockAudio();
     if (!isConnected) await connect();
     setVoiceModeActive(true);
     log("voice mode ON");
@@ -125,6 +120,10 @@ export function useRealtimeVoice() {
     [sendText]
   );
 
+  // Optional: surface the final USER lines to a parent if needed
+  // (Many UIs just read them from `transcript` with role === 'user')
+  // if (opts.onUserFinal) you can scan `transcript` in the caller.
+
   return {
     status,
     isConnected,
@@ -132,8 +131,8 @@ export function useRealtimeVoice() {
     isSpeaking,
     voiceModeActive,
     lastError,
-    transcript,         // assistant final lines
-    partialTranscript,  // user live partial
+    transcript,        // [{ id, role, text }]
+    partialTranscript, // user's live partial
     connect,
     startVoiceMode,
     stopVoiceMode,
