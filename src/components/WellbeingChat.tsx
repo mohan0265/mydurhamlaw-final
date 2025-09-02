@@ -7,6 +7,7 @@ import { ChatInput } from './chat/ChatInput'
 import { ChatLoading } from './chat/ChatLoading'
 // import { VoiceIndicator } from './chat/VoiceIndicator' // Removed - using new voice system
 import { useAuth } from '@/lib/supabase/AuthContext'
+import { useDurmah } from '@/lib/durmah/context'
 import { Message } from '@/types/chat'
 import { 
   streamGPT4oResponse, 
@@ -58,6 +59,7 @@ interface WellbeingChatProps {
   className?: string
   assistanceLevel: AssistanceLevel
   pledgedAt: string | null
+  onClose?: () => void
 }
 
 export const WellbeingChat: React.FC<WellbeingChatProps> = ({
@@ -73,8 +75,10 @@ export const WellbeingChat: React.FC<WellbeingChatProps> = ({
   className = "",
   assistanceLevel,
   pledgedAt,
+  onClose,
 }) => {
   const { user, userProfile } = useAuth()
+  const mdl = useDurmah()
   const [messages, setMessages] = useState<Message[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [input, setInput] = useState('')
@@ -379,11 +383,22 @@ export const WellbeingChat: React.FC<WellbeingChatProps> = ({
               </div>
               <h3 className="text-lg sm:text-xl font-bold text-gray-800 leading-tight">{title}</h3>
             </div>
-            {isTTSSpeaking ? (
-                <button onClick={handleInterruptVoice} className="p-2 rounded-full bg-red-500 text-white"><Square size={16} /></button>
-            ) : (
-                <button className="p-2 rounded-full bg-blue-500 text-white"><Volume2 size={16} /></button>
-            )}
+            <div className="flex items-center gap-2">
+              {isTTSSpeaking ? (
+                  <button onClick={handleInterruptVoice} className="p-2 rounded-full bg-red-500 text-white"><Square size={16} /></button>
+              ) : (
+                  <button className="p-2 rounded-full bg-blue-500 text-white"><Volume2 size={16} /></button>
+              )}
+              {onClose && (
+                <button
+                  onClick={onClose}
+                  aria-label="Close"
+                  className="rounded-md px-2 py-1 hover:bg-gray-100"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
         </div>
         <p className="text-gray-600 text-sm leading-relaxed">{description}</p>
         
@@ -460,7 +475,7 @@ export const WellbeingChat: React.FC<WellbeingChatProps> = ({
           disabled={isLoading || !pledgedAt}
           isListening={isListening}
           isVoicePlaying={isTTSSpeaking}
-          placeholder={!pledgedAt ? "Please acknowledge the integrity pledge first." : "Share how you're feeling..."}
+          placeholder={!pledgedAt ? "Please acknowledge the integrity pledge first." : `Hi ${mdl.firstName}, how can I help?`}
         />
         <div className="text-center mt-2">
             <Link href="/legal/academic-integrity" legacyBehavior>
