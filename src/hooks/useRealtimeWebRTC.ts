@@ -44,12 +44,18 @@ export function useRealtimeWebRTC() {
   const tokenRef = useRef<string | null>(null);
   const modelRef = useRef<string | null>(null);
 
+  // optional session instructions passed via connect()
+  const connectInstructionsRef = useRef<string | null>(null);
+
   // remote speaking pulse (visual only)
   const audioCtxRef = useRef<any>(null);
   const vadRemoteRef = useRef<{ alive: boolean; raf: number }>({ alive: false, raf: 0 });
 
   // track if assistant is currently replying (to gate barge-in cancel)
   const activeReplyRef = useRef<boolean>(false);
+
+  // assistant text buffer (so we don't pollute user partials)
+  const assistantBufRef = useRef<string>("");
 
   // local TTS element (for optional ElevenLabs playback)
   const localTTSRef = useRef<HTMLAudioElement | null>(null);
@@ -60,7 +66,11 @@ export function useRealtimeWebRTC() {
   const [isListening, setIsListening] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [lastError, setLastError] = useState<string | null>(null);
+
+  // NOTE: by design, `transcript` holds **assistant** final lines only.
   const [transcript, setTranscript] = useState<Array<{ id: string; text: string }>>([]);
+
+  // NOTE: `partialTranscript` now represents **only the USER's live partial**.
   const [partialTranscript, setPartialTranscript] = useState("");
 
   const log = (...a: any[]) => { if (DEBUG) console.log("[RealtimeWebRTC]", ...a); };
@@ -187,56 +197,61 @@ export function useRealtimeWebRTC() {
       return;
     }
 
-    // USER ASR (when present)
+    // USER ASR (we keep partial here for UI; final is handled upstream by onUserFinal in useRealtimeVoice)
     if (msg.type === "transcript.partial" && typeof msg.text === "string") {
-      setPartialTranscript(msg.text);
+      setPartialTranscript(msg.text); // USER partial only
       return;
     }
     if (msg.type === "transcript.completed" && typeof msg.text === "string") {
+      // USER final — do NOT push to assistant transcript; clear partial only.
       setPartialTranscript("");
-      setTranscript((old) => [...old, { id: msg.id || crypto.randomUUID(), text: msg.text }]);
       return;
     }
 
-    // ASSISTANT TEXT (when the model streams output text)
+    // ASSISTANT TEXT (model output) — buffer deltas separately from user partial
     if (msg.type === "response.output_text.delta" && typeof msg.delta === "string") {
-      setPartialTranscript((p) => p + msg.delta);
+      assistantBufRef.current += msg.delta;
       return;
     }
     if (msg.type === "response.completed") {
-      const out = msg.response?.output_text;
-      const full = Array.isArray(out) ? out.join("") : (typeof out === "string" ? out : "");
+      // Prefer buffered text; fallback to response.output_text if present
+      let full = assistantBufRef.current;
+      if (!full) {
+        const out = msg.response?.output_text;
+        full = Array.isArray(out) ? out.join("") : (typeof out === "string" ? out : "");
+      }
       if (full && full.trim()) {
-        setPartialTranscript("");
         setTranscript((old) => [...old, { id: msg.id || crypto.randomUUID(), text: full }]);
       }
+      assistantBufRef.current = "";
       return;
     }
 
-    // ASSISTANT SPEECH TRANSCRIPT
+    // ASSISTANT SPEECH TRANSCRIPT (when server returns transcript of TTS)
     if (msg.type === "response.audio_transcript.delta" && typeof msg.delta === "string") {
-      setPartialTranscript((p) => p + msg.delta);
+      assistantBufRef.current += msg.delta;
       return;
     }
     if (msg.type === "response.audio_transcript.done") {
       const full = typeof msg.transcript === "string" ? msg.transcript
                  : (typeof msg.text === "string" ? msg.text : "");
-      const finalText = full || partialTranscript;
-      if (finalText && finalText.trim()) {
+      const finalText = (full || assistantBufRef.current || "").trim();
+      if (finalText) {
         setTranscript((old) => [...old, { id: msg.id || crypto.randomUUID(), text: finalText }]);
       }
-      setPartialTranscript("");
+      assistantBufRef.current = "";
       return;
     }
   };
 
   // ---------- connect ----------
-  const connect = useCallback(async ({ token, model }: { token: string; model: string }) => {
+  const connect = useCallback(async ({ token, model, instructions }: { token: string; model: string; instructions?: string }) => {
     if (isConnected || status === "connecting") return;
     setStatus("connecting");
     setLastError(null);
     tokenRef.current = token;
     modelRef.current = model;
+    connectInstructionsRef.current = instructions || null;
 
     try {
       const pc = new RTCPeerConnection();
@@ -262,7 +277,22 @@ export function useRealtimeWebRTC() {
 
       // Data channel
       dcRef.current = pc.createDataChannel("oai-events");
-      dcRef.current.onopen = () => DEBUG && log("data channel open");
+      dcRef.current.onopen = () => {
+        DEBUG && log("data channel open");
+        // Send session.update with instructions if provided
+        const instr = connectInstructionsRef.current;
+        if (instr) {
+          try {
+            dcRef.current!.send(JSON.stringify({
+              type: "session.update",
+              session: { instructions: instr },
+            }));
+            DEBUG && log("session.update sent");
+          } catch (err) {
+            console.warn("Failed to send session.update:", err);
+          }
+        }
+      };
       dcRef.current.onmessage = handleServerEvent;
 
       // Audio send/recv
@@ -341,7 +371,7 @@ export function useRealtimeWebRTC() {
       setIsConnected(false);
       setStatus("idle");
     }
-  }, [isConnected, status, partialTranscript]);
+  }, [isConnected, status]);
 
   // ---------- disconnect ----------
   const disconnect = useCallback(() => {
@@ -352,11 +382,13 @@ export function useRealtimeWebRTC() {
       if (micStreamRef.current) { micStreamRef.current.getTracks().forEach((t) => t.stop()); micStreamRef.current = null; }
     } finally {
       activeReplyRef.current = false;
+      assistantBufRef.current = "";
       stopRemotePulse();
       setIsListening(false);
       setIsConnected(false);
       setIsSpeaking(false);
       setStatus("idle");
+      setPartialTranscript("");
     }
   }, []);
 
@@ -388,8 +420,8 @@ export function useRealtimeWebRTC() {
     isConnected,
     isListening,
     isSpeaking,
-    transcript,
-    partialTranscript,
+    transcript,         // assistant final lines
+    partialTranscript,  // user live partial
     lastError,
     connect,
     disconnect,
