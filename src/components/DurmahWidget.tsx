@@ -3,7 +3,7 @@
 // - shows BOTH roles (You/Durmah)
 // - saves JSON transcript with both roles
 // - has a reliable ✕ close and hard “End Chat” stop
-// - pushes MDL instructions via useRealtimeVoice/useRealtimeWebRTC
+// - integrates ElevenLabs TTS for human-like speech
 // - guarantees teardown on unmount to prevent ghost re-activation
 
 "use client";
@@ -13,6 +13,7 @@ import { Copy, Save, Trash2, FileText, X } from "lucide-react";
 import { supabase } from "@/lib/supabase/client";
 import { useAuth } from "@/lib/supabase/AuthContext";
 import { useRealtimeVoice } from "@/hooks/useRealtimeVoice";
+import { useElevenLabsTTS } from "@/hooks/useElevenLabsTTS";
 
 type WidgetProps = {
   context?: {
@@ -43,7 +44,7 @@ export default function DurmahWidget({ context }: WidgetProps) {
     status,
     isConnected,
     isListening,
-    isSpeaking,
+    isSpeaking: webrtcSpeaking,
     transcript,        // [{id, role, text}]
     partialTranscript, // user live partial
     connect,
@@ -51,6 +52,13 @@ export default function DurmahWidget({ context }: WidgetProps) {
     stopVoiceMode,
     lastError,
   } = useRealtimeVoice();
+
+  // ElevenLabs TTS (set your voice in env: NEXT_PUBLIC_ELEVENLABS_VOICE_ID)
+  const { isSpeaking: ttsSpeaking, speak, stop: stopTTS } = useElevenLabsTTS({
+    // You can hardcode voiceId here if you prefer:
+    // voiceId: "YOUR_ELEVENLABS_VOICE_ID",
+    // useDirectApi: false (recommended with /api/tts-elevenlabs proxy)
+  });
 
   // Track session start for metadata
   const sessionStartRef = useRef<string | null>(null);
@@ -64,14 +72,22 @@ export default function DurmahWidget({ context }: WidgetProps) {
     if (!transcript || transcript.length === lastCountRef.current) return;
     const newly = transcript.slice(lastCountRef.current);
     if (newly.length) {
-      setMessages((prev) => [
-        ...prev,
-        ...newly
-          .map((l: any) => ({ role: l.role, content: (l.text || "").trim() }))
-          .filter((m: ChatMsg) => !!m.content),
-      ]);
+      const mapped = newly
+        .map((l: any) => ({ role: l.role, content: (l.text || "").trim() }))
+        .filter((m: ChatMsg) => !!m.content);
+
+      // enqueue TTS for assistant lines only
+      mapped.forEach((m) => {
+        if (m.role === "assistant") {
+          // interrupt: false to let sentences play in order
+          speak(m.content);
+        }
+      });
+
+      setMessages((prev) => [...prev, ...mapped]);
     }
     lastCountRef.current = transcript.length;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [transcript]);
 
   // UI state
@@ -80,12 +96,13 @@ export default function DurmahWidget({ context }: WidgetProps) {
   const [saveMsg, setSaveMsg] = useState<string | null>(null);
   const [cloudId, setCloudId] = useState<string | null>(null);
   const [showSheet, setShowSheet] = useState(false);
+  const [micHardDisabled, setMicHardDisabled] = useState(false);
 
   // Show sheet whenever there is activity
   useEffect(() => {
-    if (isListening || isSpeaking || messages.length > 0) setShowSheet(true);
-    else if (!isListening && !isSpeaking && messages.length === 0) setShowSheet(false);
-  }, [isListening, isSpeaking, messages.length]);
+    if (isListening || webrtcSpeaking || ttsSpeaking || messages.length > 0) setShowSheet(true);
+    else if (!isListening && !webrtcSpeaking && !ttsSpeaking && messages.length === 0) setShowSheet(false);
+  }, [isListening, webrtcSpeaking, ttsSpeaking, messages.length]);
 
   const transcriptText = useMemo(
     () => messages.map((m) => `${m.role === "user" ? "You" : "Durmah"}: ${m.content}`).join("\n"),
@@ -121,7 +138,8 @@ export default function DurmahWidget({ context }: WidgetProps) {
     setMessages([]);
     setShowActions(false);
     lastCountRef.current = 0;
-  }, []);
+    stopTTS();
+  }, [stopTTS]);
 
   const closeTranscript = () => {
     deleteLocal();
@@ -129,7 +147,7 @@ export default function DurmahWidget({ context }: WidgetProps) {
     setShowSheet(false);
   };
 
-  // --- Save to Supabase with RLS (store JSON for both roles) ---
+  // --- Save to Supabase (both roles as JSON) ---
   const saveToCloud = async () => {
     setSaveMsg(null);
     if (messages.length === 0) {
@@ -192,7 +210,6 @@ export default function DurmahWidget({ context }: WidgetProps) {
     }
   };
 
-  // --- Delete from Supabase if saved ---
   const deleteFromCloud = async () => {
     setSaveMsg(null);
     if (!cloudId) {
@@ -216,13 +233,11 @@ export default function DurmahWidget({ context }: WidgetProps) {
   };
 
   // --- Voice: start / hard stop ---
-  const [micHardDisabled, setMicHardDisabled] = useState(false);
   const hardStop = useCallback(() => {
-    setMicHardDisabled(true); // prevent any auto-resume logic in this session
-    try {
-      stopVoiceMode(); // hook performs: close SR, stop tracks, close peer, stop timers
-    } catch { /* no-op */ }
-  }, [stopVoiceMode]);
+    setMicHardDisabled(true);
+    try { stopTTS(); } catch {}
+    try { stopVoiceMode(); } catch {}
+  }, [stopTTS, stopVoiceMode]);
 
   const toggleVoice = async () => {
     setSaveMsg(null);
@@ -231,11 +246,10 @@ export default function DurmahWidget({ context }: WidgetProps) {
     }
     if (status === "connecting") return;
 
-    if (isSpeaking || isListening) {
+    if (webrtcSpeaking || isListening || ttsSpeaking) {
       hardStop();
-      // keep transcript visible for actions
     } else {
-      if (micHardDisabled) return; // never re-open after a hard End Chat
+      if (micHardDisabled) return; // never auto-resume after hard stop
       setShowActions(false);
       setShowSheet(true);
       sessionStartRef.current = new Date().toISOString();
@@ -245,23 +259,27 @@ export default function DurmahWidget({ context }: WidgetProps) {
 
   const bubbleStatus = !isConnected
     ? "Offline"
-    : isSpeaking
+    : (webrtcSpeaking || ttsSpeaking)
     ? "Speaking"
     : isListening
     ? "Listening"
     : "Connected";
+
+  useEffect(() => {
+    return () => { hardStop(); };
+  }, [hardStop]);
 
   return (
     <>
       {/* Floating Mic Button */}
       <button
         onClick={toggleVoice}
-        title={isListening || isSpeaking ? "End chat (stop mic)" : micHardDisabled ? "Voice disabled this session" : "Start voice"}
+        title={isListening || webrtcSpeaking || ttsSpeaking ? "End chat (stop mic/voice)" : micHardDisabled ? "Voice disabled this session" : "Start voice"}
         className={`fixed right-6 bottom-6 z-50 rounded-full w-14 h-14 shadow-xl transition
-          ${isListening || isSpeaking ? "bg-red-500 hover:bg-red-600" : micHardDisabled ? "bg-gray-400" : "bg-indigo-600 hover:bg-indigo-700"}`}
-        disabled={micHardDisabled && !(isListening || isSpeaking)}
+          ${isListening || webrtcSpeaking || ttsSpeaking ? "bg-red-500 hover:bg-red-600" : micHardDisabled ? "bg-gray-400" : "bg-indigo-600 hover:bg-indigo-700"}`}
+        disabled={micHardDisabled && !(isListening || webrtcSpeaking || ttsSpeaking)}
       >
-        <span className="sr-only">{isListening || isSpeaking ? "End Chat" : "Start Voice"}</span>
+        <span className="sr-only">{isListening || webrtcSpeaking || ttsSpeaking ? "End Chat" : "Start Voice"}</span>
         <svg viewBox="0 0 24 24" className="w-8 h-8 m-auto fill-white">
           <path d="M12 14a3 3 0 0 0 3-3V6a3 3 0 1 0-6 0v5a3 3 0 0 0 3 3z"></path>
           <path d="M19 11a1 1 0 1 0-2 0 5 5 0 0 1-10 0 1 1 0 1 0-2 0 7 7 0 0 0 6 6.92V21H8a1 1 0 1 0 0 2h8a1 1 0 1 0 0-2h-3v-3.08A7 7 0 0 0 19 11z"></path>
