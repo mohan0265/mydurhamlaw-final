@@ -3,6 +3,10 @@
 // - Uses Supabase + user from the host app via supabaseBridge
 // - Saves transcripts to public.voice_conversations with optional academic context
 // - One client, one session (RLS-safe). No duplicate Supabase instances.
+// - ▶️ NEW: records BOTH roles (student=USER, Durmah=ASSISTANT).
+// - ▶️ NEW: close (✕) reliably hides transcript; bubbles for each role.
+
+"use client";
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Copy, Save, Trash2, FileText, X } from "lucide-react";
@@ -24,24 +28,19 @@ type WidgetProps = {
   };
 };
 
-type Line = { id: string; text: string };
+type ChatMsg = { role: "user" | "assistant"; content: string };
 
+// We keep these to normalize the hook's transcript (assistant lines).
+type Line = { id: string; text: string };
 type AnyLine = { id?: string | number; text?: string } | string;
 
-/** Make sure transcript is always [{id, text}] for our widget */
 function normalizeTranscript(arr: AnyLine[] | undefined | null): Line[] {
   if (!arr) return [];
   return arr.map((t, idx) => {
-    if (typeof t === "string") {
-      return { id: String(idx), text: t };
-    }
-    return {
-      id: String(t.id ?? idx),
-      text: String(t.text ?? ""),
-    };
+    if (typeof t === "string") return { id: String(idx), text: t };
+    return { id: String(t.id ?? idx), text: String(t.text ?? "") };
   });
 }
-
 
 const fmtTime = (d = new Date()) => {
   const pad = (n: number) => String(n).padStart(2, "0");
@@ -54,14 +53,14 @@ export default function DurmahWidget({ context }: WidgetProps) {
   // Use *host* app auth so RLS == student's session
   const { user } = useAuth() || { user: null };
 
-  // Your voice hook (works as-is)
+  // Your voice hook
   const {
     status,              // "idle" | "connecting" | "connected"
     isConnected,
     isListening,
     isSpeaking,
-    transcript,          // [{id,text}, ...]
-    partialTranscript,   // live partial line
+    transcript,          // [{id,text}, ...] — typically assistant’s text
+    partialTranscript,   // student's live partial while speaking
     connect,
     startVoiceMode,
     stopVoiceMode,
@@ -71,27 +70,89 @@ export default function DurmahWidget({ context }: WidgetProps) {
   // Track session start for metadata
   const sessionStartRef = useRef<string | null>(null);
 
-  // Local buffer we can save/delete without mutating the hook
-  const [localTranscript, setLocalTranscript] = useState<Line[]>([]);
+  // ▶️ NEW: full conversation with roles (what we render & save)
+  const [messages, setMessages] = useState<ChatMsg[]>([]);
+
+  // Keep a normalized view of the hook's transcript (assistant lines),
+  // so we can detect new assistant text and append to messages.
+  const [assistantLines, setAssistantLines] = useState<Line[]>([]);
   useEffect(() => {
-  setLocalTranscript(normalizeTranscript(transcript as unknown as AnyLine[]));
-}, [transcript]);
+    setAssistantLines(normalizeTranscript(transcript as unknown as AnyLine[]));
+  }, [transcript]);
 
+  // Track prior sizes to detect "new assistant lines"
+  const lastAssistantCount = useRef<number>(0);
 
+  // When hook adds new transcript lines, treat them as Durmah (assistant) replies
+  useEffect(() => {
+    const count = assistantLines.length;
+    const prev = lastAssistantCount.current;
+    if (count > prev) {
+      const newlyAdded = assistantLines.slice(prev);
+      if (newlyAdded.length) {
+        setMessages((prevMsgs) => [
+          ...prevMsgs,
+          ...newlyAdded
+            .map((l) => l.text.trim())
+            .filter(Boolean)
+            .map((text) => ({ role: "assistant" as const, content: text })),
+        ]);
+      }
+      lastAssistantCount.current = count;
+    }
+  }, [assistantLines]);
+
+  // Track the last partial & listening state to finalize USER segments
+  const lastPartialRef = useRef<string>("");
+  const wasListeningRef = useRef<boolean>(false);
+
+  useEffect(() => {
+    // Remember the latest partial
+    if (partialTranscript) {
+      lastPartialRef.current = partialTranscript;
+    }
+
+    // If we were listening and now stopped — finalize USER segment
+    if (wasListeningRef.current && !isListening) {
+      const finalUser = (lastPartialRef.current || "").trim();
+      if (finalUser) {
+        setMessages((prev) => [...prev, { role: "user", content: finalUser }]);
+      }
+      lastPartialRef.current = "";
+    }
+
+    wasListeningRef.current = isListening;
+  }, [isListening, partialTranscript]);
+
+  // UI state
   const [showActions, setShowActions] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveMsg, setSaveMsg] = useState<string | null>(null);
   const [cloudId, setCloudId] = useState<string | null>(null);
+  const [showSheet, setShowSheet] = useState(false);
 
-  const joinedText = useMemo(
-    () => localTranscript.map(l => l.text).join("\n"),
-    [localTranscript]
+  // Show sheet whenever there is activity
+  useEffect(() => {
+    if (isListening || isSpeaking || messages.length > 0) {
+      setShowSheet(true);
+    } else if (!isListening && !isSpeaking && messages.length === 0) {
+      setShowSheet(false);
+    }
+  }, [isListening, isSpeaking, messages.length]);
+
+  // Human-readable transcript for copy/.txt
+  const transcriptText = useMemo(
+    () =>
+      messages
+        .map((m) => `${m.role === "user" ? "You" : "Durmah"}: ${m.content}`)
+        .join("\n"),
+    [messages]
   );
 
   const copyToClipboard = async () => {
     setSaveMsg(null);
     try {
-      await navigator.clipboard.writeText(joinedText || "");
+      await navigator.clipboard.writeText(transcriptText || "");
       setSaveMsg("Copied to clipboard ✅");
     } catch (e: any) {
       setSaveMsg(`Copy failed: ${e?.message || e}`);
@@ -100,7 +161,7 @@ export default function DurmahWidget({ context }: WidgetProps) {
 
   const saveTxtFile = () => {
     setSaveMsg(null);
-    const blob = new Blob([joinedText || ""], { type: "text/plain;charset=utf-8" });
+    const blob = new Blob([transcriptText || ""], { type: "text/plain;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = Object.assign(document.createElement("a"), {
       href: url,
@@ -114,27 +175,27 @@ export default function DurmahWidget({ context }: WidgetProps) {
 
   const deleteLocal = () => {
     setSaveMsg(null);
-    setLocalTranscript([]);
+    setMessages([]);
     setShowActions(false);
   };
 
   const closeTranscript = () => {
-    setLocalTranscript([]);
+    setMessages([]);
     setShowActions(false);
     setSaveMsg(null);
     setCloudId(null);
+    setShowSheet(false); // ▶️ hide sheet now
   };
 
-  // --- Save to Supabase with RLS ---
+  // --- Save to Supabase with RLS (store JSON for both roles) ---
   const saveToCloud = async () => {
     setSaveMsg(null);
-    if (!joinedText.trim()) {
+    if (messages.length === 0) {
       setSaveMsg("Nothing to save.");
       return;
     }
     setSaving(true);
     try {
-      // IMPORTANT: use same client/session as host app
       const sb = supabase;
       if (!sb) {
         setSaveMsg("Supabase not available.");
@@ -156,13 +217,14 @@ export default function DurmahWidget({ context }: WidgetProps) {
       const payload = {
         user_id: authedUser.id,
         title: `Durmah conversation ${fmtTime()}`,
-        content: joinedText,
+        // ▶️ store both roles as JSON
+        content: JSON.stringify(messages),
         started_at,
         ended_at,
         metadata: {
           status,
-          partial_last: partialTranscript || null,
-          context: context || null,      // <- academic context travels with the note
+          last_partial: partialTranscript || null,
+          context: context || null,
         },
         // Optional denormalized columns for easy filtering (also inside metadata)
         context_route: context?.route ?? null,
@@ -226,6 +288,7 @@ export default function DurmahWidget({ context }: WidgetProps) {
       // Keep transcript visible for actions
     } else {
       setShowActions(false);
+      setShowSheet(true);
       sessionStartRef.current = new Date().toISOString();
       await startVoiceMode().catch(() => {});
     }
@@ -256,7 +319,7 @@ export default function DurmahWidget({ context }: WidgetProps) {
       </button>
 
       {/* Bottom Sheet with Transcript + Actions */}
-      {(isListening || isSpeaking || localTranscript.length > 0) && (
+      {showSheet && (
         <div className="fixed left-4 right-4 bottom-24 md:left-8 md:right-8 md:bottom-8 z-40">
           <div className="max-h-[60vh] overflow-hidden rounded-2xl bg-white/90 backdrop-blur shadow-2xl border">
             {/* Header */}
@@ -284,18 +347,35 @@ export default function DurmahWidget({ context }: WidgetProps) {
             </div>
 
             {/* Transcript */}
-            <div className="p-4 h-[36vh] overflow-y-auto text-sm leading-6 text-gray-800">
-              {localTranscript.length === 0 ? (
+            <div className="p-4 h-[36vh] overflow-y-auto text-sm leading-6">
+              {messages.length === 0 ? (
                 <div className="text-gray-500">No transcript yet.</div>
               ) : (
-                localTranscript.map((l) => (
-                  <div key={l.id} className="mb-2">
-                    {l.text}
-                  </div>
-                ))
+                <div className="space-y-2">
+                  {messages.map((m, i) => (
+                    <div key={i} className={m.role === "user" ? "text-right" : "text-left"}>
+                      <span
+                        className={
+                          "inline-block px-3 py-2 rounded " +
+                          (m.role === "user"
+                            ? "bg-indigo-600 text-white"
+                            : "bg-gray-200 text-gray-800")
+                        }
+                      >
+                        {m.content}
+                      </span>
+                    </div>
+                  ))}
+                </div>
               )}
-              {partialTranscript && (
-                <div className="italic text-gray-500">{partialTranscript}</div>
+
+              {/* show live partial while speaking */}
+              {isListening && partialTranscript && (
+                <div className="mt-2 text-right">
+                  <span className="inline-block px-3 py-2 rounded border text-gray-600 italic">
+                    {partialTranscript}
+                  </span>
+                </div>
               )}
             </div>
 
