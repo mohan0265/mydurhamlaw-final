@@ -7,17 +7,22 @@ import {
 } from "../durmah/phase";
 import type { MDLStudentContext, YearKey } from "../durmah/context";
 
-export { supabase } from "@/lib/supabase/client";
-export { useAuth } from "@/lib/supabase/AuthContext";
+type MinimalUser = { id: string; user_metadata?: Record<string, unknown> };
 
-type MinimalUser = { id: string; user_metadata?: Record<string, any> };
-
-function deriveFirstName(meta?: Record<string, any>) {
-  return (meta?.first_name || meta?.firstName || meta?.name || "there") as string;
+function deriveFirstName(meta?: Record<string, unknown>): string {
+  return (
+    (meta?.first_name as string) ||
+    (meta?.firstName as string) ||
+    (meta?.name as string) ||
+    "there"
+  );
 }
-function deriveYearKey(meta?: Record<string, any>): YearKey {
-  const v = (meta?.yearKey || meta?.year || "year1") as string;
-  return v === "foundation" || v === "year1" || v === "year2" || v === "year3" ? v : "year1";
+
+function deriveYearKey(meta?: Record<string, unknown>): YearKey {
+  const v = (meta?.yearKey as string) || (meta?.year as string) || "year1";
+  return v === "foundation" || v === "year1" || v === "year2" || v === "year3"
+    ? v
+    : "year1";
 }
 
 export async function loadMDLStudentContext(
@@ -25,18 +30,23 @@ export async function loadMDLStudentContext(
 ): Promise<MDLStudentContext> {
   let u = user;
   try {
-    const { supabase } = await import("@/lib/supabase/client");
-    if (!u) {
-      const sessionRes = await supabase.auth.getSession();
-      u = (sessionRes.data?.session?.user as any) || undefined;
+    const mod = await import("@/lib/supabase/client");
+    const sb = (mod as any).supabase as
+      | { auth: { getSession: () => Promise<{ data?: { session?: any } }> } }
+      | null
+      | undefined;
+
+    if (!u && sb) {
+      const { data } = await sb.auth.getSession();
+      u = (data?.session?.user as MinimalUser) || undefined;
     }
   } catch {
-    // allow anonymous context below
+    // anonymous fallback ok
   }
 
   const firstName = u ? deriveFirstName(u.user_metadata) : "there";
   const yearKey = u ? deriveYearKey(u.user_metadata) : "year1";
-  const userId = u?.id || "";
+  const userId = u?.id ?? "";
 
   const timezone = "Europe/London" as const;
   const keyDates = KEY_DATES_2025_26;

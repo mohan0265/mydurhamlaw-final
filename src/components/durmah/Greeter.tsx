@@ -8,8 +8,7 @@ import {
 } from "@/lib/durmah/phase";
 
 export default function Greeter() {
-  const ctx = useDurmah();
-  const { firstName, yearKey, daysUntil, keyDates } = ctx;
+  const { firstName, yearKey, nowPhase, daysUntil, keyDates } = useDurmah();
 
   const openMonth = () => {
     const href = defaultMonthDeepLink(
@@ -35,6 +34,12 @@ export default function Greeter() {
     <div className="w-full max-w-2xl rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
       <div className="text-sm text-gray-500 mb-1">Durmah</div>
       <h2 className="text-xl font-semibold mb-2">Hi {firstName} 👋</h2>
+      <div className="text-gray-700">
+        Hi {firstName}, current phase: <b>{nowPhase}</b>
+        {typeof daysUntil?.teachingStart === "number" ? (
+          <> • {daysUntil.teachingStart} day(s) to Teaching Start</>
+        ) : null}
+      </div>
       <p className="text-gray-700 leading-relaxed">
         You're {yearLabel(yearKey)} LLB (AY 2025/26).<br />
         Today is {todayFriendly} - {daysUntil.induction} days to Induction (29

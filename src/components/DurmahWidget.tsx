@@ -6,7 +6,8 @@
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Copy, Save, Trash2, FileText } from "lucide-react";
-import { supabase, useAuth } from "../lib/supabaseBridge";
+import { supabase } from "@/lib/supabase/client";
+import { useAuth } from "@/lib/supabase/AuthContext";
 import { useRealtimeVoice } from "../hooks/useRealtimeVoice";
 
 type WidgetProps = {
@@ -127,8 +128,14 @@ export default function DurmahWidget({ context }: WidgetProps) {
     setSaving(true);
     try {
       // IMPORTANT: use same client/session as host app
-      const { data: { session } = { session: null } } = await supabase.auth.getSession();
-const authedUser = session?.user ?? user;
+      const sb = supabase;
+      if (!sb) {
+        setSaveMsg("Supabase not available.");
+        setSaving(false);
+        return;
+      }
+      const { data: { session } = { session: null } } = await sb.auth.getSession();
+      const authedUser = session?.user ?? user;
 
       if (!authedUser) {
         setSaveMsg("Please sign in to save notes.");
@@ -160,7 +167,7 @@ const authedUser = session?.user ?? user;
         context_tags: context?.tags ?? null,
       };
 
-      const { data, error } = await supabase
+      const { data, error } = await sb
         .from("voice_conversations")
         .insert([payload])
         .select("id")
@@ -184,7 +191,12 @@ const authedUser = session?.user ?? user;
       return;
     }
     try {
-      const { error } = await supabase.from("voice_conversations").delete().eq("id", cloudId);
+      const sb = supabase;
+      if (!sb) {
+        setSaveMsg("Supabase not available.");
+        return;
+      }
+      const { error } = await sb.from("voice_conversations").delete().eq("id", cloudId);
       if (error) throw error;
       setCloudId(null);
       setSaveMsg("Deleted from cloud ✅");

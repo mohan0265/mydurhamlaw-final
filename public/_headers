@@ -8,9 +8,9 @@
   Permissions-Policy: camera=(), microphone=(self), geolocation=(), payment=(), usb=()
 
 /api/*
-  Cache-Control: no-cache, no-store, must-revalidate
+  cache-control: no-cache, no-store, must-revalidate
 
 /sw.js
-  Cache-Control: no-cache, no-store, must-revalidate
+  cache-control: no-cache, no-store, must-revalidate
   Service-Worker-Allowed: /
 
