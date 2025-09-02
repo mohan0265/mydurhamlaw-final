@@ -169,8 +169,9 @@ export function useRealtimeWebRTC() {
               model: modelRef.current || "gpt-4o-realtime-preview-2024-12-17",
               instructions: instructionsRef.current || undefined,
               turn_detection: { type: "server_vad", silence_duration_ms: 300 },
-              input_audio_format: { type: "wav", sample_rate_hz: 16000, channels: 1 },
-              output_audio_format: { type: "mp3" },
+              // IMPORTANT: these must be strings (not objects)
+              input_audio_format: "pcm16",
+              output_audio_format: "mp3",
               voice: voiceRef.current || "alloy",
             },
           })
@@ -179,7 +180,7 @@ export function useRealtimeWebRTC() {
       return;
     }
 
-    // USER ASR
+    // USER ASR from server (if enabled)
     if (msg.type === "transcript.partial" && typeof msg.text === "string") {
       setPartialTranscript(msg.text);
       return;
@@ -271,15 +272,15 @@ export function useRealtimeWebRTC() {
         dcRef.current = pc.createDataChannel("oai-events");
         dcRef.current.onopen = () => {
           DEBUG && log("data channel open");
-          // Push full session config on open
+          // Push full session config on open (correct format strings)
           const sessionMsg = {
             type: "session.update",
             session: {
               model: modelRef.current || "gpt-4o-realtime-preview-2024-12-17",
               instructions: instructionsRef.current || undefined,
               turn_detection: { type: "server_vad", silence_duration_ms: 300 },
-              input_audio_format: { type: "wav", sample_rate_hz: 16000, channels: 1 },
-              output_audio_format: { type: "mp3" },
+              input_audio_format: "pcm16",
+              output_audio_format: "mp3",
               voice: voiceRef.current || "alloy",
             },
           };
