@@ -2,12 +2,13 @@
 // Host-aware voice widget that:
 // - shows BOTH roles (You/Durmah)
 // - saves JSON transcript with both roles
-// - has a reliable ✕ close
+// - has a reliable ✕ close and hard “End Chat” stop
 // - pushes MDL instructions via useRealtimeVoice/useRealtimeWebRTC
+// - guarantees teardown on unmount to prevent ghost re-activation
 
 "use client";
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { Copy, Save, Trash2, FileText, X } from "lucide-react";
 import { supabase } from "@/lib/supabase/client";
 import { useAuth } from "@/lib/supabase/AuthContext";
@@ -66,8 +67,8 @@ export default function DurmahWidget({ context }: WidgetProps) {
       setMessages((prev) => [
         ...prev,
         ...newly
-          .map((l) => ({ role: l.role, content: (l.text || "").trim() }))
-          .filter((m) => !!m.content),
+          .map((l: any) => ({ role: l.role, content: (l.text || "").trim() }))
+          .filter((m: ChatMsg) => !!m.content),
       ]);
     }
     lastCountRef.current = transcript.length;
@@ -115,12 +116,12 @@ export default function DurmahWidget({ context }: WidgetProps) {
     URL.revokeObjectURL(url);
   };
 
-  const deleteLocal = () => {
+  const deleteLocal = useCallback(() => {
     setSaveMsg(null);
     setMessages([]);
     setShowActions(false);
     lastCountRef.current = 0;
-  };
+  }, []);
 
   const closeTranscript = () => {
     deleteLocal();
@@ -214,22 +215,31 @@ export default function DurmahWidget({ context }: WidgetProps) {
     }
   };
 
-  // --- Toggle Voice Session ---
+  // --- Voice: start / hard stop ---
+  const [micHardDisabled, setMicHardDisabled] = useState(false);
+  const hardStop = useCallback(() => {
+    setMicHardDisabled(true); // prevent any auto-resume logic in this session
+    try {
+      stopVoiceMode(); // hook performs: close SR, stop tracks, close peer, stop timers
+    } catch { /* no-op */ }
+  }, [stopVoiceMode]);
+
   const toggleVoice = async () => {
     setSaveMsg(null);
     if (!isConnected) {
-      await connect().catch(() => {});
+      try { await connect(); } catch { /* ignore */ }
     }
     if (status === "connecting") return;
 
     if (isSpeaking || isListening) {
-      stopVoiceMode();
+      hardStop();
       // keep transcript visible for actions
     } else {
+      if (micHardDisabled) return; // never re-open after a hard End Chat
       setShowActions(false);
       setShowSheet(true);
       sessionStartRef.current = new Date().toISOString();
-      await startVoiceMode().catch(() => {});
+      try { await startVoiceMode(); } catch { /* ignore */ }
     }
   };
 
@@ -246,11 +256,12 @@ export default function DurmahWidget({ context }: WidgetProps) {
       {/* Floating Mic Button */}
       <button
         onClick={toggleVoice}
-        title={isListening || isSpeaking ? "End voice chat" : "Start voice chat"}
+        title={isListening || isSpeaking ? "End chat (stop mic)" : micHardDisabled ? "Voice disabled this session" : "Start voice"}
         className={`fixed right-6 bottom-6 z-50 rounded-full w-14 h-14 shadow-xl transition
-          ${isListening || isSpeaking ? "bg-red-500 hover:bg-red-600" : "bg-indigo-600 hover:bg-indigo-700"}`}
+          ${isListening || isSpeaking ? "bg-red-500 hover:bg-red-600" : micHardDisabled ? "bg-gray-400" : "bg-indigo-600 hover:bg-indigo-700"}`}
+        disabled={micHardDisabled && !(isListening || isSpeaking)}
       >
-        <span className="sr-only">Toggle voice</span>
+        <span className="sr-only">{isListening || isSpeaking ? "End Chat" : "Start Voice"}</span>
         <svg viewBox="0 0 24 24" className="w-8 h-8 m-auto fill-white">
           <path d="M12 14a3 3 0 0 0 3-3V6a3 3 0 1 0-6 0v5a3 3 0 0 0 3 3z"></path>
           <path d="M19 11a1 1 0 1 0-2 0 5 5 0 0 1-10 0 1 1 0 1 0-2 0 7 7 0 0 0 6 6.92V21H8a1 1 0 1 0 0 2h8a1 1 0 1 0 0-2h-3v-3.08A7 7 0 0 0 19 11z"></path>
