@@ -30,8 +30,12 @@ export function todayISOInTZ(timeZone: string = "Europe/London"): string {
 }
 
 export function parseISODate(d: string): Date {
-  const [y, m, day] = d.split("-").map(Number);
-  return new Date(y, m - 1, day);
+   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(d);
+  if (!m) throw new Error(`Invalid ISO date: ${d}`);
+  const y = Number(m[1]);
+  const mon = Number(m[2]);
+  const day = Number(m[3]);
+  return new Date(y, mon - 1, day);
 }
 
 export function daysBetween(aISO: string, bISO: string): number {
