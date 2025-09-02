@@ -83,7 +83,7 @@ export async function streamGPT4oResponse(
   
   // Get MDL context for personalized responses
   const mdlContext = getWindowMDLContext()
-  const mdlSystemPrompt = buildSystemPrompt(mdlContext)
+  const mdlSystemPrompt = buildSystemPrompt(mdlContext || {})
   
   // Standard wellbeing prompt for voice interactions
   const wellbeingPrompt = 'You are a supportive AI companion for Durham Law students. Provide encouraging, helpful responses in a conversational tone.'

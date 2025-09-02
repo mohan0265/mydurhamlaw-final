@@ -5,7 +5,7 @@
 // - One client, one session (RLS-safe). No duplicate Supabase instances.
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Copy, Save, Trash2, FileText } from "lucide-react";
+import { Copy, Save, Trash2, FileText, X } from "lucide-react";
 import { supabase } from "@/lib/supabase/client";
 import { useAuth } from "@/lib/supabase/AuthContext";
 import { useRealtimeVoice } from "../hooks/useRealtimeVoice";
@@ -116,6 +116,13 @@ export default function DurmahWidget({ context }: WidgetProps) {
     setSaveMsg(null);
     setLocalTranscript([]);
     setShowActions(false);
+  };
+
+  const closeTranscript = () => {
+    setLocalTranscript([]);
+    setShowActions(false);
+    setSaveMsg(null);
+    setCloudId(null);
   };
 
   // --- Save to Supabase with RLS ---
@@ -253,16 +260,27 @@ export default function DurmahWidget({ context }: WidgetProps) {
         <div className="fixed left-4 right-4 bottom-24 md:left-8 md:right-8 md:bottom-8 z-40">
           <div className="max-h-[60vh] overflow-hidden rounded-2xl bg-white/90 backdrop-blur shadow-2xl border">
             {/* Header */}
-            <div className="flex items-center justify-between px-4 py-3 border-b">
-              <div className="text-sm text-gray-600">
-                {bubbleStatus} {lastError ? `• ${String(lastError)}` : ""}
+            <div className="flex items-center justify-between px-4 py-3 border-b bg-white/90 backdrop-blur">
+              <div className="font-medium">Transcript</div>
+              <div className="flex items-center gap-2">
+                <div className="text-sm text-gray-600">
+                  {bubbleStatus} {lastError ? `• ${String(lastError)}` : ""}
+                </div>
+                <button
+                  onClick={() => setShowActions((v) => !v)}
+                  className="text-indigo-600 text-sm font-medium hover:underline"
+                >
+                  {showActions ? "Hide actions" : "Actions"}
+                </button>
+                <button
+                  onClick={closeTranscript}
+                  className="rounded px-2 py-1 text-sm hover:bg-gray-100"
+                  aria-label="Close transcript"
+                  title="Close transcript"
+                >
+                  <X size={16} />
+                </button>
               </div>
-              <button
-                onClick={() => setShowActions((v) => !v)}
-                className="text-indigo-600 text-sm font-medium hover:underline"
-              >
-                {showActions ? "Hide actions" : "Actions"}
-              </button>
             </div>
 
             {/* Transcript */}

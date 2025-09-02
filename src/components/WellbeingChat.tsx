@@ -13,11 +13,12 @@ import {
   streamGPT4oResponse, 
   interruptVoice, 
 } from '@/lib/openai'
+import { supabase } from '@/lib/supabase/client'
 // Durmah config removed - using fallback speech detection
 import { AssistanceLevel } from './wellbeing/AssistanceLevelPopover'
 import { speakWithElevenLabs, stop as stopTTS, isSpeaking } from '@/lib/tts/elevenLabsClient'
 import toast from 'react-hot-toast'
-import { Volume2, Square } from 'lucide-react'
+import { Volume2, Square, Save } from 'lucide-react'
 
 declare global {
   interface Window {
@@ -92,6 +93,23 @@ export const WellbeingChat: React.FC<WellbeingChatProps> = ({
     // Could redirect to pledge page or show modal
     // For now, just show a toast notification
   }
+
+  // Save transcript to ai_history table
+  const saveTranscript = useCallback(async (title?: string) => {
+    if (!messages.length || !user?.id) return
+    
+    try {
+      const payload = {
+        title: title || "Wellbeing Chat",
+        content: JSON.stringify(messages), // Both user + assistant messages saved
+      }
+      await supabase?.from("ai_history").insert(payload)
+      toast.success("Transcript saved successfully")
+    } catch (e) {
+      console.error("Failed to save transcript", e)
+      toast.error("Failed to save transcript")
+    }
+  }, [messages, user?.id])
   
   // Voice recognition setup
   const recognitionRef = useRef<SpeechRecognition | null>(null)
@@ -389,6 +407,14 @@ export const WellbeingChat: React.FC<WellbeingChatProps> = ({
               ) : (
                   <button className="p-2 rounded-full bg-blue-500 text-white"><Volume2 size={16} /></button>
               )}
+              <button
+                onClick={() => saveTranscript("Wellbeing conversation")}
+                disabled={!messages.length}
+                className="p-2 rounded-full bg-green-500 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                title="Save transcript to cloud"
+              >
+                <Save size={16} />
+              </button>
               {onClose && (
                 <button
                   onClick={onClose}
