@@ -10,13 +10,11 @@ type NavItem = { label: string; href: string; hideOnMobile?: boolean };
 
 const NAV: NavItem[] = [
   { label: "Home", href: "/" },
-  { label: "My Year at a Glance", href: "/yaag" },
-  { label: "Legal News", href: "/news" },
-  { label: "AI Tools", href: "/wellbeing" }, // keep this; remove duplicate "Voice Chat" page link
+  { label: "My Year at a Glance", href: "/yaag" },      // ✅ keep YAAG
+  { label: "Community", href: "/community" },           // Durham city guide
+  { label: "Student Lounge", href: "/lounge" },         // PQ’s new lounge
   { label: "Study Resources", href: "/resources" },
-  { label: "Student Lounge", href: "/lounge" },
-  { label: "Community", href: "/community" }, // NEW: Durham city community page
-  { label: "Community Network", href: "/community-network", hideOnMobile: true },
+  { label: "Legal News", href: "/news" },
   { label: "About", href: "/about", hideOnMobile: true },
 ];
 
@@ -29,9 +27,11 @@ function ActiveLink({ href, children }: { href: string; children: React.ReactNod
   const active =
     router.pathname === href ||
     (href !== "/" && router.pathname.startsWith(href));
+
   return (
     <Link
       href={href}
+      aria-current={active ? "page" : undefined}
       className={cx(
         "px-3 py-2 rounded-md text-sm font-medium transition",
         active ? "bg-white/20 text-white" : "text-white/90 hover:text-white"
