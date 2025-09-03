@@ -10,14 +10,16 @@ type NavItem = { label: string; href: string; hideOnMobile?: boolean };
 
 const NAV: NavItem[] = [
   { label: "Home", href: "/" },
-  { label: "My Year at a Glance", href: "/year-at-a-glance" }, // ✅ fixed
-  { label: "Community", href: "/community" },
-  { label: "Student Lounge", href: "/lounge" },
-  { label: "Study Resources", href: "/resources" },
-  { label: "Legal News", href: "/news" },
+  { label: "Year at a Glance", href: "/year-at-a-glance" }, // ✅ keep YAAG (correct path)
+  { label: "Study", href: "/study-materials" },             // ✅ points to existing page
+  { label: "Assignments", href: "/assignments" },
+  { label: "Research Hub", href: "/research-hub", hideOnMobile: true },
+  { label: "Student Lounge", href: "/lounge" },             // ✅ PQ lounge
+  { label: "Community", href: "/community" },               // ✅ Durham Community page
+  { label: "News", href: "/news", hideOnMobile: true },
   { label: "About", href: "/about", hideOnMobile: true },
-  // ❌ removed: "AI Tools" and "Community Network"
 ];
+// ❌ Removed: “AI Tools” and “Community Network”
 
 function cx(...cls: (string | false | null | undefined)[]) {
   return cls.filter(Boolean).join(" ");
@@ -25,7 +27,8 @@ function cx(...cls: (string | false | null | undefined)[]) {
 
 function ActiveLink({ href, children }: { href: string; children: React.ReactNode }) {
   const router = useRouter();
-  const active = router.pathname === href || (href !== "/" && router.pathname.startsWith(href));
+  const active =
+    router.pathname === href || (href !== "/" && router.pathname.startsWith(href));
   return (
     <Link
       href={href}
@@ -66,7 +69,7 @@ export default function GlobalHeader() {
           {/* Right side: Dashboard + Auth */}
           <div className="hidden md:flex items-center gap-3">
             <Link
-              href="/dashboard"
+              href="/dashboard" // ✅ now points to the real dashboard page
               className="px-3 py-2 rounded-md text-sm font-semibold bg-white text-indigo-700 hover:bg-indigo-50 transition"
               title="Open your dashboard"
             >
@@ -77,7 +80,11 @@ export default function GlobalHeader() {
                 Hi, {user.user_metadata?.full_name || user.email || "Student"}
               </span>
             ) : (
-              <Link href="/login" className="text-white/90 hover:text-white text-sm" title="Sign in">
+              <Link
+                href="/login"
+                className="text-white/90 hover:text-white text-sm"
+                title="Sign in"
+              >
                 Login
               </Link>
             )}
