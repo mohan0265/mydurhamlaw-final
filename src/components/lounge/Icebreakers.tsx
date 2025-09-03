@@ -1,5 +1,5 @@
 import React from "react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/Button";
 
 const prompts = [
   "What tiny win did you have today?",

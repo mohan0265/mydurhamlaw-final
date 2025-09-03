@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useSupabaseClient, useUser } from "@/lib/supabase/AuthContext";
-import { Button } from "@/components/ui/button";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/Button";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ProfilePicturePreview";
 
 interface OnlineUser {
   id: string;
