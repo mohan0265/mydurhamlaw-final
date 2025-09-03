@@ -1,86 +1,33 @@
-// src/components/community/DiningSection.tsx
-import { useState, useEffect } from 'react'
+import React from "react";
 
-interface Eatery {
-  id: string
-  name: string
-  cuisine: string
-  price: string
-  hours: string
-  rating: number
-  link: string
-}
+const DINING_LIST = [
+  { name: "Flat White Café", tags: ["£", "Coffee", "Brunch"], map: "https://goo.gl/maps/nsFQvJjRxnN2", hours: "8am–5pm" },
+  { name: "Zen Durham", tags: ["££", "Asian", "Dinner"], map: "https://goo.gl/maps/xgXPXQrhWfo", hours: "12pm–10pm" },
+];
 
-const fetchEateries = async (): Promise<Eatery[]> => {
-  // Simulate API call - replace with OpenTable or Zomato API
-  return [
-    {
-      id: 'tandoori-palace',
-      name: 'Tandoori Palace',
-      cuisine: 'Indian • Halal',
-      price: '££',
-      hours: '12pm-11pm',
-      rating: 4.7,
-      link: 'https://www.opentable.com/restref/client/?restId=28234&ref=123',
-    },
-    {
-      id: 'flat-white',
-      name: 'Flat White',
-      cuisine: 'Café • Vegan Options',
-      price: '£',
-      hours: '8am-6pm',
-      rating: 4.8,
-      link: 'https://resy.com/cities/uk-durham-flat-white',
-    },
-  ]
-}
-
-export default function DiningSection() {
-  const [data, setData] = useState<Eatery[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-        setIsLoading(true)
-        const eateries = await fetchEateries()
-        setData(eateries)
-        setError(null)
-      } catch (err) {
-        setError('Failed to load dining options')
-      } finally {
-        setIsLoading(false)
-      }
-    }
-
-    loadData()
-  }, [])
-
-  if (isLoading) return <div className="text-center py-4">Loading restaurants...</div>
-  if (error) return <div className="text-red-500">{error}</div>
-
+export function DiningSection() {
   return (
-    <section id="eat" className="grid grid-cols-1 md:grid-cols-2 gap-6">
-      {data.map(venue => (
-        <div key={venue.id} className="bg-white p-6 rounded-xl shadow hover:shadow-md transition border">
-          <h3 className="text-xl font-bold text-gray-900">{venue.name}</h3>
-          <p className="text-gray-600 mt-1">{venue.cuisine}</p>
-          <p className="text-amber-600 font-medium mt-1">{venue.price}</p>
-          <p className="text-sm text-gray-500">{venue.hours}</p>
-          <div className="mt-4 flex items-center justify-between">
-            <span className="text-sm text-yellow-500">⭐ {venue.rating}</span>
+    <section id="dining" aria-labelledby="dining-heading" className="mb-8">
+      <h2 id="dining-heading" className="text-2xl font-bold mb-4 text-indigo-700">Shopping & Dining</h2>
+      <div className="grid md:grid-cols-2 gap-4">
+        {DINING_LIST.map(place => (
+          <div key={place.name} className="p-4 bg-white rounded shadow">
+            <h3 className="text-lg font-semibold">{place.name}</h3>
+            <div className="flex gap-2 my-1">
+              {place.tags.map(tag => (
+                <span key={tag} className="bg-indigo-100 text-indigo-600 text-xs px-2 py-0.5 rounded">{tag}</span>
+              ))}
+            </div>
+            <div className="text-sm text-gray-700">Open: {place.hours}</div>
             <a
-              href={venue.link}
+              href={place.map}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-blue-600 hover:underline text-sm font-medium"
-            >
-              Book Now →
-            </a>
+              className="btn-secondary mt-2 inline-block"
+            >Map</a>
           </div>
-        </div>
-      ))}
+        ))}
+      </div>
     </section>
-  )
+  );
 }
