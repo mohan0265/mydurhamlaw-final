@@ -3,7 +3,7 @@
 import { useState, useContext } from 'react'
 import { Shield, Flag, MessageSquare, X, Check } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
-import { Card, CardContent } from '@/components/ui/Card'
+import { Card, CardContent } from '@/components/ui/card'
 import { AuthContext } from '@/lib/supabase/AuthContext'
 import { submitAIFeedback } from '@/lib/supabase/feedback'
 import toast from 'react-hot-toast'

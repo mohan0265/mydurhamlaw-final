@@ -7,7 +7,7 @@ import { AuthContext } from '@/lib/supabase/AuthContext'
 import { Input } from '../ui/Input'
 import { Button } from '../ui/Button'
 import { Textarea } from '../ui/Textarea'
-import { Card, CardHeader, CardContent, CardTitle } from '../ui/Card'
+import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/card'
 import { Sparkles, CalendarDays, Mic, MicOff, ArrowLeft, MessageSquare, X, Volume2, AlertCircle } from 'lucide-react'
 // import { useVoiceRecognition } from '@/hooks/useVoiceRecognition' // Removed - using new voice system
 import { streamChatCompletion, readStreamingResponse, type ChatMessage } from '@/lib/client/apiClient'
