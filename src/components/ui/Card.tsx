@@ -64,3 +64,29 @@ export function CardTitle({ children, className = '' }: CardTitleProps) {
     </h3>
   )
 }
+
+interface CardDescriptionProps {
+  children: ReactNode
+  className?: string
+}
+
+export function CardDescription({ children, className = '' }: CardDescriptionProps) {
+  return (
+    <p className={`text-gray-600 text-sm ${className}`}>
+      {children}
+    </p>
+  )
+}
+
+interface CardFooterProps {
+  children: ReactNode
+  className?: string
+}
+
+export function CardFooter({ children, className = '' }: CardFooterProps) {
+  return (
+    <div className={`p-6 pt-0 ${className}`}>
+      {children}
+    </div>
+  )
+}
