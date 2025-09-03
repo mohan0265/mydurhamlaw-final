@@ -8,6 +8,11 @@ import DMDrawer from "@/components/lounge/DMDrawer";
 import Icebreakers from "@/components/lounge/Icebreakers";
 import MoodToggle from "@/components/lounge/MoodToggle";
 import ActivityCards from "@/components/lounge/ActivityCards";
+import NewFriendsCarousel from "@/components/lounge/NewFriendsCarousel";
+import StudyTunes from "@/components/lounge/StudyTunes";
+import VirtualCoffeeTable from "@/components/lounge/VirtualCoffeeTable";
+import ShoutoutsWall from "@/components/lounge/ShoutoutsWall";
+
 
 const LoungePage: React.FC = () => {
   // For DM
@@ -45,6 +50,10 @@ const LoungePage: React.FC = () => {
             <MoodToggle />
             <Icebreakers onPick={setIcebreaker} />
             <ActivityCards />
+            <NewFriendsCarousel />
+<StudyTunes />
+<VirtualCoffeeTable />
+<ShoutoutsWall />
           </>
         }
       />
