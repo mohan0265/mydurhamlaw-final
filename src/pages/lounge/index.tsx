@@ -6,6 +6,9 @@ import { AuthContext } from "@/lib/supabase/AuthContext";
 import LoungeFeed from "@/components/lounge/LoungeFeed";
 import LoungeComposer from "@/components/lounge/LoungeComposer";
 import { LoungePost } from "@/components/lounge/LoungePostCard";
+import PremierLounge from "./premier";
+export default PremierLounge;
+
 
 export default function LoungePage() {
   const { user, isLoading: authLoading } = useContext(AuthContext);
