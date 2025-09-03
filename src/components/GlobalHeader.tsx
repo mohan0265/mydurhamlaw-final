@@ -10,12 +10,13 @@ type NavItem = { label: string; href: string; hideOnMobile?: boolean };
 
 const NAV: NavItem[] = [
   { label: "Home", href: "/" },
-  { label: "My Year at a Glance", href: "/yaag" },      // ✅ keep YAAG
-  { label: "Community", href: "/community" },           // Durham city guide
-  { label: "Student Lounge", href: "/lounge" },         // PQ’s new lounge
+  { label: "My Year at a Glance", href: "/year-at-a-glance" }, // ✅ fixed
+  { label: "Community", href: "/community" },
+  { label: "Student Lounge", href: "/lounge" },
   { label: "Study Resources", href: "/resources" },
   { label: "Legal News", href: "/news" },
   { label: "About", href: "/about", hideOnMobile: true },
+  // ❌ removed: "AI Tools" and "Community Network"
 ];
 
 function cx(...cls: (string | false | null | undefined)[]) {
@@ -24,14 +25,10 @@ function cx(...cls: (string | false | null | undefined)[]) {
 
 function ActiveLink({ href, children }: { href: string; children: React.ReactNode }) {
   const router = useRouter();
-  const active =
-    router.pathname === href ||
-    (href !== "/" && router.pathname.startsWith(href));
-
+  const active = router.pathname === href || (href !== "/" && router.pathname.startsWith(href));
   return (
     <Link
       href={href}
-      aria-current={active ? "page" : undefined}
       className={cx(
         "px-3 py-2 rounded-md text-sm font-medium transition",
         active ? "bg-white/20 text-white" : "text-white/90 hover:text-white"
@@ -80,11 +77,7 @@ export default function GlobalHeader() {
                 Hi, {user.user_metadata?.full_name || user.email || "Student"}
               </span>
             ) : (
-              <Link
-                href="/login"
-                className="text-white/90 hover:text-white text-sm"
-                title="Sign in"
-              >
+              <Link href="/login" className="text-white/90 hover:text-white text-sm" title="Sign in">
                 Login
               </Link>
             )}
