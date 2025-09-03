@@ -77,3 +77,6 @@ const ProfilePicturePreview = () => {
 };
 
 export default ProfilePicturePreview;
+
+// Avatar components expected by lounge components
+export { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';

@@ -81,3 +81,14 @@ export default AuthProvider;
 
 // Legacy hook for backward compatibility during transition
 export const useAuth = () => React.useContext(AuthContext);
+
+// Additional legacy hooks for lounge components
+export const useSupabaseClient = () => {
+  const context = React.useContext(AuthContext);
+  return context.supabase;
+};
+
+export const useUser = () => {
+  const context = React.useContext(AuthContext);
+  return context.user;
+};
