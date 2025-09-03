@@ -1,50 +1,30 @@
-// src/components/community/HeroSection.tsx
-import Image from 'next/image'
+import React, { useState, useEffect } from "react";
 
-const images = [
-  '/images/cathedral-night.jpg',
-  '/images/river-wear-punting.jpg',
-  '/images/durham-market.jpg',
-]
+const HERO_IMAGES = [
+  "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=960&q=80",
+  "https://images.unsplash.com/photo-1464983953574-0892a716854b?auto=format&fit=crop&w=960&q=80",
+  "https://images.unsplash.com/photo-1519125323398-675f0ddb6308?auto=format&fit=crop&w=960&q=80",
+];
 
-export default function HeroSection() {
+export function HeroSection() {
+  const [index, setIndex] = useState(0);
+  useEffect(() => {
+    const interval = setInterval(() => setIndex(i => (i + 1) % HERO_IMAGES.length), 5000);
+    return () => clearInterval(interval);
+  }, []);
   return (
-    <div className="relative h-96 sm:h-screen overflow-hidden">
-      <div className="absolute inset-0 flex items-center justify-center text-white text-center px-6 z-10">
-        <div>
-          <h1 className="text-3xl sm:text-5xl md:text-6xl font-bold drop-shadow-lg">
-            Welcome to Durham
-          </h1>
-          <p className="mt-4 text-lg sm:text-xl drop-shadow">
-            Your life beyond law school starts here.
-          </p>
-          <button
-            onClick={() => document.getElementById('explore')?.scrollIntoView({ behavior: 'smooth' })}
-            className="mt-6 bg-blue-600 hover:bg-blue-700 px-6 py-3 rounded-full font-medium transition"
-          >
-            Explore Now
-          </button>
-        </div>
+    <header className="relative h-72 md:h-96 flex items-center justify-center bg-gray-100 rounded-lg overflow-hidden mb-7" aria-label="Welcome Durnam Hero section">
+      <img
+        src={HERO_IMAGES[index]}
+        alt="Durham view"
+        className="absolute inset-0 w-full h-full object-cover transition-opacity duration-1000"
+        loading="lazy"
+        draggable={false}
+      />
+      <div className="z-10 relative backdrop-blur-sm bg-white/70 p-8 rounded">
+        <h1 className="text-3xl md:text-5xl font-bold text-indigo-700 drop-shadow">Welcome to Durham!</h1>
+        <p className="mt-2 text-lg text-indigo-800 font-medium">Your trusted guide to exploring, studying, and thriving</p>
       </div>
-
-      <div className="absolute inset-0 z-0">
-        {images.map((src, i) => (
-          <Image
-            key={i}
-            src={src}
-            alt="Durham scenic"
-            fill
-            className="object-cover transition-opacity duration-1000"
-            style={{ opacity: i === 0 ? 1 : 0 }}
-          />
-        ))}
-      </div>
-
-      <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 flex space-x-2 z-20">
-        {[0, 1, 2].map(i => (
-          <div key={i} className={`h-2 w-2 rounded-full ${i === 0 ? 'bg-white' : 'bg-white/50'}`}></div>
-        ))}
-      </div>
-    </div>
-  )
+    </header>
+  );
 }
