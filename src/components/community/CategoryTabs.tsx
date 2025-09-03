@@ -1,33 +1,32 @@
-// src/components/community/CategoryTabs.tsx
-import React from 'react'
+import React from "react";
 
-interface Tab {
-  label: string
-  value: string
-}
+const CATEGORIES = [
+  { label: "Essentials", href: "#essentials" },
+  { label: "Healthcare", href: "#healthcare" },
+  { label: "Transport", href: "#transport" },
+  { label: "Shopping & Dining", href: "#dining" },
+  { label: "Post & Gov", href: "#post-gov" },
+  { label: "Events", href: "#events" },
+  { label: "Safety", href: "#safety" },
+  { label: "Map", href: "#map" },
+  { label: "Student Social", href: "#social" },
+];
 
-interface CategoryTabsProps {
-  tabs: Tab[]
-  activeTab: string
-  onTabChange: (value: string) => void
-}
-
-export default function CategoryTabs({ tabs, activeTab, onTabChange }: CategoryTabsProps) {
+export function CategoryTabs() {
   return (
-    <div className="flex flex-wrap gap-2 border-b border-gray-200">
-      {tabs.map((tab) => (
-        <button
-          key={tab.value}
-          onClick={() => onTabChange(tab.value)}
-          className={`px-4 py-2 rounded-t-md transition-colors duration-200 ${
-            tab.value === activeTab
-              ? 'bg-indigo-600 text-white font-semibold'
-              : 'bg-gray-100 text-gray-700 hover:bg-indigo-100'
-          }`}
-        >
-          {tab.label}
-        </button>
-      ))}
-    </div>
-  )
+    <nav aria-label="Main Community Sections">
+      <ul className="flex flex-wrap gap-2 justify-center mb-6">
+        {CATEGORIES.map(cat => (
+          <li key={cat.label}>
+            <a
+              href={cat.href}
+              className="px-3 py-1 rounded bg-indigo-50 hover:bg-indigo-100 text-indigo-800 font-medium focus:outline focus:ring"
+            >
+              {cat.label}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </nav>
+  );
 }
