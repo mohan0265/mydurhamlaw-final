@@ -5,7 +5,7 @@ import { useRouter } from 'next/router'
 import { getSupabaseClient } from '@/lib/supabase/client'
 import { AuthContext } from '@/lib/supabase/AuthContext'
 import ModernSidebar from '@/components/layout/ModernSidebar'
-import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/Card'
+import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/card'
 
 import { BookOpen, ArrowLeft } from 'lucide-react'
 

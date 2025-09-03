@@ -3,8 +3,8 @@ import React from 'react'
 
 // Dynamic import to prevent serialization issues
 const ModernSidebar = dynamic(() => import('@/components/layout/ModernSidebar'), { ssr: false })
-const Card = dynamic(() => import('@/components/ui/Card').then(mod => ({ default: mod.Card })), { ssr: false })
-const CardContent = dynamic(() => import('@/components/ui/Card').then(mod => ({ default: mod.CardContent })), { ssr: false })
+const Card = dynamic(() => import('@/components/ui/card').then(mod => ({ default: mod.Card })), { ssr: false })
+const CardContent = dynamic(() => import('@/components/ui/card').then(mod => ({ default: mod.CardContent })), { ssr: false })
 
 // Icons as simple components to avoid serialization issues
 const Shield = () => <div>🛡️</div>

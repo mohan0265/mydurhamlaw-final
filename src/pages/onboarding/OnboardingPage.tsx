@@ -7,7 +7,7 @@ import { AuthContext } from '@/lib/supabase/AuthContext'
 import { getSupabaseClient } from '@/lib/supabase/client'
 import ModernSidebar from '@/components/layout/ModernSidebar'
 import { getOrigin } from '@/lib/utils/getOrigin'
-import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/Card'
+import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/card'
 import { 
   Upload, 
   CheckCircle, 

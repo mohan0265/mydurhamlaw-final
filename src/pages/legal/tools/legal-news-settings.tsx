@@ -10,7 +10,7 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
-} from '@/components/ui/Card';
+} from '@/components/ui/card';
 import { useAuth } from '@/lib/supabase/AuthContext';
 import { getSupabaseClient } from '@/lib/supabase/client';
 

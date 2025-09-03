@@ -9,7 +9,7 @@ import { getSupabaseClient } from '@/lib/supabase/client'
 import ModernSidebar from '@/components/layout/ModernSidebar'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
-import { Card, CardContent } from '@/components/ui/Card'
+import { Card, CardContent } from '@/components/ui/card'
 import toast from 'react-hot-toast'
 // import { useVoiceManager } from '@/lib/context/VoiceManagerContext' // Removed - using DurmahContext
 import type { UserProfile, SharingSettings } from '@/lib/types'

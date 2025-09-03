@@ -16,7 +16,7 @@ import {
 } from 'lucide-react'
 
 import { Button } from '@/components/ui/Button'
-import { Card, CardContent } from '@/components/ui/Card'
+import { Card, CardContent } from '@/components/ui/card'
 import { SmartNewsAgent } from '@/components/news/SmartNewsAgent'
 import { useAuth } from '@/lib/supabase/AuthContext'
 import { CollapsibleText } from '@/components/ui/CollapsibleText'

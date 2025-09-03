@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { Module, ModuleProgress, SyllabusTopic } from '@/types/calendar'
-import { Card } from '@/components/ui/Card'
+import { Card } from '@/components/ui/card'
 import { ProgressBar } from '@/components/ui/ProgressBar'
 import { Badge } from '@/components/ui/Badge'
 import { TopicItem } from './TopicItem'

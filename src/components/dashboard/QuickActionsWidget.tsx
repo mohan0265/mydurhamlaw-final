@@ -1,6 +1,6 @@
 'use client'
 
-import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/Card'
+import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/card'
 import { useRouter } from 'next/router'
 import { 
   MessageSquare, 

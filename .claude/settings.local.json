@@ -35,7 +35,8 @@
       "Bash(mv:*)",
       "Bash(rmdir:*)",
       "Bash(rg:*)",
-      "Bash(rm:*)"
+      "Bash(rm:*)",
+      "Bash(find:*)"
     ],
     "deny": [],
     "ask": []

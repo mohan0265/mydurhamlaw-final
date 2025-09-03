@@ -1,6 +1,6 @@
 // src/components/academic/YearSelectionPrompt.tsx
 import React, { useState } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/Button'
 
 export type YearGroup = 'foundation' | 'year1' | 'year2' | 'year3'

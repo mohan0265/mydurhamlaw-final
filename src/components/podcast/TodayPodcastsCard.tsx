@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react'
 import { Play, Pause, Download, Clock, Calendar, RefreshCw, AlertCircle, Volume2 } from 'lucide-react'
-import { Card, CardContent } from '@/components/ui/Card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/Button'
 import { useAuth } from '@/lib/supabase/AuthContext'
 import { getSupabaseClient } from '@/lib/supabase/client'

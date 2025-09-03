@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Card, CardContent } from '@/components/ui/Card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/Badge'
 import { DurhamAcademicCalendar } from '@/lib/durham/academicCalendar'
 import { DELSATracker } from '@/lib/durham/delsa'
