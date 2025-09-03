@@ -8,7 +8,7 @@ import { AuthContext } from '@/lib/supabase/AuthContext'
 import { getSupabaseClient } from '@/lib/supabase/client'
 import ModernSidebar from '@/components/layout/ModernSidebar'
 import { Button } from '@/components/ui/Button'
-import { Input } from '@/components/ui/Input'
+import { Input } from '@/components/ui/input'
 import { Card, CardContent } from '@/components/ui/card'
 import toast from 'react-hot-toast'
 // import { useVoiceManager } from '@/lib/context/VoiceManagerContext' // Removed - using DurmahContext

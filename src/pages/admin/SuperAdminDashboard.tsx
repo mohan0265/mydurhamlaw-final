@@ -6,7 +6,7 @@ import { supabase } from '@/lib/supabase/client'
 import { withAuthProtection } from '@/lib/withAuthProtection'
 import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/Button'
-import { Input } from '@/components/ui/Input'
+import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/Textarea'
 import { 
   Users, 
