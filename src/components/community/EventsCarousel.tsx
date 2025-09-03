@@ -1,60 +1,36 @@
-// src/components/community/EventsCarousel.tsx
-import { useState, useEffect } from 'react'
-import { Swiper, SwiperSlide } from 'swiper/react'
-import 'swiper/css'
+import React, { useState } from "react";
 
-interface EventItem {
-  id: number
-  title: string
-  date: string
-  loc: string
-  link: string
-}
+const EVENTS_LIST = [
+  { title: "International Student Welcome", date: "2025-09-10", location: "Durham Student Union", link: "https://durham.ac.uk/events/welcome" },
+  { title: "Durham Regatta", date: "2025-06-14", location: "River Wear", link: "https://durhamregatta.org.uk" },
+];
 
-const fetchEvents = async (): Promise<EventItem[]> => {
-  // Replace with Eventbrite or Durham Uni API
-  return [
-    { id: 1, title: 'Durham Lumiere Festival', date: 'Nov 15-18', loc: 'City Centre', link: '#' },
-    { id: 2, title: 'Law Society Ball', date: 'Dec 5', loc: 'Durham Castle', link: '#' },
-    { id: 3, title: 'Christmas Market', date: 'Dec 1-22', loc: 'Market Place', link: '#' },
-  ]
-}
-
-export default function EventsCarousel() {
-  const [data, setData] = useState<EventItem[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-
-  useEffect(() => {
-    const loadEvents = async () => {
-      try {
-        const eventData = await fetchEvents()
-        setData(eventData)
-      } catch (error) {
-        console.error('Failed to load events:', error)
-      } finally {
-        setIsLoading(false)
-      }
-    }
-    loadEvents()
-  }, [])
-
-  if (isLoading) return <p>Loading events...</p>
+export function EventsCarousel() {
+  const [idx, setIdx] = useState(0);
+  const next = () => setIdx(i => (i + 1) % EVENTS_LIST.length);
+  const prev = () => setIdx(i => (i === 0 ? EVENTS_LIST.length - 1 : i - 1));
+  const event = EVENTS_LIST[idx];
 
   return (
-    <section className="py-6">
-      <h2 className="text-2xl font-bold mb-4">🎉 Upcoming Events</h2>
-      <Swiper spaceBetween={16} slidesPerView={1.2} loop>
-        {data.map(event => (
-          <SwiperSlide key={event.id} className="bg-white p-6 rounded-xl shadow">
-            <h3 className="font-bold text-lg">{event.title}</h3>
-            <p className="text-blue-600 font-medium">{event.date}</p>
-            <p className="text-gray-600 text-sm mt-1">{event.loc}</p>
-            <a href={event.link} className="text-sm text-blue-500 hover:underline block mt-3">
-              Learn More →
-            </a>
-          </SwiperSlide>
-        ))}
-      </Swiper>
+    <section id="events" aria-labelledby="events-heading" className="mb-8">
+      <h2 id="events-heading" className="text-2xl font-bold mb-4 text-indigo-700">Events & Festivals</h2>
+      <div className="bg-white rounded p-6 shadow text-indigo-800 min-h-[120px] flex flex-col items-center">
+        <div>
+          <b>{event.title}</b>{" "}
+          <span className="text-gray-700">{event.date}</span> <br />
+          <span>{event.location}</span>
+        </div>
+        <a
+          href={event.link}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="btn-primary mt-2"
+        >Event info</a>
+        <div className="mt-2 flex gap-2">
+          <button className="btn-secondary" aria-label="Previous event" onClick={prev}>←</button>
+          <button className="btn-secondary" aria-label="Next event" onClick={next}>→</button>
+        </div>
+      </div>
     </section>
-  )
+  );
 }
