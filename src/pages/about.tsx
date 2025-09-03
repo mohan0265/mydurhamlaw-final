@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import ModernSidebar from '@/components/layout/ModernSidebar'
-import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/Card'
+import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/card'
 import { Heart, Shield, Mic, BookOpen, Users, Sparkles, Brain, Scale } from 'lucide-react'
 import BackToHomeButton from '@/components/ui/BackToHomeButton'
 import { BrandTitle } from '@/components/ui/BrandTitle'
