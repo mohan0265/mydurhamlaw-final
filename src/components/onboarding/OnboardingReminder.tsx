@@ -4,7 +4,7 @@ import React, { useContext, useState, useEffect } from 'react'
 import { AuthContext } from '@/lib/supabase/AuthContext'
 import { getSupabaseClient } from '@/lib/supabase/client'
 import { Calendar, Target, FileText, Clock, BookOpen, X, ArrowRight } from 'lucide-react'
-import { Card, CardContent } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/Card'
 import Link from 'next/link'
 
 interface ReminderCard {

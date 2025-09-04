@@ -9,7 +9,7 @@ import { useCalendarData, useCalendarFilter } from '@/lib/hooks/useCalendarData'
 import { MonthView } from '@/components/calendar/MonthView'
 import { CalendarViewMode } from '@/types/calendar'
 import { Button } from '@/components/ui/Button'
-import { Card } from '@/components/ui/card'
+import { Card } from '@/components/ui/Card'
 import { ChevronDown, Calendar, Clock, Settings, Filter, Plus } from 'lucide-react'
 import toast from 'react-hot-toast'
 

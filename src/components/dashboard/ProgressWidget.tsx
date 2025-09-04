@@ -1,6 +1,6 @@
 'use client'
 
-import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/card'
+import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/Card'
 import { ProgressBar } from '@/components/ui/ProgressBar'
 import { Badge } from '@/components/ui/Badge'
 import { TrendingUp, Calendar, Award, Brain, Target } from 'lucide-react'

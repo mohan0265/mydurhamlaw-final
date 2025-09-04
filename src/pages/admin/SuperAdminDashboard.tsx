@@ -4,9 +4,9 @@ import React, { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/router'
 import { supabase } from '@/lib/supabase/client'
 import { withAuthProtection } from '@/lib/withAuthProtection'
-import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/card'
+import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
-import { Input } from '@/components/ui/input'
+import { Input } from '@/components/ui/Input'
 import { Textarea } from '@/components/ui/Textarea'
 import { 
   Users, 

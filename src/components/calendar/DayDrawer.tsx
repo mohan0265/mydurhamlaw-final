@@ -4,7 +4,7 @@ import { format } from 'date-fns'
 import { X, Plus, Calendar, Clock, MapPin, Book, AlertCircle, User, CheckCircle2 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
-import { Card } from '@/components/ui/card'
+import { Card } from '@/components/ui/Card'
 
 interface DayDrawerProps {
   isOpen: boolean

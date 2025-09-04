@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react'
 import { BookOpen, ClipboardList, FileText, Timer } from 'lucide-react'
-import { Card } from '@/components/ui/card'
+import { Card } from '@/components/ui/Card'
 import type {
   ModulePlan,
   Assessment,
