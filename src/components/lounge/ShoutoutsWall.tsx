@@ -1,3 +1,4 @@
+"use client";
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/Button";
 import { useSupabaseClient, useUser } from "@/lib/supabase/AuthContext";
@@ -17,77 +18,47 @@ const ShoutoutsWall: React.FC = () => {
   const [msg, setMsg] = useState("");
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [channel, setChannel] = useState<any>(null);
+
+  // Fallback UI when supabase context is missing
+  if (!supabase) {
+    return (
+      <div className="bg-gradient-to-br from-red-100 via-orange-100 to-red-50 rounded-2xl shadow px-4 py-3 mb-4">
+        <h3 className="font-bold text-lg mb-1">👏 Shoutouts Wall</h3>
+        <div className="text-center text-red-600 text-sm py-4">
+          Unable to load shoutouts (no backend connection). Please refresh the page.
+        </div>
+      </div>
+    );
+  }
 
   // Fetch initial shoutouts
   useEffect(() => {
-    if (!supabase) {
-      console.error('Supabase context is missing for ShoutoutsWall');
-      setLoading(false);
-      return;
-    }
-
     fetchShoutouts();
     
-    // Set up real-time subscription with defensive checks
-    try {
-      const newChannel = supabase.channel('lounge_shoutouts_changes');
-      
-      if (!newChannel) {
-        console.error('Failed to create supabase channel for shoutouts');
-        return;
-      }
-      
-      setChannel(newChannel);
-      
-      const subscription = newChannel
-        .on(
-          'postgres_changes',
-          {
-            event: '*',
-            schema: 'public',
-            table: 'lounge_shoutouts'
-          },
-          (payload) => {
-            console.log('Shoutouts change received:', payload);
-            if (supabase) {
-              fetchShoutouts(); // Refresh the list
-            }
-          }
-        )
-        .subscribe();
-        
-      if (!subscription) {
-        console.error('Failed to subscribe to shoutouts channel');
-      }
-      
-      return () => {
-        if (subscription && typeof subscription.unsubscribe === 'function') {
-          try {
-            subscription.unsubscribe();
-          } catch (error) {
-            console.error('Error unsubscribing from shoutouts channel:', error);
-          }
+    // Set up real-time subscription
+    const channel = supabase.channel('realtime:lounge-shoutouts');
+    
+    channel
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'lounge_shoutouts'
+        },
+        (payload) => {
+          console.log('Shoutouts change received:', payload);
+          fetchShoutouts(); // Refresh the list
         }
-        if (newChannel && typeof newChannel.unsubscribe === 'function') {
-          try {
-            newChannel.unsubscribe();
-          } catch (error) {
-            console.error('Error unsubscribing shoutouts channel:', error);
-          }
-        }
-      };
-    } catch (error) {
-      console.error('Error setting up shoutouts channel subscription:', error);
-    }
+      )
+      .subscribe();
+      
+    return () => {
+      channel.unsubscribe();
+    };
   }, [supabase]);
 
   const fetchShoutouts = async () => {
-    if (!supabase) {
-      console.error('Supabase client not available for fetching shoutouts');
-      return;
-    }
-    
     try {
       const { data, error } = await supabase
         .from('lounge_shoutouts')
@@ -110,11 +81,6 @@ const ShoutoutsWall: React.FC = () => {
 
   const send = async () => {
     if (!msg.trim() || submitting) return;
-    
-    if (!supabase) {
-      console.error('Supabase client not available for sending shoutout');
-      return;
-    }
     
     setSubmitting(true);
     try {
@@ -151,18 +117,6 @@ const ShoutoutsWall: React.FC = () => {
     if (diffInMinutes < 1440) return `${Math.floor(diffInMinutes / 60)}h ago`;
     return `${Math.floor(diffInMinutes / 1440)}d ago`;
   };
-
-  // Fallback UI when supabase context is missing
-  if (!supabase) {
-    return (
-      <div className="bg-gradient-to-br from-red-100 via-orange-100 to-red-50 rounded-2xl shadow px-4 py-3 mb-4">
-        <h3 className="font-bold text-lg mb-1">👏 Shoutouts Wall</h3>
-        <div className="text-center text-red-600 text-sm py-4">
-          Unable to load shoutouts. Please refresh the page.
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="bg-gradient-to-br from-blue-100 via-green-100 to-green-50 rounded-2xl shadow px-4 py-3 mb-4">

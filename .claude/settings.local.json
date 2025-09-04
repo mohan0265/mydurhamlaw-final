@@ -36,7 +36,18 @@
       "Bash(rmdir:*)",
       "Bash(rg:*)",
       "Bash(rm:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Read(/C:\\Users\\M Chandramohan\\OneDrive\\1MyDurhamLaw-4.0\\mydurhamlaw-final/**)",
+      "Read(/C:\\Users\\M Chandramohan\\OneDrive\\1MyDurhamLaw-4.0\\mydurhamlaw-final\\src\\pages\\lounge/**)",
+      "Read(/C:\\Users\\M Chandramohan\\OneDrive\\1MyDurhamLaw-4.0\\mydurhamlaw-final\\src\\pages\\lounge/**)",
+      "Read(/C:\\Users\\M Chandramohan\\OneDrive\\1MyDurhamLaw-4.0\\mydurhamlaw-final\\src\\components\\lounge/**)",
+      "Read(/C:\\Users\\M Chandramohan\\OneDrive\\1MyDurhamLaw-4.0\\mydurhamlaw-final\\src\\components\\lounge/**)",
+      "Read(/C:\\Users\\M Chandramohan\\OneDrive\\1MyDurhamLaw-4.0\\mydurhamlaw-final\\src\\components\\lounge/**)",
+      "Read(/C:\\Users\\M Chandramohan\\OneDrive\\1MyDurhamLaw-4.0\\mydurhamlaw-final\\src\\lib\\supabase/**)",
+      "Read(/C:\\Users\\M Chandramohan\\OneDrive\\1MyDurhamLaw-4.0\\mydurhamlaw-final\\src\\lib\\supabase/**)",
+      "Read(/C:\\Users\\M Chandramohan\\OneDrive\\1MyDurhamLaw-4.0\\mydurhamlaw-final\\src\\pages/**)",
+      "Read(/C:\\Users\\M Chandramohan\\OneDrive\\1MyDurhamLaw-4.0\\mydurhamlaw-final\\src\\components\\lounge/**)",
+      "Read(/C:\\Users\\M Chandramohan\\OneDrive\\1MyDurhamLaw-4.0\\mydurhamlaw-final\\src\\components\\lounge/**)"
     ],
     "deny": [],
     "ask": []

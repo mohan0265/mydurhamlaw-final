@@ -1,3 +1,4 @@
+"use client";
 import React from 'react';
 import LoungeLayout from '@/components/lounge/LoungeLayout';
 import OnlineUsers from '@/components/lounge/OnlineUsers';
@@ -13,6 +14,12 @@ import MoodToggle from '@/components/lounge/MoodToggle';
 import MiniTweetBar from '@/components/lounge/MiniTweetBar';
 
 export default function PremierLounge() {
+  // Simple stub user for testing - in production this would come from auth context
+  const stubUser = { 
+    id: "test-user", 
+    name: "Test User" 
+  };
+
   return (
     <LoungeLayout
       left={<OnlineUsers />}

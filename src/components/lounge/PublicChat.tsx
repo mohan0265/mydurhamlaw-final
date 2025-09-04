@@ -1,5 +1,6 @@
+"use client";
 import React, { useState, useEffect, useRef } from 'react';
-import { useSupabaseClient, useUser } from '@supabase/auth-helpers-react';
+import { useSupabaseClient, useUser } from '@/lib/supabase/AuthContext';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -32,56 +33,47 @@ export const PublicChat: React.FC = () => {
   const [replyTo, setReplyTo] = useState<ChatMessage | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const [channel, setChannel] = useState<any>(null);
+
+  if (!supabase) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="text-red-600">Cannot load chat (no backend connection).</div>
+      </div>
+    );
+  }
 
   // Fetch messages and subscribe to new ones
   useEffect(() => {
     fetchMessages();
     
-    // Initialize channel with defensive checks
-    if (!supabase) {
-      console.error('Supabase client not available for channel subscription');
-      return;
-    }
-
-    const newChannel = supabase.channel('lounge_messages');
+    // Initialize channel for real-time updates
+    const channel = supabase.channel('realtime:lounge-messages');
     
-    if (!newChannel) {
-      console.error('Failed to create supabase channel');
-      return;
-    }
-
-    setChannel(newChannel);
-
-    // Subscribe to new messages with defensive checks
-    try {
-      const subscription = newChannel
-        .on(
-          'postgres_changes',
-          { event: 'INSERT', schema: 'public', table: 'lounge_messages' },
-          (payload) => {
-            const newMessage = payload.new as ChatMessage;
-            setMessages(prev => [...prev, newMessage]);
-          }
-        )
-        .subscribe();
-
-      if (!subscription) {
-        console.error('Failed to subscribe to channel');
-        return;
-      }
-
-      return () => {
-        if (subscription && typeof subscription.unsubscribe === 'function') {
-          subscription.unsubscribe();
+    // Subscribe to new messages
+    channel
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'lounge_messages' },
+        (payload) => {
+          const newMessage = payload.new as ChatMessage;
+          setMessages(prev => [...prev, newMessage]);
         }
-        if (newChannel && typeof newChannel.unsubscribe === 'function') {
-          newChannel.unsubscribe();
+      )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'lounge_messages' },
+        (payload) => {
+          const updatedMessage = payload.new as ChatMessage;
+          setMessages(prev => prev.map(m => 
+            m.id === updatedMessage.id ? updatedMessage : m
+          ));
         }
-      };
-    } catch (error) {
-      console.error('Error setting up channel subscription:', error);
-    }
+      )
+      .subscribe();
+
+    return () => {
+      channel.unsubscribe();
+    };
   }, [supabase]);
 
   // Auto-scroll to bottom
@@ -118,7 +110,8 @@ export const PublicChat: React.FC = () => {
         user_id: user.id,
         content: newMessage.trim(),
         message_type: 'text' as const,
-        reply_to_id: replyTo?.id || null
+        reply_to_id: replyTo?.id || null,
+        reactions: {}
       };
 
       await supabase
@@ -198,7 +191,7 @@ export const PublicChat: React.FC = () => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
-                className={`flex items-start space-x-3 mb-4 ${
+                className={`flex items-start space-x-3 mb-4 group ${
                   isOwn ? 'flex-row-reverse space-x-reverse' : ''
                 }`}
               >
