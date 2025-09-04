@@ -20,35 +20,90 @@ const OnlineUsers: React.FC<OnlineUsersProps> = ({ onDM, onPing }) => {
   const supabase = useSupabaseClient();
   const currentUser = useUser();
   const [users, setUsers] = useState<OnlineUser[]>([]);
+  const [channel, setChannel] = useState<any>(null);
 
   useEffect(() => {
-    // Supabase channel presence
-    const channel = supabase.channel("lounge-presence", {
-      config: { presence: { key: currentUser?.id } },
-    });
-
-    if (currentUser) {
-      channel.track({
-        id: currentUser.id,
-        full_name: currentUser.user_metadata?.full_name || "You",
-        year: currentUser.user_metadata?.year || "",
-        avatar_url: currentUser.user_metadata?.avatar_url || null,
-        status: "online",
-      });
+    // Defensive checks for supabase client
+    if (!supabase) {
+      console.error('Supabase client not available for presence channel');
+      return;
     }
 
-    // Listen to presence sync
-    const handleSync = (status: any) => {
-      const allUsers = Object.values(status.presences || {}).map((arr: any) => arr[0]);
-      setUsers(allUsers.filter((u: OnlineUser) => u.id !== currentUser?.id));
-    };
+    // Initialize channel with defensive checks
+    try {
+      const newChannel = supabase.channel("lounge-presence", {
+        config: { presence: { key: currentUser?.id } },
+      });
 
-    channel.on("presence", { event: "sync" }, handleSync);
-    channel.subscribe();
+      if (!newChannel) {
+        console.error('Failed to create supabase presence channel');
+        return;
+      }
 
-    return () => {
-      channel.unsubscribe();
-    };
+      setChannel(newChannel);
+
+      // Track current user presence if available
+      if (currentUser) {
+        try {
+          if (typeof newChannel.track === 'function') {
+            newChannel.track({
+              id: currentUser.id,
+              full_name: currentUser.user_metadata?.full_name || "You",
+              year: currentUser.user_metadata?.year || "",
+              avatar_url: currentUser.user_metadata?.avatar_url || null,
+              status: "online",
+            });
+          } else {
+            console.error('Channel track method not available');
+          }
+        } catch (error) {
+          console.error('Error tracking user presence:', error);
+        }
+      }
+
+      // Listen to presence sync with defensive checks
+      const handleSync = (status: any) => {
+        try {
+          const allUsers = Object.values(status?.presences || {}).map((arr: any) => arr?.[0]).filter(Boolean);
+          setUsers(allUsers.filter((u: OnlineUser) => u?.id && u.id !== currentUser?.id));
+        } catch (error) {
+          console.error('Error handling presence sync:', error);
+        }
+      };
+
+      // Subscribe to presence events with defensive checks
+      if (typeof newChannel.on === 'function') {
+        newChannel.on("presence", { event: "sync" }, handleSync);
+      } else {
+        console.error('Channel on method not available');
+        return;
+      }
+
+      // Subscribe to channel
+      if (typeof newChannel.subscribe === 'function') {
+        const subscription = newChannel.subscribe();
+        
+        if (!subscription) {
+          console.error('Failed to subscribe to presence channel');
+        }
+      } else {
+        console.error('Channel subscribe method not available');
+        return;
+      }
+
+      return () => {
+        // Cleanup with defensive checks
+        if (newChannel && typeof newChannel.unsubscribe === 'function') {
+          try {
+            newChannel.unsubscribe();
+          } catch (error) {
+            console.error('Error unsubscribing from presence channel:', error);
+          }
+        }
+      };
+    } catch (error) {
+      console.error('Error setting up presence channel:', error);
+    }
   }, [supabase, currentUser]);
 
   return (
@@ -59,10 +114,12 @@ const OnlineUsers: React.FC<OnlineUsersProps> = ({ onDM, onPing }) => {
           <li className="text-gray-400 text-sm">No other students online yet.</li>
         )}
         {users.map((user) => (
-          <li key={user.id} className="flex items-center gap-3 bg-white/70 rounded-xl p-2 shadow-sm">
+          <li className="flex items-center gap-3 bg-white/70 rounded-xl p-2 shadow-sm" key={user.id}>
             <Avatar className="w-8 h-8">
-              <AvatarImage src={user.avatar_url || undefined} alt={user.full_name} />
-              <AvatarFallback>{user.full_name.charAt(0) || "U"}</AvatarFallback>
+              <AvatarImage alt={user.full_name} src={user.avatar_url || undefined} />
+              <AvatarFallback>
+                {user.full_name.charAt(0) || "U"}
+              </AvatarFallback>
             </Avatar>
             <span className="font-semibold">{user.full_name}</span>
             {user.year && (
