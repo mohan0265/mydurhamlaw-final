@@ -1,4 +1,5 @@
 // src/components/lounge/LoungeFeed.tsx
+"use client";
 import React, { useEffect, useRef, useState } from "react";
 import EmptyState from "./EmptyState";
 import LoungePostCard, { LoungePost } from "./LoungePostCard";

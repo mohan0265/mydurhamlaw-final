@@ -1,3 +1,4 @@
+"use client";
 import React, { useEffect, useState, useRef } from "react";
 import { useSupabaseClient, useUser } from "@/lib/supabase/AuthContext";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ProfilePicturePreview";

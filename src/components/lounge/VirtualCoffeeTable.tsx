@@ -1,11 +1,7 @@
+"use client";
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/Button";
-import { createClient } from '@supabase/supabase-js';
-
-// Initialize Supabase client
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-const supabase = createClient(supabaseUrl, supabaseKey);
+import { useSupabaseClient, useUser } from "@/lib/supabase/AuthContext";
 
 interface CoffeeRSVP {
   id?: string;
@@ -16,10 +12,21 @@ interface CoffeeRSVP {
 }
 
 const VirtualCoffeeTable: React.FC = () => {
+  const supabase = useSupabaseClient();
+  const user = useUser();
   const [rsvps, setRsvps] = useState<CoffeeRSVP[]>([]);
   const [hasRSVPed, setHasRSVPed] = useState(false);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+
+  if (!supabase) {
+    return (
+      <div className="bg-gradient-to-br from-yellow-100 via-orange-100 to-amber-100 rounded-2xl shadow px-4 py-3 mb-4">
+        <h3 className="font-bold text-lg mb-1">☕ Virtual Coffee Table</h3>
+        <div className="text-sm text-red-600">Unable to load coffee table (no backend connection).</div>
+      </div>
+    );
+  }
 
   // Get today's date in YYYY-MM-DD format
   const getTodayDate = () => {
@@ -32,8 +39,9 @@ const VirtualCoffeeTable: React.FC = () => {
     fetchTodayRSVPs();
     
     // Set up real-time subscription
-    const subscription = supabase
-      .channel('lounge_coffee_rsvp_changes')
+    const channel = supabase.channel('lounge-coffee-rsvp');
+    
+    channel
       .on(
         'postgres_changes',
         {
@@ -49,9 +57,9 @@ const VirtualCoffeeTable: React.FC = () => {
       .subscribe();
 
     return () => {
-      subscription.unsubscribe();
+      channel.unsubscribe();
     };
-  }, []);
+  }, [supabase]);
 
   const fetchTodayRSVPs = async () => {
     try {
@@ -69,10 +77,9 @@ const VirtualCoffeeTable: React.FC = () => {
 
       setRsvps(data || []);
       
-      // Check if current user has already RSVPed (for now, using simple check)
-      // In a real app, you'd check against the authenticated user's ID
+      // Check if current user has already RSVPed
       const userHasRSVPed = (data || []).some(rsvp => 
-        rsvp.display_name === 'Anonymous' // This would be replaced with actual user check
+        rsvp.user_id === user?.id
       );
       setHasRSVPed(userHasRSVPed);
     } catch (error) {
@@ -92,9 +99,9 @@ const VirtualCoffeeTable: React.FC = () => {
         .from('lounge_coffee_rsvp')
         .insert([
           {
-            display_name: 'Anonymous', // Would be replaced with actual user name
+            display_name: user?.user_metadata?.full_name || 'Anonymous',
             event_date: todayDate,
-            user_id: null // Would be replaced with actual user ID when auth is implemented
+            user_id: user?.id || null
           }
         ]);
 

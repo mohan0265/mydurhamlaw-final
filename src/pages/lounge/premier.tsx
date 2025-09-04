@@ -1,30 +1,52 @@
 "use client";
-import React from 'react';
-import LoungeLayout from '@/components/lounge/LoungeLayout';
-import OnlineUsers from '@/components/lounge/OnlineUsers';
-import PublicChat from '@/components/lounge/PublicChat';
-import ShoutoutsWall from '@/components/lounge/ShoutoutsWall';
-import ActivityCards from '@/components/lounge/ActivityCards';
-import DMDrawer from '@/components/lounge/DMDrawer';
-import VirtualCoffeeTable from '@/components/lounge/VirtualCoffeeTable';
-import Icebreakers from '@/components/lounge/Icebreakers';
-import StudyTunes from '@/components/lounge/StudyTunes';
-import NewFriendsCarousel from '@/components/lounge/NewFriendsCarousel';
-import MoodToggle from '@/components/lounge/MoodToggle';
-import MiniTweetBar from '@/components/lounge/MiniTweetBar';
+import * as React from "react";
+import dynamic from "next/dynamic";
+import LoungeLayout from "@/components/lounge/LoungeLayout";
+
+// Light dynamic imports if any widgets are heavy; otherwise regular imports are fine.
+const OnlineUsers = dynamic(() => import("@/components/lounge/OnlineUsers"), { ssr: false });
+const ShoutoutsWall = dynamic(() => import("@/components/lounge/ShoutoutsWall"), { ssr: false });
+const PublicChat = dynamic(() => import("@/components/lounge/PublicChat"), { ssr: false });
+const ActivityCards = dynamic(() => import("@/components/lounge/ActivityCards"), { ssr: false });
+const DMDrawer = dynamic(() => import("@/components/lounge/DMDrawer"), { ssr: false });
+const VirtualCoffeeTable = dynamic(() => import("@/components/lounge/VirtualCoffeeTable"), { ssr: false });
+const Icebreakers = dynamic(() => import("@/components/lounge/Icebreakers"), { ssr: false });
+const LoungeFeed = dynamic(() => import("@/components/lounge/LoungeFeed"), { ssr: false });
+const StudyTunes = dynamic(() => import("@/components/lounge/StudyTunes"), { ssr: false });
+const NewFriendsCarousel = dynamic(() => import("@/components/lounge/NewFriendsCarousel"), { ssr: false });
+const MoodToggle = dynamic(() => import("@/components/lounge/MoodToggle"), { ssr: false });
+const MiniTweetBar = dynamic(() => import("@/components/lounge/MiniTweetBar"), { ssr: false });
+
+// TODO: replace with real auth user; safe stub for now
+const demoUser = { id: "demo-user", name: "Guest" };
 
 export default function PremierLounge() {
-  // Simple stub user for testing - in production this would come from auth context
-  const stubUser = { 
-    id: "test-user", 
-    name: "Test User" 
-  };
-
   return (
     <LoungeLayout
-      left={<OnlineUsers />}
-      center={<PublicChat />}
-      right={<ShoutoutsWall />}
+      left={
+        <>
+          <OnlineUsers />
+          <NewFriendsCarousel />
+          <ActivityCards />
+          <MoodToggle />
+        </>
+      }
+      center={
+        <>
+          <PublicChat />
+          <LoungeFeed />
+          <MiniTweetBar />
+          <Icebreakers />
+        </>
+      }
+      right={
+        <>
+          <ShoutoutsWall />
+          <StudyTunes />
+          <VirtualCoffeeTable />
+          <DMDrawer />
+        </>
+      }
     />
   );
 }
