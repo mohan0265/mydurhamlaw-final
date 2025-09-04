@@ -12,11 +12,11 @@ const prompts = [
   "Most unusual study habit?",
 ];
 
-interface IcebreakersProps {
-  onPick: (prompt: string) => void;
+export interface IcebreakersProps {
+  onPick?: (prompt: string) => void;
 }
 
-const Icebreakers: React.FC<IcebreakersProps> = ({ onPick }) => (
+const Icebreakers: React.FC<IcebreakersProps> = ({ onPick = () => {} }) => (
   <div className="bg-gradient-to-br from-yellow-100/50 to-pink-100/50 rounded-2xl shadow-md px-4 py-3 mb-2 flex flex-col gap-2">
     <h3 className="font-bold text-lg">🧊 Icebreakers</h3>
     <div className="flex flex-wrap gap-2 mt-1">

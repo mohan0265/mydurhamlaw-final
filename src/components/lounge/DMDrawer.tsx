@@ -4,7 +4,7 @@ import { useSupabaseClient, useUser } from "@/lib/supabase/AuthContext";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ProfilePicturePreview";
 import { Button } from "@/components/ui/Button";
 
-interface DMUser {
+export interface DMUser {
   id: string;
   full_name: string;
   avatar_url: string | null;
@@ -18,13 +18,27 @@ interface DMMessage {
   created_at: string;
 }
 
-interface DMDrawerProps {
-  open: boolean;
-  onClose: () => void;
-  peer: DMUser | null;
+export interface DMDrawerProps {
+  open?: boolean;
+  onClose?: () => void;
+  peer?: DMUser | null;
 }
 
-const DMDrawer: React.FC<DMDrawerProps> = ({ open, onClose, peer }) => {
+// Helper: build a valid DMUser that satisfies the existing DMUser type
+function demoPeer(): DMUser {
+  return {
+    id: "demo-peer",
+    full_name: "Guest User",
+    avatar_url: null,
+  };
+}
+
+const DMDrawer: React.FC<DMDrawerProps> = ({ 
+  open = false, 
+  onClose = () => {}, 
+  peer 
+}) => {
+  const resolvedPeer = peer ?? demoPeer();
   const supabase = useSupabaseClient();
   const user = useUser();
   const [messages, setMessages] = useState<DMMessage[]>([]);
@@ -33,7 +47,7 @@ const DMDrawer: React.FC<DMDrawerProps> = ({ open, onClose, peer }) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!user || !peer) return;
+    if (!user || !resolvedPeer) return;
 
     setIsLoading(true);
     // Fetch both-ways messages
@@ -41,7 +55,7 @@ const DMDrawer: React.FC<DMDrawerProps> = ({ open, onClose, peer }) => {
       .from("lounge_dm_messages")
       .select("*")
       .or(`from_id.eq.${user.id},to_id.eq.${user.id}`)
-      .or(`from_id.eq.${peer.id},to_id.eq.${peer.id}`)
+      .or(`from_id.eq.${resolvedPeer.id},to_id.eq.${resolvedPeer.id}`)
       .order("created_at", { ascending: true })
       .limit(100)
       .then(({ data, error }) => {
@@ -51,12 +65,12 @@ const DMDrawer: React.FC<DMDrawerProps> = ({ open, onClose, peer }) => {
 
     // Subscribe for new messages
     const channel = supabase
-      .channel("dm-messages-" + user.id + "-" + peer.id)
+      .channel("dm-messages-" + user.id + "-" + resolvedPeer.id)
       .on("postgres_changes", {
         event: "INSERT",
         schema: "public",
         table: "lounge_dm_messages",
-        filter: `from_id=eq.${peer.id},to_id=eq.${user.id}`,
+        filter: `from_id=eq.${resolvedPeer.id},to_id=eq.${user.id}`,
       }, (payload) => {
         setMessages((prev) => [...prev, payload.new as DMMessage]);
       })
@@ -65,18 +79,18 @@ const DMDrawer: React.FC<DMDrawerProps> = ({ open, onClose, peer }) => {
     return () => {
       channel.unsubscribe();
     };
-  }, [supabase, user, peer]);
+  }, [supabase, user, resolvedPeer]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
   const sendMessage = async () => {
-    if (!input.trim() || !peer || !user) return;
+    if (!input.trim() || !resolvedPeer || !user) return;
 
     const msg: Omit<DMMessage, "id" | "created_at"> = {
       from_id: user.id,
-      to_id: peer.id,
+      to_id: resolvedPeer.id,
       body: input.trim(),
     };
 
@@ -94,7 +108,7 @@ const DMDrawer: React.FC<DMDrawerProps> = ({ open, onClose, peer }) => {
     }
   };
 
-  if (!open || !peer) return null;
+  if (!open) return null;
 
   return (
     <div
@@ -106,12 +120,12 @@ const DMDrawer: React.FC<DMDrawerProps> = ({ open, onClose, peer }) => {
       <div className="w-full max-w-sm h-full bg-white rounded-l-2xl shadow-2xl flex flex-col pt-4">
         <div className="flex items-center gap-3 px-4 pb-4 border-b">
           <Avatar className="w-10 h-10">
-            <AvatarImage alt={peer.full_name} src={peer.avatar_url || undefined} />
+            <AvatarImage alt={resolvedPeer.full_name} src={resolvedPeer.avatar_url || undefined} />
             <AvatarFallback>
-              {peer.full_name[0] || "U"}
+              {resolvedPeer.full_name[0] || "U"}
             </AvatarFallback>
           </Avatar>
-          <span className="font-semibold text-lg">{peer.full_name}</span>
+          <span className="font-semibold text-lg">{resolvedPeer.full_name}</span>
           <Button aria-label="Close DM" className="ml-auto" onClick={onClose} size="sm" variant="ghost">
             ×
           </Button>

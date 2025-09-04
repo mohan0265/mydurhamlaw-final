@@ -36,7 +36,8 @@ export default function PremierLounge() {
           <PublicChat />
           <LoungeFeed />
           <MiniTweetBar />
-          <Icebreakers />
+          <Icebreakers onPick={(choice) => console.log("Picked:", choice)} />
+
         </>
       }
       right={
@@ -45,6 +46,7 @@ export default function PremierLounge() {
           <StudyTunes />
           <VirtualCoffeeTable />
           <DMDrawer />
+
         </>
       }
     />
