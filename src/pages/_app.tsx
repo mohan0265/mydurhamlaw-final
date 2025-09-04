@@ -15,6 +15,7 @@ import {
 import { validateEnv } from "@/lib/env";
 // NOTE: AuthContext lives in src/supabase/AuthContext.tsx
 import { AuthProvider, useAuth } from "@/lib/supabase/AuthContext";
+import { SupabaseProvider } from "@/contexts/SupabaseProvider";
 
 // ✅ NEW: Durmah context provider + tiny setup
 import {
@@ -109,8 +110,9 @@ export default function App({ Component, pageProps }: AppProps) {
       </Head>
 
       <AuthProvider>
-        <QueryClientProvider client={queryClient}>
-          <HydrationBoundary state={(pageProps as any)?.dehydratedState}>
+        <SupabaseProvider>
+          <QueryClientProvider client={queryClient}>
+            <HydrationBoundary state={(pageProps as any)?.dehydratedState}>
             {/* ✅ Durmah context is provided app-wide.
                 DurmahContextSetup ensures a context exists even before auth resolves,
                 and AppDurmahBootstrap refreshes it when the user/profile changes. */}
@@ -150,6 +152,7 @@ export default function App({ Component, pageProps }: AppProps) {
             </DurmahProvider>
           </HydrationBoundary>
         </QueryClientProvider>
+        </SupabaseProvider>
       </AuthProvider>
     </>
   );

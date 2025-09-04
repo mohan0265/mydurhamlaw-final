@@ -10,7 +10,6 @@ export default function LoungeLayout({
   center?: React.ReactNode;
   right?: React.ReactNode;
 }) {
-
   return (
     <div
       className="

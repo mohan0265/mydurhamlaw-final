@@ -68,7 +68,10 @@
       "Read(/C:\\Users\\M Chandramohan\\OneDrive\\1MyDurhamLaw-4.0\\mydurhamlaw-final\\src/**)",
       "Read(/C:\\Users\\M Chandramohan\\OneDrive\\1MyDurhamLaw-4.0\\mydurhamlaw-final\\src/**)",
       "Read(/C:\\Users\\M Chandramohan\\OneDrive\\1MyDurhamLaw-4.0\\mydurhamlaw-final\\src\\components\\lounge/**)",
-      "Read(/C:\\Users\\M Chandramohan\\OneDrive\\1MyDurhamLaw-4.0\\mydurhamlaw-final\\src\\components\\lounge/**)"
+      "Read(/C:\\Users\\M Chandramohan\\OneDrive\\1MyDurhamLaw-4.0\\mydurhamlaw-final\\src\\components\\lounge/**)",
+      "Read(/C:\\Users\\M Chandramohan\\OneDrive\\1MyDurhamLaw-4.0\\mydurhamlaw-final\\src\\pages/**)",
+      "Read(/C:\\Users\\M Chandramohan\\OneDrive\\1MyDurhamLaw-4.0\\mydurhamlaw-final/**)",
+      "Read(/C:\\Users\\M Chandramohan\\OneDrive\\1MyDurhamLaw-4.0\\mydurhamlaw-final\\src\\hooks/**)"
     ],
     "deny": [],
     "ask": []
