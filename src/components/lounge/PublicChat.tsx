@@ -32,27 +32,56 @@ export const PublicChat: React.FC = () => {
   const [replyTo, setReplyTo] = useState<ChatMessage | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const [channel, setChannel] = useState<any>(null);
 
   // Fetch messages and subscribe to new ones
   useEffect(() => {
     fetchMessages();
     
-    // Subscribe to new messages
-    const subscription = supabase
-      .channel('lounge_messages')
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'lounge_messages' },
-        (payload) => {
-          const newMessage = payload.new as ChatMessage;
-          setMessages(prev => [...prev, newMessage]);
-        }
-      )
-      .subscribe();
+    // Initialize channel with defensive checks
+    if (!supabase) {
+      console.error('Supabase client not available for channel subscription');
+      return;
+    }
 
-    return () => {
-      subscription.unsubscribe();
-    };
+    const newChannel = supabase.channel('lounge_messages');
+    
+    if (!newChannel) {
+      console.error('Failed to create supabase channel');
+      return;
+    }
+
+    setChannel(newChannel);
+
+    // Subscribe to new messages with defensive checks
+    try {
+      const subscription = newChannel
+        .on(
+          'postgres_changes',
+          { event: 'INSERT', schema: 'public', table: 'lounge_messages' },
+          (payload) => {
+            const newMessage = payload.new as ChatMessage;
+            setMessages(prev => [...prev, newMessage]);
+          }
+        )
+        .subscribe();
+
+      if (!subscription) {
+        console.error('Failed to subscribe to channel');
+        return;
+      }
+
+      return () => {
+        if (subscription && typeof subscription.unsubscribe === 'function') {
+          subscription.unsubscribe();
+        }
+        if (newChannel && typeof newChannel.unsubscribe === 'function') {
+          newChannel.unsubscribe();
+        }
+      };
+    } catch (error) {
+      console.error('Error setting up channel subscription:', error);
+    }
   }, [supabase]);
 
   // Auto-scroll to bottom
@@ -184,7 +213,7 @@ export const PublicChat: React.FC = () => {
                 </div>
 
                 {/* Message Content */}
-                <div className={`flex-1 max-w-[70%] ${isOwn ? 'text-right' : ''}`}>
+                <div className={`flex-1 max-w-xs lg:max-w-md xl:max-w-lg`}>
                   {showAvatar && (
                     <div className={`flex items-center space-x-2 mb-1 ${
                       isOwn ? 'justify-end' : ''
@@ -286,7 +315,7 @@ export const PublicChat: React.FC = () => {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400">
               <Reply className="w-4 h-4" />
-              <span>Replying to {replyTo.profile?.full_name || 'Unknown User'}</span>
+              Replying to {replyTo.profile?.full_name || 'Unknown User'}
             </div>
             <Button
               variant="ghost"
@@ -305,10 +334,10 @@ export const PublicChat: React.FC = () => {
       {/* Input Area */}
       <div className="p-4 border-t bg-white dark:bg-gray-900">
         <div className="flex items-center space-x-2">
-          <Button variant="ghost" size="sm">
+          <Button size="sm" variant="ghost">
             <Paperclip className="w-4 h-4" />
           </Button>
-          <Button variant="ghost" size="sm">
+          <Button size="sm" variant="ghost">
             <Smile className="w-4 h-4" />
           </Button>
           
@@ -322,7 +351,7 @@ export const PublicChat: React.FC = () => {
             disabled={!user}
           />
           
-          <Button 
+          <Button
             onClick={sendMessage}
             disabled={!newMessage.trim() || !user}
             size="sm"
