@@ -7,47 +7,70 @@ MyDurhamLaw is a comprehensive AI-powered study companion designed specifically 
 ## ✨ Features
 
 ### 📚 Academic Management
+
 - **Smart Calendar**: Integrated academic calendar with Durham University term dates
 - **Assignment Tracker**: Deadline management and progress tracking
 - **Study Planner**: AI-powered study schedule optimization
 - **Resource Library**: Curated legal materials and resources
 
 ### 🤖 AI-Powered Assistance
+
 - **Intelligent Chat**: Context-aware AI assistant for legal queries
 - **Writing Support**: AI-powered essay and legal writing assistance
 - **Research Helper**: Advanced legal research capabilities
 - **Voice Interactions**: Natural language voice commands and responses
 
 ### 👥 Community Features
+
 - **Study Groups**: Connect with fellow law students
 - **Discussion Forums**: Academic discussions and peer support
 - **Mentorship**: Connect with senior students and alumni
 - **Events**: University events and networking opportunities
 
 ### 🎯 Specialized Tools
+
 - **Case Law Search**: Advanced legal database integration
 - **Citation Generator**: Automatic legal citation formatting
 - **Exam Preparation**: Practice questions and mock exams
 - **Ethics Guide**: Legal ethics and professional conduct resources
 
 ### 💚 Wellbeing Support
+
 - **Mental Health Resources**: Student support and counseling links
 - **Study-Life Balance**: Wellness tracking and recommendations
 - **Stress Management**: Mindfulness and relaxation tools
 
+## 💕 Always With You (AWY) Widget
+
+The AWY widget embodies our core philosophy of **"presence, not chat"** - providing emotional support through gentle awareness rather than intrusive messaging.
+
+![AWY Widget Screenshot](./docs/awy-widget-screenshot.png)
+
+### Key Features
+- **Presence Awareness**: See when loved ones are online with you
+- **Gentle Waves**: Send subtle notifications to show you're thinking of them
+- **Video Call Integration**: Quick access to meaningful conversations when needed
+- **Emotional Anchoring**: A floating reminder that you're never alone in your studies
+
+The AWY widget is designed specifically for the emotional demands of legal education, acknowledging that learning is most effective when students feel supported and connected.
+
+➡️ **[Complete AWY Documentation](./docs/awy.md)** - Setup, configuration, and usage guide
+
 ## 🚀 Quick Start
 
 ### For Students
+
 1. Visit the deployed application
 2. Sign up with your Durham University email
 3. Complete the onboarding process
 4. Start exploring features and tools
 
 ### For Developers
+
 ```bash
 # Clone the repository
 git clone <repository-url>
-cd mydurmahlaw
+cd mydurhamlaw
 
 # Install dependencies
 npm install
@@ -56,6 +79,7 @@ npm install
 cp .env.example .env.local
 
 # Configure your environment (see DEPLOYMENT_GUIDE.md)
+
 # Then start development server
 npm run dev
 ```
@@ -72,18 +96,20 @@ npm run dev
 ## 📁 Project Structure
 
 ```
-mydurmahlaw/
+mydurhamlaw/
 ├── src/
 │   ├── components/        # React components
 │   │   ├── auth/         # Authentication components
 │   │   ├── dashboard/    # Dashboard widgets
 │   │   ├── chat/         # AI chat interface
 │   │   ├── calendar/     # Calendar components
+│   │   ├── awy/          # AWY widget components
 │   │   └── layout/       # Layout and navigation
 │   ├── pages/            # Next.js pages (Pages Router)
 │   │   ├── api/          # API routes
 │   │   ├── auth/         # Authentication pages
 │   │   ├── dashboard/    # Dashboard pages
+│   │   ├── settings/     # Settings pages (including AWY)
 │   │   └── tools/        # Legal tools
 │   ├── lib/              # Utility functions
 │   │   ├── supabase/     # Supabase configuration
@@ -106,14 +132,17 @@ See [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md) for detailed setup instructions
 
 ### Environment Variables
 
-Required:
+**Required:**
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 - `SUPABASE_SERVICE_ROLE_KEY`
 
-Optional (for AI features):
+**Optional (for AI features):**
 - `OPENAI_API_KEY`
 - `ELEVENLABS_API_KEY`
+
+**AWY Widget:**
+- `NEXT_PUBLIC_FEATURE_AWY=1` - Enable AWY widget (set to 0 to disable)
 
 ## 🧪 Testing
 
@@ -134,6 +163,7 @@ npm run lint
 ## 📖 Documentation
 
 - [Deployment Guide](./DEPLOYMENT_GUIDE.md) - Complete deployment instructions
+- [AWY Widget Documentation](./docs/awy.md) - Always With You widget setup and usage
 - [API Documentation](./docs/api.md) - API endpoints and usage
 - [Component Library](./docs/components.md) - UI component documentation
 - [Contributing Guide](./docs/contributing.md) - Development guidelines
@@ -153,6 +183,7 @@ MIT License - see [LICENSE](./LICENSE) file for details.
 ## 🏫 About Durham University
 
 This application is designed specifically for Durham University law students and integrates with:
+
 - Durham University academic calendar
 - Durham Law School resources
 - University support services
@@ -167,6 +198,7 @@ This application is designed specifically for Durham University law students and
 ## 📞 Support
 
 For technical support or questions:
+
 - Check the documentation
 - Review troubleshooting guide
 - Contact the development team
