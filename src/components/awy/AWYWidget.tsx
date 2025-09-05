@@ -30,6 +30,7 @@ function getLastPosition(): Position {
     return saved ? JSON.parse(saved) : computeBottomRight();
   } catch { return computeBottomRight(); }
 }
+
 function savePosition(position: Position) {
   if (typeof window === "undefined") return;
   try { localStorage.setItem("awyWidget:position", JSON.stringify(position)); } catch {}
@@ -161,7 +162,7 @@ export default function AWYWidget() {
             <div className="flex items-center justify-between mb-2">
               <div className="font-semibold text-sm">Always With You</div>
               <div className="flex items-center gap-1">
-                <a href="/settings/awy" className="text-xs underline hover:no-underline" aria-label="Open AWY settings">
+                <a aria-label="Open AWY settings" className="text-xs underline hover:no-underline" href="/settings/awy">
                   Settings
                 </a>
                 <button onClick={() => setIsExpanded(false)} className="ml-2 text-gray-400 hover:text-gray-600" aria-label="Collapse widget">
@@ -169,14 +170,14 @@ export default function AWYWidget() {
                 </button>
               </div>
             </div>
-
             {connections.length === 0 ? (
               <div>
                 <div className="text-xs text-gray-600 mb-2">
-                  Add someone you love. When they log in, you’ll see they’re online.
+                  Add someone you love. When they log in, you'll see they're online.
                 </div>
-                <label className="block text-[11px] text-gray-500 mb-1">Loved one’s email</label>
+                <label className="block text-[11px] text-gray-500 mb-1">Loved one's email</label>
                 <input
+                  type="email"
                   className="w-full border rounded-md px-3 py-2 text-sm mb-2"
                   value={addEmail}
                   onChange={(e) => setAddEmail(e.target.value)}
@@ -184,6 +185,7 @@ export default function AWYWidget() {
                 />
                 <label className="block text-[11px] text-gray-500 mb-1">Relationship</label>
                 <input
+                  type="text"
                   className="w-full border rounded-md px-3 py-2 text-sm mb-3"
                   value={addRel}
                   onChange={(e) => setAddRel(e.target.value)}
@@ -204,7 +206,6 @@ export default function AWYWidget() {
                     const p = presenceByUser.get(c.loved_one_id);
                     const status = p?.status ?? "offline";
                     const callUrl = callLinks?.[c.loved_one_id] ?? "";
-
                     return (
                       <motion.div
                         key={c.id}
@@ -224,12 +225,14 @@ export default function AWYWidget() {
                           </motion.div>
                           <div className="min-w-0">
                             <div className="text-sm truncate font-medium">{c.relationship}</div>
-                            <motion.div className="text-[11px] text-gray-500" animate={{ color: status === "online" ? "#10b981" : "#6b7280" }}>
+                            <motion.div 
+                              className="text-[11px] text-gray-500" 
+                              animate={{ color: status === "online" ? "#10b981" : "#6b7280" }}
+                            >
                               {status === "online" ? "Online" : status === "busy" ? "Busy" : "Offline"}
                             </motion.div>
                           </div>
                         </div>
-
                         <div className="flex items-center gap-1">
                           <button
                             onClick={() => handleSendWave(c.loved_one_id)}
