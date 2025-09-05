@@ -32,27 +32,27 @@ export default function AWYWidget() {
     connections,
     presenceByUser,
     sendWave,
-    callLinks,         // <<< DB-backed call links
+    callLinks,         // DB-backed call URLs
     wavesUnread,
-    wavesUnreadRef,    // <<< optional ref (from hook)
+    wavesUnreadRef,
   } = useAwyPresence();
 
   const [position, setPosition] = useState<Position>(getLastPosition);
   const [isExpanded, setIsExpanded] = useState(false);
 
-  // Feature flag / auth
+  // feature flag + auth
   if (process.env.NEXT_PUBLIC_FEATURE_AWY !== "1") return null;
   if (!userId) return null;
 
-  // --- Toast on presence transitions (offline->online) ---
+  // toast on presence transitions (offline -> online)
   const prevPresenceRef = useRef<Map<string, string>>(new Map());
   useEffect(() => {
     const prev = prevPresenceRef.current;
     const next = new Map<string, string>();
+
     for (const c of connections) {
       const status = presenceByUser.get(c.loved_one_id)?.status ?? "offline";
       next.set(c.loved_one_id, status);
-
       const prevStatus = prev.get(c.loved_one_id) ?? "offline";
       if (status === "online" && prevStatus !== "online") {
         toast.success(`${c.relationship} is now online`, { icon: "💚", duration: 2500 });
@@ -61,7 +61,7 @@ export default function AWYWidget() {
     prevPresenceRef.current = next;
   }, [connections, presenceByUser]);
 
-  // --- Toast on wave received (diff) ---
+  // toast on wave received (diff against ref)
   useEffect(() => {
     if (wavesUnread > (wavesUnreadRef?.current ?? 0)) {
       toast("👋 Wave received!", { icon: "👋", duration: 2000 });
@@ -84,7 +84,7 @@ export default function AWYWidget() {
   };
 
   const handleCall = (lovedOneId: string) => {
-    const callUrl = callLinks?.[lovedOneId]; // <<< DB value
+    const callUrl = callLinks?.[lovedOneId];
     if (!callUrl) {
       toast.error("Add a call link in AWY Settings");
       return;
@@ -97,7 +97,7 @@ export default function AWYWidget() {
       drag
       dragMomentum={false}
       onDragEnd={handleDragEnd}
-      style={{ position: "fixed", left: position.x, top: position.y, zIndex: 30 }}
+      style={{ position: "fixed", left: position.x, top: position.y, zIndex: 30 }} // below Durmah (z-40)
       className="cursor-move"
       whileDrag={{ scale: 1.05 }}
       initial={{ opacity: 0, scale: 0.8 }}
@@ -128,10 +128,18 @@ export default function AWYWidget() {
             <div className="flex items-center justify-between mb-2">
               <div className="font-semibold text-sm">Always With You</div>
               <div className="flex items-center gap-1">
-                <a href="/settings/awy" className="text-xs underline hover:no-underline" aria-label="Open AWY settings">
+                <a
+                  href="/settings/awy"
+                  className="text-xs underline hover:no-underline"
+                  aria-label="Open AWY settings"
+                >
                   Settings
                 </a>
-                <button onClick={() => setIsExpanded(false)} className="ml-2 text-gray-400 hover:text-gray-600" aria-label="Collapse widget">
+                <button
+                  onClick={() => setIsExpanded(false)}
+                  className="ml-2 text-gray-400 hover:text-gray-600"
+                  aria-label="Collapse widget"
+                >
                   ×
                 </button>
               </div>
@@ -145,10 +153,16 @@ export default function AWYWidget() {
                   {connections.map((c) => {
                     const p = presenceByUser.get(c.loved_one_id);
                     const status = p?.status ?? "offline";
-                    const callUrl = callLinks?.[c.loved_one_id] ?? ""; // <<< DB value
+                    const callUrl = callLinks?.[c.loved_one_id] ?? "";
 
                     return (
-                      <motion.div key={c.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="flex items-center justify-between">
+                      <motion.div
+                        key={c.id}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        className="flex items-center justify-between"
+                      >
                         <div className="flex items-center gap-2 min-w-0">
                           <motion.div
                             className={`w-9 h-9 rounded-full ring-2 ${ringClass(status)} bg-gray-100 flex items-center justify-center`}
@@ -160,7 +174,10 @@ export default function AWYWidget() {
                           </motion.div>
                           <div className="min-w-0">
                             <div className="text-sm truncate font-medium">{c.relationship}</div>
-                            <motion.div className="text-[11px] text-gray-500" animate={{ color: status === "online" ? "#10b981" : "#6b7280" }}>
+                            <motion.div
+                              className="text-[11px] text-gray-500"
+                              animate={{ color: status === "online" ? "#10b981" : "#6b7280" }}
+                            >
                               {status === "online" ? "Online" : status === "busy" ? "Busy" : "Offline"}
                             </motion.div>
                           </div>
