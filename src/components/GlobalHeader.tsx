@@ -5,6 +5,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { useAuth } from "@/lib/supabase/AuthContext";
+import LogoutButton from "@/components/auth/LogoutButton"; // ✅ import logout
 
 type NavItem = { label: string; href: string; hideOnMobile?: boolean };
 
@@ -19,7 +20,6 @@ const NAV: NavItem[] = [
   { label: "News", href: "/news", hideOnMobile: true },
   { label: "About", href: "/about", hideOnMobile: true },
 ];
-// ❌ Removed: “AI Tools” and “Community Network”
 
 function cx(...cls: (string | false | null | undefined)[]) {
   return cls.filter(Boolean).join(" ");
@@ -69,16 +69,20 @@ export default function GlobalHeader() {
           {/* Right side: Dashboard + Auth */}
           <div className="hidden md:flex items-center gap-3">
             <Link
-              href="/dashboard" // ✅ now points to the real dashboard page
+              href="/dashboard" // ✅ real dashboard page
               className="px-3 py-2 rounded-md text-sm font-semibold bg-white text-indigo-700 hover:bg-indigo-50 transition"
               title="Open your dashboard"
             >
               My Dashboard
             </Link>
             {user ? (
-              <span className="text-white/90 text-sm">
-                Hi, {user.user_metadata?.full_name || user.email || "Student"}
-              </span>
+              <>
+                <span className="text-white/90 text-sm">
+                  Hi, {user.user_metadata?.full_name || user.email || "Student"}
+                </span>
+                {/* ✅ Logout button */}
+                <LogoutButton className="px-3 py-1 rounded-md border hover:bg-gray-50 bg-white text-indigo-700 text-sm" />
+              </>
             ) : (
               <Link
                 href="/login"
@@ -124,7 +128,7 @@ export default function GlobalHeader() {
               </Link>
             ))}
 
-            <div className="mt-2 pt-2 border-t border-white/10 flex items-center justify-between">
+            <div className="mt-2 pt-2 border-t border-white/10 flex flex-col gap-2">
               <Link
                 href="/dashboard"
                 className="px-3 py-2 rounded-md text-sm font-semibold bg-white text-indigo-700 hover:bg-indigo-50 transition"
@@ -133,13 +137,17 @@ export default function GlobalHeader() {
                 My Dashboard
               </Link>
               {user ? (
-                <span className="text-white/90 text-sm">
-                  {user.user_metadata?.full_name || user.email || "Student"}
-                </span>
+                <>
+                  <span className="text-white/90 text-sm">
+                    {user.user_metadata?.full_name || user.email || "Student"}
+                  </span>
+                  {/* ✅ Mobile logout */}
+                  <LogoutButton className="w-full text-center px-3 py-2 rounded-md bg-white text-indigo-700 text-sm" />
+                </>
               ) : (
                 <Link
                   href="/login"
-                  className="text-white/90 hover:text-white text-sm"
+                  className="block text-white/90 hover:text-white text-sm"
                   onClick={() => setOpen(false)}
                 >
                   Login
