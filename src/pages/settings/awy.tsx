@@ -1,30 +1,38 @@
 // src/pages/settings/awy.tsx
-// Simple MVP page to store per-connection call URLs in localStorage.
-
 import React, { useEffect, useState } from "react";
 import { useAwyPresence } from "@/hooks/useAwyPresence";
+import { createClient } from "@supabase/supabase-js";
+import toast from "react-hot-toast";
 
-function get(key: string) {
-  if (typeof window === "undefined") return "";
-  return localStorage.getItem(key) || "";
-}
-function set(key: string, v: string) {
-  if (typeof window === "undefined") return;
-  localStorage.setItem(key, v);
-}
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
 
 export default function AwySettingsPage() {
   const { userId, connections, reloadConnections } = useAwyPresence();
   const [vals, setVals] = useState<Record<string, string>>({});
+  const [loading, setLoading] = useState(false);
 
+  // Load existing call links from DB
   useEffect(() => {
-    if (!connections.length) return;
-    const next: Record<string, string> = {};
-    for (const c of connections) {
-      next[c.loved_one_id] = get(`awy:callurl:${c.loved_one_id}`);
-    }
-    setVals(next);
-  }, [connections]);
+    if (!userId || !connections.length) return;
+    const load = async () => {
+      const { data, error } = await supabase
+        .from("awy_call_links")
+        .select("*")
+        .eq("owner_id", userId);
+
+      if (!error && data) {
+        const next: Record<string, string> = {};
+        for (const row of data) {
+          next[row.loved_one_id] = row.url;
+        }
+        setVals(next);
+      }
+    };
+    load();
+  }, [userId, connections]);
 
   if (!userId) {
     return <div className="p-6">Please sign in to manage AWY settings.</div>;
@@ -58,9 +66,26 @@ export default function AwySettingsPage() {
               />
               <div className="mt-3 flex gap-2">
                 <button
-                  onClick={() => {
-                    set(`awy:callurl:${c.loved_one_id}`, vals[c.loved_one_id] ?? "");
-                    alert("Saved.");
+                  disabled={loading}
+                  onClick={async () => {
+                    setLoading(true);
+                    const { error } = await supabase
+                      .from("awy_call_links")
+                      .upsert(
+                        {
+                          owner_id: userId,
+                          loved_one_id: c.loved_one_id,
+                          url: vals[c.loved_one_id] ?? "",
+                          updated_at: new Date().toISOString(),
+                        },
+                        { onConflict: "owner_id,loved_one_id" }
+                      );
+                    setLoading(false);
+                    if (error) {
+                      toast.error("Failed to save");
+                    } else {
+                      toast.success("✅ Saved");
+                    }
                   }}
                   className="text-sm px-3 py-1.5 rounded-md border hover:bg-gray-50"
                 >
@@ -69,7 +94,7 @@ export default function AwySettingsPage() {
                 <button
                   onClick={async () => {
                     await reloadConnections();
-                    alert("Connections reloaded.");
+                    toast("Connections reloaded");
                   }}
                   className="text-sm px-3 py-1.5 rounded-md border hover:bg-gray-50"
                 >
