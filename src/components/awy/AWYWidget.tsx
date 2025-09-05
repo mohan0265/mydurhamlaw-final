@@ -48,17 +48,13 @@ export default function AWYWidget() {
     linkLovedOneByEmail,
   } = useAwyPresence();
 
-  const [position, setPosition] = useState<Position>(getLastPosition);
+  const [position, setPosition] = useState<Position>({x: 16, y: 16});
   const [isExpanded, setIsExpanded] = useState(false);
 
-  // move to bottom-right on first client render if no stored position
+  // Set position from getLastPosition() inside useEffect for SSR safety
   useEffect(() => {
-    const saved = typeof window !== "undefined" && localStorage.getItem("awyWidget:position");
-    if (!saved) {
-      const pos = computeBottomRight();
-      setPosition(pos);
-      savePosition(pos);
-    }
+    const pos = getLastPosition();
+    setPosition(pos);
   }, []);
 
   // feature flag + auth
@@ -113,6 +109,7 @@ export default function AWYWidget() {
   const [addEmail, setAddEmail] = useState("");
   const [addRel, setAddRel] = useState("Mum");
   const [adding, setAdding] = useState(false);
+
   const addLovedOne = async () => {
     if (!addEmail.trim()) { toast.error("Enter an email"); return; }
     setAdding(true);
@@ -225,7 +222,7 @@ export default function AWYWidget() {
                           </motion.div>
                           <div className="min-w-0">
                             <div className="text-sm truncate font-medium">{c.relationship}</div>
-                            <motion.div 
+                            <motion.div
                               className="text-[11px] text-gray-500" 
                               animate={{ color: status === "online" ? "#10b981" : "#6b7280" }}
                             >
