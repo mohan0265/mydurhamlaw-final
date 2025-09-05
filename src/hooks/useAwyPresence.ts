@@ -1,109 +1,252 @@
-💕 Always With You (AWY) Widget — PQ Final Integration Prompt
+// src/hooks/useAwyPresence.ts
+// AWY presence + waves + DB-backed call links (Supabase v2).
+// Self-contained: creates its own client from env vars.
 
-Repository: https://github.com/mohan0265/mydurhamlaw-final
-Branch: main (commit directly, no PRs).
-Deployment: Netlify.
-Database: Supabase (SQL + RLS already applied, including security_invoker=true fix).
+import { useEffect, useMemo, useRef, useState, useCallback } from "react";
+import { createClient, SupabaseClient } from "@supabase/supabase-js";
 
-✅ Current Status
+type AwyStatus = "online" | "offline" | "busy";
 
-awy_presence, awy_connections, awy_events tables + policies: done.
+export interface AwyConnection {
+  id: string;
+  student_id: string;
+  loved_one_id: string;
+  loved_is_user: boolean;
+  relationship: string;
+  is_visible: boolean;
+  created_at: string;
+}
 
-awy_visible_presence view recreated with security_invoker=true.
+export interface AwyPresence {
+  id: string;
+  user_id: string;
+  status: AwyStatus;
+  status_message: string | null;
+  last_seen: string;    // ISO
+  heartbeat_at: string; // ISO
+}
 
-Env vars set on Netlify (NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY, NEXT_PUBLIC_FEATURE_AWY=1).
+function getClient(): SupabaseClient {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+  if (!url || !anon) {
+    throw new Error(
+      "Supabase env not set (NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY)."
+    );
+  }
+  return createClient(url, anon);
+}
 
-Files already added:
+export function useAwyPresence() {
+  const supabaseRef = useRef<SupabaseClient>();
+  if (!supabaseRef.current) supabaseRef.current = getClient();
+  const supabase = supabaseRef.current;
 
-src/hooks/useAwyPresence.ts
+  const [userId, setUserId] = useState<string | null>(null);
 
-src/components/awy/AWYWidget.tsx
+  // core state
+  const [connections, setConnections] = useState<AwyConnection[]>([]);
+  const [presence, setPresence] = useState<AwyPresence[]>([]);
+  const [wavesUnread, setWavesUnread] = useState<number>(0);
 
-src/pages/settings/awy.tsx
+  // DB-backed call links: { [loved_one_id]: url }
+  const [callLinks, setCallLinks] = useState<Record<string, string>>({});
 
-_app.tsx patched to mount AWY globally.
+  // useful refs for diffing in the widget
+  const wavesUnreadRef = useRef(0);
+  useEffect(() => {
+    wavesUnreadRef.current = wavesUnread;
+  }, [wavesUnread]);
 
-🎯 PQ Tasks
-1. Verify & Refactor Integration
+  const presenceByUser = useMemo(() => {
+    const m = new Map<string, AwyPresence>();
+    for (const p of presence) m.set(p.user_id, p);
+    return m;
+  }, [presence]);
 
-Confirm all imports resolve with repo path aliases (@/hooks/..., @/components/...). Fix any alias issues.
+  // resolve current user
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      const { data } = await supabase.auth.getUser();
+      if (mounted) setUserId(data.user?.id ?? null);
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, [supabase]);
 
-Ensure AWYWidget does not crash on login/logout transitions.
+  // presence upsert + heartbeat loop
+  useEffect(() => {
+    if (!userId) return;
 
-Wrap any Supabase RPC or query errors with safe try/catch logging.
+    let timer: any;
 
-2. Styling & UI Polish
+    const upsertOnline = async () => {
+      try {
+        await supabase.rpc("awy_upsert_presence", {
+          p_status: "online",
+          p_message: null,
+        });
+      } catch {}
+    };
 
-Make widget draggable (persist last position to localStorage).
+    const heartbeat = async () => {
+      try {
+        await supabase.rpc("awy_heartbeat");
+      } catch {}
+    };
 
-Ensure widget layers correctly with Durmah (z-index: AWY below Durmah).
+    const start = async () => {
+      await upsertOnline();
+      timer = setInterval(heartbeat, 50_000); // ~50s
+    };
 
-Add smooth fade-in/out animations for avatars and menus (Tailwind + framer-motion if available).
+    const onVisibility = async () => {
+      if (document.visibilityState === "visible") {
+        await heartbeat();
+        if (!timer) timer = setInterval(heartbeat, 50_000);
+      } else {
+        if (timer) {
+          clearInterval(timer);
+          timer = null;
+        }
+      }
+    };
 
-3. Settings Page Enhancements
+    start();
+    document.addEventListener("visibilitychange", onVisibility);
 
-Replace localStorage for call_url with a persisted field:
+    return () => {
+      document.removeEventListener("visibilitychange", onVisibility);
+      if (timer) clearInterval(timer);
+    };
+  }, [supabase, userId]);
 
-If user profile jsonb already exists in DB, store under profile.settings.awy.call_url[loved_one_id].
+  // load my connections (student -> loved ones)
+  const loadConnections = useCallback(async () => {
+    if (!userId) return;
+    const { data, error } = await supabase
+      .from("awy_connections")
+      .select("*")
+      .eq("student_id", userId)
+      .order("created_at", { ascending: false });
+    if (!error && data) setConnections(data as AwyConnection[]);
+  }, [supabase, userId]);
 
-If not, create a small new table awy_call_links (id, owner_id, loved_one_id, url, updated_at).
+  useEffect(() => {
+    loadConnections();
+  }, [loadConnections]);
 
-UI: show ✅ when saved successfully.
+  // subscribe: presence + waves
+  useEffect(() => {
+    if (!userId) return;
 
-4. Notifications
+    const refreshPresence = async () => {
+      const { data, error } = await supabase
+        .from("awy_visible_presence")
+        .select("*");
+      if (!error && data) setPresence(data as AwyPresence[]);
+    };
 
-Add toast notification for:
+    refreshPresence();
 
-When a loved one comes online (presence insert/update).
+    const chPresence = supabase
+      .channel("awy_presence_changes")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "awy_presence" },
+        async () => {
+          await refreshPresence();
+        }
+      )
+      .subscribe();
 
-When a wave is received.
+    const chEvents = supabase
+      .channel("awy_events_inbox")
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "awy_events",
+          filter: `receiver_id=eq.${userId}`,
+        },
+        () => {
+          setWavesUnread((n) => n + 1);
+        }
+      )
+      .subscribe();
 
-Reuse existing react-hot-toast Toaster (already in _app.tsx).
+    return () => {
+      supabase.removeChannel(chPresence);
+      supabase.removeChannel(chEvents);
+    };
+  }, [supabase, userId]);
 
-5. QA / Acceptance
+  // load + live-refresh call links owned by me
+  useEffect(() => {
+    if (!userId) return;
+    let cancelled = false;
 
-Multi-browser test: user A waves user B → B gets toast within 2s.
+    const load = async () => {
+      const { data, error } = await supabase
+        .from("awy_call_links")
+        .select("loved_one_id,url")
+        .eq("owner_id", userId);
+      if (!error && data && !cancelled) {
+        const map: Record<string, string> = {};
+        for (const row of data) map[row.loved_one_id] = row.url ?? "";
+        setCallLinks(map);
+      }
+    };
 
-Presence auto-refresh: close tab A → within 2 minutes, A’s avatar fades to grey for B.
+    load();
 
-On Netlify Preview build, confirm widget only renders when NEXT_PUBLIC_FEATURE_AWY=1.
+    const ch = supabase
+      .channel("awy_call_links_owner")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "awy_call_links",
+          filter: `owner_id=eq.${userId}`,
+        },
+        load
+      )
+      .subscribe();
 
-Accessibility: avatars + buttons keyboard-focusable, aria-labels present.
+    return () => {
+      supabase.removeChannel(ch);
+      cancelled = true;
+    };
+  }, [supabase, userId]);
 
-6. Documentation
+  // actions
+  const sendWave = useCallback(
+    async (receiverId: string) => {
+      if (!userId) return { ok: false, error: "not_authenticated" };
+      const { error } = await supabase.from("awy_events").insert({
+        sender_id: userId,
+        receiver_id: receiverId,
+        kind: "wave",
+        payload: {},
+      });
+      return { ok: !error, error: error?.message };
+    },
+    [supabase, userId]
+  );
 
-Add docs/awy.md:
-
-Purpose & philosophy (emotional anchor, “presence not chat”).
-
-Env vars required.
-
-How to add loved ones (connections table).
-
-QA checklist.
-
-Update README with a short AWY section + screenshot.
-
-🚀 Deliverables
-
-Fully functional AWY widget on Netlify build.
-
-Settings page persists call_url in DB, not just localStorage.
-
-Toast notifications for waves + presence changes.
-
-Widget draggable + polished styling.
-
-docs/awy.md and updated README.
-
-🔒 Guardrails
-
-Do not modify RLS or DB schema beyond optional awy_call_links table.
-
-Do not commit secrets (service keys).
-
-Keep all AWY feature flags behind NEXT_PUBLIC_FEATURE_AWY.
-
-📌 Why this matters
-
-AWY is not a chat app. It is the emotional heart of MyDurhamLaw: a floating reassurance that loved ones are “with you, always.” Every green dot is a reminder: “I am not alone.”
+  return {
+    userId,
+    connections,
+    presence,
+    presenceByUser,
+    wavesUnread,
+    wavesUnreadRef, // for diffing in the widget (optional)
+    reloadConnections: loadConnections,
+    sendWave,
+    callLinks, // DB-backed call URLs keyed by loved_one_id
+  };
+}
