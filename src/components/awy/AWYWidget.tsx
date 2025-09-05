@@ -17,9 +17,7 @@ function getLastPosition(): Position {
   try {
     const saved = localStorage.getItem("awyWidget:position");
     return saved ? JSON.parse(saved) : { x: 16, y: 16 };
-  } catch {
-    return { x: 16, y: 16 };
-  }
+  } catch { return { x: 16, y: 16 }; }
 }
 function savePosition(position: Position) {
   if (typeof window === "undefined") return;
@@ -32,39 +30,39 @@ export default function AWYWidget() {
     connections,
     presenceByUser,
     sendWave,
-    callLinks,         // DB-backed call URLs
+    callLinks,
     wavesUnread,
     wavesUnreadRef,
+    linkLovedOneByEmail,  // <-- new
   } = useAwyPresence();
 
   const [position, setPosition] = useState<Position>(getLastPosition);
   const [isExpanded, setIsExpanded] = useState(false);
 
-  // feature flag + auth
+  // Feature flag + auth
   if (process.env.NEXT_PUBLIC_FEATURE_AWY !== "1") return null;
-  if (!userId) return null;
+  if (!userId) return null; // must be logged in
 
-  // toast on presence transitions (offline -> online)
+  // ---- Presence transition toast (offline -> online)
   const prevPresenceRef = useRef<Map<string, string>>(new Map());
   useEffect(() => {
     const prev = prevPresenceRef.current;
     const next = new Map<string, string>();
-
     for (const c of connections) {
       const status = presenceByUser.get(c.loved_one_id)?.status ?? "offline";
       next.set(c.loved_one_id, status);
       const prevStatus = prev.get(c.loved_one_id) ?? "offline";
       if (status === "online" && prevStatus !== "online") {
-        toast.success(`${c.relationship} is now online`, { icon: "💚", duration: 2500 });
+        toast.success(`${c.relationship} is now online`, { icon: "💚", duration: 2200 });
       }
     }
     prevPresenceRef.current = next;
   }, [connections, presenceByUser]);
 
-  // toast on wave received (diff against ref)
+  // ---- Wave received toast
   useEffect(() => {
     if (wavesUnread > (wavesUnreadRef?.current ?? 0)) {
-      toast("👋 Wave received!", { icon: "👋", duration: 2000 });
+      toast("👋 Wave received!", { icon: "👋", duration: 1800 });
     }
   }, [wavesUnread, wavesUnreadRef]);
 
@@ -79,17 +77,36 @@ export default function AWYWidget() {
 
   const handleSendWave = async (lovedOneId: string) => {
     const result = await sendWave(lovedOneId);
-    if (result.ok) toast.success("Wave sent! 👋", { duration: 1800 });
+    if (result.ok) toast.success("Wave sent! 👋", { duration: 1600 });
     else toast.error("Failed to send wave");
   };
 
   const handleCall = (lovedOneId: string) => {
     const callUrl = callLinks?.[lovedOneId];
-    if (!callUrl) {
-      toast.error("Add a call link in AWY Settings");
-      return;
-    }
+    if (!callUrl) { toast.error("Add a call link in AWY Settings"); return; }
     window.open(callUrl, "_blank", "noopener,noreferrer");
+  };
+
+  // ---- Empty-state add-loved-one form
+  const [addEmail, setAddEmail] = useState("");
+  const [addRel, setAddRel] = useState("Mum");
+  const [adding, setAdding] = useState(false);
+
+  const addLovedOne = async () => {
+    if (!addEmail.trim()) { toast.error("Enter an email"); return; }
+    setAdding(true);
+    const res = await linkLovedOneByEmail(addEmail.trim(), addRel.trim());
+    setAdding(false);
+    if (res.ok) {
+      toast.success("Loved one linked ✓");
+      setAddEmail("");
+      setAddRel("Mum");
+      setIsExpanded(true);
+    } else if ((res as any).error === "user_not_found") {
+      toast.error("That email has not signed up yet.");
+    } else {
+      toast.error("Could not link loved one");
+    }
   };
 
   return (
@@ -146,7 +163,33 @@ export default function AWYWidget() {
             </div>
 
             {connections.length === 0 ? (
-              <div className="text-xs text-gray-500">No loved ones connected yet.</div>
+              // ---- Empty state UI (always show widget; let user add first loved one)
+              <div>
+                <div className="text-xs text-gray-600 mb-2">
+                  Add someone you love. When they log in, you’ll see they’re online.
+                </div>
+                <label className="block text-[11px] text-gray-500 mb-1">Loved one’s email</label>
+                <input
+                  className="w-full border rounded-md px-3 py-2 text-sm mb-2"
+                  value={addEmail}
+                  onChange={(e) => setAddEmail(e.target.value)}
+                  placeholder="name@example.com"
+                />
+                <label className="block text-[11px] text-gray-500 mb-1">Relationship</label>
+                <input
+                  className="w-full border rounded-md px-3 py-2 text-sm mb-3"
+                  value={addRel}
+                  onChange={(e) => setAddRel(e.target.value)}
+                  placeholder="Mum / Dad / Sibling"
+                />
+                <button
+                  onClick={addLovedOne}
+                  disabled={adding}
+                  className="w-full text-sm px-3 py-2 rounded-md border hover:bg-gray-50"
+                >
+                  {adding ? "Linking..." : "Link Loved One"}
+                </button>
+              </div>
             ) : (
               <div className="space-y-2 max-h-64 overflow-y-auto">
                 <AnimatePresence>

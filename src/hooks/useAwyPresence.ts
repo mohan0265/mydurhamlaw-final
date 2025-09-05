@@ -1,6 +1,6 @@
 // src/hooks/useAwyPresence.ts
 // AWY presence + waves + DB-backed call links (Supabase v2).
-// Self-contained: creates its own client from env vars.
+// Includes: linkLovedOneByEmail(email, relationship) to add first loved one from the widget.
 
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
@@ -238,6 +238,22 @@ export function useAwyPresence() {
     [supabase, userId]
   );
 
+  // NEW: link loved one by email via RPC (created earlier)
+  const linkLovedOneByEmail = useCallback(
+    async (email: string, relationship: string) => {
+      if (!userId) return { ok: false, error: "not_authenticated" };
+      const { data, error } = await supabase.rpc("awy_link_loved_one", {
+        p_email: email,
+        p_relationship: relationship || "Loved One",
+      });
+      if (error) return { ok: false, error: error.message };
+      if (!data?.ok) return { ok: false, error: data?.error || "link_failed" };
+      await loadConnections(); // refresh the list so it appears immediately
+      return { ok: true };
+    },
+    [supabase, userId, loadConnections]
+  );
+
   return {
     userId,
     connections,
@@ -248,5 +264,6 @@ export function useAwyPresence() {
     reloadConnections: loadConnections,
     sendWave,
     callLinks, // DB-backed call URLs keyed by loved_one_id
+    linkLovedOneByEmail, // <<<<<< expose to the widget
   };
 }
