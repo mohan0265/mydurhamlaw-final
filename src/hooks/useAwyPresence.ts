@@ -1,9 +1,10 @@
 // src/hooks/useAwyPresence.ts
 // AWY presence + waves + DB-backed call links (Supabase v2).
-// Includes: linkLovedOneByEmail(email, relationship) to add first loved one from the widget.
+// Uses the SAME client as the app (getSupabaseClient), so auth state is shared.
 
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
-import { createClient, SupabaseClient } from "@supabase/supabase-js";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { getSupabaseClient } from "@/lib/supabase/client";
 
 type AwyStatus = "online" | "offline" | "busy";
 
@@ -26,37 +27,17 @@ export interface AwyPresence {
   heartbeat_at: string; // ISO
 }
 
-function getClient(): SupabaseClient {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-  const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-  if (!url || !anon) {
-    throw new Error(
-      "Supabase env not set (NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY)."
-    );
-  }
-  return createClient(url, anon);
-}
-
 export function useAwyPresence() {
-  const supabaseRef = useRef<SupabaseClient>();
-  if (!supabaseRef.current) supabaseRef.current = getClient();
-  const supabase = supabaseRef.current;
-
+  const supabase = getSupabaseClient() as SupabaseClient; // shared client
   const [userId, setUserId] = useState<string | null>(null);
 
-  // core state
   const [connections, setConnections] = useState<AwyConnection[]>([]);
   const [presence, setPresence] = useState<AwyPresence[]>([]);
   const [wavesUnread, setWavesUnread] = useState<number>(0);
-
-  // DB-backed call links: { [loved_one_id]: url }
   const [callLinks, setCallLinks] = useState<Record<string, string>>({});
 
-  // useful refs for diffing in the widget
   const wavesUnreadRef = useRef(0);
-  useEffect(() => {
-    wavesUnreadRef.current = wavesUnread;
-  }, [wavesUnread]);
+  useEffect(() => { wavesUnreadRef.current = wavesUnread; }, [wavesUnread]);
 
   const presenceByUser = useMemo(() => {
     const m = new Map<string, AwyPresence>();
@@ -64,42 +45,39 @@ export function useAwyPresence() {
     return m;
   }, [presence]);
 
-  // resolve current user
+  // Resolve current user + subscribe to auth changes (so it updates immediately post-login)
   useEffect(() => {
-    let mounted = true;
+    if (!supabase) return;
+
     (async () => {
-      const { data } = await supabase.auth.getUser();
-      if (mounted) setUserId(data.user?.id ?? null);
+      const { data } = await supabase.auth.getSession();
+      setUserId(data.session?.user?.id ?? null);
     })();
-    return () => {
-      mounted = false;
-    };
+
+    const { data: sub } = supabase.auth.onAuthStateChange((_evt, session) => {
+      setUserId(session?.user?.id ?? null);
+    });
+    return () => sub.subscription.unsubscribe();
   }, [supabase]);
 
   // presence upsert + heartbeat loop
   useEffect(() => {
-    if (!userId) return;
+    if (!supabase || !userId) return;
 
     let timer: any;
 
     const upsertOnline = async () => {
       try {
-        await supabase.rpc("awy_upsert_presence", {
-          p_status: "online",
-          p_message: null,
-        });
+        await supabase.rpc("awy_upsert_presence", { p_status: "online", p_message: null });
       } catch {}
     };
-
     const heartbeat = async () => {
-      try {
-        await supabase.rpc("awy_heartbeat");
-      } catch {}
+      try { await supabase.rpc("awy_heartbeat"); } catch {}
     };
 
     const start = async () => {
       await upsertOnline();
-      timer = setInterval(heartbeat, 50_000); // ~50s
+      timer = setInterval(heartbeat, 50_000);
     };
 
     const onVisibility = async () => {
@@ -107,16 +85,12 @@ export function useAwyPresence() {
         await heartbeat();
         if (!timer) timer = setInterval(heartbeat, 50_000);
       } else {
-        if (timer) {
-          clearInterval(timer);
-          timer = null;
-        }
+        if (timer) { clearInterval(timer); timer = null; }
       }
     };
 
     start();
     document.addEventListener("visibilitychange", onVisibility);
-
     return () => {
       document.removeEventListener("visibilitychange", onVisibility);
       if (timer) clearInterval(timer);
@@ -125,7 +99,7 @@ export function useAwyPresence() {
 
   // load my connections (student -> loved ones)
   const loadConnections = useCallback(async () => {
-    if (!userId) return;
+    if (!supabase || !userId) return;
     const { data, error } = await supabase
       .from("awy_connections")
       .select("*")
@@ -134,18 +108,14 @@ export function useAwyPresence() {
     if (!error && data) setConnections(data as AwyConnection[]);
   }, [supabase, userId]);
 
-  useEffect(() => {
-    loadConnections();
-  }, [loadConnections]);
+  useEffect(() => { loadConnections(); }, [loadConnections]);
 
   // subscribe: presence + waves
   useEffect(() => {
-    if (!userId) return;
+    if (!supabase || !userId) return;
 
     const refreshPresence = async () => {
-      const { data, error } = await supabase
-        .from("awy_visible_presence")
-        .select("*");
+      const { data, error } = await supabase.from("awy_visible_presence").select("*");
       if (!error && data) setPresence(data as AwyPresence[]);
     };
 
@@ -156,9 +126,7 @@ export function useAwyPresence() {
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "awy_presence" },
-        async () => {
-          await refreshPresence();
-        }
+        refreshPresence
       )
       .subscribe();
 
@@ -166,15 +134,8 @@ export function useAwyPresence() {
       .channel("awy_events_inbox")
       .on(
         "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "awy_events",
-          filter: `receiver_id=eq.${userId}`,
-        },
-        () => {
-          setWavesUnread((n) => n + 1);
-        }
+        { event: "INSERT", schema: "public", table: "awy_events", filter: `receiver_id=eq.${userId}` },
+        () => setWavesUnread((n) => n + 1)
       )
       .subscribe();
 
@@ -186,7 +147,7 @@ export function useAwyPresence() {
 
   // load + live-refresh call links owned by me
   useEffect(() => {
-    if (!userId) return;
+    if (!supabase || !userId) return;
     let cancelled = false;
 
     const load = async () => {
@@ -207,26 +168,18 @@ export function useAwyPresence() {
       .channel("awy_call_links_owner")
       .on(
         "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "awy_call_links",
-          filter: `owner_id=eq.${userId}`,
-        },
+        { event: "*", schema: "public", table: "awy_call_links", filter: `owner_id=eq.${userId}` },
         load
       )
       .subscribe();
 
-    return () => {
-      supabase.removeChannel(ch);
-      cancelled = true;
-    };
+    return () => { supabase.removeChannel(ch); cancelled = true; };
   }, [supabase, userId]);
 
   // actions
   const sendWave = useCallback(
     async (receiverId: string) => {
-      if (!userId) return { ok: false, error: "not_authenticated" };
+      if (!supabase || !userId) return { ok: false, error: "not_authenticated" };
       const { error } = await supabase.from("awy_events").insert({
         sender_id: userId,
         receiver_id: receiverId,
@@ -238,17 +191,17 @@ export function useAwyPresence() {
     [supabase, userId]
   );
 
-  // NEW: link loved one by email via RPC (created earlier)
+  // RPC to link loved one by email (already created in DB)
   const linkLovedOneByEmail = useCallback(
     async (email: string, relationship: string) => {
-      if (!userId) return { ok: false, error: "not_authenticated" };
+      if (!supabase || !userId) return { ok: false, error: "not_authenticated" };
       const { data, error } = await supabase.rpc("awy_link_loved_one", {
         p_email: email,
         p_relationship: relationship || "Loved One",
       });
       if (error) return { ok: false, error: error.message };
       if (!data?.ok) return { ok: false, error: data?.error || "link_failed" };
-      await loadConnections(); // refresh the list so it appears immediately
+      await loadConnections();
       return { ok: true };
     },
     [supabase, userId, loadConnections]
@@ -260,10 +213,10 @@ export function useAwyPresence() {
     presence,
     presenceByUser,
     wavesUnread,
-    wavesUnreadRef, // for diffing in the widget (optional)
+    wavesUnreadRef,
     reloadConnections: loadConnections,
     sendWave,
-    callLinks, // DB-backed call URLs keyed by loved_one_id
-    linkLovedOneByEmail, // <<<<<< expose to the widget
+    callLinks,
+    linkLovedOneByEmail,
   };
 }
