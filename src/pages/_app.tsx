@@ -13,45 +13,41 @@ import {
 } from "@tanstack/react-query";
 
 import { validateEnv } from "@/lib/env";
-// NOTE: AuthContext lives in src/supabase/AuthContext.tsx
 import { AuthProvider, useAuth } from "@/lib/supabase/AuthContext";
 import { SupabaseProvider } from "@/contexts/SupabaseProvider";
 
-// ✅ NEW: Durmah context provider + tiny setup
-import {
-  DurmahProvider,
-  DurmahContextSetup,
-} from "@/lib/durmah/context";
-
-// ✅ NEW: helper that builds window.__mdlStudentContext from Supabase
+import { DurmahProvider, DurmahContextSetup } from "@/lib/durmah/context";
 import { loadMDLStudentContext } from "@/lib/supabase/supabaseBridge";
 
 import LayoutShell from "@/layout/LayoutShell";
 import { Toaster } from "react-hot-toast";
 
-// ⬇️ Load Durmah widget only on the client (no SSR)
+// Existing voice widget
 const DurmahWidget = dynamic(() => import("../components/DurmahWidget"), {
   ssr: false,
 });
 
-// ✅ NEW: Bootstrap Durmah whenever auth changes
+// NEW: AWY widget mounted globally, client-only
+const AWYWidget = dynamic(() => import("@/components/awy/AWYWidget"), {
+  ssr: false,
+});
+
 const AppDurmahBootstrap: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { session, userProfile } = useAuth();
 
   useEffect(() => {
-    // Build/refresh the student context. Safe if user is null; it will fall back to anonymous.
     loadMDLStudentContext(session?.user as any).catch((e) =>
       console.error("loadMDLStudentContext failed:", e)
     );
-    // Re-run if the user changes or their year/profile changes
   }, [session?.user?.id, userProfile?.yearKey]);
 
   return <>{children}</>;
 };
 
-// Optional feature flag (Netlify → Environment → NEXT_PUBLIC_ENABLE_VOICE_FEATURES=true)
 const VOICE_ENABLED =
   process.env.NEXT_PUBLIC_ENABLE_VOICE_FEATURES === "true";
+const AWY_ENABLED =
+  process.env.NEXT_PUBLIC_FEATURE_AWY === "1";
 
 // Server-only RSS boot (no-op in browser)
 if (typeof window === "undefined") {
@@ -67,7 +63,6 @@ if (typeof window === "undefined") {
 export default function App({ Component, pageProps }: AppProps) {
   const router = useRouter();
 
-  // One QueryClient for the lifespan of the app
   const [queryClient] = useState(
     () =>
       new QueryClient({
@@ -99,7 +94,6 @@ export default function App({ Component, pageProps }: AppProps) {
       router.events.off("routeChangeComplete", handleRouteChange);
   }, [router.events]);
 
-  // Optional: hide widget on some routes
   const hiddenRoutes = ["/login", "/signup", "/auth/redirect"];
   const hideWidget = hiddenRoutes.includes(router.pathname);
 
@@ -113,45 +107,41 @@ export default function App({ Component, pageProps }: AppProps) {
         <SupabaseProvider>
           <QueryClientProvider client={queryClient}>
             <HydrationBoundary state={(pageProps as any)?.dehydratedState}>
-            {/* ✅ Durmah context is provided app-wide.
-                DurmahContextSetup ensures a context exists even before auth resolves,
-                and AppDurmahBootstrap refreshes it when the user/profile changes. */}
-            <DurmahProvider>
-              <DurmahContextSetup />
-              <AppDurmahBootstrap>
-                <LayoutShell>
-                  <Component {...pageProps} />
-                </LayoutShell>
+              <DurmahProvider>
+                <DurmahContextSetup />
+                <AppDurmahBootstrap>
+                  <LayoutShell>
+                    <Component {...pageProps} />
+                  </LayoutShell>
 
-                {/* Global Toaster */}
-                <Toaster
-                  position="top-right"
-                  toastOptions={{
-                    duration: 4000,
-                    style: { background: "#363636", color: "#fff" },
-                    success: {
-                      duration: 3000,
-                      iconTheme: { primary: "#10b981", secondary: "#fff" },
-                    },
-                    error: {
-                      duration: 5000,
-                      iconTheme: { primary: "#ef4444", secondary: "#fff" },
-                    },
-                  }}
-                />
-
-                {/* ⬇️ Floating Durmah widget */}
-                {VOICE_ENABLED && !hideWidget && (
-                  <DurmahWidget
-                    context={{
-                      route: router.asPath,
+                  {/* Global Toaster */}
+                  <Toaster
+                    position="top-right"
+                    toastOptions={{
+                      duration: 4000,
+                      style: { background: "#363636", color: "#fff" },
+                      success: {
+                        duration: 3000,
+                        iconTheme: { primary: "#10b981", secondary: "#fff" },
+                      },
+                      error: {
+                        duration: 5000,
+                        iconTheme: { primary: "#ef4444", secondary: "#fff" },
+                      },
                     }}
                   />
-                )}
-              </AppDurmahBootstrap>
-            </DurmahProvider>
-          </HydrationBoundary>
-        </QueryClientProvider>
+
+                  {/* Floating Durmah widget */}
+                  {VOICE_ENABLED && !hideWidget && (
+                    <DurmahWidget context={{ route: router.asPath }} />
+                  )}
+
+                  {/* NEW: Floating AWY widget */}
+                  {AWY_ENABLED && !hideWidget && <AWYWidget />}
+                </AppDurmahBootstrap>
+              </DurmahProvider>
+            </HydrationBoundary>
+          </QueryClientProvider>
         </SupabaseProvider>
       </AuthProvider>
     </>
