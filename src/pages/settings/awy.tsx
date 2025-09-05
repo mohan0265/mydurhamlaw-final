@@ -17,21 +17,17 @@ export default function AwySettingsPage() {
   // Load existing call links from DB
   useEffect(() => {
     if (!userId || !connections.length) return;
-    const load = async () => {
+    (async () => {
       const { data, error } = await supabase
         .from("awy_call_links")
-        .select("*")
+        .select("loved_one_id,url")
         .eq("owner_id", userId);
-
       if (!error && data) {
         const next: Record<string, string> = {};
-        for (const row of data) {
-          next[row.loved_one_id] = row.url;
-        }
+        for (const row of data) next[row.loved_one_id] = row.url ?? "";
         setVals(next);
       }
-    };
-    load();
+    })();
   }, [userId, connections]);
 
   if (!userId) {
