@@ -1,6 +1,6 @@
 // src/hooks/useAwyPresence.ts
 // AWY presence + waves + DB-backed call links (Supabase v2).
-// Uses the SAME client as the app (getSupabaseClient), so auth state is shared.
+// Uses the shared client (getSupabaseClient) and is fully defensive (no crashes if client is missing).
 
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -27,8 +27,33 @@ export interface AwyPresence {
   heartbeat_at: string; // ISO
 }
 
+// A no-op return so the UI never crashes if client is unavailable
+function emptyReturn() {
+  const wavesUnreadRef = { current: 0 } as React.MutableRefObject<number>;
+  return {
+    userId: null as string | null,
+    connections: [] as AwyConnection[],
+    presence: [] as AwyPresence[],
+    presenceByUser: new Map<string, AwyPresence>(),
+    wavesUnread: 0,
+    wavesUnreadRef,
+    reloadConnections: async () => {},
+    sendWave: async (_: string) => ({ ok: false, error: "offline" as const }),
+    callLinks: {} as Record<string, string>,
+    linkLovedOneByEmail: async (_e: string, _r: string) =>
+      ({ ok: false, error: "offline" as const }),
+  };
+}
+
 export function useAwyPresence() {
-  const supabase = getSupabaseClient() as SupabaseClient; // shared client
+  // May temporarily be undefined if something is still initializing
+  const supabase = getSupabaseClient() as SupabaseClient | undefined;
+
+  // If client is not available, expose safe no-ops (prevents hard crash)
+  if (!supabase) {
+    return emptyReturn();
+  }
+
   const [userId, setUserId] = useState<string | null>(null);
 
   const [connections, setConnections] = useState<AwyConnection[]>([]);
@@ -45,24 +70,26 @@ export function useAwyPresence() {
     return m;
   }, [presence]);
 
-  // Resolve current user + subscribe to auth changes (so it updates immediately post-login)
+  // Resolve current user + subscribe to auth changes
   useEffect(() => {
-    if (!supabase) return;
+    let unsub: (() => void) | undefined;
 
     (async () => {
       const { data } = await supabase.auth.getSession();
       setUserId(data.session?.user?.id ?? null);
+
+      const { data: sub } = supabase.auth.onAuthStateChange((_evt, session) => {
+        setUserId(session?.user?.id ?? null);
+      });
+      unsub = () => sub.subscription.unsubscribe();
     })();
 
-    const { data: sub } = supabase.auth.onAuthStateChange((_evt, session) => {
-      setUserId(session?.user?.id ?? null);
-    });
-    return () => sub.subscription.unsubscribe();
+    return () => { unsub?.(); };
   }, [supabase]);
 
   // presence upsert + heartbeat loop
   useEffect(() => {
-    if (!supabase || !userId) return;
+    if (!userId) return;
 
     let timer: any;
 
@@ -98,8 +125,8 @@ export function useAwyPresence() {
   }, [supabase, userId]);
 
   // load my connections (student -> loved ones)
-  const loadConnections = useCallback(async () => {
-    if (!supabase || !userId) return;
+  const reloadConnections = useCallback(async () => {
+    if (!userId) return;
     const { data, error } = await supabase
       .from("awy_connections")
       .select("*")
@@ -108,11 +135,11 @@ export function useAwyPresence() {
     if (!error && data) setConnections(data as AwyConnection[]);
   }, [supabase, userId]);
 
-  useEffect(() => { loadConnections(); }, [loadConnections]);
+  useEffect(() => { reloadConnections(); }, [reloadConnections]);
 
   // subscribe: presence + waves
   useEffect(() => {
-    if (!supabase || !userId) return;
+    if (!userId) return;
 
     const refreshPresence = async () => {
       const { data, error } = await supabase.from("awy_visible_presence").select("*");
@@ -147,7 +174,7 @@ export function useAwyPresence() {
 
   // load + live-refresh call links owned by me
   useEffect(() => {
-    if (!supabase || !userId) return;
+    if (!userId) return;
     let cancelled = false;
 
     const load = async () => {
@@ -179,32 +206,32 @@ export function useAwyPresence() {
   // actions
   const sendWave = useCallback(
     async (receiverId: string) => {
-      if (!supabase || !userId) return { ok: false, error: "not_authenticated" };
+      if (!userId) return { ok: false, error: "not_authenticated" as const };
       const { error } = await supabase.from("awy_events").insert({
         sender_id: userId,
         receiver_id: receiverId,
         kind: "wave",
         payload: {},
       });
-      return { ok: !error, error: error?.message };
+      return { ok: !error, error: (error?.message ?? undefined) as any };
     },
     [supabase, userId]
   );
 
-  // RPC to link loved one by email (already created in DB)
+  // RPC to link loved one by email (created earlier)
   const linkLovedOneByEmail = useCallback(
     async (email: string, relationship: string) => {
-      if (!supabase || !userId) return { ok: false, error: "not_authenticated" };
+      if (!userId) return { ok: false, error: "not_authenticated" as const };
       const { data, error } = await supabase.rpc("awy_link_loved_one", {
         p_email: email,
         p_relationship: relationship || "Loved One",
       });
       if (error) return { ok: false, error: error.message };
-      if (!data?.ok) return { ok: false, error: data?.error || "link_failed" };
-      await loadConnections();
+      if (!data?.ok) return { ok: false, error: (data?.error || "link_failed") as any };
+      await reloadConnections();
       return { ok: true };
     },
-    [supabase, userId, loadConnections]
+    [supabase, userId, reloadConnections]
   );
 
   return {
@@ -214,7 +241,7 @@ export function useAwyPresence() {
     presenceByUser,
     wavesUnread,
     wavesUnreadRef,
-    reloadConnections: loadConnections,
+    reloadConnections,
     sendWave,
     callLinks,
     linkLovedOneByEmail,
