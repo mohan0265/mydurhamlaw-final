@@ -13,7 +13,7 @@ import {
 } from "@tanstack/react-query";
 
 import { validateEnv } from "@/lib/env";
-import { AuthProvider, useAuth } from "@/lib/supabase/AuthContext";
+import { AuthProvider } from "@/lib/supabase/AuthContext";
 import { SupabaseProvider } from "@/contexts/SupabaseProvider";
 
 import { DurmahProvider, DurmahContextSetup } from "@/lib/durmah/context";
@@ -22,34 +22,22 @@ import { loadMDLStudentContext } from "@/lib/supabase/supabaseBridge";
 import LayoutShell from "@/layout/LayoutShell";
 import { Toaster } from "react-hot-toast";
 
-// Existing voice widget
+// Durmah widget (client-only)
 const DurmahWidget = dynamic(() => import("../components/DurmahWidget"), {
   ssr: false,
 });
 
-// NEW: AWY widget mounted globally, client-only
+// ✅ AWY widget (client-only)
 const AWYWidget = dynamic(() => import("@/components/awy/AWYWidget"), {
   ssr: false,
 });
 
-const AppDurmahBootstrap: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { session, userProfile } = useAuth();
-
-  useEffect(() => {
-    loadMDLStudentContext(session?.user as any).catch((e) =>
-      console.error("loadMDLStudentContext failed:", e)
-    );
-  }, [session?.user?.id, userProfile?.yearKey]);
-
-  return <>{children}</>;
-};
-
+// Optional feature flags
 const VOICE_ENABLED =
   process.env.NEXT_PUBLIC_ENABLE_VOICE_FEATURES === "true";
-const AWY_ENABLED =
-  process.env.NEXT_PUBLIC_FEATURE_AWY === "1";
+const AWY_ENABLED = process.env.NEXT_PUBLIC_FEATURE_AWY === "1";
 
-// Server-only RSS boot (no-op in browser)
+// Server-only init (no-op in browser)
 if (typeof window === "undefined") {
   import("@/lib/rss/init")
     .then(({ initializeRSSSystem }) => {
@@ -59,6 +47,19 @@ if (typeof window === "undefined") {
       console.error("Failed to import RSS initialization:", error);
     });
 }
+
+const AppDurmahBootstrap: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
+  // If your AuthContext exposes userProfile/year, you can wire them here
+  useEffect(() => {
+    // Refresh the student context each time auth changes
+    loadMDLStudentContext(undefined as any).catch((e) =>
+      console.error("loadMDLStudentContext failed:", e)
+    );
+  }, []);
+  return <>{children}</>;
+};
 
 export default function App({ Component, pageProps }: AppProps) {
   const router = useRouter();
@@ -94,8 +95,9 @@ export default function App({ Component, pageProps }: AppProps) {
       router.events.off("routeChangeComplete", handleRouteChange);
   }, [router.events]);
 
+  // Hide floating widgets on auth-only routes if you prefer
   const hiddenRoutes = ["/login", "/signup", "/auth/redirect"];
-  const hideWidget = hiddenRoutes.includes(router.pathname);
+  const hideWidgets = hiddenRoutes.includes(router.pathname);
 
   return (
     <>
@@ -131,13 +133,13 @@ export default function App({ Component, pageProps }: AppProps) {
                     }}
                   />
 
-                  {/* Floating Durmah widget */}
-                  {VOICE_ENABLED && !hideWidget && (
-                    <DurmahWidget context={{ route: router.asPath }} />
+                  {/* ⬇️ Floating widgets */}
+                  {!hideWidgets && (
+                    <>
+                      {VOICE_ENABLED && <DurmahWidget />}
+                      {AWY_ENABLED && <AWYWidget />}
+                    </>
                   )}
-
-                  {/* NEW: Floating AWY widget */}
-                  {AWY_ENABLED && !hideWidget && <AWYWidget />}
                 </AppDurmahBootstrap>
               </DurmahProvider>
             </HydrationBoundary>
