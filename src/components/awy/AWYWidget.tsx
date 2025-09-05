@@ -12,12 +12,23 @@ function ringClass(status?: "online" | "offline" | "busy") {
   return "ring-gray-400 opacity-60";
 }
 
+// 👉 default now: bottom-right, 88px from right, 180px from bottom (above Durmah mic)
+function computeBottomRight(): Position {
+  if (typeof window === "undefined") return { x: 16, y: 16 };
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+  const widgetWidth = 64;   // collapsed
+  const safeRight = 88;     // leave room for mic button
+  const safeBottom = 180;   // sit above mic
+  return { x: Math.max(16, w - widgetWidth - safeRight), y: Math.max(16, h - safeBottom) };
+}
+
 function getLastPosition(): Position {
   if (typeof window === "undefined") return { x: 16, y: 16 };
   try {
     const saved = localStorage.getItem("awyWidget:position");
-    return saved ? JSON.parse(saved) : { x: 16, y: 16 };
-  } catch { return { x: 16, y: 16 }; }
+    return saved ? JSON.parse(saved) : computeBottomRight();
+  } catch { return computeBottomRight(); }
 }
 function savePosition(position: Position) {
   if (typeof window === "undefined") return;
@@ -33,17 +44,27 @@ export default function AWYWidget() {
     callLinks,
     wavesUnread,
     wavesUnreadRef,
-    linkLovedOneByEmail,  // <-- new
+    linkLovedOneByEmail,
   } = useAwyPresence();
 
   const [position, setPosition] = useState<Position>(getLastPosition);
   const [isExpanded, setIsExpanded] = useState(false);
 
-  // Feature flag + auth
-  if (process.env.NEXT_PUBLIC_FEATURE_AWY !== "1") return null;
-  if (!userId) return null; // must be logged in
+  // move to bottom-right on first client render if no stored position
+  useEffect(() => {
+    const saved = typeof window !== "undefined" && localStorage.getItem("awyWidget:position");
+    if (!saved) {
+      const pos = computeBottomRight();
+      setPosition(pos);
+      savePosition(pos);
+    }
+  }, []);
 
-  // ---- Presence transition toast (offline -> online)
+  // feature flag + auth
+  if (process.env.NEXT_PUBLIC_FEATURE_AWY !== "1") return null;
+  if (!userId) return null;
+
+  // presence transition toast
   const prevPresenceRef = useRef<Map<string, string>>(new Map());
   useEffect(() => {
     const prev = prevPresenceRef.current;
@@ -59,7 +80,7 @@ export default function AWYWidget() {
     prevPresenceRef.current = next;
   }, [connections, presenceByUser]);
 
-  // ---- Wave received toast
+  // wave received toast
   useEffect(() => {
     if (wavesUnread > (wavesUnreadRef?.current ?? 0)) {
       toast("👋 Wave received!", { icon: "👋", duration: 1800 });
@@ -87,11 +108,10 @@ export default function AWYWidget() {
     window.open(callUrl, "_blank", "noopener,noreferrer");
   };
 
-  // ---- Empty-state add-loved-one form
+  // empty-state form
   const [addEmail, setAddEmail] = useState("");
   const [addRel, setAddRel] = useState("Mum");
   const [adding, setAdding] = useState(false);
-
   const addLovedOne = async () => {
     if (!addEmail.trim()) { toast.error("Enter an email"); return; }
     setAdding(true);
@@ -99,9 +119,7 @@ export default function AWYWidget() {
     setAdding(false);
     if (res.ok) {
       toast.success("Loved one linked ✓");
-      setAddEmail("");
-      setAddRel("Mum");
-      setIsExpanded(true);
+      setAddEmail(""); setAddRel("Mum"); setIsExpanded(true);
     } else if ((res as any).error === "user_not_found") {
       toast.error("That email has not signed up yet.");
     } else {
@@ -114,7 +132,7 @@ export default function AWYWidget() {
       drag
       dragMomentum={false}
       onDragEnd={handleDragEnd}
-      style={{ position: "fixed", left: position.x, top: position.y, zIndex: 30 }} // below Durmah (z-40)
+      style={{ position: "fixed", left: position.x, top: position.y, zIndex: 38 }} // below Durmah z-40
       className="cursor-move"
       whileDrag={{ scale: 1.05 }}
       initial={{ opacity: 0, scale: 0.8 }}
@@ -134,9 +152,7 @@ export default function AWYWidget() {
             onClick={() => setIsExpanded(true)}
             className="w-16 h-16 flex items-center justify-center hover:bg-gray-50 transition-colors"
             aria-label="Expand Always With You widget"
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setIsExpanded(true); }
-            }}
+            onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setIsExpanded(true); } }}
           >
             <span className="text-2xl">💕</span>
           </button>
@@ -145,25 +161,16 @@ export default function AWYWidget() {
             <div className="flex items-center justify-between mb-2">
               <div className="font-semibold text-sm">Always With You</div>
               <div className="flex items-center gap-1">
-                <a
-                  href="/settings/awy"
-                  className="text-xs underline hover:no-underline"
-                  aria-label="Open AWY settings"
-                >
+                <a href="/settings/awy" className="text-xs underline hover:no-underline" aria-label="Open AWY settings">
                   Settings
                 </a>
-                <button
-                  onClick={() => setIsExpanded(false)}
-                  className="ml-2 text-gray-400 hover:text-gray-600"
-                  aria-label="Collapse widget"
-                >
+                <button onClick={() => setIsExpanded(false)} className="ml-2 text-gray-400 hover:text-gray-600" aria-label="Collapse widget">
                   ×
                 </button>
               </div>
             </div>
 
             {connections.length === 0 ? (
-              // ---- Empty state UI (always show widget; let user add first loved one)
               <div>
                 <div className="text-xs text-gray-600 mb-2">
                   Add someone you love. When they log in, you’ll see they’re online.
@@ -217,10 +224,7 @@ export default function AWYWidget() {
                           </motion.div>
                           <div className="min-w-0">
                             <div className="text-sm truncate font-medium">{c.relationship}</div>
-                            <motion.div
-                              className="text-[11px] text-gray-500"
-                              animate={{ color: status === "online" ? "#10b981" : "#6b7280" }}
-                            >
+                            <motion.div className="text-[11px] text-gray-500" animate={{ color: status === "online" ? "#10b981" : "#6b7280" }}>
                               {status === "online" ? "Online" : status === "busy" ? "Busy" : "Offline"}
                             </motion.div>
                           </div>
