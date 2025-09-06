@@ -1,19 +1,22 @@
 // Debug page to help troubleshoot OAuth flow issues
 // Access this at: https://www.mydurhamlaw.com/debug-auth
-
 import { useEffect, useState } from 'react'
 import { getSupabaseClient, debugAuthState } from '@/lib/supabase/client'
 import { getAuthRedirect } from '@/lib/authRedirect'
 
 export default function DebugAuthPage() {
   const [debugInfo, setDebugInfo] = useState<any>(null)
-  const [testResults, setTestResults] = useState<any[]>([])
+  const [testResults, setTestResults] = useState<any>([])
+  const [isClient, setIsClient] = useState(false)
   
   useEffect(() => {
+    setIsClient(true)
     runDiagnostics()
   }, [])
 
   const runDiagnostics = async () => {
+    if (typeof window === 'undefined') return
+    
     const results = []
     
     // Test 1: Environment Variables
@@ -41,7 +44,7 @@ export default function DebugAuthPage() {
       }
     })
 
-    // Test 3: URL Parameters (check for OAuth callback)
+    // Test 3: URL Parameters (check for OAuth callback) - now inside useEffect guard
     const urlParams = new URLSearchParams(window.location.search)
     const hasCode = urlParams.has('code')
     const hasError = urlParams.has('error')
@@ -58,7 +61,7 @@ export default function DebugAuthPage() {
       }
     })
 
-    // Test 4: Local Storage
+    // Test 4: Local Storage - now inside useEffect guard
     const authToken = localStorage.getItem('supabase.auth.token')
     results.push({
       test: 'Local Storage',
@@ -115,6 +118,8 @@ export default function DebugAuthPage() {
   }
 
   const testGoogleOAuth = async () => {
+    if (typeof window === 'undefined') return
+    
     try {
       const supabase = getSupabaseClient()
       if (!supabase) {
@@ -146,6 +151,8 @@ export default function DebugAuthPage() {
   }
 
   const clearAuthData = () => {
+    if (typeof window === 'undefined') return
+    
     localStorage.clear()
     sessionStorage.clear()
     const supabase = getSupabaseClient()
@@ -154,6 +161,25 @@ export default function DebugAuthPage() {
     }
     alert('Auth data cleared. Page will reload.')
     window.location.reload()
+  }
+
+  // Don't render until client-side hydration is complete
+  if (!isClient) {
+    return (
+      <div className="min-h-screen bg-gray-50 py-8">
+        <div className="max-w-4xl mx-auto px-4">
+          <div className="bg-white rounded-lg shadow-lg p-6">
+            <h1 className="text-2xl font-bold text-gray-900 mb-6">
+              🔍 OAuth Debug Dashboard
+            </h1>
+            <div className="text-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+              <p className="mt-2 text-gray-600">Loading...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -231,14 +257,16 @@ export default function DebugAuthPage() {
               <li>1. Verify environment variables in Netlify dashboard</li>
               <li>2. Check Supabase Auth URL configuration</li>
               <li>3. Confirm Google OAuth redirect URIs</li>
-              <li>4. Test OAuth flow with &quot;Test Google OAuth&quot; button</li>
+              <li>4. Test OAuth flow with "Test Google OAuth" button</li>
               <li>5. Check browser console for detailed error messages</li>
             </ul>
           </div>
 
           <div className="mt-4 text-sm text-gray-500">
-            <p>⚠️ This page should be removed in production for security.</p>
-            <p>Current URL: {typeof window !== 'undefined' ? window.location.href : 'N/A'}</p>
+            ⚠️ This page should be removed in production for security.
+            {isClient && (
+              <span> Current URL: {window.location.href}</span>
+            )}
           </div>
         </div>
       </div>
