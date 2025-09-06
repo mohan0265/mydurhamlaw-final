@@ -1,6 +1,5 @@
 'use client'
-
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { GoldScaleIcon } from './GoldScaleIcon'
@@ -65,7 +64,7 @@ export const Logo: React.FC<LogoProps> = ({
   const textClasses = getTextClasses()
 
   const LogoContent = () => (
-    <div className={`flex items-center group ${className}`}>
+    <div className={`flex items-center ${className}`}>
       {/* Logo Icon */}
       {showIcon && (
         <div className="relative">
@@ -92,7 +91,7 @@ export const Logo: React.FC<LogoProps> = ({
 
   if (href) {
     return (
-      <Link href={href}>
+      <Link href={href} className="group">
         <LogoContent />
       </Link>
     )
@@ -103,36 +102,47 @@ export const Logo: React.FC<LogoProps> = ({
 
 // Helper hook to determine logo variant based on current route or theme
 export const useLogoVariant = (routePath?: string): 'light' | 'dark' => {
-  if (typeof window === 'undefined') return 'light'
-  
-  const currentPath = routePath || window.location.pathname
-  
-  // Pages with light/white backgrounds should use dark logo
-  const lightBackgroundPages = [
-    '/onboarding',
-    '/signup',
-    '/login',
-    '/complete-profile',
-    '/settings',
-    '/legal',
-    '/about',
-    '/ethics',
-    '/terms-of-use',
-    '/privacy-policy',
-    '/study-materials',
-    '/assignments',
-    '/study-schedule',
-    '/calendar',
-    '/research-hub',
-    '/tools'
-  ]
-  
-  // Check if current path starts with any light background page
-  const isLightBackground = lightBackgroundPages.some(page => 
-    currentPath.startsWith(page)
-  )
-  
-  return isLightBackground ? 'dark' : 'light'
+  const [variant, setVariant] = useState<'light' | 'dark'>('light')
+  const [currentPath, setCurrentPath] = useState<string>('')
+
+  useEffect(() => {
+    // Only access window.location inside useEffect hook for SSR safety
+    if (typeof window !== 'undefined') {
+      const path = routePath || window.location.pathname
+      setCurrentPath(path)
+    }
+  }, [routePath])
+
+  useEffect(() => {
+    // Pages with light/white backgrounds should use dark logo
+    const lightBackgroundPages = [
+      '/onboarding',
+      '/signup',
+      '/login',
+      '/complete-profile',
+      '/settings',
+      '/legal',
+      '/about',
+      '/ethics',
+      '/terms-of-use',
+      '/privacy-policy',
+      '/study-materials',
+      '/assignments',
+      '/study-schedule',
+      '/calendar',
+      '/research-hub',
+      '/tools'
+    ]
+    
+    // Check if current path starts with any light background page
+    const isLightBackground = lightBackgroundPages.some(page => 
+      currentPath.startsWith(page)
+    )
+    
+    setVariant(isLightBackground ? 'dark' : 'light')
+  }, [currentPath])
+
+  return variant
 }
 
 export default Logo
