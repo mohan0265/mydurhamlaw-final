@@ -13,15 +13,25 @@ const MoodToggle: React.FC = () => {
   const [active, setActive] = useState(moods[0].label);
 
   useEffect(() => {
-    const stored = localStorage.getItem(localStorageKey);
-    if (stored && moods.some((m) => m.label === stored)) {
-      setActive(stored);
+    // Only access localStorage in the browser environment
+    if (typeof window !== 'undefined' && window.localStorage) {
+      const stored = localStorage.getItem(localStorageKey);
+      if (stored && moods.some((m) => m.label === stored)) {
+        setActive(stored);
+      }
     }
   }, []);
 
   useEffect(() => {
-    document.body.setAttribute("data-lounge-mood", active);
-    localStorage.setItem(localStorageKey, active);
+    // Only access document.body and localStorage in the browser environment
+    if (typeof window !== 'undefined') {
+      if (document.body) {
+        document.body.setAttribute("data-lounge-mood", active);
+      }
+      if (window.localStorage) {
+        localStorage.setItem(localStorageKey, active);
+      }
+    }
   }, [active]);
 
   return (
@@ -33,11 +43,13 @@ const MoodToggle: React.FC = () => {
             key={m.label}
             aria-label={`Set mood: ${m.label}`}
             className={`flex-1 px-4 py-1 rounded-xl font-semibold transition border
-              ${active === m.label
-                ? "bg-gradient-to-br " +
-                  m.color +
-                  " border-blue-400"
-                : "bg-white/80 hover:bg-gray-50 border-gray-200"}
+              ${
+                active === m.label
+                  ? "bg-gradient-to-br " +
+                    m.color +
+                    " border-blue-400"
+                  : "bg-white/80 hover:bg-gray-50 border-gray-200"
+              }
             `}
             onClick={() => setActive(m.label)}
             tabIndex={0}
