@@ -1,7 +1,6 @@
 // src/hooks/useAwyPresence.ts
 // AWY presence + waves + DB-backed call links (Supabase v2).
 // Uses the shared client (getSupabaseClient) and is fully defensive (no crashes if client is missing).
-
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getSupabaseClient } from "@/lib/supabase/client";
@@ -55,13 +54,12 @@ export function useAwyPresence() {
   }
 
   const [userId, setUserId] = useState<string | null>(null);
-
   const [connections, setConnections] = useState<AwyConnection[]>([]);
   const [presence, setPresence] = useState<AwyPresence[]>([]);
   const [wavesUnread, setWavesUnread] = useState<number>(0);
   const [callLinks, setCallLinks] = useState<Record<string, string>>({});
-
   const wavesUnreadRef = useRef(0);
+
   useEffect(() => { wavesUnreadRef.current = wavesUnread; }, [wavesUnread]);
 
   const presenceByUser = useMemo(() => {
@@ -73,24 +71,20 @@ export function useAwyPresence() {
   // Resolve current user + subscribe to auth changes
   useEffect(() => {
     let unsub: (() => void) | undefined;
-
     (async () => {
       const { data } = await supabase.auth.getSession();
       setUserId(data.session?.user?.id ?? null);
-
       const { data: sub } = supabase.auth.onAuthStateChange((_evt, session) => {
         setUserId(session?.user?.id ?? null);
       });
       unsub = () => sub.subscription.unsubscribe();
     })();
-
     return () => { unsub?.(); };
   }, [supabase]);
 
   // presence upsert + heartbeat loop
   useEffect(() => {
     if (!userId) return;
-
     let timer: any;
 
     const upsertOnline = async () => {
@@ -98,6 +92,7 @@ export function useAwyPresence() {
         await supabase.rpc("awy_upsert_presence", { p_status: "online", p_message: null });
       } catch {}
     };
+
     const heartbeat = async () => {
       try { await supabase.rpc("awy_heartbeat"); } catch {}
     };
@@ -108,7 +103,7 @@ export function useAwyPresence() {
     };
 
     const onVisibility = async () => {
-      if (document.visibilityState === "visible") {
+      if (typeof window !== 'undefined' && document.visibilityState === "visible") {
         await heartbeat();
         if (!timer) timer = setInterval(heartbeat, 50_000);
       } else {
@@ -117,9 +112,14 @@ export function useAwyPresence() {
     };
 
     start();
-    document.addEventListener("visibilitychange", onVisibility);
+    if (typeof window !== 'undefined') {
+      document.addEventListener("visibilitychange", onVisibility);
+    }
+
     return () => {
-      document.removeEventListener("visibilitychange", onVisibility);
+      if (typeof window !== 'undefined') {
+        document.removeEventListener("visibilitychange", onVisibility);
+      }
       if (timer) clearInterval(timer);
     };
   }, [supabase, userId]);
@@ -190,7 +190,6 @@ export function useAwyPresence() {
     };
 
     load();
-
     const ch = supabase
       .channel("awy_call_links_owner")
       .on(
