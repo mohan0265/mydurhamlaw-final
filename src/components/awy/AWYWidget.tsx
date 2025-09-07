@@ -42,9 +42,20 @@ function getLastPosition(): Position {
     const saved = localStorage.getItem("awyWidget:position");
     if (saved) {
       const { x, y } = JSON.parse(saved);
+      const maxRight = window.innerWidth - WIDGET_WIDTH - SAFE_RIGHT;
+      const maxBottom = window.innerHeight - SAFE_BOTTOM;
+      
+      // Validate saved coordinates - if outside valid bounds, reset to bottom-right
+      if (typeof x !== "number" || typeof y !== "number" ||
+          x < MIN_MARGIN || x > maxRight ||
+          y < MIN_MARGIN || y > maxBottom) {
+        return computeBottomRight();
+      }
+      
+      // Clamp to safe bounds
       return {
-        x: Math.max(MIN_MARGIN, Math.min(x, window.innerWidth - WIDGET_WIDTH - SAFE_RIGHT)),
-        y: Math.max(MIN_MARGIN, Math.min(y, window.innerHeight - SAFE_BOTTOM))
+        x: Math.max(MIN_MARGIN, Math.min(x, maxRight)),
+        y: Math.max(MIN_MARGIN, Math.min(y, maxBottom))
       };
     }
     return computeBottomRight();
@@ -74,6 +85,7 @@ export default function AWYWidget() {
   // Widget position and open/close state
   const [position, setPosition] = useState<Position>({ x: MIN_MARGIN, y: MIN_MARGIN });
   const [isExpanded, setIsExpanded] = useState(false);
+  const [constraints, setConstraints] = useState<{left:number;top:number;right:number;bottom:number} | null>(null);
   
   // Empty-state add form state
   const [addEmail, setAddEmail] = useState("");
@@ -88,20 +100,22 @@ export default function AWYWidget() {
   useEffect(() => {
     // Set starting position on mount
     setPosition(getLastPosition());
-    // Update if window resizes (stay in view)
-    function handleResize() {
-      setPosition(pos => {
-        const newPos = {
-          x: Math.max(MIN_MARGIN, Math.min(pos.x, window.innerWidth - WIDGET_WIDTH - SAFE_RIGHT)),
-          y: Math.max(MIN_MARGIN, Math.min(pos.y, window.innerHeight - SAFE_BOTTOM))
-        };
-        // Save the clamped position
-        savePosition(newPos);
-        return newPos;
+  }, []);
+
+  useEffect(() => {
+    function calc() {
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      setConstraints({
+        left: MIN_MARGIN,
+        top: MIN_MARGIN,
+        right: w - WIDGET_WIDTH - SAFE_RIGHT,
+        bottom: h - SAFE_BOTTOM,
       });
     }
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
+    calc();
+    window.addEventListener("resize", calc);
+    return () => window.removeEventListener("resize", calc);
   }, []);
 
   // Show notification: someone comes online
@@ -130,13 +144,22 @@ export default function AWYWidget() {
     }
   }, [wavesUnread, wavesUnreadRef]);
 
+  // Clamp during drag
+  const onDrag = (_: any, info: {point:{x:number;y:number}}) => {
+    if (!constraints) return;
+    const x = Math.max(constraints.left, Math.min(info.point.x, constraints.right));
+    const y = Math.max(constraints.top, Math.min(info.point.y, constraints.bottom));
+    setPosition({ x, y });
+  };
+
   // Handle dragging & save, clamp to window
   const handleDragEnd = (_: any, info: { offset: { x: number, y: number } }) => {
+    if (!constraints) return;
     const nx = position.x + info.offset.x;
     const ny = position.y + info.offset.y;
     // Clamp so widget stays onscreen and out of mic zone
-    const x = Math.max(MIN_MARGIN, Math.min(nx, window.innerWidth - WIDGET_WIDTH - SAFE_RIGHT));
-    const y = Math.max(MIN_MARGIN, Math.min(ny, window.innerHeight - SAFE_BOTTOM));
+    const x = Math.max(constraints.left, Math.min(nx, constraints.right));
+    const y = Math.max(constraints.top, Math.min(ny, constraints.bottom));
     const newPosition = { x, y };
     setPosition(newPosition);
     savePosition(newPosition);
@@ -185,18 +208,14 @@ export default function AWYWidget() {
     <motion.div
       drag
       dragMomentum={false}
+      onDrag={onDrag}
       onDragEnd={handleDragEnd}
-      dragConstraints={typeof window !== "undefined" ? {
-        left: MIN_MARGIN,
-        top: MIN_MARGIN,
-        right: window.innerWidth - WIDGET_WIDTH - SAFE_RIGHT,
-        bottom: window.innerHeight - SAFE_BOTTOM
-      } : undefined}
+      dragConstraints={constraints ?? false}
       style={{
         position: "fixed",
         left: position.x,
         top: position.y,
-        zIndex: "38" // below Durmah z-40
+        zIndex: 38 // below Durmah z-40
       }}
       className="cursor-move focus:outline-blue-600 focus:ring-2 focus:ring-blue-600"
       whileDrag={{ scale: 1.05 }}
