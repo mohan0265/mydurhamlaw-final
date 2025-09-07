@@ -5,9 +5,7 @@ import { supabase } from "@/lib/supabase/client";
 export default function LogoutButton({ className }: { className?: string }) {
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    // Clear any cached profile state
-    localStorage.clear();
-    // Force reload to reset context
+    try { localStorage.clear(); } catch {}
     window.location.href = "/";
   };
 
