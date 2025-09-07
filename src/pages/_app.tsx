@@ -5,37 +5,31 @@ import Head from "next/head";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import dynamic from "next/dynamic";
-
 import {
   HydrationBoundary,
   QueryClient,
   QueryClientProvider,
 } from "@tanstack/react-query";
-
 import { validateEnv } from "@/lib/env";
 import { AuthProvider } from "@/lib/supabase/AuthContext";
 import { SupabaseProvider } from "@/contexts/SupabaseProvider";
-
 import { DurmahProvider, DurmahContextSetup } from "@/lib/durmah/context";
 import { loadMDLStudentContext } from "@/lib/supabase/supabaseBridge";
-
 import LayoutShell from "@/layout/LayoutShell";
 import { Toaster } from "react-hot-toast";
 
-// Durmah widget (client-only)
+// Voice (Durmah) widget (client-only, dynamic import safe)
 const DurmahWidget = dynamic(() => import("../components/DurmahWidget"), {
   ssr: false,
 });
-
-// ✅ AWY widget (client-only)
+// AWY widget - use bootstrap only!
 import AWYBootstrap from "@/components/AWYBootstrap";
 
-// Optional feature flags
-const VOICE_ENABLED =
-  process.env.NEXT_PUBLIC_ENABLE_VOICE_FEATURES === "true";
+// Feature flags
+const VOICE_ENABLED = process.env.NEXT_PUBLIC_ENABLE_VOICE_FEATURES === "true";
 const AWY_ENABLED = process.env.NEXT_PUBLIC_FEATURE_AWY === "1";
 
-// Server-only init (no-op in browser)
+// Server-only init
 if (typeof window === "undefined") {
   import("@/lib/rss/init")
     .then(({ initializeRSSSystem }) => {
@@ -46,12 +40,10 @@ if (typeof window === "undefined") {
     });
 }
 
-const AppDurmahBootstrap: React.FC<{ children: React.ReactNode }> = ({
-  children,
-}) => {
-  // If your AuthContext exposes userProfile/year, you can wire them here
+// Durmah context bootstrap
+const AppDurmahBootstrap: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   useEffect(() => {
-    // Refresh the student context each time auth changes
+    // Refresh student context on auth change
     loadMDLStudentContext(undefined as any).catch((e) =>
       console.error("loadMDLStudentContext failed:", e)
     );
@@ -61,7 +53,6 @@ const AppDurmahBootstrap: React.FC<{ children: React.ReactNode }> = ({
 
 export default function App({ Component, pageProps }: AppProps) {
   const router = useRouter();
-
   const [queryClient] = useState(
     () =>
       new QueryClient({
@@ -75,7 +66,6 @@ export default function App({ Component, pageProps }: AppProps) {
         },
       })
   );
-
   useEffect(() => {
     try {
       validateEnv();
@@ -83,17 +73,15 @@ export default function App({ Component, pageProps }: AppProps) {
       console.error("Environment validation failed:", error);
     }
   }, []);
-
   useEffect(() => {
     const handleRouteChange = () =>
       window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
     handleRouteChange();
     router.events.on("routeChangeComplete", handleRouteChange);
-    return () =>
-      router.events.off("routeChangeComplete", handleRouteChange);
+    return () => router.events.off("routeChangeComplete", handleRouteChange);
   }, [router.events]);
 
-  // Hide floating widgets on auth-only routes if you prefer
+  // Hide widgets on auth/redirect routes
   const hiddenRoutes = ["/login", "/signup", "/auth/redirect"];
   const hideWidgets = hiddenRoutes.includes(router.pathname);
 
@@ -102,7 +90,6 @@ export default function App({ Component, pageProps }: AppProps) {
       <Head>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </Head>
-
       <AuthProvider>
         <SupabaseProvider>
           <QueryClientProvider client={queryClient}>
@@ -113,7 +100,6 @@ export default function App({ Component, pageProps }: AppProps) {
                   <LayoutShell>
                     <Component {...pageProps} />
                   </LayoutShell>
-
                   {/* Global Toaster */}
                   <Toaster
                     position="top-right"
@@ -130,8 +116,7 @@ export default function App({ Component, pageProps }: AppProps) {
                       },
                     }}
                   />
-
-                  {/* ⬇️ Floating widgets */}
+                  {/* Floating widgets */}
                   {!hideWidgets && (
                     <>
                       {VOICE_ENABLED && <DurmahWidget />}
