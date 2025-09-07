@@ -74,6 +74,16 @@ export default function AWYWidget() {
   // Widget position and open/close state
   const [position, setPosition] = useState<Position>({ x: MIN_MARGIN, y: MIN_MARGIN });
   const [isExpanded, setIsExpanded] = useState(false);
+  
+  // Empty-state add form state
+  const [addEmail, setAddEmail] = useState("");
+  const [addRel, setAddRel] = useState("Mum");
+  const [adding, setAdding] = useState(false);
+
+  // Feature flag + auth gating as booleans (no early return yet)
+  const featureOn = process.env.NEXT_PUBLIC_FEATURE_AWY === "1";
+  const isAuthed = !!userId;
+  const shouldRender = featureOn && isAuthed;
 
   useEffect(() => {
     // Set starting position on mount
@@ -88,10 +98,6 @@ export default function AWYWidget() {
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
-
-  // Feature flag + auth gating
-  if (process.env.NEXT_PUBLIC_FEATURE_AWY !== "1") return null;
-  if (!userId) return null;
 
   // Show notification: someone comes online
   const prevPresenceRef = useRef(new Map<string, AwyStatus>());
@@ -146,10 +152,6 @@ export default function AWYWidget() {
     window.open(callUrl, "_blank", "noopener,noreferrer");
   };
 
-  // Empty-state add
-  const [addEmail, setAddEmail] = useState("");
-  const [addRel, setAddRel] = useState("Mum");
-  const [adding, setAdding] = useState(false);
   const addLovedOne = async () => {
     if (!addEmail.trim()) {
       toast.error("Enter an email");
@@ -169,6 +171,9 @@ export default function AWYWidget() {
       toast.error("Could not link loved one");
     }
   };
+
+  // Final conditional return AFTER all hooks
+  if (!shouldRender) return null;
 
   // Widget UI
   return (
