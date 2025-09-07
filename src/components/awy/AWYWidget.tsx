@@ -90,10 +90,15 @@ export default function AWYWidget() {
     setPosition(getLastPosition());
     // Update if window resizes (stay in view)
     function handleResize() {
-      setPosition(pos => ({
-        x: Math.max(MIN_MARGIN, Math.min(pos.x, window.innerWidth - WIDGET_WIDTH - SAFE_RIGHT)),
-        y: Math.max(MIN_MARGIN, Math.min(pos.y, window.innerHeight - SAFE_BOTTOM))
-      }));
+      setPosition(pos => {
+        const newPos = {
+          x: Math.max(MIN_MARGIN, Math.min(pos.x, window.innerWidth - WIDGET_WIDTH - SAFE_RIGHT)),
+          y: Math.max(MIN_MARGIN, Math.min(pos.y, window.innerHeight - SAFE_BOTTOM))
+        };
+        // Save the clamped position
+        savePosition(newPos);
+        return newPos;
+      });
     }
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
@@ -181,6 +186,12 @@ export default function AWYWidget() {
       drag
       dragMomentum={false}
       onDragEnd={handleDragEnd}
+      dragConstraints={typeof window !== "undefined" ? {
+        left: MIN_MARGIN,
+        top: MIN_MARGIN,
+        right: window.innerWidth - WIDGET_WIDTH - SAFE_RIGHT,
+        bottom: window.innerHeight - SAFE_BOTTOM
+      } : undefined}
       style={{
         position: "fixed",
         left: position.x,

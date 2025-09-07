@@ -1,12 +1,7 @@
 // src/pages/logout.tsx
 import { useEffect } from "react";
 import { useRouter } from "next/router";
-import { createClient } from "@supabase/supabase-js";
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+import { supabase } from "@/lib/supabase/client";
 
 export default function Logout() {
   const router = useRouter();
@@ -19,8 +14,8 @@ export default function Logout() {
 
         // Extra hard reset: clear any app-side caches/state if you use them
         try {
-          localStorage.removeItem("awyWidget:position");
-          // add any other app keys you want to clear here
+          localStorage.clear();
+          // This clears all localStorage including AWY widget position and any cached profile data
         } catch {}
       } finally {
         // Force a fresh load so AuthContext re-initializes to "signed out"
