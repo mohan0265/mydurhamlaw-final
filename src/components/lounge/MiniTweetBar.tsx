@@ -38,7 +38,7 @@ export default function MiniTweetBar() {
     let channel: any;
     
     (async () => {
-      const { supabase } = await import("@/lib/supabase-browser");
+      const supabase = (await import("@/lib/supabase/client")).getSupabaseClient(); if (!supabase) throw new Error("Unable to connect to database");
       
       const { data, error } = await supabase.rpc("get_lounge_sparks_recent", {
         p_limit: 20,
@@ -52,7 +52,7 @@ export default function MiniTweetBar() {
           "postgres_changes",
           { event: "*", schema: "public", table: "lounge_sparks" },
           async () => {
-            const { supabase } = await import("@/lib/supabase-browser");
+            const supabase = (await import("@/lib/supabase/client")).getSupabaseClient(); if (!supabase) throw new Error("Unable to connect to database");
             const { data } = await supabase.rpc("get_lounge_sparks_recent", {
               p_limit: 20,
             });
@@ -65,7 +65,7 @@ export default function MiniTweetBar() {
     return () => {
       if (channel) {
         (async () => {
-          const { supabase } = await import("@/lib/supabase-browser");
+          const supabase = (await import("@/lib/supabase/client")).getSupabaseClient(); if (!supabase) throw new Error("Unable to connect to database");
           supabase.removeChannel(channel);
         })();
       }
@@ -90,7 +90,7 @@ export default function MiniTweetBar() {
     }
     setPosting(true);
     try {
-      const { supabase } = await import("@/lib/supabase-browser");
+      const supabase = (await import("@/lib/supabase/client")).getSupabaseClient(); if (!supabase) throw new Error("Unable to connect to database");
       const { error } = await supabase.rpc("create_lounge_spark", {
         p_text: text,
       });

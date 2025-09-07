@@ -44,7 +44,8 @@ export default function UserProfilePage() {
       setError(null);
 
       // Dynamically import supabase client
-      const { supabase } = await import("@/lib/supabase-browser");
+      const supabase = (await import("@/lib/supabase/client")).getSupabaseClient();
+      if (!supabase) throw new Error("Unable to connect to database");
 
       // Load user profile
       const { data: profileData, error: profileError } = await supabase

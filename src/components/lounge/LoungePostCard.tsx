@@ -57,7 +57,7 @@ export default function LoungePostCard({
   useEffect(() => {
     let mounted = true;
     (async () => {
-      const { supabase } = await import("@/lib/supabase-browser");
+      const supabase = (await import("@/lib/supabase/client")).getSupabaseClient(); if (!supabase) throw new Error("Unable to connect to database");
       const { data } = await supabase.auth.getUser();
       if (!mounted) return;
       setUid(data.user?.id ?? null);
@@ -71,7 +71,7 @@ export default function LoungePostCard({
   useEffect(() => {
     let active = true;
     (async () => {
-      const { supabase } = await import("@/lib/supabase-browser");
+      const supabase = (await import("@/lib/supabase/client")).getSupabaseClient(); if (!supabase) throw new Error("Unable to connect to database");
       const { data, error } = await supabase
         .from("lounge_reactions")
         .select("emoji,user_id")
@@ -97,7 +97,7 @@ export default function LoungePostCard({
     setAnimatingReaction(emoji);
     setTimeout(() => setAnimatingReaction(null), 600);
     
-    const { supabase } = await import("@/lib/supabase-browser");
+    const supabase = (await import("@/lib/supabase/client")).getSupabaseClient(); if (!supabase) throw new Error("Unable to connect to database");
     const mine = rx.mine[emoji] === true;
     if (mine) {
       await supabase
@@ -122,7 +122,7 @@ export default function LoungePostCard({
   }
 
   async function hideMyPost() {
-    const { supabase } = await import("@/lib/supabase-browser");
+    const supabase = (await import("@/lib/supabase/client")).getSupabaseClient(); if (!supabase) throw new Error("Unable to connect to database");
     await supabase.rpc("hide_lounge_post", { p_id: post.id });
     onHidden?.(post.id);
   }

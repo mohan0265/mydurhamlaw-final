@@ -49,7 +49,7 @@ export default function LoungeFeed({ refreshKey }: LoungeFeedProps) {
     let channel: any;
     
     (async () => {
-      const { supabase } = await import("@/lib/supabase-browser");
+      const supabase = (await import("@/lib/supabase/client")).getSupabaseClient(); if (!supabase) throw new Error("Unable to connect to database");
       
       channel = supabase
         .channel("lounge_posts_rt")
@@ -64,7 +64,7 @@ export default function LoungeFeed({ refreshKey }: LoungeFeedProps) {
     return () => {
       if (channel) {
         (async () => {
-          const { supabase } = await import("@/lib/supabase-browser");
+          const supabase = (await import("@/lib/supabase/client")).getSupabaseClient(); if (!supabase) throw new Error("Unable to connect to database");
           supabase.removeChannel(channel);
         })();
       }
@@ -276,7 +276,7 @@ export default function LoungeFeed({ refreshKey }: LoungeFeedProps) {
 }
 
 async function fetchPage(limit: number, cursor: string | null) {
-  const { supabase } = await import("@/lib/supabase-browser");
+  const supabase = (await import("@/lib/supabase/client")).getSupabaseClient(); if (!supabase) throw new Error("Unable to connect to database");
   const { data, error } = await supabase.rpc("get_lounge_posts_page", {
     p_limit: limit,
     p_cursor: cursor,

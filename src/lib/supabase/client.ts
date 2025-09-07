@@ -21,7 +21,14 @@ function createSafeClient(): SupabaseClient | null {
   }
 
   try {
-    return createBrowserClient(url, anon);
+    return createBrowserClient(url, anon, {
+      auth: { 
+        storageKey: "mdl-auth",
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true 
+      }
+    });
   } catch (error) {
     console.warn('[supabase] Failed to create client:', error);
     return null;

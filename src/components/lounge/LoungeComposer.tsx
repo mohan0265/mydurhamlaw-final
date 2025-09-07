@@ -32,7 +32,7 @@ export default function LoungeComposer({
   useEffect(() => {
     let mounted = true;
     (async () => {
-      const { supabase } = await import("@/lib/supabase-browser");
+      const supabase = (await import("@/lib/supabase/client")).getSupabaseClient(); if (!supabase) throw new Error("Unable to connect to database");
       const { data } = await supabase.auth.getUser();
       const user = data.user;
       setUid(user?.id ?? null);
@@ -192,7 +192,7 @@ export default function LoungeComposer({
         }
       }
 
-      const { supabase } = await import("@/lib/supabase-browser");
+      const supabase = (await import("@/lib/supabase/client")).getSupabaseClient(); if (!supabase) throw new Error("Unable to connect to database");
       const { data: rpc, error } = await supabase.rpc("create_lounge_post", {
         p_body: body,
         p_image_url: image_url,

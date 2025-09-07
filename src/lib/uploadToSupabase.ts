@@ -4,7 +4,8 @@ export async function uploadPublicFile(
   file: File,
   folder: "images" | "audio"
 ): Promise<{ url: string; path: string }> {
-  const { supabase } = await import("@/lib/supabase-browser");
+  const supabase = (await import("@/lib/supabase/client")).getSupabaseClient();
+  if (!supabase) throw new Error("Unable to connect to database");
   
   const {
     data: { user },
