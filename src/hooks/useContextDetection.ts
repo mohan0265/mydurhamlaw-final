@@ -38,52 +38,16 @@ Keep responses warm, supportive, and focused on the student's wellbeing.`,
 Keep responses educational, structured, and academically rigorous while remaining encouraging.`,
     tone: 'academic'
   },
-  '/dashboard/foundation': {
+  '/dashboard': {
     type: 'dashboard',
-    name: 'Foundation Study Assistant',
-    systemPrompt: `You are a helpful study assistant for Durham Law foundation students. Your role is to:
-- Help organize foundational study schedules and academic planning
-- Provide guidance on basic legal concepts and course management
-- Assist with transitioning into university-level legal studies
-- Offer productivity tips and foundational study strategies
-- Help with general academic organization and planning
-Keep responses organized, practical, and focused on foundation-level academic success.`,
-    tone: 'organized'
-  },
-  '/dashboard/year1': {
-    type: 'dashboard',
-    name: 'Year 1 Study Assistant',
-    systemPrompt: `You are a helpful study assistant for Durham Law Year 1 students. Your role is to:
-- Help organize first-year study schedules and academic planning
-- Provide guidance on core legal modules and course priorities
-- Assist with developing legal research and writing skills
-- Offer productivity tips and first-year study strategies
-- Help with academic organization and progress tracking
-Keep responses organized, practical, and focused on first-year academic success.`,
-    tone: 'organized'
-  },
-  '/dashboard/year2': {
-    type: 'dashboard',
-    name: 'Year 2 Study Assistant',
-    systemPrompt: `You are a helpful study assistant for Durham Law Year 2 students. Your role is to:
-- Help organize second-year study schedules and advanced academic planning
-- Provide guidance on specialized legal modules and advanced course priorities
-- Assist with developing advanced legal analysis and research skills
-- Offer productivity tips and intermediate study strategies
-- Help with career planning and academic specialization choices
-Keep responses organized, practical, and focused on intermediate-level academic success.`,
-    tone: 'organized'
-  },
-  '/dashboard/year3': {
-    type: 'dashboard',
-    name: 'Year 3 Study Assistant',
-    systemPrompt: `You are a helpful study assistant for Durham Law Year 3 students. Your role is to:
-- Help organize final-year study schedules and dissertation planning
-- Provide guidance on specialized modules and career preparation
-- Assist with advanced legal research, analysis, and professional skills
-- Offer productivity tips and final-year study strategies
-- Help with career transition planning and academic excellence
-Keep responses organized, practical, and focused on final-year academic success and career preparation.`,
+    name: 'Durham Law Study Assistant',
+    systemPrompt: `You are a helpful study assistant for Durham Law students. Your role is to:
+- Help organize study schedules and academic planning for all year levels
+- Provide guidance on legal modules and course priorities
+- Assist with developing legal research, writing, and analytical skills
+- Offer productivity tips and study strategies
+- Help with academic organization, progress tracking, and career planning
+Keep responses organized, practical, and focused on academic success. Adapt your advice based on the student's year level and needs.`,
     tone: 'organized'
   },
   '/calendar': {
@@ -103,7 +67,7 @@ Keep responses practical, time-focused, and organizationally helpful.`,
 export function useContextDetection() {
   const router = useRouter();
   const [currentContext, setCurrentContext] = useState<ContextConfig>(
-    contextConfigs['/dashboard/foundation'] || {
+    contextConfigs['/dashboard'] || {
       type: 'general',
       name: 'General Assistant',
       systemPrompt: `You are a helpful AI assistant for Durham Law students. Provide clear, accurate, and supportive responses to help with their studies and general questions.`,
@@ -128,25 +92,10 @@ export function useContextDetection() {
       } else if (pathname.includes('assignment') || pathname.includes('research')) {
         const config = contextConfigs['/assignment-generator'];
         if (config) setCurrentContext(config);
-      } else if (pathname.includes('dashboard') || pathname.startsWith('/dashboard/')) {
-        // Handle dynamic dashboard routing
-        if (pathname.includes('/dashboard/foundation')) {
-          const config = contextConfigs['/dashboard/foundation'];
-          if (config) setCurrentContext(config);
-        } else if (pathname.includes('/dashboard/year1')) {
-          const config = contextConfigs['/dashboard/year1'];
-          if (config) setCurrentContext(config);
-        } else if (pathname.includes('/dashboard/year2')) {
-          const config = contextConfigs['/dashboard/year2'];
-          if (config) setCurrentContext(config);
-        } else if (pathname.includes('/dashboard/year3')) {
-          const config = contextConfigs['/dashboard/year3'];
-          if (config) setCurrentContext(config);
-        } else {
-          // Default to foundation if dashboard type unclear
-          const config = contextConfigs['/dashboard/foundation'];
-          if (config) setCurrentContext(config);
-        }
+      } else if (pathname.includes('dashboard') || pathname.startsWith('/dashboard')) {
+        // Handle unified dashboard routing
+        const config = contextConfigs['/dashboard'];
+        if (config) setCurrentContext(config);
       } else if (pathname.includes('calendar') || pathname.includes('schedule')) {
         const config = contextConfigs['/calendar'];
         if (config) setCurrentContext(config);

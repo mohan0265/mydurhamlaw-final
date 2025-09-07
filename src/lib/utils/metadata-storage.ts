@@ -75,15 +75,13 @@ export const clearSignupMetadata = (): void => {
 }
 
 export const getDashboardRoute = (yearGroup: string): string => {
+  // All year groups now use the same unified dashboard
   switch (yearGroup) {
     case 'foundation':
-      return '/dashboard/foundation'
     case 'year1':
-      return '/dashboard/year1'
     case 'year2':
-      return '/dashboard/year2'
     case 'year3':
-      return '/dashboard/year3'
+      return '/dashboard'
     default:
       console.error('🚨 Invalid year group:', yearGroup)
       return '/signup'

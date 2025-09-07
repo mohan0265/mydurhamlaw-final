@@ -1,58 +1,54 @@
 // src/pages/dashboard.tsx
-import Link from "next/link";
+import React from 'react';
+import GreetingWidget from '@/components/dashboard/GreetingWidget';
+import { WelcomeWidget } from '@/components/dashboard/WelcomeWidget';
+import { ProgressWidget } from '@/components/dashboard/ProgressWidget';
+import UpcomingDeadlinesWidget from '@/components/dashboard/UpcomingDeadlinesWidget';
+import TodaysTasksWidget from '@/components/dashboard/TodaysTasksWidget';
+import { StudyFocusWidget } from '@/components/dashboard/StudyFocusWidget';
+import { QuickActionsWidget } from '@/components/dashboard/QuickActionsWidget';
+import MemoryJournalWidget from '@/components/dashboard/MemoryJournalWidget';
+import WellbeingTipWidget from '@/components/dashboard/WellbeingTipWidget';
 
 export default function Dashboard() {
-  const cards = [
-    {
-      title: "My Year at a Glance",
-      desc: "See your semesters, weeks and topics at a glance.",
-      href: "/year-at-a-glance",
-    },
-    {
-      title: "Premier Student Lounge",
-      desc: "Relax, connect, and join the community.",
-      href: "/lounge",
-    },
-    {
-      title: "Durham Community",
-      desc: "Emergency info, transport, events, dining and local map.",
-      href: "/community",
-    },
-    {
-      title: "Study Resources",
-      desc: "Curated materials and tools for your modules.",
-      href: "/resources",
-    },
-    {
-      title: "Legal News",
-      desc: "Stay updated with key legal news and cases.",
-      href: "/news",
-    },
-    {
-      title: "About",
-      desc: "What this platform offers and how to get the most from it.",
-      href: "/about",
-    },
-  ];
-
   return (
-    <main className="mx-auto max-w-6xl px-4 sm:px-6 py-10">
-      <h1 className="text-3xl font-semibold mb-2">Welcome to your Dashboard</h1>
-      <p className="text-gray-600 mb-8">
-        Quick links to everything in MyDurhamLaw. Pick a card to jump in.
-      </p>
+    <main className="mx-auto max-w-7xl px-4 sm:px-6 py-6">
+      {/* Responsive widgets grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {/* Row 1 */}
+        <div className="lg:col-span-2">
+          <GreetingWidget />
+        </div>
+        <div>
+          <WelcomeWidget />
+        </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {cards.map((c) => (
-          <Link
-            key={c.href}
-            href={c.href}
-            className="rounded-2xl border bg-white p-5 shadow-sm hover:shadow-md transition"
-          >
-            <div className="text-lg font-medium mb-1">{c.title}</div>
-            <div className="text-sm text-gray-600">{c.desc}</div>
-          </Link>
-        ))}
+        {/* Row 2 */}
+        <div>
+          <ProgressWidget />
+        </div>
+        <div>
+          <UpcomingDeadlinesWidget />
+        </div>
+        <div>
+          <TodaysTasksWidget />
+        </div>
+
+        {/* Row 3 */}
+        <div>
+          <StudyFocusWidget />
+        </div>
+        <div>
+          <QuickActionsWidget />
+        </div>
+        <div>
+          <MemoryJournalWidget />
+        </div>
+
+        {/* Row 4 - Full width wellbeing tip */}
+        <div className="lg:col-span-3">
+          <WellbeingTipWidget />
+        </div>
       </div>
     </main>
   );

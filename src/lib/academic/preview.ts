@@ -16,11 +16,12 @@ export function sanitizeYear(y?: string | null): YearKey | null {
  * Convert year key to URL path segment
  */
 export function yearKeyToPath(year: YearKey): string {
+  // All year groups now use the unified dashboard, but redirect to YAAG for year-specific content
   const pathMap: Record<YearKey, string> = {
-    foundation: '/dashboard/foundation',
-    year_1: '/dashboard/year1', 
-    year_2: '/dashboard/year2',
-    year_3: '/dashboard/year3'
+    foundation: '/year-at-a-glance?y=foundation',
+    year_1: '/year-at-a-glance?y=year1', 
+    year_2: '/year-at-a-glance?y=year2',
+    year_3: '/year-at-a-glance?y=year3'
   };
   
   return pathMap[year];
@@ -30,11 +31,12 @@ export function yearKeyToPath(year: YearKey): string {
  * Convert URL path to year key
  */
 export function pathToYearKey(path: string): YearKey | null {
+  // Updated to handle new YAAG paths
   const reverseMap: Record<string, YearKey> = {
-    '/dashboard/foundation': 'foundation',
-    '/dashboard/year1': 'year_1',
-    '/dashboard/year2': 'year_2', 
-    '/dashboard/year3': 'year_3'
+    '/year-at-a-glance?y=foundation': 'foundation',
+    '/year-at-a-glance?y=year1': 'year_1',
+    '/year-at-a-glance?y=year2': 'year_2', 
+    '/year-at-a-glance?y=year3': 'year_3'
   };
   
   return reverseMap[path] || null;

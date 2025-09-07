@@ -242,6 +242,36 @@ const YearAtAGlancePage: React.FC = () => {
         </div>
       </div>
 
+      {/* Year-specific guidance banners */}
+      {year && (
+        <div className="mb-6">
+          {year === 'foundation' && (
+            <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 rounded-r-lg" role="alert">
+              <p className="font-bold">Foundation Year Guidance</p>
+              <p>Welcome to your first year! Focus on understanding the core concepts and building good study habits.</p>
+            </div>
+          )}
+          {year === 'year1' && (
+            <div className="bg-blue-100 border-l-4 border-blue-500 text-blue-700 p-4 rounded-r-lg" role="alert">
+              <p className="font-bold">Year 1 - Building Your Foundation</p>
+              <p>You're now studying the core modules of law. Focus on understanding fundamental principles and developing strong analytical skills.</p>
+            </div>
+          )}
+          {year === 'year2' && (
+            <div className="bg-purple-100 border-l-4 border-purple-500 text-purple-700 p-4 rounded-r-lg" role="alert">
+              <p className="font-bold">Year 2 - Advancing Your Knowledge</p>
+              <p>Dive deeper into specialized areas of law. Focus on developing critical analysis and legal reasoning skills.</p>
+            </div>
+          )}
+          {year === 'year3' && (
+            <div className="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded-r-lg" role="alert">
+              <p className="font-bold">Year 3 - Final Year</p>
+              <p>Focus on your dissertation and career preparation. You're almost there!</p>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Three-column academic plan */}
       <div className="grid md:grid-cols-3 gap-5">
         {plan.map((t) => <TermCardView key={t.title} t={t as TermCard} yearKey={year} />)}
