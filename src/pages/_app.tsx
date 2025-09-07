@@ -12,7 +12,6 @@ import {
 } from "@tanstack/react-query";
 import { validateEnv } from "@/lib/env";
 import { AuthProvider } from "@/lib/supabase/AuthContext";
-import { SupabaseProvider } from "@/contexts/SupabaseProvider";
 import { DurmahProvider, DurmahContextSetup } from "@/lib/durmah/context";
 import { loadMDLStudentContext } from "@/lib/supabase/supabaseBridge";
 import LayoutShell from "@/layout/LayoutShell";
@@ -91,43 +90,41 @@ export default function App({ Component, pageProps }: AppProps) {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </Head>
       <AuthProvider>
-        <SupabaseProvider>
-          <QueryClientProvider client={queryClient}>
-            <HydrationBoundary state={(pageProps as any)?.dehydratedState}>
-              <DurmahProvider>
-                <DurmahContextSetup />
-                <AppDurmahBootstrap>
-                  <LayoutShell>
-                    <Component {...pageProps} />
-                  </LayoutShell>
-                  {/* Global Toaster */}
-                  <Toaster
-                    position="top-right"
-                    toastOptions={{
-                      duration: 4000,
-                      style: { background: "#363636", color: "#fff" },
-                      success: {
-                        duration: 3000,
-                        iconTheme: { primary: "#10b981", secondary: "#fff" },
-                      },
-                      error: {
-                        duration: 5000,
-                        iconTheme: { primary: "#ef4444", secondary: "#fff" },
-                      },
-                    }}
-                  />
-                  {/* Floating widgets */}
-                  {!hideWidgets && (
-                    <>
-                      {VOICE_ENABLED && <DurmahWidget />}
-                      {AWY_ENABLED && <AWYBootstrap />}
-                    </>
-                  )}
-                </AppDurmahBootstrap>
-              </DurmahProvider>
-            </HydrationBoundary>
-          </QueryClientProvider>
-        </SupabaseProvider>
+        <QueryClientProvider client={queryClient}>
+          <HydrationBoundary state={(pageProps as any)?.dehydratedState}>
+            <DurmahProvider>
+              <DurmahContextSetup />
+              <AppDurmahBootstrap>
+                <LayoutShell>
+                  <Component {...pageProps} />
+                </LayoutShell>
+                {/* Global Toaster */}
+                <Toaster
+                  position="top-right"
+                  toastOptions={{
+                    duration: 4000,
+                    style: { background: "#363636", color: "#fff" },
+                    success: {
+                      duration: 3000,
+                      iconTheme: { primary: "#10b981", secondary: "#fff" },
+                    },
+                    error: {
+                      duration: 5000,
+                      iconTheme: { primary: "#ef4444", secondary: "#fff" },
+                    },
+                  }}
+                />
+                {/* Floating widgets */}
+                {!hideWidgets && (
+                  <>
+                    {VOICE_ENABLED && <DurmahWidget />}
+                    {AWY_ENABLED && <AWYBootstrap />}
+                  </>
+                )}
+              </AppDurmahBootstrap>
+            </DurmahProvider>
+          </HydrationBoundary>
+        </QueryClientProvider>
       </AuthProvider>
     </>
   );

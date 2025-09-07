@@ -55,10 +55,22 @@ const TestimonialCard: React.FC<TestimonialCardProps> = ({ quote, author, role }
 
 export default function DurhamLanding() {
   const { user } = useAuth()
-  const displayName =
-    user?.email?.split('@')[0]?.replace(/[0-9]/g, '') ||
-    user?.user_metadata?.full_name ||
-    'there'
+  
+  // Safely extract displayName to ensure it's always a string
+  const displayName = React.useMemo(() => {
+    if (!user) return 'there';
+    
+    const emailName = user.email?.split('@')[0]?.replace(/[0-9]/g, '');
+    const fullName = user.user_metadata?.full_name;
+    
+    if (typeof emailName === 'string' && emailName.trim()) {
+      return emailName;
+    }
+    if (typeof fullName === 'string' && fullName.trim()) {
+      return fullName;
+    }
+    return 'there';
+  }, [user]);
 
   return (
     <>

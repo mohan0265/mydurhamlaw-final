@@ -2,7 +2,7 @@
 
 import React, { createContext, useEffect, useMemo, useState } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
-import { getSupabaseBrowser } from './client';
+import { getSupabaseClient } from './client';
 
 type AuthValue = { 
   user: User | null; 
@@ -30,7 +30,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   });
 
   useEffect(() => {
-    const supabase = getSupabaseBrowser();
+    const supabase = getSupabaseClient();
     if (!supabase) { 
       setValue({ 
         user: null, 
