@@ -184,17 +184,36 @@ export function useAwyPresence(): UseAwyPresenceResult {
         (payload) => {
           setPresence((prev) => {
             // Merge or insert/update
+            const newData = payload.new as any;
+            if (!newData?.user_id) return prev;
+            
             const idx = prev.findIndex(
-              (p) => p.user_id === (payload.new as any)?.user_id
+              (p) => p.user_id === newData.user_id
             );
             if (idx >= 0) {
-              // Update
+              // Update - ensure all required fields are present
               const next = [...prev];
-              next[idx] = { ...next[idx], ...payload.new };
+              const existingItem = next[idx];
+              next[idx] = {
+                id: newData.id || existingItem?.id || '',
+                user_id: newData.user_id || existingItem?.user_id || '',
+                status: newData.status || existingItem?.status || 'offline',
+                status_message: newData.status_message ?? existingItem?.status_message ?? null,
+                last_seen: newData.last_seen || existingItem?.last_seen || new Date().toISOString(),
+                heartbeat_at: newData.heartbeat_at || existingItem?.heartbeat_at || new Date().toISOString()
+              };
               return next;
             }
-            // Insert
-            return [...prev, payload.new as any];
+            // Insert - ensure all required fields are present
+            const newPresence: AwyPresence = {
+              id: newData.id || '',
+              user_id: newData.user_id || '',
+              status: newData.status || 'offline',
+              status_message: newData.status_message ?? null,
+              last_seen: newData.last_seen || new Date().toISOString(),
+              heartbeat_at: newData.heartbeat_at || new Date().toISOString()
+            };
+            return [...prev, newPresence];
           });
         }
       )

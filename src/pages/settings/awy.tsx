@@ -38,7 +38,8 @@ export default function AwySettingsPage() {
 
   // Save call link for loved one ID
   const handleSave = async (lovedOneId: string) => {
-    if (!validateUrl(vals[lovedOneId])) {
+    const urlValue = vals[lovedOneId] ?? "";
+    if (!validateUrl(urlValue)) {
       toast.error("Enter a valid https:// call link or leave blank.");
       return;
     }
@@ -46,12 +47,17 @@ export default function AwySettingsPage() {
     try {
       // Save to DB using Supabase
       const supabase = (await import("@/lib/supabase/client")).getSupabaseClient();
+      if (!supabase) {
+        toast.error("Unable to connect to database.");
+        setLoading(false);
+        return;
+      }
       // Upsert call link (must use authenticated user)
       const { error } = await supabase
         .from("awy_call_links")
         .upsert(
-          { owner_id: userId, loved_one_id: lovedOneId, url: vals[lovedOneId] },
-          { onConflict: ["owner_id", "loved_one_id"] }
+          { owner_id: userId, loved_one_id: lovedOneId, url: urlValue },
+          { onConflict: "owner_id,loved_one_id" }
         );
       setLoading(false);
       if (!error) {
