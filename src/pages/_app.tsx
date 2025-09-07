@@ -28,9 +28,7 @@ const DurmahWidget = dynamic(() => import("../components/DurmahWidget"), {
 });
 
 // ✅ AWY widget (client-only)
-const AWYWidget = dynamic(() => import("@/components/awy/AWYWidget"), {
-  ssr: false,
-});
+import AWYBootstrap from "@/components/AWYBootstrap";
 
 // Optional feature flags
 const VOICE_ENABLED =
@@ -137,7 +135,7 @@ export default function App({ Component, pageProps }: AppProps) {
                   {!hideWidgets && (
                     <>
                       {VOICE_ENABLED && <DurmahWidget />}
-                      {AWY_ENABLED && <AWYWidget />}
+                      {AWY_ENABLED && <AWYBootstrap />}
                     </>
                   )}
                 </AppDurmahBootstrap>
