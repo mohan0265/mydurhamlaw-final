@@ -180,7 +180,7 @@ export default function AWYWidget() {
         position: "fixed",
         left: position.x,
         top: position.y,
-        zIndex: 38 // below Durmah z-40
+        zIndex: "38" // below Durmah z-40
       }}
       className="cursor-move focus:outline-blue-600 focus:ring-2 focus:ring-blue-600"
       whileDrag={{ scale: 1.05 }}
@@ -253,7 +253,7 @@ export default function AWYWidget() {
               <div className="space-y-3 pt-1">
                 {connections.map(c => {
                   const p = presenceByUser.get(c.loved_one_id);
-                  const status = (p?.status ?? "offline") as AwyStatus;
+                  const status = (typeof p?.status === "string" ? p.status : "offline") as AwyStatus;
                   const callUrl = callLinks?.[c.loved_one_id] ?? "";
                   return (
                     <motion.div
@@ -265,7 +265,7 @@ export default function AWYWidget() {
                     >
                       <motion.span
                         className={`w-9 h-9 rounded-full ring-2 ${ringClass(status)} bg-gray-100 flex items-center justify-center`}
-                        title={p?.status_message ?? ""}
+                        title={typeof p?.status_message === "string" ? p.status_message : ""}
                         animate={{ scale: status === "online" ? [1, 1.1, 1] : 1 }}
                         transition={{
                           duration: 1,
@@ -274,15 +274,11 @@ export default function AWYWidget() {
                         }}
                       >💕</motion.span>
                       <span className="flex flex-col ml-2 grow pr-2">
-                        <span className="text-sm font-medium text-gray-900">{c.relationship}</span>
+                        <span className="text-sm font-medium text-gray-900">{String(c.relationship || "Friend")}</span>
                         <span className="text-[11px] text-gray-500"
                           style={{ color: status === "online" ? "#10b981" : "#6b7280" }}
                         >
-                          {status === "online"
-                            ? "Online"
-                            : status === "busy"
-                            ? "Busy"
-                            : "Offline"}
+                          {status === "online" ? "Online" : status === "busy" ? "Busy" : "Offline"}
                         </span>
                       </span>
                       <div className="flex gap-1 items-center">
@@ -310,7 +306,7 @@ export default function AWYWidget() {
               className="absolute right-2 top-2 bg-gray-100 rounded-full px-2 py-1 text-xs text-gray-700 hover:bg-gray-200 transition focus:ring"
               aria-label="Collapse AWY"
               tabIndex={0}
-              style={{ zIndex: 1 }}
+              style={{ zIndex: "1" }}
             >×</button>
           </div>
         )}
