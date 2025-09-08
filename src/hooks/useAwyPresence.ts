@@ -124,7 +124,6 @@ export function useAwyPresence(): UseAwyPresenceResult {
   // Live DB subscription for connections
   useEffect(() => {
     if (!client || !userId) return;
-    // Listen for INSERT/UPDATE/DELETE on awy_connections for this user
     const sub = client
       .channel("connections")
       .on(
@@ -155,7 +154,6 @@ export function useAwyPresence(): UseAwyPresenceResult {
 
     let canceled = false;
 
-    // Step 1: Fetch presence for all users in this user's network
     const allUserIds = [
       userId,
       ...connections.map((c) =>
@@ -170,7 +168,6 @@ export function useAwyPresence(): UseAwyPresenceResult {
         if (data && !error && !canceled) setPresence(data);
       });
 
-    // Step 2: Listen for updates for these user_ids
     const sub = client
       .channel("presence")
       .on(
@@ -183,35 +180,37 @@ export function useAwyPresence(): UseAwyPresenceResult {
         },
         (payload) => {
           setPresence((prev) => {
-            // Merge or insert/update
             const newData = payload.new as any;
             if (!newData?.user_id) return prev;
-            
-            const idx = prev.findIndex(
-              (p) => p.user_id === newData.user_id
-            );
+
+            const idx = prev.findIndex((p) => p.user_id === newData.user_id);
             if (idx >= 0) {
-              // Update - ensure all required fields are present
               const next = [...prev];
               const existingItem = next[idx];
               next[idx] = {
-                id: newData.id || existingItem?.id || '',
-                user_id: newData.user_id || existingItem?.user_id || '',
-                status: newData.status || existingItem?.status || 'offline',
-                status_message: newData.status_message ?? existingItem?.status_message ?? null,
-                last_seen: newData.last_seen || existingItem?.last_seen || new Date().toISOString(),
-                heartbeat_at: newData.heartbeat_at || existingItem?.heartbeat_at || new Date().toISOString()
+                id: newData.id || existingItem?.id || "",
+                user_id: newData.user_id || existingItem?.user_id || "",
+                status: newData.status || existingItem?.status || "offline",
+                status_message:
+                  newData.status_message ?? existingItem?.status_message ?? null,
+                last_seen:
+                  newData.last_seen ||
+                  existingItem?.last_seen ||
+                  new Date().toISOString(),
+                heartbeat_at:
+                  newData.heartbeat_at ||
+                  existingItem?.heartbeat_at ||
+                  new Date().toISOString(),
               };
               return next;
             }
-            // Insert - ensure all required fields are present
             const newPresence: AwyPresence = {
-              id: newData.id || '',
-              user_id: newData.user_id || '',
-              status: newData.status || 'offline',
+              id: newData.id || "",
+              user_id: newData.user_id || "",
+              status: newData.status || "offline",
               status_message: newData.status_message ?? null,
               last_seen: newData.last_seen || new Date().toISOString(),
-              heartbeat_at: newData.heartbeat_at || new Date().toISOString()
+              heartbeat_at: newData.heartbeat_at || new Date().toISOString(),
             };
             return [...prev, newPresence];
           });
@@ -233,7 +232,6 @@ export function useAwyPresence(): UseAwyPresenceResult {
       setCallLinks({});
       return;
     }
-    // Only show call links where user is owner
     client
       .from("awy_call_links")
       .select("loved_one_id,url,owner_id")
@@ -241,9 +239,7 @@ export function useAwyPresence(): UseAwyPresenceResult {
       .then(({ data, error }) => {
         if (data && !error) {
           const rec: Record<string, string> = {};
-          for (const row of data) {
-            rec[row.loved_one_id] = row.url ?? "";
-          }
+          for (const row of data) rec[row.loved_one_id] = row.url ?? "";
           setCallLinks(rec);
         }
       });
@@ -272,7 +268,6 @@ export function useAwyPresence(): UseAwyPresenceResult {
         if (data && !error) setWaves(data);
       });
 
-    // Live for new unread waves
     const sub = client
       .channel("waves")
       .on(
@@ -306,7 +301,7 @@ export function useAwyPresence(): UseAwyPresenceResult {
     };
   }, [client, userId]);
 
-  // Unread waves count, with ref for prior notifications
+  // Unread waves count
   const wavesUnread = useMemo(() => {
     const count = waves.filter((w) => !w.read).length;
     wavesUnreadRef.current = count;
@@ -318,28 +313,11 @@ export function useAwyPresence(): UseAwyPresenceResult {
   const sendWave = useCallback(
     async (lovedOneId: string) => {
       if (!client || !userId) return { ok: false, error: "not_authenticated" };
-      // Insert a wave row
-      const { error } = await client
-        .from("awy_waves")
-        .insert({
-          sender_id: userId,
-          receiver_id: lovedOneId,
-          sent_at: new Date().toISOString(),
-          read: false,
-        });
-      if (!error) return { ok: true };
-      return { ok: false, error: error.message };
-    },
-    [client, userId]
-  );
-
-  // Link a loved one by email (calls special DB RPC to handle RLS/user lookup)
-  const linkLovedOneByEmail = useCallback(
-    async (email: string, relationship: string) => {
-      if (!client || !userId) return { ok: false, error: "not_authenticated" };
-      const { data, error } = await client.rpc("awy_link_loved_one_by_email", {
-        email,
-        relationship,
+      const { error } = await client.from("awy_waves").insert({
+        sender_id: userId,
+        receiver_id: lovedOneId,
+        sent_at: new Date().toISOString(),
+        read: false,
       });
       if (!error) return { ok: true };
       return { ok: false, error: error.message };
@@ -347,7 +325,20 @@ export function useAwyPresence(): UseAwyPresenceResult {
     [client, userId]
   );
 
-  // Return memoized object
+  // Link by email — **send the parameter names your function expects**
+  const linkLovedOneByEmail = useCallback(
+    async (email: string, relationship: string) => {
+      if (!client || !userId) return { ok: false, error: "not_authenticated" };
+      const { error } = await client.rpc("awy_link_loved_one_by_email", {
+        p_email: email,
+        p_relationship: relationship,
+      });
+      if (!error) return { ok: true };
+      return { ok: false, error: error.message };
+    },
+    [client, userId]
+  );
+
   return useMemo<UseAwyPresenceResult>(() => {
     return {
       userId,
