@@ -1,3 +1,4 @@
+
 // src/hooks/useAwyPresence.ts
 //
 // AWY presence + waves + DB-backed call links (Supabase v2).
@@ -325,18 +326,37 @@ export function useAwyPresence(): UseAwyPresenceResult {
     [client, userId]
   );
 
-  // Link by email — **send the parameter names your function expects**
+  // Link by email — FIXED: use correct parameter names that match the SQL function
   const linkLovedOneByEmail = useCallback(
     async (email: string, relationship: string) => {
       if (!client || !userId) return { ok: false, error: "not_authenticated" };
-      const { error } = await client.rpc("awy_link_loved_one_by_email", {
-        p_email: email,
-        p_relationship: relationship,
-      });
-      if (!error) return { ok: true };
-      return { ok: false, error: error.message };
+      
+      try {
+        const { error } = await client.rpc("awy_link_loved_one_by_email", {
+          p_email: email,
+          p_relationship: relationship,
+        });
+        
+        if (!error) {
+          // Reload connections after successful link
+          reloadConnections();
+          return { ok: true };
+        }
+        
+        // Handle specific error cases
+        if (error.message.includes('user_not_found')) {
+          return { ok: false, error: "user_not_found" };
+        }
+        if (error.message.includes('cannot_link_self')) {
+          return { ok: false, error: "cannot_link_self" };
+        }
+        
+        return { ok: false, error: error.message };
+      } catch (err) {
+        return { ok: false, error: "network_error" };
+      }
     },
-    [client, userId]
+    [client, userId, reloadConnections]
   );
 
   return useMemo<UseAwyPresenceResult>(() => {
