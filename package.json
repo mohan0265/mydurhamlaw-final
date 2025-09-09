@@ -50,6 +50,8 @@
     "react-hot-toast": "^2.5.2",
     "resend": "^4.8.0",
     "rss-parser": "^3.13.0",
+    "simple-peer": "^9.11.1",
+    "socket.io-client": "^4.8.1",
     "styled-components": "^6.1.19",
     "swiper": "^11.2.10",
     "tailwind-merge": "^2.3.0",
