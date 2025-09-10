@@ -1,31 +1,42 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Heart, Video, Phone, UserPlus, X, Settings } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { VideoCallModal } from '../VideoCall/VideoCallModal';
-
-interface LovedOne {
-  loved_one_id: string;
-  email?: string;
-  display_name?: string;
-  relationship: string;
-  is_online?: boolean;
-  last_seen?: string;
-}
+// src/components/awy/AWYWidget.tsx
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import { Heart, Video, UserPlus, X, Settings } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { VideoCallModal } from "../VideoCall/VideoCallModal";
+import { useAwyPresence } from "@/hooks/useAwyPresence";
 
 interface AWYWidgetProps {
   className?: string;
 }
 
-export const AWYWidget: React.FC<AWYWidgetProps> = ({ className = '' }) => {
+type LovedListItem = {
+  id: string;            // the OTHER user id (partner user)
+  connectionId: string;  // awy_connections.id
+  label: string;         // "Mum", "Dad", etc (relationship)
+  online: boolean;
+};
+
+export const AWYWidget: React.FC<AWYWidgetProps> = ({ className = "" }) => {
+  const {
+    userId,
+    connections,
+    presenceByUser,
+    sendWave,
+    linkLovedOneByEmail,
+    reloadConnections,
+    callLinks,
+  } = useAwyPresence();
+
   const [isExpanded, setIsExpanded] = useState(false);
   const [position, setPosition] = useState({ x: 20, y: 20 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+
   const [showAddForm, setShowAddForm] = useState(false);
-  const [newLovedOneEmail, setNewLovedOneEmail] = useState('');
-  const [newLovedOneRelationship, setNewLovedOneRelationship] = useState('');
-  const [lovedOnes, setLovedOnes] = useState<LovedOne[]>([]);
+  const [newLovedOneEmail, setNewLovedOneEmail] = useState("");
+  const [newLovedOneRelationship, setNewLovedOneRelationship] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+
   const [videoCallState, setVideoCallState] = useState<{
     isOpen: boolean;
     lovedOneName: string;
@@ -33,177 +44,184 @@ export const AWYWidget: React.FC<AWYWidgetProps> = ({ className = '' }) => {
     isInitiator: boolean;
   }>({
     isOpen: false,
-    lovedOneName: '',
-    lovedOneId: '',
-    isInitiator: false
+    lovedOneName: "",
+    lovedOneId: "",
+    isInitiator: false,
   });
 
   const widgetRef = useRef<HTMLDivElement>(null);
 
-  // Load position from localStorage
+  // ---------- position: load/save ----------
   useEffect(() => {
-    const savedPosition = localStorage.getItem('awy-widget-position');
-    if (savedPosition) {
-      try {
-        const parsed = JSON.parse(savedPosition);
+    try {
+      const saved = localStorage.getItem("awy-widget-position");
+      if (saved) {
+        const parsed = JSON.parse(saved);
         const maxX = window.innerWidth - 320;
         const maxY = window.innerHeight - 450;
         setPosition({
           x: Math.max(20, Math.min(parsed.x, maxX)),
-          y: Math.max(20, Math.min(parsed.y, maxY))
+          y: Math.max(20, Math.min(parsed.y, maxY)),
         });
-      } catch (e) {
-        console.error('Error loading position:', e);
       }
-    }
+    } catch {}
   }, []);
 
-  // Mock data for testing - replace with real Supabase calls later
-  useEffect(() => {
-    // Simulate loading loved ones
-    const mockLovedOnes: LovedOne[] = [
-      {
-        loved_one_id: '1',
-        email: 'mum@example.com',
-        display_name: 'Mum',
-        relationship: 'Mother',
-        is_online: Math.random() > 0.5, // Random online status for demo
-        last_seen: new Date().toISOString()
-      },
-      {
-        loved_one_id: '2',
-        email: 'dad@example.com',
-        display_name: 'Dad',
-        relationship: 'Father',
-        is_online: Math.random() > 0.5,
-        last_seen: new Date().toISOString()
-      }
-    ];
-    
-    setLovedOnes(mockLovedOnes);
-  }, []);
-
-  const savePosition = (newPosition: { x: number; y: number }) => {
+  const savePosition = (p: { x: number; y: number }) => {
     try {
-      localStorage.setItem('awy-widget-position', JSON.stringify(newPosition));
-    } catch (e) {
-      console.error('Error saving position:', e);
-    }
+      localStorage.setItem("awy-widget-position", JSON.stringify(p));
+    } catch {}
   };
 
   const handleMouseDown = (e: React.MouseEvent) => {
-    if (e.target === widgetRef.current || (e.target as Element).closest('.drag-handle')) {
+    if (e.target === widgetRef.current || (e.target as Element).closest(".drag-handle")) {
       setIsDragging(true);
       const rect = widgetRef.current?.getBoundingClientRect();
       if (rect) {
-        setDragOffset({
-          x: e.clientX - rect.left,
-          y: e.clientY - rect.top
-        });
+        setDragOffset({ x: e.clientX - rect.left, y: e.clientY - rect.top });
       }
     }
   };
 
   useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      if (isDragging) {
-        const newX = e.clientX - dragOffset.x;
-        const newY = e.clientY - dragOffset.y;
-        
-        const maxX = window.innerWidth - (isExpanded ? 320 : 60);
-        const maxY = window.innerHeight - (isExpanded ? 450 : 60);
-        
-        const clampedPosition = {
-          x: Math.max(0, Math.min(newX, maxX)),
-          y: Math.max(0, Math.min(newY, maxY))
-        };
-        
-        setPosition(clampedPosition);
-      }
+    const onMove = (e: MouseEvent) => {
+      if (!isDragging) return;
+      const newX = e.clientX - dragOffset.x;
+      const newY = e.clientY - dragOffset.y;
+      const maxX = window.innerWidth - (isExpanded ? 320 : 60);
+      const maxY = window.innerHeight - (isExpanded ? 450 : 60);
+      const clamped = {
+        x: Math.max(0, Math.min(newX, maxX)),
+        y: Math.max(0, Math.min(newY, maxY)),
+      };
+      setPosition(clamped);
     };
-
-    const handleMouseUp = () => {
+    const onUp = () => {
       if (isDragging) {
         setIsDragging(false);
         savePosition(position);
       }
     };
-
     if (isDragging) {
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
+      document.addEventListener("mousemove", onMove);
+      document.addEventListener("mouseup", onUp);
     }
-
     return () => {
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
+      document.removeEventListener("mousemove", onMove);
+      document.removeEventListener("mouseup", onUp);
     };
   }, [isDragging, dragOffset, position, isExpanded]);
 
+  // ---------- derive list from connections + presence ----------
+  const partnerOf = useCallback(
+    (conn: any) => {
+      if (!userId) return null as string | null;
+      return conn.student_id === userId ? (conn.loved_one_id as string | null) : (conn.student_id as string | null);
+    },
+    [userId]
+  );
+
+  const list: LovedListItem[] = connections
+    .map((c) => {
+      const otherId = partnerOf(c);
+      if (!otherId) return null;
+      const pres = presenceByUser.get(otherId);
+      const online = pres?.status === "online";
+      const label = c.relationship || "Loved One";
+      return { id: otherId, connectionId: c.id, label, online };
+    })
+    .filter(Boolean) as LovedListItem[];
+
+  const onlineCount = list.filter((i) => i.online).length;
+
+  // ---------- actions ----------
   const handleAddLovedOne = async () => {
-    if (!newLovedOneEmail.trim()) return;
+    if (!newLovedOneEmail.trim() || !newLovedOneRelationship.trim()) return;
+    if (!userId) return alert("Please sign in again.");
 
     setIsLoading(true);
     try {
-      // TODO: Replace with actual Supabase RPC call
-      console.log('Adding loved one:', newLovedOneEmail, newLovedOneRelationship);
-      
-      // For now, add to mock data
-      const newLovedOne: LovedOne = {
-        loved_one_id: Date.now().toString(),
-        email: newLovedOneEmail.trim(),
-        display_name: newLovedOneRelationship.trim() || 'Friend',
-        relationship: newLovedOneRelationship.trim() || 'Friend',
-        is_online: Math.random() > 0.5,
-        last_seen: new Date().toISOString()
-      };
-      
-      setLovedOnes(prev => [...prev, newLovedOne]);
-      setNewLovedOneEmail('');
-      setNewLovedOneRelationship('');
-      setShowAddForm(false);
-      
-      alert('Loved one added successfully! (This is a demo - will connect to database later)');
-    } catch (error) {
-      console.error('Failed to add loved one:', error);
-      alert('Failed to add loved one. Please try again.');
+      // First try to directly link (works if the email already exists as a user)
+      const r = await linkLovedOneByEmail(newLovedOneEmail.trim(), newLovedOneRelationship.trim());
+      if (r.ok) {
+        alert("Loved one linked.");
+        setNewLovedOneEmail("");
+        setNewLovedOneRelationship("");
+        setShowAddForm(false);
+        reloadConnections();
+        return;
+      }
+
+      // If the RPC threw user_not_found, send an invite via service-role route
+      if ((r.error || "").toLowerCase().includes("user_not_found")) {
+        const res = await fetch("/api/awy/invite", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "x-user-id": userId },
+          body: JSON.stringify({
+            email: newLovedOneEmail.trim(),
+            relationship: newLovedOneRelationship.trim(),
+          }),
+        });
+        const data = await res.json();
+        if (data?.ok) {
+          alert("📨 Invite sent! Connection will activate after they accept.");
+          setNewLovedOneEmail("");
+          setNewLovedOneRelationship("");
+          setShowAddForm(false);
+          reloadConnections();
+        } else {
+          alert(`Invite failed: ${data?.error || "unknown_error"}`);
+        }
+        return;
+      }
+
+      // Any other error
+      alert(`Could not add loved one: ${r.error || "unknown_error"}`);
+    } catch (e: any) {
+      alert(`Unexpected error: ${String(e?.message || e)}`);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const startVideoCall = (lovedOne: LovedOne) => {
+  const startVideoCall = (item: LovedListItem) => {
+    const deepLink = callLinks[item.id];
+    if (deepLink) {
+      // If the student set a preferred external call link for this loved one
+      window.open(deepLink, "_blank", "noopener,noreferrer");
+      return;
+    }
+    // Otherwise fall back to in-app call modal
     setVideoCallState({
       isOpen: true,
-      lovedOneName: lovedOne.display_name || lovedOne.relationship,
-      lovedOneId: lovedOne.loved_one_id,
-      isInitiator: true
+      lovedOneName: item.label,
+      lovedOneId: item.id,
+      isInitiator: true,
     });
   };
 
   const closeVideoCall = () => {
     setVideoCallState({
       isOpen: false,
-      lovedOneName: '',
-      lovedOneId: '',
-      isInitiator: false
+      lovedOneName: "",
+      lovedOneId: "",
+      isInitiator: false,
     });
   };
 
-  const sendWave = (lovedOneId: string) => {
-    alert('👋 Wave sent! (This is a demo - will connect to database later)');
+  const onWave = async (targetId: string) => {
+    const r = await sendWave(targetId);
+    if (r.ok) alert("👋 Wave sent!");
+    else alert(`Wave failed: ${r.error}`);
   };
 
+  // ---------- UI ----------
   return (
     <>
       <motion.div
         ref={widgetRef}
         className={`fixed z-50 ${className}`}
-        style={{
-          left: position.x,
-          top: position.y,
-          cursor: isDragging ? 'grabbing' : 'grab'
-        }}
+        style={{ left: position.x, top: position.y, cursor: isDragging ? "grabbing" : "grab" }}
         onMouseDown={handleMouseDown}
         initial={{ scale: 0 }}
         animate={{ scale: 1 }}
@@ -211,32 +229,22 @@ export const AWYWidget: React.FC<AWYWidgetProps> = ({ className = '' }) => {
       >
         <AnimatePresence>
           {!isExpanded ? (
-            // Collapsed State
-            <motion.div
-              key="collapsed"
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              exit={{ scale: 0 }}
-              className="relative"
-            >
+            // Collapsed
+            <motion.div key="collapsed" initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }} className="relative">
               <div
                 className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white p-4 rounded-full shadow-xl transition-all duration-300 cursor-pointer drag-handle transform hover:scale-110"
                 onClick={() => setIsExpanded(true)}
               >
                 <Heart size={28} className="fill-current animate-pulse" />
               </div>
-              
-              {/* Online indicator */}
-              {lovedOnes.some(l => l.is_online) && (
-                <div className="absolute -top-1 -right-1 w-6 h-6 bg-green-500 rounded-full border-3 border-white flex items-center justify-center">
-                  <span className="text-white text-xs font-bold">
-                    {lovedOnes.filter(l => l.is_online).length}
-                  </span>
+              {onlineCount > 0 && (
+                <div className="absolute -top-1 -right-1 w-6 h-6 bg-green-500 rounded-full border-4 border-white flex items-center justify-center">
+                  <span className="text-white text-xs font-bold">{onlineCount}</span>
                 </div>
               )}
             </motion.div>
           ) : (
-            // Expanded State
+            // Expanded
             <motion.div
               key="expanded"
               initial={{ scale: 0, opacity: 0 }}
@@ -250,23 +258,18 @@ export const AWYWidget: React.FC<AWYWidgetProps> = ({ className = '' }) => {
                   <Heart size={24} className="fill-current animate-pulse" />
                   <div>
                     <span className="font-bold text-lg">Always With You</span>
-                    <p className="text-xs opacity-90">
-                      {lovedOnes.filter(l => l.is_online).length} online
-                    </p>
+                    <p className="text-xs opacity-90">{onlineCount} online</p>
                   </div>
                 </div>
                 <div className="flex items-center space-x-2">
                   <button
-                    onClick={() => window.open('/settings/awy', '_blank')}
+                    onClick={() => window.open("/settings/awy", "_blank")}
                     className="p-2 hover:bg-white/20 rounded-full transition-colors"
                     title="Settings"
                   >
                     <Settings size={18} />
                   </button>
-                  <button
-                    onClick={() => setIsExpanded(false)}
-                    className="p-2 hover:bg-white/20 rounded-full transition-colors"
-                  >
+                  <button onClick={() => setIsExpanded(false)} className="p-2 hover:bg-white/20 rounded-full transition-colors" title="Close">
                     <X size={18} />
                   </button>
                 </div>
@@ -274,12 +277,13 @@ export const AWYWidget: React.FC<AWYWidgetProps> = ({ className = '' }) => {
 
               {/* Content */}
               <div className="p-4 max-h-96 overflow-y-auto">
-                {isLoading ? (
+                {!userId ? (
                   <div className="text-center py-8">
-                    <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-purple-600 mx-auto"></div>
-                    <p className="text-gray-600 mt-3 font-medium">Loading loved ones...</p>
+                    <Heart size={48} className="text-gray-300 mx-auto mb-4" />
+                    <p className="text-gray-600 mb-2 font-medium">Please sign in</p>
+                    <p className="text-gray-500 text-sm">Log in to manage your loved ones.</p>
                   </div>
-                ) : lovedOnes.length === 0 ? (
+                ) : list.length === 0 ? (
                   <div className="text-center py-8">
                     <Heart size={48} className="text-gray-300 mx-auto mb-4" />
                     <p className="text-gray-600 mb-4 font-medium">No loved ones connected yet</p>
@@ -294,9 +298,9 @@ export const AWYWidget: React.FC<AWYWidgetProps> = ({ className = '' }) => {
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    {lovedOnes.map((lovedOne) => (
+                    {list.map((item) => (
                       <div
-                        key={lovedOne.loved_one_id}
+                        key={item.connectionId}
                         className="flex items-center justify-between p-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl border border-gray-200 hover:shadow-md transition-all duration-300"
                       >
                         <div className="flex items-center space-x-3">
@@ -304,39 +308,29 @@ export const AWYWidget: React.FC<AWYWidgetProps> = ({ className = '' }) => {
                             <div className="w-12 h-12 bg-gradient-to-r from-purple-100 to-pink-100 rounded-full flex items-center justify-center">
                               <Heart size={20} className="text-purple-600" />
                             </div>
-                            {lovedOne.is_online ? (
-                              <div className="absolute -top-1 -right-1 w-5 h-5 bg-green-500 rounded-full border-2 border-white animate-pulse"></div>
-                            ) : (
-                              <div className="absolute -top-1 -right-1 w-5 h-5 bg-gray-400 rounded-full border-2 border-white"></div>
-                            )}
+                            <div
+                              className={`absolute -top-1 -right-1 w-5 h-5 rounded-full border-2 border-white ${
+                                item.online ? "bg-green-500 animate-pulse" : "bg-gray-400"
+                              }`}
+                            />
                           </div>
                           <div>
-                            <p className="font-semibold text-gray-900">
-                              {lovedOne.display_name || lovedOne.relationship}
-                            </p>
-                            <p className="text-sm text-gray-600">{lovedOne.relationship}</p>
-                            <p className="text-xs font-medium">
-                              {lovedOne.is_online ? (
-                                <span className="text-green-600">● Online now</span>
-                              ) : (
-                                <span className="text-gray-500">○ Offline</span>
-                              )}
-                            </p>
+                            <p className="font-semibold text-gray-900">{item.label}</p>
+                            <p className="text-xs font-medium">{item.online ? <span className="text-green-600">● Online now</span> : <span className="text-gray-500">○ Offline</span>}</p>
                           </div>
                         </div>
-                        
                         <div className="flex flex-col space-y-2">
-                          {lovedOne.is_online ? (
+                          {item.online ? (
                             <>
                               <button
-                                onClick={() => startVideoCall(lovedOne)}
+                                onClick={() => startVideoCall(item)}
                                 className="p-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-full hover:from-green-600 hover:to-green-700 transition-all duration-300 transform hover:scale-110 shadow-lg"
                                 title="Start Video Call"
                               >
                                 <Video size={16} />
                               </button>
                               <button
-                                onClick={() => sendWave(lovedOne.loved_one_id)}
+                                onClick={() => onWave(item.id)}
                                 className="p-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-full hover:from-blue-600 hover:to-blue-700 transition-all duration-300 transform hover:scale-110 shadow-lg"
                                 title="Send Wave"
                               >
@@ -345,7 +339,7 @@ export const AWYWidget: React.FC<AWYWidgetProps> = ({ className = '' }) => {
                             </>
                           ) : (
                             <button
-                              onClick={() => sendWave(lovedOne.loved_one_id)}
+                              onClick={() => onWave(item.id)}
                               className="p-2 bg-gradient-to-r from-gray-400 to-gray-500 text-white rounded-full hover:from-gray-500 hover:to-gray-600 transition-all duration-300 shadow-lg"
                               title="Send Wave (they'll see when online)"
                             >
@@ -355,7 +349,7 @@ export const AWYWidget: React.FC<AWYWidgetProps> = ({ className = '' }) => {
                         </div>
                       </div>
                     ))}
-                    
+
                     <button
                       onClick={() => setShowAddForm(true)}
                       className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white px-4 py-3 rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all duration-300 flex items-center justify-center space-x-2 transform hover:scale-105 shadow-lg"
@@ -368,11 +362,7 @@ export const AWYWidget: React.FC<AWYWidgetProps> = ({ className = '' }) => {
 
                 {/* Add Loved One Form */}
                 {showAddForm && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="mt-4 p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl border border-purple-200"
-                  >
+                  <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mt-4 p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl border border-purple-200">
                     <h4 className="font-bold text-gray-900 mb-4 flex items-center space-x-2">
                       <UserPlus size={18} className="text-purple-600" />
                       <span>Add Loved One</span>
@@ -387,7 +377,7 @@ export const AWYWidget: React.FC<AWYWidgetProps> = ({ className = '' }) => {
                       />
                       <input
                         type="text"
-                        placeholder="Relationship (e.g., Mom, Dad, Friend)"
+                        placeholder="Relationship (e.g., Mum, Dad, Guardian)"
                         value={newLovedOneRelationship}
                         onChange={(e) => setNewLovedOneRelationship(e.target.value)}
                         className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-300"
@@ -395,10 +385,10 @@ export const AWYWidget: React.FC<AWYWidgetProps> = ({ className = '' }) => {
                       <div className="flex space-x-2">
                         <button
                           onClick={handleAddLovedOne}
-                          disabled={isLoading}
+                          disabled={isLoading || !newLovedOneEmail || !newLovedOneRelationship}
                           className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 text-white py-3 rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all duration-300 disabled:opacity-50 font-medium transform hover:scale-105 shadow-lg"
                         >
-                          {isLoading ? 'Adding...' : 'Add'}
+                          {isLoading ? "Adding..." : "Add"}
                         </button>
                         <button
                           onClick={() => setShowAddForm(false)}
