@@ -126,18 +126,19 @@ export function useAwyPresence(): UseAwyPresenceResult {
   useEffect(() => {
     if (!client || !userId) return;
     const sub = client
-      .channel("connections")
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "awy_connections",
-          filter: `student_id=eq.${userId},loved_one_id=eq.${userId}`,
-        },
-        () => reloadConnections()
-      )
-      .subscribe();
+  .channel(`connections_${userId}`)
+  .on(
+    "postgres_changes",
+    { event: "*", schema: "public", table: "awy_connections", filter: `student_id=eq.${userId}` },
+    reloadConnections
+  )
+  .on(
+    "postgres_changes",
+    { event: "*", schema: "public", table: "awy_connections", filter: `loved_one_id=eq.${userId}` },
+    reloadConnections
+  )
+  .subscribe();
+
 
     return () => {
       try {
