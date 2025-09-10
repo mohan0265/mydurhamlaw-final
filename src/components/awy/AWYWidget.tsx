@@ -1,22 +1,24 @@
 // src/components/awy/AWYWidget.tsx
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { Heart, Video, UserPlus, X, Settings } from "lucide-react";
+import { Heart, Video, UserPlus, X, Settings, Trash2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { VideoCallModal } from "../VideoCall/VideoCallModal";
 import { useAwyPresence } from "@/hooks/useAwyPresence";
+import { getSupabaseClient } from "@/lib/supabase/client";
 
 interface AWYWidgetProps {
   className?: string;
 }
 
 type LovedListItem = {
-  id: string;            // the OTHER user id (partner user)
+  id: string;            // partner user_id
   connectionId: string;  // awy_connections.id
-  label: string;         // "Mum", "Dad", etc (relationship)
+  label: string;         // relationship like "Mum"
   online: boolean;
 };
 
 export const AWYWidget: React.FC<AWYWidgetProps> = ({ className = "" }) => {
+  const supabase = getSupabaseClient();
   const {
     userId,
     connections,
@@ -141,7 +143,6 @@ export const AWYWidget: React.FC<AWYWidgetProps> = ({ className = "" }) => {
 
     setIsLoading(true);
     try {
-      // First try to directly link (works if the email already exists as a user)
       const r = await linkLovedOneByEmail(newLovedOneEmail.trim(), newLovedOneRelationship.trim());
       if (r.ok) {
         alert("Loved one linked.");
@@ -152,7 +153,6 @@ export const AWYWidget: React.FC<AWYWidgetProps> = ({ className = "" }) => {
         return;
       }
 
-      // If the RPC threw user_not_found, send an invite via service-role route
       if ((r.error || "").toLowerCase().includes("user_not_found")) {
         const res = await fetch("/api/awy/invite", {
           method: "POST",
@@ -175,7 +175,6 @@ export const AWYWidget: React.FC<AWYWidgetProps> = ({ className = "" }) => {
         return;
       }
 
-      // Any other error
       alert(`Could not add loved one: ${r.error || "unknown_error"}`);
     } catch (e: any) {
       alert(`Unexpected error: ${String(e?.message || e)}`);
@@ -184,14 +183,24 @@ export const AWYWidget: React.FC<AWYWidgetProps> = ({ className = "" }) => {
     }
   };
 
+  const removeLovedOne = async (connectionId: string, label: string) => {
+    if (!supabase || !connectionId) return;
+    const ok = window.confirm(`Remove "${label}"? This will unlink them from your AWY list.`);
+    if (!ok) return;
+    const { error } = await supabase.from("awy_connections").delete().eq("id", connectionId);
+    if (error) {
+      alert(`Failed to remove: ${error.message}`);
+      return;
+    }
+    reloadConnections();
+  };
+
   const startVideoCall = (item: LovedListItem) => {
     const deepLink = callLinks[item.id];
     if (deepLink) {
-      // If the student set a preferred external call link for this loved one
       window.open(deepLink, "_blank", "noopener,noreferrer");
       return;
     }
-    // Otherwise fall back to in-app call modal
     setVideoCallState({
       isOpen: true,
       lovedOneName: item.label,
@@ -316,36 +325,50 @@ export const AWYWidget: React.FC<AWYWidgetProps> = ({ className = "" }) => {
                           </div>
                           <div>
                             <p className="font-semibold text-gray-900">{item.label}</p>
-                            <p className="text-xs font-medium">{item.online ? <span className="text-green-600">● Online now</span> : <span className="text-gray-500">○ Offline</span>}</p>
+                            <p className="text-xs font-medium">
+                              {item.online ? <span className="text-green-600">● Online now</span> : <span className="text-gray-500">○ Offline</span>}
+                            </p>
                           </div>
                         </div>
-                        <div className="flex flex-col space-y-2">
-                          {item.online ? (
-                            <>
-                              <button
-                                onClick={() => startVideoCall(item)}
-                                className="p-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-full hover:from-green-600 hover:to-green-700 transition-all duration-300 transform hover:scale-110 shadow-lg"
-                                title="Start Video Call"
-                              >
-                                <Video size={16} />
-                              </button>
+
+                        <div className="flex flex-col items-end gap-2">
+                          <div className="flex gap-2">
+                            {item.online ? (
+                              <>
+                                <button
+                                  onClick={() => startVideoCall(item)}
+                                  className="p-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-full hover:from-green-600 hover:to-green-700 transition-all duration-300 transform hover:scale-110 shadow-lg"
+                                  title="Start Video Call"
+                                >
+                                  <Video size={16} />
+                                </button>
+                                <button
+                                  onClick={() => onWave(item.id)}
+                                  className="p-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-full hover:from-blue-600 hover:to-blue-700 transition-all duration-300 transform hover:scale-110 shadow-lg"
+                                  title="Send Wave"
+                                >
+                                  👋
+                                </button>
+                              </>
+                            ) : (
                               <button
                                 onClick={() => onWave(item.id)}
-                                className="p-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-full hover:from-blue-600 hover:to-blue-700 transition-all duration-300 transform hover:scale-110 shadow-lg"
-                                title="Send Wave"
+                                className="p-2 bg-gradient-to-r from-gray-400 to-gray-500 text-white rounded-full hover:from-gray-500 hover:to-gray-600 transition-all duration-300 shadow-lg"
+                                title="Send Wave (they'll see when online)"
                               >
                                 👋
                               </button>
-                            </>
-                          ) : (
-                            <button
-                              onClick={() => onWave(item.id)}
-                              className="p-2 bg-gradient-to-r from-gray-400 to-gray-500 text-white rounded-full hover:from-gray-500 hover:to-gray-600 transition-all duration-300 shadow-lg"
-                              title="Send Wave (they'll see when online)"
-                            >
-                              👋
-                            </button>
-                          )}
+                            )}
+                          </div>
+
+                          {/* Remove loved one */}
+                          <button
+                            onClick={() => removeLovedOne(item.connectionId, item.label)}
+                            className="p-2 bg-white text-gray-600 hover:text-red-600 border rounded-full transition-all"
+                            title="Remove"
+                          >
+                            <Trash2 size={16} />
+                          </button>
                         </div>
                       </div>
                     ))}
@@ -362,7 +385,11 @@ export const AWYWidget: React.FC<AWYWidgetProps> = ({ className = "" }) => {
 
                 {/* Add Loved One Form */}
                 {showAddForm && (
-                  <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mt-4 p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl border border-purple-200">
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="mt-4 p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl border border-purple-200"
+                  >
                     <h4 className="font-bold text-gray-900 mb-4 flex items-center space-x-2">
                       <UserPlus size={18} className="text-purple-600" />
                       <span>Add Loved One</span>
