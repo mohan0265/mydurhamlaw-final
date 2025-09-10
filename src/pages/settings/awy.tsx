@@ -1,144 +1,90 @@
-// src/pages/settings/awy.tsx
+import React, { useState, useEffect } from 'react';
+import { Heart, Users, Video, Settings, Shield } from 'lucide-react';
 
-import React, { useEffect, useState } from "react";
-import { useAwyPresence } from "@/hooks/useAwyPresence";
-import toast from "react-hot-toast";
+export default function AWYSettings() {
+  const [connections, setConnections] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-const validateUrl = (url: string) => {
-  // Accept blank or valid https call urls
-  if (!url.trim()) return true;
-  try {
-    const parsed = new URL(url);
-    return parsed.protocol === "https:";
-  } catch {
-    return false;
-  }
-};
-
-export default function AwySettingsPage() {
-  const {
-    userId,
-    connections,
-    callLinks,
-    reloadConnections,
-  } = useAwyPresence();
-
-  // State for call links (per loved one)
-  const [vals, setVals] = useState<Record<string, string>>({});
-  const [loading, setLoading] = useState(false);
-
-  // Load links to state every time callLinks or connections update
   useEffect(() => {
-    const next: Record<string, string> = {};
-    for (const c of connections) {
-      next[c.loved_one_id] = callLinks?.[c.loved_one_id] ?? "";
-    }
-    setVals(next);
-  }, [connections, callLinks]);
-
-  // Save call link for loved one ID
-  const handleSave = async (lovedOneId: string) => {
-    const urlValue = vals[lovedOneId] ?? "";
-    if (!validateUrl(urlValue)) {
-      toast.error("Enter a valid https:// call link or leave blank.");
-      return;
-    }
-    setLoading(true);
-    try {
-      // Save to DB using Supabase
-      const supabase = (await import("@/lib/supabase/client")).getSupabaseClient();
-      if (!supabase) {
-        toast.error("Unable to connect to database.");
-        setLoading(false);
-        return;
-      }
-      // Upsert call link (must use authenticated user)
-      const { error } = await supabase
-        .from("awy_call_links")
-        .upsert(
-          { owner_id: userId, loved_one_id: lovedOneId, url: urlValue },
-          { onConflict: "owner_id,loved_one_id" }
-        );
-      setLoading(false);
-      if (!error) {
-        toast.success("Call link saved!", { duration: 1600 });
-        reloadConnections();
-      } else {
-        toast.error("Save failed: " + error.message);
-      }
-    } catch (e: any) {
-      setLoading(false);
-      toast.error("Unable to save right now. Try again later.");
-    }
-  };
-
-  if (!userId) {
-    return (
-      <div className="p-6 text-center text-gray-500">
-        Please sign in to manage AWY settings.
-      </div>
-    );
-  }
-
-  if (connections.length === 0) {
-    return (
-      <div className="p-6 text-center text-gray-600 text-sm">
-        No AWY connections found.
-        <br />
-        Add a loved one first in your AWY widget!
-      </div>
-    );
-  }
+    // Load AWY connections
+    setIsLoading(false);
+  }, []);
 
   return (
-    <div className="max-w-xl mx-auto p-6">
-      <h2 className="font-bold text-2xl mb-2 text-gray-900">AWY Call Settings</h2>
-      <div className="mb-5 text-gray-600 text-sm">
-        Add or update call links (e.g. Google Meet, WhatsApp, Zoom) for each loved one.<br />
-        Leave blank to disable video calls.
-      </div>
-      <div className="space-y-4">
-        {connections.map((c) => (
-          <div
-            key={c.loved_one_id}
-            className="rounded-lg border p-4 bg-white flex flex-col gap-2"
-          >
-            <span className="font-semibold text-gray-800 text-base">
-              {c.relationship}
-            </span>
-            <label className="text-xs text-gray-700 mb-1" htmlFor={`url-${c.loved_one_id}`}>
-              Call Link (must start with https://)
-            </label>
-            <input
-              id={`url-${c.loved_one_id}`}
-              type="url"
-              className="border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-400"
-              value={vals[c.loved_one_id] ?? ""}
-              onChange={(e) =>
-                setVals((prev) => ({
-                  ...prev,
-                  [c.loved_one_id]: e.target.value,
-                }))
-              }
-              placeholder="https://meet.google.com/..."
-              disabled={loading}
-              aria-label={`Call URL for ${c.relationship}`}
-              autoComplete="off"
-              required={false}
-            />
-            <button
-              type="button"
-              className={`w-full mt-2 py-2 rounded bg-blue-500 hover:bg-blue-600 text-white font-semibold text-sm focus:ring-2 focus:ring-blue-400 ${
-                loading ? "opacity-70 cursor-not-allowed" : ""
-              }`}
-              onClick={() => handleSave(c.loved_one_id)}
-              disabled={loading}
-              aria-label={`Save call link for ${c.relationship}`}
-            >
-              {loading ? "Saving..." : "Save"}
-            </button>
+    <div className="min-h-screen bg-gray-50 py-8">
+      <div className="max-w-4xl mx-auto px-4">
+        {/* Header */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+          <div className="flex items-center space-x-4">
+            <div className="bg-gradient-to-r from-purple-600 to-pink-600 p-3 rounded-full">
+              <Heart size={24} className="text-white fill-current" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Always With You Settings</h1>
+              <p className="text-gray-600">Manage your loved ones and video calling preferences</p>
+            </div>
           </div>
-        ))}
+        </div>
+
+        {/* Built-in Video Calling Info */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+          <div className="flex items-start space-x-4">
+            <div className="bg-green-100 p-3 rounded-full">
+              <Video size={24} className="text-green-600" />
+            </div>
+            <div className="flex-1">
+              <h2 className="text-xl font-semibold text-gray-900 mb-2">Built-in Video Calling</h2>
+              <p className="text-gray-600 mb-4">
+                MyDurhamLaw now features built-in video calling! No need for external services like Zoom or Google Meet. 
+                Connect directly with your loved ones through our secure, integrated video calling system.
+              </p>
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <h3 className="font-medium text-blue-900 mb-2">How it works:</h3>
+                <ul className="text-blue-800 text-sm space-y-1">
+                  <li>• Add loved ones by email through the AWY widget</li>
+                  <li>• See when they're online in real-time</li>
+                  <li>• Click the video call button to start an instant call</li>
+                  <li>• Enjoy HD video, screen sharing, and chat features</li>
+                  <li>• Perfect for study help and staying connected</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Privacy & Security */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+          <div className="flex items-start space-x-4">
+            <div className="bg-purple-100 p-3 rounded-full">
+              <Shield size={24} className="text-purple-600" />
+            </div>
+            <div className="flex-1">
+              <h2 className="text-xl font-semibold text-gray-900 mb-2">Privacy & Security</h2>
+              <div className="space-y-3 text-gray-600">
+                <p>• All video calls are end-to-end encrypted</p>
+                <p>• No call recordings are stored on our servers</p>
+                <p>• Only you and your loved ones can see your online status</p>
+                <p>• You control who can add you as a loved one</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Connected Loved Ones */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <div className="flex items-center space-x-3 mb-4">
+            <Users size={24} className="text-gray-600" />
+            <h2 className="text-xl font-semibold text-gray-900">Connected Loved Ones</h2>
+          </div>
+          
+          <div className="text-center py-8">
+            <Heart size={48} className="text-gray-300 mx-auto mb-4" />
+            <p className="text-gray-600 mb-4">Use the AWY widget to add and manage your loved ones</p>
+            <p className="text-gray-500 text-sm">
+              The floating heart icon on your dashboard lets you add loved ones, see who's online, and start video calls.
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   );

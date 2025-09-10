@@ -1,317 +1,429 @@
-'use client';
-import React, { useEffect, useRef, useState } from "react";
-import { motion } from "framer-motion";
-import toast from "react-hot-toast";
-import { useAwyPresence } from "@/hooks/useAwyPresence";
+import React, { useState, useEffect, useRef } from 'react';
+import { Heart, Video, Phone, UserPlus, X, Settings } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { VideoCallModal } from '../VideoCall/VideoCallModal';
 
-type AwyStatus = "online" | "offline" | "busy";
-interface Position { x: number; y: number; }
-
-function ringClass(status?: AwyStatus) {
-  if (status === "busy") return "ring-amber-400";
-  if (status === "online") return "ring-green-500";
-  return "ring-gray-400 opacity-60";
+interface LovedOne {
+  loved_one_id: string;
+  email?: string;
+  display_name?: string;
+  relationship: string;
+  is_online?: boolean;
+  last_seen?: string;
 }
 
-// Constants for positioning and safe-zone
-const WIDGET_WIDTH = 64;   // collapsed width
-const SAFE_RIGHT   = 88;   // px, room for mic on right
-const SAFE_BOTTOM  = 180;  // px, above mic
-const MIN_MARGIN   = 16;
-
-// Calculates bottom-right above mic
-function computeBottomRight(): Position {
-  if (typeof window === "undefined") return { x: MIN_MARGIN, y: MIN_MARGIN };
-  const w = window.innerWidth;
-  const h = window.innerHeight;
-  return {
-    x: Math.max(MIN_MARGIN, w - WIDGET_WIDTH - SAFE_RIGHT),
-    y: Math.max(MIN_MARGIN, h - SAFE_BOTTOM),
-  };
+interface AWYWidgetProps {
+  className?: string;
 }
 
-// Restore position if present, else use safe bottom-right (with bounds check)
-function getLastPosition(): Position {
-  if (typeof window === "undefined") return computeBottomRight();
-  try {
-    const saved = localStorage.getItem("awyWidget:position");
-    if (saved) {
-      const { x, y } = JSON.parse(saved);
-      const maxX = Math.max(MIN_MARGIN, window.innerWidth  - WIDGET_WIDTH - SAFE_RIGHT);
-      const maxY = Math.max(MIN_MARGIN, window.innerHeight - SAFE_BOTTOM);
-      if (typeof x === "number" && typeof y === "number" && x >= MIN_MARGIN && y >= MIN_MARGIN && x <= maxX && y <= maxY) {
-        return { x, y };
+export const AWYWidget: React.FC<AWYWidgetProps> = ({ className = '' }) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [position, setPosition] = useState({ x: 20, y: 20 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [newLovedOneEmail, setNewLovedOneEmail] = useState('');
+  const [newLovedOneRelationship, setNewLovedOneRelationship] = useState('');
+  const [lovedOnes, setLovedOnes] = useState<LovedOne[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [videoCallState, setVideoCallState] = useState<{
+    isOpen: boolean;
+    lovedOneName: string;
+    lovedOneId: string;
+    isInitiator: boolean;
+  }>({
+    isOpen: false,
+    lovedOneName: '',
+    lovedOneId: '',
+    isInitiator: false
+  });
+
+  const widgetRef = useRef<HTMLDivElement>(null);
+
+  // Load position from localStorage
+  useEffect(() => {
+    const savedPosition = localStorage.getItem('awy-widget-position');
+    if (savedPosition) {
+      try {
+        const parsed = JSON.parse(savedPosition);
+        const maxX = window.innerWidth - 320;
+        const maxY = window.innerHeight - 450;
+        setPosition({
+          x: Math.max(20, Math.min(parsed.x, maxX)),
+          y: Math.max(20, Math.min(parsed.y, maxY))
+        });
+      } catch (e) {
+        console.error('Error loading position:', e);
       }
     }
-    return computeBottomRight();
-  } catch {
-    return computeBottomRight();
-  }
-}
-
-function savePosition(position: Position) {
-  if (typeof window === "undefined") return;
-  try { localStorage.setItem("awyWidget:position", JSON.stringify(position)); } catch {}
-}
-
-export default function AWYWidget() {
-  const {
-    userId,
-    connections,
-    presenceByUser,
-    sendWave,
-    callLinks,
-    wavesUnread,
-    wavesUnreadRef,
-    linkLovedOneByEmail,
-  } = useAwyPresence();
-
-  // Widget position / expanded state
-  const [position, setPosition] = useState<Position>({ x: MIN_MARGIN, y: MIN_MARGIN });
-  const [isExpanded, setIsExpanded] = useState(false);
-
-  // Viewport drag constraints
-  const [constraints, setConstraints] = useState<{ left:number; top:number; right:number; bottom:number } | null>(null);
-
-  // Empty-state add form
-  const [addEmail, setAddEmail] = useState("");
-  const [addRel, setAddRel] = useState("Mum");
-  const [adding, setAdding] = useState(false);
-
-  // Feature/auth gating as booleans (no early returns before hooks)
-  const featureOn     = process.env.NEXT_PUBLIC_FEATURE_AWY === "1";
-  const isAuthed      = !!userId;
-  const shouldRender  = featureOn && isAuthed;
-
-  // Mount / resize: compute constraints and keep position in bounds
-  useEffect(() => {
-    setPosition(getLastPosition());
-    function calc() {
-      const w = window.innerWidth;
-      const h = window.innerHeight;
-      const next = {
-        left: MIN_MARGIN,
-        top: MIN_MARGIN,
-        right: Math.max(MIN_MARGIN, w - WIDGET_WIDTH - SAFE_RIGHT),
-        bottom: Math.max(MIN_MARGIN, h - SAFE_BOTTOM),
-      };
-      setConstraints(next);
-      setPosition(pos => ({
-        x: Math.max(next.left, Math.min(pos.x, next.right)),
-        y: Math.max(next.top,  Math.min(pos.y, next.bottom)),
-      }));
-    }
-    calc();
-    window.addEventListener("resize", calc);
-    return () => window.removeEventListener("resize", calc);
   }, []);
 
-  // Presence online notifications
-  const prevPresenceRef = useRef(new Map<string, AwyStatus>());
+  // Mock data for testing - replace with real Supabase calls later
   useEffect(() => {
-    const prev = prevPresenceRef.current;
-    const next = new Map<string, AwyStatus>();
-    for (const c of connections) {
-      const status = (presenceByUser.get(c.loved_one_id)?.status ?? "offline") as AwyStatus;
-      next.set(c.loved_one_id, status);
-      const prevStatus = prev.get(c.loved_one_id) ?? "offline";
-      if (status === "online" && prevStatus !== "online") {
-        toast.success(`${c.relationship} is now online`, { icon: "💚", duration: 2200 });
+    // Simulate loading loved ones
+    const mockLovedOnes: LovedOne[] = [
+      {
+        loved_one_id: '1',
+        email: 'mum@example.com',
+        display_name: 'Mum',
+        relationship: 'Mother',
+        is_online: Math.random() > 0.5, // Random online status for demo
+        last_seen: new Date().toISOString()
+      },
+      {
+        loved_one_id: '2',
+        email: 'dad@example.com',
+        display_name: 'Dad',
+        relationship: 'Father',
+        is_online: Math.random() > 0.5,
+        last_seen: new Date().toISOString()
+      }
+    ];
+    
+    setLovedOnes(mockLovedOnes);
+  }, []);
+
+  const savePosition = (newPosition: { x: number; y: number }) => {
+    try {
+      localStorage.setItem('awy-widget-position', JSON.stringify(newPosition));
+    } catch (e) {
+      console.error('Error saving position:', e);
+    }
+  };
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (e.target === widgetRef.current || (e.target as Element).closest('.drag-handle')) {
+      setIsDragging(true);
+      const rect = widgetRef.current?.getBoundingClientRect();
+      if (rect) {
+        setDragOffset({
+          x: e.clientX - rect.left,
+          y: e.clientY - rect.top
+        });
       }
     }
-    prevPresenceRef.current = next;
-  }, [connections, presenceByUser]);
+  };
 
-  // Wave received notification
   useEffect(() => {
-    if (wavesUnread > (wavesUnreadRef?.current ?? 0)) {
-      toast("👋 Wave received!", { icon: "👋", duration: 1800 });
+    const handleMouseMove = (e: MouseEvent) => {
+      if (isDragging) {
+        const newX = e.clientX - dragOffset.x;
+        const newY = e.clientY - dragOffset.y;
+        
+        const maxX = window.innerWidth - (isExpanded ? 320 : 60);
+        const maxY = window.innerHeight - (isExpanded ? 450 : 60);
+        
+        const clampedPosition = {
+          x: Math.max(0, Math.min(newX, maxX)),
+          y: Math.max(0, Math.min(newY, maxY))
+        };
+        
+        setPosition(clampedPosition);
+      }
+    };
+
+    const handleMouseUp = () => {
+      if (isDragging) {
+        setIsDragging(false);
+        savePosition(position);
+      }
+    };
+
+    if (isDragging) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
     }
-  }, [wavesUnread, wavesUnreadRef]);
 
-  // Clamp during drag
-  const onDrag = (_: any, info: { point: { x:number; y:number } }) => {
-    if (!constraints) return;
-    const x = Math.max(constraints.left, Math.min(info.point.x, constraints.right));
-    const y = Math.max(constraints.top,  Math.min(info.point.y, constraints.bottom));
-    setPosition({ x, y });
-  };
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isDragging, dragOffset, position, isExpanded]);
 
-  // Clamp + persist at drag end
-  const onDragEnd = (_: any, info: { offset: { x:number; y:number } }) => {
-    if (!constraints) return;
-    const nx = position.x + info.offset.x;
-    const ny = position.y + info.offset.y;
-    const x = Math.max(constraints.left, Math.min(nx, constraints.right));
-    const y = Math.max(constraints.top,  Math.min(ny, constraints.bottom));
-    const next = { x, y };
-    setPosition(next);
-    savePosition(next);
-  };
+  const handleAddLovedOne = async () => {
+    if (!newLovedOneEmail.trim()) return;
 
-  // Actions
-  const handleSendWave = async (lovedOneId: string) => {
-    const result = await sendWave(lovedOneId);
-    if (result.ok) toast.success("Wave sent! 👋", { duration: 1600 });
-    else toast.error("Failed to send wave");
-  };
-
-  const handleCall = (lovedOneId: string) => {
-    const callUrl = callLinks?.[lovedOneId];
-    if (callUrl) {
-      window.open(callUrl, '_blank');
-      toast.success("Opening call link...", { duration: 1500 });
-    } else {
-      toast.error("No call link available");
+    setIsLoading(true);
+    try {
+      // TODO: Replace with actual Supabase RPC call
+      console.log('Adding loved one:', newLovedOneEmail, newLovedOneRelationship);
+      
+      // For now, add to mock data
+      const newLovedOne: LovedOne = {
+        loved_one_id: Date.now().toString(),
+        email: newLovedOneEmail.trim(),
+        display_name: newLovedOneRelationship.trim() || 'Friend',
+        relationship: newLovedOneRelationship.trim() || 'Friend',
+        is_online: Math.random() > 0.5,
+        last_seen: new Date().toISOString()
+      };
+      
+      setLovedOnes(prev => [...prev, newLovedOne]);
+      setNewLovedOneEmail('');
+      setNewLovedOneRelationship('');
+      setShowAddForm(false);
+      
+      alert('Loved one added successfully! (This is a demo - will connect to database later)');
+    } catch (error) {
+      console.error('Failed to add loved one:', error);
+      alert('Failed to add loved one. Please try again.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const addLovedOne = async () => {
-    if (!addEmail.trim()) { toast.error("Enter an email"); return; }
-    setAdding(true);
-    const res = await linkLovedOneByEmail(addEmail.trim(), addRel.trim());
-    setAdding(false);
-    if ((res as any)?.ok) {
-      toast.success("Loved one linked ✓");
-      setAddEmail(""); setAddRel("Mum"); setIsExpanded(true);
-    } else if ((res as any)?.error === "user_not_found") {
-      toast.error("That email has not signed up yet.");
-    } else {
-      toast.error("Could not link loved one");
-    }
+  const startVideoCall = (lovedOne: LovedOne) => {
+    setVideoCallState({
+      isOpen: true,
+      lovedOneName: lovedOne.display_name || lovedOne.relationship,
+      lovedOneId: lovedOne.loved_one_id,
+      isInitiator: true
+    });
   };
 
-  // Final gate AFTER hooks are set up
-  if (!shouldRender) return null;
+  const closeVideoCall = () => {
+    setVideoCallState({
+      isOpen: false,
+      lovedOneName: '',
+      lovedOneId: '',
+      isInitiator: false
+    });
+  };
 
-  // UI
+  const sendWave = (lovedOneId: string) => {
+    alert('👋 Wave sent! (This is a demo - will connect to database later)');
+  };
+
   return (
-    <motion.div
-      drag
-      dragMomentum={false}
-      onDrag={onDrag}
-      onDragEnd={onDragEnd}
-      dragConstraints={constraints ?? false}
-      style={{ position: "fixed", left: position.x, top: position.y, zIndex: 38 }}
-      className="cursor-move focus:outline-blue-600 focus:ring-2 focus:ring-blue-600"
-      whileDrag={{ scale: 1.05 }}
-      initial={{ opacity: 0, scale: 0.8 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.2 }}
-      role="application"
-      aria-label="Always With You Widget"
-      tabIndex={0}
-    >
+    <>
       <motion.div
-        className="bg-white/90 backdrop-blur shadow-xl rounded-2xl border border-gray-200 overflow-hidden"
-        animate={{ width: isExpanded ? 256 : 64, height: isExpanded ? 'auto' : 64 }}
-        transition={{ duration: 0.2 }}
+        ref={widgetRef}
+        className={`fixed z-50 ${className}`}
+        style={{
+          left: position.x,
+          top: position.y,
+          cursor: isDragging ? 'grabbing' : 'grab'
+        }}
+        onMouseDown={handleMouseDown}
+        initial={{ scale: 0 }}
+        animate={{ scale: 1 }}
+        transition={{ type: "spring", stiffness: 260, damping: 20 }}
       >
-        {!isExpanded ? (
-          <button
-            aria-label="Open AWY"
-            className="w-full h-16 flex flex-col items-center justify-center focus:outline-none"
-            onClick={() => setIsExpanded(true)}
-            tabIndex={0}
-          >
-            <span className="w-9 h-9 rounded-full ring-2 ring-blue-400 bg-gray-100 flex items-center justify-center">💕</span>
-            <span className="text-xs mt-1 text-gray-700 font-semibold tracking-tight">AWY</span>
-          </button>
-        ) : (
-          <div className="p-4 space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="font-bold text-gray-800 text-base">Always With You</span>
-              <a href="/settings/awy" className="text-xs underline hover:no-underline" aria-label="Open AWY settings" tabIndex={0}>Settings</a>
-            </div>
-
-            {connections.length === 0 ? (
-              <div className="space-y-2">
-                <div className="text-xs text-gray-700 mb-1">Add someone you love. When they log in, you'll see they're online.</div>
-                <input
-                  aria-label="Loved one's email"
-                  className="w-full border rounded-md px-3 py-2 text-sm mb-2"
-                  value={addEmail}
-                  autoComplete="email"
-                  onChange={e => setAddEmail(e.target.value)}
-                  placeholder="name@example.com"
-                  disabled={adding}
-                  tabIndex={0}
-                />
-                <input
-                  aria-label="Relationship"
-                  className="w-full border rounded-md px-3 py-2 text-sm mb-3"
-                  value={addRel}
-                  onChange={e => setAddRel(e.target.value)}
-                  placeholder="Mum / Dad / Sibling"
-                  disabled={adding}
-                  tabIndex={0}
-                />
-                <button
-                  onClick={addLovedOne}
-                  className="w-full py-2 rounded bg-blue-500 hover:bg-blue-600 text-white font-semibold text-sm focus:ring-2 focus:ring-blue-400"
-                  disabled={adding}
-                  tabIndex={0}
-                >
-                  {adding ? "Adding..." : "Add Loved One"}
-                </button>
+        <AnimatePresence>
+          {!isExpanded ? (
+            // Collapsed State
+            <motion.div
+              key="collapsed"
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              exit={{ scale: 0 }}
+              className="relative"
+            >
+              <div
+                className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white p-4 rounded-full shadow-xl transition-all duration-300 cursor-pointer drag-handle transform hover:scale-110"
+                onClick={() => setIsExpanded(true)}
+              >
+                <Heart size={28} className="fill-current animate-pulse" />
               </div>
-            ) : (
-              <div className="space-y-3 pt-1">
-                {connections.map(c => {
-                  const p = presenceByUser.get(c.loved_one_id);
-                  const status = (typeof p?.status === "string" ? p.status : "offline") as AwyStatus;
-                  const callUrl = callLinks?.[c.loved_one_id] ?? "";
-                  return (
-                    <motion.div
-                      key={c.id}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -10 }}
-                      className="flex items-center justify-between"
+              
+              {/* Online indicator */}
+              {lovedOnes.some(l => l.is_online) && (
+                <div className="absolute -top-1 -right-1 w-6 h-6 bg-green-500 rounded-full border-3 border-white flex items-center justify-center">
+                  <span className="text-white text-xs font-bold">
+                    {lovedOnes.filter(l => l.is_online).length}
+                  </span>
+                </div>
+              )}
+            </motion.div>
+          ) : (
+            // Expanded State
+            <motion.div
+              key="expanded"
+              initial={{ scale: 0, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0, opacity: 0 }}
+              className="bg-white rounded-2xl shadow-2xl border border-gray-200 w-80 max-h-[500px] overflow-hidden backdrop-blur-sm"
+            >
+              {/* Header */}
+              <div className="bg-gradient-to-r from-purple-600 to-pink-600 text-white p-4 flex justify-between items-center drag-handle">
+                <div className="flex items-center space-x-3">
+                  <Heart size={24} className="fill-current animate-pulse" />
+                  <div>
+                    <span className="font-bold text-lg">Always With You</span>
+                    <p className="text-xs opacity-90">
+                      {lovedOnes.filter(l => l.is_online).length} online
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={() => window.open('/settings/awy', '_blank')}
+                    className="p-2 hover:bg-white/20 rounded-full transition-colors"
+                    title="Settings"
+                  >
+                    <Settings size={18} />
+                  </button>
+                  <button
+                    onClick={() => setIsExpanded(false)}
+                    className="p-2 hover:bg-white/20 rounded-full transition-colors"
+                  >
+                    <X size={18} />
+                  </button>
+                </div>
+              </div>
+
+              {/* Content */}
+              <div className="p-4 max-h-96 overflow-y-auto">
+                {isLoading ? (
+                  <div className="text-center py-8">
+                    <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-purple-600 mx-auto"></div>
+                    <p className="text-gray-600 mt-3 font-medium">Loading loved ones...</p>
+                  </div>
+                ) : lovedOnes.length === 0 ? (
+                  <div className="text-center py-8">
+                    <Heart size={48} className="text-gray-300 mx-auto mb-4" />
+                    <p className="text-gray-600 mb-4 font-medium">No loved ones connected yet</p>
+                    <p className="text-gray-500 text-sm mb-6">Add family and friends to stay connected during your studies</p>
+                    <button
+                      onClick={() => setShowAddForm(true)}
+                      className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-3 rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all duration-300 flex items-center space-x-2 mx-auto transform hover:scale-105 shadow-lg"
                     >
-                      <motion.span
-                        className={`w-9 h-9 rounded-full ring-2 ${ringClass(status)} bg-gray-100 flex items-center justify-center`}
-                        title={typeof p?.status_message === "string" ? p.status_message : ""}
-                        animate={{ scale: status === "online" ? [1, 1.1, 1] : 1 }}
-                        transition={{ duration: 1, repeat: status === "online" ? Infinity : 0, repeatDelay: 2 }}
-                      >💕</motion.span>
-                      <span className="flex flex-col ml-2 grow pr-2">
-                        <span className="text-sm font-medium text-gray-900">{String(c.relationship || "Friend")}</span>
-                        <span className="text-[11px] text-gray-500" style={{ color: status === "online" ? "#10b981" : "#6b7280" }}>
-                          {status === "online" ? "Online" : status === "busy" ? "Busy" : "Offline"}
-                        </span>
-                      </span>
-                      <div className="flex gap-1 items-center">
-                        <button
-                          className="rounded px-2 py-1 bg-gray-200 text-xs font-bold text-blue-900 hover:bg-green-100 transition focus:ring"
-                          onClick={() => handleSendWave(c.loved_one_id)}
-                          aria-label="Send wave"
-                          tabIndex={0}
-                        >👋</button>
-                        <button
-                          className="rounded px-2 py-1 bg-gray-200 text-xs font-bold text-blue-900 hover:bg-blue-100 transition focus:ring"
-                          onClick={() => handleCall(c.loved_one_id)}
-                          aria-label="Start call"
-                          disabled={!callUrl}
-                          tabIndex={0}
-                        >📞</button>
+                      <UserPlus size={18} />
+                      <span className="font-medium">Add Loved One</span>
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {lovedOnes.map((lovedOne) => (
+                      <div
+                        key={lovedOne.loved_one_id}
+                        className="flex items-center justify-between p-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl border border-gray-200 hover:shadow-md transition-all duration-300"
+                      >
+                        <div className="flex items-center space-x-3">
+                          <div className="relative">
+                            <div className="w-12 h-12 bg-gradient-to-r from-purple-100 to-pink-100 rounded-full flex items-center justify-center">
+                              <Heart size={20} className="text-purple-600" />
+                            </div>
+                            {lovedOne.is_online ? (
+                              <div className="absolute -top-1 -right-1 w-5 h-5 bg-green-500 rounded-full border-2 border-white animate-pulse"></div>
+                            ) : (
+                              <div className="absolute -top-1 -right-1 w-5 h-5 bg-gray-400 rounded-full border-2 border-white"></div>
+                            )}
+                          </div>
+                          <div>
+                            <p className="font-semibold text-gray-900">
+                              {lovedOne.display_name || lovedOne.relationship}
+                            </p>
+                            <p className="text-sm text-gray-600">{lovedOne.relationship}</p>
+                            <p className="text-xs font-medium">
+                              {lovedOne.is_online ? (
+                                <span className="text-green-600">● Online now</span>
+                              ) : (
+                                <span className="text-gray-500">○ Offline</span>
+                              )}
+                            </p>
+                          </div>
+                        </div>
+                        
+                        <div className="flex flex-col space-y-2">
+                          {lovedOne.is_online ? (
+                            <>
+                              <button
+                                onClick={() => startVideoCall(lovedOne)}
+                                className="p-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-full hover:from-green-600 hover:to-green-700 transition-all duration-300 transform hover:scale-110 shadow-lg"
+                                title="Start Video Call"
+                              >
+                                <Video size={16} />
+                              </button>
+                              <button
+                                onClick={() => sendWave(lovedOne.loved_one_id)}
+                                className="p-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-full hover:from-blue-600 hover:to-blue-700 transition-all duration-300 transform hover:scale-110 shadow-lg"
+                                title="Send Wave"
+                              >
+                                👋
+                              </button>
+                            </>
+                          ) : (
+                            <button
+                              onClick={() => sendWave(lovedOne.loved_one_id)}
+                              className="p-2 bg-gradient-to-r from-gray-400 to-gray-500 text-white rounded-full hover:from-gray-500 hover:to-gray-600 transition-all duration-300 shadow-lg"
+                              title="Send Wave (they'll see when online)"
+                            >
+                              👋
+                            </button>
+                          )}
+                        </div>
                       </div>
-                    </motion.div>
-                  );
-                })}
-              </div>
-            )}
+                    ))}
+                    
+                    <button
+                      onClick={() => setShowAddForm(true)}
+                      className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white px-4 py-3 rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all duration-300 flex items-center justify-center space-x-2 transform hover:scale-105 shadow-lg"
+                    >
+                      <UserPlus size={18} />
+                      <span className="font-medium">Add Another Loved One</span>
+                    </button>
+                  </div>
+                )}
 
-            <button
-              onClick={() => setIsExpanded(false)}
-              className="absolute right-2 top-2 bg-gray-100 rounded-full px-2 py-1 text-xs text-gray-700 hover:bg-gray-200 transition focus:ring"
-              aria-label="Collapse AWY"
-              tabIndex={0}
-              style={{ zIndex: 1 }}
-            >×</button>
-          </div>
-        )}
+                {/* Add Loved One Form */}
+                {showAddForm && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="mt-4 p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl border border-purple-200"
+                  >
+                    <h4 className="font-bold text-gray-900 mb-4 flex items-center space-x-2">
+                      <UserPlus size={18} className="text-purple-600" />
+                      <span>Add Loved One</span>
+                    </h4>
+                    <div className="space-y-3">
+                      <input
+                        type="email"
+                        placeholder="Email address"
+                        value={newLovedOneEmail}
+                        onChange={(e) => setNewLovedOneEmail(e.target.value)}
+                        className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-300"
+                      />
+                      <input
+                        type="text"
+                        placeholder="Relationship (e.g., Mom, Dad, Friend)"
+                        value={newLovedOneRelationship}
+                        onChange={(e) => setNewLovedOneRelationship(e.target.value)}
+                        className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-300"
+                      />
+                      <div className="flex space-x-2">
+                        <button
+                          onClick={handleAddLovedOne}
+                          disabled={isLoading}
+                          className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 text-white py-3 rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all duration-300 disabled:opacity-50 font-medium transform hover:scale-105 shadow-lg"
+                        >
+                          {isLoading ? 'Adding...' : 'Add'}
+                        </button>
+                        <button
+                          onClick={() => setShowAddForm(false)}
+                          className="flex-1 bg-gray-300 text-gray-700 py-3 rounded-xl hover:bg-gray-400 transition-all duration-300 font-medium"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </motion.div>
-    </motion.div>
+
+      {/* Video Call Modal */}
+      <VideoCallModal
+        isOpen={videoCallState.isOpen}
+        onClose={closeVideoCall}
+        lovedOneName={videoCallState.lovedOneName}
+        lovedOneId={videoCallState.lovedOneId}
+        isInitiator={videoCallState.isInitiator}
+      />
+    </>
   );
-}
+};
