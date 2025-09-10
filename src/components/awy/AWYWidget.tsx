@@ -1,4 +1,3 @@
-
 'use client';
 import React, { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
@@ -16,64 +15,43 @@ function ringClass(status?: AwyStatus) {
 
 // Constants for positioning and safe-zone
 const WIDGET_WIDTH = 64;   // collapsed width
-const WIDGET_HEIGHT = 64;  // collapsed height
-const EXPANDED_WIDTH = 256; // expanded width
 const SAFE_RIGHT   = 88;   // px, room for mic on right
 const SAFE_BOTTOM  = 180;  // px, above mic
 const MIN_MARGIN   = 16;
 
-// Calculates bottom-right above mic with proper bounds checking
+// Calculates bottom-right above mic
 function computeBottomRight(): Position {
   if (typeof window === "undefined") return { x: MIN_MARGIN, y: MIN_MARGIN };
   const w = window.innerWidth;
   const h = window.innerHeight;
   return {
     x: Math.max(MIN_MARGIN, w - WIDGET_WIDTH - SAFE_RIGHT),
-    y: Math.max(MIN_MARGIN, h - WIDGET_HEIGHT - SAFE_BOTTOM),
+    y: Math.max(MIN_MARGIN, h - SAFE_BOTTOM),
   };
 }
 
-// Restore position with comprehensive bounds checking and sanity validation
+// Restore position if present, else use safe bottom-right (with bounds check)
 function getLastPosition(): Position {
   if (typeof window === "undefined") return computeBottomRight();
-  
   try {
     const saved = localStorage.getItem("awyWidget:position");
     if (saved) {
-      const parsed = JSON.parse(saved);
-      const { x, y } = parsed;
-      
-      // Validate that x and y are numbers
-      if (typeof x !== "number" || typeof y !== "number" || 
-          !isFinite(x) || !isFinite(y) || 
-          isNaN(x) || isNaN(y)) {
-        return computeBottomRight();
-      }
-      
-      // Calculate current viewport constraints
-      const maxX = Math.max(MIN_MARGIN, window.innerWidth - WIDGET_WIDTH - SAFE_RIGHT);
-      const maxY = Math.max(MIN_MARGIN, window.innerHeight - WIDGET_HEIGHT - SAFE_BOTTOM);
-      
-      // Check if saved position is within current viewport bounds
-      if (x >= MIN_MARGIN && y >= MIN_MARGIN && x <= maxX && y <= maxY) {
+      const { x, y } = JSON.parse(saved);
+      const maxX = Math.max(MIN_MARGIN, window.innerWidth  - WIDGET_WIDTH - SAFE_RIGHT);
+      const maxY = Math.max(MIN_MARGIN, window.innerHeight - SAFE_BOTTOM);
+      if (typeof x === "number" && typeof y === "number" && x >= MIN_MARGIN && y >= MIN_MARGIN && x <= maxX && y <= maxY) {
         return { x, y };
       }
     }
-  } catch (error) {
-    // JSON parse error or localStorage access error
-    console.warn("Failed to restore AWY widget position:", error);
+    return computeBottomRight();
+  } catch {
+    return computeBottomRight();
   }
-  
-  return computeBottomRight();
 }
 
 function savePosition(position: Position) {
   if (typeof window === "undefined") return;
-  try { 
-    localStorage.setItem("awyWidget:position", JSON.stringify(position)); 
-  } catch (error) {
-    console.warn("Failed to save AWY widget position:", error);
-  }
+  try { localStorage.setItem("awyWidget:position", JSON.stringify(position)); } catch {}
 }
 
 export default function AWYWidget() {
@@ -92,7 +70,7 @@ export default function AWYWidget() {
   const [position, setPosition] = useState<Position>({ x: MIN_MARGIN, y: MIN_MARGIN });
   const [isExpanded, setIsExpanded] = useState(false);
 
-  // Viewport drag constraints with proper clamping
+  // Viewport drag constraints
   const [constraints, setConstraints] = useState<{ left:number; top:number; right:number; bottom:number } | null>(null);
 
   // Empty-state add form
@@ -108,35 +86,25 @@ export default function AWYWidget() {
   // Mount / resize: compute constraints and keep position in bounds
   useEffect(() => {
     setPosition(getLastPosition());
-    
-    function calculateConstraints() {
+    function calc() {
       const w = window.innerWidth;
       const h = window.innerHeight;
-      
-      // Calculate constraints based on current expanded state
-      const currentWidth = isExpanded ? EXPANDED_WIDTH : WIDGET_WIDTH;
-      const currentHeight = isExpanded ? 300 : WIDGET_HEIGHT; // approximate expanded height
-      
       const next = {
         left: MIN_MARGIN,
         top: MIN_MARGIN,
-        right: Math.max(MIN_MARGIN, w - currentWidth - SAFE_RIGHT),
-        bottom: Math.max(MIN_MARGIN, h - currentHeight - SAFE_BOTTOM),
+        right: Math.max(MIN_MARGIN, w - WIDGET_WIDTH - SAFE_RIGHT),
+        bottom: Math.max(MIN_MARGIN, h - SAFE_BOTTOM),
       };
-      
       setConstraints(next);
-      
-      // Clamp current position to new constraints
       setPosition(pos => ({
         x: Math.max(next.left, Math.min(pos.x, next.right)),
-        y: Math.max(next.top, Math.min(pos.y, next.bottom)),
+        y: Math.max(next.top,  Math.min(pos.y, next.bottom)),
       }));
     }
-    
-    calculateConstraints();
-    window.addEventListener("resize", calculateConstraints);
-    return () => window.removeEventListener("resize", calculateConstraints);
-  }, [isExpanded]); // Recalculate when expanded state changes
+    calc();
+    window.addEventListener("resize", calc);
+    return () => window.removeEventListener("resize", calc);
+  }, []);
 
   // Presence online notifications
   const prevPresenceRef = useRef(new Map<string, AwyStatus>());
@@ -161,23 +129,21 @@ export default function AWYWidget() {
     }
   }, [wavesUnread, wavesUnreadRef]);
 
-  // Clamp during drag with real-time constraint checking
+  // Clamp during drag
   const onDrag = (_: any, info: { point: { x:number; y:number } }) => {
     if (!constraints) return;
     const x = Math.max(constraints.left, Math.min(info.point.x, constraints.right));
-    const y = Math.max(constraints.top, Math.min(info.point.y, constraints.bottom));
+    const y = Math.max(constraints.top,  Math.min(info.point.y, constraints.bottom));
     setPosition({ x, y });
   };
 
-  // Clamp + persist at drag end with final validation
+  // Clamp + persist at drag end
   const onDragEnd = (_: any, info: { offset: { x:number; y:number } }) => {
     if (!constraints) return;
-    
     const nx = position.x + info.offset.x;
     const ny = position.y + info.offset.y;
     const x = Math.max(constraints.left, Math.min(nx, constraints.right));
-    const y = Math.max(constraints.top, Math.min(ny, constraints.bottom));
-    
+    const y = Math.max(constraints.top,  Math.min(ny, constraints.bottom));
     const next = { x, y };
     setPosition(next);
     savePosition(next);
@@ -191,9 +157,13 @@ export default function AWYWidget() {
   };
 
   const handleCall = (lovedOneId: string) => {
-    const callUrl = callLinks?.[lovedOneId] ?? "";
-    if (!callUrl) { toast.error("Add a call link in AWY Settings"); return; }
-    window.open(callUrl, "_blank", "noopener,noreferrer");
+    const callUrl = callLinks?.[lovedOneId];
+    if (callUrl) {
+      window.open(callUrl, '_blank');
+      toast.success("Opening call link...", { duration: 1500 });
+    } else {
+      toast.error("No call link available");
+    }
   };
 
   const addLovedOne = async () => {
@@ -201,15 +171,11 @@ export default function AWYWidget() {
     setAdding(true);
     const res = await linkLovedOneByEmail(addEmail.trim(), addRel.trim());
     setAdding(false);
-    if (res.ok) {
+    if ((res as any)?.ok) {
       toast.success("Loved one linked ✓");
-      setAddEmail(""); 
-      setAddRel("Mum"); 
-      // Keep expanded to show the new connection
-    } else if (res.error === "user_not_found") {
+      setAddEmail(""); setAddRel("Mum"); setIsExpanded(true);
+    } else if ((res as any)?.error === "user_not_found") {
       toast.error("That email has not signed up yet.");
-    } else if (res.error === "cannot_link_self") {
-      toast.error("You cannot link yourself.");
     } else {
       toast.error("Could not link loved one");
     }
@@ -218,7 +184,7 @@ export default function AWYWidget() {
   // Final gate AFTER hooks are set up
   if (!shouldRender) return null;
 
-  // UI with improved drag constraints
+  // UI
   return (
     <motion.div
       drag
@@ -226,14 +192,7 @@ export default function AWYWidget() {
       onDrag={onDrag}
       onDragEnd={onDragEnd}
       dragConstraints={constraints ?? false}
-      style={{ 
-        position: "fixed", 
-        left: position.x, 
-        top: position.y, 
-        zIndex: 38,
-        // Ensure widget doesn't go off-screen during drag
-        maxWidth: isExpanded ? EXPANDED_WIDTH : WIDGET_WIDTH,
-      }}
+      style={{ position: "fixed", left: position.x, top: position.y, zIndex: 38 }}
       className="cursor-move focus:outline-blue-600 focus:ring-2 focus:ring-blue-600"
       whileDrag={{ scale: 1.05 }}
       initial={{ opacity: 0, scale: 0.8 }}
@@ -245,10 +204,7 @@ export default function AWYWidget() {
     >
       <motion.div
         className="bg-white/90 backdrop-blur shadow-xl rounded-2xl border border-gray-200 overflow-hidden"
-        animate={{ 
-          width: isExpanded ? EXPANDED_WIDTH : WIDGET_WIDTH, 
-          height: isExpanded ? 'auto' : WIDGET_HEIGHT 
-        }}
+        animate={{ width: isExpanded ? 256 : 64, height: isExpanded ? 'auto' : 64 }}
         transition={{ duration: 0.2 }}
       >
         {!isExpanded ? (

@@ -1,9 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Mic, MicOff, Video, VideoOff, Monitor, Phone } from 'lucide-react';
-import { CallControls } from './CallControls';
-import { ChatSidebar } from './ChatSidebar';
-import { ConnectionStatus } from './ConnectionStatus';
+import { X, Mic, MicOff, Video, VideoOff, Monitor, Phone, MessageCircle, Send } from 'lucide-react';
 
 interface VideoCallModalProps {
   isOpen: boolean;
@@ -28,20 +25,27 @@ export const VideoCallModal: React.FC<VideoCallModalProps> = ({
   const [isScreenSharing, setIsScreenSharing] = useState(false);
   const [showChat, setShowChat] = useState(false);
   const [callDuration, setCallDuration] = useState(0);
+  const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'connected' | 'disconnected'>('connecting');
+  const [message, setMessage] = useState('');
+  const [messages, setMessages] = useState<Array<{ id: string; text: string; sender: string; timestamp: Date }>>([]);
 
   useEffect(() => {
     if (isOpen) {
-      // Initialize video call
       initializeCall();
+      // Start call duration timer
+      const timer = setInterval(() => {
+        setCallDuration(prev => prev + 1);
+      }, 1000);
+      return () => clearInterval(timer);
     }
     return () => {
-      // Cleanup
       cleanupCall();
     };
   }, [isOpen]);
 
   const initializeCall = async () => {
     try {
+      setConnectionStatus('connecting');
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { width: 1280, height: 720 },
         audio: true
@@ -51,10 +55,15 @@ export const VideoCallModal: React.FC<VideoCallModalProps> = ({
         localVideoRef.current.srcObject = stream;
       }
       
-      // TODO: Initialize WebRTC connection
-      setIsConnected(true);
+      // Simulate connection after 2 seconds
+      setTimeout(() => {
+        setIsConnected(true);
+        setConnectionStatus('connected');
+      }, 2000);
+      
     } catch (error) {
       console.error('Error accessing media devices:', error);
+      setConnectionStatus('disconnected');
     }
   };
 
@@ -63,11 +72,81 @@ export const VideoCallModal: React.FC<VideoCallModalProps> = ({
       const stream = localVideoRef.current.srcObject as MediaStream;
       stream.getTracks().forEach(track => track.stop());
     }
+    setCallDuration(0);
+    setIsConnected(false);
+    setConnectionStatus('connecting');
   };
 
   const handleEndCall = () => {
     cleanupCall();
     onClose();
+  };
+
+  const toggleMute = () => {
+    setIsMuted(!isMuted);
+    if (localVideoRef.current?.srcObject) {
+      const stream = localVideoRef.current.srcObject as MediaStream;
+      const audioTrack = stream.getAudioTracks()[0];
+      if (audioTrack) {
+        audioTrack.enabled = isMuted;
+      }
+    }
+  };
+
+  const toggleVideo = () => {
+    setIsVideoOff(!isVideoOff);
+    if (localVideoRef.current?.srcObject) {
+      const stream = localVideoRef.current.srcObject as MediaStream;
+      const videoTrack = stream.getVideoTracks()[0];
+      if (videoTrack) {
+        videoTrack.enabled = isVideoOff;
+      }
+    }
+  };
+
+  const toggleScreenShare = async () => {
+    try {
+      if (!isScreenSharing) {
+        const screenStream = await navigator.mediaDevices.getDisplayMedia({
+          video: true,
+          audio: true
+        });
+        if (localVideoRef.current) {
+          localVideoRef.current.srcObject = screenStream;
+        }
+        setIsScreenSharing(true);
+      } else {
+        const cameraStream = await navigator.mediaDevices.getUserMedia({
+          video: true,
+          audio: true
+        });
+        if (localVideoRef.current) {
+          localVideoRef.current.srcObject = cameraStream;
+        }
+        setIsScreenSharing(false);
+      }
+    } catch (error) {
+      console.error('Error with screen sharing:', error);
+    }
+  };
+
+  const sendMessage = () => {
+    if (message.trim()) {
+      const newMessage = {
+        id: Date.now().toString(),
+        text: message,
+        sender: 'You',
+        timestamp: new Date()
+      };
+      setMessages([...messages, newMessage]);
+      setMessage('');
+    }
+  };
+
+  const formatDuration = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
   if (!isOpen) return null;
@@ -90,7 +169,20 @@ export const VideoCallModal: React.FC<VideoCallModalProps> = ({
           <div className="bg-purple-600 p-4 flex justify-between items-center">
             <div>
               <h2 className="text-white text-xl font-semibold">Video Call with {lovedOneName}</h2>
-              <ConnectionStatus isConnected={isConnected} duration={callDuration} />
+              {/* Connection Status */}
+              <div className="flex items-center space-x-2 text-sm text-white">
+                <div className={`w-2 h-2 rounded-full ${
+                  connectionStatus === 'connected' ? 'bg-green-400' : 
+                  connectionStatus === 'connecting' ? 'bg-yellow-400' : 'bg-red-400'
+                }`} />
+                <span>
+                  {connectionStatus === 'connected' ? 'Connected' : 
+                   connectionStatus === 'connecting' ? 'Connecting...' : 'Disconnected'}
+                </span>
+                {isConnected && callDuration > 0 && (
+                  <span className="text-gray-300">• {formatDuration(callDuration)}</span>
+                )}
+              </div>
             </div>
             <button
               onClick={onClose}
@@ -128,29 +220,128 @@ export const VideoCallModal: React.FC<VideoCallModalProps> = ({
                   📚 Study Together Mode
                 </div>
               )}
+
+              {/* Connection Status Overlay */}
+              {!isConnected && (
+                <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+                  <div className="text-white text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
+                    <p className="text-lg">Connecting to {lovedOneName}...</p>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Chat Sidebar */}
             {showChat && (
-              <ChatSidebar
-                lovedOneName={lovedOneName}
-                onClose={() => setShowChat(false)}
-              />
+              <div className="w-80 bg-gray-100 flex flex-col">
+                {/* Chat Header */}
+                <div className="bg-purple-600 text-white p-4 flex justify-between items-center">
+                  <h3 className="font-semibold">Chat with {lovedOneName}</h3>
+                  <button onClick={() => setShowChat(false)} className="hover:text-gray-300">
+                    <X size={20} />
+                  </button>
+                </div>
+
+                {/* Messages */}
+                <div className="flex-1 p-4 overflow-y-auto space-y-3">
+                  {messages.map((msg) => (
+                    <div key={msg.id} className={`flex ${msg.sender === 'You' ? 'justify-end' : 'justify-start'}`}>
+                      <div className={`max-w-xs p-3 rounded-lg ${
+                        msg.sender === 'You' 
+                          ? 'bg-purple-600 text-white' 
+                          : 'bg-white text-gray-800 border'
+                      }`}>
+                        <p className="text-sm">{msg.text}</p>
+                        <p className="text-xs opacity-70 mt-1">
+                          {msg.timestamp.toLocaleTimeString()}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Message Input */}
+                <div className="p-4 border-t">
+                  <div className="flex space-x-2">
+                    <input
+                      type="text"
+                      value={message}
+                      onChange={(e) => setMessage(e.target.value)}
+                      onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
+                      placeholder="Type a message..."
+                      className="flex-1 p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    />
+                    <button
+                      onClick={sendMessage}
+                      className="p-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                    >
+                      <Send size={20} />
+                    </button>
+                  </div>
+                </div>
+              </div>
             )}
           </div>
 
           {/* Call Controls */}
-          <CallControls
-            isMuted={isMuted}
-            isVideoOff={isVideoOff}
-            isScreenSharing={isScreenSharing}
-            showChat={showChat}
-            onToggleMute={() => setIsMuted(!isMuted)}
-            onToggleVideo={() => setIsVideoOff(!isVideoOff)}
-            onToggleScreenShare={() => setIsScreenSharing(!isScreenSharing)}
-            onToggleChat={() => setShowChat(!showChat)}
-            onEndCall={handleEndCall}
-          />
+          <div className="bg-gray-800 p-4 flex justify-center items-center space-x-4">
+            {/* Mute Button */}
+            <button
+              onClick={toggleMute}
+              className={`p-3 rounded-full transition-colors ${
+                isMuted 
+                  ? 'bg-red-600 hover:bg-red-700' 
+                  : 'bg-gray-600 hover:bg-gray-700'
+              }`}
+            >
+              {isMuted ? <MicOff className="text-white" size={20} /> : <Mic className="text-white" size={20} />}
+            </button>
+
+            {/* Video Button */}
+            <button
+              onClick={toggleVideo}
+              className={`p-3 rounded-full transition-colors ${
+                isVideoOff 
+                  ? 'bg-red-600 hover:bg-red-700' 
+                  : 'bg-gray-600 hover:bg-gray-700'
+              }`}
+            >
+              {isVideoOff ? <VideoOff className="text-white" size={20} /> : <Video className="text-white" size={20} />}
+            </button>
+
+            {/* Screen Share Button */}
+            <button
+              onClick={toggleScreenShare}
+              className={`p-3 rounded-full transition-colors ${
+                isScreenSharing 
+                  ? 'bg-green-600 hover:bg-green-700' 
+                  : 'bg-gray-600 hover:bg-gray-700'
+              }`}
+            >
+              <Monitor className="text-white" size={20} />
+            </button>
+
+            {/* Chat Button */}
+            <button
+              onClick={() => setShowChat(!showChat)}
+              className={`p-3 rounded-full transition-colors ${
+                showChat 
+                  ? 'bg-blue-600 hover:bg-blue-700' 
+                  : 'bg-gray-600 hover:bg-gray-700'
+              }`}
+            >
+              <MessageCircle className="text-white" size={20} />
+            </button>
+
+            {/* End Call Button */}
+            <button
+              onClick={handleEndCall}
+              className="p-3 rounded-full bg-red-600 hover:bg-red-700 transition-colors"
+            >
+              <Phone className="text-white transform rotate-[135deg]" size={20} />
+            </button>
+          </div>
         </motion.div>
       </motion.div>
     </AnimatePresence>
