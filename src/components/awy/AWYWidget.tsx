@@ -11,7 +11,7 @@ interface AWYWidgetProps {
 }
 
 type LovedListItem = {
-  id: string;            // partner user_id
+  id: string;            // partner user_id (only for active connections)
   connectionId: string;  // awy_connections.id
   label: string;         // relationship like "Mum"
   online: boolean;
@@ -118,7 +118,10 @@ export const AWYWidget: React.FC<AWYWidgetProps> = ({ className = "" }) => {
   const partnerOf = useCallback(
     (conn: any) => {
       if (!userId) return null as string | null;
-      return conn.student_id === userId ? (conn.loved_one_id as string | null) : (conn.student_id as string | null);
+      // If connection is 'pending', loved_one_id can be null → we exclude from list
+      return conn.student_id === userId
+        ? (conn.loved_one_id as string | null)
+        : (conn.student_id as string | null);
     },
     [userId]
   );
@@ -126,7 +129,7 @@ export const AWYWidget: React.FC<AWYWidgetProps> = ({ className = "" }) => {
   const list: LovedListItem[] = connections
     .map((c) => {
       const otherId = partnerOf(c);
-      if (!otherId) return null;
+      if (!otherId) return null; // hide pending records
       const pres = presenceByUser.get(otherId);
       const online = pres?.status === "online";
       const label = c.relationship || "Loved One";
@@ -139,43 +142,42 @@ export const AWYWidget: React.FC<AWYWidgetProps> = ({ className = "" }) => {
   // ---------- actions ----------
   const handleAddLovedOne = async () => {
     if (!newLovedOneEmail.trim() || !newLovedOneRelationship.trim()) return;
-    if (!userId) return alert("Please sign in again.");
+    if (!userId) {
+      alert("Please sign in again.");
+      return;
+    }
 
     setIsLoading(true);
     try {
-      const r = await linkLovedOneByEmail(newLovedOneEmail.trim(), newLovedOneRelationship.trim());
-      if (r.ok) {
-        alert("Loved one linked.");
-        setNewLovedOneEmail("");
-        setNewLovedOneRelationship("");
-        setShowAddForm(false);
-        reloadConnections();
-        return;
-      }
+      const r = await linkLovedOneByEmail(
+        newLovedOneEmail.trim(),
+        newLovedOneRelationship.trim()
+      );
 
-      if ((r.error || "").toLowerCase().includes("user_not_found")) {
-        const res = await fetch("/api/awy/invite", {
-          method: "POST",
-          headers: { "Content-Type": "application/json", "x-user-id": userId },
-          body: JSON.stringify({
-            email: newLovedOneEmail.trim(),
-            relationship: newLovedOneRelationship.trim(),
-          }),
-        });
-        const data = await res.json();
-        if (data?.ok) {
-          alert("📨 Invite sent! Connection will activate after they accept.");
-          setNewLovedOneEmail("");
-          setNewLovedOneRelationship("");
-          setShowAddForm(false);
-          reloadConnections();
+      if (!r.ok) {
+        const err = (r.error || "").toLowerCase();
+        if (err.includes("limit_reached")) {
+          alert("You can only link up to 3 loved ones.");
+        } else if (err.includes("cannot_link_self")) {
+          alert("You can't link your own email as a loved one.");
         } else {
-          alert(`Invite failed: ${data?.error || "unknown_error"}`);
+          alert(`Could not add loved one: ${r.error || "unknown_error"}`);
         }
         return;
       }
 
-      alert(`Could not add loved one: ${r.error || "unknown_error"}`);
+      // success — report status
+      if (r.status === "active") {
+        alert("Loved one linked. They can see your online status now.");
+      } else {
+        // pending
+        alert("Saved. Ask them to sign in with Google to activate the connection.");
+      }
+
+      setNewLovedOneEmail("");
+      setNewLovedOneRelationship("");
+      setShowAddForm(false);
+      reloadConnections();
     } catch (e: any) {
       alert(`Unexpected error: ${String(e?.message || e)}`);
     } finally {
@@ -185,9 +187,14 @@ export const AWYWidget: React.FC<AWYWidgetProps> = ({ className = "" }) => {
 
   const removeLovedOne = async (connectionId: string, label: string) => {
     if (!supabase || !connectionId) return;
-    const ok = window.confirm(`Remove "${label}"? This will unlink them from your AWY list.`);
+    const ok = window.confirm(
+      `Remove "${label}"? This will unlink them from your AWY list.`
+    );
     if (!ok) return;
-    const { error } = await supabase.from("awy_connections").delete().eq("id", connectionId);
+    const { error } = await supabase
+      .from("awy_connections")
+      .delete()
+      .eq("id", connectionId);
     if (error) {
       alert(`Failed to remove: ${error.message}`);
       return;
@@ -239,7 +246,13 @@ export const AWYWidget: React.FC<AWYWidgetProps> = ({ className = "" }) => {
         <AnimatePresence>
           {!isExpanded ? (
             // Collapsed
-            <motion.div key="collapsed" initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }} className="relative">
+            <motion.div
+              key="collapsed"
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              exit={{ scale: 0 }}
+              className="relative"
+            >
               <div
                 className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white p-4 rounded-full shadow-xl transition-all duration-300 cursor-pointer drag-handle transform hover:scale-110"
                 onClick={() => setIsExpanded(true)}
@@ -278,7 +291,11 @@ export const AWYWidget: React.FC<AWYWidgetProps> = ({ className = "" }) => {
                   >
                     <Settings size={18} />
                   </button>
-                  <button onClick={() => setIsExpanded(false)} className="p-2 hover:bg-white/20 rounded-full transition-colors" title="Close">
+                  <button
+                    onClick={() => setIsExpanded(false)}
+                    className="p-2 hover:bg-white/20 rounded-full transition-colors"
+                    title="Close"
+                  >
                     <X size={18} />
                   </button>
                 </div>
@@ -296,7 +313,9 @@ export const AWYWidget: React.FC<AWYWidgetProps> = ({ className = "" }) => {
                   <div className="text-center py-8">
                     <Heart size={48} className="text-gray-300 mx-auto mb-4" />
                     <p className="text-gray-600 mb-4 font-medium">No loved ones connected yet</p>
-                    <p className="text-gray-500 text-sm mb-6">Add family and friends to stay connected during your studies</p>
+                    <p className="text-gray-500 text-sm mb-6">
+                      Add family and friends to stay connected during your studies
+                    </p>
                     <button
                       onClick={() => setShowAddForm(true)}
                       className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-3 rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all duration-300 flex items-center space-x-2 mx-auto transform hover:scale-105 shadow-lg"
@@ -326,7 +345,11 @@ export const AWYWidget: React.FC<AWYWidgetProps> = ({ className = "" }) => {
                           <div>
                             <p className="font-semibold text-gray-900">{item.label}</p>
                             <p className="text-xs font-medium">
-                              {item.online ? <span className="text-green-600">● Online now</span> : <span className="text-gray-500">○ Offline</span>}
+                              {item.online ? (
+                                <span className="text-green-600">● Online now</span>
+                              ) : (
+                                <span className="text-gray-500">○ Offline</span>
+                              )}
                             </p>
                           </div>
                         </div>
@@ -397,7 +420,7 @@ export const AWYWidget: React.FC<AWYWidgetProps> = ({ className = "" }) => {
                     <div className="space-y-3">
                       <input
                         type="email"
-                        placeholder="Email address"
+                        placeholder="Google email address"
                         value={newLovedOneEmail}
                         onChange={(e) => setNewLovedOneEmail(e.target.value)}
                         className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-300"

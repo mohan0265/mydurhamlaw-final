@@ -1,4 +1,3 @@
-
 // src/hooks/useAwyPresence.ts
 //
 // AWY presence + waves + DB-backed call links (Supabase v2).
@@ -6,7 +5,7 @@
 // Real-time presence/waves via Supabase subscriptions.
 // All DB operations are RLS-safe (use authenticated Supabase client).
 
-import { useEffect, useMemo, useRef, useState, useCallback } from "react";
+import { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getSupabaseClient } from "@/lib/supabase/client";
 
@@ -15,7 +14,7 @@ export type AwyStatus = "online" | "offline" | "busy";
 export interface AwyConnection {
   id: string;
   student_id: string;
-  loved_one_id: string;
+  loved_one_id: string | null; // can be null while 'pending'
   loved_is_user: boolean;
   relationship: string;
   is_visible: boolean;
@@ -51,12 +50,13 @@ export interface UseAwyPresenceResult {
   linkLovedOneByEmail: (
     email: string,
     relationship: string
-  ) => Promise<{ ok: boolean; error?: string }>;
+  ) => Promise<{ ok: boolean; status?: "active" | "pending"; error?: string }>;
   callLinks: Record<string, string>; // loved_one_id => URL
 }
 
 function emptyReturn(): UseAwyPresenceResult {
-  const wavesUnreadRef = useRef<number>(0);
+  // Construct a ref-like object without calling React hooks here.
+  const wavesUnreadRef = { current: 0 } as React.MutableRefObject<number>;
   return {
     userId: null,
     connections: [],
@@ -83,24 +83,25 @@ async function getCurrentUserId(client: SupabaseClient | null) {
 }
 
 export function useAwyPresence(): UseAwyPresenceResult {
-  const client = getSupabaseClient(); // SSR-safe hook
+  const client = getSupabaseClient();
   const [connections, setConnections] = useState<AwyConnection[]>([]);
   const [presence, setPresence] = useState<AwyPresence[]>([]);
   const [waves, setWaves] = useState<AwyWave[]>([]);
   const [callLinks, setCallLinks] = useState<Record<string, string>>({});
   const [userId, setUserId] = useState<string | null>(null);
-
   const wavesUnreadRef = useRef<number>(0);
 
-  // Defensive boot-up
+  // If there is no client (SSR or misconfig), provide harmless no-ops.
+  if (!client) return emptyReturn();
+
+  // Boot: who am I?
   useEffect(() => {
-    if (!client) return;
     getCurrentUserId(client).then(setUserId);
   }, [client]);
 
   // Load connections from DB (where user is student or loved one)
   const reloadConnections = useCallback(() => {
-    if (!client || !userId) {
+    if (!userId) {
       setConnections([]);
       return;
     }
@@ -111,7 +112,7 @@ export function useAwyPresence(): UseAwyPresenceResult {
       )
       .or(`student_id.eq.${userId},loved_one_id.eq.${userId}`)
       .then(({ data, error }) => {
-        if (data && !error) setConnections(data);
+        if (data && !error) setConnections(data as AwyConnection[]);
         else setConnections([]);
       });
   }, [client, userId]);
@@ -122,23 +123,23 @@ export function useAwyPresence(): UseAwyPresenceResult {
     reloadConnections();
   }, [userId, reloadConnections]);
 
-  // Live DB subscription for connections
+  // Live DB subscription for connections (listen for both roles)
   useEffect(() => {
-    if (!client || !userId) return;
-    const sub = client
-  .channel(`connections_${userId}`)
-  .on(
-    "postgres_changes",
-    { event: "*", schema: "public", table: "awy_connections", filter: `student_id=eq.${userId}` },
-    reloadConnections
-  )
-  .on(
-    "postgres_changes",
-    { event: "*", schema: "public", table: "awy_connections", filter: `loved_one_id=eq.${userId}` },
-    reloadConnections
-  )
-  .subscribe();
+    if (!userId) return;
 
+    const sub = client
+      .channel(`connections_${userId}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "awy_connections", filter: `student_id=eq.${userId}` },
+        () => reloadConnections()
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "awy_connections", filter: `loved_one_id=eq.${userId}` },
+        () => reloadConnections()
+      )
+      .subscribe();
 
     return () => {
       try {
@@ -149,7 +150,7 @@ export function useAwyPresence(): UseAwyPresenceResult {
 
   // Load real-time presence for all loved ones in connections
   useEffect(() => {
-    if (!client || !userId || !connections.length) {
+    if (!userId || connections.length === 0) {
       setPresence([]);
       return;
     }
@@ -158,20 +159,21 @@ export function useAwyPresence(): UseAwyPresenceResult {
 
     const allUserIds = [
       userId,
-      ...connections.map((c) =>
-        userId === c.student_id ? c.loved_one_id : c.student_id
-      ),
+      ...connections
+        .map((c) => (userId === c.student_id ? c.loved_one_id : c.student_id))
+        .filter((id): id is string => Boolean(id)),
     ];
+
     client
       .from("awy_presence")
       .select("*")
       .in("user_id", allUserIds)
       .then(({ data, error }) => {
-        if (data && !error && !canceled) setPresence(data);
+        if (data && !error && !canceled) setPresence(data as AwyPresence[]);
       });
 
     const sub = client
-      .channel("presence")
+      .channel(`presence_${userId}`)
       .on(
         "postgres_changes",
         {
@@ -182,39 +184,44 @@ export function useAwyPresence(): UseAwyPresenceResult {
         },
         (payload) => {
           setPresence((prev) => {
-            const newData = payload.new as any;
-            if (!newData?.user_id) return prev;
+            const newData = payload.new as Partial<AwyPresence> & { user_id?: string };
+            const uid = newData?.user_id;
+            if (!uid) return prev;
 
-            const idx = prev.findIndex((p) => p.user_id === newData.user_id);
+            const idx = prev.findIndex((p) => p.user_id === uid);
             if (idx >= 0) {
               const next = [...prev];
-              const existingItem = next[idx];
+              const existing = next[idx];
+              if (!existing) return prev; // TS-safe & defensive
+
               next[idx] = {
-                id: newData.id || existingItem?.id || "",
-                user_id: newData.user_id || existingItem?.user_id || "",
-                status: newData.status || existingItem?.status || "offline",
+                id: (newData as any).id ?? existing.id ?? "",
+                user_id: uid,
+                status:
+                  ((newData as any).status as AwyStatus | undefined) ??
+                  existing.status ??
+                  "offline",
                 status_message:
-                  newData.status_message ?? existingItem?.status_message ?? null,
+                  (newData as any).status_message ?? existing.status_message ?? null,
                 last_seen:
-                  newData.last_seen ||
-                  existingItem?.last_seen ||
-                  new Date().toISOString(),
+                  (newData as any).last_seen ?? existing.last_seen ?? new Date().toISOString(),
                 heartbeat_at:
-                  newData.heartbeat_at ||
-                  existingItem?.heartbeat_at ||
+                  (newData as any).heartbeat_at ??
+                  existing.heartbeat_at ??
                   new Date().toISOString(),
               };
               return next;
             }
-            const newPresence: AwyPresence = {
-              id: newData.id || "",
-              user_id: newData.user_id || "",
-              status: newData.status || "offline",
-              status_message: newData.status_message ?? null,
-              last_seen: newData.last_seen || new Date().toISOString(),
-              heartbeat_at: newData.heartbeat_at || new Date().toISOString(),
+
+            const added: AwyPresence = {
+              id: (newData as any).id ?? "",
+              user_id: uid,
+              status: (((newData as any).status as AwyStatus) ?? "offline") as AwyStatus,
+              status_message: (newData as any).status_message ?? null,
+              last_seen: (newData as any).last_seen ?? new Date().toISOString(),
+              heartbeat_at: (newData as any).heartbeat_at ?? new Date().toISOString(),
             };
-            return [...prev, newPresence];
+            return [...prev, added];
           });
         }
       )
@@ -230,7 +237,7 @@ export function useAwyPresence(): UseAwyPresenceResult {
 
   // Map loved_one_id -> call URL (for widget)
   useEffect(() => {
-    if (!client || !userId || !connections.length) {
+    if (!userId || connections.length === 0) {
       setCallLinks({});
       return;
     }
@@ -241,22 +248,26 @@ export function useAwyPresence(): UseAwyPresenceResult {
       .then(({ data, error }) => {
         if (data && !error) {
           const rec: Record<string, string> = {};
-          for (const row of data) rec[row.loved_one_id] = row.url ?? "";
+          for (const row of data as any[]) {
+            if (row.loved_one_id) rec[row.loved_one_id] = row.url ?? "";
+          }
           setCallLinks(rec);
+        } else {
+          setCallLinks({});
         }
       });
   }, [client, userId, connections]);
 
-  // Presence: mapped by user for quick lookup
+  // Presence map for quick lookup
   const presenceByUser = useMemo(() => {
     const m = new Map<string, AwyPresence>();
     for (const p of presence) m.set(p.user_id, p);
     return m;
   }, [presence]);
 
-  // Load unread waves (where receiver_id is user)
+  // Unread waves loader + subscription
   useEffect(() => {
-    if (!client || !userId) {
+    if (!userId) {
       setWaves([]);
       return;
     }
@@ -267,28 +278,21 @@ export function useAwyPresence(): UseAwyPresenceResult {
       .eq("read", false)
       .order("sent_at", { ascending: false })
       .then(({ data, error }) => {
-        if (data && !error) setWaves(data);
+        if (data && !error) setWaves(data as AwyWave[]);
       });
 
     const sub = client
-      .channel("waves")
+      .channel(`waves_${userId}`)
       .on(
         "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "awy_waves",
-          filter: `receiver_id=eq.${userId}`,
-        },
+        { event: "*", schema: "public", table: "awy_waves", filter: `receiver_id=eq.${userId}` },
         (payload) => {
           setWaves((prev) => {
             if (payload.eventType === "INSERT") {
               return [payload.new as AwyWave, ...prev];
             } else if (payload.eventType === "UPDATE") {
               return prev.map((w) =>
-                w.id === (payload.new as AwyWave).id
-                  ? { ...w, ...payload.new }
-                  : w
+                w.id === (payload.new as AwyWave).id ? { ...w, ...(payload.new as any) } : w
               );
             }
             return prev;
@@ -296,6 +300,7 @@ export function useAwyPresence(): UseAwyPresenceResult {
         }
       )
       .subscribe();
+
     return () => {
       try {
         client.removeChannel(sub);
@@ -314,7 +319,7 @@ export function useAwyPresence(): UseAwyPresenceResult {
   // Actions
   const sendWave = useCallback(
     async (lovedOneId: string) => {
-      if (!client || !userId) return { ok: false, error: "not_authenticated" };
+      if (!userId) return { ok: false, error: "not_authenticated" };
       const { error } = await client.from("awy_waves").insert({
         sender_id: userId,
         receiver_id: lovedOneId,
@@ -327,34 +332,31 @@ export function useAwyPresence(): UseAwyPresenceResult {
     [client, userId]
   );
 
-  // Link by email — FIXED: use correct parameter names that match the SQL function
+  // Link by email — returns { ok, status?: 'active' | 'pending' }
   const linkLovedOneByEmail = useCallback(
     async (email: string, relationship: string) => {
-      if (!client || !userId) return { ok: false, error: "not_authenticated" };
-      
+      if (!userId) return { ok: false, error: "not_authenticated" };
+
       try {
-        const { error } = await client.rpc("awy_link_loved_one_by_email", {
+        const { data, error } = await client.rpc("awy_link_loved_one_by_email", {
           p_email: email,
           p_relationship: relationship,
         });
-        
-        if (!error) {
-          // Reload connections after successful link
-          reloadConnections();
-          return { ok: true };
+
+        if (error) {
+          const msg = (error.message || "").toLowerCase();
+          if (msg.includes("limit_reached")) return { ok: false, error: "limit_reached" };
+          if (msg.includes("cannot_link_self")) return { ok: false, error: "cannot_link_self" };
+          return { ok: false, error: error.message };
         }
-        
-        // Handle specific error cases
-        if (error.message.includes('user_not_found')) {
-          return { ok: false, error: "user_not_found" };
-        }
-        if (error.message.includes('cannot_link_self')) {
-          return { ok: false, error: "cannot_link_self" };
-        }
-        
-        return { ok: false, error: error.message };
-      } catch (err) {
-        return { ok: false, error: "network_error" };
+
+        const status = (data?.status || "").toLowerCase() as "active" | "pending" | "";
+        // Reload list in either case
+        reloadConnections();
+
+        return { ok: true, status: (status || undefined) as "active" | "pending" | undefined };
+      } catch (err: any) {
+        return { ok: false, error: String(err?.message || err) };
       }
     },
     [client, userId, reloadConnections]
