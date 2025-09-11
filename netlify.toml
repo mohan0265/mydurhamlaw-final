@@ -13,24 +13,17 @@
 [[headers]]
   for = "/_next/static/*"
   [headers.values]
-    cache-control = "public, max-age=31536000, immutable"
+    Cache-Control = "public, max-age=31536000, immutable"
 
 [[headers]]
-  for = "/static/*"
+  for = "/images/*"
   [headers.values]
-    cache-control = "public, max-age=31536000, immutable"
+    Cache-Control = "public, max-age=31536000, immutable"
 
-# Optimize font loading
 [[headers]]
-  for = "/_next/static/media/*"
+  for = "/fonts/*"
   [headers.values]
-    cache-control = "public, max-age=31536000, immutable"
-
-# API routes
-[[headers]]
-  for = "/api/*"
-  [headers.values]
-    cache-control = "no-store, no-cache, must-revalidate"
+    Cache-Control = "public, max-age=31536000, immutable"
 
 # Root HTML pages
 [[headers]]

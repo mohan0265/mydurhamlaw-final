@@ -55,6 +55,16 @@ const nextConfig = {
     config.resolve.alias = alias
     return config;
   },
+  // Configure headers for SSR routes (static assets handled by Netlify)
+  async headers() {
+    return [
+      {
+        // All non-static routes (exclude _next/static, images, fonts, api)
+        source: "/((?!_next/static|images|fonts|api).*)",
+        headers: [{ key: "Cache-Control", value: "no-store" }],
+      },
+    ];
+  },
   // Configure redirects and rewrites for better SEO
   async redirects() {
     return [
