@@ -141,49 +141,43 @@ export const AWYWidget: React.FC<AWYWidgetProps> = ({ className = "" }) => {
 
   // ---------- actions ----------
   const handleAddLovedOne = async () => {
-    if (!newLovedOneEmail.trim() || !newLovedOneRelationship.trim()) return;
-    if (!userId) {
-      alert("Please sign in again.");
+  const email = newLovedOneEmail.trim();
+  const relation = newLovedOneRelationship.trim();
+  if (!email || !relation) return;
+  if (!userId) return alert('Please sign in again.');
+
+  setIsLoading(true);
+  try {
+    const r = await linkLovedOneByEmail(email, relation);
+
+    if (r.ok) {
+      alert('Loved one linked.');
+      setNewLovedOneEmail('');
+      setNewLovedOneRelationship('');
+      setShowAddForm(false);
+      reloadConnections();
       return;
     }
 
-    setIsLoading(true);
-    try {
-      const r = await linkLovedOneByEmail(
-        newLovedOneEmail.trim(),
-        newLovedOneRelationship.trim()
-      );
+    const err = (r.error ?? '').toLowerCase();
 
-      if (!r.ok) {
-        const err = (r.error || "").toLowerCase();
-        if (err.includes("limit_reached")) {
-          alert("You can only link up to 3 loved ones.");
-        } else if (err.includes("cannot_link_self")) {
-          alert("You can't link your own email as a loved one.");
-        } else {
-          alert(`Could not add loved one: ${r.error || "unknown_error"}`);
-        }
-        return;
-      }
-
-      // success — report status
-      if (r.status === "active") {
-        alert("Loved one linked. They can see your online status now.");
-      } else {
-        // pending
-        alert("Saved. Ask them to sign in with Google to activate the connection.");
-      }
-
-      setNewLovedOneEmail("");
-      setNewLovedOneRelationship("");
-      setShowAddForm(false);
-      reloadConnections();
-    } catch (e: any) {
-      alert(`Unexpected error: ${String(e?.message || e)}`);
-    } finally {
-      setIsLoading(false);
+    if (err.includes('max_loved_ones_reached')) {
+      alert('You can link up to 3 loved ones.');
+    } else if (err.includes('cannot_link_self')) {
+      alert('You cannot link your own email.');
+    } else if (err.includes('user_not_found')) {
+      // No invite flow; login will auto-activate
+      alert('That email will appear once they sign in with Google the first time.');
+    } else if (err.includes('not_authenticated')) {
+      alert('Please sign in and try again.');
+    } else {
+      alert(`Could not add loved one: ${r.error}`);
     }
-  };
+  } finally {
+    setIsLoading(false);
+  }
+};
+
 
   const removeLovedOne = async (connectionId: string, label: string) => {
     if (!supabase || !connectionId) return;
