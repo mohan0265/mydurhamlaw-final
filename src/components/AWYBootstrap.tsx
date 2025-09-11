@@ -7,36 +7,39 @@ import { getSupabaseClient } from '@/lib/supabase/client';
 
 // Dynamically import the AWYWidget to avoid SSR issues
 const ClientAWY = dynamic(
-  () => import('./awy/AWYWidget').then(mod => ({ default: mod.AWYWidget })),
+  () => import('./awy/AWYWidget').then((mod) => ({ default: mod.AWYWidget })),
   { ssr: false, loading: () => null }
 );
 
+async function activateLovedOneOnLogin(): Promise<void> {
+  const supabase = getSupabaseClient();
+  if (!supabase) return; // <-- guard fixes "possibly null"
+
+  try {
+    const { data, error } = await supabase.auth.getUser();
+    if (error || !data?.user) return;
+
+    // Safe, idempotent no-op for student logins; activates pending links for parents
+    await supabase.rpc('awy_activate_loved_one_on_login');
+  } catch {
+    // Intentionally swallow – we don't block UI on this helper
+  }
+}
+
 function AWYMountSafe() {
   const [mounted, setMounted] = useState(false);
-  const supabase = getSupabaseClient();
 
-  useEffect(() => setMounted(true), []);
-
-  // NEW: once we have a session, call the idempotent activator RPC.
   useEffect(() => {
-    if (!mounted || !supabase) return;
-    let cancelled = false;
+    setMounted(true);
+  }, []);
 
-    (async () => {
-      try {
-        const { data } = await supabase.auth.getUser();
-        if (!data?.user || cancelled) return;
-        // Will activate any pending awy_connections for this email (no-op for students)
-        await supabase.rpc('awy_activate_loved_one');
-      } catch {
-        // ignore – completely safe to fail silently here
-      }
-    })();
+  useEffect(() => {
+    if (!mounted) return;
+    if (process.env.NEXT_PUBLIC_FEATURE_AWY !== '1') return;
 
-    return () => {
-      cancelled = true;
-    };
-  }, [mounted, supabase]);
+    // Fire and forget; avoid lint "floating promise"
+    void activateLovedOneOnLogin();
+  }, [mounted]);
 
   if (!mounted) return null;
   if (process.env.NEXT_PUBLIC_FEATURE_AWY !== '1') return null;
