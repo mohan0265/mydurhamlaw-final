@@ -1,137 +1,265 @@
-import React, { useMemo } from 'react';
-import { Heart, Users, Video, Shield } from 'lucide-react';
-import { useAwyPresence } from '@/hooks/useAwyPresence';
+// src/pages/settings/awy.tsx
+import React, { useMemo, useState } from "react";
+import Head from "next/head";
+import { useRouter } from "next/router";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { authedFetch } from "@/lib/api/authedFetch";
+import { getSupabaseClient } from "@/lib/supabase/client";
+import { Toaster, toast } from "react-hot-toast";
+import Link from "next/link";
 
-export default function AWYSettings() {
-  const {
-    userId,
-    connections,
-    presenceByUser,
-    reloadConnections,
-  } = useAwyPresence();
+type AWYConnection = {
+  id: string;
+  email: string;
+  relationship: string;
+  display_name?: string | null;
+  status?: "pending" | "accepted" | "blocked";
+  created_at?: string;
+};
 
-  const rows = useMemo(() => {
-    if (!userId) return [];
-    return connections.map(c => {
-      const partnerId = c.student_id === userId ? c.loved_one_id : c.student_id;
-      const pres = partnerId ? presenceByUser.get(partnerId) : undefined;
-      const status: 'pending' | 'online' | 'offline' | 'busy' =
-        !partnerId ? 'pending' : (pres?.status ?? 'offline');
-      const online = status === 'online';
-      return {
-        id: c.id,
-        label: c.relationship || 'Loved one',
-        partnerId: partnerId ?? null,
-        status,
-        online,
-      };
+const RELATIONSHIPS = [
+  "Mum", "Dad", "Guardian", "Partner", "Sibling", "Grandparent", "Friend", "Other",
+] as const;
+
+const LIMIT = 3;
+
+async function fetchConnections(): Promise<AWYConnection[]> {
+  const r = await authedFetch("/api/awy/connections");
+  if (r.status === 401) throw new Error("Please log in to manage AWY.");
+  if (!r.ok) throw new Error(`Failed to load connections (${r.status})`);
+  const data = await r.json();
+  return Array.isArray(data) ? data : (data?.connections ?? []);
+}
+
+async function createConnection(payload: {
+  email: string;
+  relationship: string;
+  display_name?: string;
+}) {
+  const r = await authedFetch("/api/awy/connections", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+  if (r.status === 401) throw new Error("Please log in to add loved ones.");
+  if (!r.ok) {
+    const msg = await safeMsg(r);
+    throw new Error(msg || `Failed to add connection (${r.status})`);
+  }
+  return r.json();
+}
+
+async function removeConnection(id: string) {
+  // DELETE with body first; fallback to querystring
+  let r = await authedFetch("/api/awy/connections", {
+    method: "DELETE",
+    body: JSON.stringify({ id }),
+  });
+  if (r.status === 405 || r.status === 400) {
+    r = await authedFetch(`/api/awy/connections?id=${encodeURIComponent(id)}`, {
+      method: "DELETE",
     });
-  }, [userId, connections, presenceByUser]);
+  }
+  if (r.status === 401) throw new Error("Please log in to remove loved ones.");
+  if (!r.ok) {
+    const msg = await safeMsg(r);
+    throw new Error(msg || `Failed to remove connection (${r.status})`);
+  }
+  return r.json();
+}
+
+async function safeMsg(r: Response) {
+  try {
+    const d = await r.json();
+    return d?.error || d?.message;
+  } catch {
+    return null;
+  }
+}
+
+export default function AWYSettingsPage() {
+  const router = useRouter();
+  const qc = useQueryClient();
+
+  const { data: connections = [], isLoading, isError, error } = useQuery({
+    queryKey: ["awy", "connections"],
+    queryFn: fetchConnections,
+    staleTime: 60_000,
+  });
+
+  const [email, setEmail] = useState("");
+  const [relationship, setRelationship] = useState<string>("Mum");
+  const [displayName, setDisplayName] = useState("");
+
+  const count = connections.length;
+  const canAdd = count < LIMIT;
+
+  const addMut = useMutation({
+    mutationFn: createConnection,
+    onSuccess: () => {
+      toast.success("Loved one added / invited.");
+      setEmail("");
+      setDisplayName("");
+      qc.invalidateQueries({ queryKey: ["awy", "connections"] });
+    },
+    onError: (e: any) => toast.error(e?.message || "Add failed"),
+  });
+
+  const delMut = useMutation({
+    mutationFn: removeConnection,
+    onSuccess: () => {
+      toast.success("Removed.");
+      qc.invalidateQueries({ queryKey: ["awy", "connections"] });
+    },
+    onError: (e: any) => toast.error(e?.message || "Remove failed"),
+  });
+
+  const handleAdd = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!canAdd) {
+      toast.error(`You can add up to ${LIMIT} loved ones.`);
+      return;
+    }
+    if (!isValidEmail(email)) {
+      toast.error("Please enter a valid email.");
+      return;
+    }
+    addMut.mutate({
+      email: email.trim(),
+      relationship,
+      display_name: displayName.trim() || undefined,
+    } as any);
+  };
+
+  // NULL-SAFE supabase (prevents “possibly null”)
+  const supabase = useMemo(() => getSupabaseClient(), []);
+  const logout = async () => {
+    try {
+      await supabase?.auth.signOut();
+    } finally {
+      router.push("/login");
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-4xl mx-auto px-4">
-        {/* Header */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-          <div className="flex items-center space-x-4">
-            <div className="bg-gradient-to-r from-purple-600 to-pink-600 p-3 rounded-full">
-              <Heart size={24} className="text-white fill-current" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Always With You</h1>
-              <p className="text-gray-600">Manage your loved ones and video calling</p>
-            </div>
-          </div>
+    <>
+      <Head>
+        <title>Always With You — Settings</title>
+      </Head>
+
+      <main className="mx-auto max-w-3xl px-4 py-8">
+        <div className="mb-6 flex items-center justify-between">
+          <h1 className="text-2xl font-semibold">Always With You — Settings</h1>
+          <Link href="/" className="text-sm underline">← Back to Home</Link>
         </div>
 
-        {/* Built-in Video Calling Info */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-          <div className="flex items-start space-x-4">
-            <div className="bg-green-100 p-3 rounded-full">
-              <Video size={24} className="text-green-600" />
-            </div>
-            <div className="flex-1">
-              <h2 className="text-xl font-semibold text-gray-900 mb-2">Built-in Video Calling</h2>
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <h3 className="font-medium text-blue-900 mb-2">How it works</h3>
-                <ul className="text-blue-800 text-sm space-y-1">
-                  <li>• Add loved ones by email in the purple AWY widget</li>
-                  <li>• When they sign in with Google, the link activates automatically</li>
-                  <li>• You’ll see their online status in real time</li>
-                  <li>• Click the video icon to start a call</li>
-                </ul>
-              </div>
-            </div>
-          </div>
+        <div className="mb-6 rounded-xl border p-4">
+          <p className="text-sm text-gray-700">
+            Add up to <strong>{LIMIT}</strong> loved ones to see their presence in the floating
+            widget. You can invite new contacts or remove existing ones anytime.
+          </p>
         </div>
 
-        {/* Privacy & Security */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-          <div className="flex items-start space-x-4">
-            <div className="bg-purple-100 p-3 rounded-full">
-              <Shield size={24} className="text-purple-600" />
-            </div>
-            <div className="flex-1">
-              <h2 className="text-xl font-semibold text-gray-900 mb-2">Privacy & Security</h2>
-              <div className="space-y-3 text-gray-600">
-                <p>• End-to-end encrypted calls</p>
-                <p>• No call recordings stored on our servers</p>
-                <p>• Only you and your loved ones can see presence</p>
-                <p>• You control who can link to you</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Connected Loved Ones */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center space-x-3 mb-4">
-            <Users size={24} className="text-gray-600" />
-            <h2 className="text-xl font-semibold text-gray-900">Connected Loved Ones</h2>
+        <form onSubmit={handleAdd} className="mb-8 rounded-xl border p-4 grid gap-3">
+          <div className="grid gap-2">
+            <label className="text-sm font-medium">Loved one’s email</label>
+            <input
+              type="email"
+              className="rounded-lg border px-3 py-2"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="name@example.com"
+              required
+            />
           </div>
 
-          {rows.length === 0 ? (
-            <div className="text-center py-8">
-              <Heart size={48} className="text-gray-300 mx-auto mb-4" />
-              <p className="text-gray-600 mb-4">No loved ones linked yet</p>
-              <p className="text-gray-500 text-sm">
-                Use the floating heart widget to add and manage your loved ones.
-              </p>
+          <div className="grid gap-2">
+            <label className="text-sm font-medium">Relationship</label>
+            <select
+              className="rounded-lg border px-3 py-2"
+              value={relationship}
+              onChange={(e) => setRelationship(e.target.value)}
+            >
+              {RELATIONSHIPS.map((r) => (
+                <option key={r} value={r}>{r}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="grid gap-2">
+            <label className="text-sm font-medium">
+              Display name <span className="text-gray-400">(optional)</span>
+            </label>
+            <input
+              type="text"
+              className="rounded-lg border px-3 py-2"
+              value={displayName}
+              onChange={(e) => setDisplayName(e.target.value)}
+              placeholder="Mum / Dad / Uncle Ravi"
+            />
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div className="text-sm text-gray-600">
+              You’ve added <strong>{count}</strong> / {LIMIT}
+            </div>
+            <button
+              type="submit"
+              disabled={!canAdd || addMut.isPending}
+              className="rounded-lg bg-violet-600 px-4 py-2 text-white disabled:opacity-50"
+            >
+              {addMut.isPending ? "Adding…" : "Add Loved One"}
+            </button>
+          </div>
+        </form>
+
+        <div className="rounded-xl border">
+          <div className="border-b px-4 py-3 font-medium">Your Loved Ones</div>
+          {isLoading ? (
+            <div className="px-4 py-6 text-sm text-gray-600">Loading…</div>
+          ) : isError ? (
+            <div className="px-4 py-6 text-sm text-red-600">
+              {(error as any)?.message || "Failed to load."}
+            </div>
+          ) : connections.length === 0 ? (
+            <div className="px-4 py-6 text-sm text-gray-600">
+              No loved ones yet. Use the form above to add one.
             </div>
           ) : (
-            <div className="space-y-3">
-              {rows.map(r => (
-                <div key={r.id} className="flex items-center justify-between border rounded-xl p-4">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
-                      <Heart size={18} className="text-purple-600" />
+            <ul className="divide-y">
+              {connections.map((c) => (
+                <li key={c.id} className="flex items-center justify-between px-4 py-3">
+                  <div>
+                    <div className="font-medium">
+                      {c.display_name || c.relationship || "Loved One"}
                     </div>
-                    <div>
-                      <div className="font-semibold text-gray-900">{r.label}</div>
-                      <div className="text-xs">
-                        {r.status === 'pending' ? (
-                          <span className="text-amber-600">Pending — they can sign in with Google to activate</span>
-                        ) : r.online ? (
-                          <span className="text-green-600">● Online</span>
-                        ) : (
-                          <span className="text-gray-500">○ Offline</span>
-                        )}
-                      </div>
-                    </div>
+                    <div className="text-xs text-gray-600">{c.email}</div>
+                    {c.status && (
+                      <div className="text-xs text-gray-500">Status: {c.status}</div>
+                    )}
                   </div>
                   <button
-                    onClick={() => reloadConnections()}
-                    className="text-sm text-gray-600 hover:text-gray-900"
-                    title="Refresh"
+                    onClick={() => delMut.mutate(c.id)}
+                    className="rounded-lg border px-3 py-1 text-sm hover:bg-gray-50"
                   >
-                    Refresh
+                    Remove
                   </button>
-                </div>
+                </li>
               ))}
-            </div>
+            </ul>
           )}
         </div>
-      </div>
-    </div>
+
+        <div className="mt-8 text-xs text-gray-500">
+          Trouble managing connections?{" "}
+          <button onClick={logout} className="underline">Sign out</button> and sign in again.
+        </div>
+      </main>
+
+      <Toaster position="top-right" />
+    </>
   );
+}
+
+function isValidEmail(v: string) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
 }

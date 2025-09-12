@@ -5,11 +5,11 @@ import React, { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import ErrorBoundary from "@/components/common/ErrorBoundary";
 import { getSupabaseClient } from "@/lib/supabase/client";
+import { authedFetch } from "@/lib/api/authedFetch";
+import AWYSetupHint from "./awy/AWYSetupHint";
 
-// The enhanced widget expects a userId prop
 type AWYProps = { userId: string };
 
-// Import the DEFAULT export of your AWY widget (you pasted EnhancedAWYWidget into AWYWidget.tsx)
 const ClientAWY = dynamic<AWYProps>(() => import("./awy/AWYWidget"), {
   ssr: false,
   loading: () => null,
@@ -20,18 +20,14 @@ function useActivateLovedOneOnLogin() {
     (async () => {
       const supabase = getSupabaseClient();
       if (!supabase) return;
-
       try {
         const { data: { user } = { user: null } } = await supabase.auth.getUser();
         if (user) {
-          // helper RPC; ignore failures
           try {
             await supabase.rpc("awy_activate_loved_one_on_login");
           } catch {}
         }
-      } catch {
-        /* ignore auth errors */
-      }
+      } catch {}
     })();
   }, []);
 }
@@ -39,10 +35,10 @@ function useActivateLovedOneOnLogin() {
 export default function AWYBootstrap() {
   const [mounted, setMounted] = useState(false);
   const [uid, setUid] = useState<string | null>(null);
+  const [hasConnections, setHasConnections] = useState<boolean | null>(null);
 
   useEffect(() => setMounted(true), []);
 
-  // Pull the signed-in user's id for the widget
   useEffect(() => {
     const supabase = getSupabaseClient();
     if (!supabase) return;
@@ -52,6 +48,23 @@ export default function AWYBootstrap() {
       .then(({ data }) => setUid(data?.user?.id ?? null))
       .catch(() => setUid(null));
   }, []);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const r = await authedFetch("/api/awy/connections");
+        if (!r.ok) {
+          setHasConnections(false);
+          return;
+        }
+        const data = await r.json();
+        const arr = Array.isArray(data) ? data : (data?.connections ?? []);
+        setHasConnections((arr?.length ?? 0) > 0);
+      } catch {
+        setHasConnections(false);
+      }
+    })();
+  }, [uid]);
 
   useActivateLovedOneOnLogin();
 
@@ -64,6 +77,7 @@ export default function AWYBootstrap() {
   return (
     <ErrorBoundary>
       <ClientAWY userId={uid} />
+      {hasConnections === false && <AWYSetupHint />}
     </ErrorBoundary>
   );
 }
