@@ -6,7 +6,7 @@ import ErrorBoundary from '@/components/common/ErrorBoundary';
 import { getSupabaseClient } from '@/lib/supabase/client';
 
 const ClientAWY = dynamic(
-  () => import('./awy/AWYWidget').then(mod => ({ default: mod.AWYWidget })),
+  () => import('./awy/AWYWidget').then(mod => mod.AWYWidget),
   { ssr: false, loading: () => null }
 );
 

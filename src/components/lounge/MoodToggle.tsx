@@ -10,7 +10,7 @@ const moods = [
 const localStorageKey = "loungeMoodMode";
 
 const MoodToggle: React.FC = () => {
-  const [active, setActive] = useState(moods[0].label);
+  const [active, setActive] = useState(moods[0]?.label || "Calm");
 
   useEffect(() => {
     // Only access localStorage in the browser environment

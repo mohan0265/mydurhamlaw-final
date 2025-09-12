@@ -21,7 +21,7 @@ export default function OnlineUsers({ user = { id: "demo", name: "Guest" } }) {
       const list = Object.values(state).flat() as any[];
       setPeers(list);
     });
-    return () => { ch.off("presence", { event: "sync" }); };
+    return () => { ch.unsubscribe(); };
   }, [chRef.current]);
 
   return (

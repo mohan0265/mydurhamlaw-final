@@ -2,6 +2,23 @@ import { NextApiRequest, NextApiResponse } from 'next'
 import { createClient, SupabaseClient } from '@supabase/supabase-js'
 
 /**
+ * Get a server-side Supabase client with service role key
+ * This bypasses RLS and should only be used in secure server contexts
+ */
+export function getSupabaseServerClient(): SupabaseClient {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
+    }
+  )
+}
+
+/**
  * Get a server-side Supabase client that uses the user's session from cookies
  * This ensures RLS policies are properly enforced based on the authenticated user
  */

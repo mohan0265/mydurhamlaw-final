@@ -58,7 +58,7 @@ const DMDrawer: React.FC<DMDrawerProps> = ({
       .or(`from_id.eq.${resolvedPeer.id},to_id.eq.${resolvedPeer.id}`)
       .order("created_at", { ascending: true })
       .limit(100)
-      .then(({ data, error }) => {
+      .then(({ data, error }: { data: any; error: any }) => {
         setIsLoading(false);
         setMessages(data || []);
       });
@@ -71,7 +71,7 @@ const DMDrawer: React.FC<DMDrawerProps> = ({
         schema: "public",
         table: "lounge_dm_messages",
         filter: `from_id=eq.${resolvedPeer.id},to_id=eq.${user.id}`,
-      }, (payload) => {
+      }, (payload: any) => {
         setMessages((prev) => [...prev, payload.new as DMMessage]);
       })
       .subscribe();

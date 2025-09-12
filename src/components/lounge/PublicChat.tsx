@@ -27,10 +27,10 @@ export default function PublicChat({ user = { id: "demo", name: "Guest" } }) {
 
   async function send() {
     if (!text.trim()) return;
-    const { error } = await supabase.from("lounge_messages").insert({
+    const result = await supabase?.from("lounge_messages").insert({
       user_id: user.id, username: user.name || "Guest", text,
     });
-    if (error) console.error(error);
+    if (result?.error) console.error(result.error);
     setText("");
   }
 

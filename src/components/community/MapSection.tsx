@@ -9,7 +9,7 @@ const PLACES = [
 ];
 
 export function MapSection() {
-  const [center, setCenter] = useState(PLACES[0].coords);
+  const [center, setCenter] = useState(PLACES[0]?.coords || "54.7658,-1.5757");
   const mapUrl = `https://maps.google.com/maps?q=${center}&z=15&output=embed`;
 
   return (

@@ -49,7 +49,7 @@ const VirtualCoffeeTable: React.FC = () => {
           schema: 'public',
           table: 'lounge_coffee_rsvp'
         },
-        (payload) => {
+        (payload: any) => {
           console.log('Coffee RSVP change received:', payload);
           fetchTodayRSVPs(); // Refresh the list
         }
@@ -78,7 +78,7 @@ const VirtualCoffeeTable: React.FC = () => {
       setRsvps(data || []);
       
       // Check if current user has already RSVPed
-      const userHasRSVPed = (data || []).some(rsvp => 
+      const userHasRSVPed = (data || []).some((rsvp: any) => 
         rsvp.user_id === user?.id
       );
       setHasRSVPed(userHasRSVPed);

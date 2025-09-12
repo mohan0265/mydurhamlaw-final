@@ -15,12 +15,13 @@ export function usePresenceChannel(
     ref.current = ch;
 
     const sub = async () => {
-      const status = await ch.subscribe((s) => {
-        if (s === "SUBSCRIBED") {
+      await ch.subscribe((status) => {
+        if (status === "SUBSCRIBED") {
           ch.track(payload).catch((e) => console.error("presence.track error", e));
+        } else {
+          console.error("presence not subscribed:", status);
         }
       });
-      if (status !== "SUBSCRIBED") console.error("presence not subscribed:", status);
     };
     sub();
 

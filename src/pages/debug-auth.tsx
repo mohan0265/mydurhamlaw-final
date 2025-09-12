@@ -221,7 +221,7 @@ export default function DebugAuthPage() {
           )}
 
           <div className="space-y-4">
-            {testResults.map((result, index) => (
+            {testResults.map((result: any, index: number) => (
               <div
                 key={index}
                 className={`p-4 rounded-md border-l-4 ${

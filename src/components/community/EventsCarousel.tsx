@@ -11,6 +11,17 @@ export function EventsCarousel() {
   const prev = () => setIdx(i => (i === 0 ? EVENTS_LIST.length - 1 : i - 1));
   const event = EVENTS_LIST[idx];
 
+  if (!event) {
+    return (
+      <section id="events" aria-labelledby="events-heading" className="mb-8">
+        <h2 id="events-heading" className="text-2xl font-bold mb-4 text-indigo-700">Events & Festivals</h2>
+        <div className="bg-white rounded p-6 shadow text-indigo-800 min-h-[120px] flex flex-col items-center">
+          <p>No events available</p>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section id="events" aria-labelledby="events-heading" className="mb-8">
       <h2 id="events-heading" className="text-2xl font-bold mb-4 text-indigo-700">Events & Festivals</h2>

@@ -27,10 +27,10 @@ export default function ShoutoutsWall({ user = { id: "demo", name: "Guest" } }) 
 
   async function send() {
     if (!text.trim()) return;
-    const { error } = await supabase.from("lounge_shoutouts").insert({
+    const result = await supabase?.from("lounge_shoutouts").insert({
       username: user.name || "Guest", message: text,
     });
-    if (error) console.error(error);
+    if (result?.error) console.error(result.error);
     setText("");
   }
 
