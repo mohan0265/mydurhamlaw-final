@@ -1,130 +1,157 @@
-import type { Handler } from '@netlify/functions'
-import Stripe from 'stripe'
-import { createClient } from '@supabase/supabase-js'
+// netlify/functions/stripe-webhook.ts
+import type { Handler } from '@netlify/functions';
+import Stripe from 'stripe';
+import { createClient } from '@supabase/supabase-js';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
-  apiVersion: '2024-06-20',
-})
+  // Match the API version shown on your Stripe Webhooks page header.
+  // (Cast to any to avoid TS narrowing issues if your local type package lags.)
+  apiVersion: '2025-08-27.basil' as any,
+});
 
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL as string
-const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY as string
-const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL as string;
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY as string;
+const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-/**
- * Make sure your `public.profiles` table has these columns (add if missing):
- *
- *   stripe_customer_id text
- *   subscription_status text
- *   trial_ends_at timestamptz
- *   current_period_end timestamptz
- *
- * (You can ALTER TABLE to add them; RLS is bypassed with the service role key.)
- */
+const WH_SECRET = process.env.STRIPE_WEBHOOK_SECRET as string;
 
-async function updateProfileByUserId(
-  userId: string,
-  patch: Record<string, any>
-) {
-  await supabase.from('profiles').update(patch).eq('id', userId)
+/** Extend typings so TS allows reading these timestamp fields */
+type SubscriptionExt = Stripe.Subscription & {
+  current_period_end?: number | null;
+  trial_end?: number | null;
+};
+
+// ------------ helpers ------------
+async function updateProfile(userId: string, patch: Record<string, any>) {
+  if (!userId) return;
+  const { error } = await supabase.from('profiles').update(patch).eq('id', userId);
+  if (error) console.error('[supabase] update error:', error);
 }
 
+function toIso(sec?: number | null) {
+  return sec ? new Date(sec * 1000).toISOString() : null;
+}
+
+async function getUserIdFromCustomer(customerId?: string | null) {
+  if (!customerId) return '';
+  const cust = await stripe.customers.retrieve(customerId);
+  if ('deleted' in cust) return '';
+  return (cust.metadata?.supabase_user_id as string) || '';
+}
+
+async function getSubscriptionById(subId?: string | null) {
+  if (!subId) return null;
+  // Cast to our extended type to quiet TS while keeping fields we need
+  const sub = (await stripe.subscriptions.retrieve(subId)) as unknown as SubscriptionExt;
+  return sub;
+}
+
+async function getLatestSubscriptionForCustomer(customerId?: string | null) {
+  if (!customerId) return null;
+  const list = await stripe.subscriptions.list({ customer: customerId, status: 'all', limit: 1 });
+  return ((list.data[0] ?? null) as unknown) as SubscriptionExt | null;
+}
+
+// ------------ handler ------------
 export const handler: Handler = async (event) => {
-  const sig = event.headers['stripe-signature'] || ''
-  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET as string
-
-  if (!webhookSecret) {
-    return { statusCode: 500, body: 'Webhook secret not configured' }
-  }
-
-  let stripeEvent: Stripe.Event
   try {
-    stripeEvent = stripe.webhooks.constructEvent(
-      event.body as string,
-      sig,
-      webhookSecret
-    )
-  } catch (err: any) {
-    console.error('Webhook signature error:', err?.message || err)
-    return { statusCode: 400, body: `Webhook Error: ${err?.message || err}` }
-  }
+    if (event.httpMethod !== 'POST') {
+      return { statusCode: 405, body: 'Method Not Allowed' };
+    }
 
-  try {
+    const sig = event.headers['stripe-signature'] || event.headers['Stripe-Signature'];
+    if (!sig) return { statusCode: 400, body: 'Missing signature' };
+
+    let stripeEvent: Stripe.Event;
+    try {
+      stripeEvent = stripe.webhooks.constructEvent(
+        event.body as string,
+        sig as string,
+        WH_SECRET
+      );
+    } catch (err: any) {
+      console.error('[webhook] constructEvent failed:', err.message);
+      return { statusCode: 400, body: `Webhook Error: ${err.message}` };
+    }
+
     switch (stripeEvent.type) {
       case 'checkout.session.completed': {
-        const session = stripeEvent.data.object as Stripe.Checkout.Session
+        const sess = stripeEvent.data.object as Stripe.Checkout.Session;
 
-        // Prefer metadata on session → or pull customer metadata
-        let supabaseUid =
-          (session.metadata && session.metadata['supabase_uid']) || null
+        // session.customer can be string or Customer
+        const customerId =
+          typeof sess.customer === 'string' ? sess.customer : sess.customer?.id ?? '';
+        const userId = await getUserIdFromCustomer(customerId);
 
-        let customerId = (session.customer as string) || null
-        if (!supabaseUid && customerId) {
-          const cust = await stripe.customers.retrieve(customerId)
-          if (!cust || (cust as any).deleted) break
-          supabaseUid = (cust as Stripe.Customer).metadata?.['supabase_uid']
+        // session.subscription can be string | Subscription | null
+        let sub: SubscriptionExt | null = null;
+        if (typeof sess.subscription === 'string') {
+          sub = await getSubscriptionById(sess.subscription);
+        } else if (sess.subscription && typeof sess.subscription === 'object') {
+          sub = (sess.subscription as unknown) as SubscriptionExt;
         }
 
-        if (supabaseUid) {
-          await updateProfileByUserId(supabaseUid, {
+        if (userId && sub) {
+          await updateProfile(userId, {
             stripe_customer_id: customerId,
-            subscription_status: 'active', // session completed means payment method attached
-          })
+            subscription_status: sub.status,
+            trial_ends_at: toIso(sub.trial_end ?? null),
+            current_period_end: toIso(sub.current_period_end ?? null),
+          });
         }
-        break
+        break;
       }
 
-      case 'customer.subscription.created':
       case 'customer.subscription.updated':
       case 'customer.subscription.deleted': {
-        const sub = stripeEvent.data.object as Stripe.Subscription
-        const customerId = sub.customer as string
+        const subObj = (stripeEvent.data.object as unknown) as SubscriptionExt;
 
-        // Get the mapped supabase user id from customer metadata
-        let supabaseUid: string | undefined
-        if (customerId) {
-          const cust = await stripe.customers.retrieve(customerId)
-          if (!cust || (cust as any).deleted) break
-          supabaseUid = (cust as Stripe.Customer).metadata?.['supabase_uid']
+        const customerId =
+          typeof subObj.customer === 'string' ? subObj.customer : subObj.customer?.id ?? '';
+        const userId = await getUserIdFromCustomer(customerId);
+
+        if (userId) {
+          await updateProfile(userId, {
+            subscription_status: subObj.status,
+            trial_ends_at: toIso(subObj.trial_end ?? null),
+            current_period_end: toIso(subObj.current_period_end ?? null),
+          });
         }
-        if (!supabaseUid) break
-
-        await updateProfileByUserId(supabaseUid, {
-          stripe_customer_id: customerId,
-          subscription_status: sub.status,
-          trial_ends_at: sub.trial_end
-            ? new Date(sub.trial_end * 1000).toISOString()
-            : null,
-          current_period_end: sub.current_period_end
-            ? new Date(sub.current_period_end * 1000).toISOString()
-            : null,
-        })
-        break
+        break;
       }
 
       case 'invoice.payment_succeeded': {
-        // Optional: mark as active
-        break
+        // Some type versions don't expose invoice.subscription; refresh latest sub by customer.
+        const invoice = stripeEvent.data.object as Stripe.Invoice;
+
+        const customerId =
+          typeof invoice.customer === 'string' ? invoice.customer : invoice.customer?.id ?? '';
+        const userId = await getUserIdFromCustomer(customerId);
+        if (!userId) break;
+
+        const sub = await getLatestSubscriptionForCustomer(customerId);
+        if (sub) {
+          await updateProfile(userId, {
+            subscription_status: sub.status,
+            current_period_end: toIso(sub.current_period_end ?? null),
+          });
+        }
+        break;
       }
 
       case 'invoice.payment_failed': {
-        // Optional: you might set status to 'past_due' or send an email
-        break
-      }
-
-      case 'customer.subscription.trial_will_end': {
-        // Optional: send a friendly reminder email
-        break
+        // Optional: flag/notify user here.
+        break;
       }
 
       default:
-        // ignore unhandled events
-        break
+        // Not handled
+        break;
     }
 
-    return { statusCode: 200, body: 'ok' }
+    return { statusCode: 200, body: 'ok' };
   } catch (err: any) {
-    console.error('Webhook handler error:', err)
-    return { statusCode: 500, body: `Server error: ${err?.message || err}` }
+    console.error('[stripe-webhook] error:', err);
+    return { statusCode: 500, body: `Error: ${err.message || err}` };
   }
-}
-export default handler
+};
