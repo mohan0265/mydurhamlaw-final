@@ -1,16 +1,8 @@
 "use client";
 
-import React, { useEffect, useMemo, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  Heart,
-  Video,
-  UserPlus,
-  X,
-  Users,
-  Waves,
-  Smile,
-} from "lucide-react";
+import { Heart, Video, UserPlus, X, Users, Waves, Smile } from "lucide-react";
 import Link from "next/link";
 
 import { Button } from "@/components/ui/Button";
@@ -19,7 +11,7 @@ import { Badge } from "@/components/ui/Badge";
 import type { AWYConnection, AWYPresence, AWYNotification } from "@/types/billing";
 import { authedFetch } from "@/lib/api/authedFetch";
 
-/** ----------------------------------------------------------------
+/* ---------------------------------------------------------------
  * Shared helpers
  * --------------------------------------------------------------- */
 async function apiGet<T = any>(url: string): Promise<T> {
@@ -38,7 +30,7 @@ async function apiSend<T = any>(url: string, method: string, body?: any): Promis
   return r.json();
 }
 
-/** ----------------------------------------------------------------
+/* ---------------------------------------------------------------
  * CLASSIC compact widget (read-only list + settings link)
  * --------------------------------------------------------------- */
 type ClassicConn = {
@@ -50,7 +42,7 @@ type ClassicConn = {
   connected_user_id?: string | null;
 };
 
-function ClassicAWYWidget({ userId }: { userId: string }) {
+function ClassicAWYWidget({ userId }: { userId?: string }) {
   const [open, setOpen] = useState(false);
   const [connections, setConnections] = useState<ClassicConn[]>([]);
   const [loading, setLoading] = useState(true);
@@ -144,12 +136,11 @@ function ClassicAWYWidget({ userId }: { userId: string }) {
   );
 }
 
-/** ----------------------------------------------------------------
+/* ---------------------------------------------------------------
  * ENHANCED widget (invites, interactions, presence, calls)
  * --------------------------------------------------------------- */
-
 interface EnhancedAWYWidgetProps {
-  userId: string;
+  userId?: string;
   className?: string;
 }
 
@@ -157,6 +148,9 @@ export const EnhancedAWYWidget: React.FC<EnhancedAWYWidgetProps> = ({
   userId,
   className = "",
 }) => {
+  // If not signed in or user id isn’t ready yet, don’t fetch
+  if (!userId) return null;
+
   const [isExpanded, setIsExpanded] = useState(false);
   const [connections, setConnections] = useState<AWYConnection[]>([]);
   const [presence, setPresence] = useState<Record<string, AWYPresence>>({});
@@ -172,7 +166,6 @@ export const EnhancedAWYWidget: React.FC<EnhancedAWYWidgetProps> = ({
   });
 
   useEffect(() => {
-    if (!userId) return;
     (async () => {
       await Promise.all([fetchConnections(), fetchPresence(), fetchNotifications()]);
       await updateUserPresence();
@@ -356,17 +349,18 @@ export const EnhancedAWYWidget: React.FC<EnhancedAWYWidgetProps> = ({
                           >
                             <Heart className="w-4 h-4 text-pink-600" />
                           </button>
-                          {(connection as any)?.permissions?.can_initiate_calls && connection.connected_user_id && (
-                            <button
-                              onClick={() =>
-                                handleInitiateCall(connection.id, connection.connected_user_id!)
-                              }
-                              className="p-1 hover:bg-blue-100 rounded"
-                              title="Video call"
-                            >
-                              <Video className="w-4 h-4 text-blue-600" />
-                            </button>
-                          )}
+                          {(connection as any)?.permissions?.can_initiate_calls &&
+                            connection.connected_user_id && (
+                              <button
+                                onClick={() =>
+                                  handleInitiateCall(connection.id, connection.connected_user_id!)
+                                }
+                                className="p-1 hover:bg-blue-100 rounded"
+                                title="Video call"
+                              >
+                                <Video className="w-4 h-4 text-blue-600" />
+                              </button>
+                            )}
                         </div>
                       </div>
                     ))}
@@ -526,16 +520,17 @@ export const EnhancedAWYWidget: React.FC<EnhancedAWYWidgetProps> = ({
   );
 };
 
-/** ----------------------------------------------------------------
+/* ---------------------------------------------------------------
  * Default export selects UI by env flag (classic by default)
  * --------------------------------------------------------------- */
 const UI_MODE = process.env.NEXT_PUBLIC_AWY_UI_MODE ?? "classic";
 
-export default function AWYWidget({ userId }: { userId: string }) {
-  if (UI_MODE === "enhanced") {
-    return <EnhancedAWYWidget userId={userId} />;
-  }
-  return <ClassicAWYWidget userId={userId} />;
+export default function AWYWidget({ userId }: { userId?: string }) {
+  return UI_MODE === "enhanced" ? (
+    <EnhancedAWYWidget userId={userId} />
+  ) : (
+    <ClassicAWYWidget userId={userId} />
+  );
 }
 
 // Optional named exports (handy for tests or direct imports)
