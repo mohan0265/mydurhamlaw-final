@@ -11,9 +11,9 @@ interface AWYWidgetProps {
 }
 
 type LovedListItem = {
-  id: string | null;      // partner user_id (null when pending)
-  connectionId: string;   // awy_connections.id
-  label: string;          // relationship like "Mum"
+  id: string | null;       // partner user_id (null while 'pending')
+  connectionId: string;    // awy_connections.id
+  label: string;           // relationship like "Mum"
   online: boolean;
   pending: boolean;
 };
@@ -52,7 +52,7 @@ export const AWYWidget: React.FC<AWYWidgetProps> = ({ className = "" }) => {
     isInitiator: false,
   });
 
-  const widgetRef = useRef<HTMLDivElement | null>(null);
+  const widgetRef = useRef<HTMLDivElement>(null);
 
   // ---------- position: load/save ----------
   useEffect(() => {
@@ -117,35 +117,24 @@ export const AWYWidget: React.FC<AWYWidgetProps> = ({ className = "" }) => {
 
   // ---------- derive list from connections + presence ----------
   const partnerOf = useCallback(
-    (conn: any): { otherId: string | null; pending: boolean } => {
-      if (!userId) return { otherId: null, pending: false };
-      // For the student, loved_one_id may be null until parent signs in → pending.
-      if (conn.student_id === userId) {
-        const otherId = (conn.loved_one_id as string | null) ?? null;
-        return { otherId, pending: otherId === null };
-      }
-      // If you're the loved one, the "other" is the student (always set).
-      return { otherId: conn.student_id as string, pending: false };
+    (conn: any) => {
+      if (!userId) return null as string | null;
+      // If the student is the current user, partner is loved_one_id (may be null while pending)
+      // If the loved one is current user, partner is the student_id (never null)
+      return conn.student_id === userId ? (conn.loved_one_id as string | null) : (conn.student_id as string | null);
     },
     [userId]
   );
 
-  const list: LovedListItem[] = connections
-    .map((c) => {
-      const { otherId, pending } = partnerOf(c);
+  const list: LovedListItem[] =
+    connections.map((c) => {
+      const otherId = partnerOf(c); // may be null while pending (student side)
+      const pending = !otherId;     // pending until loved one signs in (and gets linked)
       const pres = otherId ? presenceByUser.get(otherId) : undefined;
-      const online = !!otherId && pres?.status === "online";
+      const online = pres?.status === "online";
       const label = c.relationship || "Loved One";
-      return {
-        id: otherId,
-        connectionId: c.id,
-        label,
-        online,
-        pending,
-      };
-    })
-    // keep all, including pending
-    .sort((a, b) => Number(b.online) - Number(a.online)); // optional: online first
+      return { id: otherId ?? null, connectionId: c.id, label, online: !!online, pending };
+    }) ?? [];
 
   const onlineCount = list.filter((i) => i.online).length;
 
@@ -159,11 +148,13 @@ export const AWYWidget: React.FC<AWYWidgetProps> = ({ className = "" }) => {
     setIsLoading(true);
     try {
       const r = await linkLovedOneByEmail(email, relation);
+
       if (r.ok) {
-        if (r.status === "pending") {
-          alert("Invite saved. They’ll appear here once they sign in with Google.");
-        } else {
+        // r.status will be "pending" for new emails, "active" if they already have an account
+        if (r.status === "active") {
           alert("Loved one linked.");
+        } else {
+          alert("Invite saved. They'll appear here once they sign in with Google.");
         }
         setNewLovedOneEmail("");
         setNewLovedOneRelationship("");
@@ -173,12 +164,10 @@ export const AWYWidget: React.FC<AWYWidgetProps> = ({ className = "" }) => {
       }
 
       const err = (r.error ?? "").toLowerCase();
-      if (err.includes("max_loved_ones_reached") || err.includes("limit_reached")) {
+      if (err.includes("max_loved_ones_reached")) {
         alert("You can link up to 3 loved ones.");
       } else if (err.includes("cannot_link_self")) {
         alert("You cannot link your own email.");
-      } else if (err.includes("user_not_found")) {
-        alert("That email will appear once they sign in with Google the first time.");
       } else if (err.includes("not_authenticated")) {
         alert("Please sign in and try again.");
       } else {
@@ -202,7 +191,7 @@ export const AWYWidget: React.FC<AWYWidgetProps> = ({ className = "" }) => {
   };
 
   const startVideoCall = (item: LovedListItem) => {
-    if (item.pending || !item.id) return; // not available yet
+    if (!item.id || item.pending) return;
     const deepLink = callLinks[item.id];
     if (deepLink) {
       window.open(deepLink, "_blank", "noopener,noreferrer");
@@ -225,9 +214,9 @@ export const AWYWidget: React.FC<AWYWidgetProps> = ({ className = "" }) => {
     });
   };
 
-  const onWave = async (target: LovedListItem) => {
-    if (target.pending || !target.id) return;
-    const r = await sendWave(target.id);
+  const onWave = async (targetId: string | null) => {
+    if (!targetId) return;
+    const r = await sendWave(targetId);
     if (r.ok) alert("👋 Wave sent!");
     else alert(`Wave failed: ${r.error}`);
   };
@@ -332,17 +321,17 @@ export const AWYWidget: React.FC<AWYWidgetProps> = ({ className = "" }) => {
                             />
                           </div>
                           <div>
-                            <div className="flex items-center gap-2">
-                              <p className="font-semibold text-gray-900">{item.label}</p>
+                            <p className="font-semibold text-gray-900 flex items-center gap-2">
+                              {item.label}
                               {item.pending && (
-                                <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">
-                                  <Clock size={12} /> Pending
+                                <span className="inline-flex items-center rounded-md bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700 border border-amber-200">
+                                  <Clock className="mr-1 h-3 w-3" /> Pending
                                 </span>
                               )}
-                            </div>
+                            </p>
                             <p className="text-xs font-medium">
                               {item.pending ? (
-                                <span className="text-amber-700">Awaiting their first sign-in</span>
+                                <span className="text-amber-600">Awaiting their first sign-in</span>
                               ) : item.online ? (
                                 <span className="text-green-600">● Online now</span>
                               ) : (
@@ -354,15 +343,7 @@ export const AWYWidget: React.FC<AWYWidgetProps> = ({ className = "" }) => {
 
                         <div className="flex flex-col items-end gap-2">
                           <div className="flex gap-2">
-                            {item.pending || !item.id ? (
-                              <button
-                                disabled
-                                className="p-2 bg-gray-300 text-white rounded-full opacity-70 cursor-not-allowed"
-                                title="Available after they sign in"
-                              >
-                                <Video size={16} />
-                              </button>
-                            ) : item.online ? (
+                            {!item.pending && item.id ? (
                               <>
                                 <button
                                   onClick={() => startVideoCall(item)}
@@ -372,7 +353,7 @@ export const AWYWidget: React.FC<AWYWidgetProps> = ({ className = "" }) => {
                                   <Video size={16} />
                                 </button>
                                 <button
-                                  onClick={() => onWave(item)}
+                                  onClick={() => onWave(item.id)}
                                   className="p-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-full hover:from-blue-600 hover:to-blue-700 transition-all duration-300 transform hover:scale-110 shadow-lg"
                                   title="Send Wave"
                                 >
@@ -381,12 +362,11 @@ export const AWYWidget: React.FC<AWYWidgetProps> = ({ className = "" }) => {
                               </>
                             ) : (
                               <button
-                                onClick={() => onWave(item)}
-                                disabled={!item.id}
-                                className="p-2 bg-gradient-to-r from-gray-400 to-gray-500 text-white rounded-full hover:from-gray-500 hover:to-gray-600 transition-all duration-300 shadow-lg disabled:opacity-60"
-                                title="Send Wave (they'll see it when online)"
+                                disabled
+                                className="p-2 bg-gray-300 text-gray-600 rounded-full cursor-not-allowed"
+                                title="Available after they sign in"
                               >
-                                👋
+                                <Video size={16} />
                               </button>
                             )}
                           </div>
