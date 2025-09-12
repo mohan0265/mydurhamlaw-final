@@ -4,23 +4,30 @@ import { getServerUser } from "@/lib/api/serverAuth"; // cookie-first + Bearer f
 import { serverAWYService } from "@/lib/awy/awyService";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  // Authenticate the request; works on Netlify using cookies OR Authorization: Bearer <token>
   const { user } = await getServerUser(req, res);
-  if (!user) {
-    return res.status(401).json({ error: "Unauthorized" });
-  }
+  if (!user) return res.status(401).json({ error: "Unauthorized" });
 
   try {
     switch (req.method) {
       case "GET": {
-        // Get user's AWY connections
-        const connections = await serverAWYService.getUserConnections(user.id);
-        return res.status(200).json({ connections });
+        try {
+          const connections = await serverAWYService.getUserConnections(user.id);
+          return res.status(200).json({ connections });
+        } catch (e: any) {
+          console.error("[awy/connections][GET] service error:", e);
+          return res.status(500).json({ error: e?.message || "service_error" });
+        }
       }
 
       case "POST": {
-        // Create new AWY connection
-        const { connectionEmail, relationshipLabel, displayName } = req.body ?? {};
+        // Accept both naming styles:
+        // - { connectionEmail, relationshipLabel, displayName }
+        // - { email, relationship, display_name }
+        const body = (req.body as any) || {};
+        const connectionEmail = body.connectionEmail || body.email;
+        const relationshipLabel = body.relationshipLabel || body.relationship;
+        const displayName =
+          body.displayName ?? body.display_name ?? null;
 
         if (!connectionEmail || !relationshipLabel) {
           return res
@@ -28,55 +35,64 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             .json({ error: "Connection email and relationship label are required" });
         }
 
-        const connectionId = await serverAWYService.createConnection(
-          user.id,
-          connectionEmail,
-          relationshipLabel,
-          displayName
-        );
-
-        return res.status(201).json({
-          success: true,
-          connectionId,
-          message: "Connection created successfully",
-        });
+        try {
+          const connectionId = await serverAWYService.createConnection(
+            user.id,
+            connectionEmail,
+            relationshipLabel,
+            displayName
+          );
+          return res.status(201).json({
+            success: true,
+            connectionId,
+            message: "Connection created successfully",
+          });
+        } catch (e: any) {
+          console.error("[awy/connections][POST] service error:", e);
+          return res.status(500).json({ error: e?.message || "service_error" });
+        }
       }
 
       case "PUT": {
-        // Update connection (permissions, etc.)
-        const { connectionId, permissions } = req.body ?? {};
-
+        const { connectionId, permissions } = (req.body as any) || {};
         if (!connectionId) {
           return res.status(400).json({ error: "Connection ID is required" });
         }
-
-        if (permissions) {
-          await serverAWYService.updateConnectionPermissions(connectionId, permissions);
-          return res.status(200).json({
-            success: true,
-            message: "Connection permissions updated",
-          });
+        try {
+          if (permissions) {
+            await serverAWYService.updateConnectionPermissions(connectionId, permissions);
+            return res.status(200).json({
+              success: true,
+              message: "Connection permissions updated",
+            });
+          }
+          return res.status(400).json({ error: "No valid update data provided" });
+        } catch (e: any) {
+          console.error("[awy/connections][PUT] service error:", e);
+          return res.status(500).json({ error: e?.message || "service_error" });
         }
-
-        return res.status(400).json({ error: "No valid update data provided" });
       }
 
       case "DELETE": {
-        // Delete connection
-        const { connectionId: deleteId } = req.body ?? {};
-        // also accept ?id=... in query as a convenience
+        const body = (req.body as any) || {};
         const id =
-          deleteId ?? (typeof req.query.id === "string" ? req.query.id : undefined);
+          body.connectionId ||
+          body.id ||
+          (typeof req.query.id === "string" ? req.query.id : undefined);
 
         if (!id) {
           return res.status(400).json({ error: "Connection ID is required" });
         }
-
-        await serverAWYService.deleteConnection(id);
-        return res.status(200).json({
-          success: true,
-          message: "Connection deleted successfully",
-        });
+        try {
+          await serverAWYService.deleteConnection(id);
+          return res.status(200).json({
+            success: true,
+            message: "Connection deleted successfully",
+          });
+        } catch (e: any) {
+          console.error("[awy/connections][DELETE] service error:", e);
+          return res.status(500).json({ error: e?.message || "service_error" });
+        }
       }
 
       default: {
@@ -85,9 +101,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
     }
   } catch (error: any) {
-    console.error("AWY Connections API error:", error);
-    return res.status(500).json({
-      error: error?.message || "Internal server error",
-    });
+    console.error("[awy/connections] unhandled error:", error);
+    return res.status(500).json({ error: error?.message || "Internal server error" });
   }
 }

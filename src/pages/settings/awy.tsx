@@ -13,34 +13,35 @@ type AWYConnection = {
   email: string;
   relationship: string;
   display_name?: string | null;
-  status?: "pending" | "accepted" | "blocked";
+  status?: "pending" | "accepted" | "blocked" | "active";
   created_at?: string;
 };
 
 const RELATIONSHIPS = [
-  "Mum", "Dad", "Guardian", "Partner", "Sibling", "Grandparent", "Friend", "Other",
+  "Mum","Dad","Guardian","Partner","Sibling","Grandparent","Friend","Other",
 ] as const;
 
 const LIMIT = 3;
 
 async function fetchConnections(): Promise<AWYConnection[]> {
   const r = await authedFetch("/api/awy/connections");
-  if (r.status === 401) throw new Error("Please log in to manage AWY.");
-  if (!r.ok) throw new Error(`Failed to load connections (${r.status})`);
+  if (!r.ok) {
+    const msg = await safeMsg(r);
+    throw new Error(msg || `Failed to load connections (${r.status})`);
+  }
   const data = await r.json();
   return Array.isArray(data) ? data : (data?.connections ?? []);
 }
 
 async function createConnection(payload: {
-  email: string;
-  relationship: string;
-  display_name?: string;
+  connectionEmail: string;
+  relationshipLabel: string;
+  displayName?: string;
 }) {
   const r = await authedFetch("/api/awy/connections", {
     method: "POST",
     body: JSON.stringify(payload),
   });
-  if (r.status === 401) throw new Error("Please log in to add loved ones.");
   if (!r.ok) {
     const msg = await safeMsg(r);
     throw new Error(msg || `Failed to add connection (${r.status})`);
@@ -49,17 +50,15 @@ async function createConnection(payload: {
 }
 
 async function removeConnection(id: string) {
-  // DELETE with body first; fallback to querystring
   let r = await authedFetch("/api/awy/connections", {
     method: "DELETE",
-    body: JSON.stringify({ id }),
+    body: JSON.stringify({ connectionId: id }),
   });
   if (r.status === 405 || r.status === 400) {
     r = await authedFetch(`/api/awy/connections?id=${encodeURIComponent(id)}`, {
       method: "DELETE",
     });
   }
-  if (r.status === 401) throw new Error("Please log in to remove loved ones.");
   if (!r.ok) {
     const msg = await safeMsg(r);
     throw new Error(msg || `Failed to remove connection (${r.status})`);
@@ -115,22 +114,17 @@ export default function AWYSettingsPage() {
 
   const handleAdd = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!canAdd) {
-      toast.error(`You can add up to ${LIMIT} loved ones.`);
-      return;
-    }
-    if (!isValidEmail(email)) {
-      toast.error("Please enter a valid email.");
-      return;
-    }
+    if (!canAdd) return toast.error(`You can add up to ${LIMIT} loved ones.`);
+    if (!isValidEmail(email)) return toast.error("Please enter a valid email.");
+
+    // IMPORTANT: send the names the API expects
     addMut.mutate({
-      email: email.trim(),
-      relationship,
-      display_name: displayName.trim() || undefined,
-    } as any);
+      connectionEmail: email.trim(),
+      relationshipLabel: relationship,
+      displayName: displayName.trim() || undefined,
+    });
   };
 
-  // NULL-SAFE supabase (prevents “possibly null”)
   const supabase = useMemo(() => getSupabaseClient(), []);
   const logout = async () => {
     try {
