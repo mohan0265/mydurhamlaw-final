@@ -7,22 +7,23 @@ import { getSupabaseClient } from '@/lib/supabase/client';
 
 // Dynamically import the AWYWidget to avoid SSR issues
 const ClientAWY = dynamic(
-  () => import('./awy/AWYWidget').then((mod) => ({ default: mod.AWYWidget })),
+  () => import('./awy/AWYWidget').then(mod => ({ default: mod.AWYWidget })),
   { ssr: false, loading: () => null }
 );
 
-async function activateLovedOneOnLogin(): Promise<void> {
+// Fire once after auth: parents with a pending email are activated.
+// Safe no-op for students or already-activated users.
+async function activateLovedOneOnLogin() {
   const supabase = getSupabaseClient();
-  if (!supabase) return; // <-- guard fixes "possibly null"
+  // Guard for TypeScript (client always exists in our app, but keeps TS happy)
+  if (!supabase) return;
 
   try {
-    const { data, error } = await supabase.auth.getUser();
-    if (error || !data?.user) return;
-
-    // Safe, idempotent no-op for student logins; activates pending links for parents
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
     await supabase.rpc('awy_activate_loved_one_on_login');
   } catch {
-    // Intentionally swallow – we don't block UI on this helper
+    // don't block UI on this helper
   }
 }
 
@@ -33,11 +34,10 @@ function AWYMountSafe() {
     setMounted(true);
   }, []);
 
+  // Call the activator once after we know we're mounted and feature is enabled
   useEffect(() => {
     if (!mounted) return;
     if (process.env.NEXT_PUBLIC_FEATURE_AWY !== '1') return;
-
-    // Fire and forget; avoid lint "floating promise"
     void activateLovedOneOnLogin();
   }, [mounted]);
 

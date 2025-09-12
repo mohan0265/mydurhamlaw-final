@@ -10,13 +10,15 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { getSupabaseClient } from "@/lib/supabase/client";
 
 export type AwyStatus = "online" | "offline" | "busy";
+export type AwyConnStatus = "pending" | "active" | "blocked";
 
 export interface AwyConnection {
   id: string;
   student_id: string;
   loved_one_id: string | null; // can be null while 'pending'
   loved_is_user: boolean;
-  relationship: string;
+  relationship: string | null;
+  status: AwyConnStatus;        // <-- added
   is_visible: boolean;
   created_at: string;
 }
@@ -26,7 +28,7 @@ export interface AwyPresence {
   user_id: string;
   status: AwyStatus;
   status_message: string | null;
-  last_seen: string; // ISO
+  last_seen: string;   // ISO
   heartbeat_at: string; // ISO
 }
 
@@ -108,7 +110,7 @@ export function useAwyPresence(): UseAwyPresenceResult {
     client
       .from("awy_connections")
       .select(
-        "id,student_id,loved_one_id,loved_is_user,relationship,is_visible,created_at"
+        "id,student_id,loved_one_id,loved_is_user,relationship,status,is_visible,created_at" // <-- status included
       )
       .or(`student_id.eq.${userId},loved_one_id.eq.${userId}`)
       .then(({ data, error }) => {
@@ -345,8 +347,10 @@ export function useAwyPresence(): UseAwyPresenceResult {
 
         if (error) {
           const msg = (error.message || "").toLowerCase();
-          if (msg.includes("limit_reached")) return { ok: false, error: "limit_reached" };
+          if (msg.includes("max_loved_ones_reached")) return { ok: false, error: "max_loved_ones_reached" };
+          if (msg.includes("limit_reached")) return { ok: false, error: "limit_reached" }; // legacy phrasing just in case
           if (msg.includes("cannot_link_self")) return { ok: false, error: "cannot_link_self" };
+          if (msg.includes("user_not_found")) return { ok: false, error: "user_not_found" };
           return { ok: false, error: error.message };
         }
 
