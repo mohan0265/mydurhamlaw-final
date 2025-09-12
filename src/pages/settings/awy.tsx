@@ -1,259 +1,183 @@
 // src/pages/settings/awy.tsx
-import React, { useMemo, useState } from "react";
-import Head from "next/head";
-import { useRouter } from "next/router";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { authedFetch } from "@/lib/api/authedFetch";
-import { getSupabaseClient } from "@/lib/supabase/client";
-import { Toaster, toast } from "react-hot-toast";
-import Link from "next/link";
+"use client";
 
-type AWYConnection = {
+import React, { useEffect, useState } from "react";
+import Link from "next/link";
+import { authedFetch } from "@/lib/api/authedFetch";
+import { Input } from "@/components/ui/Input";
+import { Button } from "@/components/ui/Button";
+
+type Conn = {
   id: string;
   email: string;
-  relationship: string;
-  display_name?: string | null;
-  status?: "pending" | "accepted" | "blocked" | "active";
-  created_at?: string;
+  relationship_label: string | null;
+  display_name: string | null;
+  status: string | null;
+  connected_user_id: string | null;
 };
 
-const RELATIONSHIPS = [
-  "Mum","Dad","Guardian","Partner","Sibling","Grandparent","Friend","Other",
-] as const;
-
-const LIMIT = 3;
-
-async function fetchConnections(): Promise<AWYConnection[]> {
-  const r = await authedFetch("/api/awy/connections");
-  if (!r.ok) {
-    const msg = await safeMsg(r);
-    throw new Error(msg || `Failed to load connections (${r.status})`);
-  }
-  const data = await r.json();
-  return Array.isArray(data) ? data : (data?.connections ?? []);
-}
-
-async function createConnection(payload: {
-  connectionEmail: string;
-  relationshipLabel: string;
-  displayName?: string;
-}) {
-  const r = await authedFetch("/api/awy/connections", {
-    method: "POST",
-    body: JSON.stringify(payload),
-  });
-  if (!r.ok) {
-    const msg = await safeMsg(r);
-    throw new Error(msg || `Failed to add connection (${r.status})`);
-  }
+async function apiGet<T = any>(url: string): Promise<T> {
+  const r = await authedFetch(url);
+  if (!r.ok) throw new Error(`${url} -> ${r.status}`);
   return r.json();
 }
 
-async function removeConnection(id: string) {
-  let r = await authedFetch("/api/awy/connections", {
-    method: "DELETE",
-    body: JSON.stringify({ connectionId: id }),
+async function apiSend<T = any>(url: string, method: string, body?: any): Promise<T> {
+  const r = await authedFetch(url, {
+    method,
+    body: body ? JSON.stringify(body) : undefined,
+    headers: { "Content-Type": "application/json" },
   });
-  if (r.status === 405 || r.status === 400) {
-    r = await authedFetch(`/api/awy/connections?id=${encodeURIComponent(id)}`, {
-      method: "DELETE",
-    });
-  }
-  if (!r.ok) {
-    const msg = await safeMsg(r);
-    throw new Error(msg || `Failed to remove connection (${r.status})`);
-  }
+  if (!r.ok) throw new Error(`${url} -> ${r.status}`);
   return r.json();
-}
-
-async function safeMsg(r: Response) {
-  try {
-    const d = await r.json();
-    return d?.error || d?.message;
-  } catch {
-    return null;
-  }
 }
 
 export default function AWYSettingsPage() {
-  const router = useRouter();
-  const qc = useQueryClient();
-
-  const { data: connections = [], isLoading, isError, error } = useQuery({
-    queryKey: ["awy", "connections"],
-    queryFn: fetchConnections,
-    staleTime: 60_000,
-  });
-
   const [email, setEmail] = useState("");
-  const [relationship, setRelationship] = useState<string>("Mum");
+  const [relationship, setRelationship] = useState("Mum");
   const [displayName, setDisplayName] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [connections, setConnections] = useState<Conn[]>([]);
 
-  const count = connections.length;
-  const canAdd = count < LIMIT;
-
-  const addMut = useMutation({
-    mutationFn: createConnection,
-    onSuccess: () => {
-      toast.success("Loved one added / invited.");
-      setEmail("");
-      setDisplayName("");
-      qc.invalidateQueries({ queryKey: ["awy", "connections"] });
-    },
-    onError: (e: any) => toast.error(e?.message || "Add failed"),
-  });
-
-  const delMut = useMutation({
-    mutationFn: removeConnection,
-    onSuccess: () => {
-      toast.success("Removed.");
-      qc.invalidateQueries({ queryKey: ["awy", "connections"] });
-    },
-    onError: (e: any) => toast.error(e?.message || "Remove failed"),
-  });
-
-  const handleAdd = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!canAdd) return toast.error(`You can add up to ${LIMIT} loved ones.`);
-    if (!isValidEmail(email)) return toast.error("Please enter a valid email.");
-
-    // IMPORTANT: send the names the API expects
-    addMut.mutate({
-      connectionEmail: email.trim(),
-      relationshipLabel: relationship,
-      displayName: displayName.trim() || undefined,
-    });
-  };
-
-  const supabase = useMemo(() => getSupabaseClient(), []);
-  const logout = async () => {
+  async function load() {
     try {
-      await supabase?.auth.signOut();
+      const data = await apiGet<{ connections: Conn[] }>("/api/awy/connections");
+      setConnections(Array.isArray(data) ? data : data?.connections ?? []);
+    } catch (e) {
+      console.error("Failed to load connections", e);
+      setConnections([]);
     } finally {
-      router.push("/login");
+      setLoading(false);
     }
-  };
+  }
+
+  useEffect(() => {
+    load();
+  }, []);
+
+  async function add() {
+    if (!email || !relationship) return;
+    setSaving(true);
+    try {
+      await apiSend("/api/awy/connections", "POST", {
+        email,
+        relationship,
+        displayName: displayName || undefined,
+      });
+      setEmail("");
+      setRelationship("Mum");
+      setDisplayName("");
+      await load();
+    } catch (e) {
+      console.error("Add connection failed", e);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function remove(id: string) {
+    if (!id) return;
+    setSaving(true);
+    try {
+      await apiSend("/api/awy/connections", "DELETE", { connectionId: id });
+      await load();
+    } catch (e) {
+      console.error("Delete connection failed", e);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const addedCount = connections.length;
+  const canAddMore = addedCount < 3;
 
   return (
-    <>
-      <Head>
-        <title>Always With You — Settings</title>
-      </Head>
+    <div className="mx-auto max-w-3xl px-4 py-8">
+      <h1 className="text-2xl font-semibold">Always With You — Settings</h1>
 
-      <main className="mx-auto max-w-3xl px-4 py-8">
-        <div className="mb-6 flex items-center justify-between">
-          <h1 className="text-2xl font-semibold">Always With You — Settings</h1>
-          <Link href="/" className="text-sm underline">← Back to Home</Link>
+      <div className="mt-2 mb-6 text-sm text-gray-600">
+        Add up to 3 loved ones to see their presence in the floating widget. You can invite new
+        contacts or remove existing ones anytime.
+      </div>
+
+      {/* Add form */}
+      <div className="rounded-lg border p-4 mb-6">
+        <label className="block text-sm font-medium mb-1">Loved one’s email</label>
+        <Input
+          placeholder="name@example.com"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          disabled={!canAddMore || saving}
+        />
+
+        <label className="block text-sm font-medium mt-4 mb-1">Relationship</label>
+        <Input
+          placeholder="Mum / Dad / Partner"
+          value={relationship}
+          onChange={(e) => setRelationship(e.target.value)}
+          disabled={!canAddMore || saving}
+        />
+
+        <label className="block text-sm font-medium mt-4 mb-1">
+          Display name <span className="text-gray-400">(optional)</span>
+        </label>
+        <Input
+          placeholder="Mum / Dad / Uncle Ravi"
+          value={displayName}
+          onChange={(e) => setDisplayName(e.target.value)}
+          disabled={!canAddMore || saving}
+        />
+
+        <div className="mt-3 text-sm text-gray-600">
+          You’ve added {addedCount} / 3
         </div>
 
-        <div className="mb-6 rounded-xl border p-4">
-          <p className="text-sm text-gray-700">
-            Add up to <strong>{LIMIT}</strong> loved ones to see their presence in the floating
-            widget. You can invite new contacts or remove existing ones anytime.
-          </p>
+        <div className="mt-4">
+          <Button onClick={add} disabled={!canAddMore || saving || !email || !relationship}>
+            {saving ? "Adding…" : "Add Loved One"}
+          </Button>
         </div>
+      </div>
 
-        <form onSubmit={handleAdd} className="mb-8 rounded-xl border p-4 grid gap-3">
-          <div className="grid gap-2">
-            <label className="text-sm font-medium">Loved one’s email</label>
-            <input
-              type="email"
-              className="rounded-lg border px-3 py-2"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="name@example.com"
-              required
-            />
-          </div>
+      {/* List */}
+      <div className="rounded-lg border p-4">
+        <h2 className="font-medium mb-3">Your Loved Ones</h2>
 
-          <div className="grid gap-2">
-            <label className="text-sm font-medium">Relationship</label>
-            <select
-              className="rounded-lg border px-3 py-2"
-              value={relationship}
-              onChange={(e) => setRelationship(e.target.value)}
-            >
-              {RELATIONSHIPS.map((r) => (
-                <option key={r} value={r}>{r}</option>
-              ))}
-            </select>
-          </div>
-
-          <div className="grid gap-2">
-            <label className="text-sm font-medium">
-              Display name <span className="text-gray-400">(optional)</span>
-            </label>
-            <input
-              type="text"
-              className="rounded-lg border px-3 py-2"
-              value={displayName}
-              onChange={(e) => setDisplayName(e.target.value)}
-              placeholder="Mum / Dad / Uncle Ravi"
-            />
-          </div>
-
-          <div className="flex items-center justify-between">
-            <div className="text-sm text-gray-600">
-              You’ve added <strong>{count}</strong> / {LIMIT}
-            </div>
-            <button
-              type="submit"
-              disabled={!canAdd || addMut.isPending}
-              className="rounded-lg bg-violet-600 px-4 py-2 text-white disabled:opacity-50"
-            >
-              {addMut.isPending ? "Adding…" : "Add Loved One"}
-            </button>
-          </div>
-        </form>
-
-        <div className="rounded-xl border">
-          <div className="border-b px-4 py-3 font-medium">Your Loved Ones</div>
-          {isLoading ? (
-            <div className="px-4 py-6 text-sm text-gray-600">Loading…</div>
-          ) : isError ? (
-            <div className="px-4 py-6 text-sm text-red-600">
-              {(error as any)?.message || "Failed to load."}
-            </div>
-          ) : connections.length === 0 ? (
-            <div className="px-4 py-6 text-sm text-gray-600">
-              No loved ones yet. Use the form above to add one.
-            </div>
-          ) : (
-            <ul className="divide-y">
-              {connections.map((c) => (
-                <li key={c.id} className="flex items-center justify-between px-4 py-3">
-                  <div>
-                    <div className="font-medium">
-                      {c.display_name || c.relationship || "Loved One"}
-                    </div>
-                    <div className="text-xs text-gray-600">{c.email}</div>
+        {loading ? (
+          <div className="text-sm text-gray-600">Loading…</div>
+        ) : connections.length === 0 ? (
+          <div className="text-sm text-gray-600">No loved ones yet.</div>
+        ) : (
+          <ul className="space-y-3">
+            {connections.map((c) => {
+              const name = c.display_name || c.relationship_label || "Loved One";
+              return (
+                <li key={c.id} className="flex items-center justify-between rounded border px-3 py-2">
+                  <div className="min-w-0">
+                    <div className="truncate font-medium">{name}</div>
+                    <div className="truncate text-sm text-gray-600">{c.email}</div>
                     {c.status && (
-                      <div className="text-xs text-gray-500">Status: {c.status}</div>
+                      <div className="text-xs text-gray-500 mt-0.5">Status: {c.status}</div>
                     )}
                   </div>
-                  <button
-                    onClick={() => delMut.mutate(c.id)}
-                    className="rounded-lg border px-3 py-1 text-sm hover:bg-gray-50"
-                  >
+                  <Button variant="outline" onClick={() => remove(c.id)} disabled={saving}>
                     Remove
-                  </button>
+                  </Button>
                 </li>
-              ))}
-            </ul>
-          )}
-        </div>
+              );
+            })}
+          </ul>
+        )}
 
-        <div className="mt-8 text-xs text-gray-500">
+        <div className="text-xs text-gray-500 mt-4">
           Trouble managing connections?{" "}
-          <button onClick={logout} className="underline">Sign out</button> and sign in again.
+          <Link href="/logout" className="underline">
+            Sign out
+          </Link>{" "}
+          and sign in again.
         </div>
-      </main>
-
-      <Toaster position="top-right" />
-    </>
+      </div>
+    </div>
   );
-}
-
-function isValidEmail(v: string) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
 }

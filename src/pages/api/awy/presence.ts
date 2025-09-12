@@ -1,3 +1,4 @@
+// src/pages/api/awy/presence.ts
 // Direct-to-DB, schema-tolerant presence API
 import type { NextApiRequest, NextApiResponse } from "next";
 import { getServerUser } from "@/lib/api/serverAuth";
@@ -11,7 +12,8 @@ async function connectedUserIdsFor(studentId: string): Promise<string[]> {
     .eq("user_id", studentId)
     .not("connected_user_id", "is", null);
 
-  if (!qA.error) return (qA.data || []).map((r: any) => r.connected_user_id).filter(Boolean);
+  if (!qA.error)
+    return (qA.data || []).map((r: any) => r.connected_user_id).filter(Boolean);
 
   // Schema B
   const qB = await supabaseAdmin

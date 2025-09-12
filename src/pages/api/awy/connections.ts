@@ -1,3 +1,4 @@
+// src/pages/api/awy/connections.ts
 // Direct-to-DB, schema-tolerant connections API
 import type { NextApiRequest, NextApiResponse } from "next";
 import { getServerUser } from "@/lib/api/serverAuth";
@@ -38,25 +39,21 @@ function mapFromB(row: any): ConnStd {
   };
 }
 
-// try primary schema, if undefined column -> try the alternate schema
+// Try primary schema, if undefined column -> try the alternate schema
 async function listConnections(userId: string): Promise<ConnStd[]> {
   // A: user_id/email/relationship_label/...
-  let qA = await supabaseAdmin
+  const qA = await supabaseAdmin
     .from("awy_connections")
-    .select(
-      "id,email,relationship_label,display_name,status,connected_user_id,created_at"
-    )
+    .select("id,email,relationship_label,display_name,status,connected_user_id,created_at")
     .eq("user_id", userId)
     .order("created_at", { ascending: false });
 
   if (!qA.error) return (qA.data || []).map(mapFromA);
 
   // B: student_id/loved_email/relationship/...
-  let qB = await supabaseAdmin
+  const qB = await supabaseAdmin
     .from("awy_connections")
-    .select(
-      "id,student_id,loved_email,relationship,display_name,status,loved_one_id,created_at"
-    )
+    .select("id,student_id,loved_email,relationship,display_name,status,loved_one_id,created_at")
     .eq("student_id", userId)
     .order("created_at", { ascending: false });
 
@@ -64,9 +61,14 @@ async function listConnections(userId: string): Promise<ConnStd[]> {
   return (qB.data || []).map(mapFromB);
 }
 
-async function createConnection(userId: string, email: string, relationshipLabel: string, displayName?: string | null) {
+async function createConnection(
+  userId: string,
+  email: string,
+  relationshipLabel: string,
+  displayName?: string | null
+) {
   // Try schema A insert
-  let insA = await supabaseAdmin
+  const insA = await supabaseAdmin
     .from("awy_connections")
     .insert({
       user_id: userId,
@@ -81,7 +83,7 @@ async function createConnection(userId: string, email: string, relationshipLabel
   if (!insA.error) return insA.data!.id as string;
 
   // Fallback to schema B insert
-  let insB = await supabaseAdmin
+  const insB = await supabaseAdmin
     .from("awy_connections")
     .insert({
       student_id: userId,
@@ -100,7 +102,7 @@ async function createConnection(userId: string, email: string, relationshipLabel
 
 async function deleteConnection(userId: string, id: string) {
   // Try schema A delete (scoped to user)
-  let delA = await supabaseAdmin
+  const delA = await supabaseAdmin
     .from("awy_connections")
     .delete()
     .eq("id", id)
@@ -109,7 +111,7 @@ async function deleteConnection(userId: string, id: string) {
   if (!delA.error && (delA.count ?? 0) >= 0) return;
 
   // Fallback schema B
-  let delB = await supabaseAdmin
+  const delB = await supabaseAdmin
     .from("awy_connections")
     .delete()
     .eq("id", id)
@@ -162,8 +164,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         await deleteConnection(user.id, id);
         return res.status(200).json({ success: true, message: "Connection deleted successfully" });
       }
-
-      // If you need PUT for permissions later, wire it directly to columns you actually have.
 
       default: {
         res.setHeader("Allow", ["GET", "POST", "DELETE"]);
