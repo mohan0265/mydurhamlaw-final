@@ -416,3 +416,7 @@ export const EnhancedAWYWidget: React.FC<EnhancedAWYWidgetProps> = ({
     </div>
   );
 };
+
+// at the very end of src/components/awy/AWYWidget.tsx
+export default EnhancedAWYWidget;
+export { EnhancedAWYWidget as AWYWidget }; // optional alias for backward-compat

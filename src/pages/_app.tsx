@@ -14,19 +14,24 @@ import { validateEnv } from "@/lib/env";
 import { AuthProvider } from "@/lib/supabase/AuthContext";
 import { DurmahProvider, DurmahContextSetup } from "@/lib/durmah/context";
 import { loadMDLStudentContext } from "@/lib/supabase/supabaseBridge";
-import LayoutShell from "@/layout/LayoutShell";
 import { Toaster } from "react-hot-toast";
+import LayoutShell from "@/layout/LayoutShell";
+import { getSupabaseClient } from "@/lib/supabase/client";
+import { TrialBanner } from "@/components/billing/TrialBanner";
 
-// Voice (Durmah) widget (client-only, dynamic import safe)
+// Voice (Durmah) widget (client-only)
 const DurmahWidget = dynamic(() => import("../components/DurmahWidget"), {
   ssr: false,
 });
-// AWY widget - use bootstrap only!
+
+// AWY widget bootstrap (client-only)
 import AWYBootstrap from "@/components/AWYBootstrap";
 
-// Feature flags
+// Feature flags (support both legacy and new)
 const VOICE_ENABLED = process.env.NEXT_PUBLIC_ENABLE_VOICE_FEATURES === "true";
-const AWY_ENABLED = process.env.NEXT_PUBLIC_FEATURE_AWY === "1";
+const AWY_ENABLED =
+  process.env.NEXT_PUBLIC_ENABLE_AWY === "true" ||
+  process.env.NEXT_PUBLIC_FEATURE_AWY === "1";
 
 // Server-only init
 if (typeof window === "undefined") {
@@ -42,7 +47,6 @@ if (typeof window === "undefined") {
 // Durmah context bootstrap
 const AppDurmahBootstrap: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   useEffect(() => {
-    // Refresh student context on auth change
     loadMDLStudentContext(undefined as any).catch((e) =>
       console.error("loadMDLStudentContext failed:", e)
     );
@@ -50,8 +54,27 @@ const AppDurmahBootstrap: React.FC<{ children: React.ReactNode }> = ({ children 
   return <>{children}</>;
 };
 
+// Trial banner wrapper (resolves user id)
+const GlobalTrialBanner: React.FC = () => {
+  const router = useRouter();
+  const [uid, setUid] = useState<string | null>(null);
+
+  useEffect(() => {
+    const supabase = getSupabaseClient();
+    if (!supabase) return;
+    supabase.auth
+      .getUser()
+      .then(({ data }) => setUid(data?.user?.id ?? null))
+      .catch(() => setUid(null));
+  }, []);
+
+  if (!uid) return null;
+  return <TrialBanner userId={uid} onUpgrade={() => router.push("/pricing")} />;
+};
+
 export default function App({ Component, pageProps }: AppProps) {
   const router = useRouter();
+
   const [queryClient] = useState(
     () =>
       new QueryClient({
@@ -65,6 +88,7 @@ export default function App({ Component, pageProps }: AppProps) {
         },
       })
   );
+
   useEffect(() => {
     try {
       validateEnv();
@@ -72,6 +96,7 @@ export default function App({ Component, pageProps }: AppProps) {
       console.error("Environment validation failed:", error);
     }
   }, []);
+
   useEffect(() => {
     const handleRouteChange = () =>
       window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
@@ -89,15 +114,20 @@ export default function App({ Component, pageProps }: AppProps) {
       <Head>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </Head>
+
       <AuthProvider>
         <QueryClientProvider client={queryClient}>
           <HydrationBoundary state={(pageProps as any)?.dehydratedState}>
             <DurmahProvider>
               <DurmahContextSetup />
               <AppDurmahBootstrap>
+                {/* Global trial banner (auto-hides when not needed) */}
+                <GlobalTrialBanner />
+
                 <LayoutShell>
                   <Component {...pageProps} />
                 </LayoutShell>
+
                 {/* Global Toaster */}
                 <Toaster
                   position="top-right"
@@ -114,6 +144,7 @@ export default function App({ Component, pageProps }: AppProps) {
                     },
                   }}
                 />
+
                 {/* Floating widgets */}
                 {!hideWidgets && (
                   <>
