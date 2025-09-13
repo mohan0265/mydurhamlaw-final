@@ -19,6 +19,12 @@ export function initializeRSSSystem(): void {
     return
   }
 
+  // Additional build-time safety check
+  if (process.env.NODE_ENV !== 'production' || process.env.NETLIFY_BUILD === 'true') {
+    console.log('⚠️ RSS system initialization skipped - build environment detected')
+    return
+  }
+
   try {
     const logger = RSSLogger.getInstance()
     const scheduler = CronScheduler.getInstance()
