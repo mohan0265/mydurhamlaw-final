@@ -1,16 +1,7 @@
-<<<<<<< HEAD
-[build.environment]
-  NODE_VERSION = "18.20.8"
-=======
+# Netlify config for Next.js
 [build]
   command = "npm run build"
-  publish = ".next"
 
 [build.environment]
-  NODE_VERSION = "18"
-
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
->>>>>>> 6548e25bdb5cc5cbab4b8d0c1398c4995d1d8912
+  NODE_VERSION = "18.20.8"
+  NEXT_TELEMETRY_DISABLED = "1"
