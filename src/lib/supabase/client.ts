@@ -6,7 +6,7 @@ import { createBrowserClient } from '@supabase/ssr';
 let cached: SupabaseClient | null = null;
 
 // Build-time safe Supabase client creation
-function createSafeClient(): SupabaseClient | null {
+function createSafeClient(): SupabaseClient<any, "public", any> | null {
   // Never create client during build or server-side rendering
   if (typeof window === 'undefined') {
     return null;

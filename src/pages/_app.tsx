@@ -26,9 +26,11 @@ const DurmahWidget = dynamic(() => import("../components/DurmahWidget"), {
 
 // AWY widget bootstrap (client-only)
 import AWYBootstrap from "@/components/AWYBootstrap";
+import { isAWYEnabled } from "@/lib/feature-flags";
 
 // Feature flags (support both legacy and new)
-const VOICE_ENABLED = process.env.NEXT_PUBLIC_ENABLE_VOICE_FEATURES === "true";
+import { isEnabled } from "@/lib/feature-flags";
+const VOICE_ENABLED = isEnabled(process.env.NEXT_PUBLIC_ENABLE_VOICE_FEATURES);
 
 
 // Server-only init
@@ -147,7 +149,7 @@ export default function App({ Component, pageProps }: AppProps) {
                 {!hideWidgets && (
                   <>
                     {VOICE_ENABLED && <DurmahWidget />}
-                    {(process.env.NEXT_PUBLIC_ENABLE_AWY === "true" || process.env.NEXT_PUBLIC_FEATURE_AWY === "1") && <AWYBootstrap />}
+                    {isAWYEnabled() && <AWYBootstrap />}
                   </>
                 )}
               </AppDurmahBootstrap>

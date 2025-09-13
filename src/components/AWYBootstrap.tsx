@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
+import { isAWYEnabled } from '@/lib/feature-flags';
 
 const AWYWidget = dynamic(() => import('./awy/AWYWidget'), { ssr: false });
 
@@ -11,7 +12,7 @@ const AWYBootstrap = () => {
     setMounted(true);
   }, []);
 
-  if (!mounted || process.env.NEXT_PUBLIC_FEATURE_AWY !== '1') {
+  if (!mounted || !isAWYEnabled()) {
     return null;
   }
 

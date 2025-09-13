@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { isAWYEnabled } from '@/lib/feature-flags';
 
 export type Status = 'online' | 'offline' | 'busy';
 
@@ -28,7 +29,7 @@ const AWYWidget = () => {
     setMounted(true);
   }, []);
 
-  if (!mounted || process.env.NEXT_PUBLIC_FEATURE_AWY !== '1') {
+  if (!mounted || !isAWYEnabled()) {
     return null;
   }
 

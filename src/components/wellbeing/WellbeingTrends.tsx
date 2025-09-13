@@ -134,7 +134,7 @@ export default function WellbeingTrends({ userId, period = 14 }: Props) {
 
     if (stats.common_stressors.length > 0) {
       const topStressor = stats.common_stressors[0];
-      if (topStressor.count >= 3) {
+      if (topStressor && topStressor.count >= 3) {
         insights.push({
           type: 'info',
           message: `"${topStressor.stressor}" has been a recurring stressor. Consider strategies to address this.`,

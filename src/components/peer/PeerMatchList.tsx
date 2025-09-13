@@ -231,7 +231,7 @@ export default function PeerMatchList({
 
   const handleMessage = (userId: string) => {
     // TODO: Implement messaging system
-    toast.info('Messaging system coming soon!');
+    toast('Messaging system coming soon!', { icon: 'ℹ️' });
     telemetry.track('peer_message_attempt', { target_user: userId });
   };
 

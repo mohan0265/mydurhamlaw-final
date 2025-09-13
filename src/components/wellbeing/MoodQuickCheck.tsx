@@ -77,7 +77,7 @@ export default function MoodQuickCheck({ onMoodSubmit, showConsent = true }: Pro
   };
 
   const handleConsentDeclined = () => {
-    toast.info('Wellbeing tracking is optional. You can enable it later in settings.');
+    toast('Wellbeing tracking is optional. You can enable it later in settings.', { icon: 'ℹ️' });
   };
 
   const toggleStressor = (stressor: string) => {

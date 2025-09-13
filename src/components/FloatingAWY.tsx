@@ -1,6 +1,8 @@
 // src/components/FloatingAWY.tsx
+import { isAWYEnabled } from '@/lib/feature-flags';
+
 export default function FloatingAWY() {
-  if (process.env.NEXT_PUBLIC_ENABLE_AWY !== 'true') return null
+  if (!isAWYEnabled()) return null
   return (
     <button
       aria-label="Open AWY Video"

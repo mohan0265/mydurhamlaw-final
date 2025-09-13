@@ -94,7 +94,7 @@ export default function OSCOLAForm({ assignmentId, onReferencesChange, initialRe
 
   const addReference = () => {
     const newRef: Reference = {
-      type: 'case',
+      type: 'case' as const,
       fields: {},
     };
     setReferences([...references, newRef]);
@@ -106,26 +106,30 @@ export default function OSCOLAForm({ assignmentId, onReferencesChange, initialRe
 
   const updateReference = (index: number, updates: Partial<Reference>) => {
     const updated = [...references];
-    updated[index] = { ...updated[index], ...updates };
-    setReferences(updated);
+    if (updated[index]) {
+      updated[index] = { ...updated[index], ...updates };
+      setReferences(updated);
+    }
   };
 
   const updateReferenceField = (index: number, field: string, value: string) => {
     const updated = [...references];
-    updated[index].fields[field] = value;
-    setReferences(updated);
-    
-    // Clear previous formatting when fields change
-    if (updated[index].formatted) {
-      updated[index].formatted = undefined;
-      updated[index].lintMessages = undefined;
+    if (updated[index]) {
+      updated[index].fields[field] = value;
+      setReferences(updated);
+      
+      // Clear previous formatting when fields change
+      if (updated[index].formatted) {
+        updated[index].formatted = undefined;
+        updated[index].lintMessages = undefined;
+      }
     }
   };
 
   const formatReference = async (index: number) => {
     const reference = references[index];
     
-    if (!reference.type || Object.keys(reference.fields).length === 0) {
+    if (!reference || !reference.type || Object.keys(reference.fields).length === 0) {
       toast.error('Please fill in reference details before formatting');
       return;
     }
@@ -314,10 +318,10 @@ export default function OSCOLAForm({ assignmentId, onReferencesChange, initialRe
                         {field.required && <span className="text-red-500 ml-1">*</span>}
                       </label>
                       <input
-                        type={field.type || 'text'}
+                        type={'type' in field ? field.type : 'text'}
                         value={reference.fields[field.key] || ''}
                         onChange={(e) => updateReferenceField(index, field.key, e.target.value)}
-                        placeholder={field.placeholder}
+                        placeholder={'placeholder' in field ? field.placeholder : ''}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
                     </div>
