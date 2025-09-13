@@ -29,9 +29,7 @@ import AWYBootstrap from "@/components/AWYBootstrap";
 
 // Feature flags (support both legacy and new)
 const VOICE_ENABLED = process.env.NEXT_PUBLIC_ENABLE_VOICE_FEATURES === "true";
-const AWY_ENABLED =
-  process.env.NEXT_PUBLIC_ENABLE_AWY === "true" ||
-  process.env.NEXT_PUBLIC_FEATURE_AWY === "1";
+
 
 // Server-only init
 if (typeof window === "undefined") {
@@ -149,7 +147,7 @@ export default function App({ Component, pageProps }: AppProps) {
                 {!hideWidgets && (
                   <>
                     {VOICE_ENABLED && <DurmahWidget />}
-                    {AWY_ENABLED && <AWYBootstrap />}
+                    {(process.env.NEXT_PUBLIC_ENABLE_AWY === "true" || process.env.NEXT_PUBLIC_FEATURE_AWY === "1") && <AWYBootstrap />}
                   </>
                 )}
               </AppDurmahBootstrap>
