@@ -172,7 +172,7 @@ ios/ or android/
    - Quickstart test = story validation steps
 
 5. **Update agent file incrementally** (O(1) operation):
-   - Run `/scripts/powershell/update-agent-context.ps1 -AgentType claude` for your AI assistant
+   - Run `/scripts/powershell/update-agent-context.ps1 -AgentType gemini` for your AI assistant
    - If exists: Add only NEW tech from current plan
    - Preserve manual additions between markers
    - Update recent changes (keep last 3)

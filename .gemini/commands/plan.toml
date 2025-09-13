@@ -1,0 +1,43 @@
+# AWY Widget Stabilization & Placement Plan
+
+# 1. Foundational Setup
+- Task: "Create AWYWidget.tsx component structure"
+  - File: `src/components/awy/AWYWidget.tsx`
+  - Details: Initial functional component, props interface, basic JSX.
+- Task: "Create AWYBootstrap.tsx for conditional loading"
+  - File: `src/components/AWYBootstrap.tsx`
+  - Details: Check for `NEXT_PUBLIC_FEATURE_AWY` flag and render `AWYWidget` dynamically.
+
+# 2. Client-Side Rendering & Positioning
+- Task: "Ensure AWYWidget is client-side only"
+  - File: `src/components/AWYBootstrap.tsx`
+  - Details: Use `next/dynamic` with `ssr: false`.
+- Task: "Implement default floating position"
+  - File: `src/components/awy/AWYWidget.tsx`
+  - Details: Apply Tailwind classes for `bottom-[180px] right-[88px]`.
+
+# 3. Visuals & State
+- Task: "Implement status ring UI"
+  - File: `src/components/awy/AWYWidget.tsx`
+  - Details: Create the circular ring and define color variants for `online`, `busy`, `offline` using Tailwind.
+- Task: "Add props for status control"
+  - File: `src/components/awy/AWYWidget.tsx`
+  - Details: Define and use a `status` prop (`'online' | 'busy' | 'offline'`).
+
+# 4. Interaction
+- Task: "Implement drag-to-move functionality"
+  - File: `src/components/awy/AWYWidget.tsx`
+  - Details: Add state for position and use event handlers (`onMouseDown`, `onMouseMove`, `onMouseUp`) to update it.
+- Task: "Persist position across session"
+  - File: `src/components/awy/AWYWidget.tsx`
+  - Details: Use `sessionStorage` to store and retrieve the widget's position.
+
+# 5. Integration & Verification
+- Task: "Integrate AWYBootstrap into the main layout"
+  - File: `src/pages/_app.tsx` or a layout component.
+  - Details: Add `<AWYBootstrap />` to the component tree.
+- Task: "Write tests for acceptance criteria"
+  - File: `tests/unit/AWYWidget.test.tsx`
+  - Details: Cover AT1-AT6, including flag checks, SSR, drag persistence, and status colors.
+- Task: "Manual verification"
+  - Details: Manually test all acceptance criteria in a browser, including mobile view.
