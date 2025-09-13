@@ -1,0 +1,65 @@
+[[task]]
+name = "Create AWYWidget.tsx client-only scaffold"
+files = ["src/components/awy/AWYWidget.tsx"]
+details = """
+- Add 'use client' at the top.
+- Hydration-safe: use mounted state and render null until mounted.
+- Feature flag: render null unless process.env.NEXT_PUBLIC_FEATURE_AWY === "1".
+- Implement a minimal skeleton wrapper &lt;div id="awy-root" /&gt;.
+- Add ringClass(status?: 'online'|'offline'|'busy'): busy→amber, online→green, else→gray/60%. Do not render a full UI yet; just export the helper.
+- Implement computeBottomRight(): bottom-right, safeRight=88, safeBottom=180. Do NOT add drag logic yet.
+- No console warnings/errors in SSR or hydration.
+- Do not touch any other files.
+"""
+
+[[task]]
+name = "Create AWYBootstrap.tsx for conditional loading (no SSR)"
+files = ["src/components/AWYBootstrap.tsx"]
+details = """
+- 'use client'.
+- Dynamic import of ./awy/AWYWidget with ssr: false.
+- mounted guard.
+- Feature flag check as well.
+- Export default component &lt;AWYBootstrap/&gt;.
+- Do not render anything if flag is off or not mounted.
+"""
+
+[[task]]
+name = "Implement default floating position"
+files = ["src/components/awy/AWYWidget.tsx"]
+details = """
+- Apply Tailwind classes for `bottom-[180px] right-[88px]`.
+- On mobile (≤768px), ensure no overlap with Durmah mic; mic remains clickable.
+"""
+
+[[task]]
+name = "Implement status ring UI"
+files = ["src/components/awy/AWYWidget.tsx"]
+
+[[task]]
+name = "Add props for status control"
+files = ["src/components/awy/AWYWidget.tsx"]
+
+[[task]]
+name = "Implement drag-to-move functionality"
+files = ["src/components/awy/AWYWidget.tsx"]
+
+[[task]]
+name = "Persist position across session"
+files = ["src/components/awy/AWYWidget.tsx"]
+
+[[task]]
+name = "Integrate AWYBootstrap into the main layout"
+files = ["src/pages/_app.tsx"]
+details = """
+- Import AWYBootstrap.
+- Render it near the root only when the feature flag is on.
+- Ensure it does not duplicate an existing mount.
+"""
+
+[[task]]
+name = "Write tests for acceptance criteria"
+files = ["tests/unit/AWYWidget.test.tsx"]
+
+[[task]]
+name = "Manual verification"
