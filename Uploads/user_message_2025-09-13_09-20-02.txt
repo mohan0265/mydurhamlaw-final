@@ -1,0 +1,206 @@
+https://github.com/mohan0265/mydurhamlaw-final
+https://supabase.com/dashboard/project/dnkzmeyidgoukbsmaemq
+https://app.netlify.com/projects/mydurhamlaw-final/deploys
+https://mydurhamlaw-final.netlify.app/
+DeepAgent Master Prompt — MyDurhamLaw Termstart Ship (72-Hour Cut)
+
+Context inputs:
+
+Repository archive: mydurhamlaw-final.zip (frontend React app on Netlify).
+
+Blueprint: “MyDurhamLaw — 72-Hour Upgrade Plan + DeepAgent Implementation Blueprint (v1)” (PDF).
+
+Objective: Convert the uploaded repo into a shippable Termstart v1 with no dead ends, working AI chat, assignment scaffolding, study analytics, wellbeing quick check, and a basic peer network—guarded by feature flags—then deploy to Netlify, provision Supabase schema, and open a PR to GitHub.
+
+Create branch: release/termstart-2025
+
+Global feature flags (default ON except rooms):
+ff_ai_chat, ff_spaced_rep, ff_assignment_oscola, ff_wellbeing_trends, ff_peer_rooms=false
+
+1) Reliability + Observability (Day 0)
+
+Add resilient fetch wrapper (retries, 10s timeout, user-friendly toasts). Replace any “backend not connected” strings with empty-state components and CTAs.
+
+Telemetry: add PostHog (or Plausible if configured). Track events: page_view, api_error, chat_request, pomodoro_start/end, assignment_created, mood_submit.
+
+File: /src/telemetry.ts and app init wiring.
+
+Acceptance: No page throws a raw backend error; events visible in telemetry.
+
+2) Serverless APIs (Netlify Functions)
+
+Create the functions below under /netlify/functions/:
+
+chat.js
+
+POST {messages[], mode, module} → {answer, sources[]}
+
+Uses OPENAI_API_KEY (or compatible) with guardrails: rate-limit 15 calls/day/user, profanity/integrity filters, token budget. Always return source links area (can be empty but present).
+
+session.js
+
+POST create study session log; GET list + aggregates.
+
+oscola.js
+
+POST validate/format references from fields {type, fields{}} → formattedString and lint messages.
+
+mood.js
+
+POST save mood entry; GET last 14-day series (aggregate only).
+
+Acceptance: 200 responses for all endpoints locally and on Netlify; 95th percentile chat latency < 6s.
+
+3) Data Model (Supabase)
+
+Create schema and RLS policies to match:
+
+tables:
+  users(id uuid pk, email text, year text, modules text[], interests text[], timezone text, consent_wellbeing bool default false)
+  session_logs(id uuid pk, user_id uuid fk, topic text, duration_min int, started_at timestamptz, difficulty int, notes text)
+  cards(id uuid pk, user_id uuid fk, topic text, prompt text, answer text, ef float, interval int, due_at timestamptz)
+  assignments(id uuid pk, user_id uuid fk, title text, module text, integrity_level text, status text,
+              issue text, research text, analysis text, draft text)
+  oscola_refs(id uuid pk, assignment_id uuid fk, kind text, raw jsonb, formatted text)
+  peer_profiles(user_id uuid pk, tags text[], availability jsonb, goals text[], score float)
+  moods(id uuid pk, user_id uuid fk, score int, stressors text[], note text, created_at timestamptz default now())
+indexes: user_id on all fk tables
+
+
+Enable RLS; allow users to read/write their rows; aggregate mood endpoint returns only user’s own aggregate unless admin.
+
+Provide SQL migration file /supabase/migrations/0001_init.sql.
+
+Acceptance: All tables created; RLS enabled; functions read/write via service role.
+
+4) Frontend Components (React)
+
+Add under /src/components/:
+
+DurmahChatPanel.tsx — chat UI + integrity banner + “Cite & Check” sidebar.
+
+PomodoroWidget.tsx — timer (25/5 default), tagging, session log calls.
+
+SessionStatsCard.tsx — daily minutes, current streak.
+
+IRACWizard.tsx — Issue → Research → Analysis (IRAC) → Draft; save/restore to Supabase; integrity checkpoints modal.
+
+OSCOLAForm.tsx — inline fields; live preview via /api/oscola.
+
+MoodQuickCheck.tsx & WellbeingTrends.tsx — consent gate, 5-point mood, 14-day chart.
+
+PeerProfileCard.tsx + PeerMatchList.tsx — tags, availability, simple match score; rooms behind flag.
+
+Acceptance: Components render and persist to Supabase where applicable.
+
+5) Page-level Wiring
+
+/dashboard: show SessionStatsCard; if consented, MoodQuickCheck.
+
+/assignments: replace placeholder with IRACWizard + OSCOLAForm drawer.
+
+/wellbeing: MoodQuickCheck + WellbeingTrends + crisis cards.
+
+/lounge & /community-network: profile editor + PeerMatchList; study rooms behind ff_peer_rooms.
+
+Global header: “AI Assistant” button opens DurmahChatPanel.
+
+Acceptance: No empty states; clear CTAs; feature flags respected.
+
+6) Feature Flags
+
+Create a simple flag utility (/src/flags.ts) reading from VITE_FLAGS or defaults above.
+
+7) CI/CD + Deploy
+
+GitHub: create PR from release/termstart-2025; add GitHub Action for lint/typecheck/build.
+
+Netlify: configure site to build on branch; set env vars.
+
+Supabase: run migration; set service keys as Netlify env.
+
+Seed content (Study Materials links) to avoid blank pages.
+
+Acceptance: Successful preview deploy; smoke tests pass (below).
+
+8) QA Smoke Tests (automate if possible)
+
+Load each route — no error banners.
+
+Start/finish Pomodoro; refresh — session persists.
+
+Create assignment, add 3 OSCOLA refs; export draft.
+
+Ask chat “Explain IRAC for Donoghue v Stevenson” — answer + sources + integrity banner render.
+
+Submit mood; trend shows new point.
+
+9) Telemetry & KPIs (instrument now)
+
+Engagement: session_minutes, pomodoro_count, chat_requests, lounge_profile_count.
+
+Learning: cards_reviewed, retention_score, assignments_created.
+
+Reliability: api_error_rate < 2%, function p95 latency.
+
+10) Deliverables
+
+PR title: Termstart v1 — AI Chat, Assignments IRAC, Study Analytics, Wellbeing
+
+Release tag: v1.0-termstart after approval.
+
+Short release notes with screenshots and URLs.
+
+Required Secrets / Config (set before deploy)
+
+Provide these to DeepAgent as environment variables (Netlify & local):
+
+# ----- LLM -----
+OPENAI_API_KEY=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
+# (that long single-line key from your Key Info doc — remove line breaks)
+
+# ----- Supabase (DurhamLaw project) -----
+SUPABASE_URL=https://dnkzmeyidgoukbsmaemq.supabase.co
+SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRua3ptZXlpZGdvdWtic21hZW1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI5OTExNDYsImV4cCI6MjA2ODU2NzE0Nn0.vvo_3Wuhi8mzKby29fXAz1-yHKIOeLDrAvzz5pLfln4
+SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRua3ptZXlpZGdvdWtic21hZW1xIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1Mjk5MTE0NiwiZXhwIjoyMDY4NTY3MTQ2fQ.8-VciniLgvtog8YwGmbQjfMyEaRl2i5xEHLoHD0pE5U
+
+# ----- Analytics -----
+POSTHOG_KEY=<if you have one; otherwise set PLAUSIBLE_DOMAIN=mydurhamlaw-final.netlify.app>
+
+# ----- Netlify -----
+NETLIFY_AUTH_TOKEN=nfp_k3g2G5iKCUjXWGRE6dWmvqVAdMp7djTv5ece
+NETLIFY_SITE_ID=c8be0bcb-4ee0-4e61-8ce2-dd39712429fb   # Yes, this is the Project ID = Site ID
+
+# ----- GitHub -----
+GITHUB_REPO=colonaive/colonaive-portal
+GITHUB_TOKEN=<create a GitHub PAT with repo + workflow scopes>
+
+# ----- Feature Flags -----
+VITE_FLAGS=ff_ai_chat:true,ff_spaced_rep:true,ff_assignment_oscola:true,ff_wellbeing_trends:true,ff_peer_rooms:false
+
+
+If you don’t supply deployment creds, proceed with local build + PR only; deployment steps should be skipped but kept scripted.
+
+Constraints & Guardrails
+
+Maintain academic-integrity notices and disclosure logs in assignment workflows.
+
+No jurisdiction-specific legal advice; provide sources and study guidance.
+
+Store only necessary wellbeing data; aggregate where possible; consent gate required.
+
+Now execute all steps. When complete, post:
+
+Netlify preview URL
+
+GitHub PR link
+
+Supabase migration status
+
+List of feature flags and their current values
+
+Telemetry verification (first events received)
+
+If DeepAgent needs a shorter “start” message, use:
+
+Start Plan: Create release/termstart-2025; add serverless endpoints (/api/chat, /api/session, /api/oscola, /api/mood), wire components (Chat, Pomodoro, IRAC+OSCOLA, Mood+Trends, Peer profiles), fix empty/error states, add telemetry, provision Supabase schema & RLS, configure Netlify deploy, open PR, run smoke tests, report preview+PR+schema+flags+telemetry.
