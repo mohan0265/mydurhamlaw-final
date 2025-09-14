@@ -1,97 +1,78 @@
-// src/pages/api/awy/invite.ts
 import type { NextApiRequest, NextApiResponse } from "next";
-import { getServerUser } from "@/lib/api/serverAuth";
-import { supabaseAdmin } from "@/lib/server/supabaseAdmin";
+import { getSupabaseFromCookies, getSupabaseAdmin } from "@/lib/supabase/server";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (req.method !== "POST") {
-    res.setHeader("Allow", ["POST"]);
-    return res.status(405).json({ ok: false, error: "method_not_allowed" });
+  if (req.method !== "POST") return res.status(405).end();
+
+  const supa = getSupabaseFromCookies(req, res);
+  const admin = getSupabaseAdmin();
+
+  const { data: auth } = await supa.auth.getUser();
+  const me = auth?.user;
+  if (!me) return res.status(401).json({ error: "Not authenticated" });
+
+  const { email, relationship, displayName } = (req.body ?? {}) as {
+    email?: string;
+    relationship?: string;
+    displayName?: string;
+  };
+  const lovedEmail = (email || "").trim().toLowerCase();
+  if (!lovedEmail || !relationship) {
+    return res.status(400).json({ error: "Missing email or relationship" });
   }
 
+  // 1) See if the loved one already has an auth account
+  let lovedUserId: string | null = null;
   try {
-    // Resolve the currently logged-in student (cookie/Bearer handled in getServerUser)
-    const { user } = await getServerUser(req, res);
-    if (!user) return res.status(401).json({ ok: false, error: "unauthenticated" });
-
-    const { email, relationship, displayName } =
-      (req.body as { email?: string; relationship?: string; displayName?: string }) || {};
-    if (!email || !relationship) {
-      return res.status(400).json({ ok: false, error: "invalid_request" });
-    }
-
-    // --- 1) Ensure an auth user exists for the loved-one email ---
-    let lovedUserId: string | null = null;
-
-    // Try to invite (creates user iff missing)
-    const invite = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
-      data: { role: "loved_one" },
-    });
-
-    if (!invite.error) {
-      lovedUserId = invite.data?.user?.id ?? null;
-    } else {
-      // If user already exists, invite may error; fall back to generating a magic link
-      // which also returns the existing user object.
-      const msg = String(invite.error?.message || "").toLowerCase();
-      const isExists =
-        invite.error.status === 422 ||
-        msg.includes("already registered") ||
-        msg.includes("already exists");
-
-      if (isExists) {
-        const link = await supabaseAdmin.auth.admin.generateLink({
-          type: "magiclink",
-          email,
-          options: { data: { role: "loved_one" } },
-        });
-        lovedUserId = link.data?.user?.id ?? null;
-      } else {
-        throw invite.error;
-      }
-    }
-
-    // --- 2) Upsert connection and link loved_one_id if we have it ---
-    const upsertConn = await supabaseAdmin
-      .from("awy_connections")
-      .upsert(
-        {
-          student_id: user.id,
-          loved_one_id: lovedUserId, // may be null if invite queued oddly
-          loved_email: email,
-          relationship,
-          display_name: displayName ?? null,
-          loved_is_user: lovedUserId ? true : null,
-          status: lovedUserId ? "active" : "pending",
-          is_visible: true,
-        },
-        { onConflict: "student_id,loved_email" }
-      )
-      .select("id,loved_one_id")
-      .single();
-
-    if (upsertConn.error) throw upsertConn.error;
-
-    // --- 3) Ensure profiles row for loved one (so role is set immediately) ---
-    if (lovedUserId) {
-      await supabaseAdmin.from("profiles").upsert(
-        {
-          id: lovedUserId,
-          user_role: "loved_one",
-          agreed_to_terms: true,
-        },
-        { onConflict: "id" }
-      );
-    }
-
-    return res.status(200).json({
-      ok: true,
-      connectionId: upsertConn.data.id,
-      lovedUserId,
-      status: lovedUserId ? "active" : "pending",
-    });
-  } catch (err: any) {
-    console.error("[awy/invite] error", err);
-    return res.status(500).json({ ok: false, error: err?.message || "server_error" });
+    const { data: byEmail } = await admin.auth.getUserByEmail(lovedEmail);
+    lovedUserId = byEmail?.user?.id ?? null;
+  } catch {
+    // ignore
   }
+
+  // 2) If not an existing user, send an invite
+  if (!lovedUserId) {
+    try {
+      await admin.auth.inviteUserByEmail(lovedEmail, {
+        data: { user_type: "loved_one" },
+      });
+    } catch {
+      // If invite fails because user exists or other benign reason, keep going.
+    }
+  }
+
+  // 3) Upsert the connection (unique per student + loved_email enforced in DB)
+  const { data, error } = await admin
+    .from("awy_connections")
+    .upsert(
+      {
+        student_id: me.id,
+        loved_email: lovedEmail,
+        relationship_label: relationship,
+        display_name: displayName || null,
+        loved_one_id: lovedUserId,
+        loved_is_user: !!lovedUserId,
+      },
+      { onConflict: "student_id,loved_email" }
+    )
+    .select()
+    .single();
+
+  if (error) return res.status(500).json({ error: error.message });
+
+  // 4) (Optional) precreate/update a profiles row for the loved user if we know them
+  if (lovedUserId) {
+    await admin.from("profiles").upsert(
+      { id: lovedUserId, user_type: "loved_one" },
+      { onConflict: "id" }
+    );
+  }
+
+  return res.json({
+    id: data.id,
+    email: data.loved_email,
+    relationship: data.relationship_label,
+    display_name: data.display_name,
+    status: data.loved_is_user ? "active" : "invited",
+  });
 }
