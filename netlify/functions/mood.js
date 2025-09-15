@@ -1,5 +1,4 @@
-
-// Mood tracking API for wellbeing features
+// Enhanced mood tracking API combining best of both approaches
 const { createClient } = require('@supabase/supabase-js');
 
 // Initialize Supabase client
@@ -7,6 +6,71 @@ const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
+
+// Mood analysis and recommendations (ADDED FROM MY VERSION)
+function analyzeMoodTrend(entries) {
+  if (!entries || entries.length === 0) {
+    return {
+      trend: 'insufficient_data',
+      average: 0,
+      recommendation: 'Start tracking your mood daily to see patterns and trends.'
+    };
+  }
+
+  const scores = entries.map(e => e.score);
+  const average = scores.reduce((a, b) => a + b, 0) / scores.length;
+  const recent = scores.slice(-3); // Last 3 entries
+  const recentAverage = recent.length > 0 ? recent.reduce((a, b) => a + b, 0) / recent.length : average;
+  
+  // Trend analysis
+  let trend = 'stable';
+  if (recent.length >= 2) {
+    if (recentAverage > average + 0.5) trend = 'improving';
+    if (recentAverage < average - 0.5) trend = 'declining';
+  }
+
+  // Recommendations based on data
+  let recommendation = '';
+  if (average < 2.5) {
+    recommendation = 'Your mood has been low recently. Consider speaking to a counselor or trusted friend. Durham University offers mental health support services.';
+  } else if (average < 3.5) {
+    recommendation = 'Your mood is moderate. Try incorporating stress-reduction activities like exercise, meditation, or regular sleep schedule.';
+  } else {
+    recommendation = 'Your mood is generally positive! Keep up the good habits that are working for you.';
+  }
+
+  // Crisis detection (ADDED FROM MY VERSION)
+  const recentLowScores = recent.filter(score => score <= 2).length;
+  const needsSupport = recentLowScores >= 2 || (scores.length > 0 && scores[scores.length - 1] === 1);
+
+  return {
+    trend,
+    average: Math.round(average * 10) / 10,
+    recentAverage: Math.round(recentAverage * 10) / 10,
+    recommendation,
+    needsSupport,
+    totalEntries: entries.length
+  };
+}
+
+// Enhanced user authentication (ADDED FROM MY VERSION)
+async function getUserFromAuth(event) {
+  // Try proper auth token first
+  const authHeader = event.headers.authorization;
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    try {
+      const token = authHeader.replace('Bearer ', '');
+      const { data: { user }, error } = await supabase.auth.getUser(token);
+      if (!error && user) return user;
+    } catch (e) {
+      console.warn('Auth token validation failed:', e);
+    }
+  }
+  
+  // Fallback to your existing method
+  const userId = event.headers['x-user-id'] || authHeader?.replace('Bearer ', '');
+  return userId ? { id: userId } : null;
+}
 
 exports.handler = async (event, context) => {
   const headers = {
@@ -16,7 +80,7 @@ exports.handler = async (event, context) => {
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
   };
 
-  // Handle CORS preflight
+  // Handle CORS preflight (KEEP YOUR EXISTING)
   if (event.httpMethod === 'OPTIONS') {
     return {
       statusCode: 200,
@@ -26,7 +90,9 @@ exports.handler = async (event, context) => {
   }
 
   try {
-    const userId = event.headers['x-user-id'] || event.headers['authorization']?.replace('Bearer ', '');
+    // Enhanced authentication (IMPROVED)
+    const user = await getUserFromAuth(event);
+    const userId = user?.id;
     
     if (!userId) {
       return {
@@ -37,7 +103,7 @@ exports.handler = async (event, context) => {
     }
 
     if (event.httpMethod === 'POST') {
-      // Save mood entry
+      // Save mood entry (ENHANCED WITH DUPLICATE PREVENTION)
       const {
         score,
         stressors = [],
@@ -52,42 +118,88 @@ exports.handler = async (event, context) => {
         };
       }
 
-      const { data, error } = await supabase
+      // Check for existing entry today (ADDED FROM MY VERSION)
+      const today = new Date().toISOString().split('T')[0];
+      const { data: existingEntry } = await supabase
         .from('moods')
-        .insert([{
-          user_id: userId,
-          score,
-          stressors: Array.isArray(stressors) ? stressors : [],
-          note: note || null,
-        }])
-        .select()
-        .single();
+        .select('id')
+        .eq('user_id', userId)
+        .gte('created_at', `${today}T00:00:00.000Z`)
+        .lt('created_at', `${today}T23:59:59.999Z`)
+        .maybeSingle();
 
-      if (error) {
-        console.error('Supabase mood insert error:', error);
-        return {
-          statusCode: 500,
-          headers,
-          body: JSON.stringify({ error: 'Failed to save mood entry' }),
-        };
+      let result;
+      let statusCode;
+      let message;
+
+      if (existingEntry) {
+        // Update existing entry
+        const { data, error } = await supabase
+          .from('moods')
+          .update({
+            score,
+            stressors: Array.isArray(stressors) ? stressors : [],
+            note: note || null,
+          })
+          .eq('id', existingEntry.id)
+          .select()
+          .single();
+
+        if (error) {
+          console.error('Supabase mood update error:', error);
+          return {
+            statusCode: 500,
+            headers,
+            body: JSON.stringify({ error: 'Failed to update mood entry' }),
+          };
+        }
+
+        result = data;
+        statusCode = 200;
+        message = 'Mood entry updated for today';
+      } else {
+        // Create new entry (KEEP YOUR EXISTING LOGIC)
+        const { data, error } = await supabase
+          .from('moods')
+          .insert([{
+            user_id: userId,
+            score,
+            stressors: Array.isArray(stressors) ? stressors : [],
+            note: note || null,
+          }])
+          .select()
+          .single();
+
+        if (error) {
+          console.error('Supabase mood insert error:', error);
+          return {
+            statusCode: 500,
+            headers,
+            body: JSON.stringify({ error: 'Failed to save mood entry' }),
+          };
+        }
+
+        result = data;
+        statusCode = 201;
+        message = 'Mood entry saved successfully';
       }
 
       return {
-        statusCode: 201,
+        statusCode,
         headers,
-        body: JSON.stringify({ mood: data, success: true }),
+        body: JSON.stringify({ mood: result, success: true, message }),
       };
     }
 
     if (event.httpMethod === 'GET') {
-      // Get mood trend for last 14 days
+      // Get mood trend for last 14 days (KEEP YOUR EXCELLENT LOGIC)
       const { days = '14' } = event.queryStringParameters || {};
       const daysNum = Math.min(parseInt(days), 30); // Max 30 days
       
       const startDate = new Date();
       startDate.setDate(startDate.getDate() - daysNum);
 
-      // Get mood entries for the period
+      // Get mood entries for the period (KEEP YOUR EXISTING)
       const { data: moods, error: moodsError } = await supabase
         .from('moods')
         .select('*')
@@ -104,7 +216,7 @@ exports.handler = async (event, context) => {
         };
       }
 
-      // Process mood data into daily aggregates
+      // Process mood data into daily aggregates (KEEP YOUR EXCELLENT LOGIC)
       const moodsByDate = moods.reduce((acc, mood) => {
         const date = new Date(mood.created_at).toISOString().split('T')[0];
         
@@ -123,7 +235,7 @@ exports.handler = async (event, context) => {
         return acc;
       }, {});
 
-      // Generate trend data for all days in period
+      // Generate trend data for all days in period (KEEP YOUR EXCELLENT LOGIC)
       const trendData = [];
       const currentDate = new Date(startDate);
       const today = new Date();
@@ -152,7 +264,7 @@ exports.handler = async (event, context) => {
         currentDate.setDate(currentDate.getDate() + 1);
       }
 
-      // Calculate overall statistics
+      // Calculate overall statistics (KEEP YOUR EXISTING)
       const allScores = moods.map(mood => mood.score);
       const avgMood = allScores.length > 0 
         ? Number((allScores.reduce((sum, score) => sum + score, 0) / allScores.length).toFixed(2))
@@ -175,12 +287,32 @@ exports.handler = async (event, context) => {
         common_stressors: commonStressors,
       };
 
+      // ADD: Enhanced analysis and support resources
+      const analysis = analyzeMoodTrend(moods);
+      
+      // Get today's entry
+      const todayKey = new Date().toISOString().split('T')[0];
+      const todaysEntry = trendData.find(entry => entry.date === todayKey);
+
+      // Crisis support resources (ADDED FROM MY VERSION)
+      const supportResources = analysis.needsSupport ? {
+        crisis: {
+          uk: '116 123', // Samaritans
+          durham: 'https://www.dur.ac.uk/counselling/',
+          text: 'Text SHOUT to 85258'
+        },
+        message: 'If you\'re struggling, please reach out for support. You\'re not alone.'
+      } : null;
+
       return {
         statusCode: 200,
         headers,
         body: JSON.stringify({
           trend: trendData,
           stats,
+          analysis, // ADDED: Enhanced mood analysis
+          todaysEntry, // ADDED: Today's specific data
+          supportResources, // ADDED: Crisis support when needed
           success: true,
         }),
       };

@@ -1,10 +1,16 @@
-
 // AI Chat endpoint with OpenAI integration, rate limiting, and guardrails
 const { OpenAI } = require('openai');
+const { createClient } = require('@supabase/supabase-js'); // ADD THIS
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
+
+// ADD SUPABASE CLIENT
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
 
 // Rate limiting store (in-memory for demo, use Redis in production)
 const rateLimitStore = new Map();
@@ -19,12 +25,28 @@ setInterval(() => {
   }
 }, 60 * 60 * 1000);
 
-// Rate limiting check (15 requests per day per user)
-function checkRateLimit(userId) {
+// ENHANCED: Check rate limit with Supabase backup
+async function checkRateLimit(userId) {
   const now = Date.now();
   const key = `chat_${userId}`;
   const limit = 15; // 15 requests per day
   
+  // Try Supabase first for persistent rate limiting
+  try {
+    const { data, error } = await supabase
+      .from('ai_history')
+      .select('*')
+      .eq('user_id', userId)
+      .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString());
+    
+    if (!error && data) {
+      return data.length < limit;
+    }
+  } catch (e) {
+    console.warn('Supabase rate limit check failed, using memory store:', e);
+  }
+  
+  // Fallback to your existing memory-based system
   if (!rateLimitStore.has(key)) {
     rateLimitStore.set(key, {
       count: 0,
@@ -48,7 +70,7 @@ function checkRateLimit(userId) {
   return true;
 }
 
-// Content safety filters
+// Content safety filters (KEEP YOUR EXISTING FUNCTION)
 function containsInappropriateContent(text) {
   const flaggedTerms = [
     'plagiarism', 'cheat', 'do my homework', 'write my essay', 
@@ -59,7 +81,7 @@ function containsInappropriateContent(text) {
   return flaggedTerms.some(term => lowerText.includes(term));
 }
 
-// Academic integrity system prompt
+// Academic integrity system prompt (KEEP YOUR EXISTING)
 const systemPrompt = `You are Durmah, an AI study assistant for Durham University law students. You provide educational guidance, explain legal concepts, and help with understanding case law and statutes.
 
 STRICT GUIDELINES:
@@ -73,8 +95,23 @@ STRICT GUIDELINES:
 
 Remember: You're here to enhance learning, not replace it.`;
 
+// ENHANCED: Get user from auth token
+async function getUserFromAuth(event) {
+  const authHeader = event.headers.authorization;
+  if (!authHeader) return null;
+  
+  try {
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error } = await supabase.auth.getUser(token);
+    return error ? null : user;
+  } catch (e) {
+    console.warn('Auth check failed:', e);
+    return null;
+  }
+}
+
 exports.handler = async (event, context) => {
-  // Only allow POST requests
+  // Only allow POST requests (KEEP YOUR EXISTING CORS LOGIC)
   if (event.httpMethod !== 'POST') {
     return {
       statusCode: 405,
@@ -88,7 +125,7 @@ exports.handler = async (event, context) => {
     };
   }
 
-  // Handle CORS preflight
+  // Handle CORS preflight (KEEP YOUR EXISTING)
   if (event.httpMethod === 'OPTIONS') {
     return {
       statusCode: 200,
@@ -117,11 +154,13 @@ exports.handler = async (event, context) => {
       };
     }
 
-    // Extract user ID from headers or body
-    const userIdentifier = userId || event.headers['x-user-id'] || 'anonymous';
+    // ENHANCED: Try to get user from auth, fallback to userId from body
+    const user = await getUserFromAuth(event);
+    const userIdentifier = user?.id || userId || event.headers['x-user-id'] || 'anonymous';
 
-    // Rate limiting check
-    if (!checkRateLimit(userIdentifier)) {
+    // Rate limiting check (ENHANCED)
+    const rateLimitPassed = await checkRateLimit(userIdentifier);
+    if (!rateLimitPassed) {
       return {
         statusCode: 429,
         headers: {
@@ -135,7 +174,7 @@ exports.handler = async (event, context) => {
       };
     }
 
-    // Content safety check
+    // Content safety check (KEEP YOUR EXISTING)
     const lastMessage = messages[messages.length - 1];
     if (lastMessage && containsInappropriateContent(lastMessage.content)) {
       return {
@@ -152,7 +191,7 @@ exports.handler = async (event, context) => {
       };
     }
 
-    // Prepare messages for OpenAI
+    // Prepare messages for OpenAI (KEEP YOUR EXISTING)
     const aiMessages = [
       { role: 'system', content: systemPrompt },
       ...messages.map(msg => ({
@@ -161,7 +200,7 @@ exports.handler = async (event, context) => {
       })),
     ];
 
-    // Call OpenAI API
+    // Call OpenAI API (KEEP YOUR EXISTING)
     const completion = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
       messages: aiMessages,
@@ -173,8 +212,27 @@ exports.handler = async (event, context) => {
 
     const answer = completion.choices[0]?.message?.content || 'I apologize, but I couldn\'t generate a response. Please try again.';
 
-    // Generate mock sources (in production, this would extract from knowledge base)
+    // Generate mock sources (KEEP YOUR EXISTING FUNCTION)
     const sources = generateSources(lastMessage?.content || '', module);
+
+    // ADD: Log to database if user is authenticated
+    if (user?.id) {
+      try {
+        await supabase
+          .from('ai_history')
+          .insert({
+            user_id: user.id,
+            question: lastMessage?.content || '',
+            answer,
+            mode,
+            module,
+            token_count: completion.usage?.total_tokens || 0
+          });
+      } catch (logError) {
+        console.warn('Failed to log chat history:', logError);
+        // Don't fail the request if logging fails
+      }
+    }
 
     return {
       statusCode: 200,
@@ -209,7 +267,7 @@ exports.handler = async (event, context) => {
   }
 };
 
-// Generate relevant sources based on content and module
+// Generate relevant sources based on content and module (KEEP YOUR EXISTING)
 function generateSources(content, module) {
   const sources = [];
   
