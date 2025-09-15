@@ -1,19 +1,41 @@
 // src/config/nav.ts
+// Central navigation config for MyDurhamLaw.
+// This version fixes the broken "Community Network" link by pointing to an existing page.
+
 export type NavItem = {
   label: string;
   href: string;
-  children?: NavItem[];
-}
+  external?: boolean;
+  icon?: string;
+};
 
-export const MAIN_NAV: NavItem[] = [
-  { label: 'Home', href: '/' },
-  { label: 'My Year at a Glance', href: '/year-at-a-glance' },
-  { label: 'Legal News', href: '/legal/tools/legal-news-feed' },
-  { label: 'AI Tools', href: '/wellbeing' },
-  { label: 'Study Resources', href: '/study-materials' },
-  { label: 'Voice Chat', href: '/wellbeing' },
-  { label: 'Student Lounge', href: '/lounge' },
-  { label: 'Community Network', href: '/community-network' },
-  { label: 'About', href: '/about' },
-  { label: 'My Dashboard', href: '/dashboard' },
+const NAV_ITEMS: NavItem[] = [
+  { label: "My Dashboard", href: "/dashboard", icon: "LayoutDashboard" },
+  { label: "Year at a Glance", href: "/year-at-a-glance", icon: "Calendar" },
+
+  // FIX: previously "/community-network" (404). Point to a real route:
+  { label: "Community", href: "/community", icon: "Users" },
+  // If you prefer the hub, swap the line above with:
+  // { label: "Community Hub", href: "/community-hub", icon: "Users" },
+
+  { label: "Library", href: "/library", icon: "BookOpen" },
+  { label: "Planner", href: "/planner", icon: "ListChecks" },
+  { label: "Assessments", href: "/assessments", icon: "ClipboardList" },
+  { label: "Notes", href: "/notes", icon: "StickyNote" },
+
+  // Settings & account
+  { label: "Settings", href: "/settings", icon: "Settings" },
+
+  // Help / docs (optional; comment out if not used)
+  // { label: "Help & Guides", href: "/help", icon: "LifeBuoy" },
+
+  // External links (example)
+  // { label: "Durham Law (Official)", href: "https://www.dur.ac.uk/law/", external: true, icon: "ExternalLink" },
 ];
+
+// Named exports commonly used across the app
+export const mainNav: NavItem[] = NAV_ITEMS;
+export const nav: NavItem[] = NAV_ITEMS;
+
+// Default export for convenience
+export default NAV_ITEMS;

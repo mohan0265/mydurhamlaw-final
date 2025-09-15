@@ -2,6 +2,7 @@
 import React from 'react'
 import Head from 'next/head'
 import Link from 'next/link'
+import { useRouter } from 'next/router'
 import { ArrowRight, Play, Heart, Brain, Shield, BookOpen, Clock } from 'lucide-react'
 import { useAuth } from '@/lib/supabase/AuthContext'
 
@@ -54,15 +55,23 @@ const TestimonialCard: React.FC<TestimonialCardProps> = ({ quote, author, role }
 )
 
 export default function DurhamLanding() {
+  const router = useRouter()
   const { user } = useAuth()
-  
+
+  // Redirect logged-in users straight to their dashboard.
+  React.useEffect(() => {
+    if (user) {
+      router.replace('/dashboard')
+    }
+  }, [user, router])
+
   // Safely extract displayName to ensure it's always a string
   const displayName = React.useMemo(() => {
     if (!user) return 'there';
-    
+
     const emailName = user.email?.split('@')[0]?.replace(/[0-9]/g, '');
     const fullName = user.user_metadata?.full_name;
-    
+
     if (typeof emailName === 'string' && emailName.trim()) {
       return emailName;
     }
@@ -367,7 +376,7 @@ export default function DurhamLanding() {
           <h2 className="text-2xl sm:text-4xl font-bold text-white mb-3 sm:mb-4">
             A Personalised Study Experience
           </h2>
-          <p className="text-lg sm:text-xl text-blue-100 mb-6 sm:mb-8">
+        <p className="text-lg sm:text-xl text-blue-100 mb-6 sm:mb-8">
             Join thousands of Durham law students already using MyDurhamLaw
           </p>
           <Link href="/signup">

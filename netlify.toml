@@ -9,11 +9,32 @@
 [[plugins]]
   package = "@netlify/plugin-nextjs"
 
-[[redirects]]
-  from = "/api/*"
-  to = "/.netlify/functions/:splat"
-  status = 200
+# IMPORTANT:
+# We intentionally removed the blanket redirect:
+#   [[redirects]]
+#   from = "/api/*"
+#   to   = "/.netlify/functions/:splat"
+#   status = 200
+#
+# Reason: it intercepted ALL /api/* requests and broke Next.js API routes
+# like /api/awy/presence, /api/awy/connections, etc.
+#
+# If you NEED a specific function to be addressable under /api/..., add
+# *only* that one explicitly below. Otherwise, call functions at
+# /.netlify/functions/<name> directly (as your code already does).
+#
+# Example (UNCOMMENT ONLY IF YOU REALLY NEED A SPECIFIC ALIAS):
+# [[redirects]]
+#   from = "/api/legal-news-feed"
+#   to   = "/.netlify/functions/legal-news-feed"
+#   status = 200
+#
+# [[redirects]]
+#   from = "/api/oscola"
+#   to   = "/.netlify/functions/oscola"
+#   status = 200
 
+# Keep useful CORS headers for your Next.js API routes
 [[headers]]
   for = "/api/*"
   [headers.values]
