@@ -38,7 +38,8 @@ export default function LoginRedirectPage() {
         const user = session.user
         console.log('👤 User authenticated:', user.id)
         console.log('👤 User metadata:', user.user_metadata)
-        setDebugInfo(`User ID: ${user.id}`)
+        console.log('👤 User email:', user.email)
+        setDebugInfo(`User ID: ${user.id}, Email: ${user.email}`)
         
         setStatus('Setting up your profile...')
 
@@ -54,10 +55,34 @@ export default function LoginRedirectPage() {
           return
         }
 
+        // ✅ Determine user role (student or loved_one)
+        let userRole = 'student' // default
+        
+        // Check if user is marked as loved_one in metadata
+        if (user.user_metadata?.role === 'loved_one') {
+          userRole = 'loved_one'
+          console.log('🔍 User role from metadata: loved_one')
+        } else {
+          // Check if user exists in awy_connections as a loved one
+          const { data: connectionData } = await supabase
+            .from('awy_connections')
+            .select('loved_one_id, relationship, display_name')
+            .eq('loved_email', user.email?.toLowerCase())
+            .maybeSingle()
+
+          if (connectionData && connectionData.loved_one_id === user.id) {
+            userRole = 'loved_one'
+            console.log('🔍 User role from awy_connections: loved_one')
+          }
+        }
+
+        console.log(`✅ Final user role determined: ${userRole}`)
+        setDebugInfo(`User role: ${userRole}`)
+
         // ✅ Check if profile already exists (created by trigger or previous signup)
         const { data: existingProfile, error: profileError } = await supabase
           .from('profiles')
-          .select('id, year_group, display_name, agreed_to_terms')
+          .select('id, user_role, year_group, display_name, agreed_to_terms')
           .eq('id', user.id)
           .maybeSingle()
 
@@ -70,26 +95,84 @@ export default function LoginRedirectPage() {
         }
 
         if (existingProfile) {
-          // Existing user - redirect to their dashboard
-          const yearGroup = existingProfile.year_group
+          // Existing user - update role if needed and redirect
+          const profileRole = existingProfile.user_role || userRole
           const displayName = existingProfile.display_name || user.email?.split('@')[0] || 'User'
-          console.log('✅ Existing profile found:', { yearGroup, displayName })
-          setStatus(`Welcome back, ${displayName}! Redirecting to your ${yearGroup} dashboard...`)
           
-          const dashboardRoute = getDashboardRoute(yearGroup)
-          setTimeout(() => {
-            console.log('🚀 Redirecting to:', dashboardRoute)
-            router.push(dashboardRoute)
-          }, 1500)
+          // Update role if it's different
+          if (existingProfile.user_role !== userRole) {
+            console.log(`🔄 Updating user role from ${existingProfile.user_role} to ${userRole}`)
+            await supabase
+              .from('profiles')
+              .update({ user_role: userRole, updated_at: new Date().toISOString() })
+              .eq('id', user.id)
+          }
+
+          console.log('✅ Existing profile found:', { role: userRole, displayName })
+          
+          if (userRole === 'loved_one') {
+            setStatus(`Welcome back, ${displayName}! Redirecting to your family dashboard...`)
+            setTimeout(() => {
+              console.log('🚀 Redirecting loved one to family dashboard')
+              router.push('/loved-one/dashboard')
+            }, 1500)
+          } else {
+            // Student user
+            const yearGroup = existingProfile.year_group
+            setStatus(`Welcome back, ${displayName}! Redirecting to your ${yearGroup} dashboard...`)
+            
+            const dashboardRoute = getDashboardRoute(yearGroup)
+            setTimeout(() => {
+              console.log('🚀 Redirecting student to:', dashboardRoute)
+              router.push(dashboardRoute)
+            }, 1500)
+          }
         } else {
-          // New user - redirect to profile completion page
-          console.log('🆕 New user detected, redirecting to profile completion')
-          setStatus('Welcome! Let\'s complete your profile...')
+          // New user - create profile and redirect appropriately
+          console.log(`🆕 New ${userRole} detected, creating profile...`)
           
-          setTimeout(() => {
-            console.log('🚀 Redirecting to profile completion page')
-            router.push('/complete-profile')
-          }, 1500)
+          // ✅ FIXED: Create profile data with proper typing
+          const baseProfileData: any = {
+            id: user.id,
+            user_role: userRole,
+            display_name: user.email?.split('@')[0] || 'User',
+            agreed_to_terms: userRole === 'loved_one' ? true : false, // Loved ones auto-agree
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          }
+
+          // Add year_group for students only
+          if (userRole === 'student') {
+            baseProfileData.year_group = null // Will be set in complete-profile
+          }
+
+          const { error: createError } = await supabase
+            .from('profiles')
+            .insert([baseProfileData])
+
+          if (createError) {
+            console.error('🚨 Profile creation error:', createError)
+            setDebugInfo(`Profile creation error: ${createError.message}`)
+            setStatus('Profile creation failed. Please try again.')
+            setShowFallback(true)
+            return
+          }
+
+          if (userRole === 'loved_one') {
+            // Loved ones go directly to dashboard
+            setStatus(`Welcome! Redirecting to your family dashboard...`)
+            setTimeout(() => {
+              console.log('🚀 Redirecting new loved one to family dashboard')
+              router.push('/loved-one/dashboard')
+            }, 1500)
+          } else {
+            // Students need to complete profile
+            setStatus('Welcome! Let\'s complete your profile...')
+            setTimeout(() => {
+              console.log('🚀 Redirecting new student to profile completion')
+              router.push('/complete-profile')
+            }, 1500)
+          }
         }
 
       } catch (error: any) {
@@ -132,6 +215,12 @@ export default function LoginRedirectPage() {
             <p className="text-sm text-gray-600 mb-4">Taking longer than expected?</p>
             <div className="space-y-3">
               <button
+                onClick={() => router.push('/loved-one/dashboard')}
+                className="block w-full bg-violet-600 text-white px-4 py-2 rounded-md hover:bg-violet-700 transition-colors"
+              >
+                Family Dashboard
+              </button>
+              <button
                 onClick={() => router.push('/complete-profile')}
                 className="block w-full bg-purple-600 text-white px-4 py-2 rounded-md hover:bg-purple-700 transition-colors"
               >
@@ -144,10 +233,10 @@ export default function LoginRedirectPage() {
                 Start Over
               </button>
               <button
-                onClick={() => window.location.reload()}
+                onClick={() => router.push('/')}
                 className="block w-full bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
               >
-                Retry Authentication
+                Go Home
               </button>
             </div>
           </div>
