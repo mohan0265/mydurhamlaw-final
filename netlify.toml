@@ -1,10 +1,14 @@
 [build]
   command = "npm run build"
   functions = "netlify/functions"
-  publish = "dist"
+  publish = ".next"
 
 [build.environment]
   NODE_VERSION = "18"
+  NPM_FLAGS = "--version"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
 
 [[redirects]]
   from = "/api/*"
@@ -18,5 +22,22 @@
     Access-Control-Allow-Methods = "GET, POST, PUT, DELETE, OPTIONS"
     Access-Control-Allow-Headers = "Content-Type, Authorization"
 
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-XSS-Protection = "1; mode=block"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+
 [functions]
   node_bundler = "esbuild"
+  external_node_modules = ["@supabase/supabase-js", "openai"]
+
+[dev]
+  framework = "nextjs"
+  command = "npm run dev"
+  targetPort = 3000
+  port = 8888
+  publish = "out"
+  autoLaunch = false

@@ -1,4 +1,4 @@
-// Enhanced mood tracking API combining best of both approaches
+// Enhanced mood tracking API - using existing 'moods' table
 const { createClient } = require('@supabase/supabase-js');
 
 // Initialize Supabase client
@@ -7,7 +7,7 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
-// Mood analysis and recommendations (ADDED FROM MY VERSION)
+// Mood analysis and recommendations
 function analyzeMoodTrend(entries) {
   if (!entries || entries.length === 0) {
     return {
@@ -19,17 +19,15 @@ function analyzeMoodTrend(entries) {
 
   const scores = entries.map(e => e.score);
   const average = scores.reduce((a, b) => a + b, 0) / scores.length;
-  const recent = scores.slice(-3); // Last 3 entries
+  const recent = scores.slice(-3);
   const recentAverage = recent.length > 0 ? recent.reduce((a, b) => a + b, 0) / recent.length : average;
   
-  // Trend analysis
   let trend = 'stable';
   if (recent.length >= 2) {
     if (recentAverage > average + 0.5) trend = 'improving';
     if (recentAverage < average - 0.5) trend = 'declining';
   }
 
-  // Recommendations based on data
   let recommendation = '';
   if (average < 2.5) {
     recommendation = 'Your mood has been low recently. Consider speaking to a counselor or trusted friend. Durham University offers mental health support services.';
@@ -39,7 +37,6 @@ function analyzeMoodTrend(entries) {
     recommendation = 'Your mood is generally positive! Keep up the good habits that are working for you.';
   }
 
-  // Crisis detection (ADDED FROM MY VERSION)
   const recentLowScores = recent.filter(score => score <= 2).length;
   const needsSupport = recentLowScores >= 2 || (scores.length > 0 && scores[scores.length - 1] === 1);
 
@@ -53,9 +50,8 @@ function analyzeMoodTrend(entries) {
   };
 }
 
-// Enhanced user authentication (ADDED FROM MY VERSION)
+// Enhanced user authentication
 async function getUserFromAuth(event) {
-  // Try proper auth token first
   const authHeader = event.headers.authorization;
   if (authHeader && authHeader.startsWith('Bearer ')) {
     try {
@@ -67,7 +63,6 @@ async function getUserFromAuth(event) {
     }
   }
   
-  // Fallback to your existing method
   const userId = event.headers['x-user-id'] || authHeader?.replace('Bearer ', '');
   return userId ? { id: userId } : null;
 }
@@ -80,17 +75,11 @@ exports.handler = async (event, context) => {
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
   };
 
-  // Handle CORS preflight (KEEP YOUR EXISTING)
   if (event.httpMethod === 'OPTIONS') {
-    return {
-      statusCode: 200,
-      headers,
-      body: '',
-    };
+    return { statusCode: 200, headers, body: '' };
   }
 
   try {
-    // Enhanced authentication (IMPROVED)
     const user = await getUserFromAuth(event);
     const userId = user?.id;
     
@@ -103,12 +92,7 @@ exports.handler = async (event, context) => {
     }
 
     if (event.httpMethod === 'POST') {
-      // Save mood entry (ENHANCED WITH DUPLICATE PREVENTION)
-      const {
-        score,
-        stressors = [],
-        note,
-      } = JSON.parse(event.body || '{}');
+      const { score, stressors = [], note } = JSON.parse(event.body || '{}');
 
       if (!score || score < 1 || score > 5) {
         return {
@@ -118,22 +102,19 @@ exports.handler = async (event, context) => {
         };
       }
 
-      // Check for existing entry today (ADDED FROM MY VERSION)
+      // Check for existing entry today
       const today = new Date().toISOString().split('T')[0];
       const { data: existingEntry } = await supabase
-        .from('moods')
+        .from('moods')  // Keep using your existing table
         .select('id')
         .eq('user_id', userId)
         .gte('created_at', `${today}T00:00:00.000Z`)
         .lt('created_at', `${today}T23:59:59.999Z`)
         .maybeSingle();
 
-      let result;
-      let statusCode;
-      let message;
+      let result, statusCode, message;
 
       if (existingEntry) {
-        // Update existing entry
         const { data, error } = await supabase
           .from('moods')
           .update({
@@ -158,7 +139,6 @@ exports.handler = async (event, context) => {
         statusCode = 200;
         message = 'Mood entry updated for today';
       } else {
-        // Create new entry (KEEP YOUR EXISTING LOGIC)
         const { data, error } = await supabase
           .from('moods')
           .insert([{
@@ -192,16 +172,14 @@ exports.handler = async (event, context) => {
     }
 
     if (event.httpMethod === 'GET') {
-      // Get mood trend for last 14 days (KEEP YOUR EXCELLENT LOGIC)
       const { days = '14' } = event.queryStringParameters || {};
-      const daysNum = Math.min(parseInt(days), 30); // Max 30 days
+      const daysNum = Math.min(parseInt(days), 30);
       
       const startDate = new Date();
       startDate.setDate(startDate.getDate() - daysNum);
 
-      // Get mood entries for the period (KEEP YOUR EXISTING)
       const { data: moods, error: moodsError } = await supabase
-        .from('moods')
+        .from('moods')  // Keep using your existing table
         .select('*')
         .eq('user_id', userId)
         .gte('created_at', startDate.toISOString())
@@ -216,16 +194,12 @@ exports.handler = async (event, context) => {
         };
       }
 
-      // Process mood data into daily aggregates (KEEP YOUR EXCELLENT LOGIC)
+      // Keep all your existing aggregation logic
       const moodsByDate = moods.reduce((acc, mood) => {
         const date = new Date(mood.created_at).toISOString().split('T')[0];
         
         if (!acc[date]) {
-          acc[date] = {
-            scores: [],
-            stressors: new Set(),
-            entries: 0,
-          };
+          acc[date] = { scores: [], stressors: new Set(), entries: 0 };
         }
         
         acc[date].scores.push(mood.score);
@@ -235,7 +209,6 @@ exports.handler = async (event, context) => {
         return acc;
       }, {});
 
-      // Generate trend data for all days in period (KEEP YOUR EXCELLENT LOGIC)
       const trendData = [];
       const currentDate = new Date(startDate);
       const today = new Date();
@@ -264,7 +237,6 @@ exports.handler = async (event, context) => {
         currentDate.setDate(currentDate.getDate() + 1);
       }
 
-      // Calculate overall statistics (KEEP YOUR EXISTING)
       const allScores = moods.map(mood => mood.score);
       const avgMood = allScores.length > 0 
         ? Number((allScores.reduce((sum, score) => sum + score, 0) / allScores.length).toFixed(2))
@@ -287,17 +259,13 @@ exports.handler = async (event, context) => {
         common_stressors: commonStressors,
       };
 
-      // ADD: Enhanced analysis and support resources
       const analysis = analyzeMoodTrend(moods);
-      
-      // Get today's entry
       const todayKey = new Date().toISOString().split('T')[0];
       const todaysEntry = trendData.find(entry => entry.date === todayKey);
 
-      // Crisis support resources (ADDED FROM MY VERSION)
       const supportResources = analysis.needsSupport ? {
         crisis: {
-          uk: '116 123', // Samaritans
+          uk: '116 123',
           durham: 'https://www.dur.ac.uk/counselling/',
           text: 'Text SHOUT to 85258'
         },
@@ -310,9 +278,9 @@ exports.handler = async (event, context) => {
         body: JSON.stringify({
           trend: trendData,
           stats,
-          analysis, // ADDED: Enhanced mood analysis
-          todaysEntry, // ADDED: Today's specific data
-          supportResources, // ADDED: Crisis support when needed
+          analysis,
+          todaysEntry,
+          supportResources,
           success: true,
         }),
       };
