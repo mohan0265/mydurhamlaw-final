@@ -1,74 +1,47 @@
+// src/pages/api/awy/calls.ts
 import type { NextApiRequest, NextApiResponse } from "next";
-import { getServerUser } from "@/lib/api/serverAuth"; // cookie-first + Bearer fallback
-import { serverAWYService } from "@/lib/awy/awyService";
+import { getServerUser } from "@/lib/api/serverAuth";
+import { supabaseAdmin } from "@/lib/server/supabaseAdmin";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  // Authenticate the request; this works on Netlify (cookies or Authorization: Bearer <token>)
-  const { user } = await getServerUser(req, res);
-  if (!user) {
-    return res.status(401).json({ error: "Unauthorized" });
+  if (req.method !== "POST") {
+    res.setHeader("Allow", ["POST"]);
+    return res.status(405).json({ ok: false, error: "method_not_allowed" });
   }
 
   try {
-    switch (req.method) {
-      case "POST": {
-        // Initiate a call
-        const { connectionId, recipientUserId, sessionType = "video" } = req.body ?? {};
-        if (!connectionId || !recipientUserId) {
-          return res
-            .status(400)
-            .json({ error: "Connection ID and recipient user ID are required" });
-        }
+    const { user } = await getServerUser(req, res);
+    if (!user) return res.status(401).json({ ok: false, error: "unauthenticated" });
 
-        const newSessionId = await serverAWYService.initiateCall(
-          connectionId,
-          user.id,
-          recipientUserId,
-          sessionType
-        );
+    const { email } = (req.body as { email?: string }) || {};
+    if (!email) return res.status(400).json({ ok: false, error: "invalid_request" });
 
-        return res.status(201).json({
-          success: true,
-          sessionId: newSessionId,
-          message: "Call initiated successfully",
-        });
-      }
+    // Create a call record in the database
+    const { data: callData, error: callError } = await supabaseAdmin
+      .from("awy_calls")
+      .insert({
+        student_id: user.id,
+        loved_email: email,
+        status: "initiated",
+        created_at: new Date().toISOString(),
+      })
+      .select()
+      .single();
 
-      case "PUT": {
-        // Update call session
-        // Use a different local name to avoid shadowing 'sessionId' above
-        const { sessionId: updateSessionId, updates } = req.body ?? {};
-        if (!updateSessionId || !updates) {
-          return res.status(400).json({ error: "Session ID and updates are required" });
-        }
+    if (callError) throw callError;
 
-        await serverAWYService.updateCallSession(updateSessionId, updates);
-        return res.status(200).json({
-          success: true,
-          message: "Call session updated successfully",
-        });
-      }
+    // For now, return a simple room URL
+    // You can integrate with services like Jitsi, Zoom, or custom WebRTC later
+    const roomUrl = `/call/${callData.id}`;
 
-      case "GET": {
-        // Get call session details
-        const { sessionId: getSessionId } = req.query ?? {};
-        if (!getSessionId || typeof getSessionId !== "string") {
-          return res.status(400).json({ error: "Session ID is required" });
-        }
-
-        const session = await serverAWYService.getCallSession(getSessionId as string);
-        return res.status(200).json({ session });
-      }
-
-      default: {
-        res.setHeader("Allow", ["GET", "POST", "PUT"]);
-        return res.status(405).json({ error: "Method not allowed" });
-      }
-    }
-  } catch (error: any) {
-    console.error("AWY Calls API error:", error);
-    return res.status(500).json({
-      error: error?.message || "Internal server error",
+    return res.status(200).json({
+      ok: true,
+      callId: callData.id,
+      roomUrl,
+      url: roomUrl,
     });
+  } catch (err: any) {
+    console.error("[awy/calls] error:", err);
+    return res.status(500).json({ ok: false, error: err?.message || "server_error" });
   }
 }

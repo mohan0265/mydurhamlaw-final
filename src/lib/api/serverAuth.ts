@@ -5,7 +5,7 @@ import { createServerClient } from "@supabase/ssr";
 export function getServerSupabase(req: NextApiRequest, res: NextApiResponse) {
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, // anon is fine server-side
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
         get: (name) => req.cookies[name],

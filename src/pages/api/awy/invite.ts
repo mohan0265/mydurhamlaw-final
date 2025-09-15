@@ -41,7 +41,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         });
         lovedUserId = link.data?.user?.id ?? null;
       } else {
-        // Don’t explode—still record the connection as pending
+        // Don't explode—still record the connection as pending
         console.error("[awy/invite] invite error:", invited.error);
       }
     }
