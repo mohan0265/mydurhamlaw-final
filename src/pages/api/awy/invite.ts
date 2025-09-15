@@ -3,122 +3,98 @@ import { getServerUser } from "@/lib/api/serverAuth";
 import { supabaseAdmin } from "@/lib/server/supabaseAdmin";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  // Enable CORS
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
   if (req.method !== "POST") {
     res.setHeader("Allow", ["POST"]);
     return res.status(405).json({ ok: false, error: "method_not_allowed" });
   }
 
   try {
+    console.log("[awy/invite] Starting invite process...");
+
+    // 1. Get authenticated user
     const { user } = await getServerUser(req, res);
     if (!user) {
       console.log("[awy/invite] No user found");
       return res.status(401).json({ ok: false, error: "unauthenticated" });
     }
 
+    console.log("[awy/invite] User authenticated:", user.id);
+
+    // 2. Get request data
     const { email, relationship, displayName } = req.body || {};
     if (!email || !relationship) {
       console.log("[awy/invite] Missing email or relationship");
-      return res.status(400).json({ ok: false, error: "invalid_request" });
+      return res.status(400).json({ ok: false, error: "Email and relationship are required" });
     }
 
-    console.log(`[awy/invite] Processing invite for ${email} by user ${user.id}`);
+    console.log("[awy/invite] Processing invite for:", email);
 
-    let lovedUserId: string | null = null;
-
-    // 1) Try to invite the user
-    try {
-      const invited = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
-        data: { role: "loved_one" },
-        redirectTo: `${process.env.NEXT_PUBLIC_APP_URL || 'https://mydurhamlaw-final.netlify.app'}/auth/callback`
-      });
-
-      if (!invited.error && invited.data?.user?.id) {
-        lovedUserId = invited.data.user.id;
-        console.log(`[awy/invite] Successfully invited ${email}, user ID: ${lovedUserId}`);
-      }
-    } catch (inviteError: any) {
-      console.log(`[awy/invite] Invite error (expected if user exists): ${inviteError.message}`);
-      // User might already exist, continue with connection creation
-    }
-
-    // 2) If invite failed, try to get existing user
-    if (!lovedUserId) {
-      try {
-        const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers();
-        const existingUser = existingUsers.users?.find(u => u.email === email);
-        if (existingUser) {
-          lovedUserId = existingUser.id;
-          console.log(`[awy/invite] Found existing user: ${lovedUserId}`);
-        }
-      } catch (e) {
-        console.log(`[awy/invite] Could not find existing user: ${e}`);
-      }
-    }
-
-    // 3) Create the connection
+    // 3. Create connection directly (simplified approach)
     const connectionData = {
+      id: `conn_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       student_id: user.id,
-      loved_email: email.toLowerCase(),
-      relationship,
-      display_name: displayName || null,
-      loved_one_id: lovedUserId,
-      loved_is_user: lovedUserId ? true : null,
-      status: lovedUserId ? "active" : "pending",
+      loved_email: email.toLowerCase().trim(),
+      relationship: relationship.trim(),
+      display_name: displayName?.trim() || null,
+      status: "pending",
       is_visible: true,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
     };
 
-    console.log(`[awy/invite] Creating connection:`, connectionData);
+    console.log("[awy/invite] Creating connection with data:", connectionData);
 
-    const { data: upsertData, error: upsertError } = await supabaseAdmin
+    // 4. Insert into database
+    const { data: insertData, error: insertError } = await supabaseAdmin
       .from("awy_connections")
-      .upsert(connectionData, { 
-        onConflict: "student_id,loved_email",
-        ignoreDuplicates: false 
-      })
-      .select("id,loved_one_id")
+      .insert([connectionData])
+      .select("id")
       .single();
 
-    if (upsertError) {
-      console.error("[awy/invite] Upsert error:", upsertError);
-      throw upsertError;
-    }
-
-    console.log(`[awy/invite] Connection created/updated:`, upsertData);
-
-    // 4) Create profile for loved one if they exist as a user
-    if (lovedUserId) {
-      try {
-        await supabaseAdmin.from("profiles").upsert(
-          { 
-            id: lovedUserId, 
-            user_role: "loved_one", 
-            agreed_to_terms: true,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          },
-          { onConflict: "id", ignoreDuplicates: true }
-        );
-        console.log(`[awy/invite] Profile created for loved one: ${lovedUserId}`);
-      } catch (profileError) {
-        console.log(`[awy/invite] Profile creation non-fatal error:`, profileError);
-        // Non-fatal, connection still works
+    if (insertError) {
+      console.error("[awy/invite] Insert error:", insertError);
+      
+      // Check if it's a duplicate error
+      if (insertError.code === '23505' || insertError.message.includes('duplicate')) {
+        return res.status(409).json({ 
+          ok: false, 
+          error: "This email is already added as a loved one" 
+        });
       }
+      
+      throw insertError;
     }
+
+    console.log("[awy/invite] Connection created successfully:", insertData);
 
     return res.status(200).json({
       ok: true,
-      connectionId: upsertData?.id,
-      lovedUserId,
-      status: lovedUserId ? "active" : "pending",
-      message: `Successfully ${lovedUserId ? 'connected to' : 'invited'} ${email}`
+      connectionId: insertData.id,
+      message: `Successfully added ${email} as ${relationship}`,
+      status: "pending"
     });
 
   } catch (err: any) {
     console.error("[awy/invite] Fatal error:", err);
+    console.error("[awy/invite] Error stack:", err.stack);
+    
     return res.status(500).json({ 
       ok: false, 
-      error: err?.message || "server_error",
-      details: process.env.NODE_ENV === 'development' ? err.stack : undefined
+      error: err?.message || "Internal server error",
+      details: process.env.NODE_ENV === 'development' ? {
+        message: err.message,
+        code: err.code,
+        stack: err.stack
+      } : undefined
     });
   }
 }

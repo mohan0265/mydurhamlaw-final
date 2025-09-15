@@ -2,6 +2,15 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import { getServerUser } from "@/lib/api/serverAuth";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  // Enable CORS
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
   try {
     const { user, supabase } = await getServerUser(req, res);
     if (!user) {
@@ -10,16 +19,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     if (req.method === "GET") {
+      console.log("[awy/connections] Fetching connections for user:", user.id);
+
       const { data, error } = await supabase
         .from("awy_connections")
         .select("*")
         .eq("student_id", user.id)
-        .eq("is_visible", true);
+        .eq("is_visible", true)
+        .order("created_at", { ascending: false });
 
       if (error) {
         console.error("[awy/connections] DB error:", error);
         return res.status(500).json({ ok: false, error: error.message });
       }
+
+      console.log("[awy/connections] Found connections:", data?.length || 0);
 
       return res.status(200).json({
         ok: true,
@@ -32,6 +46,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       if (!id) {
         return res.status(400).json({ ok: false, error: "Missing connection ID" });
       }
+
+      console.log("[awy/connections] Deleting connection:", id);
 
       const { error } = await supabase
         .from("awy_connections")
