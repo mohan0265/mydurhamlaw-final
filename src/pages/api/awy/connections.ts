@@ -1,4 +1,3 @@
-// src/pages/api/awy/connections.ts
 import type { NextApiRequest, NextApiResponse } from "next";
 import { getServerUser } from "@/lib/api/serverAuth";
 
@@ -18,14 +17,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .eq("student_id", user.id)
       .eq("is_visible", true);
 
-    if (error) throw error;
+    if (error) {
+      console.error("[awy/connections] DB error:", error);
+      return res.status(500).json({ ok: false, error: error.message });
+    }
 
     return res.status(200).json({
       ok: true,
       connections: data || [],
     });
   } catch (err: any) {
-    console.error("[awy/connections] error:", err);
+    console.error("[awy/connections] fatal:", err);
     return res.status(500).json({ ok: false, error: err?.message || "server_error" });
   }
 }
