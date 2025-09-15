@@ -2,42 +2,69 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import { getServerUser } from "@/lib/api/serverAuth";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  // Enable CORS
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, DELETE, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
-
   try {
     const { user, supabase } = await getServerUser(req, res);
     if (!user) {
-      console.log("[awy/connections] No authenticated user");
       return res.status(401).json({ ok: false, error: "unauthenticated" });
     }
 
     if (req.method === "GET") {
       console.log("[awy/connections] Fetching connections for user:", user.id);
 
-      const { data, error } = await supabase
-        .from("awy_connections")
-        .select("*")
-        .eq("student_id", user.id)
-        .eq("is_visible", true)
-        .order("created_at", { ascending: false });
+      // Get user's role first
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("user_role")
+        .eq("id", user.id)
+        .single();
 
-      if (error) {
-        console.error("[awy/connections] DB error:", error);
-        return res.status(500).json({ ok: false, error: error.message });
+      const userRole = profile?.user_role || "student";
+      console.log("[awy/connections] User role:", userRole);
+
+      let connections = [];
+
+      if (userRole === "student") {
+        // Student: Get their loved ones
+        const { data, error } = await supabase
+          .from("awy_connections")
+          .select(`
+            *,
+            loved_one_profile:profiles!awy_connections_loved_one_id_fkey(
+              display_name,
+              user_role
+            )
+          `)
+          .eq("student_id", user.id)
+          .eq("is_visible", true)
+          .order("created_at", { ascending: false });
+
+        if (error) throw error;
+        connections = data || [];
+      } else {
+        // Loved one: Get their students
+        const { data, error } = await supabase
+          .from("awy_connections")
+          .select(`
+            *,
+            student_profile:profiles!awy_connections_student_id_fkey(
+              display_name,
+              user_role
+            )
+          `)
+          .eq("loved_one_id", user.id)
+          .eq("is_visible", true)
+          .order("created_at", { ascending: false });
+
+        if (error) throw error;
+        connections = data || [];
       }
 
-      console.log("[awy/connections] Found connections:", data?.length || 0);
+      console.log(`[awy/connections] Found ${connections.length} connections`);
 
       return res.status(200).json({
         ok: true,
-        connections: data || [],
+        connections,
+        userRole
       });
     }
 
@@ -47,18 +74,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         return res.status(400).json({ ok: false, error: "Missing connection ID" });
       }
 
-      console.log("[awy/connections] Deleting connection:", id);
-
       const { error } = await supabase
         .from("awy_connections")
         .delete()
-        .eq("id", id)
-        .eq("student_id", user.id);
+        .eq("id", id);
 
-      if (error) {
-        console.error("[awy/connections] Delete error:", error);
-        return res.status(500).json({ ok: false, error: error.message });
-      }
+      if (error) throw error;
 
       return res.status(200).json({ ok: true });
     }
@@ -67,7 +88,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(405).json({ ok: false, error: "method_not_allowed" });
 
   } catch (err: any) {
-    console.error("[awy/connections] Fatal error:", err);
+    console.error("[awy/connections] Error:", err);
     return res.status(500).json({ 
       ok: false, 
       error: err?.message || "server_error" 
