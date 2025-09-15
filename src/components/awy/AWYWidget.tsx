@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { isAWYEnabled } from '@/lib/feature-flags';
+import { authedFetch } from '@/lib/api/authedFetch';
 import AWYSetupHint from './AWYSetupHint';
 
 type Status = 'online' | 'offline' | 'busy';
@@ -31,11 +32,15 @@ const ringClass = (s?: Status) => {
 const computeBottomRight = () => ({ bottom: 24, right: 24 });
 
 async function api<T = any>(input: RequestInfo, init?: RequestInit): Promise<T> {
-  const r = await fetch(input, {
-    credentials: 'include',
-    headers: { 'Content-Type': 'application/json' },
+  // USE authedFetch instead of regular fetch
+  const r = await authedFetch(input, {
     ...init,
+    headers: {
+      'Content-Type': 'application/json',
+      ...init?.headers,
+    },
   });
+  
   if (!r.ok) {
     const msg = await r.text().catch(() => '');
     throw new Error(msg || `${(init?.method || 'GET')} ${input} -> ${r.status}`);
@@ -128,7 +133,7 @@ export default function AWYWidget() {
 
   if (!mounted || !enabled) return null;
 
-  // No connections? Show a small “Add loved ones” hint.
+  // No connections? Show a small "Add loved ones" hint.
   const noConnections = !loading && connections.length === 0;
 
   const pos = computeBottomRight();
@@ -173,7 +178,7 @@ export default function AWYWidget() {
           ) : noConnections ? (
             <div className="py-4">
               <div className="mb-2 text-sm text-gray-600">
-                You haven’t added any loved ones yet.
+                You haven't added any loved ones yet.
               </div>
               <AWYSetupHint />
             </div>
