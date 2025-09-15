@@ -9,17 +9,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   try {
     const { user } = await getServerUser(req, res);
-    if (!user) return res.status(401).json({ ok: false, error: "unauthenticated" });
+    if (!user) {
+      console.log("[awy/presence] No authenticated user");
+      return res.status(401).json({ ok: false, error: "unauthenticated" });
+    }
 
-    // Simple mock presence for now - you can enhance this later
+    // Simple mock presence for now - you can enhance this later with real-time data
     const mockPresence: Record<string, string> = {
       "cmcolonaive@gmail.com": "online",
-      // Add more emails as needed
+      // Add more emails as needed based on your connections
     };
 
     return res.status(200).json(mockPresence);
   } catch (err: any) {
-    console.error("[awy/presence] fatal:", err);
-    return res.status(500).json({ ok: false, error: err?.message || "server_error" });
+    console.error("[awy/presence] Fatal error:", err);
+    return res.status(500).json({ 
+      ok: false, 
+      error: err?.message || "server_error" 
+    });
   }
 }

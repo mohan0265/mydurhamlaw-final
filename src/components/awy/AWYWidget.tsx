@@ -42,8 +42,15 @@ async function api<T = any>(input: RequestInfo, init?: RequestInit): Promise<T> 
   });
   
   if (!r.ok) {
-    const msg = await r.text().catch(() => '');
-    throw new Error(msg || `${(init?.method || 'GET')} ${input} -> ${r.status}`);
+    const errorText = await r.text().catch(() => '');
+    let errorMessage;
+    try {
+      const errorJson = JSON.parse(errorText);
+      errorMessage = errorJson.error || errorJson.message || errorText;
+    } catch {
+      errorMessage = errorText || `${(init?.method || 'GET')} ${input} -> ${r.status}`;
+    }
+    throw new Error(errorMessage);
   }
   return (await r.json()) as T;
 }
