@@ -9,7 +9,6 @@ import toast from "react-hot-toast";
 
 import { getSupabaseClient } from "@/lib/supabase/client";
 import { BrandTitle } from "@/components/ui/BrandTitle";
-import { getAuthRedirect } from "@/lib/authRedirect";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -26,14 +25,14 @@ export default function LoginPage() {
       // If already logged in, go to dashboard
       const { data } = await supabase.auth.getSession();
       if (data.session) {
-        router.replace("/dashboard");
+        router.replace("/year-at-a-glance"); // Updated to your main page
         return;
       }
 
       // Subscribe so UI updates immediately after OAuth redirect
       const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
         if (session) {
-          router.replace("/dashboard");
+          router.replace("/year-at-a-glance"); // Updated to your main page
         }
       });
       unsub = () => sub.subscription.unsubscribe();
@@ -52,13 +51,20 @@ export default function LoginPage() {
         return;
       }
 
-      const redirectTo = getAuthRedirect(); // should be your /auth/redirect route
+      // FIXED: Use proper callback URL that matches your existing callback.tsx
+      const redirectTo = `${window.location.origin}/auth/callback`;
+      
+      console.log('🔄 Initiating Google OAuth with redirect:', redirectTo);
+      
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
           redirectTo,
           scopes: "openid email profile",
-          queryParams: { access_type: "offline", prompt: "consent" },
+          queryParams: { 
+            access_type: "offline", 
+            prompt: "consent" 
+          },
         },
       });
 
@@ -66,6 +72,8 @@ export default function LoginPage() {
         console.error("Google OAuth error:", error);
         toast.error(`Google Sign-in failed: ${error.message}`);
         setLoading(false);
+      } else {
+        console.log('✅ OAuth initiated successfully, redirecting to Google...');
       }
       // OAuth redirect takes over on success
     } catch (err: any) {
@@ -128,6 +136,18 @@ export default function LoginPage() {
         {process.env.NODE_ENV === "development" && router.query.error && (
           <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
             <p className="text-xs text-yellow-600">OAuth Error: {router.query.error as string}</p>
+          </div>
+        )}
+
+        {/* Debug info for development */}
+        {process.env.NODE_ENV === "development" && (
+          <div className="mt-4 p-3 bg-gray-50 border border-gray-200 rounded-lg">
+            <p className="text-xs text-gray-600">
+              Supabase URL: {process.env.NEXT_PUBLIC_SUPABASE_URL ? '✅ Set' : '❌ Missing'}
+            </p>
+            <p className="text-xs text-gray-600">
+              Supabase Anon Key: {process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? '✅ Set' : '❌ Missing'}
+            </p>
           </div>
         )}
       </div>

@@ -9,11 +9,11 @@ interface FeatureFlags {
 }
 
 const defaultFlags: FeatureFlags = {
-  ff_ai_chat: true,
-  ff_spaced_rep: true,
-  ff_assignment_oscola: true,
-  ff_wellbeing_trends: true,
-  ff_peer_rooms: false,
+  ff_ai_chat: true,           // ✅ Keep true (already working)
+  ff_spaced_rep: true,       // 🔄 Change to false (not ready yet)
+  ff_assignment_oscola: true, // 🔄 Change to false (not ready yet)  
+  ff_wellbeing_trends: true,  // ✅ Keep true (ready for release)
+  ff_peer_rooms: true,       // ✅ Keep false (not ready yet)
 };
 
 // Parse flags from environment
