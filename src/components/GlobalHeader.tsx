@@ -1,7 +1,7 @@
 // src/components/GlobalHeader.tsx
 'use client';
 
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useAuth } from '@/lib/supabase/AuthContext';
@@ -26,7 +26,8 @@ function ActiveLink({
 }) {
   const router = useRouter();
   const active =
-    router.pathname === href || (href !== '/' && router.pathname.startsWith(href));
+    router.pathname === href ||
+    (href !== '/' && router.pathname.startsWith(href));
   return (
     <Link
       href={href}
@@ -41,17 +42,86 @@ function ActiveLink({
   );
 }
 
+/** Keeps a menu open while pointer moves between button and panel. */
+function useHoverDelay() {
+  const [open, setOpen] = useState(false);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const openNow = () => {
+    if (timer.current) clearTimeout(timer.current);
+    setOpen(true);
+  };
+
+  const closeSoon = (ms = 160) => {
+    if (timer.current) clearTimeout(timer.current);
+    timer.current = setTimeout(() => setOpen(false), ms);
+  };
+
+  const toggle = () => setOpen((v) => !v);
+
+  return { open, setOpen, openNow, closeSoon, toggle };
+}
+
+function HoverMenu({
+  menu,
+}: {
+  menu: Menu;
+}) {
+  const { open, openNow, closeSoon, toggle } = useHoverDelay();
+
+  return (
+    <div
+      className="relative"
+      onMouseEnter={openNow}
+      onMouseLeave={() => closeSoon(160)}
+      onFocus={openNow}
+      onBlur={() => closeSoon(160)}
+    >
+      <button
+        type="button"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        onClick={toggle}
+        className="px-3 py-2 rounded-md text-sm font-medium text-white/90 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
+      >
+        {menu.label}
+      </button>
+
+      {open && (
+        <div
+          className="absolute left-0 top-full mt-2 w-60 rounded-xl border border-white/10 bg-white/95 shadow-2xl backdrop-blur z-[60] pointer-events-auto"
+          role="menu"
+          onMouseEnter={openNow}
+          onMouseLeave={() => closeSoon(160)}
+        >
+          <ul className="py-2">
+            {menu.items.map((it) => (
+              <li key={it.href}>
+                <Link
+                  href={it.href}
+                  className="block px-3 py-2 text-sm text-gray-800 hover:bg-gray-100 rounded-lg mx-1"
+                >
+                  {it.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function GlobalHeader() {
   const router = useRouter();
   const { user } = useAuth() || { user: null };
 
-  // --- Menus ---------------------------------------------------------------
-  // Keep links only to pages we actually have in the app.
+  // --- Menus: link ONLY to real pages in the repo -------------------------
   const studyMenu: Menu = useMemo(
     () => ({
       label: 'Study',
       items: [
-        { label: 'Year at a Glance', href: '/year-at-a-glance' }, // ✅ YAAG (correct page)
+        { label: 'Year at a Glance', href: '/year-at-a-glance' }, // YAAG
         { label: 'Study Schedule', href: '/study-schedule' },
         { label: 'Assignments', href: '/assignments' },
         { label: 'Research Hub', href: '/research-hub' },
@@ -86,10 +156,10 @@ export default function GlobalHeader() {
   );
 
   const [openMobile, setOpenMobile] = useState(false);
-  const [openStudy, setOpenStudy] = useState(false);
-  const [openCommunity, setOpenCommunity] = useState(false);
-  const [openInfo, setOpenInfo] = useState(false);
-  const [openAccount, setOpenAccount] = useState(false);
+  const [openStudyM, setOpenStudyM] = useState(false);
+  const [openCommM, setOpenCommM] = useState(false);
+  const [openInfoM, setOpenInfoM] = useState(false);
+  const [openAcctM, setOpenAcctM] = useState(false);
 
   const displayName =
     user?.user_metadata?.full_name ||
@@ -113,107 +183,17 @@ export default function GlobalHeader() {
               Dashboard
             </ActiveLink>
 
-            {/* Study (submenu) */}
-            <div
-              className="relative"
-              onMouseEnter={() => setOpenStudy(true)}
-              onMouseLeave={() => setOpenStudy(false)}
-            >
-              <button
-                className="px-3 py-2 rounded-md text-sm font-medium text-white/90 hover:text-white"
-                onClick={() => setOpenStudy((v) => !v)}
-              >
-                {studyMenu.label}
-              </button>
-              {openStudy && (
-                <div className="absolute left-0 mt-2 w-56 rounded-xl border border-white/10 bg-white/95 shadow-2xl backdrop-blur">
-                  <ul className="py-2">
-                    {studyMenu.items.map((it) => (
-                      <li key={it.href}>
-                        <Link
-                          href={it.href}
-                          className="block px-3 py-2 text-sm text-gray-800 hover:bg-gray-100 rounded-lg mx-1"
-                        >
-                          {it.label}
-                        </Link>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </div>
-
-            {/* Community (submenu) */}
-            <div
-              className="relative"
-              onMouseEnter={() => setOpenCommunity(true)}
-              onMouseLeave={() => setOpenCommunity(false)}
-            >
-              <button
-                className="px-3 py-2 rounded-md text-sm font-medium text-white/90 hover:text-white"
-                onClick={() => setOpenCommunity((v) => !v)}
-              >
-                {communityMenu.label}
-              </button>
-              {openCommunity && (
-                <div className="absolute left-0 mt-2 w-56 rounded-xl border border-white/10 bg-white/95 shadow-2xl backdrop-blur">
-                  <ul className="py-2">
-                    {communityMenu.items.map((it) => (
-                      <li key={it.href}>
-                        <Link
-                          href={it.href}
-                          className="block px-3 py-2 text-sm text-gray-800 hover:bg-gray-100 rounded-lg mx-1"
-                        >
-                          {it.label}
-                        </Link>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </div>
-
-            {/* Info (submenu) */}
-            <div
-              className="relative"
-              onMouseEnter={() => setOpenInfo(true)}
-              onMouseLeave={() => setOpenInfo(false)}
-            >
-              <button
-                className="px-3 py-2 rounded-md text-sm font-medium text-white/90 hover:text-white"
-                onClick={() => setOpenInfo((v) => !v)}
-              >
-                {infoMenu.label}
-              </button>
-              {openInfo && (
-                <div className="absolute left-0 mt-2 w-56 rounded-xl border border-white/10 bg-white/95 shadow-2xl backdrop-blur">
-                  <ul className="py-2">
-                    {infoMenu.items.map((it) => (
-                      <li key={it.href}>
-                        <Link
-                          href={it.href}
-                          className="block px-3 py-2 text-sm text-gray-800 hover:bg-gray-100 rounded-lg mx-1"
-                        >
-                          {it.label}
-                        </Link>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </div>
+            <HoverMenu menu={studyMenu} />
+            <HoverMenu menu={communityMenu} />
+            <HoverMenu menu={infoMenu} />
           </div>
 
           {/* Right side (desktop): presence + auth/CTAs */}
           <div className="hidden md:flex items-center gap-3">
-            {/* tiny online badge (uses AuthContext under the hood) */}
             <PresenceBadge />
-
             {user ? (
               <>
                 <span className="text-white/90 text-sm">Hi, {displayName}</span>
-
-                {/* Manage Billing goes to /billing */}
                 <Link
                   href="/billing"
                   className="px-3 py-2 rounded-md text-sm font-semibold bg-white text-indigo-700 hover:bg-indigo-50 transition"
@@ -221,7 +201,6 @@ export default function GlobalHeader() {
                 >
                   Manage Billing
                 </Link>
-
                 <LogoutButton className="px-3 py-2 rounded-md border hover:bg-white/10 text-white text-sm" />
               </>
             ) : (
@@ -289,11 +268,11 @@ export default function GlobalHeader() {
             <div className="rounded-lg bg-white/5">
               <button
                 className="w-full text-left px-3 py-2 text-white/90 hover:text-white font-medium"
-                onClick={() => setOpenStudy((v) => !v)}
+                onClick={() => setOpenStudyM((v) => !v)}
               >
                 {studyMenu.label}
               </button>
-              {openStudy && (
+              {openStudyM && (
                 <ul className="pb-2">
                   {studyMenu.items.map((it) => (
                     <li key={it.href}>
@@ -314,11 +293,11 @@ export default function GlobalHeader() {
             <div className="rounded-lg bg-white/5">
               <button
                 className="w-full text-left px-3 py-2 text-white/90 hover:text-white font-medium"
-                onClick={() => setOpenCommunity((v) => !v)}
+                onClick={() => setOpenCommM((v) => !v)}
               >
                 {communityMenu.label}
               </button>
-              {openCommunity && (
+              {openCommM && (
                 <ul className="pb-2">
                   {communityMenu.items.map((it) => (
                     <li key={it.href}>
@@ -339,11 +318,11 @@ export default function GlobalHeader() {
             <div className="rounded-lg bg-white/5">
               <button
                 className="w-full text-left px-3 py-2 text-white/90 hover:text-white font-medium"
-                onClick={() => setOpenInfo((v) => !v)}
+                onClick={() => setOpenInfoM((v) => !v)}
               >
                 {infoMenu.label}
               </button>
-              {openInfo && (
+              {openInfoM && (
                 <ul className="pb-2">
                   {infoMenu.items.map((it) => (
                     <li key={it.href}>
@@ -364,11 +343,11 @@ export default function GlobalHeader() {
             <div className="rounded-lg bg-white/5">
               <button
                 className="w-full text-left px-3 py-2 text-white/90 hover:text-white font-medium"
-                onClick={() => setOpenAccount((v) => !v)}
+                onClick={() => setOpenAcctM((v) => !v)}
               >
                 {user ? 'Account' : 'Get Started'}
               </button>
-              {openAccount && (
+              {openAcctM && (
                 <div className="pb-2">
                   {user ? (
                     <>
