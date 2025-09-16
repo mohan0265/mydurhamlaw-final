@@ -38,12 +38,14 @@ async function api<T = any>(input: RequestInfo, init?: RequestInit): Promise<T> 
 }
 
 function normalizePresence(raw: any): PresenceMap {
+  // Map already?
   if (raw && typeof raw === 'object' && !Array.isArray(raw) && !('connected' in raw)) {
     return raw as PresenceMap;
   }
-  if (raw && typeof raw === 'object' && Array.isArray(raw.lovedOnes)) {
+  // Our presence API shape: { connected, me, lovedOnes: [{ email, online|connected|status }] }
+  if (raw && typeof raw === 'object' && Array.isArray((raw as any).lovedOnes)) {
     const map: PresenceMap = {};
-    for (const lo of raw.lovedOnes) {
+    for (const lo of (raw as any).lovedOnes) {
       const email = String(lo?.email || '').toLowerCase();
       if (!email) continue;
       const online =
@@ -52,6 +54,7 @@ function normalizePresence(raw: any): PresenceMap {
     }
     return map;
   }
+  // Array of entries
   if (Array.isArray(raw)) {
     const map: PresenceMap = {};
     for (const it of raw) {
@@ -68,7 +71,7 @@ function normalizePresence(raw: any): PresenceMap {
 
 function nameFromConn(c: Conn): string {
   if (c.display_name && c.display_name.trim()) return c.display_name.trim();
-  if (c.relationship && c.relationship.trim()) return c.relationship.trim(); // e.g., Mum, Dad
+  if (c.relationship && c.relationship.trim()) return c.relationship.trim(); // Mum, Dad, etc.
   const nick = c.email.split('@')[0] || c.email;
   return nick.replace(/[._-]+/g, ' ');
 }
@@ -96,6 +99,7 @@ export default function FloatingAWY() {
   // Load connections once & poll presence
   useEffect(() => {
     let stop = false;
+
     const loadConnections = async () => {
       try {
         const data = await api<{ ok?: boolean; connections?: any[] }>('/api/awy/connections');
@@ -139,7 +143,7 @@ export default function FloatingAWY() {
 
   const anyOnline = onlineLoved.length > 0;
 
-  // ---- UI ------------------------------------------------------------------
+  // ---- UI (kept safe: simple SVG, no exotic rgba stops) --------------------
 
   return (
     <div
@@ -149,7 +153,9 @@ export default function FloatingAWY() {
     >
       {/* Hover card */}
       <div
-        className={`absolute -top-3 right-0 mb-2 translate-y-[-100%] ${hovering ? 'opacity-100' : 'opacity-0 pointer-events-none'} transition-opacity duration-150`}
+        className={`absolute -top-3 right-0 mb-2 translate-y-[-100%] ${
+          hovering ? 'opacity-100' : 'opacity-0 pointer-events-none'
+        } transition-opacity duration-150`}
       >
         <div className="w-max max-w-xs rounded-2xl border bg-white/95 px-3 py-2 text-sm shadow-2xl backdrop-blur">
           {anyOnline ? (
@@ -171,28 +177,25 @@ export default function FloatingAWY() {
         </div>
       </div>
 
-      {/* Heart button */}
+      {/* Heart launcher */}
       <button
         onClick={dispatchOpen}
         aria-label="Open Always With You"
         title={anyOnline ? `${onlineLoved.join(', ')} online` : 'AWY — no one online'}
         className="relative block h-16 w-16 focus:outline-none"
       >
-        {/* SVG heart with premium gradient */}
+        {/* SVG heart with a clean gradient */}
         <svg
           viewBox="0 0 64 64"
           className="h-16 w-16 drop-shadow-[0_6px_14px_rgba(99,102,241,0.35)]"
+          aria-hidden
         >
           <defs>
             <linearGradient id="awyHeartGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#8b5cf6" />   {/* purple-500 */}
-              <stop offset="50%" stopColor="#a78bfa" />  {/* purple-400 */}
-              <stop offset="100%" stopColor="#06b6d4" /> {/* cyan-500 */}
+              <stop offset="0%" stopColor="#8B5CF6" />   {/* purple-500 */}
+              <stop offset="50%" stopColor="#A78BFA" />  {/* purple-400 */}
+              <stop offset="100%" stopColor="#06B6D4" /> {/* cyan-500 */}
             </linearGradient>
-            <radialGradient id="awyGloss" cx="30%" cy="20%" r="60%">
-              <stop offset="0%" stopColor="rgba(255,255,255,0.7)" />
-              <stop offset="100%" stopColor="rgba(255,255,255,0)" />
-            </radialGradient>
           </defs>
 
           {/* Heart shape */}
@@ -200,22 +203,16 @@ export default function FloatingAWY() {
             d="M32 56s-3.2-2.61-11.6-9.17C11.2 40.84 6 35.6 6 28.5 6 21.04 12.04 15 19.5 15c4.39 0 8.28 2.13 10.5 5.41C32.22 17.13 36.11 15 40.5 15 47.96 15 54 21.04 54 28.5c0 7.1-5.2 12.34-14.4 18.33C35.2 53.39 32 56 32 56z"
             fill="url(#awyHeartGradient)"
           />
-          {/* subtle gloss */}
-          <path
-            d="M32 56s-3.2-2.61-11.6-9.17C11.2 40.84 6 35.6 6 28.5 6 21.04 12.04 15 19.5 15c4.39 0 8.28 2.13 10.5 5.41C32.22 17.13 36.11 15 40.5 15 47.96 15 54 21.04 54 28.5c0 7.1-5.2 12.34-14.4 18.33C35.2 53.39 32 56 32 56z"
-            fill="url(#awyGloss)"
-            opacity="0.4"
-          />
 
-          {/* Inner presence orb backdrop */}
-          <circle cx="32" cy="34" r="10" fill="rgba(255,255,255,0.85)" />
+          {/* Inner white disc (slight opacity) */}
+          <circle cx="32" cy="34" r="10" fill="#FFFFFF" fillOpacity="0.9" />
 
           {/* Presence orb */}
           <circle
             cx="32"
             cy="34"
             r="7"
-            fill={anyOnline ? '#10b981' : '#9ca3af'} // emerald-500 or gray-400
+            fill={anyOnline ? '#10B981' : '#9CA3AF'} // emerald-500 / gray-400
           />
 
           {/* Glow ring (only when online) */}
@@ -226,7 +223,7 @@ export default function FloatingAWY() {
                 cy="34"
                 r="9.5"
                 fill="none"
-                stroke="#10b981"
+                stroke="#10B981"
                 strokeOpacity="0.65"
                 className="animate-pulse"
               />
@@ -235,7 +232,7 @@ export default function FloatingAWY() {
                 cy="34"
                 r="7"
                 fill="none"
-                stroke="#10b981"
+                stroke="#10B981"
                 strokeOpacity="0.35"
                 className="animate-ping"
               />
