@@ -2,12 +2,26 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { Readable } from 'node:stream';
 import Stripe from 'stripe';
+import { supabaseAdmin } from '@/lib/server/supabaseAdmin';
+
+/**
+ * Minimal Stripe webhook: verifies events and stores a few fields.
+ *
+ * Env required:
+ * - STRIPE_SECRET_KEY
+ * - STRIPE_WEBHOOK_SECRET
+ *
+ * Optional tables:
+ * - public.billing_events (json logging)
+ * - public.profiles (column stripe_customer_id text)
+ */
 
 export const config = { api: { bodyParser: false } };
 
+// Do NOT pin apiVersion; let the SDK use your account default to avoid TS drift.
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string);
 
-async function getRawBody(readable: Readable) {
+async function rawBody(readable: Readable): Promise<Buffer> {
   const chunks: Uint8Array[] = [];
   for await (const chunk of readable) {
     chunks.push(typeof chunk === 'string' ? Buffer.from(chunk) : chunk);
@@ -15,113 +29,119 @@ async function getRawBody(readable: Readable) {
   return Buffer.concat(chunks);
 }
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (req.method !== 'POST') return res.status(405).end('Method not allowed');
+function unixToIsoMaybe(v: unknown): string | null {
+  // Support either number or stringified number; tolerate missing/renamed keys.
+  const n = typeof v === 'number' ? v : typeof v === 'string' ? Number(v) : NaN;
+  return Number.isFinite(n) && n > 0 ? new Date(n * 1000).toISOString() : null;
+}
 
-  const sig = req.headers['stripe-signature'] as string;
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  if (req.method !== 'POST') {
+    res.setHeader('Allow', ['POST']);
+    return res.status(405).send('Method Not Allowed');
+  }
+
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET as string;
+  if (!webhookSecret) {
+    console.error('[stripe/webhook] Missing STRIPE_WEBHOOK_SECRET');
+    return res.status(500).send('Server misconfigured');
+  }
 
   let event: Stripe.Event;
 
   try {
-    const rawBody = await getRawBody(req);
-    event = stripe.webhooks.constructEvent(rawBody, sig, webhookSecret);
+    const buf = await rawBody(req);
+    const sig = req.headers['stripe-signature'] as string;
+    event = stripe.webhooks.constructEvent(buf, sig, webhookSecret);
   } catch (err: any) {
-    console.error('Webhook signature verification failed:', err?.message || err);
-    return res.status(400).send(`Webhook Error: ${err.message || 'Invalid signature'}`);
+    console.error('[stripe/webhook] Signature verification failed:', err?.message || err);
+    return res.status(400).send(`Webhook Error: ${err?.message || 'invalid signature'}`);
   }
 
   try {
-    // Optional Supabase mirroring
-    const SUPABASE_URL = process.env.SUPABASE_URL;
-    const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    let supabase: any = null;
-
-    if (SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY) {
-      const { createClient } = await import('@supabase/supabase-js');
-      supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
-        auth: { persistSession: false },
-      });
-    }
-
     switch (event.type) {
       case 'checkout.session.completed': {
-        const session = event.data.object as Stripe.Checkout.Session;
-        const customerId = (session.customer as string) || null;
-        const subscriptionId = (session.subscription as string) || null;
-        const plan = session.metadata?.plan || null;
+        const s = event.data.object as Stripe.Checkout.Session;
 
-        if (supabase && session.customer_details?.email) {
-          const email = session.customer_details.email;
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('id')
-            .ilike('email', email)
-            .maybeSingle();
+        const customerId = (s.customer as string) || null;
+        const subscriptionId = (s.subscription as string) || null;
+        const email = s.customer_details?.email || null;
 
-          if (profile) {
-            await supabase
+        // Try to store customer id on profile by email (ignore failure)
+        if (email && customerId) {
+          try {
+            await supabaseAdmin
               .from('profiles')
-              .update({
-                stripe_customer_id: customerId,
-                stripe_subscription_id: subscriptionId,
-                stripe_price_id: null,
-                stripe_subscription_status: 'active',
-              })
-              .eq('id', profile.id);
+              .update({ stripe_customer_id: customerId })
+              .eq('email', email);
+          } catch (e) {
+            console.warn('[stripe/webhook] Could not store stripe_customer_id:', e);
           }
         }
 
-        console.log('checkout.session.completed', { customerId, subscriptionId, plan });
+        // Optional event log
+        try {
+          await supabaseAdmin.from('billing_events').insert([
+            {
+              type: event.type,
+              subscription_id: subscriptionId,
+              customer_id: customerId,
+              email,
+              payload: s,
+            },
+          ]);
+        } catch {
+          /* table might not exist; ignore */
+        }
         break;
       }
 
-      case 'customer.subscription.created':
       case 'customer.subscription.updated':
       case 'customer.subscription.deleted': {
         const sub = event.data.object as Stripe.Subscription;
-        const customerId = sub.customer as string;
-        const priceId = sub.items?.data?.[0]?.price?.id || null;
+        const customerId = (sub.customer as string) || null;
         const status = sub.status;
-        // In newest typings this may be optional, so cast to any safely:
-        const currentPeriodEnd = (sub as any).current_period_end
-          ? new Date((sub as any).current_period_end * 1000).toISOString()
-          : null;
 
-        if (supabase) {
-          const { data: profiles } = await supabase
-            .from('profiles')
-            .select('id')
-            .eq('stripe_customer_id', customerId);
+        // NOTE: do NOT trust Stripe types to always include this field.
+        // Read defensively to fix TS error across versions.
+        const rawCpe =
+          (sub as any)?.current_period_end ??
+          (sub as any)?.current_period_end_at ??
+          null;
+        const currentPeriodEndIso = unixToIsoMaybe(rawCpe);
 
-          if (profiles?.length) {
-            await supabase
-              .from('profiles')
-              .update({
-                stripe_subscription_id: sub.id,
-                stripe_price_id: priceId,
-                stripe_subscription_status: status,
-                stripe_current_period_end: currentPeriodEnd,
-              })
-              .in(
-                'id',
-                profiles.map((p: any) => p.id)
-              );
-          }
+        try {
+          await supabaseAdmin.from('billing_events').insert([
+            {
+              type: event.type,
+              customer_id: customerId,
+              subscription_id: sub.id,
+              status,
+              current_period_end: currentPeriodEndIso, // store as ISO string or null
+              payload: sub,
+            },
+          ]);
+        } catch {
+          /* table might not exist; ignore */
         }
-
-        console.log('subscription event', { type: event.type, id: sub.id, status });
         break;
       }
 
-      default:
-        // ignore others we don't use yet
-        break;
+      default: {
+        // Firehose (optional)
+        try {
+          await supabaseAdmin
+            .from('billing_events')
+            .insert([{ type: event.type, payload: event.data.object as any }]);
+        } catch {
+          /* ignore */
+        }
+      }
     }
 
-    return res.json({ received: true });
+    return res.status(200).json({ received: true });
   } catch (err: any) {
-    console.error('Webhook handler failed:', err?.message || err);
-    return res.status(500).json({ error: 'Webhook handler error' });
+    console.error('[stripe/webhook] Handler error:', err?.message || err);
+    return res.status(500).send('Webhook handler error');
   }
 }

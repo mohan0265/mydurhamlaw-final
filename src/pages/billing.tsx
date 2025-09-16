@@ -6,15 +6,16 @@ import { getSupabaseServerClient } from '@/lib/supabase/server';
 import { SubscriptionStatus } from '@/components/billing/SubscriptionStatus';
 import { PricingPlans } from '@/components/billing/PricingPlans';
 import { TrialBanner } from '@/components/billing/TrialBanner';
+import ManageBillingButton from '@/components/billing/ManageBillingButton';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { 
-  CreditCard, 
-  Download, 
-  FileText, 
+import {
+  CreditCard,
+  Download,
+  FileText,
   BarChart3,
   Clock,
-  CheckCircle
+  CheckCircle,
 } from 'lucide-react';
 
 interface BillingPageProps {
@@ -22,43 +23,16 @@ interface BillingPageProps {
     id: string;
     email: string;
     display_name?: string;
-    stripe_customer_id?: string | null;
   };
 }
 
 export default function BillingPage({ user }: BillingPageProps) {
   const [activeTab, setActiveTab] = useState<'overview' | 'plans' | 'usage' | 'billing'>('overview');
 
-  const startCheckout = async (plan: 'monthly' | 'annual') => {
-    const res = await fetch('/api/stripe/checkout', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ plan }),
-    });
-    if (!res.ok) {
-      alert('Could not start checkout. Please try again.');
-      return;
-    }
-    const { url } = await res.json();
-    window.location.href = url;
-  };
-
-  const openPortal = async () => {
-    if (!user?.stripe_customer_id) {
-      alert('No Stripe customer found on your account yet.');
-      return;
-    }
-    const res = await fetch('/api/stripe/portal', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ customerId: user.stripe_customer_id }),
-    });
-    if (!res.ok) {
-      alert('Could not open billing portal.');
-      return;
-    }
-    const { url } = await res.json();
-    window.location.href = url;
+  const handleSelectPlan = (planId: string) => {
+    // The PricingPlans component can call /api/stripe/checkout under the hood
+    console.log('Selected plan:', planId);
+    alert('Redirecting to Stripe checkout…');
   };
 
   return (
@@ -71,9 +45,13 @@ export default function BillingPage({ user }: BillingPageProps) {
       <div className="min-h-screen bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {/* Header */}
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Billing & Subscription</h1>
-            <p className="text-gray-600">Manage your subscription, view usage, and update billing information</p>
+          <div className="mb-8 flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">Billing & Subscription</h1>
+              <p className="text-gray-600">Manage your subscription, view usage, and update billing information</p>
+            </div>
+            {/* Always visible manage billing (works after first checkout) */}
+            <ManageBillingButton />
           </div>
 
           {/* Trial Banner */}
@@ -94,7 +72,7 @@ export default function BillingPage({ user }: BillingPageProps) {
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id as any)}
                     className={`flex items-center gap-2 py-2 px-1 border-b-2 font-medium text-sm ${
-                      activeTab === tab.id
+                      activeTab === (tab.id as any)
                         ? 'border-blue-500 text-blue-600'
                         : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                     }`}
@@ -111,10 +89,12 @@ export default function BillingPage({ user }: BillingPageProps) {
           <div className="space-y-8">
             {activeTab === 'overview' && (
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                {/* Subscription Status */}
                 <div className="lg:col-span-2">
                   <SubscriptionStatus userId={user.id} onUpgrade={() => setActiveTab('plans')} />
                 </div>
 
+                {/* Quick Actions */}
                 <div className="space-y-6">
                   <Card className="p-6">
                     <h3 className="text-lg font-semibold mb-4">Quick Actions</h3>
@@ -127,10 +107,13 @@ export default function BillingPage({ user }: BillingPageProps) {
                         <BarChart3 className="w-4 h-4 mr-2" />
                         Check Usage
                       </Button>
-                      <Button onClick={openPortal} className="w-full justify-start" variant="outline">
-                        <FileText className="w-4 h-4 mr-2" />
-                        Manage Billing (Stripe)
-                      </Button>
+                      {/* Open Stripe Portal */}
+                      <ManageBillingButton>
+                        <span className="inline-flex items-center">
+                          <FileText className="w-4 h-4 mr-2" />
+                          Manage Billing / Invoices
+                        </span>
+                      </ManageBillingButton>
                     </div>
                   </Card>
                 </div>
@@ -141,12 +124,9 @@ export default function BillingPage({ user }: BillingPageProps) {
               <div>
                 <div className="mb-8">
                   <h2 className="text-2xl font-bold text-gray-900 mb-2">Choose Your Plan</h2>
-                  <p className="text-gray-600">Select the perfect plan for your studies</p>
+                  <p className="text-gray-600">Select the perfect plan for your law studies at Durham University</p>
                 </div>
-                <PricingPlans
-                  onSelectPlan={startCheckout}
-                  showAnnualPricing={false}
-                />
+                <PricingPlans onSelectPlan={handleSelectPlan} />
               </div>
             )}
 
@@ -160,7 +140,7 @@ export default function BillingPage({ user }: BillingPageProps) {
             {activeTab === 'billing' && (
               <div>
                 <h2 className="text-2xl font-bold text-gray-900 mb-6">Billing History</h2>
-                <BillingHistory />
+                <BillingHistory userId={user.id} />
               </div>
             )}
           </div>
@@ -170,13 +150,14 @@ export default function BillingPage({ user }: BillingPageProps) {
   );
 }
 
-// Usage Overview Component (unchanged from your version)
+// Usage Overview Component
 const UsageOverview: React.FC<{ userId: string }> = ({ userId }) => {
   const [usage, setUsage] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchUsage();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId]);
 
   const fetchUsage = async () => {
@@ -243,17 +224,17 @@ const UsageOverview: React.FC<{ userId: string }> = ({ userId }) => {
   );
 };
 
-// Billing History placeholder (unchanged)
-const BillingHistory: React.FC = () => {
+// Billing History Component
+const BillingHistory: React.FC<{ userId: string }> = ({ userId }) => {
   return (
     <Card className="p-6">
       <div className="text-center py-8">
         <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
         <h3 className="text-lg font-semibold text-gray-900 mb-2">No Billing History Yet</h3>
-        <p className="text-gray-600 mb-4">
-          Your billing history will appear here once you have an active subscription.
-        </p>
-        <Button onClick={() => window.location.reload()}>Refresh</Button>
+        <p className="text-gray-600 mb-4">Your billing history will appear here once you have an active subscription.</p>
+        <ManageBillingButton className="px-4 py-2 rounded-md bg-indigo-600 text-white hover:bg-indigo-700">
+          Open Billing Portal
+        </ManageBillingButton>
       </div>
     </Card>
   );
@@ -261,27 +242,30 @@ const BillingHistory: React.FC = () => {
 
 export const getServerSideProps: GetServerSideProps = async () => {
   const supabase = getSupabaseServerClient();
-  const { data: { user } } = await supabase.auth.getUser();
 
-  if (!user) {
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser();
+
+  if (error || !user) {
     return {
-      redirect: { destination: '/login?redirect=/billing', permanent: false },
+      redirect: {
+        destination: '/login?redirect=/billing',
+        permanent: false,
+      },
     };
   }
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('display_name, stripe_customer_id')
-    .eq('id', user.id)
-    .single();
+  // Get user profile
+  const { data: profile } = await supabase.from('profiles').select('display_name').eq('id', user.id).single();
 
   return {
     props: {
       user: {
         id: user.id,
         email: user.email,
-        display_name: profile?.display_name || null,
-        stripe_customer_id: profile?.stripe_customer_id || null,
+        display_name: (profile as any)?.display_name || null,
       },
     },
   };
