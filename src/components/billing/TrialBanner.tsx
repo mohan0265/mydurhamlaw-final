@@ -1,101 +1,106 @@
+// src/components/billing/TrialBanner.tsx
+'use client';
 
-import React, { useState, useEffect } from 'react';
-import { AlertTriangle, Clock, X } from 'lucide-react';
-import { Button } from '@/components/ui/Button';
+import React, { useEffect, useState } from 'react';
 
-interface TrialBannerProps {
+type Props = {
   userId: string;
-  onUpgrade: () => void;
-}
+  onUpgrade?: () => void;
+};
 
-export const TrialBanner: React.FC<TrialBannerProps> = ({ userId, onUpgrade }) => {
-  const [daysRemaining, setDaysRemaining] = useState<number | null>(null);
-  const [isVisible, setIsVisible] = useState(false);
-  const [isDismissed, setIsDismissed] = useState(false);
+type SubInfo = {
+  tier: string;
+  inTrial: boolean;
+  trialEndsAt: string | null;
+  status: string;
+};
+
+export const TrialBanner: React.FC<Props> = ({ onUpgrade }) => {
+  const [loading, setLoading] = useState(true);
+  const [info, setInfo] = useState<SubInfo | null>(null);
+  const [starting, setStarting] = useState(false);
+
+  const load = async () => {
+    setLoading(true);
+    try {
+      const r = await fetch('/api/billing/subscription');
+      const j = await r.json();
+      setInfo(j?.subscription ?? null);
+    } catch {
+      setInfo(null);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    checkTrialStatus();
-  }, [userId]);
+    load();
+  }, []);
 
-  const checkTrialStatus = async () => {
+  const startTrial = async () => {
     try {
-      const response = await fetch('/api/billing/subscription');
-      const data = await response.json();
-      
-      if (data.subscription?.status === 'trial' && data.subscription.trial_end_date) {
-        const trialEnd = new Date(data.subscription.trial_end_date);
-        const now = new Date();
-        const diffTime = trialEnd.getTime() - now.getTime();
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        
-        setDaysRemaining(Math.max(0, diffDays));
-        setIsVisible(diffDays <= 7); // Show banner when 7 days or less remaining
+      setStarting(true);
+      const r = await fetch('/api/billing/subscription', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'start_trial' }),
+      });
+      const j = await r.json();
+      if (!r.ok || !j?.success) {
+        throw new Error(j?.error || 'Could not start trial');
       }
-    } catch (error) {
-      console.error('Error checking trial status:', error);
+      await load();
+    } catch (e: any) {
+      alert(e?.message || 'Could not start trial.');
+    } finally {
+      setStarting(false);
     }
   };
 
-  if (!isVisible || isDismissed || daysRemaining === null) {
-    return null;
-  }
+  if (loading) return null;
 
-  const getBannerStyle = () => {
-    if (daysRemaining === 0) {
-      return 'bg-red-50 border-red-200 text-red-800';
-    } else if (daysRemaining <= 3) {
-      return 'bg-orange-50 border-orange-200 text-orange-800';
-    } else {
-      return 'bg-yellow-50 border-yellow-200 text-yellow-800';
-    }
-  };
+  // If already active paid subscription, no banner
+  if (info?.status === 'active' && (info?.tier || '').toLowerCase() !== 'free') return null;
 
-  const getIcon = () => {
-    if (daysRemaining === 0) {
-      return <AlertTriangle className="w-5 h-5 text-red-500" />;
-    } else {
-      return <Clock className="w-5 h-5 text-yellow-500" />;
-    }
-  };
-
-  const getMessage = () => {
-    if (daysRemaining === 0) {
-      return 'Your free trial has expired. Upgrade now to continue using MyDurhamLaw.';
-    } else if (daysRemaining === 1) {
-      return 'Your free trial expires tomorrow. Upgrade now to avoid interruption.';
-    } else {
-      return `Your free trial expires in ${daysRemaining} days. Upgrade now to continue enjoying all features.`;
-    }
-  };
-
-  return (
-    <div className={`border rounded-lg p-4 mb-6 ${getBannerStyle()}`}>
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          {getIcon()}
+  // If in trial, show remaining
+  if (info?.inTrial) {
+    return (
+      <div className="rounded-xl border bg-blue-50 p-4 text-blue-900">
+        <div className="flex items-center justify-between">
           <div>
-            <p className="font-medium">{getMessage()}</p>
-            <p className="text-sm mt-1 opacity-90">
-              Don't lose access to your AI assistant, AWY connections, and premium features.
-            </p>
+            <div className="font-semibold">Your free trial is active</div>
+            {info.trialEndsAt && (
+              <div className="text-sm">
+                Ends on <strong>{new Date(info.trialEndsAt).toLocaleDateString()}</strong>
+              </div>
+            )}
           </div>
-        </div>
-        
-        <div className="flex items-center gap-2">
-          <Button
-            onClick={onUpgrade}
-            size="sm"
-            className="bg-blue-600 hover:bg-blue-700 text-white"
-          >
-            Upgrade Now
-          </Button>
           <button
-            onClick={() => setIsDismissed(true)}
-            className="p-1 hover:bg-black/10 rounded"
+            onClick={onUpgrade}
+            className="rounded-md bg-indigo-600 text-white px-3 py-2 text-sm hover:bg-indigo-700"
           >
-            <X className="w-4 h-4" />
+            Upgrade now
           </button>
         </div>
+      </div>
+    );
+  }
+
+  // Not in trial: offer to start one
+  return (
+    <div className="rounded-xl border bg-indigo-50 p-4 text-indigo-900">
+      <div className="flex items-center justify-between">
+        <div>
+          <div className="font-semibold">Start your 14-day free trial</div>
+          <div className="text-sm">No card needed • Cancel anytime</div>
+        </div>
+        <button
+          onClick={startTrial}
+          disabled={starting}
+          className="rounded-md bg-indigo-600 text-white px-3 py-2 text-sm hover:bg-indigo-700 disabled:opacity-60"
+        >
+          {starting ? 'Starting…' : 'Start free trial'}
+        </button>
       </div>
     </div>
   );
