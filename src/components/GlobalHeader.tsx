@@ -25,12 +25,13 @@ function ActiveLink({
   className?: string;
 }) {
   const router = useRouter();
-  const active =
-    router.pathname === href ||
-    (href !== '/' && router.pathname.startsWith(href));
+  // Use asPath to avoid weirdness with querystrings and dynamic routes
+  const path = router.asPath.split('?')[0] || '/';
+  const active = path === href;
   return (
     <Link
       href={href}
+      prefetch={false}
       className={cx(
         'px-3 py-2 rounded-md text-sm font-medium transition',
         active ? 'bg-white/20 text-white' : 'text-white/90 hover:text-white',
@@ -52,7 +53,7 @@ function useHoverDelay() {
     setOpen(true);
   };
 
-  const closeSoon = (ms = 160) => {
+  const closeSoon = (ms = 180) => {
     if (timer.current) clearTimeout(timer.current);
     timer.current = setTimeout(() => setOpen(false), ms);
   };
@@ -62,20 +63,16 @@ function useHoverDelay() {
   return { open, setOpen, openNow, closeSoon, toggle };
 }
 
-function HoverMenu({
-  menu,
-}: {
-  menu: Menu;
-}) {
+function HoverMenu({ menu }: { menu: Menu }) {
   const { open, openNow, closeSoon, toggle } = useHoverDelay();
 
   return (
     <div
       className="relative"
       onMouseEnter={openNow}
-      onMouseLeave={() => closeSoon(160)}
+      onMouseLeave={() => closeSoon(180)}
       onFocus={openNow}
-      onBlur={() => closeSoon(160)}
+      onBlur={() => closeSoon(180)}
     >
       <button
         type="button"
@@ -89,16 +86,17 @@ function HoverMenu({
 
       {open && (
         <div
-          className="absolute left-0 top-full mt-2 w-60 rounded-xl border border-white/10 bg-white/95 shadow-2xl backdrop-blur z-[60] pointer-events-auto"
+          className="absolute left-0 top-full mt-2 w-60 rounded-xl border border-white/10 bg-white/95 shadow-2xl backdrop-blur z-[60]"
           role="menu"
           onMouseEnter={openNow}
-          onMouseLeave={() => closeSoon(160)}
+          onMouseLeave={() => closeSoon(180)}
         >
           <ul className="py-2">
             {menu.items.map((it) => (
               <li key={it.href}>
                 <Link
                   href={it.href}
+                  prefetch={false}
                   className="block px-3 py-2 text-sm text-gray-800 hover:bg-gray-100 rounded-lg mx-1"
                 >
                   {it.label}
@@ -113,15 +111,14 @@ function HoverMenu({
 }
 
 export default function GlobalHeader() {
-  const router = useRouter();
   const { user } = useAuth() || { user: null };
 
-  // --- Menus: link ONLY to real pages in the repo -------------------------
+  // Link ONLY to pages that exist in the repo
   const studyMenu: Menu = useMemo(
     () => ({
       label: 'Study',
       items: [
-        { label: 'Year at a Glance', href: '/year-at-a-glance' }, // YAAG
+        { label: 'Year at a Glance', href: '/year-at-a-glance' },
         { label: 'Study Schedule', href: '/study-schedule' },
         { label: 'Assignments', href: '/assignments' },
         { label: 'Research Hub', href: '/research-hub' },
@@ -136,7 +133,7 @@ export default function GlobalHeader() {
       label: 'Community',
       items: [
         { label: 'Student Lounge', href: '/lounge' },
-        { label: 'Community', href: '/community' },
+        { label: 'Community Hub', href: '/community' },
         { label: 'News', href: '/news' },
       ],
     }),
@@ -172,7 +169,7 @@ export default function GlobalHeader() {
         <div className="h-14 flex items-center justify-between">
           {/* Brand */}
           <div className="flex items-center gap-3">
-            <Link href="/" className="text-white font-semibold text-lg">
+            <Link href="/" prefetch={false} className="text-white font-semibold text-lg">
               My <span className="text-pink-200">Durham</span> Law
             </Link>
           </div>
@@ -182,7 +179,6 @@ export default function GlobalHeader() {
             <ActiveLink href="/dashboard" className="font-semibold">
               Dashboard
             </ActiveLink>
-
             <HoverMenu menu={studyMenu} />
             <HoverMenu menu={communityMenu} />
             <HoverMenu menu={infoMenu} />
@@ -196,8 +192,8 @@ export default function GlobalHeader() {
                 <span className="text-white/90 text-sm">Hi, {displayName}</span>
                 <Link
                   href="/billing"
+                  prefetch={false}
                   className="px-3 py-2 rounded-md text-sm font-semibold bg-white text-indigo-700 hover:bg-indigo-50 transition"
-                  title="Manage subscription & invoices"
                 >
                   Manage Billing
                 </Link>
@@ -205,25 +201,17 @@ export default function GlobalHeader() {
               </>
             ) : (
               <>
-                <Link
-                  href="/pricing"
-                  className="text-white/90 hover:text-white text-sm"
-                  title="See plans"
-                >
+                <Link href="/pricing" prefetch={false} className="text-white/90 hover:text-white text-sm">
                   Pricing
                 </Link>
                 <Link
                   href="/pricing"
+                  prefetch={false}
                   className="px-3 py-2 rounded-md text-sm font-semibold bg-white text-indigo-700 hover:bg-indigo-50 transition"
-                  title="Start your free trial"
                 >
                   Start Free Trial
                 </Link>
-                <Link
-                  href="/login"
-                  className="text-white/90 hover:text-white text-sm"
-                  title="Sign in"
-                >
+                <Link href="/login" prefetch={false} className="text-white/90 hover:text-white text-sm">
                   Login
                 </Link>
               </>
@@ -256,6 +244,7 @@ export default function GlobalHeader() {
             <div className="flex items-center justify-between">
               <Link
                 href="/dashboard"
+                prefetch={false}
                 className="px-3 py-2 rounded-md text-sm font-semibold bg-white text-indigo-700 hover:bg-indigo-50 transition"
                 onClick={() => setOpenMobile(false)}
               >
@@ -278,6 +267,7 @@ export default function GlobalHeader() {
                     <li key={it.href}>
                       <Link
                         href={it.href}
+                        prefetch={false}
                         className="block px-4 py-2 text-sm text-white/90 hover:text-white hover:bg-white/10"
                         onClick={() => setOpenMobile(false)}
                       >
@@ -303,6 +293,7 @@ export default function GlobalHeader() {
                     <li key={it.href}>
                       <Link
                         href={it.href}
+                        prefetch={false}
                         className="block px-4 py-2 text-sm text-white/90 hover:text-white hover:bg-white/10"
                         onClick={() => setOpenMobile(false)}
                       >
@@ -328,6 +319,7 @@ export default function GlobalHeader() {
                     <li key={it.href}>
                       <Link
                         href={it.href}
+                        prefetch={false}
                         className="block px-4 py-2 text-sm text-white/90 hover:text-white hover:bg-white/10"
                         onClick={() => setOpenMobile(false)}
                       >
@@ -353,6 +345,7 @@ export default function GlobalHeader() {
                     <>
                       <Link
                         href="/billing"
+                        prefetch={false}
                         className="block px-4 py-2 text-sm text-white/90 hover:text-white hover:bg-white/10"
                         onClick={() => setOpenMobile(false)}
                       >
@@ -369,6 +362,7 @@ export default function GlobalHeader() {
                     <>
                       <Link
                         href="/pricing"
+                        prefetch={false}
                         className="block px-4 py-2 text-sm text-white/90 hover:text-white hover:bg-white/10"
                         onClick={() => setOpenMobile(false)}
                       >
@@ -376,6 +370,7 @@ export default function GlobalHeader() {
                       </Link>
                       <Link
                         href="/pricing"
+                        prefetch={false}
                         className="block px-4 py-2 text-sm text-indigo-700 bg-white rounded mx-3 mt-1 text-center font-semibold hover:bg-indigo-50"
                         onClick={() => setOpenMobile(false)}
                       >
@@ -383,6 +378,7 @@ export default function GlobalHeader() {
                       </Link>
                       <Link
                         href="/login"
+                        prefetch={false}
                         className="block px-4 py-2 text-sm text-white/90 hover:text-white hover:bg-white/10"
                         onClick={() => setOpenMobile(false)}
                       >
