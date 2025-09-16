@@ -32,7 +32,6 @@ const ringClass = (s?: Status) => {
 const computeBottomRight = () => ({ bottom: 24, right: 24 });
 
 async function api<T = any>(input: RequestInfo, init?: RequestInit): Promise<T> {
-  // USE authedFetch instead of regular fetch
   const r = await authedFetch(input, {
     ...init,
     headers: {
@@ -40,19 +39,55 @@ async function api<T = any>(input: RequestInfo, init?: RequestInit): Promise<T> 
       ...init?.headers,
     },
   });
-  
+
   if (!r.ok) {
-    const errorText = await r.text().catch(() => '');
-    let errorMessage;
+    const txt = await r.text().catch(() => '');
     try {
-      const errorJson = JSON.parse(errorText);
-      errorMessage = errorJson.error || errorJson.message || errorText;
+      const j = txt ? JSON.parse(txt) : null;
+      const msg = j?.error || j?.message || txt || `${init?.method || 'GET'} ${input} -> ${r.status}`;
+      throw new Error(msg);
     } catch {
-      errorMessage = errorText || `${(init?.method || 'GET')} ${input} -> ${r.status}`;
+      throw new Error(txt || `${init?.method || 'GET'} ${input} -> ${r.status}`);
     }
-    throw new Error(errorMessage);
   }
   return (await r.json()) as T;
+}
+
+// Accept multiple presence shapes and normalize to PresenceMap
+function toPresenceMap(raw: any): PresenceMap {
+  // Already a map?
+  if (raw && typeof raw === 'object' && !Array.isArray(raw) && !('connected' in raw)) {
+    return raw as PresenceMap;
+  }
+
+  // Our lightweight API returns: { connected, me, lovedOnes: [{ email, online|connected|status }] }
+  if (raw && typeof raw === 'object' && 'lovedOnes' in raw && Array.isArray(raw.lovedOnes)) {
+    const map: PresenceMap = {};
+    for (const lo of raw.lovedOnes) {
+      const email = String(lo?.email || '').toLowerCase();
+      if (!email) continue;
+      const online =
+        lo?.online === true || lo?.connected === true || String(lo?.status || '').toLowerCase() === 'online';
+      map[email] = online ? 'online' : 'offline';
+    }
+    return map;
+  }
+
+  // Array of presence entries?
+  if (Array.isArray(raw)) {
+    const map: PresenceMap = {};
+    for (const it of raw) {
+      const email = String(it?.email || it?.loved_email || '').toLowerCase();
+      if (!email) continue;
+      const online =
+        it?.online === true || it?.connected === true || String(it?.status || '').toLowerCase() === 'online';
+      map[email] = online ? 'online' : 'offline';
+    }
+    return map;
+  }
+
+  // Fallback
+  return {};
 }
 
 export default function AWYWidget() {
@@ -66,6 +101,14 @@ export default function AWYWidget() {
   useEffect(() => setMounted(true), []);
   const enabled = isAWYEnabled();
 
+  // Allow FloatingAWY to summon the panel
+  useEffect(() => {
+    if (!mounted) return;
+    const handler = () => setOpen(true);
+    window.addEventListener('awy:open', handler);
+    return () => window.removeEventListener('awy:open', handler);
+  }, [mounted]);
+
   // initial load + presence polling
   useEffect(() => {
     if (!mounted || !enabled) return;
@@ -75,9 +118,10 @@ export default function AWYWidget() {
     const loadConnections = async () => {
       try {
         setLoading(true);
+        // If backend not ready, API will safely return { connections: [] }
         const data = await api<{ connections: any[] }>('/api/awy/connections');
         const list = (data?.connections || []).map((row) => ({
-          id: row.id,
+          id: row.id ?? `${row.email || row.loved_email || 'unknown'}`,
           email: String(row.email || row.loved_email || '').toLowerCase(),
           relationship: row.relationship_label ?? row.relationship ?? null,
           display_name: row.display_name ?? null,
@@ -94,10 +138,11 @@ export default function AWYWidget() {
 
     const loadPresence = async () => {
       try {
-        const p = await api<PresenceMap>('/api/awy/presence');
-        if (!stop) setPresence(p || {});
+        const p = await api<any>('/api/awy/presence');
+        if (!stop) setPresence(toPresenceMap(p));
       } catch (e) {
         // Presence not critical; keep quiet in UI
+        // eslint-disable-next-line no-console
         console.debug('[AWY] presence fetch failed:', e);
       }
     };
@@ -156,7 +201,9 @@ export default function AWYWidget() {
       >
         {/* little presence indicator */}
         <span
-          className={`absolute -top-1 -right-1 h-3.5 w-3.5 rounded-full ring-2 ring-white ${onlineCount > 0 ? 'bg-green-500' : 'bg-gray-400 opacity-70'}`}
+          className={`absolute -top-1 -right-1 h-3.5 w-3.5 rounded-full ring-2 ring-white ${
+            onlineCount > 0 ? 'bg-green-500' : 'bg-gray-400 opacity-70'
+          }`}
           title={onlineCount > 0 ? `${onlineCount} online` : 'No one online'}
         />
         <svg viewBox="0 0 24 24" className="h-7 w-7" fill="currentColor" aria-hidden>
@@ -185,7 +232,7 @@ export default function AWYWidget() {
           ) : noConnections ? (
             <div className="py-4">
               <div className="mb-2 text-sm text-gray-600">
-                You haven't added any loved ones yet.
+                You haven&apos;t added any loved ones yet.
               </div>
               <AWYSetupHint />
             </div>
@@ -212,7 +259,9 @@ export default function AWYWidget() {
                           {initials}
                         </div>
                         <span
-                          className={`absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full ring-2 ring-white ${ringClass(st)}`}
+                          className={`absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full ring-2 ring-white ${ringClass(
+                            st
+                          )}`}
                           title={st || 'offline'}
                         />
                       </div>

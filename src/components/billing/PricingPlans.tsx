@@ -4,7 +4,7 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 
 type Props = {
-  onSelectPlan?: (planKey: 'monthly' | 'annual') => void;
+  onSelectPlan?: (planKey: 'monthly' | 'annual') => void; // optional override
   showAnnualPricing?: boolean;
 };
 
@@ -14,12 +14,14 @@ export const PricingPlans: React.FC<Props> = ({ onSelectPlan, showAnnualPricing 
   const startCheckout = async (plan: 'monthly' | 'annual') => {
     try {
       setLoading(plan);
+
+      // Allow parent override if you still want to route to /signup first
       if (onSelectPlan) {
-        // allow parent to override behavior
         await onSelectPlan(plan);
         setLoading(null);
         return;
       }
+
       const res = await fetch('/api/stripe/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -37,6 +39,7 @@ export const PricingPlans: React.FC<Props> = ({ onSelectPlan, showAnnualPricing 
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      {/* Monthly */}
       <Card className="p-6">
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-semibold">Student Monthly</h3>
@@ -47,7 +50,7 @@ export const PricingPlans: React.FC<Props> = ({ onSelectPlan, showAnnualPricing 
           <span className="text-gray-500 mb-1">/month</span>
         </div>
         <ul className="mt-4 space-y-2 text-sm text-gray-700">
-          <li>• YAAG + Planner + Notes</li>
+          <li>• Year-at-a-Glance, Planner, Notes</li>
           <li>• Assessments</li>
           <li>• Durmah voice</li>
           <li>• Loved ones (AWY)</li>
@@ -61,6 +64,7 @@ export const PricingPlans: React.FC<Props> = ({ onSelectPlan, showAnnualPricing 
         </Button>
       </Card>
 
+      {/* Annual */}
       <Card className="p-6 ring-2 ring-indigo-200">
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-semibold">Student Annual</h3>
