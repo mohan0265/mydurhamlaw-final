@@ -25,9 +25,7 @@ function ActiveLink({
   className?: string;
 }) {
   const router = useRouter();
-  const active =
-    router.pathname === href ||
-    (href !== '/' && router.pathname.startsWith(href));
+  const active = router.pathname === href || (href !== '/' && router.pathname.startsWith(href));
   return (
     <Link
       href={href}
@@ -36,64 +34,73 @@ function ActiveLink({
         active ? 'bg-white/20 text-white' : 'text-white/90 hover:text-white',
         className
       )}
-      prefetch={false}
     >
       {children}
     </Link>
   );
 }
 
-/** Small hover menu with delayed close so it doesn't vanish while moving mouse */
-const HoverMenu: React.FC<{
+function HoverMenu({
+  label,
+  items,
+}: {
   label: string;
-  children: React.ReactNode;
-}> = ({ label, children }) => {
+  items: MenuItem[];
+}) {
   const [open, setOpen] = useState(false);
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const openNow = () => {
-    if (closeTimer.current) {
-      clearTimeout(closeTimer.current);
-      closeTimer.current = null;
-    }
+    if (closeTimer.current) clearTimeout(closeTimer.current);
     setOpen(true);
   };
-  const closeWithDelay = () => {
+  const closeSoon = () => {
     if (closeTimer.current) clearTimeout(closeTimer.current);
-    closeTimer.current = setTimeout(() => setOpen(false), 180);
+    closeTimer.current = setTimeout(() => setOpen(false), 140); // small delay prevents flicker
   };
 
   return (
     <div
       className="relative"
       onMouseEnter={openNow}
-      onMouseLeave={closeWithDelay}
+      onMouseLeave={closeSoon}
     >
       <button
         className="px-3 py-2 rounded-md text-sm font-medium text-white/90 hover:text-white"
         onClick={() => setOpen((v) => !v)}
-        aria-haspopup="menu"
         aria-expanded={open}
       >
         {label}
       </button>
+
       {open && (
         <div
           className="absolute left-0 mt-2 w-56 rounded-xl border border-white/10 bg-white/95 shadow-2xl backdrop-blur"
           onMouseEnter={openNow}
-          onMouseLeave={closeWithDelay}
+          onMouseLeave={closeSoon}
         >
-          {children}
+          <ul className="py-2">
+            {items.map((it) => (
+              <li key={it.href}>
+                <Link
+                  href={it.href}
+                  className="block px-3 py-2 text-sm text-gray-800 hover:bg-gray-100 rounded-lg mx-1"
+                >
+                  {it.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
         </div>
       )}
     </div>
   );
-};
+}
 
 export default function GlobalHeader() {
   const { user } = useAuth() || { user: null };
+  const [openMobile, setOpenMobile] = useState(false);
 
-  // Menus (only to real pages)
   const studyMenu: Menu = useMemo(
     () => ({
       label: 'Study',
@@ -112,9 +119,9 @@ export default function GlobalHeader() {
     () => ({
       label: 'Community',
       items: [
+        { label: 'Community Hub', href: '/community' },   // <- points to the page you actually have
         { label: 'Student Lounge', href: '/lounge' },
-        { label: 'Community Hub', href: '/community' }, // canonical community page
-        { label: 'News', href: '/news' },
+        { label: 'Legal News', href: '/news' },           // redirect handled by next.config.js
       ],
     }),
     []
@@ -137,76 +144,23 @@ export default function GlobalHeader() {
     user?.email?.split('@')[0]?.replace(/[0-9]/g, '') ||
     'Student';
 
-  const [openMobile, setOpenMobile] = useState(false);
-  const [mStudy, setMStudy] = useState(false);
-  const [mComm, setMComm] = useState(false);
-  const [mInfo, setMInfo] = useState(false);
-  const [mAcct, setMAcct] = useState(false);
-
   return (
-    <header className="sticky top-0 z-[300] isolate bg-gradient-to-r from-violet-700 to-indigo-700 shadow">
+    <header className="sticky top-0 z-50 bg-gradient-to-r from-violet-700 to-indigo-700 shadow">
       <nav className="mx-auto max-w-7xl px-4 sm:px-6">
         <div className="h-14 flex items-center justify-between">
           {/* Brand */}
           <div className="flex items-center gap-3">
-            <Link href="/" prefetch={false} className="text-white font-semibold text-lg">
+            <Link href="/" className="text-white font-semibold text-lg">
               My <span className="text-pink-200">Durham</span> Law
             </Link>
           </div>
 
           {/* Desktop nav */}
           <div className="hidden md:flex items-center gap-1">
-            <ActiveLink href="/dashboard" className="font-semibold">
-              Dashboard
-            </ActiveLink>
-
-            <HoverMenu label={studyMenu.label}>
-              <ul className="py-2">
-                {studyMenu.items.map((it) => (
-                  <li key={it.href}>
-                    <Link
-                      href={it.href}
-                      className="block px-3 py-2 text-sm text-gray-800 hover:bg-gray-100 rounded-lg mx-1"
-                      prefetch={false}
-                    >
-                      {it.label}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </HoverMenu>
-
-            <HoverMenu label={communityMenu.label}>
-              <ul className="py-2">
-                {communityMenu.items.map((it) => (
-                  <li key={it.href}>
-                    <Link
-                      href={it.href}
-                      className="block px-3 py-2 text-sm text-gray-800 hover:bg-gray-100 rounded-lg mx-1"
-                      prefetch={false}
-                    >
-                      {it.label}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </HoverMenu>
-
-            <HoverMenu label={infoMenu.label}>
-              <ul className="py-2">
-                {infoMenu.items.map((it) => (
-                  <li key={it.href}>
-                    <Link
-                      href={it.href}
-                      className="block px-3 py-2 text-sm text-gray-800 hover:bg-gray-100 rounded-lg mx-1"
-                      prefetch={false}
-                    >
-                      {it.label}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </HoverMenu>
+            <ActiveLink href="/dashboard" className="font-semibold">Dashboard</ActiveLink>
+            <HoverMenu label={studyMenu.label} items={studyMenu.items} />
+            <HoverMenu label={communityMenu.label} items={communityMenu.items} />
+            <HoverMenu label={infoMenu.label} items={infoMenu.items} />
           </div>
 
           {/* Right (desktop) */}
@@ -217,8 +171,8 @@ export default function GlobalHeader() {
                 <span className="text-white/90 text-sm">Hi, {displayName}</span>
                 <Link
                   href="/billing"
-                  prefetch={false}
                   className="px-3 py-2 rounded-md text-sm font-semibold bg-white text-indigo-700 hover:bg-indigo-50 transition"
+                  title="Manage subscription & invoices"
                 >
                   Manage Billing
                 </Link>
@@ -226,27 +180,11 @@ export default function GlobalHeader() {
               </>
             ) : (
               <>
-                <Link
-                  href="/pricing"
-                  prefetch={false}
-                  className="text-white/90 hover:text-white text-sm"
-                >
-                  Pricing
-                </Link>
-                <Link
-                  href="/pricing"
-                  prefetch={false}
-                  className="px-3 py-2 rounded-md text-sm font-semibold bg-white text-indigo-700 hover:bg-indigo-50 transition"
-                >
+                <Link href="/pricing" className="text-white/90 hover:text-white text-sm">Pricing</Link>
+                <Link href="/pricing" className="px-3 py-2 rounded-md text-sm font-semibold bg-white text-indigo-700 hover:bg-indigo-50 transition">
                   Start Free Trial
                 </Link>
-                <Link
-                  href="/login"
-                  prefetch={false}
-                  className="text-white/90 hover:text-white text-sm"
-                >
-                  Login
-                </Link>
+                <Link href="/login" className="text-white/90 hover:text-white text-sm">Login</Link>
               </>
             )}
           </div>
@@ -277,7 +215,6 @@ export default function GlobalHeader() {
             <div className="flex items-center justify-between">
               <Link
                 href="/dashboard"
-                prefetch={false}
                 className="px-3 py-2 rounded-md text-sm font-semibold bg-white text-indigo-700 hover:bg-indigo-50 transition"
                 onClick={() => setOpenMobile(false)}
               >
@@ -286,141 +223,106 @@ export default function GlobalHeader() {
               <PresenceBadge />
             </div>
 
-            {/* STUDY */}
+            {/* Study */}
             <div className="rounded-lg bg-white/5">
-              <button
-                className="w-full text-left px-3 py-2 text-white/90 hover:text-white font-medium"
-                onClick={() => setMStudy((v) => !v)}
-              >
-                {studyMenu.label}
-              </button>
-              {mStudy && (
-                <ul className="pb-2">
-                  {studyMenu.items.map((it) => (
-                    <li key={it.href}>
-                      <Link
-                        href={it.href}
-                        prefetch={false}
-                        className="block px-4 py-2 text-sm text-white/90 hover:text-white hover:bg-white/10"
-                        onClick={() => setOpenMobile(false)}
-                      >
-                        {it.label}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              )}
+              <div className="px-3 py-2 text-white/80 text-xs">Study</div>
+              <ul className="pb-2">
+                {studyMenu.items.map((it) => (
+                  <li key={it.href}>
+                    <Link
+                      href={it.href}
+                      className="block px-4 py-2 text-sm text-white/90 hover:text-white hover:bg-white/10"
+                      onClick={() => setOpenMobile(false)}
+                    >
+                      {it.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
             </div>
 
-            {/* COMMUNITY */}
+            {/* Community */}
             <div className="rounded-lg bg-white/5">
-              <button
-                className="w-full text-left px-3 py-2 text-white/90 hover:text-white font-medium"
-                onClick={() => setMComm((v) => !v)}
-              >
-                {communityMenu.label}
-              </button>
-              {mComm && (
-                <ul className="pb-2">
-                  {communityMenu.items.map((it) => (
-                    <li key={it.href}>
-                      <Link
-                        href={it.href}
-                        prefetch={false}
-                        className="block px-4 py-2 text-sm text-white/90 hover:text-white hover:bg-white/10"
-                        onClick={() => setOpenMobile(false)}
-                      >
-                        {it.label}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              )}
+              <div className="px-3 py-2 text-white/80 text-xs">Community</div>
+              <ul className="pb-2">
+                {communityMenu.items.map((it) => (
+                  <li key={it.href}>
+                    <Link
+                      href={it.href}
+                      className="block px-4 py-2 text-sm text-white/90 hover:text-white hover:bg-white/10"
+                      onClick={() => setOpenMobile(false)}
+                    >
+                      {it.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
             </div>
 
-            {/* INFO */}
+            {/* Info */}
             <div className="rounded-lg bg-white/5">
-              <button
-                className="w-full text-left px-3 py-2 text-white/90 hover:text-white font-medium"
-                onClick={() => setMInfo((v) => !v)}
-              >
-                {infoMenu.label}
-              </button>
-              {mInfo && (
-                <ul className="pb-2">
-                  {infoMenu.items.map((it) => (
-                    <li key={it.href}>
-                      <Link
-                        href={it.href}
-                        prefetch={false}
-                        className="block px-4 py-2 text-sm text-white/90 hover:text-white hover:bg-white/10"
-                        onClick={() => setOpenMobile(false)}
-                      >
-                        {it.label}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              )}
+              <div className="px-3 py-2 text-white/80 text-xs">Info</div>
+              <ul className="pb-2">
+                {infoMenu.items.map((it) => (
+                  <li key={it.href}>
+                    <Link
+                      href={it.href}
+                      className="block px-4 py-2 text-sm text-white/90 hover:text-white hover:bg-white/10"
+                      onClick={() => setOpenMobile(false)}
+                    >
+                      {it.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
             </div>
 
-            {/* ACCOUNT */}
+            {/* Account */}
             <div className="rounded-lg bg-white/5">
-              <button
-                className="w-full text-left px-3 py-2 text-white/90 hover:text-white font-medium"
-                onClick={() => setMAcct((v) => !v)}
-              >
-                {user ? 'Account' : 'Get Started'}
-              </button>
-              {mAcct && (
-                <div className="pb-2">
-                  {user ? (
-                    <>
-                      <Link
-                        href="/billing"
-                        prefetch={false}
-                        className="block px-4 py-2 text-sm text-white/90 hover:text-white hover:bg-white/10"
-                        onClick={() => setOpenMobile(false)}
-                      >
-                        Manage Billing
-                      </Link>
-                      <div className="px-4 py-2 text-xs text-white/80">
-                        Signed in as <span className="font-medium">{displayName}</span>
-                      </div>
-                      <div className="px-3 pb-2">
-                        <LogoutButton className="w-full text-center px-3 py-2 rounded-md bg-white text-indigo-700 text-sm" />
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <Link
-                        href="/pricing"
-                        prefetch={false}
-                        className="block px-4 py-2 text-sm text-white/90 hover:text-white hover:bg-white/10"
-                        onClick={() => setOpenMobile(false)}
-                      >
-                        See Pricing
-                      </Link>
-                      <Link
-                        href="/pricing"
-                        prefetch={false}
-                        className="block px-4 py-2 text-sm text-indigo-700 bg-white rounded mx-3 mt-1 text-center font-semibold hover:bg-indigo-50"
-                        onClick={() => setOpenMobile(false)}
-                      >
-                        Start Free Trial
-                      </Link>
-                      <Link
-                        href="/login"
-                        prefetch={false}
-                        className="block px-4 py-2 text-sm text-white/90 hover:text-white hover:bg-white/10"
-                        onClick={() => setOpenMobile(false)}
-                      >
-                        Login
-                      </Link>
-                    </>
-                  )}
-                </div>
-              )}
+              <div className="px-3 py-2 text-white/80 text-xs">{user ? 'Account' : 'Get Started'}</div>
+              <div className="pb-2">
+                {user ? (
+                  <>
+                    <Link
+                      href="/billing"
+                      className="block px-4 py-2 text-sm text-white/90 hover:text-white hover:bg-white/10"
+                      onClick={() => setOpenMobile(false)}
+                    >
+                      Manage Billing
+                    </Link>
+                    <div className="px-4 py-2 text-xs text-white/80">
+                      Signed in as <span className="font-medium">{displayName}</span>
+                    </div>
+                    <div className="px-3 pb-2">
+                      <LogoutButton className="w-full text-center px-3 py-2 rounded-md bg-white text-indigo-700 text-sm" />
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <Link
+                      href="/pricing"
+                      className="block px-4 py-2 text-sm text-white/90 hover:text-white hover:bg-white/10"
+                      onClick={() => setOpenMobile(false)}
+                    >
+                      See Pricing
+                    </Link>
+                    <Link
+                      href="/pricing"
+                      className="block px-4 py-2 text-sm text-indigo-700 bg-white rounded mx-3 mt-1 text-center font-semibold hover:bg-indigo-50"
+                      onClick={() => setOpenMobile(false)}
+                    >
+                      Start Free Trial
+                    </Link>
+                    <Link
+                      href="/login"
+                      className="block px-4 py-2 text-sm text-white/90 hover:text-white hover:bg-white/10"
+                      onClick={() => setOpenMobile(false)}
+                    >
+                      Login
+                    </Link>
+                  </>
+                )}
+              </div>
             </div>
           </div>
         </div>

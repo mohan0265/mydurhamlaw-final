@@ -1,10 +1,9 @@
 // src/pages/community/index.tsx
-// Community Hub (canonical) — composes your existing section components
-
 import React from 'react';
 import Head from 'next/head';
 
-// Import sections from the barrel file we just created
+// Use RELATIVE imports so TS doesn't depend on alias config
+// All of these components exist in src/components/community/*
 import {
   HeroSection,
   CategoryTabs,
@@ -18,49 +17,40 @@ import {
   PostAndGovSection,
   MapSection,
   StudentSocialCard,
-} from '@/components/community';
+} from '../../components/community';
 
-// Status controls live under community-network in your repo
-import StatusControls from '@/components/community-network/StatusControls';
+// Status controls live under community-network in this repo
+import StatusControls from '../../components/community-network/StatusControls';
 
 export default function CommunityHubPage() {
   return (
     <>
       <Head>
         <title>Community Hub • MyDurhamLaw</title>
-        <meta
-          name="description"
-          content="Student lounge, essentials and life around Durham — curated for MyDurhamLaw students and families."
-        />
+        <meta name="description" content="Community resources, status controls, events, safety, transport, healthcare and more for Durham Law students and families." />
       </Head>
 
-      <main className="mx-auto max-w-7xl px-4 sm:px-6 py-6 space-y-8">
+      <main className="mx-auto max-w-7xl px-4 sm:px-6 py-8 space-y-8">
         <HeroSection />
+
+        {/* quick toggles (presence / DM) */}
         <StatusControls />
 
-        <section className="space-y-6">
-          <CategoryTabs />
-          <EventsCarousel />
-        </section>
+        {/* categories and carousels */}
+        <CategoryTabs />
+        <EventsCarousel />
 
-        <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <HealthcareSection />
-          <DiningSection />
-        </section>
-
+        {/* resource sections */}
+        <HealthcareSection />
+        <DiningSection />
         <TransportSection />
-
-        <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <SafetyTipsSection />
-          <EmergencyEssentialsSection />
-        </section>
-
-        <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <ParentEssentials />
-          <PostAndGovSection />
-        </section>
-
+        <SafetyTipsSection />
+        <EmergencyEssentialsSection />
+        <ParentEssentials />
+        <PostAndGovSection />
         <MapSection />
+
+        {/* social / cards */}
         <StudentSocialCard />
       </main>
     </>

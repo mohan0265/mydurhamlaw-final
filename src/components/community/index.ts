@@ -1,16 +1,20 @@
 // src/components/community/index.ts
-// Barrel exports for all Community sections (named exports where available)
+// Barrel for Community sections.
+// Most files export *named* components (no default). ParentEssentials exports default.
+// We re-export accordingly so pages can import from this one place.
 
-export { HeroSection } from './HeroSection';
-export { CategoryTabs } from './CategoryTabs';
-export { EventsCarousel } from './EventsCarousel';
-export { HealthcareSection } from './HealthcareSection';
-export { DiningSection } from './DiningSection';
-export { TransportSection } from './TransportSection';
-export { SafetyTipsSection } from './SafetyTipsSection';
-export { EmergencyEssentialsSection } from './EmergencyEssentialsSection';
-// NOTE: ParentEssentials is a default export in its file, so alias its default:
+export * from './HeroSection';
+export * from './CategoryTabs';
+export * from './EventsCarousel';
+export * from './HealthcareSection';
+export * from './DiningSection';
+export * from './TransportSection';
+export * from './SafetyTipsSection';
+export * from './EmergencyEssentialsSection';
+
+// This file exports a *default* component; give it a named handle here:
 export { default as ParentEssentials } from './ParentEssentials';
-export { PostAndGovSection } from './PostAndGovSection';
-export { MapSection } from './MapSection';
-export { StudentSocialCard } from './StudentSocialCard';
+
+export * from './PostAndGovSection';
+export * from './MapSection';
+export * from './StudentSocialCard';

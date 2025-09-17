@@ -1,77 +1,68 @@
+// src/pages/api/awy/connections.ts
 import type { NextApiRequest, NextApiResponse } from "next";
 import { getServerUser } from "@/lib/api/serverAuth";
 
-/**
- * Returns the caller's AWY connections without relying on PostgREST FK-joins.
- * We first fetch connections, then fetch the relevant profiles in a second query.
- */
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
     const { user, supabase } = await getServerUser(req, res);
     if (!user) return res.status(401).json({ ok: false, error: "unauthenticated" });
 
     if (req.method === "GET") {
-      // fetch user role (default to 'student')
-      const { data: profRow } = await supabase
+      // role
+      const { data: profile } = await supabase
         .from("profiles")
-        .select("user_role, display_name")
+        .select("user_role")
         .eq("id", user.id)
-        .single();
+        .maybeSingle();
 
-      const userRole = (profRow?.user_role as string) || "student";
+      const userRole = (profile?.user_role as string) || "student";
 
-      // get connections (raw)
-      const { data: connsRaw, error: cErr } = await supabase
+      // grab raw connections without joins (joins are fragile on DBs with different FK names)
+      const { data: rows, error } = await supabase
         .from("awy_connections")
         .select("*")
-        .eq(userRole === "student" ? "student_id" : "loved_one_id", user.id)
+        .or(`student_id.eq.${user.id},loved_one_id.eq.${user.id}`)
         .eq("is_visible", true)
         .order("created_at", { ascending: false });
 
-      if (cErr) throw cErr;
-      const connections = connsRaw || [];
+      if (error) throw error;
 
-      // collect profile IDs to hydrate names
-      const ids =
-        userRole === "student"
-          ? connections.map((c: any) => c.loved_one_id).filter(Boolean)
-          : connections.map((c: any) => c.student_id).filter(Boolean);
+      // collect peer ids to fetch display names
+      const peerIds = Array.from(
+        new Set(
+          (rows || []).map(r => (r.student_id === user.id ? r.loved_one_id : r.student_id)).filter(Boolean)
+        )
+      );
 
-      let profilesById: Record<string, { display_name?: string; user_role?: string }> = {};
-      if (ids.length) {
-        const { data: profs, error: pErr } = await supabase
+      let names: Record<string, string> = {};
+      if (peerIds.length) {
+        const { data: peers } = await supabase
           .from("profiles")
-          .select("id, display_name, user_role")
-          .in("id", Array.from(new Set(ids)));
-
-        if (!pErr && profs) {
-          profilesById = Object.fromEntries(
-            profs.map((p: any) => [p.id, { display_name: p.display_name, user_role: p.user_role }])
-          );
-        }
+          .select("id, display_name")
+          .in("id", peerIds as string[]);
+        (peers || []).forEach(p => { if (p?.id) names[p.id] = p.display_name || ""; });
       }
 
-      // normalize to client shape (email may be stored as loved_email on the row)
-      const normalized = connections.map((row: any) => {
-        const otherId = userRole === "student" ? row.loved_one_id : row.student_id;
-        const prof = otherId ? profilesById[otherId] : undefined;
-
+      const connections = (rows || []).map(r => {
+        const isStudent = r.student_id === user.id || userRole === "student";
+        const peerId = isStudent ? r.loved_one_id : r.student_id;
+        const email = isStudent ? (r.loved_email || r.email || null) : null; // we usually only store loved_email
         return {
-          id: row.id as string,
-          email: String(row.loved_email || row.email || '').toLowerCase(),
-          relationship: row.relationship_label ?? row.relationship ?? null,
-          display_name: prof?.display_name ?? row.loved_name ?? row.student_name ?? null,
-          status: row.status ?? null,
+          id: r.id,
+          peer_id: peerId,
+          email,
+          relationship: r.relationship_label ?? r.relationship ?? null,
+          display_name: names[peerId] || null,
+          status: r.status ?? null,
         };
       });
 
-      return res.status(200).json({ ok: true, connections: normalized, userRole });
+      return res.status(200).json({ ok: true, userRole, connections });
     }
 
     if (req.method === "DELETE") {
-      const { id } = (req.body as { id?: string }) || {};
+      const { id } = req.body || {};
       if (!id) return res.status(400).json({ ok: false, error: "Missing connection ID" });
-
       const { error } = await supabase.from("awy_connections").delete().eq("id", id);
       if (error) throw error;
       return res.status(200).json({ ok: true });

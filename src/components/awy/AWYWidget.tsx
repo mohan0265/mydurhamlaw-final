@@ -1,3 +1,4 @@
+// src/components/awy/AWYWidget.tsx
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
@@ -6,15 +7,23 @@ import { authedFetch } from '@/lib/api/authedFetch';
 import AWYSetupHint from './AWYSetupHint';
 
 type Status = 'online' | 'offline' | 'busy';
-type PresenceMap = Record<string, Status>; // keyed by email (lowercased)
 
-// Normalized connection
+/**
+ * Presence is stored in a flexible map where the key can be either:
+ *  - a peer/user id (preferred), or
+ *  - an email (legacy)
+ *
+ * We’ll look up by peer_id first, and fall back to email.
+ */
+type PresenceMap = Record<string, Status>;
+
 type Conn = {
   id: string;
-  email: string;
+  peer_id?: string | null;           // <-- NEW (preferred key for presence)
+  email: string;                     // lowercased
   relationship: string | null;
   display_name: string | null;
-  status: string | null; // pending | active | ...
+  status: string | null;             // pending | active | ...
 };
 
 const ringClass = (s?: Status) => {
@@ -28,7 +37,6 @@ const ringClass = (s?: Status) => {
   }
 };
 
-// position helper
 const computeBottomRight = () => ({ bottom: 24, right: 24 });
 
 async function api<T = any>(input: RequestInfo, init?: RequestInit): Promise<T> {
@@ -44,7 +52,8 @@ async function api<T = any>(input: RequestInfo, init?: RequestInit): Promise<T> 
     const txt = await r.text().catch(() => '');
     try {
       const j = txt ? JSON.parse(txt) : null;
-      const msg = j?.error || j?.message || txt || `${init?.method || 'GET'} ${input} -> ${r.status}`;
+      const msg =
+        j?.error || j?.message || txt || `${init?.method || 'GET'} ${input} -> ${r.status}`;
       throw new Error(msg);
     } catch {
       throw new Error(txt || `${init?.method || 'GET'} ${input} -> ${r.status}`);
@@ -53,40 +62,70 @@ async function api<T = any>(input: RequestInfo, init?: RequestInit): Promise<T> 
   return (await r.json()) as T;
 }
 
-// Accept multiple presence shapes and normalize to PresenceMap
+/** Normalize unknown presence payloads into a PresenceMap.
+ * Supports:
+ *  - { [idOrEmail]: 'online' | 'offline' | 'busy' }
+ *  - { [idOrEmail]: { status: 'online' | ... } }
+ *  - { lovedOnes: [{ email, online|connected|status }] }
+ *  - [{ email|loved_email, online|connected|status }]
+ */
 function toPresenceMap(raw: any): PresenceMap {
-  // Already a map?
-  if (raw && typeof raw === 'object' && !Array.isArray(raw) && !('connected' in raw)) {
-    return raw as PresenceMap;
+  if (!raw) return {};
+
+  // Plain map object (by id or email)
+  if (typeof raw === 'object' && !Array.isArray(raw) && !('lovedOnes' in raw)) {
+    const out: PresenceMap = {};
+    for (const [k, v] of Object.entries(raw)) {
+      if (!k) continue;
+      if (typeof v === 'string') {
+        out[k.toLowerCase?.() ?? k] =
+          (v.toLowerCase() as Status) in { online: 1, offline: 1, busy: 1 }
+            ? (v.toLowerCase() as Status)
+            : 'offline';
+      } else if (v && typeof v === 'object' && 'status' in v) {
+        const s = String((v as any).status || '').toLowerCase();
+        out[k.toLowerCase?.() ?? k] =
+          (s as Status) in { online: 1, offline: 1, busy: 1 } ? (s as Status) : 'offline';
+      }
+    }
+    return out;
   }
 
-  // Our lightweight API returns: { connected, me, lovedOnes: [{ email, online|connected|status }] }
-  if (raw && typeof raw === 'object' && 'lovedOnes' in raw && Array.isArray(raw.lovedOnes)) {
+  // lovedOnes array { email, online|connected|status }
+  if (raw && typeof raw === 'object' && Array.isArray(raw.lovedOnes)) {
     const map: PresenceMap = {};
     for (const lo of raw.lovedOnes) {
-      const email = String(lo?.email || '').toLowerCase();
-      if (!email) continue;
-      const online =
-        lo?.online === true || lo?.connected === true || String(lo?.status || '').toLowerCase() === 'online';
-      map[email] = online ? 'online' : 'offline';
+      const key = String(lo?.email || '').toLowerCase();
+      if (!key) continue;
+      const s =
+        lo?.online === true || lo?.connected === true
+          ? 'online'
+          : String(lo?.status || '').toLowerCase() === 'online'
+          ? 'online'
+          : 'offline';
+      map[key] = s;
     }
     return map;
   }
 
-  // Array of presence entries?
+  // Array of entries with email/loved_email OR id/status
   if (Array.isArray(raw)) {
     const map: PresenceMap = {};
     for (const it of raw) {
-      const email = String(it?.email || it?.loved_email || '').toLowerCase();
-      if (!email) continue;
-      const online =
-        it?.online === true || it?.connected === true || String(it?.status || '').toLowerCase() === 'online';
-      map[email] = online ? 'online' : 'offline';
+      const idKey = (it && (it.id || it.user_id)) as string | undefined;
+      const emailKey = String(it?.email || it?.loved_email || '').toLowerCase();
+      const s =
+        it?.online === true || it?.connected === true
+          ? 'online'
+          : String(it?.status || '').toLowerCase() === 'online'
+          ? 'online'
+          : 'offline';
+      if (idKey) map[idKey] = s;
+      if (emailKey) map[emailKey] = s;
     }
     return map;
   }
 
-  // Fallback
   return {};
 }
 
@@ -101,7 +140,7 @@ export default function AWYWidget() {
   useEffect(() => setMounted(true), []);
   const enabled = isAWYEnabled();
 
-  // Allow FloatingAWY to summon the panel
+  // Allow other components (e.g., a floating heart) to open this panel
   useEffect(() => {
     if (!mounted) return;
     const handler = () => setOpen(true);
@@ -118,15 +157,17 @@ export default function AWYWidget() {
     const loadConnections = async () => {
       try {
         setLoading(true);
-        // If backend not ready, API will safely return { connections: [] }
         const data = await api<{ connections: any[] }>('/api/awy/connections');
-        const list = (data?.connections || []).map((row) => ({
-          id: row.id ?? `${row.email || row.loved_email || 'unknown'}`,
+
+        const list: Conn[] = (data?.connections || []).map((row) => ({
+          id: row.id ?? `${row.peer_id || row.email || row.loved_email || 'unknown'}`,
+          peer_id: row.peer_id ?? null, // preferred for presence lookups
           email: String(row.email || row.loved_email || '').toLowerCase(),
           relationship: row.relationship_label ?? row.relationship ?? null,
           display_name: row.display_name ?? null,
           status: row.status ?? null,
-        })) as Conn[];
+        }));
+
         if (!stop) setConnections(list);
       } catch (e) {
         console.error('[AWY] load connections failed:', e);
@@ -155,12 +196,17 @@ export default function AWYWidget() {
     };
   }, [mounted, enabled]);
 
+  const presenceFor = (c: Conn): Status | undefined => {
+    // Prefer peer_id (user_id-based presence), then fall back to email-based presence
+    return (c.peer_id && presence[c.peer_id]) || presence[c.email];
+  };
+
   const onlineCount = useMemo(
     () =>
-      connections.reduce(
-        (n, c) => n + (presence[c.email] === 'online' || presence[c.email] === 'busy' ? 1 : 0),
-        0
-      ),
+      connections.reduce((n, c) => {
+        const s = presenceFor(c);
+        return n + (s === 'online' || s === 'busy' ? 1 : 0);
+      }, 0),
     [connections, presence]
   );
 
@@ -185,9 +231,7 @@ export default function AWYWidget() {
 
   if (!mounted || !enabled) return null;
 
-  // No connections? Show a small "Add loved ones" hint.
   const noConnections = !loading && connections.length === 0;
-
   const pos = computeBottomRight();
 
   return (
@@ -239,7 +283,7 @@ export default function AWYWidget() {
           ) : (
             <ul className="space-y-2">
               {connections.map((c) => {
-                const st: Status | undefined = presence[c.email];
+                const st = presenceFor(c);
                 const initials =
                   (c.display_name || c.email || '?')
                     .split(/[^\p{L}\p{N}]+/u)
