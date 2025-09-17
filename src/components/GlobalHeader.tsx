@@ -25,95 +25,75 @@ function ActiveLink({
   className?: string;
 }) {
   const router = useRouter();
-  const path = (router.asPath || '/').split('?')[0]; // exact match only
-  const active = path === href;
-
+  const active =
+    router.pathname === href ||
+    (href !== '/' && router.pathname.startsWith(href));
   return (
     <Link
       href={href}
-      prefetch={false}
       className={cx(
         'px-3 py-2 rounded-md text-sm font-medium transition',
         active ? 'bg-white/20 text-white' : 'text-white/90 hover:text-white',
         className
       )}
+      prefetch={false}
     >
       {children}
     </Link>
   );
 }
 
-/** keeps submenu open while pointer moves button ↔ panel */
-function useHoverDelay() {
+/** Small hover menu with delayed close so it doesn't vanish while moving mouse */
+const HoverMenu: React.FC<{
+  label: string;
+  children: React.ReactNode;
+}> = ({ label, children }) => {
   const [open, setOpen] = useState(false);
-  const t = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const openNow = () => {
-    if (t.current) clearTimeout(t.current);
+    if (closeTimer.current) {
+      clearTimeout(closeTimer.current);
+      closeTimer.current = null;
+    }
     setOpen(true);
   };
-  const closeSoon = (ms = 180) => {
-    if (t.current) clearTimeout(t.current);
-    t.current = setTimeout(() => setOpen(false), ms);
+  const closeWithDelay = () => {
+    if (closeTimer.current) clearTimeout(closeTimer.current);
+    closeTimer.current = setTimeout(() => setOpen(false), 180);
   };
-  const toggle = () => setOpen((v) => !v);
-  return { open, openNow, closeSoon, toggle };
-}
-
-function HoverMenu({ menu }: { menu: Menu }) {
-  const { open, openNow, closeSoon, toggle } = useHoverDelay();
 
   return (
     <div
       className="relative"
       onMouseEnter={openNow}
-      onMouseLeave={() => closeSoon(180)}
-      onFocus={openNow}
-      onBlur={() => closeSoon(180)}
+      onMouseLeave={closeWithDelay}
     >
       <button
-        type="button"
+        className="px-3 py-2 rounded-md text-sm font-medium text-white/90 hover:text-white"
+        onClick={() => setOpen((v) => !v)}
         aria-haspopup="menu"
         aria-expanded={open}
-        onClick={toggle}
-        className="px-3 py-2 rounded-md text-sm font-medium text-white/90 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
       >
-        {menu.label}
+        {label}
       </button>
-
       {open && (
         <div
-          className="absolute left-0 top-full mt-2 w-60 rounded-xl border border-white/10 bg-white/95 shadow-2xl backdrop-blur z-[200] pointer-events-auto"
-          role="menu"
+          className="absolute left-0 mt-2 w-56 rounded-xl border border-white/10 bg-white/95 shadow-2xl backdrop-blur"
           onMouseEnter={openNow}
-          onMouseLeave={() => closeSoon(180)}
+          onMouseLeave={closeWithDelay}
         >
-          <ul className="py-2">
-            {menu.items.map((it) => (
-              <li key={it.href}>
-                <Link
-                  href={it.href}
-                  prefetch={false}
-                  className="block px-3 py-2 text-sm text-gray-800 hover:bg-gray-100 rounded-lg mx-1"
-                >
-                  {it.label}
-                </Link>
-              </li>
-            ))}
-          </ul>
+          {children}
         </div>
       )}
     </div>
   );
-}
+};
 
 export default function GlobalHeader() {
   const { user } = useAuth() || { user: null };
-  const displayName =
-    user?.user_metadata?.full_name ||
-    user?.email?.split('@')[0]?.replace(/[0-9]/g, '') ||
-    'Student';
 
-  // ✅ Only link to pages that actually exist in /pages
+  // Menus (only to real pages)
   const studyMenu: Menu = useMemo(
     () => ({
       label: 'Study',
@@ -133,7 +113,7 @@ export default function GlobalHeader() {
       label: 'Community',
       items: [
         { label: 'Student Lounge', href: '/lounge' },
-        { label: 'Community Hub', href: '/community' }, // <— hub is /community
+        { label: 'Community Hub', href: '/community' }, // canonical community page
         { label: 'News', href: '/news' },
       ],
     }),
@@ -152,15 +132,19 @@ export default function GlobalHeader() {
     []
   );
 
-  // mobile drawers
-  const [mOpen, setMOpen] = useState(false);
+  const displayName =
+    user?.user_metadata?.full_name ||
+    user?.email?.split('@')[0]?.replace(/[0-9]/g, '') ||
+    'Student';
+
+  const [openMobile, setOpenMobile] = useState(false);
   const [mStudy, setMStudy] = useState(false);
   const [mComm, setMComm] = useState(false);
   const [mInfo, setMInfo] = useState(false);
   const [mAcct, setMAcct] = useState(false);
 
   return (
-    <header className="sticky top-0 z-[300] isolate relative bg-gradient-to-r from-violet-700 to-indigo-700 shadow pointer-events-auto">
+    <header className="sticky top-0 z-[300] isolate bg-gradient-to-r from-violet-700 to-indigo-700 shadow">
       <nav className="mx-auto max-w-7xl px-4 sm:px-6">
         <div className="h-14 flex items-center justify-between">
           {/* Brand */}
@@ -175,12 +159,57 @@ export default function GlobalHeader() {
             <ActiveLink href="/dashboard" className="font-semibold">
               Dashboard
             </ActiveLink>
-            <HoverMenu menu={studyMenu} />
-            <HoverMenu menu={communityMenu} />
-            <HoverMenu menu={infoMenu} />
+
+            <HoverMenu label={studyMenu.label}>
+              <ul className="py-2">
+                {studyMenu.items.map((it) => (
+                  <li key={it.href}>
+                    <Link
+                      href={it.href}
+                      className="block px-3 py-2 text-sm text-gray-800 hover:bg-gray-100 rounded-lg mx-1"
+                      prefetch={false}
+                    >
+                      {it.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </HoverMenu>
+
+            <HoverMenu label={communityMenu.label}>
+              <ul className="py-2">
+                {communityMenu.items.map((it) => (
+                  <li key={it.href}>
+                    <Link
+                      href={it.href}
+                      className="block px-3 py-2 text-sm text-gray-800 hover:bg-gray-100 rounded-lg mx-1"
+                      prefetch={false}
+                    >
+                      {it.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </HoverMenu>
+
+            <HoverMenu label={infoMenu.label}>
+              <ul className="py-2">
+                {infoMenu.items.map((it) => (
+                  <li key={it.href}>
+                    <Link
+                      href={it.href}
+                      className="block px-3 py-2 text-sm text-gray-800 hover:bg-gray-100 rounded-lg mx-1"
+                      prefetch={false}
+                    >
+                      {it.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </HoverMenu>
           </div>
 
-          {/* Right side */}
+          {/* Right (desktop) */}
           <div className="hidden md:flex items-center gap-3">
             <PresenceBadge />
             {user ? (
@@ -197,7 +226,11 @@ export default function GlobalHeader() {
               </>
             ) : (
               <>
-                <Link href="/pricing" prefetch={false} className="text-white/90 hover:text-white text-sm">
+                <Link
+                  href="/pricing"
+                  prefetch={false}
+                  className="text-white/90 hover:text-white text-sm"
+                >
                   Pricing
                 </Link>
                 <Link
@@ -207,7 +240,11 @@ export default function GlobalHeader() {
                 >
                   Start Free Trial
                 </Link>
-                <Link href="/login" prefetch={false} className="text-white/90 hover:text-white text-sm">
+                <Link
+                  href="/login"
+                  prefetch={false}
+                  className="text-white/90 hover:text-white text-sm"
+                >
                   Login
                 </Link>
               </>
@@ -217,10 +254,10 @@ export default function GlobalHeader() {
           {/* Mobile toggle */}
           <button
             className="md:hidden text-white/90 hover:text-white"
-            onClick={() => setMOpen((v) => !v)}
+            onClick={() => setOpenMobile((v) => !v)}
             aria-label="Toggle menu"
           >
-            {mOpen ? (
+            {openMobile ? (
               <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none">
                 <path stroke="currentColor" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
@@ -234,7 +271,7 @@ export default function GlobalHeader() {
       </nav>
 
       {/* Mobile drawer */}
-      {mOpen && (
+      {openMobile && (
         <div className="md:hidden border-t border-white/10 bg-indigo-700/95 backdrop-blur">
           <div className="px-4 py-3 space-y-3">
             <div className="flex items-center justify-between">
@@ -242,7 +279,7 @@ export default function GlobalHeader() {
                 href="/dashboard"
                 prefetch={false}
                 className="px-3 py-2 rounded-md text-sm font-semibold bg-white text-indigo-700 hover:bg-indigo-50 transition"
-                onClick={() => setMOpen(false)}
+                onClick={() => setOpenMobile(false)}
               >
                 Dashboard
               </Link>
@@ -265,7 +302,7 @@ export default function GlobalHeader() {
                         href={it.href}
                         prefetch={false}
                         className="block px-4 py-2 text-sm text-white/90 hover:text-white hover:bg-white/10"
-                        onClick={() => setMOpen(false)}
+                        onClick={() => setOpenMobile(false)}
                       >
                         {it.label}
                       </Link>
@@ -291,7 +328,7 @@ export default function GlobalHeader() {
                         href={it.href}
                         prefetch={false}
                         className="block px-4 py-2 text-sm text-white/90 hover:text-white hover:bg-white/10"
-                        onClick={() => setMOpen(false)}
+                        onClick={() => setOpenMobile(false)}
                       >
                         {it.label}
                       </Link>
@@ -317,7 +354,7 @@ export default function GlobalHeader() {
                         href={it.href}
                         prefetch={false}
                         className="block px-4 py-2 text-sm text-white/90 hover:text-white hover:bg-white/10"
-                        onClick={() => setMOpen(false)}
+                        onClick={() => setOpenMobile(false)}
                       >
                         {it.label}
                       </Link>
@@ -343,7 +380,7 @@ export default function GlobalHeader() {
                         href="/billing"
                         prefetch={false}
                         className="block px-4 py-2 text-sm text-white/90 hover:text-white hover:bg-white/10"
-                        onClick={() => setMOpen(false)}
+                        onClick={() => setOpenMobile(false)}
                       >
                         Manage Billing
                       </Link>
@@ -360,7 +397,7 @@ export default function GlobalHeader() {
                         href="/pricing"
                         prefetch={false}
                         className="block px-4 py-2 text-sm text-white/90 hover:text-white hover:bg-white/10"
-                        onClick={() => setMOpen(false)}
+                        onClick={() => setOpenMobile(false)}
                       >
                         See Pricing
                       </Link>
@@ -368,7 +405,7 @@ export default function GlobalHeader() {
                         href="/pricing"
                         prefetch={false}
                         className="block px-4 py-2 text-sm text-indigo-700 bg-white rounded mx-3 mt-1 text-center font-semibold hover:bg-indigo-50"
-                        onClick={() => setMOpen(false)}
+                        onClick={() => setOpenMobile(false)}
                       >
                         Start Free Trial
                       </Link>
@@ -376,7 +413,7 @@ export default function GlobalHeader() {
                         href="/login"
                         prefetch={false}
                         className="block px-4 py-2 text-sm text-white/90 hover:text-white hover:bg-white/10"
-                        onClick={() => setMOpen(false)}
+                        onClick={() => setOpenMobile(false)}
                       >
                         Login
                       </Link>
