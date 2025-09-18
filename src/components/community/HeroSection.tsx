@@ -6,7 +6,7 @@ const HERO_IMAGES = [
   "https://images.unsplash.com/photo-1519125323398-675f0ddb6308?auto=format&fit=crop&w=960&q=80",
 ];
 
-export function HeroSection() {
+export default function HeroSection() {
   const [index, setIndex] = useState(0);
   useEffect(() => {
     const interval = setInterval(() => setIndex(i => (i + 1) % HERO_IMAGES.length), 5000);

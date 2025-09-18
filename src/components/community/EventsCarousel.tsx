@@ -5,7 +5,7 @@ const EVENTS_LIST = [
   { title: "Durham Regatta", date: "2025-06-14", location: "River Wear", link: "https://durhamregatta.org.uk" },
 ];
 
-export function EventsCarousel() {
+export default function EventsCarousel() {
   const [idx, setIdx] = useState(0);
   const next = () => setIdx(i => (i + 1) % EVENTS_LIST.length);
   const prev = () => setIdx(i => (i === 0 ? EVENTS_LIST.length - 1 : i - 1));

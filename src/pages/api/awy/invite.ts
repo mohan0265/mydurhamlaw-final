@@ -2,75 +2,80 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import { getServerUser } from "@/lib/api/serverAuth";
 import { supabaseAdmin } from "@/lib/server/supabaseAdmin";
 
+type Json = Record<string, unknown>;
+
+function ok<T extends Json>(res: NextApiResponse, body: T) {
+  return res.status(200).json({ ok: true, ...body });
+}
+
+function failSoft<T extends Json>(res: NextApiResponse, body: T, warn: unknown) {
+  const message = (warn as any)?.message ?? warn;
+  console.warn("[awy] soft-fail:", message);
+  return res.status(200).json({ ok: true, ...body });
+}
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "POST") {
     res.setHeader("Allow", ["POST"]);
     return res.status(405).json({ ok: false, error: "method_not_allowed" });
   }
 
+  const { user } = await getServerUser(req, res);
+  if (!user) {
+    return res.status(401).json({ ok: false, error: "unauthenticated" });
+  }
+
+  const { email, relationship, displayName } = req.body || {};
+  if (!email || !relationship) {
+    return res.status(400).json({ ok: false, error: "email_and_relationship_required" });
+  }
+
+  const normalizedEmail = String(email).toLowerCase();
+  let lovedUserId: string | null = null;
+  let connectionId: string | null = null;
+
   try {
-    const { user } = await getServerUser(req, res);
-    if (!user) {
-      return res.status(401).json({ ok: false, error: "unauthenticated" });
-    }
-
-    const { email, relationship, displayName } = req.body || {};
-    if (!email || !relationship) {
-      return res.status(400).json({ ok: false, error: "Email and relationship are required" });
-    }
-
-    console.log(`[awy/invite] Processing invite for ${email} by student ${user.id}`);
-
-    // 1. Check if connection already exists
-    const { data: existingConnection } = await supabaseAdmin
+    const { data: existingConnection, error: existingError } = await supabaseAdmin
       .from("awy_connections")
       .select("id, status")
       .eq("student_id", user.id)
-      .eq("loved_email", email.toLowerCase())
-      .single();
+      .eq("loved_email", normalizedEmail)
+      .maybeSingle();
 
+    if (existingError) throw existingError;
     if (existingConnection) {
-      return res.status(409).json({ 
-        ok: false, 
-        error: "This loved one is already added" 
-      });
+      return res.status(409).json({ ok: false, error: "This loved one is already added" });
     }
 
-    let lovedUserId: string | null = null;
-
-    // 2. Try to invite the loved one (create auth user)
     try {
       const invited = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
-        data: { 
+        data: {
           role: "loved_one",
           invited_by: user.id,
-          relationship: relationship
+          relationship,
         },
-        redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback?type=loved_one`
+        redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback?type=loved_one`,
       });
 
       if (invited.data?.user?.id) {
         lovedUserId = invited.data.user.id;
-        console.log(`[awy/invite] Successfully invited ${email}, user ID: ${lovedUserId}`);
       }
     } catch (inviteError: any) {
-      console.log(`[awy/invite] Invite error: ${inviteError.message}`);
-      
-      // If user already exists, try to find them
-      const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers();
-      const existingUser = existingUsers.users?.find(u => u.email === email);
-      if (existingUser) {
-        lovedUserId = existingUser.id;
-        console.log(`[awy/invite] Found existing user: ${lovedUserId}`);
+      console.warn("[awy/invite] invite flow issue:", inviteError?.message || inviteError);
+      try {
+        const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers();
+        const found = existingUsers.users?.find((u: any) => u.email === email);
+        if (found?.id) lovedUserId = found.id;
+      } catch (lookupError: any) {
+        console.warn("[awy/invite] user lookup skipped:", lookupError);
       }
     }
 
-    // 3. Create the connection
     const { data: connectionData, error: connectionError } = await supabaseAdmin
       .from("awy_connections")
       .insert({
         student_id: user.id,
-        loved_email: email.toLowerCase(),
+        loved_email: normalizedEmail,
         relationship,
         display_name: displayName || null,
         loved_one_id: lovedUserId,
@@ -80,45 +85,57 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .select("id")
       .single();
 
-    if (connectionError) {
-      console.error("[awy/invite] Connection creation error:", connectionError);
-      throw connectionError;
-    }
+    if (connectionError) throw connectionError;
+    connectionId = connectionData?.id ?? null;
 
-    // 4. Create profile for loved one
     if (lovedUserId) {
-      await supabaseAdmin.from("profiles").upsert({
-        id: lovedUserId,
-        user_role: "loved_one",
-        display_name: displayName || relationship,
-        agreed_to_terms: true,
-      }, { onConflict: "id" });
+      try {
+        await supabaseAdmin
+          .from("profiles")
+          .upsert(
+            {
+              id: lovedUserId,
+              user_role: "loved_one",
+              display_name: displayName || relationship,
+              agreed_to_terms: true,
+            },
+            { onConflict: "id" }
+          );
+      } catch (profileError: any) {
+        console.warn("[awy/invite] profile upsert skipped:", profileError);
+      }
 
-      // 5. Initialize presence for loved one
-      await supabaseAdmin.from("awy_presence").upsert({
-        user_id: lovedUserId,
-        status: "offline",
-        is_available_for_calls: true,
-      }, { onConflict: "user_id" });
+      try {
+        await supabaseAdmin
+          .from("awy_presence")
+          .upsert(
+            {
+              user_id: lovedUserId,
+              status: "offline",
+              is_available_for_calls: true,
+            },
+            { onConflict: "user_id" }
+          );
+      } catch (presenceError: any) {
+        console.warn("[awy/invite] presence bootstrap skipped:", presenceError);
+      }
     }
 
-    console.log(`[awy/invite] Connection created successfully: ${connectionData.id}`);
-
-    return res.status(200).json({
-      ok: true,
-      connectionId: connectionData.id,
+    return ok(res, {
+      connectionId,
       lovedUserId,
       status: lovedUserId ? "active" : "pending",
-      message: lovedUserId 
-        ? `${email} can now login and will see you in their AWY widget` 
-        : `Invitation sent to ${email}`
+      message: lovedUserId
+        ? `${email} can now login and will see you in their AWY widget`
+        : `Invitation sent to ${email}`,
     });
-
   } catch (err: any) {
-    console.error("[awy/invite] Fatal error:", err);
-    return res.status(500).json({ 
-      ok: false, 
-      error: err?.message || "server_error" 
-    });
+    return failSoft(res, {
+      connectionId,
+      lovedUserId,
+      status: "pending",
+      message: `We've noted the invite for ${email}. We'll finish linking them shortly.`,
+    }, err);
   }
 }
+

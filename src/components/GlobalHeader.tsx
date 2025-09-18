@@ -1,7 +1,7 @@
 // src/components/GlobalHeader.tsx
 'use client';
 
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useAuth } from '@/lib/supabase/AuthContext';
@@ -25,7 +25,11 @@ function ActiveLink({
   className?: string;
 }) {
   const router = useRouter();
-  const active = router.pathname === href || (href !== '/' && router.pathname.startsWith(href));
+  const active =
+    href === '/dashboard'
+      ? router.pathname === '/dashboard'
+      : router.pathname === href ||
+        (href !== '/' && router.pathname.startsWith(href + '/'));
   return (
     <Link
       href={href}
@@ -39,6 +43,7 @@ function ActiveLink({
     </Link>
   );
 }
+
 
 function HoverMenu({
   label,
@@ -56,8 +61,14 @@ function HoverMenu({
   };
   const closeSoon = () => {
     if (closeTimer.current) clearTimeout(closeTimer.current);
-    closeTimer.current = setTimeout(() => setOpen(false), 140); // small delay prevents flicker
+    closeTimer.current = setTimeout(() => setOpen(false), 150); // small delay prevents flicker
   };
+
+  useEffect(() => {
+    return () => {
+      if (closeTimer.current) clearTimeout(closeTimer.current);
+    };
+  }, []);
 
   return (
     <div
@@ -106,10 +117,8 @@ export default function GlobalHeader() {
       label: 'Study',
       items: [
         { label: 'Year at a Glance', href: '/year-at-a-glance' },
-        { label: 'Study Schedule', href: '/study-schedule' },
         { label: 'Assignments', href: '/assignments' },
         { label: 'Research Hub', href: '/research-hub' },
-        { label: 'Durmah (Wellbeing)', href: '/wellbeing' },
       ],
     }),
     []
@@ -119,9 +128,9 @@ export default function GlobalHeader() {
     () => ({
       label: 'Community',
       items: [
-        { label: 'Community Hub', href: '/community' },   // <- points to the page you actually have
         { label: 'Student Lounge', href: '/lounge' },
-        { label: 'Legal News', href: '/news' },           // redirect handled by next.config.js
+        { label: 'Community Hub', href: '/community' },
+        { label: 'Legal News', href: '/legal/tools/legal-news-feed' },
       ],
     }),
     []

@@ -12,7 +12,7 @@ const CATEGORIES = [
   { label: "Student Social", href: "#social" },
 ];
 
-export function CategoryTabs() {
+export default function CategoryTabs() {
   return (
     <nav aria-label="Main Community Sections">
       <ul className="flex flex-wrap gap-2 justify-center mb-6">

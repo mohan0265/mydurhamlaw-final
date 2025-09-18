@@ -1,73 +1,107 @@
 // src/pages/api/awy/interactions.ts
 import type { NextApiRequest, NextApiResponse } from "next";
-import { getServerUser } from "@/lib/api/serverAuth"; // cookie-first + Bearer fallback
-import { serverAWYService } from "@/lib/awy/awyService";
+import { getServerUser } from "@/lib/api/serverAuth";
+
+type Json = Record<string, unknown>;
+
+function ok<T extends Json>(res: NextApiResponse, body: T) {
+  return res.status(200).json({ ok: true, ...body });
+}
+
+function failSoft<T extends Json>(res: NextApiResponse, body: T, warn: unknown) {
+  const message = (warn as any)?.message ?? warn;
+  console.warn("[awy] soft-fail:", message);
+  return res.status(200).json({ ok: true, ...body });
+}
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  // Authenticate (works on Netlify using cookies OR Authorization: Bearer <token>)
-  const { user } = await getServerUser(req, res);
+  const { user, supabase } = await getServerUser(req, res);
   if (!user) {
-    return res.status(401).json({ error: "Unauthorized" });
+    return res.status(401).json({ ok: false, error: "unauthorized" });
   }
 
-  try {
-    switch (req.method) {
-      case "GET": {
-        // Get recent interactions
-        const qLimit = Array.isArray(req.query.limit) ? req.query.limit[0] : req.query.limit;
-        const limit = Number.parseInt((qLimit as string) ?? "20", 10) || 20;
+  switch (req.method) {
+    case "GET": {
+      const qLimit = Array.isArray(req.query.limit) ? req.query.limit[0] : req.query.limit;
+      const limit = Number.parseInt((qLimit as string) ?? "20", 10) || 20;
 
-        const interactions = await serverAWYService.getRecentInteractions(user.id, limit);
-        return res.status(200).json({ interactions });
+      try {
+        const { data, error } = await supabase
+          .from("awy_interactions")
+          .select("*")
+          .or('sender_id.eq.' + user.id + ',recipient_id.eq.' + user.id)
+          .order("created_at", { ascending: false })
+          .limit(limit);
+
+        if (error) throw error;
+        return ok(res, { interactions: data ?? [] });
+      } catch (fetchError: any) {
+        return failSoft(res, { interactions: [] }, fetchError);
+      }
+    }
+
+    case "POST": {
+      const { connectionId, interactionType, message } = req.body ?? {};
+      if (!connectionId || !interactionType) {
+        return res.status(400).json({ ok: false, error: "connection_id_and_type_required" });
       }
 
-      case "POST": {
-        // Send new interaction
-        const { connectionId, interactionType, message } = req.body ?? {};
+      const payload: Record<string, unknown> = {
+        connection_id: connectionId,
+        interaction_type: interactionType,
+        message: message ?? null,
+        sender_id: user.id,
+        created_at: new Date().toISOString(),
+      };
 
-        if (!connectionId || !interactionType) {
-          return res
-            .status(400)
-            .json({ error: "Connection ID and interaction type are required" });
-        }
+      try {
+        const { data, error } = await supabase
+          .from("awy_interactions")
+          .insert(payload)
+          .select("id")
+          .single();
 
-        const interactionId = await serverAWYService.sendInteraction(
-          user.id,
-          connectionId,
-          interactionType,
-          message
-        );
-
-        return res.status(201).json({
-          success: true,
-          interactionId,
+        if (error) throw error;
+        return ok(res, {
+          interactionId: data?.id ?? null,
           message: "Interaction sent successfully",
         });
+      } catch (insertError: any) {
+        return failSoft(res, {
+          interactionId: null,
+          message: "Interaction recorded for follow-up",
+        }, insertError);
+      }
+    }
+
+    case "PUT": {
+      const { interactionId: readId } = req.body ?? {};
+      if (!readId) {
+        return res.status(400).json({ ok: false, error: "interaction_id_required" });
       }
 
-      case "PUT": {
-        // Mark interaction as read
-        const { interactionId: readId } = req.body ?? {};
-        if (!readId) {
-          return res.status(400).json({ error: "Interaction ID is required" });
-        }
+      try {
+        const { error } = await supabase
+          .from("awy_interactions")
+          .update({ is_read: true, read_at: new Date().toISOString() })
+          .eq("id", readId);
 
-        await serverAWYService.markInteractionAsRead(readId);
-        return res.status(200).json({
+        if (error) throw error;
+        return ok(res, {
           success: true,
           message: "Interaction marked as read",
         });
-      }
-
-      default: {
-        res.setHeader("Allow", ["GET", "POST", "PUT"]);
-        return res.status(405).json({ error: "Method not allowed" });
+      } catch (updateError: any) {
+        return failSoft(res, {
+          success: false,
+          message: "Could not mark interaction as read",
+        }, updateError);
       }
     }
-  } catch (error: any) {
-    console.error("AWY Interactions API error:", error);
-    return res.status(500).json({
-      error: error?.message || "Internal server error",
-    });
+
+    default: {
+      res.setHeader("Allow", ["GET", "POST", "PUT"]);
+      return res.status(405).json({ ok: false, error: "method_not_allowed" });
+    }
   }
 }

@@ -1,7 +1,7 @@
 import React from "react";
 import Link from "next/link";
 
-export function StudentSocialCard() {
+export default function StudentSocialCard() {
   return (
     <section id="social" aria-labelledby="social-heading" className="mb-8">
       <h2 id="social-heading" className="text-2xl font-bold mb-4 text-indigo-700">Student Social</h2>

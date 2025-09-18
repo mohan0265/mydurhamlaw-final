@@ -7,7 +7,7 @@ const TIPS = [
   { title: "Emergency Apps", desc: "Download the SafeZone uni app & save emergency numbers on your phone." },
 ];
 
-export function SafetyTipsSection() {
+export default function SafetyTipsSection() {
   return (
     <section id="safety" aria-labelledby="safety-heading" className="mb-8">
       <h2 id="safety-heading" className="text-2xl font-bold mb-4 text-indigo-700">Safety & Tips</h2>

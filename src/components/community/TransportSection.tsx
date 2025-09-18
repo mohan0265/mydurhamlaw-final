@@ -6,7 +6,7 @@ const TAXI_NUM = "0191 386 6662";
 const AIRPORT_NCL = "https://www.newcastleairport.com/";
 const AIRPORT_MME = "https://www.durhamteesvalleyairport.com/";
 
-export function TransportSection() {
+export default function TransportSection() {
   return (
     <section id="transport" aria-labelledby="transport-heading" className="mb-8">
       <h2 id="transport-heading" className="text-2xl font-bold mb-4 text-indigo-700">Transport</h2>

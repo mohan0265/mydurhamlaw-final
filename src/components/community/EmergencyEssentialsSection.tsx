@@ -11,7 +11,7 @@ const ESSENTIALS = [
   { name: "Boots Pharmacy", call: "0191 386 4011", map: "https://goo.gl/maps/xqQnKp1jgs92" },
 ];
 
-export function EmergencyEssentialsSection() {
+export default function EmergencyEssentialsSection() {
   return (
     <section id="essentials" aria-labelledby="essentials-heading" className="mb-8">
       <h2 id="essentials-heading" className="text-2xl font-bold mb-4 text-indigo-700">Emergency & Essentials</h2>

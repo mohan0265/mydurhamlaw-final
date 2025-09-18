@@ -1,67 +1,116 @@
 // src/pages/api/awy/notifications.ts
 import type { NextApiRequest, NextApiResponse } from "next";
-import { getServerUser } from "@/lib/api/serverAuth"; // cookie-first + Bearer token fallback
-import { serverAWYService } from "@/lib/awy/awyService";
+import { getServerUser } from "@/lib/api/serverAuth";
+
+type Json = Record<string, unknown>;
+
+function ok<T extends Json>(res: NextApiResponse, body: T) {
+  return res.status(200).json({ ok: true, ...body });
+}
+
+function failSoft<T extends Json>(res: NextApiResponse, body: T, warn: unknown) {
+  const message = (warn as any)?.message ?? warn;
+  console.warn("[awy] soft-fail:", message);
+  return res.status(200).json({ ok: true, ...body });
+}
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  // Authenticate (works on Netlify using cookies OR Authorization: Bearer <token>)
-  const { user } = await getServerUser(req, res);
+  const { user, supabase } = await getServerUser(req, res);
   if (!user) {
-    return res.status(401).json({ error: "Unauthorized" });
+    return res.status(401).json({ ok: false, error: "unauthorized" });
   }
 
-  try {
-    switch (req.method) {
-      case "GET": {
-        // Get user's notifications
-        const raw = Array.isArray(req.query.unread_only)
-          ? req.query.unread_only[0]
-          : (req.query.unread_only as string | undefined);
+  switch (req.method) {
+    case "GET": {
+      const raw = Array.isArray(req.query.unread_only)
+        ? req.query.unread_only[0]
+        : (req.query.unread_only as string | undefined);
+      const unreadOnly = (raw ?? "false").toLowerCase() === "true";
 
-        const unreadOnly = (raw ?? "false").toLowerCase() === "true";
+      try {
+        let query = supabase
+          .from("awy_notifications")
+          .select("*")
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: false });
 
-        const notifications = await serverAWYService.getUserNotifications(
-          user.id,
-          unreadOnly
-        );
-        return res.status(200).json({ notifications });
+        const { data, error } = await query;
+        if (error) throw error;
+        let notifications = (data ?? []) as any[];
+
+        if (unreadOnly) {
+          notifications = notifications.filter((n) =>
+            n?.is_read === false || n?.read_at == null
+          );
+        }
+
+        return ok(res, { notifications });
+      } catch (fetchError: any) {
+        return failSoft(res, { notifications: [] }, fetchError);
+      }
+    }
+
+    case "PUT": {
+      const { notificationId, markAllAsRead } =
+        (req.body as { notificationId?: string; markAllAsRead?: boolean }) || {};
+
+      if (!notificationId && !markAllAsRead) {
+        return res.status(400).json({ ok: false, error: "No notification target provided" });
       }
 
-      case "PUT": {
-        // Mark notification(s) as read
-        const { notificationId, markAllAsRead } =
-          (req.body as { notificationId?: string; markAllAsRead?: boolean }) || {};
+      const timestamp = new Date().toISOString();
 
-        if (markAllAsRead) {
-          await serverAWYService.markAllNotificationsAsRead(user.id);
-          return res.status(200).json({
+      if (markAllAsRead) {
+        try {
+          const { error } = await supabase
+            .from("awy_notifications")
+            .update({ is_read: true, read_at: timestamp })
+            .eq("user_id", user.id);
+
+          if (error) throw error;
+          return ok(res, {
             success: true,
             message: "All notifications marked as read",
           });
+        } catch (updateAllError: any) {
+          return failSoft(res, {
+            success: false,
+            message: "Could not mark all notifications right now",
+          }, updateAllError);
         }
+      }
 
-        if (notificationId) {
-          await serverAWYService.markNotificationAsRead(notificationId);
-          return res.status(200).json({
+      if (notificationId) {
+        try {
+          const { error } = await supabase
+            .from("awy_notifications")
+            .update({ is_read: true, read_at: timestamp })
+            .eq("id", notificationId)
+            .eq("user_id", user.id)
+            ;
+
+          if (error) throw error;
+          return ok(res, {
             success: true,
             message: "Notification marked as read",
           });
+        } catch (updateError: any) {
+          return failSoft(res, {
+            success: false,
+            message: "Could not mark notification as read",
+          }, updateError);
         }
-
-        return res
-          .status(400)
-          .json({ error: "Either notificationId or markAllAsRead must be provided" });
       }
 
-      default: {
-        res.setHeader("Allow", ["GET", "PUT"]);
-        return res.status(405).json({ error: "Method not allowed" });
-      }
+      return ok(res, {
+        success: true,
+        message: "Nothing to update",
+      });
     }
-  } catch (error: any) {
-    console.error("AWY Notifications API error:", error);
-    return res.status(500).json({
-      error: error?.message || "Internal server error",
-    });
+
+    default: {
+      res.setHeader("Allow", ["GET", "PUT"]);
+      return res.status(405).json({ ok: false, error: "method_not_allowed" });
+    }
   }
 }

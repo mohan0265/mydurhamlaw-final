@@ -5,7 +5,7 @@ const DINING_LIST = [
   { name: "Zen Durham", tags: ["££", "Asian", "Dinner"], map: "https://goo.gl/maps/xgXPXQrhWfo", hours: "12pm–10pm" },
 ];
 
-export function DiningSection() {
+export default function DiningSection() {
   return (
     <section id="dining" aria-labelledby="dining-heading" className="mb-8">
       <h2 id="dining-heading" className="text-2xl font-bold mb-4 text-indigo-700">Shopping & Dining</h2>

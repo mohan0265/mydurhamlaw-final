@@ -8,7 +8,7 @@ const PLACES = [
   { label: "City Centre", coords: "54.7767,-1.5756" },
 ];
 
-export function MapSection() {
+export default function MapSection() {
   const [center, setCenter] = useState(PLACES[0]?.coords || "54.7658,-1.5757");
   const mapUrl = `https://maps.google.com/maps?q=${center}&z=15&output=embed`;
 

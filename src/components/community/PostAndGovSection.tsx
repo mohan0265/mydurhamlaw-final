@@ -15,7 +15,7 @@ const POST_OFFICES = [
 const COUNCIL = "https://durham.gov.uk";
 const VISA_SUPPORT = "https://www.gov.uk/browse/visas-immigration";
 
-export function PostAndGovSection() {
+export default function PostAndGovSection() {
   return (
     <section id="post-gov" aria-labelledby="postgov-heading" className="mb-8">
       <h2 id="postgov-heading" className="text-2xl font-bold mb-4 text-indigo-700">Post & Government Services</h2>

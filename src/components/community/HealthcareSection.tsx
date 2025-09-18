@@ -3,7 +3,7 @@ import React from "react";
 const GP_FINDER = "https://www.nhs.uk/service-search/find-a-gp";
 const MENTAL_HEALTH_LINK = "https://www.nhs.uk/mental-health/";
 
-export function HealthcareSection() {
+export default function HealthcareSection() {
   return (
     <section id="healthcare" aria-labelledby="healthcare-heading" className="mb-8">
       <h2 id="healthcare-heading" className="text-2xl font-bold mb-4 text-indigo-700">Healthcare & Wellbeing</h2>
