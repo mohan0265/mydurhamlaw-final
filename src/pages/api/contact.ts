@@ -1,186 +1,110 @@
-import { NextApiRequest, NextApiResponse } from 'next'
-import { Resend } from 'resend'
-import { supabase } from '@/lib/supabase/client'
+// src/pages/api/contact.ts
+import type { NextApiRequest, NextApiResponse } from 'next';
+import { Resend } from 'resend';
 
-// Initialize Resend with API key
-const resend = new Resend(process.env.RESEND_API_KEY)
+const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
-    return res.status(405).json({ 
-      success: false, 
-      error: 'Method not allowed. Use POST.' 
-    })
+    res.setHeader('Allow', ['POST']);
+    return res.status(405).json({ success: false, error: 'Method not allowed' });
   }
 
   try {
-    const { name, email, subject, message } = req.body
+    const { name, email, subject, message } = (req.body || {}) as {
+      name?: string;
+      email?: string;
+      subject?: string;
+      message?: string;
+    };
 
-    // Validate required fields
-    if (!name || !email || !subject || !message) {
+    if (!name || !email || !message) {
       return res.status(400).json({
         success: false,
-        error: 'Missing required fields: name, email, subject, message'
-      })
+        error: 'Missing required fields: name, email, message',
+      });
     }
 
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    if (!emailRegex.test(email)) {
-      return res.status(400).json({
+    // very basic email check
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return res.status(400).json({ success: false, error: 'Invalid email format' });
+    }
+
+    if (!resend) {
+      return res.status(501).json({
         success: false,
-        error: 'Invalid email format'
-      })
+        error:
+          'Email transport not configured. Set RESEND_API_KEY (and CONTACT_FROM with a verified sender).',
+      });
     }
 
-    // Validate API key exists
-    if (!process.env.RESEND_API_KEY) {
-      console.error('RESEND_API_KEY environment variable is not set')
-      return res.status(500).json({
-        success: false,
-        error: 'Email service configuration error'
-      })
-    }
+    const to = process.env.CONTACT_TO || 'admin@saversmed.com';
+    const from = process.env.CONTACT_FROM || 'no-reply@mydurhamlaw.com';
+    const safeSubject = (subject || 'New enquiry from MyDurhamLaw').slice(0, 200);
 
-    const fromEmail = process.env.RESEND_FROM_EMAIL || 'contact@colonaive.ai'
-    
-    // Create HTML email template
-    const htmlContent = `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; border-radius: 10px 10px 0 0; text-align: center;">
-          <h1 style="color: white; margin: 0; font-size: 28px; font-weight: bold;">
-            COLONAiVE™
-          </h1>
-          <p style="color: rgba(255, 255, 255, 0.9); margin: 10px 0 0 0; font-size: 16px;">
-            New Contact Form Message
-          </p>
+    const html = `
+      <div style="font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; line-height:1.6; max-width:640px; margin:auto">
+        <div style="background:linear-gradient(90deg,#6d28d9,#4338ca); color:#fff; padding:18px 20px; border-radius:10px 10px 0 0">
+          <h1 style="margin:0; font-size:20px;">MyDurhamLaw – New Contact Form Message</h1>
         </div>
-        
-        <div style="background: #f8f9fa; padding: 30px; border: 1px solid #e9ecef;">
-          <div style="background: white; padding: 25px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-            <h2 style="color: #333; margin-top: 0; border-bottom: 2px solid #667eea; padding-bottom: 10px;">
-              ${subject}
-            </h2>
-            
-            <div style="margin: 20px 0;">
-              <div style="display: flex; margin-bottom: 15px;">
-                <strong style="color: #667eea; width: 100px; display: inline-block;">From:</strong>
-                <span style="color: #333;">${name}</span>
-              </div>
-              <div style="display: flex; margin-bottom: 15px;">
-                <strong style="color: #667eea; width: 100px; display: inline-block;">Email:</strong>
-                <a href="mailto:${email}" style="color: #667eea; text-decoration: none;">${email}</a>
-              </div>
-              <div style="display: flex; margin-bottom: 20px;">
-                <strong style="color: #667eea; width: 100px; display: inline-block;">Date:</strong>
-                <span style="color: #333;">${new Date().toLocaleDateString('en-US', { 
-                  weekday: 'long', 
-                  year: 'numeric', 
-                  month: 'long', 
-                  day: 'numeric',
-                  hour: '2-digit',
-                  minute: '2-digit'
-                })}</span>
-              </div>
-            </div>
-            
-            <div style="background: #f8f9fa; padding: 20px; border-radius: 6px; border-left: 4px solid #667eea;">
-              <h3 style="color: #333; margin-top: 0;">Message:</h3>
-              <p style="color: #555; line-height: 1.6; white-space: pre-wrap; margin-bottom: 0;">${message}</p>
-            </div>
-          </div>
-          
-          <div style="margin-top: 20px; padding: 15px; background: #e3f2fd; border-radius: 6px; border: 1px solid #bbdefb;">
-            <p style="margin: 0; color: #1565c0; font-size: 14px;">
-              <strong>Action Required:</strong> Please respond to this inquiry within 24 hours.
-              Reply directly to <a href="mailto:${email}" style="color: #1565c0;">${email}</a> to continue the conversation.
-            </p>
+        <div style="border:1px solid #e5e7eb; border-top:0; padding:20px;">
+          <p><strong>Name:</strong> ${escapeHtml(name)}</p>
+          <p><strong>Email:</strong> <a href="mailto:${escapeHtml(email)}">${escapeHtml(email)}</a></p>
+          <p><strong>Subject:</strong> ${escapeHtml(safeSubject)}</p>
+          <p><strong>Received:</strong> ${new Date().toLocaleString()}</p>
+          <hr style="border:none;border-top:1px solid #e5e7eb;margin:16px 0" />
+          <p style="margin:0 0 6px 0;"><strong>Message:</strong></p>
+          <div style="white-space:pre-wrap; border:1px solid #e5e7eb; background:#fafafa; padding:12px; border-radius:8px;">
+            ${escapeHtml(message)}
           </div>
         </div>
-        
-        <div style="background: #333; color: #fff; padding: 20px; border-radius: 0 0 10px 10px; text-align: center; font-size: 12px;">
-          <p style="margin: 0;">COLONAiVE™ - AI-Powered Colorectal Health Platform</p>
-          <p style="margin: 5px 0 0 0; color: #aaa;">This message was sent from the contact form at colonaive.ai</p>
+        <div style="color:#6b7280; font-size:12px; text-align:center; margin-top:10px">
+          Sent from the contact form on mydurhamlaw.com
         </div>
       </div>
-    `
+    `;
 
-    console.log('Attempting to send email with Resend...')
-    console.log('From:', fromEmail)
-    console.log('To: info@colonaive.ai')
-    console.log('Subject:', `New Contact Form Message from COLONAiVE Website - ${subject}`)
+    const result = await resend.emails.send({
+      from,
+      to,
+      subject: `MyDurhamLaw – ${safeSubject}`,
+      html,
+      text: stripHtml(`${name} <${email}> wrote:\n\n${message}`),
+    });
 
-    // Send email using Resend
-    const emailResult = await resend.emails.send({
-      from: fromEmail,
-      to: 'info@colonaive.ai',
-      subject: `New Contact Form Message from COLONAiVE Website - ${subject}`,
-      html: htmlContent,
-      // Also include plain text version
-      text: `
-New Contact Form Message from COLONAiVE Website
-
-From: ${name}
-Email: ${email}
-Subject: ${subject}
-Date: ${new Date().toLocaleString()}
-
-Message:
-${message}
-
----
-Please respond to this inquiry by replying directly to ${email}.
-      `.trim()
-    })
-
-    console.log('Resend email result:', emailResult)
-
-    // Save to database (keeping existing functionality)
+    // Optionally store in DB if server Supabase client exists
     try {
-      if (supabase) {
-        const { error: dbError } = await supabase
-          .from('contact_messages')
-          .insert([{
-            name: name.trim(),
-            email: email.trim(),
-            subject: subject.trim(),
-            message: message.trim(),
-            status: 'new'
-          }])
-
-        if (dbError) {
-          console.error('Database error (non-critical):', dbError)
-          // Don't fail the request if database save fails, as long as email was sent
-        }
-      } else {
-        console.warn('Database save skipped: Supabase client not available')
+      const mod = await import('@/lib/server/supabaseAdmin').catch(() => null as any);
+      const supabaseAdmin = mod?.supabaseAdmin ?? null;
+      if (supabaseAdmin) {
+        await supabaseAdmin.from('contact_messages').insert({
+          name: name.trim(),
+          email: email.trim(),
+          subject: safeSubject.trim(),
+          message: String(message || '').trim(),
+          status: 'new',
+          provider_id: (result as any)?.data?.id ?? null,
+        });
       }
-    } catch (dbError) {
-      console.error('Database save failed (non-critical):', dbError)
+    } catch (dbErr) {
+      console.warn('[contact] skipped DB save:', dbErr);
     }
 
-    // Return success response
-    return res.status(200).json({
-      success: true,
-      message: 'Contact message sent successfully',
-      emailId: emailResult.data?.id
-    })
-
-  } catch (error: any) {
-    console.error('Contact form API error:', error)
-    
-    // Log specific error details for debugging
-    if (error.response) {
-      console.error('Resend API response error:', error.response.data)
-    }
-    if (error.message) {
-      console.error('Error message:', error.message)
-    }
-
-    return res.status(500).json({
-      success: false,
-      error: 'Failed to send contact message. Please try again later.',
-      details: process.env.NODE_ENV === 'development' ? error.message : undefined
-    })
+    return res.status(200).json({ success: true, id: (result as any)?.data?.id || null });
+  } catch (err: any) {
+    console.error('[contact] fatal:', err);
+    return res.status(500).json({ success: false, error: err?.message || 'Internal error' });
   }
+}
+
+function escapeHtml(s: string) {
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function stripHtml(s: string) {
+  return s.replace(/<[^>]+>/g, '');
 }
