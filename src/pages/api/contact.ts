@@ -2,7 +2,8 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { Resend } from 'resend';
 
-const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
+const resendKey = process.env.RESEND_API_KEY || '';
+const resend = resendKey ? new Resend(resendKey) : null;
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
@@ -25,7 +26,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     }
 
-    // very basic email check
+    // tiny email check
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return res.status(400).json({ success: false, error: 'Invalid email format' });
     }
@@ -34,12 +35,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(501).json({
         success: false,
         error:
-          'Email transport not configured. Set RESEND_API_KEY (and CONTACT_FROM with a verified sender).',
+          'Email transport not configured. Set RESEND_API_KEY (and CONTACT_FROM with a verified/allowed sender).',
       });
     }
 
+    // Use safe defaults
     const to = process.env.CONTACT_TO || 'admin@saversmed.com';
-    const from = process.env.CONTACT_FROM || 'no-reply@mydurhamlaw.com';
+    // NOTE: onboarding@resend.dev is allowed for testing if you haven’t verified a domain yet
+    const from = process.env.CONTACT_FROM || 'MyDurhamLaw <onboarding@resend.dev>';
     const safeSubject = (subject || 'New enquiry from MyDurhamLaw').slice(0, 200);
 
     const html = `
@@ -64,15 +67,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       </div>
     `;
 
-    const result = await resend.emails.send({
+    // Build payload; add reply_to but keep TS happy if your installed typings don’t have it yet
+    const payload: any = {
       from,
       to,
       subject: `MyDurhamLaw – ${safeSubject}`,
       html,
       text: stripHtml(`${name} <${email}> wrote:\n\n${message}`),
-    });
+    };
+    payload.reply_to = email; // Resend supports `reply_to`; some older @types don’t
 
-    // Optionally store in DB if server Supabase client exists
+    const result = await resend.emails.send(payload);
+
+    // Optional: persist in DB if server client available
     try {
       const mod = await import('@/lib/server/supabaseAdmin').catch(() => null as any);
       const supabaseAdmin = mod?.supabaseAdmin ?? null;
@@ -106,5 +113,5 @@ function escapeHtml(s: string) {
 }
 
 function stripHtml(s: string) {
-  return s.replace(/<[^>]+>/g, '');
+  return String(s).replace(/<[^>]+>/g, '');
 }
