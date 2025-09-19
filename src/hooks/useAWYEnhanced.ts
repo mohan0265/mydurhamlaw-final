@@ -1,6 +1,6 @@
 
 import { useState, useEffect, useCallback } from 'react';
-import { awyService } from '@/lib/awy/awyService';
+import { awyService } from '@/lib/awy/service';
 import type { 
   AWYConnection, 
   AWYPresence, 

@@ -19,20 +19,16 @@ import { StudyFocusWidget } from '@/components/dashboard/StudyFocusWidget';
 import { QuickActionsWidget } from '@/components/dashboard/QuickActionsWidget';
 import MemoryJournalWidget from '@/components/dashboard/MemoryJournalWidget';
 import WellbeingTipWidget from '@/components/dashboard/WellbeingTipWidget';
+import DurmahWidget from '@/components/DurmahWidget';
 
 export default function Dashboard() {
   const router = useRouter();
   const { user } = useAuth() || { user: null };
 
-  const displayName =
-    user?.user_metadata?.full_name ||
-    user?.email?.split('@')[0]?.replace(/[0-9]/g, '') ||
-    'Student';
-
   return (
     <>
       <Head>
-        <title>Dashboard â€¢ MyDurhamLaw</title>
+        <title>Dashboard • MyDurhamLaw</title>
       </Head>
 
       <main className="mx-auto max-w-7xl px-4 sm:px-6 py-6">
@@ -40,6 +36,11 @@ export default function Dashboard() {
         <div className="mb-6">
           <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Dashboard</h1>
           <p className="text-gray-600 mt-1">Your personalized study companion</p>
+        </div>
+
+        {/* Durmah wellbeing widget */}
+        <div className="mb-8">
+          <DurmahWidget />
         </div>
 
         {/* Signed-out state */}

@@ -1,426 +1,289 @@
-﻿// src/components/DurmahWidget.tsx
-"use client";
+// src/components/DurmahWidget.tsx
+'use client';
 
-import React, { useEffect, useMemo, useRef, useState, useCallback } from "react";
-import { Copy, Save, Trash2, FileText, X } from "lucide-react";
-import { supabase } from "@/lib/supabase/client";
-import { useAuth } from "@/lib/supabase/AuthContext";
-import { useRealtimeVoice } from "@/hooks/useRealtimeVoice";
-import { useElevenLabsTTS } from "@/hooks/useElevenLabsTTS";
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { getStudentContext, composeOpener, type StudentContext } from '@/lib/durmah/service';
 
-const VOICE_OPTIONS = [
-  { id: "XrExE9yKIg1WjnnlVkGX", label: "Matilda" },
-  { id: "onwK4e9ZLuTAKqWW03F9", label: "Daniel" },
-  { id: "pFZP5JQG7iQjIQuC4Bku", label: "Lily" },
-  { id: "Xb7hH8MSUJpSbSDYk0k2", label: "Alice" },
-  { id: "CwhRBWXzGAHq8TQ4Fs17", label: "Roger" },
-  { id: "cgSgspJ2msm6clMCkdW9", label: "Jessica" },
+type ThreadMessage = {
+  id: string;
+  role: 'durmah' | 'student';
+  content: string;
+  timestamp: string;
+};
+
+const GENERAL_SUGGESTIONS = [
+  { label: 'Review this week', prompt: 'Can you help me review this week and spot any gaps?' },
+  { label: 'Make a study plan', prompt: 'Help me make a study plan for this week.' },
+  { label: 'Practice quiz', prompt: 'Could you give me a short practice quiz?' },
 ];
 
-type WidgetProps = {
-  context?: {
-    route?: string;
-    term?: "Michaelmas" | "Epiphany" | "Easter" | string;
-    year_label?: string;
-    module_id?: string;
-    module_code?: string;
-    week?: string;
-    tags?: string[];
-    extra?: Record<string, any>;
-  };
+const EMPTY_CONTEXT: StudentContext = {
+  userId: null,
+  name: null,
+  yearOfStudy: null,
+  upcoming: [],
+  lastMemory: null,
 };
 
-type ChatMsg = { role: "user" | "assistant"; content: string };
+function classNames(...args: Array<string | false | null | undefined>) {
+  return args.filter(Boolean).join(' ');
+}
 
-const fmtTime = (d = new Date()) => {
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}-${pad(
-    d.getHours()
-  )}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
-};
+function inferTopic(ctx: StudentContext | null, text: string): string | null {
+  const fallback = ctx?.upcoming?.[0]?.title;
+  if (fallback) return fallback;
 
-export default function DurmahWidget({ context }: WidgetProps) {
-  const { user } = useAuth() || { user: null };
+  const cleaned = text
+    .replace(/[.!?]/g, '')
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 4)
+    .join(' ');
 
-  const {
-    status,
-    isConnected,
-    isListening,
-    isSpeaking: webrtcSpeaking,
-    transcript,        // NOW includes both student + assistant lines
-    partialTranscript, // live user partial
-    connect,
-    startVoiceMode,
-    stopVoiceMode,
-    lastError,
-  } = useRealtimeVoice();
+  if (!cleaned) return null;
+  return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
+}
 
-  // ElevenLabs TTS (assistant speech)
-  const {
-    isSpeaking: ttsSpeaking,
-    speak,
-    stop: stopTTS,
-    provider,
-    voiceId,
-    setVoiceId,
-  } = useElevenLabsTTS();
+function buildFollowUp(topic: string | null): string {
+  if (topic) {
+    return `Thanks for sharing. Shall we map out the next steps for "${topic}"?`;
+  }
+  return 'Got it. Want me to outline a quick plan or highlight useful resources?';
+}
 
-  // Track session start for metadata
-  const sessionStartRef = useRef<string | null>(null);
+export default function DurmahWidget() {
+  const [context, setContext] = useState<StudentContext>(EMPTY_CONTEXT);
+  const [loading, setLoading] = useState(true);
+  const [messages, setMessages] = useState<ThreadMessage[]>([]);
+  const [input, setInput] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const inputRef = useRef<HTMLInputElement | null>(null);
 
-  // Conversation we render & save
-  const [messages, setMessages] = useState<ChatMsg[]>([]);
-  const lastCountRef = useRef<number>(0);
+  const isAuthed = Boolean(context.userId);
 
-  // On each transcript growth, append new items (respect role)
   useEffect(() => {
-    if (!transcript || transcript.length === lastCountRef.current) return;
-    const newly = transcript.slice(lastCountRef.current);
-    if (newly.length) {
-      const mapped = newly
-        .map((l: any) => ({ role: l.role as "user" | "assistant", content: (l.text || "").trim() }))
-        .filter((m: ChatMsg) => !!m.content);
+    let active = true;
 
-      // speak assistant lines
-      mapped.forEach((m) => {
-        if (m.role === "assistant") speak(m.content);
-      });
+    (async () => {
+      try {
+        const ctx = await getStudentContext();
+        if (!active) return;
+        setContext(ctx);
+        const opener = composeOpener(ctx);
+        setMessages([
+          {
+            id: 'durmah-opener',
+            role: 'durmah',
+            content: opener,
+            timestamp: new Date().toISOString(),
+          },
+        ]);
+      } catch (err) {
+        console.warn('[DurmahWidget] context load failed:', (err as Error)?.message || err);
+        if (active) {
+          setContext(EMPTY_CONTEXT);
+          setMessages([
+            {
+              id: 'durmah-opener',
+              role: 'durmah',
+              content: composeOpener(EMPTY_CONTEXT),
+              timestamp: new Date().toISOString(),
+            },
+          ]);
+        }
+      } finally {
+        if (active) setLoading(false);
+      }
+    })();
 
-      setMessages((prev) => [...prev, ...mapped]);
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const quickActions = useMemo(() => {
+    if (context.upcoming.length > 0) {
+      const next = context.upcoming[0];
+      if (next) {
+        const due = next.dueAt ? new Date(next.dueAt).toLocaleDateString() : 'soon';
+        const title = next.title || 'this task';
+        return [
+          { label: 'Plan task', prompt: `Help me plan "${title}" before ${due}.` },
+          { label: 'Break into steps', prompt: `Can you break "${title}" into manageable steps?` },
+          { label: 'Set reminder', prompt: `Remind me to work on "${title}" tomorrow evening.` },
+        ];
+      }
     }
-    lastCountRef.current = transcript.length;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [transcript]);
+    return GENERAL_SUGGESTIONS;
+  }, [context.upcoming]);
 
-  // UI state
-  const [showActions, setShowActions] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [saveMsg, setSaveMsg] = useState<string | null>(null);
-  const [cloudId, setCloudId] = useState<string | null>(null);
-  const [showSheet, setShowSheet] = useState(false);
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!isAuthed) return;
 
-  // Show sheet whenever there is activity
-  useEffect(() => {
-    if (isListening || webrtcSpeaking || ttsSpeaking || messages.length > 0) setShowSheet(true);
-    else if (!isListening && !webrtcSpeaking && !ttsSpeaking && messages.length === 0) setShowSheet(false);
-  }, [isListening, webrtcSpeaking, ttsSpeaking, messages.length]);
+    const text = input.trim();
+    if (!text) return;
 
-  const transcriptText = useMemo(
-    () => messages.map((m) => `${m.role === "user" ? "Student" : "Durmah"}: ${m.content}`).join("\n"),
-    [messages]
-  );
+    const userMessage: ThreadMessage = {
+      id: `student-${Date.now()}`,
+      role: 'student',
+      content: text,
+      timestamp: new Date().toISOString(),
+    };
 
-  const copyToClipboard = async () => {
-    setSaveMsg(null);
-    try {
-      await navigator.clipboard.writeText(transcriptText || "");
-      setSaveMsg("Copied to clipboard ✅");
-    } catch (e: any) {
-      setSaveMsg(`Copy failed: ${e?.message || e}`);
-    }
-  };
+    setMessages((prev) => [...prev, userMessage]);
+    setInput('');
+    setSubmitting(true);
 
-  const saveTxtFile = () => {
-    setSaveMsg(null);
-    const blob = new Blob([transcriptText || ""], { type: "text/plain;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const a = Object.assign(document.createElement("a"), {
-      href: url,
-      download: `durmah-${fmtTime()}.txt`,
+    const topic = inferTopic(context, text);
+
+    fetch('/api/durmah/memory', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        last_topic: topic ?? context.upcoming[0]?.title ?? null,
+        last_message: text,
+      }),
+    }).catch((err) => {
+      console.warn('[DurmahWidget] memory save failed:', err);
+    }).finally(() => {
+      setSubmitting(false);
     });
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
+
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: `durmah-${Date.now()}`,
+        role: 'durmah',
+        content: buildFollowUp(topic),
+        timestamp: new Date().toISOString(),
+      },
+    ]);
   };
 
-  const deleteLocal = useCallback(() => {
-    setSaveMsg(null);
-    setMessages([]);
-    setShowActions(false);
-    lastCountRef.current = 0;
-    stopTTS();
-  }, [stopTTS]);
-
-  const closeTranscript = () => {
-    deleteLocal();
-    setCloudId(null);
-    setShowSheet(false);
+  const handleChipClick = (prompt: string) => {
+    setInput(prompt);
+    inputRef.current?.focus();
   };
-
-  // --- Save to Supabase (JSON of both roles) ---
-  const saveToCloud = async () => {
-    setSaveMsg(null);
-    if (messages.length === 0) {
-      setSaveMsg("Nothing to save.");
-      return;
-    }
-    setSaving(true);
-    try {
-      const sb = supabase;
-      if (!sb) {
-        setSaveMsg("Supabase not available.");
-        setSaving(false);
-        return;
-      }
-      const { data: { session } = { session: null } } = await sb.auth.getSession();
-      const authedUser = session?.user ?? user;
-
-      if (!authedUser) {
-        setSaveMsg("Please sign in to save notes.");
-        setSaving(false);
-        return;
-      }
-
-      const started_at = sessionStartRef.current ?? new Date().toISOString();
-      const ended_at = new Date().toISOString();
-
-      const payload = {
-        user_id: authedUser.id,
-        title: `Durmah conversation ${fmtTime()}`,
-        content: JSON.stringify(messages),
-        started_at,
-        ended_at,
-        metadata: {
-          status,
-          last_partial: partialTranscript || null,
-          context: context || null,
-        },
-        context_route: context?.route ?? null,
-        context_term: context?.term ?? null,
-        context_module_id: context?.module_id ?? null,
-        context_module_code: context?.module_code ?? null,
-        context_year_label: context?.year_label ?? null,
-        context_week: context?.week ?? null,
-        context_tags: context?.tags ?? null,
-      };
-
-      const { data, error } = await sb
-        .from("voice_conversations")
-        .insert([payload])
-        .select("id")
-        .single();
-
-      if (error) throw error;
-      setCloudId(data.id);
-      setSaveMsg("Saved to cloud ✅");
-    } catch (e: any) {
-      setSaveMsg(`Save failed: ${e?.message || e}`);
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const deleteFromCloud = async () => {
-    setSaveMsg(null);
-    if (!cloudId) {
-      deleteLocal();
-      return;
-    }
-    try {
-      const sb = supabase;
-      if (!sb) {
-        setSaveMsg("Supabase not available.");
-        return;
-      }
-      const { error } = await sb.from("voice_conversations").delete().eq("id", cloudId);
-      if (error) throw error;
-      setCloudId(null);
-      setSaveMsg("Deleted from cloud ✅");
-      deleteLocal();
-    } catch (e: any) {
-      setSaveMsg(`Delete failed: ${e?.message || e}`);
-    }
-  };
-
-  // --- Voice: start / hard stop (no more grey-lock) ---
-  const hardStop = useCallback(() => {
-    try { stopTTS(); } catch {}
-    try { stopVoiceMode(); } catch {}
-  }, [stopTTS, stopVoiceMode]);
-
-  const toggleVoice = async () => {
-    setSaveMsg(null);
-    if (!isConnected) {
-      try { await connect(); } catch {}
-    }
-    if (status === "connecting") return;
-
-    if (webrtcSpeaking || isListening || ttsSpeaking) {
-      hardStop();
-    } else {
-      setShowActions(false);
-      setShowSheet(true);
-      sessionStartRef.current = new Date().toISOString();
-      try { await startVoiceMode(); } catch {}
-    }
-  };
-
-  const bubbleStatus = !isConnected
-    ? "Offline"
-    : (webrtcSpeaking || ttsSpeaking)
-    ? "Speaking"
-    : isListening
-    ? "Listening"
-    : "Connected";
-
-  useEffect(() => {
-    return () => { hardStop(); };
-  }, [hardStop]);
 
   return (
-    <>
-      {/* Floating Mic Button */}
-      <button
-        onClick={toggleVoice}
-        title={isListening || webrtcSpeaking || ttsSpeaking ? "End chat (stop mic/voice)" : "Start voice"}
-        className={`fixed right-6 bottom-6 z-50 rounded-full w-14 h-14 shadow-xl transition
-          ${isListening || webrtcSpeaking || ttsSpeaking ? "bg-red-500 hover:bg-red-600" : "bg-indigo-600 hover:bg-indigo-700"}`}
-      >
-        <span className="sr-only">{isListening || webrtcSpeaking || ttsSpeaking ? "End Chat" : "Start Voice"}</span>
-        <svg viewBox="0 0 24 24" className="w-8 h-8 m-auto fill-white">
-          <path d="M12 14a3 3 0 0 0 3-3V6a3 3 0 1 0-6 0v5a3 3 0 0 0 3 3z"></path>
-          <path d="M19 11a1 1 0 1 0-2 0 5 5 0 0 1-10 0 1 1 0 1 0-2 0 7 7 0 0 0 6 6.92V21H8a1 1 0 1 0 0 2h8a1 1 0 1 0 0-2h-3v-3.08A7 7 0 0 0 19 11z"></path>
-        </svg>
-      </button>
-
-      {/* Bottom Sheet with Transcript + Actions */}
-      {showSheet && (
-        <div className="fixed left-4 right-4 bottom-24 md:left-8 md:right-8 md:bottom-8 z-40">
-          <div className="max-h-[60vh] overflow-hidden rounded-2xl bg-white/90 backdrop-blur shadow-2xl border">
-            {/* Header */}
-            <div className="flex items-center justify-between px-4 py-3 border-b bg-white/90 backdrop-blur">
-              <div className="font-medium">Transcript</div>
-
-              <div className="flex items-center gap-3 flex-wrap justify-end">
-                {/* status */}
-                <div className="text-sm text-gray-600">
-                  {bubbleStatus} {lastError ? `• ${String(lastError)}` : ""}
-                </div>
-
-                {/* 🔊 Voice picker + Test button + provider tag */}
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-gray-500">Voice:</span>
-                  <select
-                    value={voiceId}
-                    onChange={(e) => setVoiceId(e.target.value)}
-                    className="text-sm border rounded px-2 py-1"
-                    title="Choose ElevenLabs voice"
-                  >
-                    {VOICE_OPTIONS.map((v) => (
-                      <option key={v.id} value={v.id}>{v.label}</option>
-                    ))}
-                  </select>
-                  <button
-                    onClick={() => {
-                      const name = VOICE_OPTIONS.find((v) => v.id === voiceId)?.label || "this";
-                      speak(
-                        `Hi! I'm ${name}, an ElevenLabs voice for MyDurhamLaw. How can I help today?`,
-                        { interrupt: true }
-                      );
-                    }}
-                    className="text-indigo-600 text-sm font-medium hover:underline"
-                    title="Play a short sample"
-                  >
-                    Test
-                  </button>
-                  <span className="text-xs text-gray-500">({provider})</span>
-                </div>
-
-                {/* actions toggle */}
-                <button
-                  onClick={() => setShowActions((v) => !v)}
-                  className="text-indigo-600 text-sm font-medium hover:underline"
-                >
-                  {showActions ? "Hide actions" : "Actions"}
-                </button>
-
-                {/* close */}
-                <button
-                  onClick={closeTranscript}
-                  className="rounded px-2 py-1 text-sm hover:bg-gray-100"
-                  aria-label="Close transcript"
-                  title="Close transcript"
-                >
-                  <X size={16} />
-                </button>
-              </div>
-            </div>
-
-            {/* Transcript */}
-            <div className="p-4 h-[36vh] overflow-y-auto text-sm leading-6">
-              {messages.length === 0 ? (
-                <div className="text-gray-500">No transcript yet.</div>
-              ) : (
-                <div className="space-y-2">
-                  {messages.map((m, i) => (
-                    <div key={i} className={m.role === "user" ? "text-right" : "text-left"}>
-                      <span
-                        className={
-                          "inline-block px-3 py-2 rounded " +
-                          (m.role === "user"
-                            ? "bg-indigo-600 text-white"
-                            : "bg-gray-200 text-gray-800")
-                        }
-                      >
-                        {m.content}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* live user partial */}
-              {isListening && partialTranscript && (
-                <div className="mt-2 text-right">
-                  <span className="inline-block px-3 py-2 rounded border text-gray-600 italic">
-                    {partialTranscript}
-                  </span>
-                </div>
-              )}
-            </div>
-
-            {/* Actions */}
-            {showActions && (
-              <div className="px-4 py-3 border-t flex flex-wrap gap-2 items-center">
-                <button
-                  onClick={saveTxtFile}
-                  className="px-3 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 flex items-center gap-2"
-                >
-                  <FileText className="w-4 h-4" /> Save .txt
-                </button>
-
-                <button
-                  onClick={copyToClipboard}
-                  className="px-3 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 flex items-center gap-2"
-                >
-                  <Copy className="w-4 h-4" /> Copy
-                </button>
-
-                <button
-                  onClick={deleteFromCloud}
-                  className="px-3 py-2 rounded-lg bg-rose-100 hover:bg-rose-200 text-rose-700 flex items-center gap-2"
-                >
-                  <Trash2 className="w-4 h-4" /> Delete{cloudId ? " (cloud)" : ""}
-                </button>
-
-                <button
-                  disabled={saving}
-                  onClick={saveToCloud}
-                  className={`px-3 py-2 rounded-lg text-white flex items-center gap-2 ${
-                    saving ? "bg-indigo-400" : "bg-indigo-600 hover:bg-indigo-700"
-                  }`}
-                >
-                  <Save className="w-4 h-4" />
-                  {saving ? "Saving..." : "Save to cloud"}
-                </button>
-
-                {saveMsg && <div className="ml-2 text-sm text-gray-600">{saveMsg}</div>}
-              </div>
+    <section className="rounded-3xl border border-violet-100 bg-gradient-to-br from-violet-50 via-white to-white shadow-sm">
+      <div className="flex flex-col gap-4 p-6">
+        <header className="flex items-start justify-between gap-4">
+          <div>
+            <p className="text-xs uppercase tracking-wide text-violet-500">Durmah Wellbeing</p>
+            <h2 className="text-xl font-semibold text-gray-900">Your steady check-in buddy</h2>
+            {context.yearOfStudy && (
+              <p className="text-sm text-gray-600">Year {context.yearOfStudy} � Here for your rhythm</p>
             )}
           </div>
+          <div className="hidden sm:block rounded-full bg-violet-100 px-4 py-2 text-sm font-medium text-violet-600">
+            Always with you
+          </div>
+        </header>
+
+        <div className="rounded-2xl bg-white/80 p-4 shadow-inner">
+          {loading ? (
+            <div className="space-y-2">
+              <div className="h-3 w-1/3 animate-pulse rounded-full bg-violet-100" />
+              <div className="h-3 w-2/3 animate-pulse rounded-full bg-violet-100" />
+            </div>
+          ) : (
+            <div className="space-y-3 text-sm leading-6">
+              {messages.map((message) => (
+                <div
+                  key={message.id}
+                  className={classNames(
+                    'flex',
+                    message.role === 'student' ? 'justify-end' : 'justify-start'
+                  )}
+                >
+                  <span
+                    className={classNames(
+                      'max-w-[85%] rounded-2xl px-4 py-2',
+                      message.role === 'student'
+                        ? 'bg-indigo-600 text-white'
+                        : 'bg-violet-100 text-violet-900'
+                    )}
+                  >
+                    {message.content}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
-      )}
-    </>
+
+        <div className="flex flex-wrap gap-2">
+          {quickActions.map((chip) => (
+            <button
+              key={chip.label}
+              type="button"
+              onClick={() => handleChipClick(chip.prompt)}
+              className="rounded-full border border-violet-100 bg-white px-3 py-1 text-sm font-medium text-violet-700 transition hover:bg-violet-50"
+            >
+              {chip.label}
+            </button>
+          ))}
+        </div>
+
+        <form onSubmit={handleSubmit} className="flex flex-col gap-2">
+          <label htmlFor="durmah-input" className="text-xs font-medium text-gray-500">
+            Share what's on your mind
+          </label>
+          <div className="flex items-center gap-2 rounded-2xl border border-violet-100 bg-white px-3 py-2 shadow-sm focus-within:border-violet-300">
+            <input
+              id="durmah-input"
+              ref={inputRef}
+              type="text"
+              value={input}
+              onChange={(event) => setInput(event.target.value)}
+              placeholder={isAuthed ? 'I want to focus on�' : 'Sign in to start a personalised chat'}
+              disabled={!isAuthed || submitting}
+              className="flex-1 bg-transparent text-sm text-gray-800 focus:outline-none disabled:text-gray-400"
+            />
+            <button
+              type="submit"
+              disabled={!isAuthed || submitting || !input.trim()}
+              className={classNames(
+                'rounded-full px-4 py-2 text-sm font-semibold transition',
+                !isAuthed || submitting || !input.trim()
+                  ? 'bg-gray-200 text-gray-500'
+                  : 'bg-indigo-600 text-white hover:bg-indigo-700'
+              )}
+            >
+              Send
+            </button>
+          </div>
+          {!isAuthed && (
+            <p className="text-xs text-gray-500">
+              Sign in to get personalised check-ins, save your reflections, and keep Durmah in sync with your timetable.
+            </p>
+          )}
+        </form>
+
+        {context.upcoming.length > 0 ? (
+          <div className="rounded-2xl border border-violet-100 bg-white/70 p-4 text-sm text-gray-700">
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-violet-500">
+              Next up for you
+            </p>
+            <ul className="space-y-2">
+              {context.upcoming.map((item, index) => (
+                <li key={`${item.title}-${index}`} className="flex items-start justify-between gap-3">
+                  <span className="font-medium text-gray-900">{item.title}</span>
+                  <span className="text-xs text-gray-500">
+                    {new Date(item.dueAt).toLocaleDateString()}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : (
+          <div className="rounded-2xl border border-dashed border-violet-100 bg-white/50 p-4 text-sm text-gray-600">
+            Let me know what you'd like to work on next and I'll keep you gently on track.
+          </div>
+        )}
+      </div>
+    </section>
   );
 }
