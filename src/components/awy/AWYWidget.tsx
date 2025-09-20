@@ -41,19 +41,26 @@ const ringClass = (s?: Status) => {
 const computeBottomRight = () => ({ bottom: 24, right: 24 });
 
 async function api<T = any>(input: RequestInfo, init?: RequestInit): Promise<T> {
-  const response = await authedFetch(input, {
-    ...init,
-    headers: {
-      'Content-Type': 'application/json',
-      ...init?.headers,
-    },
-  });
-
   try {
-    return (await response.json()) as T;
-  } catch {
+    const response = await authedFetch(input, {
+      ...init,
+      headers: {
+        'Content-Type': 'application/json',
+        ...init?.headers,
+      },
+    });
+
+    if (!response.ok) {
+      console.debug('[AWY] api soft status:', response.status);
+    }
+
+    const payload = (await response.json().catch(() => ({} as T))) as T;
+    return payload;
+  } catch (error) {
+    console.debug('[AWY] api request failed:', error);
     return {} as T;
   }
+}
 }
 
 /** Normalize unknown presence payloads into a PresenceMap.
@@ -164,8 +171,7 @@ export default function AWYWidget() {
         const data = await api<{ ok?: boolean; connections?: any[]; error?: string }>('/api/awy/connections');
 
         if (data?.ok === false) {
-          if (!stop) setConnections([]);
-          return;
+          console.debug('[AWY] connections soft response:', data?.error);
         }
 
         const rows = Array.isArray(data?.connections) ? data.connections : [];
@@ -180,7 +186,7 @@ export default function AWYWidget() {
 
         if (!stop) setConnections(list);
       } catch (e) {
-        console.error('[AWY] load connections failed:', e);
+        console.debug('[AWY] load connections failed:', e);
         if (!stop) setConnections([]);
       } finally {
         if (!stop) setLoading(false);
@@ -189,15 +195,15 @@ export default function AWYWidget() {
 
     const loadPresence = async () => {
       try {
-        const p = await api<any>('/api/awy/presence');
-        if (p?.ok === false) {
-          return;
+        const payload = await api<any>('/api/awy/presence');
+        if (payload?.ok === false) {
+          console.debug('[AWY] presence soft response:', payload?.error);
         }
-        if (!stop) setPresence(toPresenceMap(p));
+        const nextPresence = payload && payload.ok !== false ? toPresenceMap(payload) : {};
+        if (!stop) setPresence(nextPresence);
       } catch (e) {
-        // Presence not critical; keep quiet in UI
-        // eslint-disable-next-line no-console
         console.debug('[AWY] presence fetch failed:', e);
+        if (!stop) setPresence({});
       }
     };
 
@@ -348,3 +354,12 @@ export default function AWYWidget() {
     </>
   );
 }
+
+
+
+
+
+
+
+
+

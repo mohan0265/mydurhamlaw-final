@@ -1,79 +1,47 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { getServerUser } from '@/lib/api/serverAuth';
-
-const ok = (res: NextApiResponse, body: Record<string, unknown> = {}) =>
-  res.status(200).json({ ok: true, ...body });
-
-const failSoft = (
-  res: NextApiResponse,
-  message: string,
-  extra: Record<string, unknown> = {}
-) => {
-  console.warn('[durmah/memory] soft-fail:', message);
-  return res.status(200).json({ ok: false, error: message, ...extra });
-};
+import { getServerUser, softOk } from '@/lib/server/auth';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const { user, supabase } = await getServerUser(req, res);
 
-  if (!user || !supabase) {
-    if (req.method === 'GET') {
-      return ok(res, { memory: null });
-    }
-    return failSoft(res, 'unauthenticated', { saved: false });
-  }
-
   if (req.method === 'GET') {
+    if (!user) return res.status(401).json({ ok: false, error: 'unauthenticated' });
     try {
       const { data, error } = await supabase
         .from('durmah_memory')
-        .select('last_seen_at, last_topic, last_message')
+        .select('user_id, last_seen_at, last_topic, last_message')
         .eq('user_id', user.id)
-        .order('last_seen_at', { ascending: false })
-        .limit(1);
-
-      if (error) {
-        throw error;
+        .single();
+      if (error && error.code !== 'PGRST116') {
+        console.debug('[durmah] memory GET soft-fail:', error);
+        return softOk(res, { ok: true, memory: null });
       }
-
-      return ok(res, { memory: data?.[0] ?? null });
-    } catch (err: any) {
-      console.warn('[durmah/memory] load failed:', err?.message || err);
-      return ok(res, { memory: null });
+      return softOk(res, { ok: true, memory: data ?? null });
+    } catch (e) {
+      console.debug('[durmah] memory GET exception:', e);
+      return softOk(res, { ok: true, memory: null });
     }
   }
 
   if (req.method === 'POST') {
-    const body = (req.body || {}) as { last_topic?: string | null; last_message?: string | null };
-    const payload = {
-      user_id: user.id,
-      last_topic: body.last_topic ?? null,
-      last_message: body.last_message ?? null,
-      last_seen_at: new Date().toISOString(),
-    };
-
+    if (!user) return res.status(401).json({ ok: false, error: 'unauthenticated' });
     try {
-      const mod = await import('@/lib/server/supabaseAdmin').catch(() => null as any);
-      const supabaseAdmin = mod?.supabaseAdmin ?? null;
-
-      if (!supabaseAdmin) {
-        throw new Error('service-role client unavailable');
-      }
-
-      const { error } = await supabaseAdmin
+      const { last_topic, last_message } = (req.body || {}) as { last_topic?: string; last_message?: string };
+      const { error } = await supabase
         .from('durmah_memory')
-        .upsert(payload, { onConflict: 'user_id' });
-
+        .upsert([{ user_id: user.id, last_topic: last_topic || null, last_message: last_message || null, last_seen_at: new Date().toISOString() }], { onConflict: 'user_id' });
       if (error) {
-        throw error;
+        console.debug('[durmah] memory POST soft-fail:', error);
+        return softOk(res, { ok: true });
       }
-
-      return ok(res, { saved: true });
-    } catch (err: any) {
-      const message = err?.message || 'save_failed';
-      return failSoft(res, message, { saved: false });
+      return softOk(res, { ok: true });
+    } catch (e) {
+      console.debug('[durmah] memory POST exception:', e);
+      return softOk(res, { ok: true });
     }
   }
 
-  return failSoft(res, 'method_not_allowed');
+  return res.status(405).json({ ok: false, error: 'method not allowed' });
 }
+
+

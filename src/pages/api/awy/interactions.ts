@@ -1,6 +1,6 @@
 // src/pages/api/awy/interactions.ts
 import type { NextApiRequest, NextApiResponse } from "next";
-import { getServerUser } from "@/lib/api/serverAuth";
+import { getServerUser } from "@/lib/server/auth";
 
 type Json = Record<string, unknown>;
 
@@ -17,7 +17,7 @@ function failSoft<T extends Json>(res: NextApiResponse, body: T, warn: unknown) 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const { user, supabase } = await getServerUser(req, res);
   if (!user) {
-    return res.status(401).json({ ok: false, error: "unauthorized" });
+    return res.status(401).json({ ok: false, error: "unauthenticated" });
   }
 
   switch (req.method) {

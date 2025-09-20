@@ -16,29 +16,6 @@ type StudentSnapshot = {
 
 const EMPTY_SNAPSHOT: StudentSnapshot = { name: null, upcoming: [] };
 
-async function fetchMemory(): Promise<MemoryRecord> {
-  try {
-    const response = await fetch('/api/durmah/memory');
-    const json = await response.json().catch(() => null);
-    if (!json || json.ok === false) return null;
-    return json.memory ?? null;
-  } catch {
-    return null;
-  }
-}
-
-async function saveMemory(last_topic?: string, last_message?: string) {
-  try {
-    await fetch('/api/durmah/memory', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ last_topic, last_message }),
-    });
-  } catch {
-    // soft fail
-  }
-}
-
 async function getStudentContext(userId?: string | null): Promise<StudentSnapshot> {
   const supabase = getSupabaseClient();
   if (!supabase || !userId) return { ...EMPTY_SNAPSHOT };
@@ -117,7 +94,24 @@ export default function DurmahWidget() {
     let cancelled = false;
 
     (async () => {
-      const memory = await fetchMemory();
+      let memory: MemoryRecord = null;
+
+      try {
+        const response = await fetch('/api/durmah/memory', { credentials: 'include' });
+        if (response.ok) {
+          const payload = await response.json().catch(() => null);
+          if (payload && payload.ok !== false) {
+            memory = payload.memory ?? null;
+          }
+        } else if (response.status === 400 || response.status === 401) {
+          console.debug('[Durmah] memory GET soft status:', response.status);
+        } else {
+          console.debug('[Durmah] memory GET unexpected status:', response.status);
+        }
+      } catch (error) {
+        console.debug('[Durmah] memory GET failed:', error);
+      }
+
       const context = await getStudentContext(user?.id);
       if (cancelled) return;
 
@@ -153,7 +147,23 @@ export default function DurmahWidget() {
     setInput('');
     setIsStreaming(true);
 
-    saveMemory(inferTopic(userText), userText);
+    const inferredTopic = inferTopic(userText);
+
+    void (async () => {
+      try {
+        const response = await fetch('/api/durmah/memory', {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ last_topic: inferredTopic, last_message: userText }),
+        });
+        if (!response.ok) {
+          console.debug('[Durmah] memory POST soft status:', response.status);
+        }
+      } catch (error) {
+        console.debug('[Durmah] memory POST failed:', error);
+      }
+    })();
 
     const payloadMessages = history.map((message) => ({
       role: message.role === 'durmah' ? 'assistant' : 'user',
@@ -298,3 +308,10 @@ export default function DurmahWidget() {
     </section>
   );
 }
+
+
+
+
+
+
+
