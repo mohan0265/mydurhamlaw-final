@@ -28,18 +28,17 @@ export default function Dashboard() {
   return (
     <>
       <Head>
-        <title>Dashboard • MyDurhamLaw</title>
+        <title>Dashboard - MyDurhamLaw</title>
       </Head>
 
       <main className="mx-auto max-w-7xl px-4 sm:px-6 py-6">
         {/* Header */}
-        <div className="mb-6">
+        <div className="mb-4">
           <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Dashboard</h1>
           <p className="text-gray-600 mt-1">Your personalized study companion</p>
         </div>
 
-        {/* Durmah wellbeing widget */}
-        <div className="mb-8">
+        <div className="mb-6">
           <DurmahWidget />
         </div>
 

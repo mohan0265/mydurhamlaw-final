@@ -1,289 +1,201 @@
-// src/components/DurmahWidget.tsx
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { getStudentContext, composeOpener, type StudentContext } from '@/lib/durmah/service';
+import React, { useEffect, useMemo, useState } from 'react';
+import { getSupabaseClient } from '@/lib/supabase/client';
+import { useAuth } from '@/lib/supabase/AuthContext';
 
-type ThreadMessage = {
-  id: string;
-  role: 'durmah' | 'student';
-  content: string;
-  timestamp: string;
-};
+type Msg = { role: 'durmah' | 'you'; text: string; ts: number };
+type UpcomingItem = { id: string; title: string; due_at?: string | null };
 
-const GENERAL_SUGGESTIONS = [
-  { label: 'Review this week', prompt: 'Can you help me review this week and spot any gaps?' },
-  { label: 'Make a study plan', prompt: 'Help me make a study plan for this week.' },
-  { label: 'Practice quiz', prompt: 'Could you give me a short practice quiz?' },
-];
-
-const EMPTY_CONTEXT: StudentContext = {
-  userId: null,
-  name: null,
-  yearOfStudy: null,
-  upcoming: [],
-  lastMemory: null,
-};
-
-function classNames(...args: Array<string | false | null | undefined>) {
-  return args.filter(Boolean).join(' ');
+async function fetchMemory(): Promise<{ last_topic?: string; last_message?: string } | null> {
+  try {
+    const r = await fetch('/api/durmah/memory');
+    const j = await r.json();
+    if (!j?.ok) return null;
+    return j?.memory ?? null;
+  } catch { return null; }
 }
 
-function inferTopic(ctx: StudentContext | null, text: string): string | null {
-  const fallback = ctx?.upcoming?.[0]?.title;
-  if (fallback) return fallback;
-
-  const cleaned = text
-    .replace(/[.!?]/g, '')
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 4)
-    .join(' ');
-
-  if (!cleaned) return null;
-  return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
+async function saveMemory(last_topic?: string, last_message?: string) {
+  try {
+    await fetch('/api/durmah/memory', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ last_topic, last_message }),
+    });
+  } catch { /* fail-soft */ }
 }
 
-function buildFollowUp(topic: string | null): string {
-  if (topic) {
-    return `Thanks for sharing. Shall we map out the next steps for "${topic}"?`;
+async function getStudentContext(userId?: string | null) {
+  const supabase = getSupabaseClient();
+  if (!supabase || !userId) return { name: null as string | null, upcoming: [] as UpcomingItem[] };
+
+  try {
+    const prof = await supabase.from('profiles')
+      .select('full_name')
+      .eq('id', userId)
+      .maybeSingle();
+
+    const name = prof.data?.full_name || null;
+
+    // Adapt table name if different
+    const tasks = await supabase
+      .from('assignments')
+      .select('id,title,due_at')
+      .gte('due_at', new Date().toISOString())
+      .order('due_at', { ascending: true })
+      .limit(3);
+
+    const upcoming: UpcomingItem[] = (tasks.data || []).map((t) => ({
+      id: String(t.id),
+      title: t.title ?? 'Upcoming item',
+      due_at: t.due_at ?? null,
+    }));
+
+    return { name, upcoming };
+  } catch {
+    return { name: null as string | null, upcoming: [] as UpcomingItem[] };
   }
-  return 'Got it. Want me to outline a quick plan or highlight useful resources?';
+}
+
+function timeHello(d = new Date()) {
+  const h = d.getHours();
+  if (h < 12) return 'Good morning';
+  if (h < 18) return 'Good afternoon';
+  return 'Good evening';
+}
+
+function composeOpener(
+  name?: string | null,
+  memory?: { last_topic?: string; last_message?: string } | null,
+  upcoming: UpcomingItem[] = []
+) {
+  const niceName = name?.trim() ? `, ${name.split(' ')[0]}` : '';
+  if (upcoming.length > 0) {
+    const first = upcoming[0];
+    if (first) {
+      const when = first.due_at ? new Date(first.due_at).toLocaleDateString() : 'soon';
+      const title = first.title || 'your next task';
+      return `${timeHello()}${niceName}! I am here. I see "${title}" due ${when}. Want help planning or breaking it down?`;
+    }
+  }
+  if (memory?.last_topic) {
+    return `${timeHello()}${niceName}! Last time we talked about "${memory.last_topic}". Want to pick that up or start something new?`;
+  }
+  return `${timeHello()}${niceName}! I am Durmah - your study and wellbeing buddy. What would you like to work on right now?`;
 }
 
 export default function DurmahWidget() {
-  const [context, setContext] = useState<StudentContext>(EMPTY_CONTEXT);
-  const [loading, setLoading] = useState(true);
-  const [messages, setMessages] = useState<ThreadMessage[]>([]);
+  const { user } = useAuth() || { user: null };
+  const [ready, setReady] = useState(false);
+  const [ctxName, setCtxName] = useState<string | null>(null);
+  const [upcoming, setUpcoming] = useState<UpcomingItem[]>([]);
+  const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState('');
-  const [submitting, setSubmitting] = useState(false);
-  const inputRef = useRef<HTMLInputElement | null>(null);
 
-  const isAuthed = Boolean(context.userId);
+  const signedIn = !!user?.id;
 
   useEffect(() => {
-    let active = true;
-
+    let cancelled = false;
     (async () => {
-      try {
-        const ctx = await getStudentContext();
-        if (!active) return;
-        setContext(ctx);
-        const opener = composeOpener(ctx);
-        setMessages([
-          {
-            id: 'durmah-opener',
-            role: 'durmah',
-            content: opener,
-            timestamp: new Date().toISOString(),
-          },
-        ]);
-      } catch (err) {
-        console.warn('[DurmahWidget] context load failed:', (err as Error)?.message || err);
-        if (active) {
-          setContext(EMPTY_CONTEXT);
-          setMessages([
-            {
-              id: 'durmah-opener',
-              role: 'durmah',
-              content: composeOpener(EMPTY_CONTEXT),
-              timestamp: new Date().toISOString(),
-            },
-          ]);
-        }
-      } finally {
-        if (active) setLoading(false);
-      }
+      const mem = await fetchMemory();
+      const ctx = await getStudentContext(user?.id);
+      if (cancelled) return;
+      setCtxName(ctx.name);
+      setUpcoming(ctx.upcoming);
+      const opener = composeOpener(ctx.name, mem, ctx.upcoming);
+      setMessages([{ role: 'durmah', text: opener, ts: Date.now() }]);
+      setReady(true);
     })();
+    return () => { cancelled = true; };
+  }, [user?.id]);
 
-    return () => {
-      active = false;
-    };
-  }, []);
+  const chips = useMemo(() => {
+    if (upcoming.length === 0) return ['Review this week', 'Make a study plan', 'Practice quiz'];
+    return ['Plan task', 'Break into steps', 'Set reminder'];
+  }, [upcoming]);
 
-  const quickActions = useMemo(() => {
-    if (context.upcoming.length > 0) {
-      const next = context.upcoming[0];
-      if (next) {
-        const due = next.dueAt ? new Date(next.dueAt).toLocaleDateString() : 'soon';
-        const title = next.title || 'this task';
-        return [
-          { label: 'Plan task', prompt: `Help me plan "${title}" before ${due}.` },
-          { label: 'Break into steps', prompt: `Can you break "${title}" into manageable steps?` },
-          { label: 'Set reminder', prompt: `Remind me to work on "${title}" tomorrow evening.` },
-        ];
-      }
-    }
-    return GENERAL_SUGGESTIONS;
-  }, [context.upcoming]);
+  function inferTopic(text: string) {
+    return text.split(/\s+/).slice(0, 4).join(' ');
+  }
 
-  const handleSubmit = async (event: React.FormEvent) => {
-    event.preventDefault();
-    if (!isAuthed) return;
-
-    const text = input.trim();
-    if (!text) return;
-
-    const userMessage: ThreadMessage = {
-      id: `student-${Date.now()}`,
-      role: 'student',
-      content: text,
-      timestamp: new Date().toISOString(),
-    };
-
-    setMessages((prev) => [...prev, userMessage]);
+  async function send() {
+    if (!input.trim()) return;
+    const userText = input.trim();
     setInput('');
-    setSubmitting(true);
-
-    const topic = inferTopic(context, text);
-
-    fetch('/api/durmah/memory', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        last_topic: topic ?? context.upcoming[0]?.title ?? null,
-        last_message: text,
-      }),
-    }).catch((err) => {
-      console.warn('[DurmahWidget] memory save failed:', err);
-    }).finally(() => {
-      setSubmitting(false);
-    });
-
-    setMessages((prev) => [
-      ...prev,
-      {
-        id: `durmah-${Date.now()}`,
-        role: 'durmah',
-        content: buildFollowUp(topic),
-        timestamp: new Date().toISOString(),
-      },
-    ]);
-  };
-
-  const handleChipClick = (prompt: string) => {
-    setInput(prompt);
-    inputRef.current?.focus();
-  };
+    setMessages((m) => [...m, { role: 'you', text: userText, ts: Date.now() }]);
+    saveMemory(inferTopic(userText), userText);
+    const follow = 'Got it - want me to draft steps, set a small timer, or add a reminder?';
+    setMessages((m) => [...m, { role: 'durmah', text: follow, ts: Date.now() + 1 }]);
+  }
 
   return (
-    <section className="rounded-3xl border border-violet-100 bg-gradient-to-br from-violet-50 via-white to-white shadow-sm">
-      <div className="flex flex-col gap-4 p-6">
-        <header className="flex items-start justify-between gap-4">
-          <div>
-            <p className="text-xs uppercase tracking-wide text-violet-500">Durmah Wellbeing</p>
-            <h2 className="text-xl font-semibold text-gray-900">Your steady check-in buddy</h2>
-            {context.yearOfStudy && (
-              <p className="text-sm text-gray-600">Year {context.yearOfStudy} • Here for your rhythm</p>
-            )}
-          </div>
-          <div className="hidden sm:block rounded-full bg-violet-100 px-4 py-2 text-sm font-medium text-violet-600">
-            Always with you
-          </div>
-        </header>
+    <section className="rounded-xl border border-violet-200 bg-white shadow-sm">
+      <header className="flex items-center justify-between px-4 py-3">
+        <div className="font-semibold text-violet-800">Durmah</div>
+        <div className="text-xs text-violet-600">Always here for you</div>
+      </header>
 
-        <div className="rounded-2xl bg-white/80 p-4 shadow-inner">
-          {loading ? (
-            <div className="space-y-2">
-              <div className="h-3 w-1/3 animate-pulse rounded-full bg-violet-100" />
-              <div className="h-3 w-2/3 animate-pulse rounded-full bg-violet-100" />
-            </div>
-          ) : (
-            <div className="space-y-3 text-sm leading-6">
-              {messages.map((message) => (
-                <div
-                  key={message.id}
-                  className={classNames(
-                    'flex',
-                    message.role === 'student' ? 'justify-end' : 'justify-start'
-                  )}
-                >
-                  <span
-                    className={classNames(
-                      'max-w-[85%] rounded-2xl px-4 py-2',
-                      message.role === 'student'
-                        ? 'bg-indigo-600 text-white'
-                        : 'bg-violet-100 text-violet-900'
-                    )}
-                  >
-                    {message.content}
-                  </span>
+      {!ready ? (
+        <div className="px-4 pb-6 text-sm text-gray-500">Connecting...</div>
+      ) : !signedIn ? (
+        <div className="px-4 pb-6">
+          <div className="mb-3 text-sm text-gray-700">
+            Please <a className="underline" href="/login">sign in</a> to get personalized check-ins.
+          </div>
+          <div className="rounded-md bg-gray-50 p-3 text-sm text-gray-600">
+            {messages[0]?.text}
+          </div>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {chips.map((c) => (
+              <button key={c} className="rounded-full border px-3 py-1 text-xs text-gray-700" disabled>
+                {c}
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : (
+        <div className="px-4 pb-4">
+          <div className="space-y-2">
+            {messages.map((m, i) => (
+              <div key={m.ts + ':' + i} className={m.role === 'durmah' ? 'text-violet-800' : 'text-gray-900'}>
+                <div className={`inline-block max-w-full rounded-2xl px-3 py-2 text-sm ${m.role === 'durmah' ? 'bg-violet-50' : 'bg-gray-50'}`}>
+                  <strong className="mr-1">{m.role === 'durmah' ? 'Durmah:' : (ctxName ? ctxName.split(' ')[0] : 'You') + ':'}</strong>
+                  <span>{m.text}</span>
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
+              </div>
+            ))}
+          </div>
 
-        <div className="flex flex-wrap gap-2">
-          {quickActions.map((chip) => (
-            <button
-              key={chip.label}
-              type="button"
-              onClick={() => handleChipClick(chip.prompt)}
-              className="rounded-full border border-violet-100 bg-white px-3 py-1 text-sm font-medium text-violet-700 transition hover:bg-violet-50"
-            >
-              {chip.label}
-            </button>
-          ))}
-        </div>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {chips.map((c) => (
+              <button
+                key={c}
+                onClick={() => setInput((p) => (p ? p : c))}
+                className="rounded-full border border-violet-200 bg-white px-3 py-1 text-xs text-violet-700 hover:bg-violet-50"
+              >
+                {c}
+              </button>
+            ))}
+          </div>
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-2">
-          <label htmlFor="durmah-input" className="text-xs font-medium text-gray-500">
-            Share what's on your mind
-          </label>
-          <div className="flex items-center gap-2 rounded-2xl border border-violet-100 bg-white px-3 py-2 shadow-sm focus-within:border-violet-300">
+          <div className="mt-3 flex gap-2">
             <input
-              id="durmah-input"
-              ref={inputRef}
-              type="text"
+              className="w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-violet-300"
               value={input}
-              onChange={(event) => setInput(event.target.value)}
-              placeholder={isAuthed ? 'I want to focus on…' : 'Sign in to start a personalised chat'}
-              disabled={!isAuthed || submitting}
-              className="flex-1 bg-transparent text-sm text-gray-800 focus:outline-none disabled:text-gray-400"
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="Tell me what you are working on..."
             />
             <button
-              type="submit"
-              disabled={!isAuthed || submitting || !input.trim()}
-              className={classNames(
-                'rounded-full px-4 py-2 text-sm font-semibold transition',
-                !isAuthed || submitting || !input.trim()
-                  ? 'bg-gray-200 text-gray-500'
-                  : 'bg-indigo-600 text-white hover:bg-indigo-700'
-              )}
+              onClick={send}
+              className="rounded-lg bg-violet-600 px-3 py-2 text-sm font-medium text-white hover:bg-violet-700 disabled:opacity-50"
+              disabled={!input.trim()}
             >
               Send
             </button>
           </div>
-          {!isAuthed && (
-            <p className="text-xs text-gray-500">
-              Sign in to get personalised check-ins, save your reflections, and keep Durmah in sync with your timetable.
-            </p>
-          )}
-        </form>
-
-        {context.upcoming.length > 0 ? (
-          <div className="rounded-2xl border border-violet-100 bg-white/70 p-4 text-sm text-gray-700">
-            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-violet-500">
-              Next up for you
-            </p>
-            <ul className="space-y-2">
-              {context.upcoming.map((item, index) => (
-                <li key={`${item.title}-${index}`} className="flex items-start justify-between gap-3">
-                  <span className="font-medium text-gray-900">{item.title}</span>
-                  <span className="text-xs text-gray-500">
-                    {new Date(item.dueAt).toLocaleDateString()}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        ) : (
-          <div className="rounded-2xl border border-dashed border-violet-100 bg-white/50 p-4 text-sm text-gray-600">
-            Let me know what you'd like to work on next and I'll keep you gently on track.
-          </div>
-        )}
-      </div>
+        </div>
+      )}
     </section>
   );
 }
