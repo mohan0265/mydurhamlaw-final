@@ -1,20 +1,31 @@
-// src/pages/api/chat-stream.ts
-import type { NextApiRequest, NextApiResponse } from "next";
-import OpenAI from "openai";
+import type { NextApiRequest, NextApiResponse } from 'next';
+import OpenAI from 'openai';
 
-type ChatMessage = { role: "system" | "user" | "assistant"; content: string };
+type ChatMessage = { role: 'system' | 'user' | 'assistant'; content: string };
+
+type StreamChunk = {
+  choices?: Array<{
+    delta?: { content?: string };
+  }>;
+};
 
 const SYSTEM_PROMPT =
-  "You are Durmah, a friendly, succinct voice mentor for Durham law students. " +
-  "Be natural, avoid repetition, and keep answers concise unless asked for depth. " +
-  "Acknowledge when audio is still connecting, but never repeat the same listening line. " +
-  "If the user is just testing the mic, respond briefly and invite a question.";
+  'You are Durmah, a friendly, succinct voice mentor for Durham law students. ' +
+  'Be natural, avoid repetition, and keep answers concise unless asked for depth. ' +
+  'Acknowledge when audio is still connecting, but never repeat the same listening line. ' +
+  'If the user is just testing the mic, respond briefly and invite a question.';
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
+export const config = {
+  api: {
+    bodyParser: true,
+  },
+};
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (req.method !== "POST") {
-    res.status(405).json({ error: "Method not allowed" });
+  if (req.method !== 'POST') {
+    res.status(405).json({ error: 'Method not allowed' });
     return;
   }
 
@@ -22,42 +33,51 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const body = req.body as { messages?: ChatMessage[] };
     const incoming = Array.isArray(body?.messages) ? body.messages : [];
 
-    // Type guard: coerce/validate roles
     const sanitized: ChatMessage[] = incoming
-      .filter(m => m && typeof m.content === "string")
-      .map(m => {
-        const role = (["system", "user", "assistant"] as const).includes(m.role as any)
-          ? (m.role as "system" | "user" | "assistant")
-          : "user";
-        return { role, content: m.content.trim() };
+      .filter((message) => message && typeof message.content === 'string')
+      .map((message) => {
+        const allowedRoles: Array<ChatMessage['role']> = ['system', 'user', 'assistant'];
+        const role = allowedRoles.includes(message.role) ? message.role : 'user';
+        return { role, content: message.content.trim() };
       });
 
-    // Only inject system prompt once, at the start of each session
-    const hasSystem = sanitized.some(m => m.role === "system");
-    const msgs: ChatMessage[] = hasSystem
+    const hasSystem = sanitized.some((message) => message.role === 'system');
+    const messages: ChatMessage[] = hasSystem
       ? [...sanitized]
-      : [{ role: "system", content: SYSTEM_PROMPT }, ...sanitized];
+      : [{ role: 'system', content: SYSTEM_PROMPT }, ...sanitized];
 
-    // Basic duplicate guard: if last assistant == penultimate assistant, drop the last one
-    if (msgs.length >= 2) {
-      const last = msgs[msgs.length - 1];
-      const prev = msgs[msgs.length - 2];
-      if (last && prev && last.role === "assistant" && prev.role === "assistant" && last.content === prev.content) {
-        msgs.pop();
+    res.writeHead(200, {
+      'Content-Type': 'text/plain; charset=utf-8',
+      'Cache-Control': 'no-cache, no-transform',
+      Connection: 'keep-alive',
+      'Transfer-Encoding': 'chunked',
+    });
+
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages,
+      temperature: 0.6,
+      max_tokens: 400,
+      stream: true,
+    });
+
+    const stream = completion as AsyncIterable<StreamChunk>;
+    for await (const part of stream) {
+      const token = part?.choices?.[0]?.delta?.content ?? '';
+      if (token) {
+        res.write(token);
       }
     }
 
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: msgs,
-      temperature: 0.6,
-      max_tokens: 400,
-    });
-
-    const text = completion.choices?.[0]?.message?.content?.trim() || "Okay.";
-    res.status(200).json({ text });
+    res.end();
   } catch (err: any) {
-    console.error("[chat-stream] error", err);
-    res.status(500).json({ error: "Chat failed", detail: err?.message ?? String(err) });
+    console.error('[chat-stream] error', err);
+    if (!res.headersSent) {
+      res.status(500).json({ error: 'Chat failed', detail: err?.message || String(err) });
+    } else {
+      res.write('\n');
+      res.write('[error]');
+      res.end();
+    }
   }
 }

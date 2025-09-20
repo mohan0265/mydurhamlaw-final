@@ -1,89 +1,78 @@
-// src/pages/settings/awy.tsx
-"use client";
+'use client';
 
-import React, { useEffect, useState } from "react";
-import Link from "next/link";
-import { authedFetch } from "@/lib/api/authedFetch";
+import React, { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { authedFetch } from '@/lib/api/authedFetch';
 
-/** -----------------------------
- * Helpers
- * ---------------------------- */
-async function apiGet<T = any>(url: string): Promise<T> {
-  const r = await authedFetch(url);
-  if (!r.ok) throw new Error(`${url} -> ${r.status}`);
-  return r.json();
-}
-
-async function apiSend<T = any>(url: string, method: string, body?: any): Promise<T> {
-  const r = await authedFetch(url, {
-    method,
-    headers: { "Content-Type": "application/json" },
-    body: body ? JSON.stringify(body) : undefined,
-  });
-  if (!r.ok) throw new Error(`${url} -> ${r.status}`);
-  return r.json();
-}
-
-/** -----------------------------
- * Types (schema tolerant)
- * ---------------------------- */
-type Conn = {
+type RawConnection = {
   id: string;
-  // either old or new columns:
   email?: string | null;
   loved_email?: string | null;
-
   relationship?: string | null;
   relationship_label?: string | null;
-
   display_name?: string | null;
   status?: string | null;
-
-  // optional linkage to an auth user
-  connected_user_id?: string | null;
-  loved_one_id?: string | null;
 };
 
-function normalizeConn(row: Conn) {
+type Connection = {
+  id: string;
+  email: string;
+  relationship: string;
+  displayName: string | null;
+  status: string | null;
+};
+
+type ApiResponse = {
+  ok?: boolean;
+  error?: string;
+  connections?: RawConnection[];
+};
+
+async function getJson(url: string, init?: RequestInit) {
+  const response = await authedFetch(url, init);
+  try {
+    return await response.json();
+  } catch {
+    return {};
+  }
+}
+
+function normalise(row: RawConnection): Connection {
   return {
-    id: row.id,
-    email: row.email ?? row.loved_email ?? "",
-    relationship: row.relationship ?? row.relationship_label ?? "",
-    display_name: row.display_name ?? null,
-    status: row.status ?? null,
+    id: String(row.id),
+    email: (row.email || row.loved_email || '').toLowerCase(),
+    relationship: row.relationship || row.relationship_label || 'Loved one',
+    displayName: row.display_name || null,
+    status: row.status || null,
   };
 }
 
-/** -----------------------------
- * Constants
- * ---------------------------- */
-const RELN_OPTIONS = ["Mum", "Dad", "Guardian", "Partner", "Family"] as const;
-const DEFAULT_RELN: string = RELN_OPTIONS[0] ?? "Mum";
-const MAX = 3;
+const MAX_CONNECTIONS = 3;
+const RELATIONSHIP_OPTIONS = ['Mum', 'Dad', 'Guardian', 'Partner', 'Family'];
 
-/** -----------------------------
- * Page
- * ---------------------------- */
 export default function AWYSettingsPage() {
-  const [loading, setLoading] = useState<boolean>(true);
-  const [connections, setConnections] = useState<ReturnType<typeof normalizeConn>[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [needsAuth, setNeedsAuth] = useState(false);
+  const [connections, setConnections] = useState<Connection[]>([]);
 
-  // Form state (NOTE: strictly typed as string to avoid "possibly undefined")
-  const [email, setEmail] = useState<string>("");
-  const [relationship, setRelationship] = useState<string>(DEFAULT_RELN);
-  const [displayName, setDisplayName] = useState<string>("");
-
-  const used = connections.length;
-  const canAddMore = used < MAX;
+  const [email, setEmail] = useState('');
+  const [relationship, setRelationship] = useState<string>(RELATIONSHIP_OPTIONS[0] ?? '');
+  const [displayName, setDisplayName] = useState('');
 
   const refresh = async () => {
+    setLoading(true);
+    setNeedsAuth(false);
     try {
-      setLoading(true);
-      const data = await apiGet<any>("/api/awy/connections");
-      const list: Conn[] = Array.isArray(data) ? data : data?.connections ?? [];
-      setConnections(list.map(normalizeConn));
-    } catch (e) {
-      console.error("Load connections failed:", e);
+      const data = (await getJson('/api/awy/connections')) as ApiResponse;
+      if (data?.ok === false && data?.error === 'unauthenticated') {
+        setNeedsAuth(true);
+        setConnections([]);
+        return;
+      }
+      const items = Array.isArray(data?.connections) ? data.connections : [];
+      setConnections(items.map(normalise));
+    } catch (err) {
+      console.warn('[AWY settings] load failed:', err);
       setConnections([]);
     } finally {
       setLoading(false);
@@ -94,83 +83,104 @@ export default function AWYSettingsPage() {
     refresh();
   }, []);
 
+  const usedSlots = connections.length;
+  const canAddMore = usedSlots < MAX_CONNECTIONS;
+
   const handleAdd = async () => {
-    if (!canAddMore) {
-      alert("You’ve already added the maximum (3).");
-      return;
-    }
-    if (!email.trim() || !relationship.trim()) return;
+    if (!canAddMore) return;
+    const trimmedEmail = email.trim().toLowerCase();
+    if (!trimmedEmail) return;
 
     try {
-      await apiSend("/api/awy/invite", "POST", {
-        email: email.trim(),
-        relationship: relationship.trim(),
-        displayName: displayName.trim() || undefined,
+      const result = await getJson('/api/awy/connections', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: trimmedEmail,
+          relationship: relationship.trim(),
+          displayName: displayName.trim() || undefined,
+        }),
       });
 
-      setEmail("");
-      setRelationship(DEFAULT_RELN); // << strictly a string
-      setDisplayName("");
+      if (result?.ok === false) {
+        alert(result?.error || 'Could not add loved one.');
+        return;
+      }
+
+      setEmail('');
+      setRelationship(RELATIONSHIP_OPTIONS[0] ?? '');
+      setDisplayName('');
+      alert('Loved one added. They can log in immediately.');
       await refresh();
-      alert("Loved one added. They can log in immediately.");
-    } catch (e: any) {
-      console.error("Add loved one failed:", e);
-      alert(e?.message ?? "Failed to add loved one");
+    } catch (err) {
+      console.error('[AWY settings] add loved one failed:', err);
+      alert('Could not add loved one.');
     }
   };
 
   const handleRemove = async (id: string) => {
-    if (!confirm("Remove this loved one?")) return;
+    if (!confirm('Remove this loved one?')) return;
     try {
-      await apiSend("/api/awy/connections", "DELETE", { id });
+      const result = await getJson('/api/awy/connections', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id }),
+      });
+
+      if (result?.ok === false) {
+        alert(result?.error || 'Could not remove loved one.');
+        return;
+      }
+
       await refresh();
-    } catch (e: any) {
-      console.error("Remove loved one failed:", e);
-      alert(e?.message ?? "Failed to remove loved one");
+    } catch (err) {
+      console.error('[AWY settings] remove loved one failed:', err);
+      alert('Could not remove loved one.');
     }
   };
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-8">
-      <h1 className="text-2xl font-semibold mb-4">Always With You — Settings</h1>
-
-      <p className="text-sm text-gray-600 mb-6">
-        Add up to 3 loved ones to see their presence in the floating widget. You can invite new contacts or remove
-        existing ones anytime.
+      <h1 className="mb-4 text-2xl font-semibold">Always With You - Settings</h1>
+      <p className="mb-6 text-sm text-gray-600">
+        Add up to three loved ones to show their presence in the AWY widget. You can update or remove them at any time.
       </p>
 
-      {/* Form */}
-      <div className="rounded-lg border bg-white p-4 mb-8">
+      {needsAuth && (
+        <div className="mb-8 rounded-lg border border-yellow-200 bg-yellow-50 p-4 text-sm text-yellow-800">
+          Please <Link href="/login" className="font-medium underline">sign in</Link> to manage your loved ones.
+        </div>
+      )}
+
+      <div className="mb-8 rounded-lg border bg-white p-4">
         <div className="mb-3">
-          <label className="block text-sm font-medium mb-1">Loved one’s email</label>
+          <label className="mb-1 block text-sm font-medium">Loved one's email</label>
           <input
             type="email"
             className="w-full rounded border px-3 py-2"
             placeholder="name@example.com"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            disabled={!canAddMore}
+            onChange={(event) => setEmail(event.target.value)}
+            disabled={!canAddMore || needsAuth}
           />
         </div>
-
         <div className="mb-3">
-          <label className="block text-sm font-medium mb-1">Relationship</label>
+          <label className="mb-1 block text-sm font-medium">Relationship</label>
           <select
             className="w-full rounded border px-3 py-2"
             value={relationship}
-            onChange={(e) => setRelationship(e.target.value)}
-            disabled={!canAddMore}
+            onChange={(event) => setRelationship(event.target.value)}
+            disabled={!canAddMore || needsAuth}
           >
-            {RELN_OPTIONS.map((opt) => (
-              <option key={opt} value={opt}>
-                {opt}
+            {RELATIONSHIP_OPTIONS.map((option) => (
+              <option key={option} value={option}>
+                {option}
               </option>
             ))}
           </select>
         </div>
-
         <div className="mb-4">
-          <label className="block text-sm font-medium mb-1">
+          <label className="mb-1 block text-sm font-medium">
             Display name <span className="text-gray-400">(optional)</span>
           </label>
           <input
@@ -178,59 +188,44 @@ export default function AWYSettingsPage() {
             className="w-full rounded border px-3 py-2"
             placeholder="Mum / Dad / Uncle Ravi"
             value={displayName}
-            onChange={(e) => setDisplayName(e.target.value)}
-            disabled={!canAddMore}
+            onChange={(event) => setDisplayName(event.target.value)}
+            disabled={!canAddMore || needsAuth}
           />
         </div>
-
         <div className="flex items-center justify-between">
-          <div className="text-sm text-gray-600">
-            You’ve added {used} / {MAX}
-          </div>
+          <span className="text-sm text-gray-600">You have added {usedSlots} of {MAX_CONNECTIONS}</span>
           <button
             className={`rounded px-4 py-2 text-white ${
-              canAddMore ? "bg-violet-600 hover:bg-violet-700" : "bg-gray-400 cursor-not-allowed"
+              canAddMore && !needsAuth ? 'bg-violet-600 hover:bg-violet-700' : 'bg-gray-400 cursor-not-allowed'
             }`}
             onClick={handleAdd}
-            disabled={!canAddMore}
+            disabled={!canAddMore || needsAuth}
           >
-            Add Loved One
+            Add loved one
           </button>
         </div>
       </div>
 
-      {/* List */}
       <div className="rounded-lg border bg-white p-4">
-        <h2 className="text-lg font-medium mb-3">Your Loved Ones</h2>
-
+        <h2 className="mb-3 text-lg font-medium">Your loved ones</h2>
         {loading ? (
-          <div className="text-sm text-gray-600">Loading…</div>
+          <div className="text-sm text-gray-600">Loading...</div>
         ) : connections.length === 0 ? (
           <div className="text-sm text-gray-600">No loved ones yet.</div>
         ) : (
           <ul className="space-y-3">
-            {connections.map((c) => (
-              <li key={c.id} className="flex items-center justify-between rounded border px-3 py-2">
+            {connections.map((conn) => (
+              <li key={conn.id} className="flex items-center justify-between rounded border px-3 py-2">
                 <div className="min-w-0">
-                  <div className="truncate text-sm font-medium">{c.relationship || "Loved One"}</div>
-                  <div className="truncate text-xs text-gray-600">{c.email}</div>
-                  {c.status && (
-                    <div className="mt-1 text-xs">
-                      Status:{" "}
-                      <span
-                        className={
-                          c.status === "active" ? "text-green-600 font-medium" : "text-yellow-700 font-medium"
-                        }
-                      >
-                        {c.status}
-                      </span>
-                    </div>
+                  <div className="truncate text-sm font-medium">{conn.relationship}</div>
+                  <div className="truncate text-xs text-gray-600">{conn.email}</div>
+                  {conn.status && (
+                    <div className="mt-1 text-xs text-gray-500">Status: {conn.status}</div>
                   )}
                 </div>
-
                 <button
-                  className="text-sm rounded px-3 py-1 border hover:bg-gray-50"
-                  onClick={() => handleRemove(c.id)}
+                  className="rounded px-3 py-1 text-sm hover:bg-gray-100"
+                  onClick={() => handleRemove(conn.id)}
                 >
                   Remove
                 </button>
@@ -241,8 +236,8 @@ export default function AWYSettingsPage() {
       </div>
 
       <div className="mt-6 text-right">
-        <Link href="/" className="text-violet-600 underline text-sm">
-          ← Back to Home
+        <Link href="/" className="text-sm text-violet-600 underline">
+          Back to home
         </Link>
       </div>
     </div>

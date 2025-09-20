@@ -1,36 +1,29 @@
-// src/pages/api/durmah/memory.ts
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getServerUser } from '@/lib/api/serverAuth';
 
-interface JsonBody {
-  last_topic?: string | null;
-  last_message?: string | null;
-}
+const ok = (res: NextApiResponse, body: Record<string, unknown> = {}) =>
+  res.status(200).json({ ok: true, ...body });
 
-type Json = Record<string, unknown>;
-
-function ok<T extends Json>(res: NextApiResponse, body: T) {
-  return res.status(200).json({ ok: true, ...body });
-}
-
-function failSoft<T extends Json>(res: NextApiResponse, body: T, warn: unknown) {
-  const message = (warn as any)?.message ?? warn;
+const failSoft = (
+  res: NextApiResponse,
+  message: string,
+  extra: Record<string, unknown> = {}
+) => {
   console.warn('[durmah/memory] soft-fail:', message);
-  return res.status(200).json({ ok: true, ...body });
-}
+  return res.status(200).json({ ok: false, error: message, ...extra });
+};
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const { user, supabase } = await getServerUser(req, res);
 
-  if (!user) {
-    return res.status(401).json({ ok: false, error: 'unauthenticated' });
+  if (!user || !supabase) {
+    if (req.method === 'GET') {
+      return ok(res, { memory: null });
+    }
+    return failSoft(res, 'unauthenticated', { saved: false });
   }
 
   if (req.method === 'GET') {
-    if (!supabase) {
-      return ok(res, { memory: null });
-    }
-
     try {
       const { data, error } = await supabase
         .from('durmah_memory')
@@ -44,13 +37,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
 
       return ok(res, { memory: data?.[0] ?? null });
-    } catch (err) {
-      return failSoft(res, { memory: null }, err);
+    } catch (err: any) {
+      console.warn('[durmah/memory] load failed:', err?.message || err);
+      return ok(res, { memory: null });
     }
   }
 
   if (req.method === 'POST') {
-    const body = (req.body || {}) as JsonBody;
+    const body = (req.body || {}) as { last_topic?: string | null; last_message?: string | null };
     const payload = {
       user_id: user.id,
       last_topic: body.last_topic ?? null,
@@ -63,7 +57,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const supabaseAdmin = mod?.supabaseAdmin ?? null;
 
       if (!supabaseAdmin) {
-        throw new Error('supabaseAdmin unavailable');
+        throw new Error('service-role client unavailable');
       }
 
       const { error } = await supabaseAdmin
@@ -75,11 +69,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
 
       return ok(res, { saved: true });
-    } catch (err) {
-      return failSoft(res, { saved: false }, err);
+    } catch (err: any) {
+      const message = err?.message || 'save_failed';
+      return failSoft(res, message, { saved: false });
     }
   }
 
-  res.setHeader('Allow', ['GET', 'POST']);
-  return res.status(405).json({ ok: false, error: 'method_not_allowed' });
+  return failSoft(res, 'method_not_allowed');
 }

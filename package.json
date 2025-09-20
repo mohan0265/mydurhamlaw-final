@@ -20,7 +20,8 @@
     "audit:fix": "npm audit fix --force",
     "update:deps": "npm update",
     "clean:all": "rimraf .next node_modules package-lock.json && npm install",
-    "export": "next build && next export"
+    "export": "next build && next export",
+    "prebuild": "node scripts/check-utf8.mjs"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.6",

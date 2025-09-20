@@ -1,19 +1,30 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { getSupabaseClient } from '@/lib/supabase/client';
 import { useAuth } from '@/lib/supabase/AuthContext';
 
 type Msg = { role: 'durmah' | 'you'; text: string; ts: number };
 type UpcomingItem = { id: string; title: string; due_at?: string | null };
 
-async function fetchMemory(): Promise<{ last_topic?: string; last_message?: string } | null> {
+type MemoryRecord = { last_topic?: string; last_message?: string } | null;
+
+type StudentSnapshot = {
+  name: string | null;
+  upcoming: UpcomingItem[];
+};
+
+const EMPTY_SNAPSHOT: StudentSnapshot = { name: null, upcoming: [] };
+
+async function fetchMemory(): Promise<MemoryRecord> {
   try {
-    const r = await fetch('/api/durmah/memory');
-    const j = await r.json();
-    if (!j?.ok) return null;
-    return j?.memory ?? null;
-  } catch { return null; }
+    const response = await fetch('/api/durmah/memory');
+    const json = await response.json().catch(() => null);
+    if (!json || json.ok === false) return null;
+    return json.memory ?? null;
+  } catch {
+    return null;
+  }
 }
 
 async function saveMemory(last_topic?: string, last_message?: string) {
@@ -23,22 +34,24 @@ async function saveMemory(last_topic?: string, last_message?: string) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ last_topic, last_message }),
     });
-  } catch { /* fail-soft */ }
+  } catch {
+    // soft fail
+  }
 }
 
-async function getStudentContext(userId?: string | null) {
+async function getStudentContext(userId?: string | null): Promise<StudentSnapshot> {
   const supabase = getSupabaseClient();
-  if (!supabase || !userId) return { name: null as string | null, upcoming: [] as UpcomingItem[] };
+  if (!supabase || !userId) return { ...EMPTY_SNAPSHOT };
 
   try {
-    const prof = await supabase.from('profiles')
+    const profile = await supabase
+      .from('profiles')
       .select('full_name')
       .eq('id', userId)
       .maybeSingle();
 
-    const name = prof.data?.full_name || null;
+    const name = profile.data?.full_name || null;
 
-    // Adapt table name if different
     const tasks = await supabase
       .from('assignments')
       .select('id,title,due_at')
@@ -46,31 +59,31 @@ async function getStudentContext(userId?: string | null) {
       .order('due_at', { ascending: true })
       .limit(3);
 
-    const upcoming: UpcomingItem[] = (tasks.data || []).map((t) => ({
-      id: String(t.id),
-      title: t.title ?? 'Upcoming item',
-      due_at: t.due_at ?? null,
+    const upcoming: UpcomingItem[] = (tasks.data || []).map((task) => ({
+      id: String(task.id),
+      title: task.title || 'Upcoming item',
+      due_at: task.due_at || null,
     }));
 
     return { name, upcoming };
   } catch {
-    return { name: null as string | null, upcoming: [] as UpcomingItem[] };
+    return { ...EMPTY_SNAPSHOT };
   }
 }
 
-function timeHello(d = new Date()) {
-  const h = d.getHours();
-  if (h < 12) return 'Good morning';
-  if (h < 18) return 'Good afternoon';
+function timeHello(now = new Date()) {
+  const hour = now.getHours();
+  if (hour < 12) return 'Good morning';
+  if (hour < 18) return 'Good afternoon';
   return 'Good evening';
 }
 
 function composeOpener(
-  name?: string | null,
-  memory?: { last_topic?: string; last_message?: string } | null,
-  upcoming: UpcomingItem[] = []
+  name: string | null,
+  memory: MemoryRecord,
+  upcoming: UpcomingItem[]
 ) {
-  const niceName = name?.trim() ? `, ${name.split(' ')[0]}` : '';
+  const niceName = name ? `, ${name.split(' ')[0]}` : '';
   if (upcoming.length > 0) {
     const first = upcoming[0];
     if (first) {
@@ -85,48 +98,133 @@ function composeOpener(
   return `${timeHello()}${niceName}! I am Durmah - your study and wellbeing buddy. What would you like to work on right now?`;
 }
 
+function inferTopic(text: string) {
+  return text.split(/\s+/).slice(0, 4).join(' ');
+}
+
 export default function DurmahWidget() {
   const { user } = useAuth() || { user: null };
+  const signedIn = !!user?.id;
+
   const [ready, setReady] = useState(false);
-  const [ctxName, setCtxName] = useState<string | null>(null);
-  const [upcoming, setUpcoming] = useState<UpcomingItem[]>([]);
+  const [snapshot, setSnapshot] = useState<StudentSnapshot>({ ...EMPTY_SNAPSHOT });
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState('');
-
-  const signedIn = !!user?.id;
+  const [isStreaming, setIsStreaming] = useState(false);
+  const streamControllerRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     let cancelled = false;
+
     (async () => {
-      const mem = await fetchMemory();
-      const ctx = await getStudentContext(user?.id);
+      const memory = await fetchMemory();
+      const context = await getStudentContext(user?.id);
       if (cancelled) return;
-      setCtxName(ctx.name);
-      setUpcoming(ctx.upcoming);
-      const opener = composeOpener(ctx.name, mem, ctx.upcoming);
+
+      setSnapshot(context);
+      const opener = composeOpener(context.name, memory, context.upcoming);
       setMessages([{ role: 'durmah', text: opener, ts: Date.now() }]);
       setReady(true);
     })();
-    return () => { cancelled = true; };
+
+    return () => {
+      cancelled = true;
+      streamControllerRef.current?.abort();
+    };
   }, [user?.id]);
 
   const chips = useMemo(() => {
-    if (upcoming.length === 0) return ['Review this week', 'Make a study plan', 'Practice quiz'];
+    if (snapshot.upcoming.length === 0) {
+      return ['Review this week', 'Make a study plan', 'Practice quiz'];
+    }
     return ['Plan task', 'Break into steps', 'Set reminder'];
-  }, [upcoming]);
-
-  function inferTopic(text: string) {
-    return text.split(/\s+/).slice(0, 4).join(' ');
-  }
+  }, [snapshot.upcoming]);
 
   async function send() {
-    if (!input.trim()) return;
+    if (!signedIn || !input.trim() || isStreaming) return;
+
     const userText = input.trim();
+    const timestamp = Date.now();
+    const userMessage: Msg = { role: 'you', text: userText, ts: timestamp };
+    const assistantId = timestamp + 1;
+
+    const history = [...messages, userMessage];
+    setMessages([...history, { role: 'durmah', text: '', ts: assistantId }]);
     setInput('');
-    setMessages((m) => [...m, { role: 'you', text: userText, ts: Date.now() }]);
+    setIsStreaming(true);
+
     saveMemory(inferTopic(userText), userText);
-    const follow = 'Got it - want me to draft steps, set a small timer, or add a reminder?';
-    setMessages((m) => [...m, { role: 'durmah', text: follow, ts: Date.now() + 1 }]);
+
+    const payloadMessages = history.map((message) => ({
+      role: message.role === 'durmah' ? 'assistant' : 'user',
+      content: message.text,
+    }));
+
+    try {
+      const controller = new AbortController();
+      streamControllerRef.current = controller;
+
+      const response = await fetch('/api/chat-stream', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: payloadMessages }),
+        signal: controller.signal,
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      if (!response.body) {
+        const json = await response.json().catch(() => ({ text: 'Okay.' }));
+        const fallback = (json?.text || json?.content || 'Okay.').toString();
+        setMessages((current) =>
+          current.map((message) =>
+            message.ts === assistantId ? { ...message, text: fallback } : message
+          )
+        );
+        return;
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let assistantText = '';
+
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        assistantText += decoder.decode(value, { stream: true });
+        const partial = assistantText;
+        setMessages((current) =>
+          current.map((message) =>
+            message.ts === assistantId ? { ...message, text: partial } : message
+          )
+        );
+      }
+
+      assistantText += decoder.decode();
+      const finalReply = assistantText.trim() || 'Okay.';
+      setMessages((current) =>
+        current.map((message) =>
+          message.ts === assistantId ? { ...message, text: finalReply } : message
+        )
+      );
+    } catch (error) {
+      console.error('[DurmahWidget] chat failed:', error);
+      setMessages((current) =>
+        current.map((message) =>
+          message.ts === assistantId
+            ? {
+                ...message,
+                text: 'Hmm, I am having trouble right now, but I saved your note.',
+              }
+            : message
+        )
+      );
+    } finally {
+      streamControllerRef.current = null;
+      setIsStreaming(false);
+    }
   }
 
   return (
@@ -147,9 +245,9 @@ export default function DurmahWidget() {
             {messages[0]?.text}
           </div>
           <div className="mt-3 flex flex-wrap gap-2">
-            {chips.map((c) => (
-              <button key={c} className="rounded-full border px-3 py-1 text-xs text-gray-700" disabled>
-                {c}
+            {chips.map((chip) => (
+              <button key={chip} className="rounded-full border px-3 py-1 text-xs text-gray-700" disabled>
+                {chip}
               </button>
             ))}
           </div>
@@ -157,24 +255,24 @@ export default function DurmahWidget() {
       ) : (
         <div className="px-4 pb-4">
           <div className="space-y-2">
-            {messages.map((m, i) => (
-              <div key={m.ts + ':' + i} className={m.role === 'durmah' ? 'text-violet-800' : 'text-gray-900'}>
-                <div className={`inline-block max-w-full rounded-2xl px-3 py-2 text-sm ${m.role === 'durmah' ? 'bg-violet-50' : 'bg-gray-50'}`}>
-                  <strong className="mr-1">{m.role === 'durmah' ? 'Durmah:' : (ctxName ? ctxName.split(' ')[0] : 'You') + ':'}</strong>
-                  <span>{m.text}</span>
+            {messages.map((message, index) => (
+              <div key={message.ts + ':' + index} className={message.role === 'durmah' ? 'text-violet-800' : 'text-gray-900'}>
+                <div className={`inline-block max-w-full rounded-2xl px-3 py-2 text-sm ${message.role === 'durmah' ? 'bg-violet-50' : 'bg-gray-50'}`}>
+                  <strong className="mr-1">{message.role === 'durmah' ? 'Durmah:' : (snapshot.name ? snapshot.name.split(' ')[0] : 'You') + ':'}</strong>
+                  <span>{message.text}</span>
                 </div>
               </div>
             ))}
           </div>
 
           <div className="mt-3 flex flex-wrap gap-2">
-            {chips.map((c) => (
+            {chips.map((chip) => (
               <button
-                key={c}
-                onClick={() => setInput((p) => (p ? p : c))}
+                key={chip}
+                onClick={() => !input && setInput(chip)}
                 className="rounded-full border border-violet-200 bg-white px-3 py-1 text-xs text-violet-700 hover:bg-violet-50"
               >
-                {c}
+                {chip}
               </button>
             ))}
           </div>
@@ -183,13 +281,14 @@ export default function DurmahWidget() {
             <input
               className="w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-violet-300"
               value={input}
-              onChange={(e) => setInput(e.target.value)}
+              onChange={(event) => setInput(event.target.value)}
               placeholder="Tell me what you are working on..."
+              disabled={isStreaming}
             />
             <button
               onClick={send}
               className="rounded-lg bg-violet-600 px-3 py-2 text-sm font-medium text-white hover:bg-violet-700 disabled:opacity-50"
-              disabled={!input.trim()}
+              disabled={!input.trim() || isStreaming}
             >
               Send
             </button>

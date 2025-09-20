@@ -2,6 +2,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { useAuth } from '@/lib/supabase/AuthContext';
 import { isAWYEnabled } from '@/lib/feature-flags';
 import { authedFetch } from '@/lib/api/authedFetch';
 import AWYSetupHint from './AWYSetupHint';
@@ -13,7 +14,7 @@ type Status = 'online' | 'offline' | 'busy';
  *  - a peer/user id (preferred), or
  *  - an email (legacy)
  *
- * We’ll look up by peer_id first, and fall back to email.
+ * We'll look up by peer_id first, and fall back to email.
  */
 type PresenceMap = Record<string, Status>;
 
@@ -40,7 +41,7 @@ const ringClass = (s?: Status) => {
 const computeBottomRight = () => ({ bottom: 24, right: 24 });
 
 async function api<T = any>(input: RequestInfo, init?: RequestInit): Promise<T> {
-  const r = await authedFetch(input, {
+  const response = await authedFetch(input, {
     ...init,
     headers: {
       'Content-Type': 'application/json',
@@ -48,18 +49,11 @@ async function api<T = any>(input: RequestInfo, init?: RequestInit): Promise<T> 
     },
   });
 
-  if (!r.ok) {
-    const txt = await r.text().catch(() => '');
-    try {
-      const j = txt ? JSON.parse(txt) : null;
-      const msg =
-        j?.error || j?.message || txt || `${init?.method || 'GET'} ${input} -> ${r.status}`;
-      throw new Error(msg);
-    } catch {
-      throw new Error(txt || `${init?.method || 'GET'} ${input} -> ${r.status}`);
-    }
+  try {
+    return (await response.json()) as T;
+  } catch {
+    return {} as T;
   }
-  return (await r.json()) as T;
 }
 
 /** Normalize unknown presence payloads into a PresenceMap.
@@ -130,6 +124,8 @@ function toPresenceMap(raw: any): PresenceMap {
 }
 
 export default function AWYWidget() {
+  const { user } = useAuth() || { user: null };
+  const authed = Boolean(user?.id);
   const [mounted, setMounted] = useState(false);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -138,30 +134,44 @@ export default function AWYWidget() {
   const [presence, setPresence] = useState<PresenceMap>({});
 
   useEffect(() => setMounted(true), []);
-  const enabled = isAWYEnabled();
+  const featureEnabled = isAWYEnabled();
+  const enabled = featureEnabled && authed;
 
   // Allow other components (e.g., a floating heart) to open this panel
   useEffect(() => {
-    if (!mounted) return;
+    if (!mounted || !enabled) return;
     const handler = () => setOpen(true);
     window.addEventListener('awy:open', handler);
     return () => window.removeEventListener('awy:open', handler);
-  }, [mounted]);
+  }, [mounted, enabled]);
 
   // initial load + presence polling
   useEffect(() => {
-    if (!mounted || !enabled) return;
+    if (!mounted || !enabled) {
+      if (!authed) {
+        setConnections([]);
+        setPresence({});
+      }
+      setLoading(false);
+      return;
+    }
 
     let stop = false;
 
     const loadConnections = async () => {
       try {
         setLoading(true);
-        const data = await api<{ connections: any[] }>('/api/awy/connections');
+        const data = await api<{ ok?: boolean; connections?: any[]; error?: string }>('/api/awy/connections');
 
-        const list: Conn[] = (data?.connections || []).map((row) => ({
+        if (data?.ok === false) {
+          if (!stop) setConnections([]);
+          return;
+        }
+
+        const rows = Array.isArray(data?.connections) ? data.connections : [];
+        const list: Conn[] = rows.map((row) => ({
           id: row.id ?? `${row.peer_id || row.email || row.loved_email || 'unknown'}`,
-          peer_id: row.peer_id ?? null, // preferred for presence lookups
+          peer_id: row.peer_id ?? null,
           email: String(row.email || row.loved_email || '').toLowerCase(),
           relationship: row.relationship_label ?? row.relationship ?? null,
           display_name: row.display_name ?? null,
@@ -180,6 +190,9 @@ export default function AWYWidget() {
     const loadPresence = async () => {
       try {
         const p = await api<any>('/api/awy/presence');
+        if (p?.ok === false) {
+          return;
+        }
         if (!stop) setPresence(toPresenceMap(p));
       } catch (e) {
         // Presence not critical; keep quiet in UI
@@ -194,7 +207,7 @@ export default function AWYWidget() {
       stop = true;
       clearInterval(id);
     };
-  }, [mounted, enabled]);
+  }, [mounted, enabled, authed]);
 
   const presenceFor = (c: Conn): Status | undefined => {
     // Prefer peer_id (user_id-based presence), then fall back to email-based presence
@@ -272,11 +285,11 @@ export default function AWYWidget() {
           </div>
 
           {loading ? (
-            <div className="py-6 text-center text-sm text-gray-500">Loading…</div>
+            <div className="py-6 text-center text-sm text-gray-500">Loading...</div>
           ) : noConnections ? (
             <div className="py-4">
               <div className="mb-2 text-sm text-gray-600">
-                You haven&apos;t added any loved ones yet.
+                You haven't added any loved ones yet.
               </div>
               <AWYSetupHint />
             </div>
@@ -286,7 +299,7 @@ export default function AWYWidget() {
                 const st = presenceFor(c);
                 const initials =
                   (c.display_name || c.email || '?')
-                    .split(/[^\p{L}\p{N}]+/u)
+                    .split(/[^A-Za-z0-9]+/)
                     .filter(Boolean)
                     .slice(0, 2)
                     .map((s: string) => s[0]?.toUpperCase())
