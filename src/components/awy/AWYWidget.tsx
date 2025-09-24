@@ -1,7 +1,7 @@
 // src/components/awy/AWYWidget.tsx
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useAuth } from '@/lib/supabase/AuthContext';
 import { isAWYEnabled } from '@/lib/feature-flags';
 import { authedFetch } from '@/lib/api/authedFetch';
@@ -9,22 +9,15 @@ import AWYSetupHint from './AWYSetupHint';
 
 type Status = 'online' | 'offline' | 'busy';
 
-/**
- * Presence is stored in a flexible map where the key can be either:
- *  - a peer/user id (preferred), or
- *  - an email (legacy)
- *
- * We'll look up by peer_id first, and fall back to email.
- */
 type PresenceMap = Record<string, Status>;
 
 type Conn = {
   id: string;
-  peer_id?: string | null;           // <-- NEW (preferred key for presence)
-  email: string;                     // lowercased
+  peer_id?: string | null;
+  email: string;
   relationship: string | null;
   display_name: string | null;
-  status: string | null;             // pending | active | ...
+  status: string | null;
 };
 
 const ringClass = (s?: Status) => {
@@ -40,40 +33,9 @@ const ringClass = (s?: Status) => {
 
 const computeBottomRight = () => ({ bottom: 24, right: 24 });
 
-async function api<T = any>(input: RequestInfo, init?: RequestInit): Promise<T> {
-  try {
-    const response = await authedFetch(input, {
-      ...init,
-      headers: {
-        'Content-Type': 'application/json',
-        ...init?.headers,
-      },
-    });
-
-    if (!response.ok) {
-      console.debug('[AWY] api soft status:', response.status);
-    }
-
-    const payload = (await response.json().catch(() => ({} as T))) as T;
-    return payload;
-  } catch (error) {
-    console.debug('[AWY] api request failed:', error);
-    return {} as T;
-  }
-}
-}
-
-/** Normalize unknown presence payloads into a PresenceMap.
- * Supports:
- *  - { [idOrEmail]: 'online' | 'offline' | 'busy' }
- *  - { [idOrEmail]: { status: 'online' | ... } }
- *  - { lovedOnes: [{ email, online|connected|status }] }
- *  - [{ email|loved_email, online|connected|status }]
- */
 function toPresenceMap(raw: any): PresenceMap {
   if (!raw) return {};
 
-  // Plain map object (by id or email)
   if (typeof raw === 'object' && !Array.isArray(raw) && !('lovedOnes' in raw)) {
     const out: PresenceMap = {};
     for (const [k, v] of Object.entries(raw)) {
@@ -92,7 +54,6 @@ function toPresenceMap(raw: any): PresenceMap {
     return out;
   }
 
-  // lovedOnes array { email, online|connected|status }
   if (raw && typeof raw === 'object' && Array.isArray(raw.lovedOnes)) {
     const map: PresenceMap = {};
     for (const lo of raw.lovedOnes) {
@@ -109,7 +70,6 @@ function toPresenceMap(raw: any): PresenceMap {
     return map;
   }
 
-  // Array of entries with email/loved_email OR id/status
   if (Array.isArray(raw)) {
     const map: PresenceMap = {};
     for (const it of raw) {
@@ -136,15 +96,21 @@ export default function AWYWidget() {
   const [mounted, setMounted] = useState(false);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(true);
-
   const [connections, setConnections] = useState<Conn[]>([]);
   const [presence, setPresence] = useState<PresenceMap>({});
+  const [needsAuth, setNeedsAuth] = useState(false);
+  const [fetchError, setFetchError] = useState(false);
+
+  const needsAuthRef = useRef(false);
+
+  useEffect(() => {
+    needsAuthRef.current = needsAuth;
+  }, [needsAuth]);
 
   useEffect(() => setMounted(true), []);
   const featureEnabled = isAWYEnabled();
   const enabled = featureEnabled && authed;
 
-  // Allow other components (e.g., a floating heart) to open this panel
   useEffect(() => {
     if (!mounted || !enabled) return;
     const handler = () => setOpen(true);
@@ -152,7 +118,6 @@ export default function AWYWidget() {
     return () => window.removeEventListener('awy:open', handler);
   }, [mounted, enabled]);
 
-  // initial load + presence polling
   useEffect(() => {
     if (!mounted || !enabled) {
       if (!authed) {
@@ -160,22 +125,57 @@ export default function AWYWidget() {
         setPresence({});
       }
       setLoading(false);
+      setNeedsAuth(false);
+      setFetchError(false);
+      return;
+    }
+
+    if (needsAuth) {
+      setLoading(false);
       return;
     }
 
     let stop = false;
+    const safe = (fn: () => void) => {
+      if (!stop) fn();
+    };
 
     const loadConnections = async () => {
-      try {
+      safe(() => {
         setLoading(true);
-        const data = await api<{ ok?: boolean; connections?: any[]; error?: string }>('/api/awy/connections');
+        setFetchError(false);
+      });
 
-        if (data?.ok === false) {
-          console.debug('[AWY] connections soft response:', data?.error);
+      try {
+        const response = await authedFetch('/api/awy/connections');
+
+        if (stop) return;
+
+        if (response.status === 401) {
+          safe(() => {
+            setNeedsAuth(true);
+            setConnections([]);
+            setPresence({});
+            setLoading(false);
+          });
+          return;
         }
 
-        const rows = Array.isArray(data?.connections) ? data.connections : [];
-        const list: Conn[] = rows.map((row) => ({
+        if (!response.ok) {
+          console.debug('[AWY] connections status:', response.status);
+          safe(() => {
+            setFetchError(true);
+            setConnections([]);
+            setLoading(false);
+          });
+          return;
+        }
+
+        const json = await response.json().catch(() => null);
+        if (stop) return;
+
+        const rows = Array.isArray(json?.connections) ? json.connections : [];
+        const list: Conn[] = rows.map((row: any) => ({
           id: row.id ?? `${row.peer_id || row.email || row.loved_email || 'unknown'}`,
           peer_id: row.peer_id ?? null,
           email: String(row.email || row.loved_email || '').toLowerCase(),
@@ -184,41 +184,83 @@ export default function AWYWidget() {
           status: row.status ?? null,
         }));
 
-        if (!stop) setConnections(list);
-      } catch (e) {
-        console.debug('[AWY] load connections failed:', e);
-        if (!stop) setConnections([]);
-      } finally {
-        if (!stop) setLoading(false);
+        safe(() => {
+          setConnections(list);
+          setNeedsAuth(false);
+          setLoading(false);
+        });
+      } catch (error) {
+        console.debug('[AWY] load connections failed:', error);
+        if (stop) return;
+        safe(() => {
+          setFetchError(true);
+          setConnections([]);
+          setLoading(false);
+        });
       }
     };
 
     const loadPresence = async () => {
+      if (needsAuthRef.current) return;
       try {
-        const payload = await api<any>('/api/awy/presence');
-        if (payload?.ok === false) {
-          console.debug('[AWY] presence soft response:', payload?.error);
+        const response = await authedFetch('/api/awy/presence');
+
+        if (stop) return;
+
+        if (response.status === 401) {
+          safe(() => {
+            setNeedsAuth(true);
+            setPresence({});
+          });
+          return;
         }
-        const nextPresence = payload && payload.ok !== false ? toPresenceMap(payload) : {};
-        if (!stop) setPresence(nextPresence);
-      } catch (e) {
-        console.debug('[AWY] presence fetch failed:', e);
-        if (!stop) setPresence({});
+
+        if (!response.ok) {
+          console.debug('[AWY] presence status:', response.status);
+          safe(() => {
+            setFetchError(true);
+            setPresence({});
+          });
+          return;
+        }
+
+        const payload = await response.json().catch(() => null);
+        if (stop) return;
+
+        const nextPresence = payload && payload.ok === false ? {} : toPresenceMap(payload);
+        safe(() => {
+          setPresence(nextPresence);
+        });
+      } catch (error) {
+        console.debug('[AWY] presence fetch failed:', error);
+        if (stop) return;
+        safe(() => {
+          setFetchError(true);
+          setPresence({});
+        });
       }
     };
 
-    loadConnections().then(loadPresence);
-    const id = setInterval(loadPresence, 20000);
+    loadConnections().then(() => {
+      if (!needsAuthRef.current) {
+        loadPresence();
+      }
+    });
+
+    const intervalId = setInterval(() => {
+      if (!needsAuthRef.current) {
+        loadPresence();
+      }
+    }, 20000);
+
     return () => {
       stop = true;
-      clearInterval(id);
+      clearInterval(intervalId);
     };
-  }, [mounted, enabled, authed]);
+  }, [mounted, enabled, authed, needsAuth]);
 
-  const presenceFor = (c: Conn): Status | undefined => {
-    // Prefer peer_id (user_id-based presence), then fall back to email-based presence
-    return (c.peer_id && presence[c.peer_id]) || presence[c.email];
-  };
+  const presenceFor = (c: Conn): Status | undefined =>
+    (c.peer_id && presence[c.peer_id]) || presence[c.email];
 
   const onlineCount = useMemo(
     () =>
@@ -231,20 +273,38 @@ export default function AWYWidget() {
 
   const startCall = async (email: string) => {
     try {
-      const res = await api<{ roomUrl?: string; callId?: string; url?: string }>(
-        '/api/awy/calls',
-        { method: 'POST', body: JSON.stringify({ email }) }
-      );
+      const response = await authedFetch('/api/awy/calls', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+
+      if (response.status === 401) {
+        setNeedsAuth(true);
+        return;
+      }
+
+      if (!response.ok) {
+        console.warn('[AWY] call start status:', response.status);
+        setFetchError(true);
+        return;
+      }
+
+      const res = (await response.json().catch(() => ({}))) as {
+        roomUrl?: string;
+        callId?: string;
+        url?: string;
+      };
 
       const url = res.roomUrl || res.url || (res.callId ? `/assistant/call/${res.callId}` : null);
       if (url) {
         window.location.href = url;
       } else {
-        alert('Call created, but no room URL was returned.');
+        console.warn('[AWY] call start returned no URL', res);
       }
-    } catch (e: any) {
-      console.error('[AWY] call start failed:', e);
-      alert(e?.message || 'Could not start the call. Please try again.');
+    } catch (error) {
+      console.error('[AWY] call start failed:', error);
+      setFetchError(true);
     }
   };
 
@@ -255,14 +315,12 @@ export default function AWYWidget() {
 
   return (
     <>
-      {/* Toggle button */}
       <button
         aria-label="Open AWY"
         onClick={() => setOpen((v) => !v)}
         className="fixed z-[60] flex h-14 w-14 items-center justify-center rounded-full bg-violet-600 text-white shadow-xl hover:bg-violet-700 focus:outline-none"
         style={{ bottom: pos.bottom, right: pos.right }}
       >
-        {/* little presence indicator */}
         <span
           className={`absolute -top-1 -right-1 h-3.5 w-3.5 rounded-full ring-2 ring-white ${
             onlineCount > 0 ? 'bg-green-500' : 'bg-gray-400 opacity-70'
@@ -274,7 +332,6 @@ export default function AWYWidget() {
         </svg>
       </button>
 
-      {/* Panel */}
       {open && (
         <div
           className="fixed z-[60] w-[320px] rounded-xl border bg-white/95 p-3 shadow-2xl backdrop-blur"
@@ -290,7 +347,26 @@ export default function AWYWidget() {
             </button>
           </div>
 
-          {loading ? (
+          {needsAuth && (
+            <div className="mb-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+              Sign in to enable Always-With-You presence.{' '}
+              <a className="font-medium text-amber-900 underline" href="/login">
+                Sign in
+              </a>
+            </div>
+          )}
+
+          {!needsAuth && fetchError && (
+            <div className="mb-3 rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-700">
+              Unable to refresh presence right now. We'll retry automatically.
+            </div>
+          )}
+
+          {needsAuth ? (
+            <div className="py-4 text-sm text-gray-600">
+              We could not confirm your session. Please sign in again to reach your loved ones.
+            </div>
+          ) : loading ? (
             <div className="py-6 text-center text-sm text-gray-500">Loading...</div>
           ) : noConnections ? (
             <div className="py-4">
@@ -354,12 +430,3 @@ export default function AWYWidget() {
     </>
   );
 }
-
-
-
-
-
-
-
-
-
