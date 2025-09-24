@@ -56,39 +56,36 @@ export function extractBearerToken(req: NextApiRequest): string | null {
 }
 
 /**
- * Soft helper: respond with status 200 and a JSON body used by our API soft-fail pattern.
- * Returns void (callers sometimes `return softOk(...)`).
+ * Lightweight JSON 200 helper used by many routes to return a consistent OK payload.
  */
-export function softOk(res: NextApiResponse, body: Record<string, any> = { ok: true }) {
+export function softOk(res: NextApiResponse, payload: any) {
   try {
-    res.status(200).json(body);
+    return res.status(200).json(payload);
   } catch (err) {
-    console.debug('[auth] softOk failed:', err);
+    // Keep debug lightweight
+    console.debug('[auth] softOk failed:', (err as any)?.message ?? err);
+    // fall back to a minimal response
+    try { return res.status(200).end(); } catch { /* ignore */ }
   }
 }
 
 /**
- * Guard that ensures a user is authenticated via cookies on server-side API routes.
- * Returns an object `{ user, supabase }` when authenticated, otherwise calls `softOk(res, ...)` and returns null.
+ * Ensure there's an authenticated user based on the cookies in the incoming request.
+ * Returns an object { user, supabase } when authenticated, or null when not.
+ * Callers can choose to `return softOk(res, {...})` or throw as needed.
  */
-export async function requireUser(
-  req: NextApiRequest,
-  res: NextApiResponse
-): Promise<{ user: any; supabase: SupabaseClient } | null> {
+export async function requireUser(req: NextApiRequest, res: NextApiResponse) {
   try {
-    const supabase = getServerClient(req, res);
-    // supabase.auth.getUser() returns { data: { user }, error }
-    const result = await supabase.auth.getUser();
-    const user = result?.data?.user ?? null;
-    if (!user) {
-      // softFail pattern used in this project: return a 200 with ok:false so front-end won't crash
-      softOk(res, { ok: false, error: 'unauthenticated' });
+    const supabase = createPagesServerClient({ req, res });
+    const { data, error } = await supabase.auth.getUser();
+    if (error) {
+      console.debug('[auth] requireUser supabase.getUser error:', (error as any)?.message ?? error);
       return null;
     }
-    return { user, supabase };
+    if (!data?.user) return null;
+    return { user: data.user, supabase };
   } catch (err) {
-    console.debug('[auth] requireUser failed:', err);
-    softOk(res, { ok: false, error: 'auth_error' });
+    console.debug('[auth] requireUser failed:', (err as any)?.message ?? err);
     return null;
   }
 }
