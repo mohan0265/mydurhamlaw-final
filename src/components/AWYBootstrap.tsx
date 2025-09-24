@@ -7,8 +7,8 @@ import { isAWYEnabled } from '@/lib/feature-flags';
 
 const AWYWidget = dynamic(() => import('./awy/AWYWidget'), { ssr: false });
 
-class AWYErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean }> {
-  constructor(props: { children: React.ReactNode }) {
+class AWYErrorBoundary extends React.Component<{ children: React.ReactNode; fallback?: React.ReactNode }, { hasError: boolean }> {
+  constructor(props: { children: React.ReactNode; fallback?: React.ReactNode }) {
     super(props);
     this.state = { hasError: false };
   }
@@ -17,12 +17,21 @@ class AWYErrorBoundary extends React.Component<{ children: React.ReactNode }, { 
     return { hasError: true };
   }
 
-  componentDidCatch(error: unknown) {
-    console.error('AWY widget crashed:', error);
+  componentDidCatch(error: unknown, info: unknown) {
+    console.error('AWY widget crashed:', error, info);
   }
 
   render() {
-    if (this.state.hasError) return null;
+    if (this.state.hasError) {
+      return (
+        this.props.fallback ?? (
+          <div className="fixed bottom-24 right-24 z-[60] rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-700 shadow">
+            AWY widget unavailable
+          </div>
+        )
+      );
+    }
+
     return this.props.children;
   }
 }
@@ -44,7 +53,13 @@ const AWYBootstrap: React.FC = () => {
   }
 
   return (
-    <AWYErrorBoundary>
+    <AWYErrorBoundary
+      fallback={
+        <div className="fixed bottom-24 right-24 z-[60] rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-700 shadow">
+          AWY widget unavailable
+        </div>
+      }
+    >
       <AWYWidget />
     </AWYErrorBoundary>
   );
