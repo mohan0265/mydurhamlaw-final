@@ -55,37 +55,16 @@ export function extractBearerToken(req: NextApiRequest): string | null {
   return match?.[1]?.trim() ?? null;
 }
 
-/**
- * Lightweight JSON 200 helper used by many routes to return a consistent OK payload.
- */
-export function softOk(res: NextApiResponse, payload: any) {
-  try {
-    return res.status(200).json(payload);
-  } catch (err) {
-    // Keep debug lightweight
-    console.debug('[auth] softOk failed:', (err as any)?.message ?? err);
-    // fall back to a minimal response
-    try { return res.status(200).end(); } catch { /* ignore */ }
-  }
+export function softOk(res: NextApiResponse, payload?: any) {
+  return res.status(200).json(payload ?? { ok: true });
 }
 
-/**
- * Ensure there's an authenticated user based on the cookies in the incoming request.
- * Returns an object { user, supabase } when authenticated, or null when not.
- * Callers can choose to `return softOk(res, {...})` or throw as needed.
- */
 export async function requireUser(req: NextApiRequest, res: NextApiResponse) {
-  try {
-    const supabase = createPagesServerClient({ req, res });
-    const { data, error } = await supabase.auth.getUser();
-    if (error) {
-      console.debug('[auth] requireUser supabase.getUser error:', (error as any)?.message ?? error);
-      return null;
-    }
-    if (!data?.user) return null;
-    return { user: data.user, supabase };
-  } catch (err) {
-    console.debug('[auth] requireUser failed:', (err as any)?.message ?? err);
+  const supabase = createPagesServerClient({ req, res });
+  const { data, error } = await supabase.auth.getUser();
+  if (error || !data?.user) {
+    console.debug('[auth] requireUser failed:', (error as any)?.message ?? error);
     return null;
   }
+  return { user: data.user, supabase };
 }
