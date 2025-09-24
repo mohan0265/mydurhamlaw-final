@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { getServerUser } from "@/lib/server/auth";
+import { requireUser } from "@/lib/server/auth";
 import { supabaseAdmin } from "@/lib/server/supabaseAdmin";
 
 type Json = Record<string, unknown>;
@@ -20,11 +20,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(405).json({ ok: false, error: "method_not_allowed" });
   }
 
-  const { user } = await getServerUser(req, res);
-  if (!user) {
-    console.log("[awy/calls] No authenticated user");
-    return res.status(401).json({ ok: false, error: "unauthenticated" });
+  const got = await requireUser(req, res);
+  if (!got) {
+    console.debug('[AWY] requireUser: unauthenticated (calls)');
+    return;
   }
+
+  const { user } = got;
 
   const { email } = (req.body as { email?: string }) || {};
   if (!email) {

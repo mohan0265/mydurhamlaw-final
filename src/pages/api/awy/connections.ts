@@ -23,7 +23,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   const got = await requireUser(req, res);
-  if (!got) return;
+  if (!got) {
+    console.debug('[AWY] requireUser: unauthenticated (connections)');
+    return;
+  }
 
   const { user, supabase } = got;
 
