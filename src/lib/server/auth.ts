@@ -8,7 +8,7 @@ const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
 export function getServerClient(req: NextApiRequest, res: NextApiResponse): SupabaseClient {
   // Uses Supabase cookies from req/res. Works on Netlify functions too.
-  return createPagesServerClient({ req, res });
+  return createPagesServerClient({ req, res }) as unknown as SupabaseClient;
 }
 
 function extractBearerToken(req: NextApiRequest): string | null {
@@ -42,15 +42,18 @@ function createAnonClient(token?: string): SupabaseClient | null {
 }
 
 export async function getServerUser(req: NextApiRequest, res: NextApiResponse) {
-  const supabase = getServerClient(req, res);
+  const supabaseFromCookies = getServerClient(req, res);
 
   try {
-    const { data, error } = await supabase.auth.getUser();
+    const { data, error } = await supabaseFromCookies.auth.getUser();
     if (!error && data?.user) {
-      return { user: data.user, supabase };
+      return { user: data.user, supabase: supabaseFromCookies };
+    }
+    if (error) {
+      console.debug('[auth] Cookie-based user lookup soft-fail:', error);
     }
   } catch (err) {
-    console.debug('[auth] Cookie-based user lookup failed:', err);
+    console.debug('[auth] Cookie-based user lookup exception:', err);
   }
 
   const bearer = extractBearerToken(req);
@@ -71,7 +74,8 @@ export async function getServerUser(req: NextApiRequest, res: NextApiResponse) {
     }
   }
 
-  return { user: null, supabase };
+  const fallback = createAnonClient();
+  return { user: null, supabase: fallback ?? supabaseFromCookies };
 }
 
 export async function requireUser(req: NextApiRequest, res: NextApiResponse) {
@@ -90,3 +94,4 @@ export function softOk(res: NextApiResponse, body: any) {
 export function softFail(res: NextApiResponse, msg: string, extra?: Record<string, any>) {
   res.status(200).json({ ok: false, error: msg, ...(extra ?? {}) });
 }
+

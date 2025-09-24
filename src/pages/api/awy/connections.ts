@@ -1,75 +1,110 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { getServerUser, softOk } from '@/lib/server/auth';
+import { requireUser } from '@/lib/server/auth';
 
-type Conn = {
+type ConnectionRow = {
   id: string;
+  student_id: string;
   loved_email: string;
-  relationship: string | null;
   display_name: string | null;
-  status: string | null;
+  relationship: string | null;
+  status: 'active' | 'pending' | 'blocked' | null;
   is_visible: boolean | null;
   created_at: string | null;
-  loved_one_id: string | null;
+  updated_at: string | null;
+  loved_one_id?: string | null;
 };
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  const { user, supabase } = await getServerUser(req, res);
+  if (req.method === 'OPTIONS') {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET,POST,DELETE,OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    return res.status(204).end();
+  }
 
-  if (req.method === 'GET') {
-    if (!user) return softOk(res, { ok: true, connections: [], userRole: 'student' });
-    try {
+  const got = await requireUser(req, res);
+  if (!got) return;
+
+  const { user, supabase } = got;
+
+  try {
+    if (req.method === 'GET') {
       const { data, error } = await supabase
-        .from('awy_connections')
-        .select('id, loved_email, relationship, display_name, status, is_visible, created_at, loved_one_id')
+        .from<ConnectionRow>('awy_connections')
+        .select('*')
         .eq('student_id', user.id)
         .order('created_at', { ascending: false });
-      if (error) {
-        console.debug('[awy] GET connections soft-fail:', error);
-        return softOk(res, { ok: true, connections: [], userRole: 'student' });
-      }
-      const list: Conn[] = (data || []).map((r: any) => ({
-        id: r.id,
-        loved_email: String(r.loved_email || '').toLowerCase(),
-        relationship: r.relationship ?? null,
-        display_name: r.display_name ?? null,
-        status: r.status ?? null,
-        is_visible: r.is_visible ?? null,
-        created_at: r.created_at ?? null,
-        loved_one_id: r.loved_one_id ?? null,
-      }));
-      return softOk(res, { ok: true, connections: list, userRole: 'student' });
-    } catch (e) {
-      console.debug('[awy] GET connections exception:', e);
-      return softOk(res, { ok: true, connections: [], userRole: 'student' });
-    }
-  }
 
-  if (req.method === 'POST') {
-    if (!user) return res.status(401).json({ ok: false, error: 'unauthenticated' });
-    try {
-      const { loved_email, relationship, display_name } = (req.body || {}) as {
-        loved_email?: string; relationship?: string; display_name?: string;
+      if (error) {
+        console.warn('[AWY GET] connections soft-fail:', error);
+        return res.status(200).json({ ok: true, connections: [] });
+      }
+
+      const list = (data ?? []).map((row) => ({
+        ...row,
+        loved_email: String(row.loved_email || '').toLowerCase(),
+      }));
+
+      return res.status(200).json({ ok: true, connections: list });
+    }
+
+    if (req.method === 'POST') {
+      const { email, display_name, relationship } = (req.body ?? {}) as {
+        email?: string;
+        display_name?: string;
+        relationship?: string;
       };
-      const email = String(loved_email || '').trim().toLowerCase();
-      if (!email) return res.status(400).json({ ok: false, error: 'missing loved_email' });
+
+      const lovedEmail = String(email ?? '').trim().toLowerCase();
+      if (!lovedEmail) {
+        return res.status(400).json({ ok: false, error: 'missing_email' });
+      }
+
+      const payload = {
+        student_id: user.id,
+        loved_email: lovedEmail,
+        display_name: display_name?.trim() || null,
+        relationship: relationship?.trim() || null,
+        status: 'active' as const,
+        is_visible: true,
+      };
+
       const { error } = await supabase
         .from('awy_connections')
-        .upsert(
-          [{ student_id: user.id, loved_email: email, relationship: relationship || null, display_name: display_name || null, status: 'active', is_visible: true }],
-          { onConflict: 'student_id,loved_email', ignoreDuplicates: true }
-        );
+        .upsert(payload, { onConflict: 'student_id,loved_email' });
+
       if (error) {
-        console.debug('[awy] POST connections soft-fail:', error);
-        return softOk(res, { ok: true });
+        console.warn('[AWY POST] connections soft-fail:', error);
+        return res.status(200).json({ ok: true });
       }
-      return softOk(res, { ok: true });
-    } catch (e) {
-      console.debug('[awy] POST connections exception:', e);
-      return softOk(res, { ok: true });
+
+      return res.status(200).json({ ok: true });
     }
+
+    if (req.method === 'DELETE') {
+      const { id } = (req.body ?? {}) as { id?: string };
+      if (!id) {
+        return res.status(400).json({ ok: false, error: 'missing_id' });
+      }
+
+      const { error } = await supabase
+        .from('awy_connections')
+        .delete()
+        .eq('id', id)
+        .eq('student_id', user.id);
+
+      if (error) {
+        console.warn('[AWY DELETE] connections error:', error);
+        return res.status(500).json({ ok: false, error: 'server_error' });
+      }
+
+      return res.status(200).json({ ok: true });
+    }
+
+    res.setHeader('Allow', 'GET,POST,DELETE,OPTIONS');
+    return res.status(405).json({ ok: false, error: 'method_not_allowed' });
+  } catch (err) {
+    console.error('[AWY handler] fatal:', err);
+    return res.status(500).json({ ok: false, error: 'server_error' });
   }
-
-  return res.status(405).json({ ok: false, error: 'method not allowed' });
 }
-
-
