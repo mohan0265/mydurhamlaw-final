@@ -92,6 +92,7 @@ function toPresenceMap(raw: any): PresenceMap {
 
 export default function AWYWidget() {
   const { user } = useAuth() || { user: null };
+  console.debug('[AWY] mounting with authed=' + Boolean(user?.id));
   const authed = Boolean(user?.id);
   const [mounted, setMounted] = useState(false);
   const [open, setOpen] = useState(false);
@@ -313,7 +314,8 @@ export default function AWYWidget() {
   const noConnections = !loading && connections.length === 0;
   const pos = computeBottomRight();
 
-  return (
+  try {
+    return (
     <>
       <button
         aria-label="Open AWY"
@@ -429,4 +431,12 @@ export default function AWYWidget() {
       )}
     </>
   );
+  } catch (e) {
+    console.error('[AWY] render failed:', e);
+    return (
+      <div className="fixed bottom-24 right-24 z-[60] rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-700 shadow">
+        AWY widget unavailable
+      </div>
+    );
+  }
 }
