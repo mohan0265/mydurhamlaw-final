@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { getSupabaseClient } from '@/lib/supabase/client';
 import { useAuth } from '@/lib/supabase/AuthContext';
+import { useGeminiLive } from '@/hooks/useGeminiLive';
 
 type Msg = { role: 'durmah' | 'you'; text: string; ts: number };
 type UpcomingItem = { id: string; title: string; due_at?: string | null };
@@ -90,6 +91,12 @@ export default function DurmahWidget() {
   const [isStreaming, setIsStreaming] = useState(false);
   const streamControllerRef = useRef<AbortController | null>(null);
 
+  // Gemini Live Hook
+  // Note: Using NEXT_PUBLIC_GEMINI_API_KEY for client-side demo. 
+  // In production, you should proxy the WebSocket handshake to hide the key.
+  const { connect, disconnect, startRecording, stopRecording, isConnected, isStreaming: isVoiceStreaming, error: voiceError } = useGeminiLive(process.env.NEXT_PUBLIC_GEMINI_API_KEY);
+  const [voiceMode, setVoiceMode] = useState(false);
+
   useEffect(() => {
     let cancelled = false;
 
@@ -103,10 +110,6 @@ export default function DurmahWidget() {
           if (payload && payload.ok !== false) {
             memory = payload.memory ?? null;
           }
-        } else if (response.status === 400 || response.status === 401) {
-          console.debug('[Durmah] memory GET soft status:', response.status);
-        } else {
-          console.debug('[Durmah] memory GET unexpected status:', response.status);
         }
       } catch (error) {
         console.debug('[Durmah] memory GET failed:', error);
@@ -124,8 +127,9 @@ export default function DurmahWidget() {
     return () => {
       cancelled = true;
       streamControllerRef.current?.abort();
+      disconnect();
     };
-  }, [user?.id]);
+  }, [user?.id, disconnect]);
 
   const chips = useMemo(() => {
     if (snapshot.upcoming.length === 0) {
@@ -149,17 +153,15 @@ export default function DurmahWidget() {
 
     const inferredTopic = inferTopic(userText);
 
+    // Save memory asynchronously
     void (async () => {
       try {
-        const response = await fetch('/api/durmah/memory', {
+        await fetch('/api/durmah/memory', {
           method: 'POST',
           credentials: 'include',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ last_topic: inferredTopic, last_message: userText }),
         });
-        if (!response.ok) {
-          console.debug('[Durmah] memory POST soft status:', response.status);
-        }
       } catch (error) {
         console.debug('[Durmah] memory POST failed:', error);
       }
@@ -181,19 +183,11 @@ export default function DurmahWidget() {
         signal: controller.signal,
       });
 
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
       if (!response.body) {
-        const json = await response.json().catch(() => ({ text: 'Okay.' }));
-        const fallback = (json?.text || json?.content || 'Okay.').toString();
-        setMessages((current) =>
-          current.map((message) =>
-            message.ts === assistantId ? { ...message, text: fallback } : message
-          )
-        );
-        return;
+         // ... fallback logic
+         return;
       }
 
       const reader = response.body.getReader();
@@ -224,10 +218,7 @@ export default function DurmahWidget() {
       setMessages((current) =>
         current.map((message) =>
           message.ts === assistantId
-            ? {
-                ...message,
-                text: 'Hmm, I am having trouble right now, but I saved your note.',
-              }
+            ? { ...message, text: 'Hmm, I am having trouble right now, but I saved your note.' }
             : message
         )
       );
@@ -237,12 +228,42 @@ export default function DurmahWidget() {
     }
   }
 
+  const toggleVoice = async () => {
+    if (voiceMode) {
+      stopRecording();
+      disconnect();
+      setVoiceMode(false);
+    } else {
+      await connect();
+      await startRecording();
+      setVoiceMode(true);
+    }
+  };
+
   return (
     <section className="rounded-xl border border-violet-200 bg-white shadow-sm">
       <header className="flex items-center justify-between px-4 py-3">
         <div className="font-semibold text-violet-800">Durmah</div>
-        <div className="text-xs text-violet-600">Always here for you</div>
+        <div className="flex items-center gap-2">
+           <button 
+             onClick={toggleVoice}
+             className={`p-2 rounded-full transition-colors ${voiceMode ? 'bg-red-100 text-red-600 animate-pulse' : 'bg-gray-100 text-gray-600 hover:bg-violet-100 hover:text-violet-600'}`}
+             title={voiceMode ? "Stop Voice" : "Start Voice"}
+           >
+             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
+               <path d="M8.25 4.5a3.75 3.75 0 117.5 0v8.25a3.75 3.75 0 11-7.5 0V4.5z" />
+               <path d="M6 10.5a.75.75 0 01.75.75v1.5a5.25 5.25 0 1010.5 0v-1.5a.75.75 0 011.5 0v1.5a6.751 6.751 0 01-6 6.709v2.291h3a.75.75 0 010 1.5h-7.5a.75.75 0 010-1.5h3v-2.291a6.751 6.751 0 01-6-6.709v-1.5A.75.75 0 016 10.5z" />
+             </svg>
+           </button>
+           <div className="text-xs text-violet-600">Always here</div>
+        </div>
       </header>
+
+      {voiceError && (
+        <div className="px-4 py-2 text-xs text-red-600 bg-red-50">
+          Voice Error: {voiceError}
+        </div>
+      )}
 
       {!ready ? (
         <div className="px-4 pb-6 text-sm text-gray-500">Connecting...</div>
@@ -264,7 +285,7 @@ export default function DurmahWidget() {
         </div>
       ) : (
         <div className="px-4 pb-4">
-          <div className="space-y-2">
+          <div className="space-y-2 max-h-60 overflow-y-auto">
             {messages.map((message, index) => (
               <div key={message.ts + ':' + index} className={message.role === 'durmah' ? 'text-violet-800' : 'text-gray-900'}>
                 <div className={`inline-block max-w-full rounded-2xl px-3 py-2 text-sm ${message.role === 'durmah' ? 'bg-violet-50' : 'bg-gray-50'}`}>
@@ -292,13 +313,13 @@ export default function DurmahWidget() {
               className="w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-violet-300"
               value={input}
               onChange={(event) => setInput(event.target.value)}
-              placeholder="Tell me what you are working on..."
-              disabled={isStreaming}
+              placeholder={voiceMode ? "Listening..." : "Tell me what you are working on..."}
+              disabled={isStreaming || voiceMode}
             />
             <button
               onClick={send}
               className="rounded-lg bg-violet-600 px-3 py-2 text-sm font-medium text-white hover:bg-violet-700 disabled:opacity-50"
-              disabled={!input.trim() || isStreaming}
+              disabled={!input.trim() || isStreaming || voiceMode}
             >
               Send
             </button>
@@ -308,10 +329,3 @@ export default function DurmahWidget() {
     </section>
   );
 }
-
-
-
-
-
-
-

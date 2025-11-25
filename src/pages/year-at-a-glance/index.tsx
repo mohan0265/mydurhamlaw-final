@@ -152,6 +152,12 @@ const YearAtAGlancePage: React.FC = () => {
       setYear(urlYear);
       return;
     }
+    
+    // Fallback timer in case profile loading hangs
+    const timer = setTimeout(() => {
+      if (!year) setYear('year1');
+    }, 1500);
+
     // If profile is loaded, choose profile year or last-resort year1
     if (!profileLoading) {
       const chosen: YearKey = (profileYear ?? 'year1') as YearKey;
@@ -165,7 +171,9 @@ const YearAtAGlancePage: React.FC = () => {
         );
       }
     }
-  }, [urlYear, profileLoading, profileYear, router]);
+    
+    return () => clearTimeout(timer);
+  }, [urlYear, profileLoading, profileYear, router, year]);
 
   // Persist only after we have a real selection
   useEffect(() => {
