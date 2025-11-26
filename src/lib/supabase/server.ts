@@ -12,6 +12,20 @@ export function getSupabaseServerClient(): SupabaseClient {
     {
       auth: {
         autoRefreshToken: false,
+import { NextApiRequest, NextApiResponse } from 'next'
+import { createClient, SupabaseClient } from '@supabase/supabase-js'
+
+/**
+ * Get a server-side Supabase client with service role key
+ * This bypasses RLS and should only be used in secure server contexts
+ */
+export function getSupabaseServerClient(): SupabaseClient {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    {
+      auth: {
+        autoRefreshToken: false,
         persistSession: false
       }
     }
@@ -20,6 +34,20 @@ export function getSupabaseServerClient(): SupabaseClient {
 
 /**
  * Get a server-side Supabase client that uses the user's session from cookies
+ * This ensures RLS policies are properly enforced based on the authenticated user
+ */
+export function getServerSupabase(
+  req: NextApiRequest,
+  res: NextApiResponse
+): SupabaseClient {
+  // Get the auth token from cookies
+  const token = req.cookies['mdl-auth'] || req.cookies['sb-access-token'] || req.cookies['supabase-auth-token']
+  
+  // Create client with user's auth token if available
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
       global: {
         headers: token ? {
           Authorization: `Bearer ${token}`
@@ -38,6 +66,22 @@ export function getSupabaseServerClient(): SupabaseClient {
 export async function getServerUser(req: NextApiRequest, res: NextApiResponse) {
   const supabase = getServerSupabase(req, res)
   
+  try {
+    const { data: { user }, error } = await supabase.auth.getUser()
+    
+    if (error) {
+      // Try alternative auth methods
+      const authHeader = req.headers.authorization
+      const token = authHeader?.replace('Bearer ', '') || 
+                   req.cookies['mdl-auth'] ||
+                   req.cookies['sb-access-token'] || 
+                   req.cookies['supabase-auth-token']
+      
+      if (token) {
+        // Create a client with the explicit token
+        const tokenClient = createClient(
+          process.env.NEXT_PUBLIC_SUPABASE_URL!,
+          process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
           {
             global: {
               headers: {
