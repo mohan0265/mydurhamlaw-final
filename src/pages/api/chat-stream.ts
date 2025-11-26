@@ -58,7 +58,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       },
     });
 
-    const result = await chat.sendMessageStream(lastMessage.parts[0].text);
+    const text = lastMessage.parts[0]?.text || '';
+    if (!text) {
+         res.status(400).json({ error: 'Empty message content' });
+         return;
+    }
+    const result = await chat.sendMessageStream(text);
 
     res.writeHead(200, {
       'Content-Type': 'text/plain; charset=utf-8',

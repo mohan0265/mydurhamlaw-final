@@ -1,6 +1,6 @@
 // src/pages/api/awy/presence.ts
 import type { NextApiRequest, NextApiResponse } from "next";
-import { getServerUser } from "@/lib/server/auth";
+import { requireUser } from "@/lib/server/auth";
 
 /**
  * Lightweight presence endpoint for AWY & PresenceBadge.
@@ -15,9 +15,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    const { user, supabase } = await getServerUser(req, res);
-
-    if (!user) {
+    const got = await requireUser(req, res);
+    if (!got) {
       console.debug('[AWY] presence unauthenticated request');
       return res.status(200).json({
         connected: false,
@@ -25,6 +24,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         lovedOnes: [],
       });
     }
+    const { user, supabase } = got;
 
     if (!supabase) {
       console.debug('[AWY] presence supabase client missing for user:', user.id);

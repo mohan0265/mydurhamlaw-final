@@ -33,7 +33,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   try {
     if (req.method === 'GET') {
       const { data, error } = await supabase
-        .from<ConnectionRow>('awy_connections')
+        .from('awy_connections')
         .select('*')
         .eq('student_id', user.id)
         .order('created_at', { ascending: false });

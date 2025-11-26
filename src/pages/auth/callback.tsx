@@ -23,9 +23,7 @@ export default function AuthCallbackPage() {
     let cancelled = false;
 
     async function run() {
-      if (typeof window === 'undefined') {
-        return;
-      }
+      if (typeof window === 'undefined') return;
 
       const supabase = getSupabaseClient();
       if (!supabase) {
@@ -40,8 +38,9 @@ export default function AuthCallbackPage() {
       const errorDescription = params.get('error_description');
       const authCode = params.get('code');
 
+      // 1. Handle explicit errors from provider
       if (looksLikeProfileSaveError(errorCode, errorDescription)) {
-        setError('We could not finish setting up your profile yet. Please try again in a moment. If this keeps happening, contact support.');
+        setError('We could not finish setting up your profile yet. Please try again in a moment.');
         setStatus('Sending you back to the login page...');
         setTimeout(() => router.push('/login?error=profile_setup'), REDIRECT_DELAY + 1000);
         return;
@@ -56,23 +55,36 @@ export default function AuthCallbackPage() {
       }
 
       try {
+        // 2. If we have a code, exchange it.
         if (authCode) {
           setStatus('Establishing your session...');
           const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(authCode);
-          if (exchangeError) {
-            throw exchangeError;
-          }
+          if (exchangeError) throw exchangeError;
         }
 
+        // 3. Verify session exists
         setStatus('Checking your session...');
-        const { data, error: sessionError } = await supabase.auth.getSession();
-        if (sessionError || !data?.session) {
-          throw sessionError || new Error('Session was not created.');
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        
+        if (sessionError) throw sessionError;
+        
+        if (!session) {
+           // Sometimes the session is there but just needs a moment or a refresh
+           // We can try one more time after a short delay or just fail.
+           // For now, let's assume if exchange worked (or no code), we should have a session.
+           // If no code and no session, maybe they just navigated here manually?
+           if (!authCode) {
+             // Just navigated here?
+             router.push('/login');
+             return;
+           }
+           throw new Error('Session was not created after code exchange.');
         }
 
         if (cancelled) return;
         setStatus('Redirecting to complete your setup...');
         router.push('/LoginRedirectPage');
+
       } catch (err: any) {
         console.error('[auth/callback] error:', err);
         const message = err?.message || 'Unexpected authentication error.';
