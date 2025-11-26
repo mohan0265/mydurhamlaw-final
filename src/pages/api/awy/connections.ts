@@ -25,7 +25,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const got = await requireUser(req, res);
   if (!got) {
     console.debug('[AWY] requireUser: unauthenticated (connections)');
-    return;
+    return res.status(401).json({ ok: false, error: 'unauthorized' });
   }
 
   const { user, supabase } = got;

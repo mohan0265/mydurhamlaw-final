@@ -119,10 +119,12 @@ export function useGeminiLive(apiKey: string | undefined) {
         console.error("WebSocket error:", e);
         setError("Connection error");
         setIsConnected(false);
+        stopRecording();
       };
 
       ws.onclose = () => {
         setIsConnected(false);
+        stopRecording();
       };
 
     } catch (e: any) {

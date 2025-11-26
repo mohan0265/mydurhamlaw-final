@@ -3,7 +3,9 @@ import { requireUser, softOk } from '@/lib/server/auth';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const got = await requireUser(req, res);
-  if (!got) return;
+  if (!got) {
+    return res.status(401).json({ ok: false, error: 'unauthorized' });
+  }
 
   const { user, supabase } = got;
 
