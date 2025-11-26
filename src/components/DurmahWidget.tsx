@@ -24,11 +24,11 @@ async function getStudentContext(userId?: string | null): Promise<StudentSnapsho
   try {
     const profile = await supabase
       .from('profiles')
-      .select('full_name')
+      .select('display_name')
       .eq('id', userId)
       .maybeSingle();
 
-    const name = profile.data?.full_name || null;
+    const name = profile.data?.display_name || null;
 
     const tasks = await supabase
       .from('assignments')
