@@ -16,7 +16,8 @@ export function getServerClient(req: NextApiRequest, res: NextApiResponse) {
       req, 
       res,
       supabaseUrl: SUPABASE_URL,
-      supabaseKey: SUPABASE_ANON_KEY
+      supabaseKey: SUPABASE_ANON_KEY,
+      cookieOptions: { name: 'mdl-auth' }
     });
   } catch (err) {
     console.debug('[auth] getServerClient failed:', (err as any)?.message ?? err);
@@ -70,7 +71,8 @@ export async function requireUser(req: NextApiRequest, res: NextApiResponse) {
       req, 
       res,
       supabaseUrl: SUPABASE_URL,
-      supabaseKey: SUPABASE_ANON_KEY
+      supabaseKey: SUPABASE_ANON_KEY,
+      cookieOptions: { name: 'mdl-auth' }
     });
     const { data, error } = await supabase.auth.getUser();
     if (error || !data?.user) {
