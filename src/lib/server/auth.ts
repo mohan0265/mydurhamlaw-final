@@ -12,13 +12,14 @@ const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
  */
 export function getServerClient(req: NextApiRequest, res: NextApiResponse) {
   try {
-    return createPagesServerClient({ 
-      req, 
-      res,
-      supabaseUrl: SUPABASE_URL,
-      supabaseKey: SUPABASE_ANON_KEY,
-      cookieOptions: { name: 'mdl-auth' }
-    });
+    return createPagesServerClient(
+      { req, res },
+      {
+        supabaseUrl: SUPABASE_URL,
+        supabaseKey: SUPABASE_ANON_KEY,
+        cookieOptions: { name: 'mdl-auth' }
+      }
+    );
   } catch (err) {
     console.debug('[auth] getServerClient failed:', (err as any)?.message ?? err);
     throw err;
@@ -67,13 +68,14 @@ export function softOk(res: NextApiResponse, payload?: any) {
 
 export async function requireUser(req: NextApiRequest, res: NextApiResponse) {
   try {
-    const supabase = createPagesServerClient({ 
-      req, 
-      res,
-      supabaseUrl: SUPABASE_URL,
-      supabaseKey: SUPABASE_ANON_KEY,
-      cookieOptions: { name: 'mdl-auth' }
-    });
+    const supabase = createPagesServerClient(
+      { req, res },
+      {
+        supabaseUrl: SUPABASE_URL,
+        supabaseKey: SUPABASE_ANON_KEY,
+        cookieOptions: { name: 'mdl-auth' }
+      }
+    );
     const { data, error } = await supabase.auth.getUser();
     if (error || !data?.user) {
       console.debug('[auth] requireUser failed:', (error as any)?.message ?? error);
