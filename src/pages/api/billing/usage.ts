@@ -1,7 +1,7 @@
 // src/pages/api/billing/usage.ts
 import type { NextApiRequest, NextApiResponse } from "next";
 import { getServerUser } from "@/lib/api/serverAuth"; // cookie-first + Bearer fallback
-import { serverSubscriptionService } from "@/lib/billing/subscriptionService";
+import { serverSubscriptionService } from "@/lib/billing/subscriptionServiceServer";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   // Authenticate (works on Netlify using cookies OR Authorization: Bearer <token>)

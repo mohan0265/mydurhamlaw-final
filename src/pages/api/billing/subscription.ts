@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getServerUser } from '@/lib/api/serverAuth';
-import { serverSubscriptionService } from '@/lib/billing/subscriptionService';
+import { serverSubscriptionService } from '@/lib/billing/subscriptionServiceServer';
 
 const ok = (res: NextApiResponse, body: Record<string, unknown> = {}) =>
   res.status(200).json({ ok: true, ...body });

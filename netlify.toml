@@ -5,6 +5,7 @@
 
 [build.environment]
   NODE_VERSION = "18.20.8"
+  SECRETS_SCAN_OMIT_KEYS = "NEXT_PUBLIC_GEMINI_API_KEY,GEMINI_API_KEY"
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"

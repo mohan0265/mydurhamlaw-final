@@ -1,13 +1,13 @@
 
 import { getSupabaseClient } from '@/lib/supabase/client';
-import { getSupabaseServerClient } from '@/lib/supabase/server';
 import type { SubscriptionPlan, UserSubscription, SubscriptionInfo } from '@/types/billing';
+import type { SupabaseClient } from '@supabase/supabase-js';
 
 export class SubscriptionService {
   private supabase: any;
 
-  constructor(isServer = false) {
-    this.supabase = isServer ? getSupabaseServerClient() : getSupabaseClient();
+  constructor(client?: SupabaseClient) {
+    this.supabase = client || getSupabaseClient();
   }
 
   private ensureSupabase(): any {
@@ -280,4 +280,3 @@ export class SubscriptionService {
 
 // Singleton instances
 export const subscriptionService = new SubscriptionService();
-export const serverSubscriptionService = new SubscriptionService(true);
