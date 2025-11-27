@@ -17,7 +17,13 @@ export function getServerClient(req: NextApiRequest, res: NextApiResponse) {
       {
         supabaseUrl: SUPABASE_URL,
         supabaseKey: SUPABASE_ANON_KEY,
-        cookieOptions: { name: 'mdl-auth' }
+        cookieOptions: { 
+          name: 'mdl-auth',
+          path: '/',
+          sameSite: 'lax',
+          secure: process.env.NODE_ENV === 'production',
+          domain: undefined
+        }
       }
     );
   } catch (err) {
