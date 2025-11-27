@@ -1,6 +1,6 @@
 // src/lib/server/auth.ts
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { createServerClient, serializeCookie } from '@supabase/ssr';
+import { createServerClient, serialize } from '@supabase/ssr';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -24,7 +24,7 @@ export function getServerClient(req: NextApiRequest, res: NextApiResponse) {
             res.setHeader(
               'Set-Cookie',
               cookiesToSet.map(({ name, value, options }) =>
-                serializeCookie(name, value, options)
+                serialize(name, value, options)
               )
             );
           },
