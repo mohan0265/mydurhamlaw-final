@@ -93,8 +93,19 @@ export default function DurmahWidget() {
   const streamControllerRef = useRef<AbortController | null>(null);
 
   // Gemini Live Hook
-  const { connect, disconnect, startRecording, stopRecording, isConnected, isStreaming: isVoiceStreaming, error: voiceError } = useGeminiLive(process.env.NEXT_PUBLIC_GEMINI_API_KEY);
+  const { 
+    connect, 
+    disconnect, 
+    startRecording, 
+    stopRecording, 
+    isConnected, 
+    isStreaming: isVoiceStreaming, 
+    error: voiceError,
+    transcript,
+    clearTranscript
+  } = useGeminiLive(process.env.NEXT_PUBLIC_GEMINI_API_KEY);
   const [voiceMode, setVoiceMode] = useState(false);
+  const [showTranscript, setShowTranscript] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -182,7 +193,10 @@ export default function DurmahWidget() {
         signal: controller.signal,
       });
 
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      if (!response.ok) {
+        const errText = await response.text();
+        throw new Error(`HTTP ${response.status}: ${errText}`);
+      }
 
       if (!response.body) {
          return;
@@ -216,7 +230,7 @@ export default function DurmahWidget() {
       setMessages((current) =>
         current.map((message) =>
           message.ts === assistantId
-            ? { ...message, text: 'Hmm, I am having trouble right now, but I saved your note.' }
+            ? { ...message, text: 'I am having trouble connecting. Please try again.' }
             : message
         )
       );
@@ -231,11 +245,43 @@ export default function DurmahWidget() {
       stopRecording();
       disconnect();
       setVoiceMode(false);
+      // Show transcript if there was a conversation
+      if (transcript.length > 0) {
+        setShowTranscript(true);
+      }
     } else {
+      clearTranscript();
       await connect();
       await startRecording();
       setVoiceMode(true);
     }
+  };
+
+  const saveSession = async () => {
+    // Save the last user message and topic from the transcript to memory
+    if (transcript.length > 0) {
+      const lastUserMsg = [...transcript].reverse().find(t => t.role === 'user');
+      if (lastUserMsg) {
+        const topic = inferTopic(lastUserMsg.text);
+        try {
+          await fetch('/api/durmah/memory', {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ last_topic: topic, last_message: lastUserMsg.text }),
+          });
+        } catch (error) {
+          console.debug('[Durmah] memory save failed:', error);
+        }
+      }
+    }
+    setShowTranscript(false);
+    clearTranscript();
+  };
+
+  const discardSession = () => {
+    setShowTranscript(false);
+    clearTranscript();
   };
 
   // Floating Widget UI
@@ -287,6 +333,39 @@ export default function DurmahWidget() {
       {voiceError && (
         <div className="px-4 py-2 text-xs text-red-600 bg-red-50">
           Voice Error: {voiceError}
+        </div>
+      )}
+
+      {/* Transcript Modal */}
+      {showTranscript && (
+        <div className="absolute inset-0 z-10 flex flex-col bg-white p-4">
+          <h3 className="mb-2 text-lg font-semibold text-gray-900">Session Transcript</h3>
+          <div className="flex-1 overflow-y-auto rounded border bg-gray-50 p-3 text-sm">
+            {transcript.length === 0 ? (
+              <p className="text-gray-500 italic">No transcript available.</p>
+            ) : (
+              transcript.map((t, i) => (
+                <div key={i} className="mb-2">
+                  <strong className="block text-xs text-gray-500">{t.role === 'user' ? 'You' : 'Durmah'}</strong>
+                  <p className="text-gray-800">{t.text}</p>
+                </div>
+              ))
+            )}
+          </div>
+          <div className="mt-4 flex gap-2">
+            <button
+              onClick={discardSession}
+              className="flex-1 rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+            >
+              Discard
+            </button>
+            <button
+              onClick={saveSession}
+              className="flex-1 rounded-lg bg-violet-600 px-4 py-2 text-sm font-medium text-white hover:bg-violet-700"
+            >
+              Save to Memory
+            </button>
+          </div>
         </div>
       )}
 

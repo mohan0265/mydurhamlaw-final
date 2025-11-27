@@ -9,12 +9,6 @@ const SYSTEM_PROMPT =
   'Acknowledge when audio is still connecting, but never repeat the same listening line. ' +
   'If the user is just testing the mic, respond briefly and invite a question.';
 
-// Initialize Gemini
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY || '');
-const model = genAI.getGenerativeModel({ 
-  model: 'gemini-1.5-flash',
-  systemInstruction: SYSTEM_PROMPT
-});
 
 export const config = {
   api: {
@@ -28,27 +22,42 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return;
   }
 
+  const apiKey = process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+  if (!apiKey) {
+    console.error('[chat-stream] Missing GEMINI_API_KEY');
+    res.status(500).json({ error: 'Server configuration error: Missing API Key' });
+    return;
+  }
+
   try {
     const body = req.body as { messages?: ChatMessage[] };
     const incoming = Array.isArray(body?.messages) ? body.messages : [];
 
+    if (incoming.length === 0) {
+      res.status(400).json({ error: 'No messages provided' });
+      return;
+    }
+
     // Filter and format messages for Gemini
-    // Gemini history format: { role: 'user' | 'model', parts: [{ text: string }] }
-    // We need to convert 'assistant' to 'model' and 'system' is handled via systemInstruction
     const history = incoming
-      .filter((msg) => msg.role !== 'system') // System prompt is set in model config
+      .filter((msg) => msg.role !== 'system')
       .map((msg) => ({
         role: msg.role === 'assistant' ? 'model' : 'user',
         parts: [{ text: msg.content }],
       }));
 
-    // The last message is the new prompt, remove it from history
+    // The last message is the new prompt
     const lastMessage = history.pop();
-
-    if (!lastMessage) {
-      res.status(400).json({ error: 'No messages provided' });
+    if (!lastMessage || !lastMessage.parts[0]?.text) {
+      res.status(400).json({ error: 'Empty message content' });
       return;
     }
+
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({ 
+      model: 'gemini-1.5-flash',
+      systemInstruction: SYSTEM_PROMPT
+    });
 
     const chat = model.startChat({
       history: history,
@@ -58,12 +67,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       },
     });
 
-    const text = lastMessage.parts[0]?.text || '';
-    if (!text) {
-         res.status(400).json({ error: 'Empty message content' });
-         return;
-    }
-    const result = await chat.sendMessageStream(text);
+    const result = await chat.sendMessageStream(lastMessage.parts[0].text);
 
     res.writeHead(200, {
       'Content-Type': 'text/plain; charset=utf-8',
@@ -81,12 +85,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     res.end();
   } catch (err: any) {
-    console.error('[chat-stream] error', err);
+    console.error('[chat-stream] error:', err);
+    // If headers haven't been sent, return JSON error
     if (!res.headersSent) {
-      res.status(500).json({ error: 'Chat failed', detail: err?.message || String(err) });
+      res.status(500).json({ 
+        error: 'Chat failed', 
+        detail: err?.message || String(err) 
+      });
     } else {
-      res.write('\n');
-      res.write('[error]');
+      // If streaming started, we can't send JSON, so just end the stream
+      console.error('[chat-stream] Stream interrupted by error');
       res.end();
     }
   }

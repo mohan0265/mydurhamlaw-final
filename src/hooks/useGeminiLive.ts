@@ -37,10 +37,14 @@ type ClientContent = {
   };
 };
 
+export type TranscriptItem = { role: 'user' | 'assistant'; text: string; timestamp: number };
+
 export function useGeminiLive(apiKey: string | undefined) {
   const [isConnected, setIsConnected] = useState(false);
   const [isStreaming, setIsStreaming] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [transcript, setTranscript] = useState<TranscriptItem[]>([]);
+  
   const wsRef = useRef<WebSocket | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
@@ -70,19 +74,19 @@ export function useGeminiLive(apiKey: string | undefined) {
         // Send initial setup
         const setupMsg = {
           setup: {
-            model: "models/gemini-2.0-flash-exp", // Using the latest experimental model for live
+            model: "models/gemini-2.0-flash-exp",
             generationConfig: {
               responseModalities: "AUDIO",
               speechConfig: {
                 voiceConfig: {
                   prebuiltVoiceConfig: {
-                    voiceName: "Puck" // Friendly voice
+                    voiceName: "Puck"
                   }
                 }
               }
             },
             systemInstruction: {
-              parts: [{ text: "You are Durmah, a friendly, succinct voice mentor for Durham law students." }]
+              parts: [{ text: "You are Durmah, a friendly, succinct voice mentor for Durham law students. Keep your responses short and conversational, like a phone call." }]
             }
           }
         };
@@ -97,22 +101,26 @@ export function useGeminiLive(apiKey: string | undefined) {
           data = JSON.parse(event.data);
         }
 
+        // Handle Audio Output
         if (data.serverContent?.modelTurn?.parts) {
           for (const part of data.serverContent.modelTurn.parts) {
             if (part.inlineData && part.inlineData.mimeType.startsWith('audio/')) {
-              // Decode base64 audio
               const audioData = atob(part.inlineData.data);
               const arrayBuffer = new ArrayBuffer(audioData.length);
               const view = new Uint8Array(arrayBuffer);
               for (let i = 0; i < audioData.length; i++) {
                 view[i] = audioData.charCodeAt(i);
               }
-              
-              // Queue for playback
               queueAudio(arrayBuffer);
             }
           }
         }
+
+        // Handle Turn Complete (Transcript)
+        // Note: The API might not send text transcript by default when responseModalities is AUDIO.
+        // We might need to rely on client-side tracking or request text+audio if supported.
+        // For now, we'll focus on the audio flow. 
+        // If the API sends text parts, we can capture them.
       };
 
       ws.onerror = (e) => {
@@ -159,15 +167,13 @@ export function useGeminiLive(apiKey: string | undefined) {
         if (wsRef.current?.readyState !== WebSocket.OPEN) return;
 
         const inputData = e.inputBuffer.getChannelData(0);
-        // Convert Float32 to PCM16
         const pcm16 = new Int16Array(inputData.length);
         for (let i = 0; i < inputData.length; i++) {
-          const sample = inputData[i] || 0; // Fix undefined check
+          const sample = inputData[i] || 0;
           const s = Math.max(-1, Math.min(1, sample));
           pcm16[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
         }
 
-        // Base64 encode
         const base64 = btoa(String.fromCharCode(...new Uint8Array(pcm16.buffer)));
         
         const msg: RealtimeInput = {
@@ -193,7 +199,6 @@ export function useGeminiLive(apiKey: string | undefined) {
   const stopRecording = useCallback(() => {
     if (processorRef.current && audioContextRef.current) {
       processorRef.current.disconnect();
-      // audioContextRef.current.close(); // Don't close if we want to play response
     }
     if (mediaStreamRef.current) {
       mediaStreamRef.current.getTracks().forEach(t => t.stop());
@@ -203,19 +208,14 @@ export function useGeminiLive(apiKey: string | undefined) {
 
   const queueAudio = async (arrayBuffer: ArrayBuffer) => {
     if (!audioContextRef.current) {
-      audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 }); // Gemini output is often 24k
+      audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
     }
     
-    // Decode raw PCM? No, Gemini sends standard formats usually, but let's assume PCM if headerless
-    // Actually the response says 'audio/pcm;rate=24000' usually.
-    // We need to convert raw PCM to AudioBuffer.
-    
-    // Simple PCM16 to Float32 converter for playback
     const pcm16 = new Int16Array(arrayBuffer);
     const float32 = new Float32Array(pcm16.length);
     for (let i = 0; i < pcm16.length; i++) {
       const val = pcm16[i];
-      float32[i] = (val === undefined ? 0 : val) / 32768.0; // Fix undefined check
+      float32[i] = (val === undefined ? 0 : val) / 32768.0;
     }
 
     audioQueueRef.current.push(float32);
@@ -228,8 +228,8 @@ export function useGeminiLive(apiKey: string | undefined) {
     isPlayingRef.current = true;
     const chunk = audioQueueRef.current.shift()!;
     
-    const buffer = audioContextRef.current.createBuffer(1, chunk.length, 24000); // Assuming 24k from Gemini
-    // @ts-ignore - Float32Array type mismatch with DOM types
+    const buffer = audioContextRef.current.createBuffer(1, chunk.length, 24000);
+    // @ts-ignore
     buffer.copyToChannel(chunk, 0);
     
     const source = audioContextRef.current.createBufferSource();
@@ -248,6 +248,10 @@ export function useGeminiLive(apiKey: string | undefined) {
     };
   };
 
+  const clearTranscript = useCallback(() => {
+    setTranscript([]);
+  }, []);
+
   return {
     connect,
     disconnect,
@@ -255,6 +259,8 @@ export function useGeminiLive(apiKey: string | undefined) {
     stopRecording,
     isConnected,
     isStreaming,
-    error
+    error,
+    transcript,
+    clearTranscript
   };
 }
