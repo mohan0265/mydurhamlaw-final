@@ -1,6 +1,6 @@
 // src/lib/server/auth.ts
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { createPagesServerClient } from '@supabase/auth-helpers-nextjs';
+import { createServerClient, serializeCookie } from '@supabase/ssr';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -12,18 +12,28 @@ const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
  */
 export function getServerClient(req: NextApiRequest, res: NextApiResponse) {
   try {
-    return createPagesServerClient(
-      { req, res },
+    return createServerClient(
+      SUPABASE_URL,
+      SUPABASE_ANON_KEY,
       {
-        supabaseUrl: SUPABASE_URL,
-        supabaseKey: SUPABASE_ANON_KEY,
-        // @ts-ignore
-        cookieOptions: { 
+        cookies: {
+          getAll() {
+            return Object.keys(req.cookies).map((name) => ({ name, value: req.cookies[name] || '' }));
+          },
+          setAll(cookiesToSet) {
+            res.setHeader(
+              'Set-Cookie',
+              cookiesToSet.map(({ name, value, options }) =>
+                serializeCookie(name, value, options)
+              )
+            );
+          },
+        },
+        cookieOptions: {
           name: 'mdl-auth',
           path: '/',
           sameSite: 'lax',
           secure: process.env.NODE_ENV === 'production',
-          domain: undefined
         }
       }
     );
@@ -75,21 +85,7 @@ export function softOk(res: NextApiResponse, payload?: any) {
 
 export async function requireUser(req: NextApiRequest, res: NextApiResponse) {
   try {
-    const supabase = createPagesServerClient(
-      { req, res },
-      {
-        supabaseUrl: SUPABASE_URL,
-        supabaseKey: SUPABASE_ANON_KEY,
-        // @ts-ignore
-        cookieOptions: { 
-          name: 'mdl-auth',
-          path: '/',
-          sameSite: 'lax',
-          secure: process.env.NODE_ENV === 'production',
-          domain: undefined
-        }
-      }
-    );
+    const supabase = getServerClient(req, res);
     const { data, error } = await supabase.auth.getUser();
     if (error || !data?.user) {
       const msg = (error as any)?.message ?? 'No user found';
