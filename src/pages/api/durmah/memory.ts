@@ -1,18 +1,3 @@
-import type { NextApiRequest, NextApiResponse } from 'next';
-import { requireUser, softOk } from '@/lib/server/auth';
-
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  const got = await requireUser(req, res);
-  if (!got) {
-    return res.status(401).json({ ok: false, error: 'unauthorized' });
-  }
-
-  const { user, supabase } = got;
-
-  if (req.method === 'GET') {
-    try {
-      const { data, error } = await supabase
-        .from('durmah_memory')
         .select('user_id, last_seen_at, last_topic, last_message')
         .eq('user_id', user.id)
         .single();

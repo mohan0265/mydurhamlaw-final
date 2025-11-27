@@ -78,8 +78,9 @@ export async function requireUser(req: NextApiRequest, res: NextApiResponse) {
     );
     const { data, error } = await supabase.auth.getUser();
     if (error || !data?.user) {
-      console.debug('[auth] requireUser failed:', (error as any)?.message ?? error);
-      return null;
+      const msg = (error as any)?.message ?? 'No user found';
+      console.debug('[auth] requireUser failed:', msg);
+      return { error: msg };
     }
     return { user: data.user, supabase };
   } catch (err) {
