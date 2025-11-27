@@ -3,7 +3,7 @@ import React from 'react'
 import { useRouter } from 'next/router'
 import GlobalHeader from '@/components/GlobalHeader'
 import GlobalFooter from '@/components/GlobalFooter'
-// Durmah/AWY components removed
+import DurmahWidget from '@/components/DurmahWidget'
 import { CalendarProvider } from '@/context/CalendarContext'
 
 type Props = { children: React.ReactNode }
@@ -44,6 +44,9 @@ export default function LayoutShell({ children }: Props) {
       </CalendarProvider>
 
       <GlobalFooter />
+      
+      {/* Global Floating Widgets */}
+      <DurmahWidget />
     </div>
   )
 }

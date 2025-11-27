@@ -84,6 +84,7 @@ export default function DurmahWidget() {
   const { user } = useAuth() || { user: null };
   const signedIn = !!user?.id;
 
+  const [isOpen, setIsOpen] = useState(false);
   const [ready, setReady] = useState(false);
   const [snapshot, setSnapshot] = useState<StudentSnapshot>({ ...EMPTY_SNAPSHOT });
   const [messages, setMessages] = useState<Msg[]>([]);
@@ -92,8 +93,6 @@ export default function DurmahWidget() {
   const streamControllerRef = useRef<AbortController | null>(null);
 
   // Gemini Live Hook
-  // Note: Using NEXT_PUBLIC_GEMINI_API_KEY for client-side demo. 
-  // In production, you should proxy the WebSocket handshake to hide the key.
   const { connect, disconnect, startRecording, stopRecording, isConnected, isStreaming: isVoiceStreaming, error: voiceError } = useGeminiLive(process.env.NEXT_PUBLIC_GEMINI_API_KEY);
   const [voiceMode, setVoiceMode] = useState(false);
 
@@ -186,7 +185,6 @@ export default function DurmahWidget() {
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
       if (!response.body) {
-         // ... fallback logic
          return;
       }
 
@@ -240,22 +238,49 @@ export default function DurmahWidget() {
     }
   };
 
+  // Floating Widget UI
+  if (!isOpen) {
+    return (
+      <button
+        onClick={() => setIsOpen(true)}
+        className="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-violet-600 text-white shadow-lg transition-transform hover:scale-105 hover:bg-violet-700 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2"
+        aria-label="Open Durmah Chat"
+      >
+        {/* Chat Icon */}
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-8 w-8">
+          <path fillRule="evenodd" d="M4.848 2.771A49.144 49.144 0 0112 2.25c2.43 0 4.817.178 7.152.52 1.978.292 3.348 2.024 3.348 3.97v6.02c0 1.946-1.37 3.678-3.348 3.97a48.901 48.901 0 01-3.476.383.39.39 0 00-.297.17l-2.755 4.133a.75.75 0 01-1.248 0l-2.755-4.133a.39.39 0 00-.297-.17 48.9 48.9 0 01-3.476-.384c-1.978-.29-3.348-2.024-3.348-3.97V6.741c0-1.946 1.37-3.678 3.348-3.97zM6.75 8.25a.75.75 0 01.75-.75h9a.75.75 0 010 1.5h-9a.75.75 0 01-.75-.75zm.75 2.25a.75.75 0 000 1.5H12a.75.75 0 000-1.5H7.5z" clipRule="evenodd" />
+        </svg>
+      </button>
+    );
+  }
+
   return (
-    <section className="rounded-xl border border-violet-200 bg-white shadow-sm">
-      <header className="flex items-center justify-between px-4 py-3">
-        <div className="font-semibold text-violet-800">Durmah</div>
+    <div className="fixed bottom-6 right-6 z-50 flex w-full max-w-md flex-col overflow-hidden rounded-2xl border border-violet-200 bg-white shadow-2xl sm:w-[400px]">
+      <header className="flex items-center justify-between bg-violet-600 px-4 py-3 text-white">
+        <div className="flex items-center gap-2">
+          <div className="font-semibold">Durmah</div>
+          <span className="rounded-full bg-violet-500 px-2 py-0.5 text-[10px] font-medium text-white">Beta</span>
+        </div>
         <div className="flex items-center gap-2">
            <button 
              onClick={toggleVoice}
-             className={`p-2 rounded-full transition-colors ${voiceMode ? 'bg-red-100 text-red-600 animate-pulse' : 'bg-gray-100 text-gray-600 hover:bg-violet-100 hover:text-violet-600'}`}
+             className={`p-1.5 rounded-full transition-colors ${voiceMode ? 'bg-red-500 text-white animate-pulse' : 'text-violet-100 hover:bg-violet-500'}`}
              title={voiceMode ? "Stop Voice" : "Start Voice"}
            >
-             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
+             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
                <path d="M8.25 4.5a3.75 3.75 0 117.5 0v8.25a3.75 3.75 0 11-7.5 0V4.5z" />
                <path d="M6 10.5a.75.75 0 01.75.75v1.5a5.25 5.25 0 1010.5 0v-1.5a.75.75 0 011.5 0v1.5a6.751 6.751 0 01-6 6.709v2.291h3a.75.75 0 010 1.5h-7.5a.75.75 0 010-1.5h3v-2.291a6.751 6.751 0 01-6-6.709v-1.5A.75.75 0 016 10.5z" />
              </svg>
            </button>
-           <div className="text-xs text-violet-600">Always here</div>
+           <button 
+             onClick={() => setIsOpen(false)}
+             className="rounded-full p-1.5 text-violet-100 hover:bg-violet-500"
+             aria-label="Close"
+           >
+             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5">
+               <path fillRule="evenodd" d="M5.47 5.47a.75.75 0 011.06 0L12 10.94l5.47-5.47a.75.75 0 111.06 1.06L13.06 12l5.47 5.47a.75.75 0 11-1.06 1.06L12 13.06l-5.47 5.47a.75.75 0 01-1.06-1.06L10.94 12 5.47 6.53a.75.75 0 010-1.06z" clipRule="evenodd" />
+             </svg>
+           </button>
         </div>
       </header>
 
@@ -265,67 +290,85 @@ export default function DurmahWidget() {
         </div>
       )}
 
-      {!ready ? (
-        <div className="px-4 pb-6 text-sm text-gray-500">Connecting...</div>
-      ) : !signedIn ? (
-        <div className="px-4 pb-6">
-          <div className="mb-3 text-sm text-gray-700">
-            Please <a className="underline" href="/login">sign in</a> to get personalized check-ins.
-          </div>
-          <div className="rounded-md bg-gray-50 p-3 text-sm text-gray-600">
-            {messages[0]?.text}
-          </div>
-          <div className="mt-3 flex flex-wrap gap-2">
-            {chips.map((chip) => (
-              <button key={chip} className="rounded-full border px-3 py-1 text-xs text-gray-700" disabled>
-                {chip}
-              </button>
-            ))}
-          </div>
-        </div>
-      ) : (
-        <div className="px-4 pb-4">
-          <div className="space-y-2 max-h-60 overflow-y-auto">
-            {messages.map((message, index) => (
-              <div key={message.ts + ':' + index} className={message.role === 'durmah' ? 'text-violet-800' : 'text-gray-900'}>
-                <div className={`inline-block max-w-full rounded-2xl px-3 py-2 text-sm ${message.role === 'durmah' ? 'bg-violet-50' : 'bg-gray-50'}`}>
-                  <strong className="mr-1">{message.role === 'durmah' ? 'Durmah:' : (snapshot.name ? snapshot.name.split(' ')[0] : 'You') + ':'}</strong>
-                  <span>{message.text}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div className="mt-3 flex flex-wrap gap-2">
-            {chips.map((chip) => (
-              <button
-                key={chip}
-                onClick={() => !input && setInput(chip)}
-                className="rounded-full border border-violet-200 bg-white px-3 py-1 text-xs text-violet-700 hover:bg-violet-50"
-              >
-                {chip}
-              </button>
-            ))}
-          </div>
-
-          <div className="mt-3 flex gap-2">
-            <input
-              className="w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-violet-300"
-              value={input}
-              onChange={(event) => setInput(event.target.value)}
-              placeholder={voiceMode ? "Listening..." : "Tell me what you are working on..."}
-              disabled={isStreaming || voiceMode}
-            />
-            <button
-              onClick={send}
-              className="rounded-lg bg-violet-600 px-3 py-2 text-sm font-medium text-white hover:bg-violet-700 disabled:opacity-50"
-              disabled={!input.trim() || isStreaming || voiceMode}
+      <div className="flex h-[400px] flex-col">
+        {!ready ? (
+          <div className="flex h-full items-center justify-center text-sm text-gray-500">Connecting...</div>
+        ) : !signedIn ? (
+          <div className="flex h-full flex-col items-center justify-center p-6 text-center">
+            <p className="mb-4 text-sm text-gray-600">
+              Sign in to chat with Durmah, your personal study companion.
+            </p>
+            <a 
+              href="/login" 
+              className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-medium text-white hover:bg-violet-700"
             >
-              Send
-            </button>
+              Sign In
+            </a>
           </div>
-        </div>
-      )}
-    </section>
+        ) : (
+          <>
+            <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
+              {messages.map((message, index) => (
+                <div key={message.ts + ':' + index} className={`flex ${message.role === 'durmah' ? 'justify-start' : 'justify-end'}`}>
+                  <div 
+                    className={`max-w-[85%] rounded-2xl px-4 py-2 text-sm shadow-sm ${
+                      message.role === 'durmah' 
+                        ? 'bg-white text-gray-800 rounded-tl-none' 
+                        : 'bg-violet-600 text-white rounded-tr-none'
+                    }`}
+                  >
+                    {message.text}
+                  </div>
+                </div>
+              ))}
+              {isStreaming && (
+                <div className="flex justify-start">
+                  <div className="max-w-[85%] rounded-2xl rounded-tl-none bg-white px-4 py-2 text-sm text-gray-500 shadow-sm">
+                    Thinking...
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="border-t border-gray-100 bg-white p-3">
+              {messages.length < 2 && (
+                <div className="mb-3 flex flex-wrap gap-2">
+                  {chips.map((chip) => (
+                    <button
+                      key={chip}
+                      onClick={() => !input && setInput(chip)}
+                      className="rounded-full border border-violet-100 bg-violet-50 px-3 py-1 text-xs text-violet-700 hover:bg-violet-100"
+                    >
+                      {chip}
+                    </button>
+                  ))}
+                </div>
+              )}
+              
+              <div className="flex gap-2">
+                <input
+                  className="flex-1 rounded-full border border-gray-200 bg-gray-50 px-4 py-2 text-sm outline-none focus:border-violet-300 focus:ring-2 focus:ring-violet-100"
+                  value={input}
+                  onChange={(event) => setInput(event.target.value)}
+                  placeholder={voiceMode ? "Listening..." : "Type a message..."}
+                  disabled={isStreaming || voiceMode}
+                  onKeyDown={(e) => e.key === 'Enter' && send()}
+                />
+                <button
+                  onClick={send}
+                  className="flex h-9 w-9 items-center justify-center rounded-full bg-violet-600 text-white transition-colors hover:bg-violet-700 disabled:opacity-50"
+                  disabled={!input.trim() || isStreaming || voiceMode}
+                  aria-label="Send message"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-4 w-4">
+                    <path d="M3.478 2.405a.75.75 0 00-.926.94l2.432 7.905H13.5a.75.75 0 010 1.5H4.984l-2.432 7.905a.75.75 0 00.926.94 60.519 60.519 0 0018.445-8.986.75.75 0 000-1.218A60.517 60.517 0 003.478 2.405z" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
   );
 }
