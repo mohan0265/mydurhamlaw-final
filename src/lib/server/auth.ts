@@ -17,6 +17,7 @@ export function getServerClient(req: NextApiRequest, res: NextApiResponse) {
       {
         supabaseUrl: SUPABASE_URL,
         supabaseKey: SUPABASE_ANON_KEY,
+        // @ts-ignore
         cookieOptions: { 
           name: 'mdl-auth',
           path: '/',
@@ -79,6 +80,7 @@ export async function requireUser(req: NextApiRequest, res: NextApiResponse) {
       {
         supabaseUrl: SUPABASE_URL,
         supabaseKey: SUPABASE_ANON_KEY,
+        // @ts-ignore
         cookieOptions: { 
           name: 'mdl-auth',
           path: '/',
