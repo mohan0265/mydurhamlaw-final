@@ -243,7 +243,7 @@ export default function DurmahWidget() {
     return (
       <button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-violet-600 text-white shadow-lg transition-transform hover:scale-105 hover:bg-violet-700 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2"
+        className="fixed bottom-24 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-violet-600 text-white shadow-lg transition-transform hover:scale-105 hover:bg-violet-700 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2"
         aria-label="Open Durmah Chat"
       >
         {/* Chat Icon */}
@@ -255,7 +255,7 @@ export default function DurmahWidget() {
   }
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 flex w-full max-w-md flex-col overflow-hidden rounded-2xl border border-violet-200 bg-white shadow-2xl sm:w-[400px]">
+    <div className="fixed bottom-24 right-6 z-50 flex w-full max-w-md flex-col overflow-hidden rounded-2xl border border-violet-200 bg-white shadow-2xl sm:w-[400px]">
       <header className="flex items-center justify-between bg-violet-600 px-4 py-3 text-white">
         <div className="flex items-center gap-2">
           <div className="font-semibold">Durmah</div>
