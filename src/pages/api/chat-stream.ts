@@ -39,7 +39,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // Filter and format messages for Gemini
-    const history = incoming
+    let history = incoming
       .filter((msg) => msg.role !== 'system')
       .map((msg) => ({
         role: msg.role === 'assistant' ? 'model' : 'user',
@@ -51,6 +51,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (!lastMessage || !lastMessage.parts[0]?.text) {
       res.status(400).json({ error: 'Empty message content' });
       return;
+    }
+
+    // Gemini requires the first history message to be 'user'.
+    // If the conversation started with an assistant greeting, remove it.
+    while (history.length > 0 && history[0].role === 'model') {
+      history.shift();
     }
 
     const genAI = new GoogleGenerativeAI(apiKey);
