@@ -19,7 +19,6 @@ import { StudyFocusWidget } from '@/components/dashboard/StudyFocusWidget';
 import { QuickActionsWidget } from '@/components/dashboard/QuickActionsWidget';
 import MemoryJournalWidget from '@/components/dashboard/MemoryJournalWidget';
 import WellbeingTipWidget from '@/components/dashboard/WellbeingTipWidget';
-import DurmahWidget from '@/components/DurmahWidget';
 
 export default function Dashboard() {
   const router = useRouter();
@@ -38,9 +37,6 @@ export default function Dashboard() {
           <p className="text-gray-600 mt-1">Your personalized study companion</p>
         </div>
 
-        <div className="mb-6">
-          <DurmahWidget />
-        </div>
 
         {/* Signed-out state */}
         {!user && (
