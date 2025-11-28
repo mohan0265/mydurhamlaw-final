@@ -230,7 +230,7 @@ export default function DurmahWidget() {
       setMessages((current) =>
         current.map((message) =>
           message.ts === assistantId
-            ? { ...message, text: 'I am having trouble connecting. Please try again.' }
+            ? { ...message, text: `Error: ${error instanceof Error ? error.message : String(error)}` }
             : message
         )
       );
