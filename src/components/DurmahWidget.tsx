@@ -141,6 +141,13 @@ export default function DurmahWidget() {
     };
   }, [user?.id, disconnect]);
 
+  // Sync voiceMode with connection state
+  useEffect(() => {
+    if (!isConnected && voiceMode) {
+      setVoiceMode(false);
+    }
+  }, [isConnected, voiceMode]);
+
   const chips = useMemo(() => {
     if (snapshot.upcoming.length === 0) {
       return ['Review this week', 'Make a study plan', 'Practice quiz'];
