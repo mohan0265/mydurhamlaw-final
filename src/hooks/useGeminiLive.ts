@@ -157,6 +157,9 @@ export function useGeminiLive(apiKey: string | undefined) {
       mediaStreamRef.current = stream;
       
       const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 16000 });
+      if (audioContext.state === 'suspended') {
+        await audioContext.resume();
+      }
       audioContextRef.current = audioContext;
       
       const source = audioContext.createMediaStreamSource(stream);
@@ -174,7 +177,14 @@ export function useGeminiLive(apiKey: string | undefined) {
           pcm16[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
         }
 
-        const base64 = btoa(String.fromCharCode(...new Uint8Array(pcm16.buffer)));
+        // Safe Base64 conversion
+        let binary = '';
+        const bytes = new Uint8Array(pcm16.buffer);
+        const len = bytes.byteLength;
+        for (let i = 0; i < len; i++) {
+          binary += String.fromCharCode(bytes[i]);
+        }
+        const base64 = btoa(binary);
         
         const msg: RealtimeInput = {
           realtimeInput: {
@@ -192,6 +202,7 @@ export function useGeminiLive(apiKey: string | undefined) {
       setIsStreaming(true);
 
     } catch (e: any) {
+      console.error("Mic access error:", e);
       setError("Microphone access denied");
     }
   }, []);
