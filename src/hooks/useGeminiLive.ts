@@ -74,7 +74,7 @@ export function useGeminiLive(apiKey: string | undefined) {
         // Send initial setup
         const setupMsg = {
           setup: {
-            model: "models/gemini-2.0-flash-exp",
+            model: "models/gemini-2.5-flash",
             generationConfig: {
               responseModalities: "AUDIO",
               speechConfig: {
