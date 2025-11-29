@@ -271,15 +271,18 @@ export function useGeminiLive(apiKey: string | undefined) {
             const abs = Math.abs(val === undefined ? 0 : val);
             if (abs > maxAmp) maxAmp = abs;
         }
-        if (Math.random() < 0.05) { // Log occasionally
-             console.log(`[GeminiLive] Mic level: ${maxAmp.toFixed(4)}`);
-        }
-
+        
+        // Apply digital gain (boost volume) to help VAD
+        const gain = 4.0;
         const pcm16 = new Int16Array(processedData.length);
         for (let i = 0; i < processedData.length; i++) {
           const val = processedData[i];
-          const s = Math.max(-1, Math.min(1, val === undefined ? 0 : val));
+          const s = Math.max(-1, Math.min(1, (val === undefined ? 0 : val) * gain));
           pcm16[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+        }
+
+        if (Math.random() < 0.05) { // Log occasionally
+             console.log(`[GeminiLive] Mic level (boosted): ${(maxAmp * gain).toFixed(4)}`);
         }
 
         // Safe Base64 conversion
@@ -294,7 +297,7 @@ export function useGeminiLive(apiKey: string | undefined) {
         const msg: RealtimeInput = {
           realtimeInput: {
             mediaChunks: [{
-              mimeType: "audio/pcm;rate=16000",
+              mimeType: "audio/pcm",
               data: base64
             }]
           }
