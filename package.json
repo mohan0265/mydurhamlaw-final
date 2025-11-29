@@ -24,7 +24,7 @@
     "prebuild": "node scripts/check-utf8.mjs"
   },
   "dependencies": {
-    "@google/generative-ai": "^0.24.1",
+    "@google/generative-ai": "^0.21.0",
     "@headlessui/react": "^2.2.6",
     "@heroicons/react": "^2.2.0",
     "@netlify/functions": "^4.2.5",
