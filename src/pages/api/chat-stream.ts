@@ -1,8 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { getDurmahModel } from '@/lib/geminiClient';
 
 type ChatMessage = { role: 'system' | 'user' | 'assistant'; content: string };
-
 
 export const config = {
   api: {
@@ -25,41 +23,61 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return;
     }
 
-    // Filter and format messages for Gemini
-    // Gemini requires the first history message to be 'user'.
-    const history: { role: string; parts: { text: string }[] }[] = [];
+    // Prepare messages for Gemini REST API
+    const contents: { role: string; parts: { text: string }[] }[] = [];
     
     for (const msg of incoming) {
-      if (msg.role === 'system') continue;
-      history.push({
+      if (msg.role === 'system') continue; // System prompt is handled separately
+      contents.push({
         role: msg.role === 'assistant' ? 'model' : 'user',
         parts: [{ text: msg.content }],
       });
     }
 
-    // The last message is the new prompt
-    const lastMessage = history.pop();
-    if (!lastMessage || !lastMessage.parts[0]?.text) {
-      res.status(400).json({ error: 'Empty message content' });
+    // Sanitize: Ensure first message is user
+    while (contents.length > 0 && contents[0].role === 'model') {
+      contents.shift();
+    }
+
+    if (contents.length === 0) {
+      res.status(400).json({ error: 'No valid user messages found' });
       return;
     }
 
-    // Sanitize history: remove leading model messages
-    while (history.length > 0 && history[0].role === 'model') {
-      history.shift();
+    const apiKey = process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+    if (!apiKey) {
+      throw new Error('Missing GEMINI_API_KEY');
     }
 
-    const model = getDurmahModel();
+    // Use v1 API and gemini-1.5-flash
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:streamGenerateContent?alt=sse&key=${apiKey}`;
 
-    const chat = model.startChat({
-      history: history,
-      generationConfig: {
-        maxOutputTokens: 400,
-        temperature: 0.7,
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
       },
+      body: JSON.stringify({
+        contents,
+        systemInstruction: {
+          parts: [{ text: 'You are Durmah, a friendly, succinct voice mentor for Durham law students. Be natural, avoid repetition, and keep answers concise unless asked for depth. Acknowledge when audio is still connecting, but never repeat the same listening line. If the user is just testing the mic, respond briefly and invite a question.' }]
+        },
+        generationConfig: {
+          maxOutputTokens: 400,
+          temperature: 0.7,
+        },
+      }),
     });
 
-    const result = await chat.sendMessageStream(lastMessage.parts[0].text);
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('[Gemini API Error]', response.status, errorText);
+      throw new Error(`Gemini API Error: ${response.status} ${errorText}`);
+    }
+
+    if (!response.body) {
+      throw new Error('No response body from Gemini API');
+    }
 
     res.writeHead(200, {
       'Content-Type': 'text/plain; charset=utf-8',
@@ -68,14 +86,39 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       'Transfer-Encoding': 'chunked',
     });
 
-    for await (const chunk of result.stream) {
-      const chunkText = chunk.text();
-      if (chunkText) {
-        res.write(chunkText);
+    // Stream parsing
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || '';
+
+      for (const line of lines) {
+        if (line.startsWith('data: ')) {
+          const jsonStr = line.slice(6).trim();
+          if (jsonStr === '[DONE]') continue;
+          
+          try {
+            const data = JSON.parse(jsonStr);
+            const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (text) {
+              res.write(text);
+            }
+          } catch (e) {
+            console.warn('Failed to parse SSE JSON:', jsonStr);
+          }
+        }
       }
     }
 
     res.end();
+
   } catch (err: any) {
     console.error('[chat-stream] error:', err);
     if (!res.headersSent) {
