@@ -82,7 +82,7 @@ export function useGeminiLive(apiKey: string | undefined) {
             setup: {
               model: "models/gemini-2.0-flash-exp",
               generationConfig: {
-                responseModalities: "AUDIO",
+                responseModalities: ["AUDIO"],
                 speechConfig: {
                   voiceConfig: {
                     prebuiltVoiceConfig: {
@@ -97,6 +97,19 @@ export function useGeminiLive(apiKey: string | undefined) {
             }
           };
           ws.send(JSON.stringify(setupMsg));
+          
+          // Kickstart conversation to verify audio output works
+          const kickstartMsg = {
+            clientContent: {
+              turns: [{
+                role: "user",
+                parts: [{ text: "Hello Durmah" }]
+              }],
+              turnComplete: true
+            }
+          };
+          ws.send(JSON.stringify(kickstartMsg));
+          
           resolve();
         };
 
