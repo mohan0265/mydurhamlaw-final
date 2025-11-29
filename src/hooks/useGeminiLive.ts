@@ -66,6 +66,11 @@ export function useGeminiLive(apiKey: string | undefined) {
         return;
       }
 
+      // Reset audio scheduling state
+      scheduledTimeRef.current = 0;
+      audioQueueRef.current = [];
+      isPlayingRef.current = false;
+
       const url = `wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1alpha.GenerativeService.BidiGenerateContent?key=${apiKey}`;
       
       try {
