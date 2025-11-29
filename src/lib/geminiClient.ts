@@ -9,7 +9,7 @@ if (!apiKey) {
 const genAI = new GoogleGenerativeAI(apiKey);
 
 // Default to a valid model
-const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-1.5-pro';
+const GEMINI_MODEL = 'gemini-1.5-pro';
 
 export const getDurmahModel = () =>
   genAI.getGenerativeModel({
