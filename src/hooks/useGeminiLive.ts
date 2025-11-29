@@ -108,6 +108,9 @@ export function useGeminiLive(apiKey: string | undefined) {
             } else {
               data = JSON.parse(event.data);
             }
+            
+            // Log everything for debugging
+            // console.log("[GeminiLive] Rx:", JSON.stringify(data).slice(0, 200)); 
           } catch (e) {
             console.error("[GeminiLive] Error parsing message", e);
             return;
@@ -118,11 +121,24 @@ export function useGeminiLive(apiKey: string | undefined) {
              setError(`Server error: ${data.error.message || 'Unknown'}`);
              return;
           }
+          
+          if (data.serverContent) {
+             if (data.serverContent.turnComplete) {
+                 console.log("[GeminiLive] Turn Complete");
+             }
+             if (data.serverContent.modelTurn) {
+                 console.log("[GeminiLive] Model Turn received");
+                 if (data.serverContent.modelTurn.parts) {
+                    console.log(`[GeminiLive] Parts: ${data.serverContent.modelTurn.parts.length}`);
+                 }
+             }
+          }
 
           // Handle Audio Output
           if (data.serverContent?.modelTurn?.parts) {
             for (const part of data.serverContent.modelTurn.parts) {
               if (part.inlineData && part.inlineData.mimeType.startsWith('audio/')) {
+                console.log(`[GeminiLive] Rx Audio chunk: ${part.inlineData.data.length} chars`);
                 const audioData = atob(part.inlineData.data);
                 const arrayBuffer = new ArrayBuffer(audioData.length);
                 const view = new Uint8Array(arrayBuffer);
