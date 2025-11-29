@@ -153,27 +153,55 @@ export function useGeminiLive(apiKey: string | undefined) {
     if (!navigator.mediaDevices) return;
 
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: { sampleRate: 16000, channelCount: 1 } });
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       mediaStreamRef.current = stream;
       
-      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 16000 });
+      // Use default sample rate to avoid hardware mismatches
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
       if (audioContext.state === 'suspended') {
         await audioContext.resume();
       }
       audioContextRef.current = audioContext;
       
+      console.log(`[GeminiLive] AudioContext started. Rate: ${audioContext.sampleRate}`);
+
       const source = audioContext.createMediaStreamSource(stream);
+      // Buffer size 4096 is ~85ms at 48kHz, ~256ms at 16kHz
       const processor = audioContext.createScriptProcessor(4096, 1, 1);
       processorRef.current = processor;
+
+      const targetRate = 16000;
 
       processor.onaudioprocess = (e) => {
         if (wsRef.current?.readyState !== WebSocket.OPEN) return;
 
         const inputData = e.inputBuffer.getChannelData(0);
-        const pcm16 = new Int16Array(inputData.length);
-        for (let i = 0; i < inputData.length; i++) {
-          const sample = inputData[i] || 0;
-          const s = Math.max(-1, Math.min(1, sample));
+        
+        // Downsample if needed
+        let processedData = inputData;
+        if (audioContext.sampleRate !== targetRate) {
+            const ratio = audioContext.sampleRate / targetRate;
+            const newLength = Math.floor(inputData.length / ratio);
+            processedData = new Float32Array(newLength);
+            for (let i = 0; i < newLength; i++) {
+                const offset = Math.floor(i * ratio);
+                processedData[i] = inputData[offset];
+            }
+        }
+
+        // Check for silence (debug)
+        let maxAmp = 0;
+        for (let i = 0; i < processedData.length; i++) {
+            const abs = Math.abs(processedData[i]);
+            if (abs > maxAmp) maxAmp = abs;
+        }
+        if (Math.random() < 0.05) { // Log occasionally
+             console.log(`[GeminiLive] Mic level: ${maxAmp.toFixed(4)}`);
+        }
+
+        const pcm16 = new Int16Array(processedData.length);
+        for (let i = 0; i < processedData.length; i++) {
+          const s = Math.max(-1, Math.min(1, processedData[i]));
           pcm16[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
         }
 
