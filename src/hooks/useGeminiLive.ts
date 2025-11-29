@@ -42,6 +42,7 @@ export type TranscriptItem = { role: 'user' | 'assistant'; text: string; timesta
 export function useGeminiLive(apiKey: string | undefined) {
   const [isConnected, setIsConnected] = useState(false);
   const [isStreaming, setIsStreaming] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [transcript, setTranscript] = useState<TranscriptItem[]>([]);
   
@@ -87,7 +88,7 @@ export function useGeminiLive(apiKey: string | undefined) {
             setup: {
               model: "models/gemini-2.0-flash-exp",
               generationConfig: {
-                responseModalities: ["AUDIO"],
+                responseModalities: ["TEXT", "AUDIO"],
                 speechConfig: {
                   voiceConfig: {
                     prebuiltVoiceConfig: {
@@ -150,6 +151,26 @@ export function useGeminiLive(apiKey: string | undefined) {
                     console.log(`[GeminiLive] Parts: ${data.serverContent.modelTurn.parts.length}`);
                  }
              }
+          }
+
+          // Handle Text Output (Transcript)
+          if (data.serverContent?.modelTurn?.parts) {
+            for (const part of data.serverContent.modelTurn.parts) {
+              if (part.text) {
+                console.log("[GeminiLive] Rx Text:", part.text);
+                setTranscript(prev => [...prev, {
+                  role: 'assistant',
+                  text: part.text,
+                  timestamp: Date.now(),
+                }]);
+              }
+            }
+          }
+          
+          // Handle User Transcript (if available)
+          // Note: Gemini Live might not always echo user text depending on config
+          if (data.serverContent?.turnComplete && data.serverContent?.interrupted) {
+              // Handle interruption if needed
           }
 
           // Handle Audio Output
@@ -238,14 +259,16 @@ export function useGeminiLive(apiKey: string | undefined) {
             processedData = new Float32Array(newLength);
             for (let i = 0; i < newLength; i++) {
                 const offset = Math.floor(i * ratio);
-                processedData[i] = inputData[offset];
+                const val = inputData[offset];
+                processedData[i] = val === undefined ? 0 : val;
             }
         }
 
         // Check for silence (debug)
         let maxAmp = 0;
         for (let i = 0; i < processedData.length; i++) {
-            const abs = Math.abs(processedData[i]);
+            const val = processedData[i];
+            const abs = Math.abs(val === undefined ? 0 : val);
             if (abs > maxAmp) maxAmp = abs;
         }
         if (Math.random() < 0.05) { // Log occasionally
@@ -254,7 +277,8 @@ export function useGeminiLive(apiKey: string | undefined) {
 
         const pcm16 = new Int16Array(processedData.length);
         for (let i = 0; i < processedData.length; i++) {
-          const s = Math.max(-1, Math.min(1, processedData[i]));
+          const val = processedData[i];
+          const s = Math.max(-1, Math.min(1, val === undefined ? 0 : val));
           pcm16[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
         }
 
@@ -334,8 +358,15 @@ export function useGeminiLive(apiKey: string | undefined) {
     source.start(startTime);
     scheduledTimeRef.current = startTime + buffer.duration;
     
+    // Update state for UI
+    setIsPlaying(true);
+    
     source.onended = () => {
       isPlayingRef.current = false;
+      // Only set state to false if queue is empty to avoid flickering
+      if (audioQueueRef.current.length === 0) {
+          setIsPlaying(false);
+      }
       playQueue();
     };
   };
@@ -351,6 +382,7 @@ export function useGeminiLive(apiKey: string | undefined) {
     stopRecording,
     isConnected,
     isStreaming,
+    isPlaying,
     error,
     transcript,
     clearTranscript

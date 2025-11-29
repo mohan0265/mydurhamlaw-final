@@ -100,6 +100,7 @@ export default function DurmahWidget() {
     stopRecording, 
     isConnected, 
     isStreaming: isVoiceStreaming, 
+    isPlaying,
     error: voiceError,
     transcript,
     clearTranscript
@@ -252,8 +253,26 @@ export default function DurmahWidget() {
       stopRecording();
       disconnect();
       setVoiceMode(false);
-      // Show transcript if there was a conversation
+      
+      // Sync transcript to chat history
       if (transcript.length > 0) {
+        const lastUser = [...transcript].reverse().find(t => t.role === 'user');
+        const lastAssistant = [...transcript].reverse().find(t => t.role === 'assistant');
+        
+        if (lastUser) {
+           const timestamp = Date.now();
+           const userMsg: Msg = { role: 'you', text: lastUser.text, ts: timestamp };
+           const assistantMsg: Msg = { 
+             role: 'durmah', 
+             text: lastAssistant?.text || (transcript.length > 1 ? "I've noted that down." : ""), 
+             ts: timestamp + 1 
+           };
+           
+           // Only add if we have actual content
+           if (userMsg.text) {
+             setMessages(prev => [...prev, userMsg, assistantMsg]);
+           }
+        }
         setShowTranscript(true);
       }
     } else {
@@ -449,7 +468,7 @@ export default function DurmahWidget() {
                   className="flex-1 rounded-full border border-gray-200 bg-gray-50 px-4 py-2 text-sm outline-none focus:border-violet-300 focus:ring-2 focus:ring-violet-100"
                   value={input}
                   onChange={(event) => setInput(event.target.value)}
-                  placeholder={voiceMode ? "Listening..." : "Type a message..."}
+                  placeholder={voiceMode ? (isPlaying ? "Speaking..." : "Listening...") : "Type a message..."}
                   disabled={isStreaming || voiceMode}
                   onKeyDown={(e) => e.key === 'Enter' && send()}
                 />
