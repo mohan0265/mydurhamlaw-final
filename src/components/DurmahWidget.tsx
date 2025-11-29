@@ -338,8 +338,21 @@ export default function DurmahWidget() {
       </header>
 
       {voiceError && (
-        <div className="px-4 py-2 text-xs text-red-600 bg-red-50">
-          Voice Error: {voiceError}
+        <div className={`px-4 py-3 text-xs ${voiceError.includes('quota') || voiceError.includes('1011') ? 'bg-amber-50 text-amber-800' : 'bg-red-50 text-red-600'}`}>
+          {voiceError.includes('quota') || voiceError.includes('1011') ? (
+            <>
+              <strong>Usage Limit Reached (Google API)</strong>
+              <p className="mt-1">
+                The experimental voice model is currently rate-limited or your account quota is full.
+                <br/>
+                1. Check if your Billing Account is <strong>linked</strong> to this Project in Google Cloud.
+                <br/>
+                2. Try generating a <strong>new API Key</strong>.
+              </p>
+            </>
+          ) : (
+            <>Voice Error: {voiceError}</>
+          )}
         </div>
       )}
 
