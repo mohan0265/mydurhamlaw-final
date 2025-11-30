@@ -88,7 +88,7 @@ export function useGeminiLive(apiKey: string | undefined) {
             setup: {
               model: "models/gemini-2.0-flash-exp",
               generationConfig: {
-                responseModalities: ["AUDIO", "TEXT"],
+                responseModalities: ["AUDIO"],
                 speechConfig: {
                   voiceConfig: {
                     prebuiltVoiceConfig: {
