@@ -474,7 +474,7 @@ export default function DurmahWidget() {
                   className="flex-1 rounded-full border border-gray-200 bg-gray-50 px-4 py-2 text-sm outline-none focus:border-violet-300 focus:ring-2 focus:ring-violet-100"
                   value={input}
                   onChange={(event) => setInput(event.target.value)}
-                  placeholder={voiceMode ? (isPlaying ? "Durmah is speaking..." : "Live with Durmah – you can talk now") : "Type a message..."}
+                  placeholder={voiceMode ? (isPlaying ? "Durmah is speaking..." : "Live with Durmah - you can talk now") : "Type a message..."}
                   disabled={isStreaming || voiceMode}
                   onKeyDown={(e) => e.key === 'Enter' && send()}
                 />
