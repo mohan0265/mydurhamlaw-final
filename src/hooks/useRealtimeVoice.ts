@@ -26,7 +26,7 @@ interface RealtimeOptions {
  * - Transcript callbacks
  */
 export function useRealtimeVoice(options: RealtimeOptions) {
-  const { apiKey, systemPrompt, onTranscript } = options;
+  const { systemPrompt, onTranscript } = options;
 
   const [connected, setConnected] = useState(false);
   const [speaking, setSpeaking] = useState(false);  // assistant speaking state
@@ -113,13 +113,13 @@ export function useRealtimeVoice(options: RealtimeOptions) {
       await pc.setLocalDescription(offer);
 
       // Exchange SDP with Google Realtime API
-      const baseUrl =
-        "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:connectRealtime";
-
-      const resp = await fetch(`${baseUrl}?key=${apiKey}`, {
+      const resp = await fetch("/api/voice/offer", {
         method: "POST",
-        headers: { "Content-Type": "application/sdp" },
-        body: offer.sdp,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          offerSdp: offer.sdp,
+          systemPrompt,
+        }),
       });
 
       if (!resp.ok) {
@@ -134,7 +134,7 @@ export function useRealtimeVoice(options: RealtimeOptions) {
       setError(err.message);
       setConnected(false);
     }
-  }, [apiKey, onTranscript]);
+  }, [onTranscript, systemPrompt]);
 
   /**
    * DISCONNECT — Close peer connection and stop mic
