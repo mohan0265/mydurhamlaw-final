@@ -2,24 +2,20 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 
-/**
- * A single transcript turn from either the user or Durmah.
- */
 export interface VoiceTurn {
   speaker: "user" | "assistant";
   text: string;
 }
 
 interface RealtimeOptions {
-  apiKey: string;       // kept for future flexibility, currently unused
-  systemPrompt: string; // kept for future use via datachannel, currently unused
+  apiKey: string;       // not used right now, kept for future flexibility
+  systemPrompt: string; // not yet sent, but kept for later use
   onTranscript?: (turn: VoiceTurn) => void;
 }
 
 /**
- * WebRTC-based Realtime Voice engine.
- * - Browser talks to Netlify function
- * - Netlify function talks to Gemini Realtime API
+ * WebRTC-based Realtime Voice engine for Durmah.
+ * Browser <-> Netlify function <-> Gemini Realtime API
  */
 export function useRealtimeVoice(options: RealtimeOptions) {
   const { onTranscript } = options;
@@ -41,6 +37,16 @@ export function useRealtimeVoice(options: RealtimeOptions) {
       audioRef.current = el;
     }
   };
+
+  /**
+   * STOP TALKING — mute mic tracks
+   */
+  const stopTalking = useCallback(() => {
+    if (!micStreamRef.current) return;
+    micStreamRef.current.getTracks().forEach((track) => {
+      track.enabled = false;
+    });
+  }, []);
 
   /**
    * CONNECT — create WebRTC session and exchange SDP via Netlify function
@@ -96,7 +102,7 @@ export function useRealtimeVoice(options: RealtimeOptions) {
       const offer = await pc.createOffer();
       await pc.setLocalDescription(offer);
 
-      // Send SDP to Netlify → Google
+      // *** CRITICAL PART: note the leading "/" here ***
       const resp = await fetch("/.netlify/functions/gemini-realtime-sdp", {
         method: "POST",
         headers: { "Content-Type": "application/sdp" },
@@ -116,7 +122,7 @@ export function useRealtimeVoice(options: RealtimeOptions) {
       setError(err?.message || "Realtime connection failed");
       setConnected(false);
     }
-  }, [onTranscript]);
+  }, [onTranscript, stopTalking]);
 
   /**
    * DISCONNECT — close peer connection and stop mic
@@ -148,16 +154,6 @@ export function useRealtimeVoice(options: RealtimeOptions) {
     if (!micStreamRef.current) return;
     micStreamRef.current.getTracks().forEach((track) => {
       track.enabled = true;
-    });
-  }, []);
-
-  /**
-   * STOP TALKING — mute mic tracks
-   */
-  const stopTalking = useCallback(() => {
-    if (!micStreamRef.current) return;
-    micStreamRef.current.getTracks().forEach((track) => {
-      track.enabled = false;
     });
   }, []);
 
