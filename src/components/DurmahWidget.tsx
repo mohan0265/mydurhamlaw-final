@@ -102,9 +102,26 @@ export default function DurmahWidget() {
     isStreaming: isVoiceStreaming, 
     isPlaying,
     error: voiceError,
-    transcript,
-    clearTranscript
-  } = useGeminiLive(process.env.NEXT_PUBLIC_GEMINI_API_KEY);
+  } = useGeminiLive({
+    apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY,
+    systemPrompt: "You are Durmah, a friendly, succinct voice mentor for Durham law students. Keep your responses short and conversational, like a phone call.",
+    onTranscript: (text, source) => {
+      setMessages(prev => {
+        const lastMsg = prev[prev.length - 1];
+        const role = source === 'user' ? 'you' : 'durmah';
+        
+        // If the last message is from the same role and is recent, append to it (optional, but good for streaming)
+        // For now, let's just add new bubbles for simplicity and to match the "chat" feel
+        // But to avoid spamming bubbles for partial transcripts if they come in chunks:
+        // The user's prompt implies "onTranscript" gives the full text or chunks. 
+        // If it's chunks, we might need logic. 
+        // Assuming "transcription" events are sentence-level or turn-level based on the SDK description.
+        
+        return [...prev, { role, text, ts: Date.now() }];
+      });
+    }
+  });
+  
   const [voiceMode, setVoiceMode] = useState(false);
   const [showTranscript, setShowTranscript] = useState(false);
 
@@ -254,29 +271,23 @@ export default function DurmahWidget() {
       disconnect();
       setVoiceMode(false);
       
-      // Sync transcript to chat history
-      if (transcript.length > 0) {
-        const lastUser = [...transcript].reverse().find(t => t.role === 'user');
-        const lastAssistant = [...transcript].reverse().find(t => t.role === 'assistant');
-        
-        if (lastUser) {
-           const timestamp = Date.now();
-           const userMsg: Msg = { role: 'you', text: lastUser.text, ts: timestamp };
-           const assistantMsg: Msg = { 
-             role: 'durmah', 
-             text: lastAssistant?.text || (transcript.length > 1 ? "I've noted that down." : ""), 
-             ts: timestamp + 1 
-           };
-           
-           // Only add if we have actual content
-           if (userMsg.text) {
-             setMessages(prev => [...prev, userMsg, assistantMsg]);
-           }
-        }
-        setShowTranscript(true);
+      // Save session memory if needed (using last messages)
+      if (messages.length > 0) {
+         const lastUser = [...messages].reverse().find(m => m.role === 'you');
+         if (lastUser) {
+             const topic = inferTopic(lastUser.text);
+             try {
+                await fetch('/api/durmah/memory', {
+                  method: 'POST',
+                  credentials: 'include',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ last_topic: topic, last_message: lastUser.text }),
+                });
+             } catch (e) { console.error(e); }
+         }
       }
+
     } else {
-      clearTranscript();
       await connect();
       await startRecording();
       setVoiceMode(true);
@@ -284,30 +295,12 @@ export default function DurmahWidget() {
   };
 
   const saveSession = async () => {
-    // Save the last user message and topic from the transcript to memory
-    if (transcript.length > 0) {
-      const lastUserMsg = [...transcript].reverse().find(t => t.role === 'user');
-      if (lastUserMsg) {
-        const topic = inferTopic(lastUserMsg.text);
-        try {
-          await fetch('/api/durmah/memory', {
-            method: 'POST',
-            credentials: 'include',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ last_topic: topic, last_message: lastUserMsg.text }),
-          });
-        } catch (error) {
-          console.debug('[Durmah] memory save failed:', error);
-        }
-      }
-    }
+    // Already handled in toggleVoice or real-time
     setShowTranscript(false);
-    clearTranscript();
   };
 
   const discardSession = () => {
     setShowTranscript(false);
-    clearTranscript();
   };
 
   // Floating Widget UI

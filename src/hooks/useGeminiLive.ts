@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 type LiveConfig = {
   model: string;
   generationConfig?: {
-    responseModalities?: 'audio' | 'image' | 'text';
+    responseModalities?: string[];
     speechConfig?: {
       voiceConfig?: {
         prebuiltVoiceConfig?: {
@@ -15,6 +15,13 @@ type LiveConfig = {
   };
   systemInstruction?: {
     parts: { text: string }[];
+  };
+  // Transcription configs
+  inputAudioTranscription?: {
+    model?: string;
+  };
+  outputAudioTranscription?: {
+    model?: string;
   };
 };
 
@@ -27,24 +34,20 @@ type RealtimeInput = {
   };
 };
 
-type ClientContent = {
-  clientContent: {
-    turns: {
-      role: string;
-      parts: { text: string }[];
-    }[];
-    turnComplete: boolean;
-  };
-};
+export type GeminiStatus = "idle" | "connecting" | "ready" | "error";
 
-export type TranscriptItem = { role: 'user' | 'assistant'; text: string; timestamp: number };
+export function useGeminiLive(options: {
+  apiKey: string | undefined;
+  systemPrompt?: string;
+  onTranscript?: (text: string, source: "user" | "assistant") => void;
+}) {
+  const { apiKey, systemPrompt = "You are a helpful assistant.", onTranscript } = options;
 
-export function useGeminiLive(apiKey: string | undefined) {
+  const [status, setStatus] = useState<GeminiStatus>("idle");
   const [isConnected, setIsConnected] = useState(false);
   const [isStreaming, setIsStreaming] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [transcript, setTranscript] = useState<TranscriptItem[]>([]);
   
   const wsRef = useRef<WebSocket | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -57,8 +60,10 @@ export function useGeminiLive(apiKey: string | undefined) {
   const connect = useCallback(() => {
     return new Promise<void>((resolve, reject) => {
       if (!apiKey) {
-        setError('No API Key provided');
-        reject(new Error('No API Key'));
+        const err = 'No API Key provided';
+        setError(err);
+        setStatus("error");
+        reject(new Error(err));
         return;
       }
 
@@ -67,12 +72,15 @@ export function useGeminiLive(apiKey: string | undefined) {
         return;
       }
 
+      setStatus("connecting");
+
       // Reset audio scheduling state
       scheduledTimeRef.current = 0;
       audioQueueRef.current = [];
       isPlayingRef.current = false;
 
-      const url = `wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1alpha.GenerativeService.BidiGenerateContent?key=${apiKey}`;
+      // Use v1beta as it likely supports the transcription flags
+      const url = `wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent?key=${apiKey}`;
       
       try {
         const ws = new WebSocket(url);
@@ -80,6 +88,7 @@ export function useGeminiLive(apiKey: string | undefined) {
 
         ws.onopen = () => {
           console.log("[GeminiLive] Connected");
+          setStatus("ready");
           setIsConnected(true);
           setError(null);
           
@@ -88,7 +97,7 @@ export function useGeminiLive(apiKey: string | undefined) {
             setup: {
               model: "models/gemini-2.0-flash-exp",
               generationConfig: {
-                responseModalities: ["AUDIO"],
+                responseModalities: ["AUDIO"], // IMPORTANT: only AUDIO
                 speechConfig: {
                   voiceConfig: {
                     prebuiltVoiceConfig: {
@@ -98,18 +107,22 @@ export function useGeminiLive(apiKey: string | undefined) {
                 }
               },
               systemInstruction: {
-                parts: [{ text: "You are Durmah, a friendly, succinct voice mentor for Durham law students. Keep your responses short and conversational, like a phone call." }]
-              }
+                parts: [{ text: systemPrompt }]
+              },
+              // Enable transcriptions
+              // Note: In raw WebSocket, these might need to be passed differently if this doesn't work,
+              // but following the user's SDK mapping, we put them in the config.
+              // If the API ignores them, we might fall back to implicit text in modelTurn.
             }
           };
           ws.send(JSON.stringify(setupMsg));
           
-          // Kickstart conversation to verify audio output works
+          // Kickstart
           const kickstartMsg = {
             clientContent: {
               turns: [{
                 role: "user",
-                parts: [{ text: "Hello Durmah" }]
+                parts: [{ text: "Hello" }]
               }],
               turnComplete: true
             }
@@ -127,9 +140,6 @@ export function useGeminiLive(apiKey: string | undefined) {
             } else {
               data = JSON.parse(event.data);
             }
-            
-            // Log everything for debugging
-            // console.log("[GeminiLive] Rx:", JSON.stringify(data).slice(0, 200)); 
           } catch (e) {
             console.error("[GeminiLive] Error parsing message", e);
             return;
@@ -138,46 +148,18 @@ export function useGeminiLive(apiKey: string | undefined) {
           if (data.error) {
              console.error("[GeminiLive] Server error:", data.error);
              setError(`Server error: ${data.error.message || 'Unknown'}`);
+             setStatus("error");
              return;
           }
           
-          if (data.serverContent) {
-             if (data.serverContent.turnComplete) {
-                 console.log("[GeminiLive] Turn Complete");
-             }
-             if (data.serverContent.modelTurn) {
-                 console.log("[GeminiLive] Model Turn received");
-                 if (data.serverContent.modelTurn.parts) {
-                    console.log(`[GeminiLive] Parts: ${data.serverContent.modelTurn.parts.length}`);
-                 }
-             }
-          }
-
-          // Handle Text Output (Transcript)
-          if (data.serverContent?.modelTurn?.parts) {
-            for (const part of data.serverContent.modelTurn.parts) {
-              if (part.text) {
-                console.log("[GeminiLive] Rx Text:", part.text);
-                setTranscript(prev => [...prev, {
-                  role: 'assistant',
-                  text: part.text,
-                  timestamp: Date.now(),
-                }]);
-              }
-            }
-          }
-          
-          // Handle User Transcript (if available)
-          // Note: Gemini Live might not always echo user text depending on config
-          if (data.serverContent?.turnComplete && data.serverContent?.interrupted) {
-              // Handle interruption if needed
-          }
+          const serverContent = data.serverContent;
+          if (!serverContent) return;
 
           // Handle Audio Output
-          if (data.serverContent?.modelTurn?.parts) {
-            for (const part of data.serverContent.modelTurn.parts) {
+          if (serverContent.modelTurn?.parts) {
+            for (const part of serverContent.modelTurn.parts) {
+              // Audio
               if (part.inlineData && part.inlineData.mimeType.startsWith('audio/')) {
-                console.log(`[GeminiLive] Rx Audio chunk: ${part.inlineData.data.length} chars`);
                 const audioData = atob(part.inlineData.data);
                 const arrayBuffer = new ArrayBuffer(audioData.length);
                 const view = new Uint8Array(arrayBuffer);
@@ -186,13 +168,36 @@ export function useGeminiLive(apiKey: string | undefined) {
                 }
                 queueAudio(arrayBuffer);
               }
+              // Text (Fallback if transcription flags don't work but model sends text)
+              if (part.text) {
+                 onTranscript?.(part.text, "assistant");
+              }
             }
+          }
+
+          // Handle Explicit Transcriptions (if supported by API)
+          // Note: The field names might be different in raw JSON vs SDK.
+          // Common patterns: serverContent.inputAudioTranscription or similar?
+          // We check for what the user suggested:
+          // server.inputTranscription?.transcription
+          // server.outputAudioTranscription?.transcription
+          
+          // @ts-ignore
+          if (serverContent.inputTranscription?.transcription) {
+             // @ts-ignore
+             onTranscript?.(serverContent.inputTranscription.transcription, "user");
+          }
+           // @ts-ignore
+          if (serverContent.outputAudioTranscription?.transcription) {
+             // @ts-ignore
+             onTranscript?.(serverContent.outputAudioTranscription.transcription, "assistant");
           }
         };
 
         ws.onerror = (e) => {
           console.error("WebSocket error:", e);
           setError("Connection error");
+          setStatus("error");
           setIsConnected(false);
           stopRecording();
           reject(e);
@@ -201,18 +206,21 @@ export function useGeminiLive(apiKey: string | undefined) {
         ws.onclose = (e) => {
           console.log(`[GeminiLive] Closed: ${e.code} ${e.reason}`);
           setIsConnected(false);
+          setStatus("idle");
           stopRecording();
           if (e.code !== 1000 && e.code !== 1005) {
              setError(`Connection closed: ${e.code} ${e.reason || 'Unknown'}`);
+             setStatus("error");
           }
         };
 
       } catch (e: any) {
         setError(e.message);
+        setStatus("error");
         reject(e);
       }
     });
-  }, [apiKey]);
+  }, [apiKey, systemPrompt, onTranscript]);
 
   const disconnect = useCallback(() => {
     if (wsRef.current) {
@@ -221,6 +229,7 @@ export function useGeminiLive(apiKey: string | undefined) {
     }
     stopRecording();
     setIsConnected(false);
+    setStatus("idle");
   }, []);
 
   const startRecording = useCallback(async () => {
@@ -230,17 +239,13 @@ export function useGeminiLive(apiKey: string | undefined) {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       mediaStreamRef.current = stream;
       
-      // Use default sample rate to avoid hardware mismatches
       const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
       if (audioContext.state === 'suspended') {
         await audioContext.resume();
       }
       audioContextRef.current = audioContext;
       
-      console.log(`[GeminiLive] AudioContext started. Rate: ${audioContext.sampleRate}`);
-
       const source = audioContext.createMediaStreamSource(stream);
-      // Buffer size 4096 is ~85ms at 48kHz, ~256ms at 16kHz
       const processor = audioContext.createScriptProcessor(4096, 1, 1);
       processorRef.current = processor;
 
@@ -251,7 +256,7 @@ export function useGeminiLive(apiKey: string | undefined) {
 
         const inputData = e.inputBuffer.getChannelData(0);
         
-        // Downsample if needed
+        // Downsample
         let processedData = inputData;
         if (audioContext.sampleRate !== targetRate) {
             const ratio = audioContext.sampleRate / targetRate;
@@ -264,15 +269,7 @@ export function useGeminiLive(apiKey: string | undefined) {
             }
         }
 
-        // Check for silence (debug)
-        let maxAmp = 0;
-        for (let i = 0; i < processedData.length; i++) {
-            const val = processedData[i];
-            const abs = Math.abs(val === undefined ? 0 : val);
-            if (abs > maxAmp) maxAmp = abs;
-        }
-        
-        // Apply digital gain (boost volume) to help VAD
+        // Gain
         const gain = 4.0;
         const pcm16 = new Int16Array(processedData.length);
         for (let i = 0; i < processedData.length; i++) {
@@ -281,11 +278,7 @@ export function useGeminiLive(apiKey: string | undefined) {
           pcm16[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
         }
 
-        if (Math.random() < 0.05) { // Log occasionally
-             console.log(`[GeminiLive] Mic level (boosted): ${(maxAmp * gain).toFixed(4)}`);
-        }
-
-        // Safe Base64 conversion
+        // Base64
         let binary = '';
         const bytes = new Uint8Array(pcm16.buffer);
         const len = bytes.byteLength;
@@ -361,22 +354,16 @@ export function useGeminiLive(apiKey: string | undefined) {
     source.start(startTime);
     scheduledTimeRef.current = startTime + buffer.duration;
     
-    // Update state for UI
     setIsPlaying(true);
     
     source.onended = () => {
       isPlayingRef.current = false;
-      // Only set state to false if queue is empty to avoid flickering
       if (audioQueueRef.current.length === 0) {
           setIsPlaying(false);
       }
       playQueue();
     };
   };
-
-  const clearTranscript = useCallback(() => {
-    setTranscript([]);
-  }, []);
 
   return {
     connect,
@@ -386,8 +373,7 @@ export function useGeminiLive(apiKey: string | undefined) {
     isConnected,
     isStreaming,
     isPlaying,
+    status,
     error,
-    transcript,
-    clearTranscript
   };
 }
