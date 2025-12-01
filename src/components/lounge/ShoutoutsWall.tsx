@@ -10,9 +10,10 @@ export default function ShoutoutsWall({ user = { id: "demo", name: "Guest" } }) 
   const supabase = useSupabaseClient();
   const [items, setItems] = useState<Kudos[]>([]);
   const [text, setText] = useState("");
-  if (!supabase) return <Card><CardHeader><CardTitle>Shoutouts</CardTitle></CardHeader><CardContent>Backend not connected.</CardContent></Card>;
 
   useEffect(() => {
+    if (!supabase) return;
+
     let active = true;
     supabase.from("lounge_shoutouts").select("*").order("created_at", { ascending: true }).then(({ data, error }) => {
       if (error) { console.error(error); return; }
@@ -32,6 +33,15 @@ export default function ShoutoutsWall({ user = { id: "demo", name: "Guest" } }) 
     });
     if (result?.error) console.error(result.error);
     setText("");
+  }
+
+  if (!supabase) {
+    return (
+      <Card>
+        <CardHeader><CardTitle>Shoutouts</CardTitle></CardHeader>
+        <CardContent>Backend not connected.</CardContent>
+      </Card>
+    );
   }
 
   return (

@@ -37,7 +37,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // The last message is the new prompt
     const lastMessage = history.pop();
-    if (!lastMessage || !lastMessage.parts[0]?.text) {
+    const promptText = lastMessage?.parts?.[0]?.text;
+    if (!promptText) {
       res.status(400).json({ error: 'Empty message content' });
       return;
     }
@@ -57,7 +58,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       },
     });
 
-    const result = await chat.sendMessageStream(lastMessage.parts[0].text);
+    const result = await chat.sendMessageStream(promptText);
 
     res.writeHead(200, {
       'Content-Type': 'text/plain; charset=utf-8',

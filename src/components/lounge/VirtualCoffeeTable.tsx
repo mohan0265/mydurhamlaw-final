@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/Button";
 import { useSupabaseClient, useUser } from "@/lib/supabase/AuthContext";
 
@@ -19,38 +19,58 @@ const VirtualCoffeeTable: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
-  if (!supabase) {
-    return (
-      <div className="bg-gradient-to-br from-yellow-100 via-orange-100 to-amber-100 rounded-2xl shadow px-4 py-3 mb-4">
-        <h3 className="font-bold text-lg mb-1">☕ Virtual Coffee Table</h3>
-        <div className="text-sm text-red-600">Unable to load coffee table (no backend connection).</div>
-      </div>
-    );
-  }
-
   // Get today's date in YYYY-MM-DD format
   const getTodayDate = () => {
     const today = new Date();
-    return today.toISOString().split('T')[0];
+    return today.toISOString().split("T")[0];
   };
+
+  const fetchTodayRSVPs = useCallback(async () => {
+    if (!supabase) return;
+
+    try {
+      const todayDate = getTodayDate();
+      const { data, error } = await supabase
+        .from("lounge_coffee_rsvp")
+        .select("*")
+        .eq("event_date", todayDate)
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        console.error("Error fetching coffee RSVPs:", error);
+        return;
+      }
+
+      const list = data || [];
+      setRsvps(list);
+
+      const userHasRSVPed = list.some((rsvp: any) => rsvp.user_id === user?.id);
+      setHasRSVPed(userHasRSVPed);
+    } catch (error) {
+      console.error("Error fetching coffee RSVPs:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, [supabase, user?.id]);
 
   // Fetch RSVPs for today
   useEffect(() => {
+    if (!supabase) return;
+
     fetchTodayRSVPs();
-    
+
     // Set up real-time subscription
-    const channel = supabase.channel('lounge-coffee-rsvp');
-    
+    const channel = supabase.channel("lounge-coffee-rsvp");
+
     channel
       .on(
-        'postgres_changes',
+        "postgres_changes",
         {
-          event: '*',
-          schema: 'public',
-          table: 'lounge_coffee_rsvp'
+          event: "*",
+          schema: "public",
+          table: "lounge_coffee_rsvp",
         },
-        (payload: any) => {
-          console.log('Coffee RSVP change received:', payload);
+        () => {
           fetchTodayRSVPs(); // Refresh the list
         }
       )
@@ -59,60 +79,30 @@ const VirtualCoffeeTable: React.FC = () => {
     return () => {
       channel.unsubscribe();
     };
-  }, [supabase]);
-
-  const fetchTodayRSVPs = async () => {
-    try {
-      const todayDate = getTodayDate();
-      const { data, error } = await supabase
-        .from('lounge_coffee_rsvp')
-        .select('*')
-        .eq('event_date', todayDate)
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        console.error('Error fetching coffee RSVPs:', error);
-        return;
-      }
-
-      setRsvps(data || []);
-      
-      // Check if current user has already RSVPed
-      const userHasRSVPed = (data || []).some((rsvp: any) => 
-        rsvp.user_id === user?.id
-      );
-      setHasRSVPed(userHasRSVPed);
-    } catch (error) {
-      console.error('Error fetching coffee RSVPs:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [supabase, fetchTodayRSVPs]);
 
   const handleRSVP = async () => {
-    if (hasRSVPed || submitting) return;
-    
+    if (!supabase || hasRSVPed || submitting) return;
+
     setSubmitting(true);
     try {
       const todayDate = getTodayDate();
-      const { error } = await supabase
-        .from('lounge_coffee_rsvp')
-        .insert([
-          {
-            display_name: user?.user_metadata?.full_name || 'Anonymous',
-            event_date: todayDate,
-            user_id: user?.id || null
-          }
-        ]);
+      const { error } = await supabase.from("lounge_coffee_rsvp").insert([
+        {
+          display_name: user?.user_metadata?.full_name || "Anonymous",
+          event_date: todayDate,
+          user_id: user?.id || null,
+        },
+      ]);
 
       if (error) {
-        console.error('Error submitting RSVP:', error);
+        console.error("Error submitting RSVP:", error);
         return;
       }
 
       setHasRSVPed(true);
     } catch (error) {
-      console.error('Error submitting RSVP:', error);
+      console.error("Error submitting RSVP:", error);
     } finally {
       setSubmitting(false);
     }
@@ -123,34 +113,49 @@ const VirtualCoffeeTable: React.FC = () => {
     const now = new Date();
     const coffeeTime = new Date();
     coffeeTime.setHours(17, 0, 0, 0); // 5:00 PM
-    
+
     if (now.getTime() > coffeeTime.getTime()) {
       return "Tomorrow's Coffee: 5-5:20pm";
     }
     return "Today's Coffee: 5-5:20pm";
   };
 
-  return (
-    <div className="bg-gradient-to-br from-yellow-100 via-orange-100 to-amber-100 rounded-2xl shadow px-4 py-3 mb-4">
-      <h3 className="font-bold text-lg mb-1">☕ Virtual Coffee Table</h3>
-      <div className="text-sm mb-2">
-        {getCoffeeTimeDisplay()} | Host: Any student
+  if (!supabase) {
+    return (
+      <div className="mb-4 rounded-2xl bg-gradient-to-br from-yellow-100 via-orange-100 to-amber-100 px-4 py-3 shadow">
+        <h3 className="mb-1 text-lg font-bold">
+          Virtual Coffee Table
+        </h3>
+        <div className="text-sm text-red-600">
+          Unable to load coffee table (no backend connection).
+        </div>
       </div>
-      
+    );
+  }
+
+  return (
+    <div className="mb-4 rounded-2xl bg-gradient-to-br from-yellow-100 via-orange-100 to-amber-100 px-4 py-3 shadow">
+      <h3 className="mb-1 text-lg font-bold">Virtual Coffee Table</h3>
+      <div className="mb-2 text-sm">{getCoffeeTimeDisplay()} | Host: Any student</div>
+
       {loading ? (
         <div className="text-sm text-gray-500">Loading RSVPs...</div>
       ) : (
         <>
-          <div className="text-sm mb-2">
-            <strong>{rsvps.length}</strong> {rsvps.length === 1 ? 'person has' : 'people have'} RSVPed
+          <div className="mb-2 text-sm">
+            <strong>{rsvps.length}</strong>{" "}
+            {rsvps.length === 1 ? "person has" : "people have"} RSVPed
             {rsvps.length > 0 && (
-              <div className="text-xs text-gray-600 mt-1">
-                {rsvps.slice(0, 3).map(rsvp => rsvp.display_name).join(', ')}
+              <div className="mt-1 text-xs text-gray-600">
+                {rsvps
+                  .slice(0, 3)
+                  .map((rsvp) => rsvp.display_name)
+                  .join(", ")}
                 {rsvps.length > 3 && ` and ${rsvps.length - 3} more`}
               </div>
             )}
           </div>
-          
+
           <Button
             size="sm"
             className="mt-2"
@@ -158,18 +163,22 @@ const VirtualCoffeeTable: React.FC = () => {
             disabled={hasRSVPed || submitting}
             aria-pressed={hasRSVPed}
           >
-            {submitting ? 'Submitting...' : hasRSVPed ? 'Marked as Attending' : 'RSVP to Join'}
+            {submitting
+              ? "Submitting..."
+              : hasRSVPed
+              ? "Marked as Attending"
+              : "RSVP to Join"}
           </Button>
-          
+
           {hasRSVPed && (
-            <div className="text-xs text-green-600 mt-1 font-medium">
-              ✓ See you at the table!
+            <div className="mt-1 text-xs font-medium text-green-600">
+              See you at the table!
             </div>
           )}
         </>
       )}
-      
-      <div className="text-xs text-gray-400 mt-1">
+
+      <div className="mt-1 text-xs text-gray-400">
         Make friends—zero pressure, all welcome.
       </div>
     </div>

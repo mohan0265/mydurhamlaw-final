@@ -24,6 +24,7 @@
     "prebuild": "node scripts/check-utf8.mjs"
   },
   "dependencies": {
+    "@google/genai": "^1.30.0",
     "@google/generative-ai": "^0.21.0",
     "@headlessui/react": "^2.2.6",
     "@heroicons/react": "^2.2.0",
@@ -60,6 +61,7 @@
     "styled-components": "^6.1.19",
     "swiper": "^11.2.10",
     "tailwind-merge": "^2.3.0",
+    "ws": "^8.18.3",
     "zod": "^3.25.76",
     "zustand": "^5.0.7"
   },

@@ -10,9 +10,10 @@ export default function PublicChat({ user = { id: "demo", name: "Guest" } }) {
   const supabase = useSupabaseClient();
   const [msgs, setMsgs] = useState<Msg[]>([]);
   const [text, setText] = useState("");
-  if (!supabase) return <Card><CardHeader><CardTitle>Chat</CardTitle></CardHeader><CardContent>Backend not connected.</CardContent></Card>;
 
   useEffect(() => {
+    if (!supabase) return;
+
     let active = true;
     supabase.from("lounge_messages").select("*").order("created_at", { ascending: true }).then(({ data, error }) => {
       if (error) { console.error(error); return; }
@@ -32,6 +33,15 @@ export default function PublicChat({ user = { id: "demo", name: "Guest" } }) {
     });
     if (result?.error) console.error(result.error);
     setText("");
+  }
+
+  if (!supabase) {
+    return (
+      <Card>
+        <CardHeader><CardTitle>Chat</CardTitle></CardHeader>
+        <CardContent>Backend not connected.</CardContent>
+      </Card>
+    );
   }
 
   return (
