@@ -92,6 +92,8 @@ export default function DurmahWidget() {
   const [isStreaming, setIsStreaming] = useState(false);
   const streamControllerRef = useRef<AbortController | null>(null);
 
+  const [callTranscript, setCallTranscript] = useState<Msg[]>([]);
+
   // Gemini Live Hook
   const { 
     connect, 
@@ -106,17 +108,8 @@ export default function DurmahWidget() {
     apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY,
     systemPrompt: "You are Durmah, a friendly, succinct voice mentor for Durham law students. Keep your responses short and conversational, like a phone call.",
     onTranscript: (text, source) => {
-      setMessages(prev => {
-        const lastMsg = prev[prev.length - 1];
+      setCallTranscript(prev => {
         const role = source === 'user' ? 'you' : 'durmah';
-        
-        // If the last message is from the same role and is recent, append to it (optional, but good for streaming)
-        // For now, let's just add new bubbles for simplicity and to match the "chat" feel
-        // But to avoid spamming bubbles for partial transcripts if they come in chunks:
-        // The user's prompt implies "onTranscript" gives the full text or chunks. 
-        // If it's chunks, we might need logic. 
-        // Assuming "transcription" events are sentence-level or turn-level based on the SDK description.
-        
         return [...prev, { role, text, ts: Date.now() }];
       });
     }
@@ -271,9 +264,14 @@ export default function DurmahWidget() {
       disconnect();
       setVoiceMode(false);
       
-      // Save session memory if needed (using last messages)
-      if (messages.length > 0) {
-         const lastUser = [...messages].reverse().find(m => m.role === 'you');
+      // Show transcript UI for this call
+      if (callTranscript.length > 0) {
+        setShowTranscript(true);
+      }
+
+      // Save session memory if needed (using last messages from transcript)
+      if (callTranscript.length > 0) {
+         const lastUser = [...callTranscript].reverse().find(m => m.role === 'you');
          if (lastUser) {
              const topic = inferTopic(lastUser.text);
              try {
@@ -288,6 +286,7 @@ export default function DurmahWidget() {
       }
 
     } else {
+      setCallTranscript([]); // clear previous call
       await connect();
       await startRecording();
       setVoiceMode(true);
@@ -295,12 +294,17 @@ export default function DurmahWidget() {
   };
 
   const saveSession = async () => {
-    // Already handled in toggleVoice or real-time
+    // Save transcript to main chat history
+    if (callTranscript.length > 0) {
+        setMessages(prev => [...prev, ...callTranscript]);
+    }
     setShowTranscript(false);
+    setCallTranscript([]);
   };
 
   const discardSession = () => {
     setShowTranscript(false);
+    setCallTranscript([]);
   };
 
   // Floating Widget UI
@@ -348,6 +352,46 @@ export default function DurmahWidget() {
            </button>
         </div>
       </header>
+
+      {showTranscript && callTranscript.length > 0 && (
+        <div className="mt-3 rounded-lg border border-violet-100 bg-violet-50/70 p-3 text-xs mx-4">
+          <div className="mb-2 flex items-center justify-between">
+            <span className="font-semibold text-violet-700">Voice session transcript</span>
+            <div className="flex gap-2">
+              <button
+                onClick={saveSession}
+                className="rounded-full bg-violet-600 px-2 py-0.5 text-[10px] text-white"
+              >
+                Save
+              </button>
+              <button
+                onClick={discardSession}
+                className="rounded-full bg-slate-200 px-2 py-0.5 text-[10px] text-slate-700"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+          <div className="max-h-40 space-y-1 overflow-y-auto">
+            {callTranscript.map((msg) => (
+              <div
+                key={msg.ts}
+                className={`flex ${msg.role === "you" ? "justify-end" : "justify-start"}`}
+              >
+                <div
+                  className={`rounded-2xl px-2 py-1 text-[11px] ${
+                    msg.role === "you"
+                      ? "bg-violet-600 text-white"
+                      : "bg-white text-slate-900"
+                  }`}
+                >
+                  {msg.text}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {voiceError && (
         <div className={`px-4 py-3 text-xs ${voiceError.includes('quota') || voiceError.includes('1011') ? 'bg-amber-50 text-amber-800' : 'bg-red-50 text-red-600'}`}>
@@ -430,7 +474,7 @@ export default function DurmahWidget() {
                   className="flex-1 rounded-full border border-gray-200 bg-gray-50 px-4 py-2 text-sm outline-none focus:border-violet-300 focus:ring-2 focus:ring-violet-100"
                   value={input}
                   onChange={(event) => setInput(event.target.value)}
-                  placeholder={voiceMode ? (isPlaying ? "Speaking..." : "Listening...") : "Type a message..."}
+                  placeholder={voiceMode ? (isPlaying ? "Durmah is speaking..." : "Live with Durmah – you can talk now") : "Type a message..."}
                   disabled={isStreaming || voiceMode}
                   onKeyDown={(e) => e.key === 'Enter' && send()}
                 />

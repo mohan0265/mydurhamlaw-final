@@ -110,24 +110,13 @@ export function useGeminiLive(options: {
                 parts: [{ text: systemPrompt }]
               },
               // Enable transcriptions
-              // Note: In raw WebSocket, these might need to be passed differently if this doesn't work,
-              // but following the user's SDK mapping, we put them in the config.
-              // If the API ignores them, we might fall back to implicit text in modelTurn.
+              inputAudioTranscription: {},
+              outputAudioTranscription: {},
             }
           };
           ws.send(JSON.stringify(setupMsg));
           
-          // Kickstart
-          const kickstartMsg = {
-            clientContent: {
-              turns: [{
-                role: "user",
-                parts: [{ text: "Hello" }]
-              }],
-              turnComplete: true
-            }
-          };
-          ws.send(JSON.stringify(kickstartMsg));
+          // Kickstart removed to prevent auto-speaking
           
           resolve();
         };
@@ -269,8 +258,24 @@ export function useGeminiLive(options: {
             }
         }
 
-        // Gain
-        const gain = 4.0;
+        // Check for silence (debug)
+        let maxAmp = 0;
+        let sumSq = 0;
+        for (let i = 0; i < processedData.length; i++) {
+            const val = processedData[i];
+            const abs = Math.abs(val === undefined ? 0 : val);
+            if (abs > maxAmp) maxAmp = abs;
+            sumSq += val * val;
+        }
+        
+        // Simple energy-based VAD to avoid sending pure silence
+        const rms = Math.sqrt(sumSq / processedData.length);
+        if (rms < 0.005) {
+            return;
+        }
+
+        // Apply digital gain (boost volume) to help VAD
+        const gain = 2.0;
         const pcm16 = new Int16Array(processedData.length);
         for (let i = 0; i < processedData.length; i++) {
           const val = processedData[i];
