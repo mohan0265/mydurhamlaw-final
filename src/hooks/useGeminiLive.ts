@@ -72,7 +72,7 @@ export function useGeminiLive(apiKey: string | undefined) {
       audioQueueRef.current = [];
       isPlayingRef.current = false;
 
-      const url = `wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1alpha.GenerativeService.BidiGenerateContent?key=${apiKey}`;
+      const url = `wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent?key=${apiKey}`;
       
       try {
         const ws = new WebSocket(url);
