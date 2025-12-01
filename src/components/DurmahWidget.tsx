@@ -61,7 +61,7 @@ function composeOpener(name: string | null, memory: MemoryRecord, upcoming: Upco
   if (upcoming.length > 0) {
     const first = upcoming[0];
     if (!first) {
-      return `${timeHello()}${niceName}! I am Durmah — your study & wellbeing buddy. What would you like to work on right now?`;
+      return `${timeHello()}${niceName}! I am Durmah - your study & wellbeing buddy. What would you like to work on right now?`;
     }
     const when = first.due_at ? new Date(first.due_at).toLocaleDateString() : "soon";
     const title = first.title || "your next task";
@@ -72,7 +72,7 @@ function composeOpener(name: string | null, memory: MemoryRecord, upcoming: Upco
     return `${timeHello()}${niceName}! Last time we talked about "${memory.last_topic}". Want to continue?`;
   }
 
-  return `${timeHello()}${niceName}! I am Durmah — your study & wellbeing buddy. What would you like to work on right now?`;
+  return `${timeHello()}${niceName}! I am Durmah - your study & wellbeing buddy. What would you like to work on right now?`;
 }
 
 function inferTopic(text: string) {
@@ -287,7 +287,7 @@ export default function DurmahWidget() {
         onClick={() => setIsOpen(true)}
         className="fixed bottom-24 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-violet-600 text-white shadow-lg"
       >
-        💬
+        Chat
       </button>
     );
   }
@@ -306,14 +306,14 @@ export default function DurmahWidget() {
               connected ? "bg-red-600 text-white" : "bg-violet-500 text-white"
             }`}
           >
-            🎤
+            Mic
           </button>
 
           <button
             onClick={() => setIsOpen(false)}
             className="p-1.5 rounded-full hover:bg-violet-500 hover:text-white"
           >
-            ❌
+            X
           </button>
         </div>
       </header>
@@ -412,7 +412,7 @@ export default function DurmahWidget() {
             disabled={!input.trim()}
             className="px-3 py-2 rounded-xl bg-violet-600 text-white hover:bg-violet-700 disabled:bg-gray-300"
           >
-            ➤
+            Send
           </button>
         </div>
       )}
