@@ -1,9 +1,7 @@
-"use client";
-
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useAuth } from "@/lib/supabase/AuthContext";
 import { getSupabaseClient } from "@/lib/supabase/client";
-import { useRealtimeVoice, VoiceTurn } from "@/hooks/useRealtimeVoice";
+import { useDurmahRealtime, VoiceTurn } from "@/hooks/useDurmahRealtime";
 
 type Msg = { role: "durmah" | "you"; text: string; ts: number };
 type UpcomingItem = { id: string; title: string; due_at?: string | null };
@@ -79,6 +77,32 @@ function inferTopic(text: string) {
   return text.split(/\s+/).slice(0, 4).join(" ");
 }
 
+function buildDurmahSystemPrompt(snapshot: StudentSnapshot, user: any) {
+  const firstName = snapshot.name || user?.email || "student";
+
+  // Include upcoming assignment, if any
+  const nextItem = snapshot.upcoming[0];
+  const nextLine = nextItem
+    ? `The student’s next task is "${nextItem.title}" due on ${nextItem.due_at}.`
+    : `No specific upcoming assignments are known.`;
+
+  return `
+You are Durmah, a friendly and wise Law Professor and Mentor at Durham Law School.
+Your goal is to help the student understand complex legal concepts using the Socratic method.
+
+Guidelines:
+- Address the student as "${firstName}".
+- Ask guiding questions instead of just giving answers.
+- Keep each spoken response short (1–2 sentences) because this is a voice conversation.
+- If the student sounds stressed or overwhelmed, offer calm encouragement and help them break work into small steps.
+- You are professional but warm and accessible.
+
+Context:
+- ${nextLine}
+- If the student asks about scheduling, exams, or assignments, help them plan realistically.
+`.trim();
+}
+
 export default function DurmahWidget() {
   const { user } = useAuth() || { user: null };
   const signedIn = !!user?.id;
@@ -94,20 +118,16 @@ export default function DurmahWidget() {
 
   const streamControllerRef = useRef<AbortController | null>(null);
 
-  // NEW REALTIME VOICE HOOK
+  // OpenAI Realtime Hook
   const {
     connected,
     speaking,
-    error,
-    connect,
-    disconnect,
-    startTalking,
-    stopTalking,
-  } = useRealtimeVoice({
-    apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY || "",
-    systemPrompt:
-      "You are Durmah, a warm, supportive legal study companion. Speak naturally and concisely. Maintain a calm, friendly tone.",
-    onTranscript: (turn: VoiceTurn) => {
+    error: voiceError,
+    startCall,
+    endCall,
+  } = useDurmahRealtime({
+    systemPrompt: buildDurmahSystemPrompt(snapshot, user),
+    onTurn: (turn) => {
       setCallTranscript((prev) => [
         ...prev,
         {
@@ -146,8 +166,9 @@ export default function DurmahWidget() {
     return () => {
       cancelled = true;
       streamControllerRef.current?.abort();
+      endCall(); // Ensure call ends on unmount
     };
-  }, [user?.id]);
+  }, [user?.id, endCall]);
 
   const chips = useMemo(() => {
     if (snapshot.upcoming.length === 0) {
@@ -163,32 +184,34 @@ export default function DurmahWidget() {
     if (!connected) {
       setCallTranscript([]);
       setShowVoiceTranscript(false);
-      await connect();
-      startTalking();
+      await startCall();
       return;
     }
 
-    stopTalking();
-    await disconnect();
+    endCall();
     setShowVoiceTranscript(true);
 
-    const lastUser = [...callTranscript].reverse().find((m) => m.role === "you");
-    if (lastUser) {
-      const topic = inferTopic(lastUser.text);
-      try {
-        await fetch("/api/durmah/memory", {
-          method: "POST",
-          credentials: "include",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ last_topic: topic, last_message: lastUser.text }),
-        });
-      } catch {}
-    }
+    // We don't save automatically on end call anymore, user must click Save
+    // But we can prepare the memory update logic in the Save handler
   }
 
-  const saveVoiceTranscript = () => {
+  const saveVoiceTranscript = async () => {
     if (callTranscript.length > 0) {
       setMessages((prev) => [...prev, ...callTranscript]);
+      
+      // Update memory
+      const lastUser = [...callTranscript].reverse().find((m) => m.role === "you");
+      if (lastUser) {
+        const topic = inferTopic(lastUser.text);
+        try {
+          await fetch("/api/durmah/memory", {
+            method: "POST",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ last_topic: topic, last_message: lastUser.text }),
+          });
+        } catch {}
+      }
     }
     setShowVoiceTranscript(false);
     setCallTranscript([]);
@@ -303,10 +326,10 @@ export default function DurmahWidget() {
           <button
             onClick={toggleVoice}
             className={`p-1.5 rounded-full ${
-              connected ? "bg-red-600 text-white" : "bg-violet-500 text-white"
+              connected ? "bg-red-600 text-white animate-pulse" : "bg-violet-500 text-white"
             }`}
           >
-            Mic
+            {connected ? "Stop" : "Mic"}
           </button>
 
           <button
@@ -358,9 +381,9 @@ export default function DurmahWidget() {
         </div>
       )}
 
-      {error && (
+      {voiceError && (
         <div className="px-4 py-2 text-xs text-red-600 bg-red-50 border-y border-red-100">
-          Voice error: {error}
+          Voice error: {voiceError}
         </div>
       )}
 
