@@ -83,7 +83,7 @@ function buildDurmahSystemPrompt(snapshot: StudentSnapshot, user: any) {
   // Include upcoming assignment, if any
   const nextItem = snapshot.upcoming[0];
   const nextLine = nextItem
-    ? `The student’s next task is "${nextItem.title}" due on ${nextItem.due_at}.`
+    ? `The student's next task is "${nextItem.title}" due on ${nextItem.due_at}.`
     : `No specific upcoming assignments are known.`;
 
   return `
@@ -93,7 +93,7 @@ Your goal is to help the student understand complex legal concepts using the Soc
 Guidelines:
 - Address the student as "${firstName}".
 - Ask guiding questions instead of just giving answers.
-- Keep each spoken response short (1–2 sentences) because this is a voice conversation.
+- Keep each spoken response short (1-2 sentences) because this is a voice conversation.
 - If the student sounds stressed or overwhelmed, offer calm encouragement and help them break work into small steps.
 - You are professional but warm and accessible.
 
