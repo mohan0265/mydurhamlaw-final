@@ -40,7 +40,8 @@ export function useDurmahRealtime({ systemPrompt, onTurn }: UseDurmahRealtimeOpt
       audioEl.autoplay = true;
       audioElRef.current = audioEl;
       pc.ontrack = (e) => {
-        audioEl.srcObject = e.streams[0];
+        const stream = e.streams[0] || new MediaStream([e.track]);
+        audioEl.srcObject = stream;
       };
 
       // 3. Add local microphone
