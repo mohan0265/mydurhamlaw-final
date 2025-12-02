@@ -5,16 +5,16 @@ export type VoiceTurn = { speaker: "user" | "durmah"; text: string };
 type UseDurmahRealtimeOptions = {
   systemPrompt: string;
   onTurn?: (turn: VoiceTurn) => void;
+  audioRef: React.RefObject<HTMLAudioElement>;
 };
 
-export function useDurmahRealtime({ systemPrompt, onTurn }: UseDurmahRealtimeOptions) {
+export function useDurmahRealtime({ systemPrompt, onTurn, audioRef }: UseDurmahRealtimeOptions) {
   const [connected, setConnected] = useState(false);
   const [speaking, setSpeaking] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const pcRef = useRef<RTCPeerConnection | null>(null);
   const dcRef = useRef<RTCDataChannel | null>(null);
-  const audioElRef = useRef<HTMLAudioElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
   const startCall = useCallback(async () => {
@@ -36,12 +36,12 @@ export function useDurmahRealtime({ systemPrompt, onTurn }: UseDurmahRealtimeOpt
       pcRef.current = pc;
 
       // Play remote audio
-      const audioEl = document.createElement("audio");
-      audioEl.autoplay = true;
-      audioElRef.current = audioEl;
       pc.ontrack = (e) => {
         const stream = e.streams[0] || new MediaStream([e.track]);
-        audioEl.srcObject = stream;
+        if (audioRef.current) {
+          audioRef.current.srcObject = stream;
+          audioRef.current.play().catch(err => console.error("Audio play failed:", err));
+        }
       };
 
       // 3. Add local microphone
@@ -141,9 +141,9 @@ export function useDurmahRealtime({ systemPrompt, onTurn }: UseDurmahRealtimeOpt
       streamRef.current.getTracks().forEach((t) => t.stop());
       streamRef.current = null;
     }
-    if (audioElRef.current) {
-      audioElRef.current.srcObject = null;
-      audioElRef.current = null;
+    // Audio ref is managed by parent component, just clear srcObject if needed
+    if (audioRef.current) {
+      audioRef.current.srcObject = null;
     }
     setConnected(false);
     setSpeaking(false);

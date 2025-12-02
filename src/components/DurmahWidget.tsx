@@ -117,6 +117,16 @@ export default function DurmahWidget() {
   const [showVoiceTranscript, setShowVoiceTranscript] = useState(false);
 
   const streamControllerRef = useRef<AbortController | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  // Ensure browser is allowed to autoplay incoming WebRTC audio
+  useEffect(() => {
+    if (!audioRef.current) return;
+    const el = audioRef.current;
+    el.autoplay = true;
+    el.muted = false;
+    (el as any).playsInline = true;
+  }, []);
 
   // OpenAI Realtime Hook
   const {
@@ -127,6 +137,7 @@ export default function DurmahWidget() {
     endCall,
   } = useDurmahRealtime({
     systemPrompt: buildDurmahSystemPrompt(snapshot, user),
+    audioRef,
     onTurn: (turn) => {
       setCallTranscript((prev) => [
         ...prev,
@@ -321,6 +332,12 @@ export default function DurmahWidget() {
         <div className="font-semibold flex items-center gap-2">
           Durmah <span className="bg-violet-500 rounded-full text-[10px] px-2">Beta</span>
         </div>
+
+        {/* Hidden audio output for Durmah's voice */}
+        <audio
+          ref={audioRef}
+          style={{ display: 'none' }}
+        />
 
         <div className="flex items-center gap-2">
           <button
