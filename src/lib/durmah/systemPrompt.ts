@@ -12,7 +12,7 @@ export interface DurmahStudentContext {
   currentPhase?: string; // e.g. 'Michaelmas Term'
   keyDates?: KeyDates;
   todayLabel?: string;
-  upcomingTasks?: { title: string; due_at: string }[];
+  upcomingTasks?: { title: string; due: string }[];
 }
 
 export interface DurmahMemorySnapshot {
@@ -28,15 +28,25 @@ function timeHello(now = new Date()) {
   return "Good evening";
 }
 
-export function composeGreeting(ctx: DurmahStudentContext, memory?: DurmahMemorySnapshot | null): string {
+export function composeGreeting(
+  ctx: DurmahStudentContext, 
+  memory?: DurmahMemorySnapshot | null,
+  upcomingTasks?: { title: string; due: string }[]
+): string {
   const niceName = ctx.firstName ? `, ${ctx.firstName.split(" ")[0]}` : "";
   const greeting = timeHello();
 
   // 1. Upcoming task priority
-  if (ctx.upcomingTasks && ctx.upcomingTasks.length > 0) {
-    const first = ctx.upcomingTasks[0];
+  if (upcomingTasks && upcomingTasks.length > 0) {
+    const first = upcomingTasks[0];
     if (first) {
-      const when = new Date(first.due_at).toLocaleDateString("en-GB", { month: "short", day: "numeric" });
+      // Parse "YYYY-MM-DD" or similar if needed, but assuming ISO or readable string
+      // If 'due' is ISO string:
+      const date = new Date(first.due);
+      const when = !isNaN(date.getTime()) 
+        ? date.toLocaleDateString("en-GB", { month: "short", day: "numeric" })
+        : first.due;
+        
       return `${greeting}${niceName}! I see "${first.title}" is due ${when}. Want help planning it?`;
     }
   }
@@ -47,7 +57,6 @@ export function composeGreeting(ctx: DurmahStudentContext, memory?: DurmahMemory
   }
 
   // 3. Phase-aware fallback
-  // Map phase string to logic if needed, or just use the string
   const phase = ctx.currentPhase?.toLowerCase() || "";
   
   if (phase.includes("induction")) {
@@ -65,7 +74,8 @@ export function composeGreeting(ctx: DurmahStudentContext, memory?: DurmahMemory
 
 export function buildDurmahSystemPrompt(
   ctx: DurmahStudentContext,
-  memory?: DurmahMemorySnapshot | null
+  memory?: DurmahMemorySnapshot | null,
+  upcomingTasks?: { title: string; due: string }[]
 ): string {
   const firstName = ctx.firstName || "Student";
   const yearLabel = ctx.yearGroup === "foundation" ? "Foundation Year" : 
@@ -84,8 +94,8 @@ export function buildDurmahSystemPrompt(
   }
 
   let upcomingContext = "No immediate deadlines.";
-  if (ctx.upcomingTasks && ctx.upcomingTasks.length > 0) {
-    const items = ctx.upcomingTasks.map(u => `"${u.title}" due ${u.due_at}`).join(", ");
+  if (upcomingTasks && upcomingTasks.length > 0) {
+    const items = upcomingTasks.map(u => `"${u.title}" due ${u.due}`).join(", ");
     upcomingContext = `Upcoming tasks: ${items}.`;
   }
 

@@ -35,21 +35,21 @@ export function useDurmahRealtime({ systemPrompt, onTurn, audioRef }: UseDurmahR
       const pc = new RTCPeerConnection();
       pcRef.current = pc;
 
-      // Play remote audio
+      // 3. Add local microphone
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
+      stream.getAudioTracks().forEach((track) => pc.addTrack(track, stream));
+
+      // 4. Play remote audio
       pc.ontrack = (e) => {
-        const stream = e.streams[0] || new MediaStream([e.track]);
+        const remoteStream = e.streams[0] || new MediaStream([e.track]);
         if (audioRef.current) {
-          audioRef.current.srcObject = stream;
+          audioRef.current.srcObject = remoteStream;
           audioRef.current.play().catch(err => console.error("Audio play failed:", err));
         }
       };
 
-      // 3. Add local microphone
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      streamRef.current = stream;
-      stream.getTracks().forEach((track) => pc.addTrack(track, stream));
-
-      // 4. Data Channel for events
+      // 5. Data Channel for events
       const dc = pc.createDataChannel("oai-events");
       dcRef.current = dc;
 
@@ -58,6 +58,7 @@ export function useDurmahRealtime({ systemPrompt, onTurn, audioRef }: UseDurmahR
         const updateEvent = {
           type: "session.update",
           session: {
+            model: "gpt-4o-realtime-preview-2024-10-01",
             instructions: systemPrompt,
             modalities: ["text", "audio"],
             input_audio_transcription: {
@@ -66,11 +67,6 @@ export function useDurmahRealtime({ systemPrompt, onTurn, audioRef }: UseDurmahR
           },
         };
         dc.send(JSON.stringify(updateEvent));
-        
-        // Kick off response if needed, or wait for user. 
-        // Usually better to wait or send a "response.create" if we want the model to speak first.
-        // For Durmah, let's wait for user or send a greeting if desired.
-        // User prompt implies "Start a single Realtime session... Open the mic".
       };
 
       dc.onmessage = (e) => {
@@ -97,12 +93,12 @@ export function useDurmahRealtime({ systemPrompt, onTurn, audioRef }: UseDurmahR
         }
       };
 
-      // 5. SDP Offer/Answer
+      // 6. SDP Offer/Answer
       const offer = await pc.createOffer();
       await pc.setLocalDescription(offer);
 
       const baseUrl = "https://api.openai.com/v1/realtime";
-      const model = "gpt-4o-realtime-preview-2024-12-17";
+      const model = "gpt-4o-realtime-preview-2024-10-01";
       const sdpResponse = await fetch(`${baseUrl}?model=${model}`, {
         method: "POST",
         body: offer.sdp,

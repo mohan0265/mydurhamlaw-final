@@ -111,7 +111,7 @@ export default function DurmahWidget() {
   // Set initial greeting once ready
   useEffect(() => {
     if (ready && messages.length === 0) {
-      const greeting = composeGreeting(studentContext, memory);
+      const greeting = composeGreeting(studentContext, memory, studentContext.upcomingTasks);
       setMessages([{ role: "durmah", text: greeting, ts: Date.now() }]);
     }
   }, [ready, studentContext, memory, messages.length]);
@@ -119,7 +119,7 @@ export default function DurmahWidget() {
 
   // 3. Voice Hook
   const systemPrompt = useMemo(() => 
-    buildDurmahSystemPrompt(studentContext, memory), 
+    buildDurmahSystemPrompt(studentContext, memory, studentContext.upcomingTasks), 
   [studentContext, memory]);
 
   const {
