@@ -26,9 +26,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // Filter and format messages for Gemini
     const history: { role: string; parts: { text: string }[] }[] = [];
+    let systemInstruction = undefined;
     
     for (const msg of incoming) {
-      if (msg.role === 'system') continue;
+      if (msg.role === 'system') {
+        systemInstruction = msg.content;
+        continue;
+      }
       history.push({
         role: msg.role === 'assistant' ? 'model' : 'user',
         parts: [{ text: msg.content }],
@@ -52,6 +56,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const chat = model.startChat({
       history: history,
+      systemInstruction: systemInstruction,
       generationConfig: {
         maxOutputTokens: 400,
         temperature: 0.7,

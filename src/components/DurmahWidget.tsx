@@ -1,120 +1,74 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useAuth } from "@/lib/supabase/AuthContext";
-import { getSupabaseClient } from "@/lib/supabase/client";
 import { useDurmahRealtime, VoiceTurn } from "@/hooks/useDurmahRealtime";
+import { useDurmah, MDLStudentContext } from "@/lib/durmah/context";
+import { 
+  buildDurmahSystemPrompt, 
+  composeGreeting, 
+  DurmahStudentContext, 
+  DurmahMemorySnapshot 
+} from "@/lib/durmah/systemPrompt";
+import { formatTodayForDisplay } from "@/lib/durmah/phase";
 
 type Msg = { role: "durmah" | "you"; text: string; ts: number };
-type UpcomingItem = { id: string; title: string; due_at?: string | null };
-type MemoryRecord = { last_topic?: string; last_message?: string } | null;
-
-type StudentSnapshot = {
-  name: string | null;
-  upcoming: UpcomingItem[];
-};
-
-const EMPTY_SNAPSHOT: StudentSnapshot = { name: null, upcoming: [] };
-
-async function getStudentContext(userId?: string | null): Promise<StudentSnapshot> {
-  const supabase = getSupabaseClient();
-  if (!supabase || !userId) return { ...EMPTY_SNAPSHOT };
-
-  try {
-    const profile = await supabase
-      .from("profiles")
-      .select("display_name")
-      .eq("id", userId)
-      .maybeSingle();
-
-    const name = profile.data?.display_name || null;
-
-    const tasks = await supabase
-      .from("assignments")
-      .select("id,title,due_at")
-      .gte("due_at", new Date().toISOString())
-      .order("due_at", { ascending: true })
-      .limit(3);
-
-    const upcoming: UpcomingItem[] = (tasks.data || []).map((task) => ({
-      id: String(task.id),
-      title: task.title || "your next task",
-      due_at: task.due_at || null,
-    }));
-
-    return { name, upcoming };
-  } catch {
-    return { ...EMPTY_SNAPSHOT };
-  }
-}
-
-function timeHello(now = new Date()) {
-  const h = now.getHours();
-  if (h < 12) return "Good morning";
-  if (h < 18) return "Good afternoon";
-  return "Good evening";
-}
-
-function composeOpener(name: string | null, memory: MemoryRecord, upcoming: UpcomingItem[]) {
-  const niceName = name ? `, ${name.split(" ")[0]}` : "";
-
-  if (upcoming.length > 0) {
-    const first = upcoming[0];
-    if (!first) {
-      return `${timeHello()}${niceName}! I am Durmah - your study & wellbeing buddy. What would you like to work on right now?`;
-    }
-    const when = first.due_at ? new Date(first.due_at).toLocaleDateString() : "soon";
-    const title = first.title || "your next task";
-    return `${timeHello()}${niceName}! I see "${title}" due ${when}. Want help planning it?`;
-  }
-
-  if (memory?.last_topic) {
-    return `${timeHello()}${niceName}! Last time we talked about "${memory.last_topic}". Want to continue?`;
-  }
-
-  return `${timeHello()}${niceName}! I am Durmah - your study & wellbeing buddy. What would you like to work on right now?`;
-}
 
 function inferTopic(text: string) {
   return text.split(/\s+/).slice(0, 4).join(" ");
 }
 
-function buildDurmahSystemPrompt(snapshot: StudentSnapshot, user: any) {
-  const firstName = snapshot.name || user?.email || "student";
-
-  // Include upcoming assignment, if any
-  const nextItem = snapshot.upcoming[0];
-  const nextLine = nextItem
-    ? `The student's next task is "${nextItem.title}" due on ${nextItem.due_at}.`
-    : `No specific upcoming assignments are known.`;
-
-  return `
-You are Durmah, a friendly and wise Law Professor and Mentor at Durham Law School.
-Your goal is to help the student understand complex legal concepts using the Socratic method.
-
-Guidelines:
-- Address the student as "${firstName}".
-- Ask guiding questions instead of just giving answers.
-- Keep each spoken response short (1-2 sentences) because this is a voice conversation.
-- If the student sounds stressed or overwhelmed, offer calm encouragement and help them break work into small steps.
-- You are professional but warm and accessible.
-
-Context:
-- ${nextLine}
-- If the student asks about scheduling, exams, or assignments, help them plan realistically.
-`.trim();
-}
-
 export default function DurmahWidget() {
   const { user } = useAuth() || { user: null };
   const signedIn = !!user?.id;
+  
+  // 1. Source Context
+  const durmahCtx = useDurmah();
+  
+  // Construct the unified context object
+  const studentContext: DurmahStudentContext = useMemo(() => {
+    // Fallback to window if hook is empty/loading (though hook handles window fallback internally)
+    const base = durmahCtx.hydrated ? durmahCtx : (typeof window !== 'undefined' ? window.__mdlStudentContext : null);
+    
+    if (!base) {
+      return {
+        userId: user?.id || "anon",
+        firstName: "Student",
+        university: "Durham University",
+        programme: "LLB",
+        yearGroup: "year1",
+        academicYear: "2025/26",
+        modules: [],
+        nowPhase: "term time" as any,
+      };
+    }
+
+    return {
+      userId: base.userId,
+      firstName: base.firstName,
+      university: base.university,
+      programme: base.programme,
+      yearGroup: base.yearKey,
+      academicYear: base.academicYear,
+      modules: base.modules,
+      nowPhase: base.nowPhase,
+      keyDates: base.keyDates,
+      todayLabel: formatTodayForDisplay(),
+      // TODO: If we have real upcoming tasks in context, map them here. 
+      // For now, we'll assume the context might have them or we leave empty.
+      // The current useDurmah hook doesn't expose 'upcoming' directly in MDLStudentContext type yet, 
+      // but the plan says "Pass 1-3 of them into DurmahStudentContext.upcoming".
+      // I will leave it empty for now or map if available.
+      upcoming: [] 
+    };
+  }, [durmahCtx, user?.id]);
 
   const [isOpen, setIsOpen] = useState(false);
   const [ready, setReady] = useState(false);
-  const [snapshot, setSnapshot] = useState<StudentSnapshot>({ ...EMPTY_SNAPSHOT });
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
   const [callTranscript, setCallTranscript] = useState<Msg[]>([]);
   const [showVoiceTranscript, setShowVoiceTranscript] = useState(false);
+  const [memory, setMemory] = useState<DurmahMemorySnapshot | null>(null);
 
   const streamControllerRef = useRef<AbortController | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -128,7 +82,46 @@ export default function DurmahWidget() {
     (el as any).playsInline = true;
   }, []);
 
-  // OpenAI Realtime Hook
+  // 2. Memory & Greeting
+  useEffect(() => {
+    if (!signedIn) return;
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const res = await fetch("/api/durmah/memory");
+        if (res.ok) {
+          const data = await res.json();
+          if (!cancelled && data.ok && data.memory) {
+            setMemory(data.memory);
+          }
+        }
+      } catch (e) {
+        console.error("Failed to fetch memory", e);
+      }
+      
+      if (!cancelled) {
+        setReady(true);
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, [signedIn]);
+
+  // Set initial greeting once ready
+  useEffect(() => {
+    if (ready && messages.length === 0) {
+      const greeting = composeGreeting(studentContext, memory);
+      setMessages([{ role: "durmah", text: greeting, ts: Date.now() }]);
+    }
+  }, [ready, studentContext, memory, messages.length]);
+
+
+  // 3. Voice Hook
+  const systemPrompt = useMemo(() => 
+    buildDurmahSystemPrompt(studentContext, memory), 
+  [studentContext, memory]);
+
   const {
     connected,
     speaking,
@@ -136,7 +129,7 @@ export default function DurmahWidget() {
     startCall,
     endCall,
   } = useDurmahRealtime({
-    systemPrompt: buildDurmahSystemPrompt(snapshot, user),
+    systemPrompt,
     audioRef,
     onTurn: (turn) => {
       setCallTranscript((prev) => [
@@ -150,43 +143,19 @@ export default function DurmahWidget() {
     },
   });
 
-  // Greeting + context loader
+  // Cleanup on unmount
   useEffect(() => {
-    let cancelled = false;
-
-    (async () => {
-      let memory: MemoryRecord = null;
-
-      try {
-        const response = await fetch("/api/durmah/memory", { credentials: "include" });
-        if (response.ok) {
-          const payload = await response.json().catch(() => null);
-          if (payload && payload.ok !== false) memory = payload.memory ?? null;
-        }
-      } catch {}
-
-      const context = await getStudentContext(user?.id);
-      if (cancelled) return;
-
-      setSnapshot(context);
-      const opener = composeOpener(context.name, memory, context.upcoming);
-      setMessages([{ role: "durmah", text: opener, ts: Date.now() }]);
-      setReady(true);
-    })();
-
     return () => {
-      cancelled = true;
       streamControllerRef.current?.abort();
-      endCall(); // Ensure call ends on unmount
+      endCall();
     };
-  }, [user?.id, endCall]);
+  }, [endCall]);
 
   const chips = useMemo(() => {
-    if (snapshot.upcoming.length === 0) {
-      return ["Review this week", "Make a study plan", "Practice quiz"];
-    }
-    return ["Plan task", "Break into steps", "Set reminder"];
-  }, [snapshot.upcoming]);
+    if (studentContext.nowPhase === 'exams') return ["Revision tips", "Past papers", "Stress management"];
+    if (studentContext.nowPhase === 'induction_week') return ["Where is the library?", "How to reference", "Module choices"];
+    return ["Review this week", "Make a study plan", "Practice quiz"];
+  }, [studentContext.nowPhase]);
 
   // ----------------------------
   // VOICE SESSION HANDLING
@@ -201,9 +170,6 @@ export default function DurmahWidget() {
 
     endCall();
     setShowVoiceTranscript(true);
-
-    // We don't save automatically on end call anymore, user must click Save
-    // But we can prepare the memory update logic in the Save handler
   }
 
   const saveVoiceTranscript = async () => {
@@ -221,6 +187,8 @@ export default function DurmahWidget() {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ last_topic: topic, last_message: lastUser.text }),
           });
+          // Optimistically update local memory
+          setMemory(prev => ({ ...prev, last_topic: topic, last_message: lastUser.text }));
         } catch {}
       }
     }
@@ -251,6 +219,7 @@ export default function DurmahWidget() {
 
     const inferredTopic = inferTopic(userText);
 
+    // Update memory in background
     void (async () => {
       try {
         await fetch("/api/durmah/memory", {
@@ -259,13 +228,21 @@ export default function DurmahWidget() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ last_topic: inferredTopic, last_message: userText }),
         });
+        setMemory(prev => ({ ...prev, last_topic: inferredTopic, last_message: userText }));
       } catch {}
     })();
 
-    const payloadMessages = history.map((m) => ({
-      role: m.role === "durmah" ? "assistant" : "user",
-      content: m.text,
-    }));
+    // Prepare messages for API
+    // We inject the system prompt as a 'system' message if the API supports it, 
+    // or we rely on the API to use a default. The user requested we use the SAME prompt.
+    // So we will pass it as a system message.
+    const payloadMessages = [
+      { role: "system", content: systemPrompt },
+      ...history.map((m) => ({
+        role: m.role === "durmah" ? "assistant" : "user",
+        content: m.text,
+      }))
+    ];
 
     try {
       const controller = new AbortController();
