@@ -38,6 +38,8 @@ export default function DurmahWidget() {
         academicYear: "2025/26",
         modules: [],
         nowPhase: "term time" as any,
+        currentPhase: "Michaelmas Term",
+        upcomingTasks: []
       };
     }
 
@@ -50,14 +52,12 @@ export default function DurmahWidget() {
       academicYear: base.academicYear,
       modules: base.modules,
       nowPhase: base.nowPhase,
+      currentPhase: base.nowPhase, // Map for systemPrompt
       keyDates: base.keyDates,
       todayLabel: formatTodayForDisplay(),
       // TODO: If we have real upcoming tasks in context, map them here. 
       // For now, we'll assume the context might have them or we leave empty.
-      // The current useDurmah hook doesn't expose 'upcoming' directly in MDLStudentContext type yet, 
-      // but the plan says "Pass 1-3 of them into DurmahStudentContext.upcoming".
-      // I will leave it empty for now or map if available.
-      upcoming: [] 
+      upcomingTasks: [] 
     };
   }, [durmahCtx, user?.id]);
 
@@ -152,10 +152,10 @@ export default function DurmahWidget() {
   }, [endCall]);
 
   const chips = useMemo(() => {
-    if (studentContext.nowPhase === 'exams') return ["Revision tips", "Past papers", "Stress management"];
-    if (studentContext.nowPhase === 'induction_week') return ["Where is the library?", "How to reference", "Module choices"];
+    if (studentContext.currentPhase === 'exams') return ["Revision tips", "Past papers", "Stress management"];
+    if (studentContext.currentPhase === 'induction_week') return ["Where is the library?", "How to reference", "Module choices"];
     return ["Review this week", "Make a study plan", "Practice quiz"];
-  }, [studentContext.nowPhase]);
+  }, [studentContext.currentPhase]);
 
   // ----------------------------
   // VOICE SESSION HANDLING

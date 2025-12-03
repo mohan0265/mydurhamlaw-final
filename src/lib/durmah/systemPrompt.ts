@@ -9,10 +9,10 @@ export interface DurmahStudentContext {
   yearGroup: YearKey;
   academicYear: string;
   modules: ModuleLite[];
-  nowPhase?: AcademicPhase;
+  currentPhase?: string; // e.g. 'Michaelmas Term'
   keyDates?: KeyDates;
   todayLabel?: string;
-  upcoming?: { title: string; due_at: string }[];
+  upcomingTasks?: { title: string; due_at: string }[];
 }
 
 export interface DurmahMemorySnapshot {
@@ -33,8 +33,8 @@ export function composeGreeting(ctx: DurmahStudentContext, memory?: DurmahMemory
   const greeting = timeHello();
 
   // 1. Upcoming task priority
-  if (ctx.upcoming && ctx.upcoming.length > 0) {
-    const first = ctx.upcoming[0];
+  if (ctx.upcomingTasks && ctx.upcomingTasks.length > 0) {
+    const first = ctx.upcomingTasks[0];
     if (first) {
       const when = new Date(first.due_at).toLocaleDateString("en-GB", { month: "short", day: "numeric" });
       return `${greeting}${niceName}! I see "${first.title}" is due ${when}. Want help planning it?`;
@@ -47,13 +47,16 @@ export function composeGreeting(ctx: DurmahStudentContext, memory?: DurmahMemory
   }
 
   // 3. Phase-aware fallback
-  if (ctx.nowPhase === "induction_week") {
+  // Map phase string to logic if needed, or just use the string
+  const phase = ctx.currentPhase?.toLowerCase() || "";
+  
+  if (phase.includes("induction")) {
     return `${greeting}${niceName}! Welcome to Induction Week. How are you settling in?`;
   }
-  if (ctx.nowPhase === "exams") {
+  if (phase.includes("exam")) {
     return `${greeting}${niceName}! It's exam season. Remember to pace yourself. What are we revising today?`;
   }
-  if (ctx.nowPhase === "vacation") {
+  if (phase.includes("vacation")) {
     return `${greeting}${niceName}! Hope you're enjoying the break. Need to catch up on anything?`;
   }
 
@@ -69,17 +72,20 @@ export function buildDurmahSystemPrompt(
                     ctx.yearGroup === "year1" ? "Year 1" :
                     ctx.yearGroup === "year2" ? "Year 2" : "Year 3";
   
-  const phase = ctx.nowPhase || "term time";
+  const phase = ctx.currentPhase || "term time";
   const today = ctx.todayLabel || formatTodayForDisplay();
 
   let memoryContext = "";
   if (memory?.last_topic) {
     memoryContext = `Last topic discussed: "${memory.last_topic}".`;
   }
+  if (memory?.last_message) {
+    memoryContext += ` Last user message: "${memory.last_message}".`;
+  }
 
   let upcomingContext = "No immediate deadlines.";
-  if (ctx.upcoming && ctx.upcoming.length > 0) {
-    const items = ctx.upcoming.map(u => `"${u.title}" due ${u.due_at}`).join(", ");
+  if (ctx.upcomingTasks && ctx.upcomingTasks.length > 0) {
+    const items = ctx.upcomingTasks.map(u => `"${u.title}" due ${u.due_at}`).join(", ");
     upcomingContext = `Upcoming tasks: ${items}.`;
   }
 

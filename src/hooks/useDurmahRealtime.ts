@@ -60,6 +60,9 @@ export function useDurmahRealtime({ systemPrompt, onTurn, audioRef }: UseDurmahR
           session: {
             instructions: systemPrompt,
             modalities: ["text", "audio"],
+            input_audio_transcription: {
+              model: "whisper-1",
+            },
           },
         };
         dc.send(JSON.stringify(updateEvent));
