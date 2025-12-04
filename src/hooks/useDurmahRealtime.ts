@@ -8,8 +8,6 @@ type UseDurmahRealtimeOptions = {
   audioRef: React.RefObject<HTMLAudioElement>;
 };
 
-
-
 export function useDurmahRealtime({ systemPrompt, onTurn, audioRef }: UseDurmahRealtimeOptions) {
   const [connected, setConnected] = useState(false);
   const [speaking, setSpeaking] = useState(false);
@@ -25,8 +23,8 @@ export function useDurmahRealtime({ systemPrompt, onTurn, audioRef }: UseDurmahR
       setError(null);
 
       // 1. Get ephemeral token
-      console.debug("[DurmahVoice] Fetching token...");
-      const tokenRes = await fetch("/.netlify/functions/openai-realtime-token", {
+      console.debug("[DurmahVoice] Fetching token from /realtime-session...");
+      const tokenRes = await fetch("/.netlify/functions/realtime-session", {
         method: "POST",
       });
       if (!tokenRes.ok) {
