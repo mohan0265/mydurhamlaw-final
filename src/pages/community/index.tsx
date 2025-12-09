@@ -30,28 +30,46 @@ export default function CommunityHubPage() {
         <meta name="description" content="Community resources, status controls, events, safety, transport, healthcare and more for Durham Law students and families." />
       </Head>
 
-      <main className="mx-auto max-w-7xl px-4 sm:px-6 py-8 space-y-8">
-        <HeroSection />
+      <main className="min-h-screen bg-gray-50">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8 space-y-10">
+          <HeroSection />
 
-        {/* quick toggles (presence / DM) */}
-        <StatusControls />
+          {/* quick toggles (presence / DM) */}
+          <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+             <StatusControls />
+          </div>
 
-        {/* categories and carousels */}
-        <CategoryTabs />
-        <EventsCarousel />
+          {/* categories and carousels */}
+          <div className="space-y-6">
+            <CategoryTabs />
+            <EventsCarousel />
+          </div>
 
-        {/* resource sections */}
-        <HealthcareSection />
-        <DiningSection />
-        <TransportSection />
-        <SafetyTipsSection />
-        <EmergencyEssentialsSection />
-        <ParentEssentials />
-        <PostAndGovSection />
-        <MapSection />
+          {/* resource sections grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="space-y-8">
+              <HealthcareSection />
+              <DiningSection />
+              <TransportSection />
+            </div>
+            <div className="space-y-8">
+              <SafetyTipsSection />
+              <EmergencyEssentialsSection />
+              <ParentEssentials />
+            </div>
+          </div>
 
-        {/* social / cards */}
-        <StudentSocialCard />
+          {/* Full width sections */}
+          <div className="space-y-8">
+            <PostAndGovSection />
+            <MapSection />
+          </div>
+
+          {/* social / cards */}
+          <div className="pt-8 border-t border-gray-200">
+            <StudentSocialCard />
+          </div>
+        </div>
       </main>
     </>
   );

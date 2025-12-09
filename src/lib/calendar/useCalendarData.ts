@@ -65,6 +65,7 @@ export interface YearPlan {
     weeks: Array<{
       id: string;           // 'W1'
       dateLabel?: string;   // '6 Oct'
+      mondayISO?: string;   // 'YYYY-MM-DD'
       deadlines: Array<{ label: string; danger?: boolean }>;
     }>;
   }>;

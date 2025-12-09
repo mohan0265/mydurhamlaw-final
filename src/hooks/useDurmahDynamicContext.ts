@@ -59,7 +59,7 @@ export function useDurmahDynamicContext() {
         // or rely on the /api/calendar/day endpoint which aggregates everything.
         // Using the API is safer to get the unified view (timetable + personal).
         
-        const res = await fetch(`/api/calendar/day?date=${todayStr}`);
+        const res = await fetch(`/api/calendar/day?date=${todayStr}`, { credentials: 'include' });
         if (res.ok) {
           const dayData = await res.json();
           // dayData.events is expected to be an array

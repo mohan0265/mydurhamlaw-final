@@ -41,7 +41,9 @@ export default function AWYWidget() {
   const [needsAuth, setNeedsAuth] = useState(false);
 
   useEffect(() => setMounted(true), []);
-  const featureEnabled = isAWYEnabled();
+  
+  // Force enabled for authenticated users in production as requested
+  const featureEnabled = isAWYEnabled() || true; 
   const enabled = featureEnabled && authed;
 
   // 1. Load connections (friends/family)
@@ -150,10 +152,14 @@ export default function AWYWidget() {
   }, [connections, presenceState]);
 
   const startCall = async (email: string) => {
-    // Stub for WebRTC call
-    console.log('[AWY] Starting call with', email);
-    // In a real app, this would create a room and send a notification
-    const roomUrl = `/assistant/call/${btoa(email)}`; // Mock URL
+    console.log('[AWY] Starting Jitsi call with', email);
+    
+    // Generate a unique room ID based on the sorted emails to ensure both parties join the same room
+    // In a real app, this should be a secure, random ID exchanged via signaling
+    const participants = [user?.email || '', email].sort();
+    const roomId = btoa(participants.join('_')).replace(/[^a-zA-Z0-9]/g, ''); // Simple sanitization
+    
+    const roomUrl = `https://meet.jit.si/MyDurhamLaw-${roomId}`;
     window.open(roomUrl, '_blank');
   };
 
@@ -237,12 +243,12 @@ export default function AWYWidget() {
                     
                     <button
                       onClick={() => startCall(c.email)}
-                      disabled={!isOnline}
                       className={`ml-2 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
                         isOnline 
                           ? 'bg-violet-600 text-white hover:bg-violet-700 shadow-sm' 
-                          : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                          : 'bg-gray-100 text-gray-400 hover:bg-gray-200'
                       }`}
+                      title={isOnline ? "Start Video Call" : "Call (Offline)"}
                     >
                       Call
                     </button>
