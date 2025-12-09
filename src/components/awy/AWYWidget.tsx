@@ -1,264 +1,261 @@
-'use client';
+'use client'
 
-import { useEffect, useMemo, useState } from 'react';
-import { useAuth } from '@/lib/supabase/AuthContext';
-import { isAWYEnabled } from '@/lib/feature-flags';
-import { authedFetch } from '@/lib/api/authedFetch';
-import { getSupabaseClient } from '@/lib/supabase/client';
-import AWYSetupHint from './AWYSetupHint';
+import React, { useState, useEffect, useRef } from 'react'
+import { Heart, Video, X, Loader2 } from 'lucide-react'
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import toast from 'react-hot-toast'
 
-type Status = 'online' | 'offline' | 'busy';
-
-type Conn = {
-  id: string;
-  email: string;
-  display_name: string | null;
-  relationship: string | null;
-  status?: Status;
-};
-
-const ringClass = (s?: Status) => {
-  switch (s) {
-    case 'busy':
-      return 'bg-amber-500';
-    case 'online':
-      return 'bg-green-500';
-    default:
-      return 'bg-gray-400 opacity-60';
-  }
-};
-
-const computeBottomRight = () => ({ bottom: 24, right: 24 });
+interface Connection {
+  id: string // loved_one_id or student_id
+  displayName: string
+  isAvailable: boolean
+  status: string
+  role?: 'student' | 'loved_one'
+}
 
 export default function AWYWidget() {
-  const { user } = useAuth() || { user: null };
-  const authed = Boolean(user?.id);
-  const [mounted, setMounted] = useState(false);
-  const [open, setOpen] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [connections, setConnections] = useState<Conn[]>([]);
-  const [presenceState, setPresenceState] = useState<Record<string, Status>>({});
-  const [needsAuth, setNeedsAuth] = useState(false);
-
-  useEffect(() => setMounted(true), []);
+  const [isOpen, setIsOpen] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [connections, setConnections] = useState<Connection[]>([])
+  const [isMyAvailabilityOn, setIsMyAvailabilityOn] = useState(false)
+  const [userRole, setUserRole] = useState<'student' | 'loved_one' | null>(null)
+  const [userId, setUserId] = useState<string | null>(null)
   
-  // Force enabled for authenticated users in production as requested
-  const featureEnabled = isAWYEnabled() || true; 
-  const enabled = featureEnabled && authed;
+  const supabase = createClientComponentClient()
+  const channelRef = useRef<any>(null)
 
-  // 1. Load connections (friends/family)
-  useEffect(() => {
-    if (!mounted || !enabled) return;
+  // Fetch initial data
+  const fetchData = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
 
-    const loadConnections = async () => {
-      try {
-        setLoading(true);
-        const response = await authedFetch('/api/awy/connections');
-        if (response.status === 401) {
-          setNeedsAuth(true);
-          return;
+      setUserId(user.id)
+
+      // Get role
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single()
+      
+      const role = profile?.role || 'student'
+      setUserRole(role)
+
+      // Get my status
+      const { data: myPresence } = await supabase
+        .from('awy_presence')
+        .select('is_available')
+        .eq('user_id', user.id)
+        .single()
+      
+      if (myPresence) setIsMyAvailabilityOn(myPresence.is_available)
+
+      // Fetch connections based on role
+      if (role === 'loved_one') {
+        const res = await fetch('/api/awy/presence/lovedone-view')
+        const data = await res.json()
+        if (data.ok) {
+          setConnections(data.students.map((s: any) => ({
+            id: s.studentId,
+            displayName: s.displayName,
+            isAvailable: s.isAvailable,
+            status: s.status,
+            role: 'student'
+          })))
         }
-        if (!response.ok) throw new Error('Failed to load connections');
-        
-        const json = await response.json();
-        const rows = Array.isArray(json?.connections) ? json.connections : [];
-        
-        const list: Conn[] = rows.map((row: any) => ({
-          id: row.id ?? row.email,
-          email: String(row.email || '').toLowerCase(),
-          display_name: row.display_name ?? null,
-          relationship: row.relationship_label ?? row.relationship ?? null,
-        }));
-        
-        setConnections(list);
-      } catch (err) {
-        console.error('[AWY] Load connections failed', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadConnections();
-  }, [mounted, enabled]);
-
-  // 2. Supabase Realtime Presence
-  useEffect(() => {
-    if (!mounted || !enabled || !user?.id) return;
-
-    const supabase = getSupabaseClient();
-    if (!supabase) return;
-
-    // Channel for global presence or a specific room
-    // For simplicity, we'll use a global 'awy-presence' room, 
-    // but in production this should be scoped or RLS protected.
-    const channel = supabase.channel('awy-global-presence', {
-      config: {
-        presence: {
-          key: user.id,
-        },
-      },
-    });
-
-    channel
-      .on('presence', { event: 'sync' }, () => {
-        const newState = channel.presenceState();
-        const map: Record<string, Status> = {};
-        
-        // Map presence state to our format
-        // newState is { [userId]: [{ user_id: '...', online_at: '...' }, ...] }
-        Object.values(newState).forEach((presences: any) => {
-          for (const p of presences) {
-             if (p.user_id) {
-               map[p.user_id] = 'online'; // If they are in the channel, they are online
-             }
-             if (p.email) {
-               map[p.email.toLowerCase()] = 'online';
-             }
+      } else {
+        const res = await fetch('/api/awy/presence/student-view')
+        const data = await res.json()
+        if (data.ok) {
+          const connRes = await fetch('/api/awy/loved-ones')
+          const connData = await connRes.json()
+          
+          if (connData.ok) {
+            const presMap = new Map(data.presence.map((p: any) => [p.user_id, p]))
+            
+            const list = connData.connections.map((c: any) => ({
+              id: c.loved_one_id,
+              displayName: c.nickname || c.relationship || 'Loved One',
+              isAvailable: presMap.get(c.loved_one_id)?.is_available || false,
+              status: presMap.get(c.loved_one_id)?.status || 'offline',
+              role: 'loved_one'
+            })).filter((c: any) => c.id) // Only active connections
+            
+            setConnections(list)
           }
-        });
-        setPresenceState(map);
-      })
-      .subscribe(async (status) => {
-        if (status === 'SUBSCRIBED') {
-          // Track my own status
-          await channel.track({
-            user_id: user.id,
-            email: user.email,
-            online_at: new Date().toISOString(),
-            status: 'online'
-          });
         }
-      });
+      }
+    } catch (err) {
+      console.error('AWY fetch error:', err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchData()
+
+    // Realtime Subscription
+    if (!channelRef.current) {
+      channelRef.current = supabase
+        .channel('awy_presence_changes')
+        .on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'awy_presence'
+          },
+          (payload) => {
+            // Update local state if the updated user is in our list
+            setConnections(prev => prev.map(c => {
+              if (c.id === payload.new.user_id) {
+                return {
+                  ...c,
+                  isAvailable: payload.new.is_available,
+                  status: payload.new.status || 'online'
+                }
+              }
+              return c
+            }))
+          }
+        )
+        .subscribe()
+    }
+
+    // Fallback polling every 15s
+    const interval = setInterval(fetchData, 15000)
 
     return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [mounted, enabled, user]);
+      if (channelRef.current) supabase.removeChannel(channelRef.current)
+      clearInterval(interval)
+    }
+  }, [supabase])
 
-  const onlineCount = useMemo(() => {
-    return connections.reduce((count, conn) => {
-      // Check if connection is online via presence map (by ID or Email)
-      // Note: Realtime presence usually gives us user_ids. 
-      // We need to match connections (which might have user_id) to presence keys.
-      // Assuming we can match by email or some ID if available.
-      // For now, let's assume we might not have their user_id in 'connections' list 
-      // unless the API returns it.
-      
-      // If the API returns a user_id for the connection, use it.
-      // Otherwise fallback to email if the presence payload includes it.
-      const isOnline = presenceState[conn.id] === 'online' || presenceState[conn.email] === 'online';
-      return count + (isOnline ? 1 : 0);
-    }, 0);
-  }, [connections, presenceState]);
+  const toggleAvailability = async () => {
+    const newState = !isMyAvailabilityOn
+    setIsMyAvailabilityOn(newState)
+    try {
+      await fetch('/api/awy/presence/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ is_available: newState })
+      })
+      toast.success(newState ? "You are now visible" : "You are hidden")
+    } catch (error) {
+      setIsMyAvailabilityOn(!newState)
+      toast.error('Failed to update status')
+    }
+  }
 
-  const startCall = async (email: string) => {
-    console.log('[AWY] Starting Jitsi call with', email);
+  const getJitsiUrl = (otherId: string) => {
+    if (!userId) return '#'
+    // Consistent room name: MyDurhamLaw-{studentId}-{lovedOneId}
+    // We need to know who is who.
+    // If I am student, other is lovedOne. Room: MyDurhamLaw-{me}-{other}
+    // If I am lovedOne, other is student. Room: MyDurhamLaw-{other}-{me}
     
-    // Generate a unique room ID based on the sorted emails to ensure both parties join the same room
-    // In a real app, this should be a secure, random ID exchanged via signaling
-    const participants = [user?.email || '', email].sort();
-    const roomId = btoa(participants.join('_')).replace(/[^a-zA-Z0-9]/g, ''); // Simple sanitization
+    const studentId = userRole === 'student' ? userId : otherId
+    const lovedOneId = userRole === 'student' ? otherId : userId
     
-    const roomUrl = `https://meet.jit.si/MyDurhamLaw-${roomId}`;
-    window.open(roomUrl, '_blank');
-  };
+    return `https://meet.jit.si/MyDurhamLaw-${studentId}-${lovedOneId}`
+  }
 
-  if (!mounted || !enabled) return null;
-
-  const pos = computeBottomRight();
+  if (loading) return null
 
   return (
-    <>
-      <button
-        aria-label="Open AWY"
-        onClick={() => setOpen((v) => !v)}
-        className="fixed z-[60] flex h-14 w-14 items-center justify-center rounded-full bg-violet-600 text-white shadow-xl hover:bg-violet-700 focus:outline-none transition-transform hover:scale-105 active:scale-95"
-        style={{ bottom: pos.bottom, right: pos.right }}
-      >
-        <span
-          className={`absolute -top-1 -right-1 h-3.5 w-3.5 rounded-full ring-2 ring-white transition-colors ${
-            onlineCount > 0 ? 'bg-green-500' : 'bg-gray-400 opacity-70'
-          }`}
-          title={onlineCount > 0 ? `${onlineCount} online` : 'No one online'}
-        />
-        <svg viewBox="0 0 24 24" className="h-7 w-7" fill="currentColor" aria-hidden>
-          <path d="M12 12c2.21 0 4-1.79 4-4S14.21 4 12 4 8 5.79 8 8s1.79 4 4 4Zm0 2c-3.33 0-6 2.24-6 5v1h12v-1c0-2.76-2.67-5-6-5Z" />
-        </svg>
-      </button>
-
-      {open && (
-        <div
-          className="fixed z-[60] w-[320px] rounded-xl border bg-white/95 p-3 shadow-2xl backdrop-blur animate-in fade-in slide-in-from-bottom-4 duration-200"
-          style={{ bottom: pos.bottom + 72, right: pos.right - 6 }}
-        >
-          <div className="mb-2 flex items-center justify-between">
-            <div className="text-sm font-semibold text-gray-800">Always With You</div>
-            <button
-              onClick={() => setOpen(false)}
-              className="rounded px-2 py-1 text-xs text-gray-600 hover:bg-gray-100"
+    <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end space-y-4">
+      {/* Main Widget */}
+      {isOpen && (
+        <div className="bg-white rounded-2xl shadow-xl border border-pink-100 p-4 w-80 animate-in slide-in-from-bottom-5 fade-in duration-200">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-semibold text-gray-900 flex items-center">
+              <Heart className="w-4 h-4 text-pink-500 mr-2 fill-pink-500" />
+              Always With You
+            </h3>
+            <button 
+              onClick={() => setIsOpen(false)}
+              className="text-gray-400 hover:text-gray-600"
             >
-              Close
+              <X className="w-4 h-4" />
             </button>
           </div>
 
-          {needsAuth && (
-            <div className="mb-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
-              Sign in to see your loved ones. <a href="/login" className="underline">Login</a>
-            </div>
-          )}
+          {/* My Status Toggle */}
+          <div className="flex items-center justify-between bg-gray-50 p-3 rounded-xl mb-4">
+            <span className="text-sm text-gray-600">I'm Available</span>
+            <button
+              onClick={toggleAvailability}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-pink-500 focus:ring-offset-2 ${
+                isMyAvailabilityOn ? 'bg-pink-500' : 'bg-gray-200'
+              }`}
+            >
+              <span
+                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                  isMyAvailabilityOn ? 'translate-x-6' : 'translate-x-1'
+                }`}
+              />
+            </button>
+          </div>
 
-          {loading ? (
-            <div className="py-6 text-center text-sm text-gray-500">Loading...</div>
-          ) : connections.length === 0 ? (
-            <div className="py-4">
-              <div className="mb-2 text-sm text-gray-600">No loved ones added yet.</div>
-              <AWYSetupHint />
-            </div>
-          ) : (
-            <ul className="space-y-2 max-h-[300px] overflow-y-auto">
-              {connections.map((c) => {
-                const isOnline = presenceState[c.id] === 'online' || presenceState[c.email] === 'online';
-                const status: Status = isOnline ? 'online' : 'offline';
-                
-                const initials = (c.display_name || c.email).substring(0, 2).toUpperCase();
-
-                return (
-                  <li key={c.id} className="flex items-center justify-between rounded-lg border border-gray-100 p-2 hover:bg-gray-50 transition-colors">
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className="relative shrink-0">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-violet-100 text-violet-700 text-xs font-bold">
-                          {initials}
-                        </div>
-                        <span
-                          className={`absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full ring-2 ring-white ${ringClass(status)}`}
-                        />
+          {/* Connections List */}
+          <div className="space-y-3">
+            {connections.length === 0 ? (
+              <div className="text-center py-4 text-gray-400 text-sm">
+                No active connections.
+              </div>
+            ) : (
+              connections.map(conn => (
+                <div key={conn.id} className="flex items-center justify-between p-2 hover:bg-gray-50 rounded-lg transition-colors">
+                  <div className="flex items-center space-x-3">
+                    <div className="relative">
+                      <div className="w-10 h-10 bg-pink-100 rounded-full flex items-center justify-center text-pink-600 font-bold">
+                        {conn.displayName.charAt(0)}
                       </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="truncate text-sm font-medium text-gray-900">
-                          {c.display_name || c.relationship || 'Loved One'}
-                        </div>
-                        <div className="truncate text-xs text-gray-500">{c.email}</div>
-                      </div>
+                      {conn.isAvailable && (
+                        <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></span>
+                      )}
                     </div>
-                    
-                    <button
-                      onClick={() => startCall(c.email)}
-                      className={`ml-2 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
-                        isOnline 
-                          ? 'bg-violet-600 text-white hover:bg-violet-700 shadow-sm' 
-                          : 'bg-gray-100 text-gray-400 hover:bg-gray-200'
-                      }`}
-                      title={isOnline ? "Start Video Call" : "Call (Offline)"}
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">{conn.displayName}</p>
+                      <p className="text-xs text-gray-500">
+                        {conn.isAvailable ? 'Available' : 'Away'}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  {conn.isAvailable && (
+                    <a
+                      href={getJitsiUrl(conn.id)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="p-2 bg-pink-100 text-pink-600 rounded-full hover:bg-pink-200 transition-colors"
+                      title="Start Video Call"
                     >
-                      Call
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
+                      <Video className="w-4 h-4" />
+                    </a>
+                  )}
+                </div>
+              ))
+            )}
+          </div>
         </div>
       )}
-    </>
-  );
+
+      {/* Floating Button */}
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="group flex items-center justify-center w-14 h-14 bg-white border-2 border-pink-100 rounded-full shadow-lg hover:border-pink-200 hover:shadow-xl transition-all duration-200"
+      >
+        <div className="relative">
+          <Heart className={`w-6 h-6 text-pink-500 transition-transform duration-200 ${isOpen ? 'scale-110 fill-pink-500' : 'group-hover:scale-110'}`} />
+          {/* Online Indicator Badge if anyone is online */}
+          {connections.some(c => c.isAvailable) && (
+            <span className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 border-2 border-white rounded-full animate-pulse"></span>
+          )}
+        </div>
+      </button>
+    </div>
+  )
 }

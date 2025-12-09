@@ -1,629 +1,268 @@
 'use client'
 
-import React, { useState, useEffect, useCallback } from 'react'
-import { useRouter } from 'next/router'
+import React, { useState, useEffect, useRef } from 'react'
 import Head from 'next/head'
-import { Heart, Calendar, BookOpen, Clock, FileText, User, MapPin, Moon, Sun, Video, MessageCircle, Settings, ExternalLink } from 'lucide-react'
-import { getSupabaseClient } from '@/lib/supabase/client'
-import { BrandTitle } from '@/components/ui/BrandTitle'
-import { UKTimeDisplay } from '@/components/ui/UKTimeDisplay'
+import { Heart, Video, LogOut, User, RefreshCw } from 'lucide-react'
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
+import { UKTimeDisplay } from '@/components/ui/UKTimeDisplay'
 
-interface StudentProfile {
-  id: string
-  display_name: string
-  user_type: string
-  sharing_settings: any
-  last_seen?: string
-  current_activity?: string
-  is_online?: boolean
-}
-
-interface CalendarEvent {
-  title: string
-  date: string
-  time: string
-  type: 'lecture' | 'seminar' | 'exam' | 'assignment' | 'personal'
-}
-
-interface SharedNote {
-  id: string
-  title: string
-  content: string
-  created_at: string
-  is_shared_with_parents: boolean
+interface Student {
+  studentId: string
+  displayName: string
+  isAvailable: boolean
+  status: string
 }
 
 export default function LovedOneDashboard() {
+  const [user, setUser] = useState<any>(null)
+  const [students, setStudents] = useState<Student[]>([])
+  const [isMyAvailabilityOn, setIsMyAvailabilityOn] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [isRefreshing, setIsRefreshing] = useState(false)
   const router = useRouter()
-  const [studentProfile, setStudentProfile] = useState<StudentProfile | null>(null)
-  const [parentEmail, setParentEmail] = useState<string | null>(null)
-  const [parentRelationship, setParentRelationship] = useState<string>('')
-  const [isLoading, setIsLoading] = useState(true)
-  const [todaysEvents, setTodaysEvents] = useState<CalendarEvent[]>([])
-  const [sharedNotes, setSharedNotes] = useState<SharedNote[]>([])
-  const [upcomingExams, setUpcomingExams] = useState<CalendarEvent[]>([])
+  const supabase = createClientComponentClient()
+  const channelRef = useRef<any>(null)
 
-  const loadStudentProfile = useCallback(async (studentId: string, email: string) => {
-    try {
-      const supabase = getSupabaseClient();
-      if (!supabase) {
-        toast.error('Unable to connect to database');
-        return;
-      }
-      
-      const { data: profile, error } = await supabase
-        .from('profiles')
-        .select('id, display_name, user_type, sharing_settings, parent1_email, parent1_relationship, parent1_display_name, parent2_email, parent2_relationship, parent2_display_name')
-        .eq('id', studentId)
-        .single()
-
-      if (error || !profile) {
-        toast.error('Failed to load student information')
-        return
-      }
-
-      // Determine relationship
-      let relationship = 'Loved One'
-      if (profile.parent1_email === email) {
-        relationship = profile.parent1_relationship || 'Parent'
-      } else if (profile.parent2_email === email) {
-        relationship = profile.parent2_relationship || 'Parent'
-      }
-
-      setParentRelationship(relationship)
-      setStudentProfile(profile)
-
-      // Load additional data based on sharing settings
-      if (profile.sharing_settings?.share_today_calendar) {
-        await loadTodaysCalendar(studentId)
-      }
-
-      if (profile.sharing_settings?.share_custom_notes) {
-        await loadSharedNotes(studentId)
-      }
-
-      await loadUpcomingExams(studentId)
-      await loadPresenceData(studentId)
-
-    } catch (error) {
-      console.error('Failed to load student profile:', error)
-      toast.error('Failed to load student information')
-    } finally {
-      setIsLoading(false)
-    }
-  }, [])
-
-  const authenticateParent = useCallback(async () => {
-    try {
-      // Get auth details from session storage
-      const token = sessionStorage.getItem('parent_token')
-      const email = sessionStorage.getItem('parent_email')
-      const studentId = sessionStorage.getItem('student_id')
-
-      if (!token || !email || !studentId) {
-        router.push('/loved-one-login')
-        return
-      }
-
-      const supabase = getSupabaseClient();
-      if (!supabase) {
-        toast.error('Unable to connect to authentication service');
-        router.push('/loved-one-login');
-        return;
-      }
-
-      // Verify token is still valid
-      const { data: tokenData, error: tokenError } = await supabase
-        .from('parent_session_tokens')
-        .select('*')
-        .eq('token_hash', token)
-        .eq('parent_email', email)
-        .eq('student_id', studentId)
-        .gt('expires_at', new Date().toISOString())
-        .single()
-
-      if (tokenError || !tokenData) {
-        toast.error('Session expired. Please log in again.')
-        router.push('/loved-one-login')
-        return
-      }
-
-      // Update last used timestamp
-      await supabase
-        .from('parent_session_tokens')
-        .update({ 
-          last_used_at: new Date().toISOString(),
-          is_active: true
-        })
-        .eq('id', tokenData.id)
-
-      setParentEmail(email)
-
-      // Load student profile
-      await loadStudentProfile(studentId, email)
-
-    } catch (error) {
-      console.error('Authentication error:', error)
+  const fetchUser = async () => {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
       router.push('/loved-one-login')
+      return
     }
-  }, [router, loadStudentProfile])
+    setUser(user)
+    fetchData(user.id)
+  }
+
+  const fetchData = async (userId: string) => {
+    setIsRefreshing(true)
+    try {
+      // 1. Fetch my presence status
+      const { data: myPresence } = await supabase
+        .from('awy_presence')
+        .select('is_available')
+        .eq('user_id', userId)
+        .single()
+      
+      if (myPresence) {
+        setIsMyAvailabilityOn(myPresence.is_available)
+      }
+
+      // 2. Fetch connected students via API
+      const res = await fetch('/api/awy/presence/lovedone-view')
+      const data = await res.json()
+      
+      if (data.ok) {
+        setStudents(data.students)
+      }
+    } catch (error) {
+      console.error('Refresh error:', error)
+    } finally {
+      setLoading(false)
+      setIsRefreshing(false)
+    }
+  }
 
   useEffect(() => {
-    authenticateParent()
-  }, [authenticateParent])
+    fetchUser()
 
-  const loadTodaysCalendar = async (studentId: string) => {
-    // Mock data - in production, integrate with actual calendar
-    const today = new Date().toISOString().split('T')[0] as string;
-    const mockEvents: CalendarEvent[] = [
-      {
-        title: 'Contract Law Lecture',
-        date: today,
-        time: '09:00',
-        type: 'lecture'
-      },
-      {
-        title: 'Criminal Law Seminar',
-        date: today,
-        time: '14:00',
-        type: 'seminar'
-      },
-      {
-        title: 'Study Group - Tort Law',
-        date: today,
-        time: '16:30',
-        type: 'personal'
-      }
-    ]
-
-    setTodaysEvents(mockEvents)
-  }
-
-  const loadSharedNotes = async (studentId: string) => {
-    try {
-      // Mock data - in production, load from actual notes table
-      const mockNotes: SharedNote[] = [
-        {
-          id: '1',
-          title: 'This Week\'s Goals',
-          content: 'Focus on contract formation principles. Review offer and acceptance cases. Complete assignment outline by Friday.',
-          created_at: new Date().toISOString(),
-          is_shared_with_parents: true
-        },
-        {
-          id: '2',
-          title: 'Study Update',
-          content: 'Making good progress on tort law. The negligence cases are starting to make sense. Planning to visit the library tomorrow.',
-          created_at: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
-          is_shared_with_parents: true
-        }
-      ]
-
-      setSharedNotes(mockNotes)
-    } catch (error) {
-      console.error('Failed to load shared notes:', error)
+    // Realtime Subscription
+    if (!channelRef.current) {
+      channelRef.current = supabase
+        .channel('awy_dashboard_changes')
+        .on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'awy_presence'
+          },
+          (payload) => {
+            // Update local state if the updated user is one of our students
+            setStudents(prev => prev.map(s => {
+              if (s.studentId === payload.new.user_id) {
+                return {
+                  ...s,
+                  isAvailable: payload.new.is_available,
+                  status: payload.new.status || 'online'
+                }
+              }
+              return s
+            }))
+          }
+        )
+        .subscribe()
     }
-  }
 
-  const loadUpcomingExams = async (studentId: string) => {
-    // Mock exam data
-    const oneWeekFromNow = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] as string;
-    const twoWeeksFromNow = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] as string;
+    // Fallback polling
+    const interval = setInterval(() => {
+      if (user) fetchData(user.id)
+    }, 15000)
+
+    return () => {
+      if (channelRef.current) supabase.removeChannel(channelRef.current)
+      clearInterval(interval)
+    }
+  }, [supabase, user])
+
+  const toggleAvailability = async () => {
+    const newState = !isMyAvailabilityOn
+    setIsMyAvailabilityOn(newState) // Optimistic update
     
-    const mockExams: CalendarEvent[] = [
-      {
-        title: 'Contract Law Mid-term',
-        date: oneWeekFromNow,
-        time: '10:00',
-        type: 'exam'
-      },
-      {
-        title: 'Criminal Law Essay',
-        date: twoWeeksFromNow,
-        time: '23:59',
-        type: 'assignment'
-      }
-    ]
-
-    setUpcomingExams(mockExams)
-  }
-
-  const loadPresenceData = async (studentId: string) => {
     try {
-      const supabase = getSupabaseClient();
-      if (!supabase) {
-        console.error('Supabase client not available for presence data');
-        return;
-      }
+      const res = await fetch('/api/awy/presence/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ is_available: newState })
+      })
       
-      const { data: presence } = await supabase
-        .from('user_presence')
-        .select('*')
-        .eq('user_id', studentId)
-        .single()
-
-      if (presence) {
-        setStudentProfile(prev => prev ? {
-          ...prev,
-          is_online: presence.is_online,
-          last_seen: presence.last_seen,
-          current_activity: presence.activity
-        } : null)
-      }
+      if (!res.ok) throw new Error('Failed to update')
+      toast.success(newState ? "You are now visible to your student" : "You are now hidden")
     } catch (error) {
-      console.error('Failed to load presence data:', error)
+      setIsMyAvailabilityOn(!newState) // Revert
+      toast.error('Failed to update status')
     }
   }
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString)
-    return date.toLocaleDateString('en-GB', {
-      weekday: 'short',
-      day: 'numeric',
-      month: 'short'
-    })
+  const handleLogout = async () => {
+    await supabase.auth.signOut()
+    router.push('/loved-one-login')
   }
 
-  const formatTime = (timeString: string) => {
-    return timeString
+  const getJitsiUrl = (studentId: string) => {
+    if (!user) return '#'
+    // Format: https://meet.jit.si/MyDurhamLaw-{studentId}-{lovedOneId}
+    return `https://meet.jit.si/MyDurhamLaw-${studentId}-${user.id}`
   }
 
-  const getEventIcon = (type: CalendarEvent['type']) => {
-    switch (type) {
-      case 'lecture':
-        return <BookOpen className="w-4 h-4" />
-      case 'seminar':
-        return <User className="w-4 h-4" />
-      case 'exam':
-        return <FileText className="w-4 h-4" />
-      case 'assignment':
-        return <FileText className="w-4 h-4" />
-      case 'personal':
-        return <Clock className="w-4 h-4" />
-      default:
-        return <Calendar className="w-4 h-4" />
-    }
-  }
-
-  const getEventColor = (type: CalendarEvent['type']) => {
-    switch (type) {
-      case 'lecture':
-        return 'bg-blue-100 text-blue-800 border-blue-200'
-      case 'seminar':
-        return 'bg-green-100 text-green-800 border-green-200'
-      case 'exam':
-        return 'bg-red-100 text-red-800 border-red-200'
-      case 'assignment':
-        return 'bg-orange-100 text-orange-800 border-orange-200'
-      case 'personal':
-        return 'bg-purple-100 text-purple-800 border-purple-200'
-      default:
-        return 'bg-gray-100 text-gray-800 border-gray-200'
-    }
-  }
-
-  const initiateVideoCall = async () => {
-    if (!studentProfile || !parentEmail) return
-
-    toast.success('Initiating video call... Your student will be notified.')
-    
-    // In production, this would integrate with the video call service
-    try {
-      const supabase = getSupabaseClient();
-      if (!supabase) {
-        toast.error('Unable to connect to call service');
-        return;
-      }
-      
-      // Create call session
-      const { error } = await supabase
-        .from('video_call_sessions')
-        .insert({
-          student_id: studentProfile.id,
-          parent_email: parentEmail,
-          status: 'ringing'
-        })
-
-      if (error) throw error
-
-      toast.success('Call initiated! Waiting for your student to answer...')
-    } catch (error) {
-      console.error('Failed to initiate call:', error)
-      toast.error('Failed to start video call')
-    }
-  }
-
-  if (isLoading) {
+  if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-red-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-500 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading dashboard...</p>
-        </div>
-      </div>
-    )
-  }
-
-  if (!studentProfile) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-red-50 flex items-center justify-center">
-        <div className="text-center">
-          <Heart className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Access Denied</h2>
-          <p className="text-gray-600 mb-4">Unable to load student information.</p>
-          <button
-            onClick={() => router.push('/loved-one-login')}
-            className="bg-pink-500 text-white px-6 py-2 rounded-lg hover:bg-pink-600"
-          >
-            Try Again
-          </button>
-        </div>
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-500"></div>
       </div>
     )
   }
 
   return (
-    <>
+    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-red-50">
       <Head>
-        <title>{studentProfile.display_name} - Always With You Dashboard</title>
-        <meta name="description" content="Stay connected with your student through MyDurhamLaw" />
+        <title>Loved One Dashboard - MyDurhamLaw</title>
       </Head>
 
-      <div className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-red-50">
-        
-        {/* Header */}
-        <div className="bg-white shadow-sm border-b border-gray-200">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-4">
-                <div className="bg-gradient-to-r from-pink-500 to-red-500 p-3 rounded-full">
-                  <Heart className="w-6 h-6 text-white" />
-                </div>
-                <div>
-                  <h1 className="text-2xl font-bold text-gray-900">
-                    Always With You
-                  </h1>
-                  <BrandTitle variant="light" size="sm" as="span" className="text-gray-600" />
-                </div>
-              </div>
-
-              <div className="flex items-center space-x-4">
-                <UKTimeDisplay 
-                  showLabel={true}
-                  showIcon={true}
-                  size="sm"
-                  variant="inline"
-                />
-                <button
-                  onClick={() => {
-                    sessionStorage.clear()
-                    router.push('/loved-one-login')
-                  }}
-                  className="text-sm text-gray-600 hover:text-gray-800"
-                >
-                  Sign Out
-                </button>
-              </div>
-            </div>
+      {/* Header */}
+      <header className="bg-white shadow-sm border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+          <div className="flex items-center space-x-2">
+            <Heart className="w-6 h-6 text-pink-500 fill-pink-500" />
+            <span className="font-bold text-gray-900 text-lg">Always With You</span>
+          </div>
+          <div className="flex items-center space-x-4">
+            <UKTimeDisplay size="sm" variant="inline" />
+            <button 
+              onClick={handleLogout}
+              className="text-gray-500 hover:text-gray-700 flex items-center text-sm"
+            >
+              <LogOut className="w-4 h-4 mr-1" />
+              Sign Out
+            </button>
           </div>
         </div>
+      </header>
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          
-          {/* Student Status Header */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-4">
-                <div className="relative">
-                  <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white text-2xl font-bold">
-                    {studentProfile.display_name.charAt(0)}
-                  </div>
-                  {studentProfile.is_online && (
-                    <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-green-500 border-2 border-white rounded-full animate-pulse">
-                      <Heart className="w-3 h-3 text-white absolute inset-0.5" />
+      <main className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+        
+        {/* Availability Toggle */}
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mb-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div>
+            <h2 className="text-xl font-bold text-gray-900">Your Availability</h2>
+            <p className="text-sm text-gray-500 mt-1">
+              When on, your student sees a green dot and knows you're around.
+            </p>
+          </div>
+          <button
+            onClick={toggleAvailability}
+            className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-pink-500 focus:ring-offset-2 ${
+              isMyAvailabilityOn ? 'bg-green-500' : 'bg-gray-200'
+            }`}
+          >
+            <span
+              className={`inline-block h-6 w-6 transform rounded-full bg-white transition-transform ${
+                isMyAvailabilityOn ? 'translate-x-7' : 'translate-x-1'
+              }`}
+            />
+          </button>
+        </div>
+
+        {/* Connected Students */}
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-medium text-gray-900">Connected Students</h3>
+          <button 
+            onClick={() => user && fetchData(user.id)} 
+            className={`text-gray-400 hover:text-gray-600 ${isRefreshing ? 'animate-spin' : ''}`}
+          >
+            <RefreshCw className="w-4 h-4" />
+          </button>
+        </div>
+        
+        <div className="space-y-4">
+          {students.length === 0 ? (
+            <div className="text-center py-12 bg-white rounded-2xl border border-gray-200 border-dashed">
+              <User className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+              <p className="text-gray-500">No students connected yet.</p>
+              <p className="text-sm text-gray-400 mt-2">Ask your student to add you via their settings.</p>
+            </div>
+          ) : (
+            students.map(student => (
+              <div key={student.studentId} className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 flex items-center justify-between">
+                <div className="flex items-center space-x-4">
+                  <div className="relative">
+                    <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 text-xl font-bold">
+                      {student.displayName.charAt(0)}
                     </div>
-                  )}
-                </div>
-                <div>
-                  <h2 className="text-3xl font-bold text-gray-900">
-                    {studentProfile.display_name}
-                  </h2>
-                  <p className="text-gray-600 capitalize">
-                    {studentProfile.user_type?.replace('_', ' ')} • Durham Law Student
-                  </p>
-                  <div className="flex items-center space-x-2 mt-2">
-                    {studentProfile.is_online ? (
-                      <>
-                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                        <span className="text-sm text-green-600 font-medium">Online now</span>
-                        {studentProfile.current_activity && (
-                          <span className="text-sm text-gray-500">• {studentProfile.current_activity}</span>
-                        )}
-                      </>
-                    ) : (
-                      <>
-                        <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
-                        <span className="text-sm text-gray-500">
-                          Last seen {studentProfile.last_seen ? new Date(studentProfile.last_seen).toLocaleString('en-GB') : 'recently'}
-                        </span>
-                      </>
+                    {student.isAvailable && (
+                      <span className="absolute bottom-0 right-0 w-4 h-4 bg-green-500 border-2 border-white rounded-full animate-pulse"></span>
                     )}
                   </div>
-                </div>
-              </div>
-
-              <div className="flex items-center space-x-3">
-                <button
-                  onClick={initiateVideoCall}
-                  disabled={!studentProfile.is_online}
-                  className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors ${
-                    studentProfile.is_online
-                      ? 'bg-blue-500 text-white hover:bg-blue-600'
-                      : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                  }`}
-                >
-                  <Video className="w-4 h-4" />
-                  <span>Video Call</span>
-                </button>
-                <button
-                  disabled={!studentProfile.is_online}
-                  className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors ${
-                    studentProfile.is_online
-                      ? 'bg-green-500 text-white hover:bg-green-600'
-                      : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                  }`}
-                >
-                  <MessageCircle className="w-4 h-4" />
-                  <span>Message</span>
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Dashboard Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            
-            {/* Left Column */}
-            <div className="lg:col-span-2 space-y-6">
-              
-              {/* Today's Schedule */}
-              {studentProfile.sharing_settings?.share_today_calendar && (
-                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                  <div className="flex items-center space-x-2 mb-4">
-                    <Calendar className="w-5 h-5 text-blue-600" />
-                    <h3 className="text-lg font-semibold text-gray-900">Today&apos;s Schedule</h3>
+                  <div>
+                    <h4 className="text-xl font-semibold text-gray-900">{student.displayName}</h4>
+                    <p className={`text-sm font-medium ${student.isAvailable ? 'text-green-600' : 'text-gray-500'}`}>
+                      {student.isAvailable ? 'Online & Available' : 'Offline'}
+                    </p>
                   </div>
-                  
-                  {todaysEvents.length > 0 ? (
-                    <div className="space-y-3">
-                      {todaysEvents.map((event, index) => (
-                        <div key={index} className={`flex items-center space-x-3 p-3 rounded-lg border ${getEventColor(event.type)}`}>
-                          {getEventIcon(event.type)}
-                          <div className="flex-1">
-                            <p className="font-medium">{event.title}</p>
-                            <p className="text-sm opacity-75">{formatTime(event.time)}</p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-gray-500 text-center py-4">No scheduled events for today</p>
-                  )}
                 </div>
-              )}
 
-              {/* Shared Notes */}
-              {studentProfile.sharing_settings?.share_custom_notes && (
-                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                  <div className="flex items-center space-x-2 mb-4">
-                    <FileText className="w-5 h-5 text-green-600" />
-                    <h3 className="text-lg font-semibold text-gray-900">Shared Notes</h3>
-                  </div>
-                  
-                  {sharedNotes.length > 0 ? (
-                    <div className="space-y-4">
-                      {sharedNotes.map((note) => (
-                        <div key={note.id} className="p-4 bg-gray-50 rounded-lg">
-                          <div className="flex items-center justify-between mb-2">
-                            <h4 className="font-medium text-gray-900">{note.title}</h4>
-                            <span className="text-xs text-gray-500">
-                              {new Date(note.created_at).toLocaleDateString('en-GB')}
-                            </span>
-                          </div>
-                          <p className="text-gray-700 text-sm leading-relaxed">{note.content}</p>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-gray-500 text-center py-4">No shared notes yet</p>
-                  )}
-                </div>
-              )}
-            </div>
-
-            {/* Right Column */}
-            <div className="space-y-6">
-              
-              {/* Upcoming Exams */}
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                <div className="flex items-center space-x-2 mb-4">
-                  <FileText className="w-5 h-5 text-red-600" />
-                  <h3 className="text-lg font-semibold text-gray-900">Upcoming Exams</h3>
-                </div>
-                
-                {upcomingExams.length > 0 ? (
-                  <div className="space-y-3">
-                    {upcomingExams.map((exam, index) => (
-                      <div key={index} className={`p-3 rounded-lg border ${getEventColor(exam.type)}`}>
-                        <div className="flex items-center space-x-2 mb-1">
-                          {getEventIcon(exam.type)}
-                          <p className="font-medium text-sm">{exam.title}</p>
-                        </div>
-                        <p className="text-xs opacity-75">
-                          {formatDate(exam.date)} at {formatTime(exam.time)}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
+                {student.isAvailable ? (
+                  <a
+                    href={getJitsiUrl(student.studentId)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center px-4 py-2 border border-transparent rounded-full shadow-sm text-sm font-medium text-white bg-pink-600 hover:bg-pink-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pink-500"
+                  >
+                    <Video className="w-4 h-4 mr-2" />
+                    Video Call
+                  </a>
                 ) : (
-                  <p className="text-gray-500 text-center py-4 text-sm">No upcoming exams</p>
+                  <button
+                    disabled
+                    className="inline-flex items-center px-4 py-2 border border-gray-200 rounded-full text-sm font-medium text-gray-400 bg-gray-50 cursor-not-allowed"
+                  >
+                    <Video className="w-4 h-4 mr-2" />
+                    Offline
+                  </button>
                 )}
               </div>
-
-              {/* Quick Stats */}
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Stats</h3>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">Study Time Today</span>
-                    <span className="font-medium text-gray-900">4h 30m</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">Assignments Due</span>
-                    <span className="font-medium text-orange-600">2</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">Next Exam</span>
-                    <span className="font-medium text-red-600">7 days</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Relationship Info */}
-              <div className="bg-gradient-to-r from-pink-500 to-red-500 rounded-lg p-6 text-white">
-                <div className="flex items-center space-x-2 mb-3">
-                  <Heart className="w-5 h-5" />
-                  <h3 className="font-semibold">Your Connection</h3>
-                </div>
-                <p className="text-pink-100 text-sm mb-3">
-                  You&apos;re logged in as <strong>{studentProfile.display_name}&apos;s {parentRelationship}</strong>
-                </p>
-                <p className="text-pink-100 text-xs">
-                  Information shown is controlled by your student&apos;s sharing preferences.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Footer */}
-          <div className="text-center mt-12 pb-8">
-            <p className="text-sm text-gray-500 mb-2">
-              Powered by MyDurhamLaw • Always With You Feature
-            </p>
-            <div className="flex items-center justify-center space-x-4 text-xs text-gray-400">
-              <button className="hover:text-gray-600 flex items-center space-x-1">
-                <Settings className="w-3 h-3" />
-                <span>Sharing Settings</span>
-              </button>
-              <button className="hover:text-gray-600 flex items-center space-x-1">
-                <ExternalLink className="w-3 h-3" />
-                <span>Support</span>
-              </button>
-            </div>
-          </div>
+            ))
+          )}
         </div>
-      </div>
-    </>
+
+        {/* Info Card */}
+        <div className="mt-8 bg-blue-50 border border-blue-100 rounded-xl p-4 text-sm text-blue-800">
+          <p>
+            <strong>Note:</strong> You can only call your student when they have marked themselves as available (green dot). This ensures you connect at the right time.
+          </p>
+        </div>
+      </main>
+    </div>
   )
 }

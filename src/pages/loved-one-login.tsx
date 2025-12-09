@@ -3,7 +3,7 @@
 import React, { useState } from 'react'
 import { useRouter } from 'next/router'
 import Head from 'next/head'
-import { Heart, Mail, ArrowRight, Lock, Shield } from 'lucide-react'
+import { Heart, Mail, ArrowRight, Lock, Shield, Check } from 'lucide-react'
 import { getSupabaseClient } from '@/lib/supabase/client'
 import { BrandTitle } from '@/components/ui/BrandTitle'
 import toast from 'react-hot-toast'
@@ -12,75 +12,39 @@ export default function LovedOneLoginPage() {
   const router = useRouter()
   const [email, setEmail] = useState('')
   const [isLoading, setIsLoading] = useState(false)
-  const [step, setStep] = useState<'email' | 'verification'>('email')
-  const [studentInfo, setStudentInfo] = useState<any>(null)
+  const [isSent, setIsSent] = useState(false)
 
-  const handleEmailSubmit = async (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!email.trim()) return
 
     setIsLoading(true)
+    const supabase = getSupabaseClient()
+    if (!supabase) {
+      toast.error('System unavailable')
+      setIsLoading(false)
+      return
+    }
 
     try {
-      const supabase = getSupabaseClient();
-      if (!supabase) {
-        toast.error('Unable to connect to database');
-        setIsLoading(false);
-        return;
-      }
-      
-      // Check if this email is authorized as a parent/loved one
-      const { data: students, error } = await supabase
-        .from('profiles')
-        .select('id, display_name, user_type, parent1_email, parent1_relationship, parent1_display_name, parent2_email, parent2_relationship, parent2_display_name')
-        .or(`parent1_email.eq.${email},parent2_email.eq.${email}`)
+      // We use signInWithOtp for Magic Link
+      const { error } = await supabase.auth.signInWithOtp({
+        email: email.trim(),
+        options: {
+          emailRedirectTo: `${window.location.origin}/loved-one-dashboard`,
+          data: {
+            role: 'loved_one' // Hint to create profile with this role if new
+          }
+        },
+      })
 
       if (error) throw error
 
-      if (!students || students.length === 0) {
-        toast.error('This email is not authorized as a loved one for any student. Please ask your student to add you in their settings.')
-        setIsLoading(false)
-        return
-      }
-
-      // For simplicity, take the first student (in real app, handle multiple)
-      const student = students[0]
-      if (!student) {
-        toast.error('Student information not found. Please try again.')
-        setIsLoading(false)
-        return
-      }
-      
-      setStudentInfo(student)
-
-      // Generate a secure login token
-      const loginToken = crypto.randomUUID()
-      const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours
-
-      // Store the token
-      const { error: tokenError } = await supabase
-        .from('parent_session_tokens')
-        .insert({
-          parent_email: email,
-          student_id: student.id,
-          token_hash: loginToken, // In production, hash this
-          expires_at: expiresAt.toISOString()
-        })
-
-      if (tokenError) throw tokenError
-
-      // Store token in session storage for this session
-      sessionStorage.setItem('parent_token', loginToken)
-      sessionStorage.setItem('parent_email', email)
-      sessionStorage.setItem('student_id', student.id)
-
-      // Show success and redirect
-      toast.success(`Welcome! You're connected to ${student.display_name}`)
-      router.push('/loved-one-dashboard')
-
+      setIsSent(true)
+      toast.success('Login link sent!')
     } catch (error: any) {
       console.error('Login error:', error)
-      toast.error('Failed to verify access. Please try again.')
+      toast.error(error.message || 'Failed to send login link')
     } finally {
       setIsLoading(false)
     }
@@ -115,8 +79,8 @@ export default function LovedOneLoginPage() {
           {/* Login Form */}
           <div className="bg-white rounded-lg shadow-xl border border-gray-200 p-6">
             
-            {step === 'email' && (
-              <form onSubmit={handleEmailSubmit}>
+            {!isSent ? (
+              <form onSubmit={handleLogin}>
                 <div className="mb-6">
                   <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
                     Your Email Address
@@ -131,12 +95,12 @@ export default function LovedOneLoginPage() {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent"
-                      placeholder="Enter the email your student added"
+                      placeholder="Enter your email"
                       required
                     />
                   </div>
                   <p className="mt-2 text-xs text-gray-500">
-                    This must be the email address your student added to their account
+                    We'll send you a secure Magic Link to log in. No password needed.
                   </p>
                 </div>
 
@@ -149,12 +113,28 @@ export default function LovedOneLoginPage() {
                     <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white" />
                   ) : (
                     <>
-                      <span>Connect</span>
+                      <span>Send Login Link</span>
                       <ArrowRight className="w-4 h-4" />
                     </>
                   )}
                 </button>
               </form>
+            ) : (
+              <div className="text-center py-8">
+                <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
+                  <Check className="w-8 h-8 text-green-600" />
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 mb-2">Check your email</h3>
+                <p className="text-gray-600 mb-6">
+                  We've sent a login link to <strong>{email}</strong>. Click it to sign in instantly.
+                </p>
+                <button
+                  onClick={() => setIsSent(false)}
+                  className="text-pink-600 hover:text-pink-700 font-medium text-sm"
+                >
+                  Use a different email
+                </button>
+              </div>
             )}
 
             {/* Security Notice */}
@@ -164,35 +144,11 @@ export default function LovedOneLoginPage() {
                 <div>
                   <h3 className="text-sm font-medium text-blue-800">Secure Access</h3>
                   <p className="text-sm text-blue-700 mt-1">
-                    Your access is completely controlled by your student. They can add or remove loved ones at any time, and you can only see what they choose to share.
+                    Your access is completely controlled by your student. They must add your email to their settings first.
                   </p>
                 </div>
               </div>
             </div>
-
-            {/* Privacy Features */}
-            <div className="mt-4 space-y-2 text-xs text-gray-600">
-              <div className="flex items-center space-x-2">
-                <Lock className="w-3 h-3" />
-                <span>Student controls what you can see</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Lock className="w-3 h-3" />
-                <span>Video calls only when student is available</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Lock className="w-3 h-3" />
-                <span>Respects quiet hours and do-not-disturb</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Support */}
-          <div className="text-center mt-6">
-            <p className="text-sm text-gray-600">
-              Need help? Ask your student to check their{' '}
-              <span className="font-medium">Family Settings</span> in their dashboard.
-            </p>
           </div>
         </div>
       </div>
