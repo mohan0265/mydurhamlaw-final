@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useAuth } from "@/lib/supabase/AuthContext";
 import { useDurmahRealtime, VoiceTurn } from "@/hooks/useDurmahRealtime";
+import { useDurmahDynamicContext } from "@/hooks/useDurmahDynamicContext";
 import { useDurmah, MDLStudentContext } from "@/lib/durmah/context";
 import { 
   buildDurmahSystemPrompt, 
@@ -22,6 +23,7 @@ export default function DurmahWidget() {
   
   // 1. Source Context
   const durmahCtx = useDurmah();
+  const { upcomingTasks, todaysEvents } = useDurmahDynamicContext();
   
   // Construct the unified context object
   const studentContext: DurmahStudentContext = useMemo(() => {
@@ -39,7 +41,8 @@ export default function DurmahWidget() {
         modules: [],
         nowPhase: "term time" as any,
         currentPhase: "Michaelmas Term",
-        upcomingTasks: []
+        upcomingTasks: [],
+        todaysEvents: []
       };
     }
 
@@ -55,11 +58,10 @@ export default function DurmahWidget() {
       currentPhase: base.nowPhase, // Map for systemPrompt
       keyDates: base.keyDates,
       todayLabel: formatTodayForDisplay(),
-      // TODO: If we have real upcoming tasks in context, map them here. 
-      // For now, we'll assume the context might have them or we leave empty.
-      upcomingTasks: [] 
+      upcomingTasks,
+      todaysEvents
     };
-  }, [durmahCtx, user?.id]);
+  }, [durmahCtx, user?.id, upcomingTasks, todaysEvents]);
 
   const [isOpen, setIsOpen] = useState(false);
   const [ready, setReady] = useState(false);
@@ -111,16 +113,16 @@ export default function DurmahWidget() {
   // Set initial greeting once ready
   useEffect(() => {
     if (ready && messages.length === 0) {
-      const greeting = composeGreeting(studentContext, memory, studentContext.upcomingTasks);
+      const greeting = composeGreeting(studentContext, memory, upcomingTasks, todaysEvents);
       setMessages([{ role: "durmah", text: greeting, ts: Date.now() }]);
     }
-  }, [ready, studentContext, memory, messages.length]);
+  }, [ready, studentContext, memory, messages.length, upcomingTasks, todaysEvents]);
 
 
   // 3. Voice Hook
   const systemPrompt = useMemo(() => 
-    buildDurmahSystemPrompt(studentContext, memory, studentContext.upcomingTasks), 
-  [studentContext, memory]);
+    buildDurmahSystemPrompt(studentContext, memory, upcomingTasks, todaysEvents), 
+  [studentContext, memory, upcomingTasks, todaysEvents]);
 
   const {
     startListening,

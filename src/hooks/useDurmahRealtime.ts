@@ -39,6 +39,10 @@ export function useDurmahRealtime({ systemPrompt, onTurn, audioRef }: UseDurmahR
       const pc = new RTCPeerConnection();
       pcRef.current = pc;
 
+      pc.oniceconnectionstatechange = () => {
+        console.debug(`[DurmahVoice] ICE connection state: ${pc.iceConnectionState}`);
+      };
+
       // 3. Add local microphone
       console.debug("[DurmahVoice] Requesting microphone...");
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -78,6 +82,9 @@ export function useDurmahRealtime({ systemPrompt, onTurn, audioRef }: UseDurmahR
             },
             turn_detection: {
               type: "server_vad",
+              threshold: 0.5,
+              prefix_padding_ms: 300,
+              silence_duration_ms: 500
             },
           },
         };
@@ -89,7 +96,15 @@ export function useDurmahRealtime({ systemPrompt, onTurn, audioRef }: UseDurmahR
         try {
           const event = JSON.parse(e.data);
           
-          // Log interesting events (filter out frequent audio deltas if needed)
+          // Log VAD events to debug voice detection
+          if (event.type === "input_audio_buffer.speech_started") {
+            console.debug("[DurmahVoice] VAD: Speech started");
+          }
+          if (event.type === "input_audio_buffer.speech_stopped") {
+            console.debug("[DurmahVoice] VAD: Speech stopped");
+          }
+
+          // Log interesting events (filter out frequent audio deltas)
           if (!event.type.includes("delta") && !event.type.includes("buffer")) {
              console.debug("[DurmahVoice] Event:", event.type);
           }
@@ -127,7 +142,7 @@ export function useDurmahRealtime({ systemPrompt, onTurn, audioRef }: UseDurmahR
 
       // 6. SDP Offer/Answer
       console.debug("[DurmahVoice] Creating offer...");
-      const offer = await pc.createOffer();
+      const offer = await pc.createOffer({ offerToReceiveAudio: true });
       await pc.setLocalDescription(offer);
 
       const baseUrl = "https://api.openai.com/v1/realtime";

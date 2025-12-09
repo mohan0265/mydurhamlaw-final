@@ -13,6 +13,7 @@ export interface DurmahStudentContext {
   keyDates?: KeyDates;
   todayLabel?: string;
   upcomingTasks?: { title: string; due: string }[];
+  todaysEvents?: { title: string; start: string; end: string }[];
 }
 
 export interface DurmahMemorySnapshot {
@@ -31,12 +32,22 @@ function timeHello(now = new Date()) {
 export function composeGreeting(
   ctx: DurmahStudentContext, 
   memory?: DurmahMemorySnapshot | null,
-  upcomingTasks?: { title: string; due: string }[]
+  upcomingTasks?: { title: string; due: string }[],
+  todaysEvents?: { title: string; start: string; end: string }[]
 ): string {
   const niceName = ctx.firstName ? `, ${ctx.firstName.split(" ")[0]}` : "";
   const greeting = timeHello();
 
-  // 1. Upcoming task priority
+  // 1. Today's Events (Immediate context)
+  if (todaysEvents && todaysEvents.length > 0) {
+    const nextEvent = todaysEvents.find(e => new Date(e.start) > new Date()); // Find next event today
+    if (nextEvent) {
+       const time = new Date(nextEvent.start).toLocaleTimeString("en-GB", { hour: '2-digit', minute: '2-digit' });
+       return `${greeting}${niceName}! You have "${nextEvent.title}" coming up at ${time}. Ready to prep?`;
+    }
+  }
+
+  // 2. Upcoming task priority
   if (upcomingTasks && upcomingTasks.length > 0) {
     const first = upcomingTasks[0];
     if (first) {
@@ -51,12 +62,12 @@ export function composeGreeting(
     }
   }
 
-  // 2. Memory continuity
+  // 3. Memory continuity
   if (memory?.last_topic) {
     return `${greeting}${niceName}! Last time we talked about "${memory.last_topic}". Shall we continue?`;
   }
 
-  // 3. Phase-aware fallback
+  // 4. Phase-aware fallback
   const phase = ctx.currentPhase?.toLowerCase() || "";
   
   if (phase.includes("induction")) {
@@ -75,7 +86,8 @@ export function composeGreeting(
 export function buildDurmahSystemPrompt(
   ctx: DurmahStudentContext,
   memory?: DurmahMemorySnapshot | null,
-  upcomingTasks?: { title: string; due: string }[]
+  upcomingTasks?: { title: string; due: string }[],
+  todaysEvents?: { title: string; start: string; end: string }[]
 ): string {
   const firstName = ctx.firstName || "Student";
   const yearLabel = ctx.yearGroup === "foundation" ? "Foundation Year" : 
@@ -99,6 +111,15 @@ export function buildDurmahSystemPrompt(
     upcomingContext = `Upcoming tasks: ${items}.`;
   }
 
+  let eventsContext = "No events scheduled for today.";
+  if (todaysEvents && todaysEvents.length > 0) {
+    const items = todaysEvents.map(e => {
+      const time = new Date(e.start).toLocaleTimeString("en-GB", { hour: '2-digit', minute: '2-digit' });
+      return `"${e.title}" at ${time}`;
+    }).join(", ");
+    eventsContext = `Today's Schedule: ${items}.`;
+  }
+
   const modulesList = ctx.modules.map(m => m.title).join(", ");
 
   return `
@@ -117,6 +138,7 @@ Your goal is to help the student understand complex legal concepts using the Soc
 - Current Date: ${today}
 - Academic Phase: ${phase}
 - Modules: ${modulesList || "General Law"}
+- ${eventsContext}
 - ${upcomingContext}
 - ${memoryContext}
 
@@ -126,3 +148,4 @@ Your goal is to help the student understand complex legal concepts using the Soc
 - If asked about scheduling, help them plan realistically based on their upcoming tasks.
 `.trim();
 }
+
