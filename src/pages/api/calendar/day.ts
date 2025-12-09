@@ -1,6 +1,6 @@
 // src/pages/api/calendar/day.ts
 import { NextApiRequest, NextApiResponse } from 'next'
-import { getServerSupabase } from '@/lib/supabase/server'
+import { getServerSupabase, getServerUser } from '@/lib/supabase/server'
 import { DayDetail } from '@/types/calendar'
 import { format } from 'date-fns'
 import { DURHAM_LLB_2025_26, getDefaultPlanByStudentYear } from '@/data/durham/llb'
@@ -44,28 +44,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const plan = getDefaultPlanByStudentYear(normalizedYearGroup)
 
   try {
-    // Accept Authorization: Bearer <token> from the client
-    const authHeader = String(req.headers.authorization || '')
-    const bearerPrefix = 'Bearer '
-    const token = authHeader.startsWith(bearerPrefix) ? authHeader.slice(bearerPrefix.length) : undefined
+    console.log(`[CalendarAPI] Request for date=${date}. Checking auth...`)
 
-    const supabase = getServerSupabase(req, res)
+    // Use the shared helper which tries cookies first, then falls back to Authorization header
+    const user = await getServerUser(req, res)
 
-    // If a token is present, ask Supabase to resolve the user with it.
-    // (auth.getUser(token) works even if there is no cookie session.)
-    const { data: userData, error: userErr } = token
-      ? await supabase.auth.getUser(token)
-      : await supabase.auth.getUser()
-
-    const user = userData?.user
+    console.log(`[CalendarAPI] User found: ${user?.id || 'none'}`)
 
     // DEMO MODE: if unauthenticated + demo enabled, return typed empty day
-    if ((!user || userErr) && isDemoMode) {
-      return res.status(200).json(emptyDayDetail(date))
+    if (!user && isDemoMode) {
+      console.log('[CalendarAPI] Returning demo mode data (unauthenticated)')
+      return res.status(200).json(emptyDayDetail(date as string))
     }
 
     // Otherwise require auth
-    if (!user || userErr) {
+    if (!user) {
+      console.warn('[CalendarAPI] Returning 401 Unauthorized - No user found via cookies or header')
       return res.status(401).json({ message: 'Unauthorized' })
     }
 
