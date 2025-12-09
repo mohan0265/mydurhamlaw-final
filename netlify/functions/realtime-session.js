@@ -4,7 +4,9 @@ export const handler = async (event) => {
   }
 
   try {
-    const resp = await fetch("https://api.openai.com/v1/realtime/sessions", {
+    const { voice } = JSON.parse(event.body || '{}');
+
+    const response = await fetch("https://api.openai.com/v1/realtime/sessions", {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
@@ -12,23 +14,16 @@ export const handler = async (event) => {
       },
       body: JSON.stringify({
         model: "gpt-4o-realtime-preview-2024-12-17",
-        voice: "alloy",
+        voice: voice || "alloy",
       }),
     });
 
-    if (!resp.ok) {
-      const text = await resp.text();
-      console.error("OpenAI session error:", resp.status, text);
-      return { statusCode: resp.status, body: text };
-    }
+    const data = await response.json();
 
-    const data = await resp.json();
     return {
       statusCode: 200,
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     };
-  } catch (err) {
     console.error("Realtime token function error:", err);
     return { statusCode: 500, body: "Error creating realtime session" };
   }

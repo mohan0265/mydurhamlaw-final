@@ -10,6 +10,8 @@ import {
   DurmahMemorySnapshot 
 } from "@/lib/durmah/systemPrompt";
 import { formatTodayForDisplay } from "@/lib/durmah/phase";
+import { useDurmahSettings } from "@/hooks/useDurmahSettings";
+import { Settings, X } from "lucide-react";
 
 type Msg = { role: "durmah" | "you"; text: string; ts: number };
 
@@ -24,6 +26,7 @@ export default function DurmahWidget() {
   // 1. Source Context
   const durmahCtx = useDurmah();
   const { upcomingTasks, todaysEvents } = useDurmahDynamicContext();
+  const { preset, updateVoice, availablePresets, voiceId } = useDurmahSettings();
   
   // Construct the unified context object
   const studentContext: DurmahStudentContext = useMemo(() => {
@@ -64,6 +67,7 @@ export default function DurmahWidget() {
   }, [durmahCtx, user?.id, upcomingTasks, todaysEvents]);
 
   const [isOpen, setIsOpen] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   const [ready, setReady] = useState(false);
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
@@ -121,8 +125,8 @@ export default function DurmahWidget() {
 
   // 3. Voice Hook
   const systemPrompt = useMemo(() => 
-    buildDurmahSystemPrompt(studentContext, memory, upcomingTasks, todaysEvents), 
-  [studentContext, memory, upcomingTasks, todaysEvents]);
+    buildDurmahSystemPrompt(studentContext, memory, upcomingTasks, todaysEvents, preset), 
+  [studentContext, memory, upcomingTasks, todaysEvents, preset]);
 
   const {
     startListening,
@@ -133,6 +137,7 @@ export default function DurmahWidget() {
     error: voiceError,
   } = useDurmahRealtime({
     systemPrompt,
+    voice: preset.modelVoiceId,
     audioRef,
     onTurn: (turn) => {
       setCallTranscript((prev) => [
@@ -322,6 +327,14 @@ export default function DurmahWidget() {
 
         <div className="flex items-center gap-2">
           <button
+            onClick={() => setShowSettings(!showSettings)}
+            className="p-1.5 rounded-full hover:bg-violet-500 hover:text-white"
+            title="Voice Settings"
+          >
+            <Settings size={18} />
+          </button>
+
+          <button
             onClick={toggleVoice}
             className={`p-1.5 rounded-full ${
               isListening ? "bg-red-600 text-white animate-pulse" : "bg-violet-500 text-white"
@@ -334,13 +347,47 @@ export default function DurmahWidget() {
             onClick={() => setIsOpen(false)}
             className="p-1.5 rounded-full hover:bg-violet-500 hover:text-white"
           >
-            X
+            <X size={18} />
           </button>
         </div>
       </header>
 
+      {/* --------------- SETTINGS MODAL ---------------- */}
+      {showSettings && (
+        <div className="absolute inset-0 z-10 bg-white/95 p-4 flex flex-col animate-in fade-in slide-in-from-bottom-4">
+          <div className="flex justify-between items-center mb-4 border-b pb-2">
+            <h3 className="font-semibold text-gray-800">Durmah Settings</h3>
+            <button onClick={() => setShowSettings(false)} className="text-gray-500 hover:text-gray-700">
+              <X size={18} />
+            </button>
+          </div>
+          
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Voice Style</label>
+              <div className="space-y-2">
+                {availablePresets.map((p) => (
+                  <button
+                    key={p.id}
+                    onClick={() => updateVoice(p.id)}
+                    className={`w-full text-left p-3 rounded-lg border transition-all ${
+                      voiceId === p.id 
+                        ? "border-violet-600 bg-violet-50 ring-1 ring-violet-600" 
+                        : "border-gray-200 hover:border-violet-300 hover:bg-gray-50"
+                    }`}
+                  >
+                    <div className="font-medium text-sm text-gray-900">{p.label}</div>
+                    <div className="text-xs text-gray-500">{p.description}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* --------------- VOICE TRANSCRIPT ---------------- */}
-      {showVoiceTranscript && callTranscript.length > 0 && (
+      {showVoiceTranscript && callTranscript.length > 0 && !showSettings && (
         <div className="p-3 bg-violet-50 border-b border-violet-200">
           <div className="text-xs font-semibold text-violet-700 mb-2">
             Voice Session Transcript
@@ -379,7 +426,7 @@ export default function DurmahWidget() {
         </div>
       )}
 
-      {voiceError && (
+      {voiceError && !showSettings && (
         <div className="px-4 py-2 text-xs text-red-600 bg-red-50 border-y border-red-100">
           Voice error: {voiceError}
         </div>
@@ -403,7 +450,7 @@ export default function DurmahWidget() {
       </div>
 
       {/* --------------- QUICK REPLY CHIPS ---------------- */}
-      {!isListening && (
+      {!isListening && !showSettings && (
         <div className="flex gap-2 overflow-x-auto p-3 border-t border-gray-200">
           {chips.map((c) => (
             <button
@@ -418,7 +465,7 @@ export default function DurmahWidget() {
       )}
 
       {/* --------------- TEXT INPUT BAR ---------------- */}
-      {!isListening && (
+      {!isListening && !showSettings && (
         <div className="border-t border-gray-200 p-3 flex gap-2 items-center bg-white">
           <input
             value={input}
@@ -439,7 +486,7 @@ export default function DurmahWidget() {
       )}
 
       {/* --------------- VOICE MODE FOOTER ---------------- */}
-      {isListening && (
+      {isListening && !showSettings && (
         <div className="p-3 text-center text-xs bg-violet-50 border-t border-violet-200">
           <div className="font-semibold mb-1">Status: {status}</div>
           {speaking ? "Durmah is speaking..." : "Listening..."}

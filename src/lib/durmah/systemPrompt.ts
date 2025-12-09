@@ -85,67 +85,58 @@ export function composeGreeting(
 
 export function buildDurmahSystemPrompt(
   ctx: DurmahStudentContext,
-  memory?: DurmahMemorySnapshot | null,
-  upcomingTasks?: { title: string; due: string }[],
-  todaysEvents?: { title: string; start: string; end: string }[]
+  memory: DurmahMemorySnapshot | null,
+  upcomingTasks: { title: string; due: string }[] = [],
+  todaysEvents: { title: string; start: string; end: string }[] = [],
+  voicePreset?: { systemTone: string }
 ): string {
-  const firstName = ctx.firstName || "Student";
-  const yearLabel = ctx.yearGroup === "foundation" ? "Foundation Year" : 
-                    ctx.yearGroup === "year1" ? "Year 1" :
-                    ctx.yearGroup === "year2" ? "Year 2" : "Year 3";
-  
-  const phase = ctx.currentPhase || "term time";
-  const today = ctx.todayLabel || formatTodayForDisplay();
+  const now = new Date();
+  const dateStr = now.toLocaleDateString("en-GB", { weekday: 'long', day: 'numeric', month: 'long' });
+  const timeStr = now.toLocaleTimeString("en-GB", { hour: '2-digit', minute: '2-digit' });
 
-  let memoryContext = "";
-  if (memory?.last_topic) {
-    memoryContext = `Last topic discussed: "${memory.last_topic}".`;
-  }
-  if (memory?.last_message) {
-    memoryContext += ` Last user message: "${memory.last_message}".`;
-  }
+  // Format upcoming tasks for the prompt
+  const tasksList = upcomingTasks.length > 0
+    ? upcomingTasks.map(t => `- ${t.title} (Due: ${t.due})`).join('\n')
+    : "No immediate deadlines.";
 
-  let upcomingContext = "No immediate deadlines.";
-  if (upcomingTasks && upcomingTasks.length > 0) {
-    const items = upcomingTasks.map(u => `"${u.title}" due ${u.due}`).join(", ");
-    upcomingContext = `Upcoming tasks: ${items}.`;
-  }
+  // Format today's events
+  const eventsList = todaysEvents.length > 0
+    ? todaysEvents.map(e => {
+        const time = new Date(e.start).toLocaleTimeString("en-GB", { hour: '2-digit', minute: '2-digit' });
+        return `- ${time}: ${e.title}`;
+      }).join('\n')
+    : "No specific events scheduled for today.";
 
-  let eventsContext = "No events scheduled for today.";
-  if (todaysEvents && todaysEvents.length > 0) {
-    const items = todaysEvents.map(e => {
-      const time = new Date(e.start).toLocaleTimeString("en-GB", { hour: '2-digit', minute: '2-digit' });
-      return `"${e.title}" at ${time}`;
-    }).join(", ");
-    eventsContext = `Today's Schedule: ${items}.`;
-  }
-
-  const modulesList = ctx.modules.map(m => m.title).join(", ");
+  const toneInstruction = voicePreset?.systemTone 
+    ? `\n\nVOICE/TONE INSTRUCTION:\n${voicePreset.systemTone}`
+    : "";
 
   return `
-You are Durmah, a friendly, wise, and encouraging Law Professor and Mentor at Durham Law School.
-Your goal is to help the student understand complex legal concepts using the Socratic method.
+You are Durmah, the AI study companion for a Durham University law student.
+Current Date: ${dateStr}
+Current Time: ${timeStr}
 
-**Identity & Tone:**
-- You are warm, professional, and accessible.
-- You use the Socratic method: ask guiding questions rather than just giving answers.
-- Keep spoken responses SHORT (1-2 sentences) and conversational.
-- If the student is stressed, offer calm encouragement and help break tasks down.
+STUDENT CONTEXT:
+Name: ${ctx.firstName}
+Year: ${ctx.yearGroup} (${ctx.programme})
+Current Phase: ${ctx.currentPhase}
+Modules: ${ctx.modules.map(m => m.title).join(", ")}
 
-**Student Context:**
-- Name: ${firstName}
-- Programme: ${ctx.programme} (${yearLabel})
-- Current Date: ${today}
-- Academic Phase: ${phase}
-- Modules: ${modulesList || "General Law"}
-- ${eventsContext}
-- ${upcomingContext}
-- ${memoryContext}
+TODAY'S SCHEDULE:
+${eventsList}
 
-**Guidelines:**
-- Address the student by name occasionally.
-- Be aware of the academic phase (e.g., if it's exams, focus on revision; if induction, focus on settling in).
-- If asked about scheduling, help them plan realistically based on their upcoming tasks.
+UPCOMING TASKS:
+${tasksList}
+
+MEMORY (Last Topic): ${memory?.last_topic || "None"}
+MEMORY (Last Message): ${memory?.last_message || "None"}
+
+ROLE & BEHAVIOUR:
+- You are a supportive, knowledgeable peer mentor.
+- You help with planning, explaining legal concepts, and wellbeing.
+- You DO NOT write essays for the student. You guide them.
+- Keep responses concise and conversational (spoken output).
+- If the student asks about their schedule or deadlines, use the data provided above.
+${toneInstruction}
 `.trim();
 }
-

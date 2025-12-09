@@ -2,13 +2,19 @@ import { useState, useRef, useCallback, useEffect } from "react";
 
 export type VoiceTurn = { speaker: "user" | "durmah"; text: string };
 
-type UseDurmahRealtimeOptions = {
+interface UseDurmahRealtimeProps {
   systemPrompt: string;
+  voice?: string; // e.g. "alloy", "echo", "shimmer"
   onTurn?: (turn: VoiceTurn) => void;
   audioRef: React.RefObject<HTMLAudioElement>;
-};
+}
 
-export function useDurmahRealtime({ systemPrompt, onTurn, audioRef }: UseDurmahRealtimeOptions) {
+export function useDurmahRealtime({
+  systemPrompt,
+  voice = "alloy",
+  onTurn,
+  audioRef,
+}: UseDurmahRealtimeProps) {
   const [status, setStatus] = useState<"idle" | "connecting" | "listening" | "speaking" | "error">("idle");
   const [speaking, setSpeaking] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -23,16 +29,21 @@ export function useDurmahRealtime({ systemPrompt, onTurn, audioRef }: UseDurmahR
       setError(null);
       setStatus("connecting");
 
-      // 1. Get ephemeral token
+      // 1. Get ephemeral token from Netlify function
       console.debug("[DurmahVoice] Fetching token from /realtime-session...");
-      const tokenRes = await fetch("/.netlify/functions/realtime-session", {
+      const tokenResponse = await fetch("/.netlify/functions/realtime-session", {
         method: "POST",
+        body: JSON.stringify({ voice }),
       });
-      if (!tokenRes.ok) {
-        throw new Error(`Failed to get token: ${tokenRes.statusText}`);
+      const data = await tokenResponse.json();
+      const EPHEMERAL_KEY = data.client_secret?.value;
+
+      if (!EPHEMERAL_KEY) {
+        console.error("No ephemeral key returned", data);
+        setStatus("error");
+        setError("Failed to get auth token");
+        return;
       }
-      const data = await tokenRes.json();
-      const ephemeralKey = data.client_secret.value;
       console.debug("[DurmahVoice] Token received.");
 
       // 2. Create PeerConnection
@@ -153,7 +164,7 @@ export function useDurmahRealtime({ systemPrompt, onTurn, audioRef }: UseDurmahR
         method: "POST",
         body: offer.sdp,
         headers: {
-          Authorization: `Bearer ${ephemeralKey}`,
+          Authorization: `Bearer ${EPHEMERAL_KEY}`,
           "Content-Type": "application/sdp",
         },
       });
@@ -177,7 +188,7 @@ export function useDurmahRealtime({ systemPrompt, onTurn, audioRef }: UseDurmahR
       setStatus("error");
       stopListening();
     }
-  }, [systemPrompt, onTurn]);
+  }, [systemPrompt, onTurn, voice]);
 
   const stopListening = useCallback(() => {
     console.debug("[DurmahVoice] stopListening called");
