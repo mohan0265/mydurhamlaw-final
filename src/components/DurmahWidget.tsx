@@ -123,11 +123,12 @@ export default function DurmahWidget() {
   [studentContext, memory]);
 
   const {
-    connected,
+    startListening,
+    stopListening,
+    isListening,
+    status,
     speaking,
     error: voiceError,
-    startCall,
-    endCall,
   } = useDurmahRealtime({
     systemPrompt,
     audioRef,
@@ -147,9 +148,9 @@ export default function DurmahWidget() {
   useEffect(() => {
     return () => {
       streamControllerRef.current?.abort();
-      endCall();
+      stopListening();
     };
-  }, [endCall]);
+  }, [stopListening]);
 
   const chips = useMemo(() => {
     if (studentContext.currentPhase === 'exams') return ["Revision tips", "Past papers", "Stress management"];
@@ -161,14 +162,15 @@ export default function DurmahWidget() {
   // VOICE SESSION HANDLING
   // ----------------------------
   async function toggleVoice() {
-    if (!connected) {
+    console.log("[DurmahVoice] Mic button clicked");
+    if (!isListening) {
       setCallTranscript([]);
       setShowVoiceTranscript(false);
-      await startCall();
+      await startListening();
       return;
     }
 
-    endCall();
+    stopListening();
     setShowVoiceTranscript(true);
   }
 
@@ -205,7 +207,7 @@ export default function DurmahWidget() {
   // TEXT CHAT SEND
   // ----------------------------
   async function send() {
-    if (!signedIn || !input.trim() || isStreaming || connected) return;
+    if (!signedIn || !input.trim() || isStreaming || isListening) return;
 
     const userText = input.trim();
     const now = Date.now();
@@ -320,10 +322,10 @@ export default function DurmahWidget() {
           <button
             onClick={toggleVoice}
             className={`p-1.5 rounded-full ${
-              connected ? "bg-red-600 text-white animate-pulse" : "bg-violet-500 text-white"
+              isListening ? "bg-red-600 text-white animate-pulse" : "bg-violet-500 text-white"
             }`}
           >
-            {connected ? "Stop" : "Mic"}
+            {isListening ? "Stop" : "Mic"}
           </button>
 
           <button
@@ -399,7 +401,7 @@ export default function DurmahWidget() {
       </div>
 
       {/* --------------- QUICK REPLY CHIPS ---------------- */}
-      {!connected && (
+      {!isListening && (
         <div className="flex gap-2 overflow-x-auto p-3 border-t border-gray-200">
           {chips.map((c) => (
             <button
@@ -414,7 +416,7 @@ export default function DurmahWidget() {
       )}
 
       {/* --------------- TEXT INPUT BAR ---------------- */}
-      {!connected && (
+      {!isListening && (
         <div className="border-t border-gray-200 p-3 flex gap-2 items-center bg-white">
           <input
             value={input}
@@ -435,8 +437,9 @@ export default function DurmahWidget() {
       )}
 
       {/* --------------- VOICE MODE FOOTER ---------------- */}
-      {connected && (
+      {isListening && (
         <div className="p-3 text-center text-xs bg-violet-50 border-t border-violet-200">
+          <div className="font-semibold mb-1">Status: {status}</div>
           {speaking ? "Durmah is speaking..." : "Listening..."}
         </div>
       )}

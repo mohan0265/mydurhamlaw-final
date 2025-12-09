@@ -9,7 +9,7 @@ type UseDurmahRealtimeOptions = {
 };
 
 export function useDurmahRealtime({ systemPrompt, onTurn, audioRef }: UseDurmahRealtimeOptions) {
-  const [connected, setConnected] = useState(false);
+  const [status, setStatus] = useState<"idle" | "connecting" | "listening" | "speaking" | "error">("idle");
   const [speaking, setSpeaking] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -17,10 +17,11 @@ export function useDurmahRealtime({ systemPrompt, onTurn, audioRef }: UseDurmahR
   const dcRef = useRef<RTCDataChannel | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
-  const startCall = useCallback(async () => {
-    console.debug("[DurmahVoice] Starting call...");
+  const startListening = useCallback(async () => {
+    console.debug("[DurmahVoice] startListening called");
     try {
       setError(null);
+      setStatus("connecting");
 
       // 1. Get ephemeral token
       console.debug("[DurmahVoice] Fetching token from /realtime-session...");
@@ -81,6 +82,7 @@ export function useDurmahRealtime({ systemPrompt, onTurn, audioRef }: UseDurmahR
           },
         };
         dc.send(JSON.stringify(updateEvent));
+        setStatus("listening");
       };
 
       dc.onmessage = (e) => {
@@ -105,14 +107,18 @@ export function useDurmahRealtime({ systemPrompt, onTurn, audioRef }: UseDurmahR
           // Handle speaking state
           if (event.type === "response.content_part.added" && event.part?.type === "audio") {
              setSpeaking(true);
+             setStatus("speaking");
           }
           if (event.type === "response.done") {
              setSpeaking(false);
+             setStatus("listening");
           }
           
           // Error handling from server
           if (event.type === "error") {
             console.error("[DurmahVoice] Server error:", event.error);
+            setError(event.error.message || "Server error");
+            setStatus("error");
           }
         } catch (err) {
           console.error("Error parsing data channel message", err);
@@ -148,18 +154,18 @@ export function useDurmahRealtime({ systemPrompt, onTurn, audioRef }: UseDurmahR
         sdp: answerSdp,
       });
 
-      setConnected(true);
       console.debug("[DurmahVoice] Call connected.");
 
     } catch (err: any) {
       console.error("Start call failed:", err);
       setError(err.message || "Failed to start call");
-      endCall();
+      setStatus("error");
+      stopListening();
     }
   }, [systemPrompt, onTurn]);
 
-  const endCall = useCallback(() => {
-    console.debug("[DurmahVoice] Ending call...");
+  const stopListening = useCallback(() => {
+    console.debug("[DurmahVoice] stopListening called");
     if (pcRef.current) {
       pcRef.current.close();
       pcRef.current = null;
@@ -176,16 +182,23 @@ export function useDurmahRealtime({ systemPrompt, onTurn, audioRef }: UseDurmahR
     if (audioRef.current) {
       audioRef.current.srcObject = null;
     }
-    setConnected(false);
+    setStatus("idle");
     setSpeaking(false);
   }, []);
 
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      endCall();
+      stopListening();
     };
-  }, [endCall]);
+  }, [stopListening]);
 
-  return { connected, speaking, error, startCall, endCall };
+  return { 
+    startListening, 
+    stopListening, 
+    isListening: status !== "idle" && status !== "error", 
+    status,
+    speaking, 
+    error 
+  };
 }
