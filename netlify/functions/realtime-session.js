@@ -1,4 +1,4 @@
-export const handler = async (event) => {
+exports.handler = async (event) => {
   if (event.httpMethod !== "POST") {
     return { statusCode: 405, body: "Method Not Allowed" };
   }
@@ -24,6 +24,7 @@ export const handler = async (event) => {
       statusCode: 200,
       body: JSON.stringify(data),
     };
+  } catch (err) {
     console.error("Realtime token function error:", err);
     return { statusCode: 500, body: "Error creating realtime session" };
   }

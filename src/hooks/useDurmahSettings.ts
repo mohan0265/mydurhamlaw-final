@@ -36,8 +36,13 @@ export function useDurmahSettings() {
           const preset = getDurmahVoicePreset(data.durmah_voice_id);
           setVoiceId(preset.id);
         }
-      } catch (err) {
-        console.error('[DurmahSettings] Failed to fetch voice setting:', err);
+      } catch (err: any) {
+        // If the column doesn't exist yet (migration not run), just ignore and use default
+        if (err?.code === 'PGRST204' || err?.message?.includes('column')) {
+           console.warn('[DurmahSettings] Voice setting column missing, using default.');
+        } else {
+           console.error('[DurmahSettings] Failed to fetch voice setting:', err);
+        }
       } finally {
         setLoading(false);
       }
