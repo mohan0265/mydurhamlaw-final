@@ -6,8 +6,8 @@ export default function GlobalFooter() {
   const year = useMemo(() => new Date().getFullYear(), [])
 
   return (
-    <footer className="mt-16 border-t bg-white/90 backdrop-blur">
-      <div className="mx-auto max-w-7xl px-4 py-10 grid gap-8 md:grid-cols-3 text-sm">
+    <footer className="mt-8 border-t bg-white/90 backdrop-blur">
+      <div className="mx-auto max-w-7xl px-4 py-8 grid gap-8 md:grid-cols-3 text-sm">
         <div>
           <div className="font-extrabold text-lg mb-2">
             <span className="mr-1">⚖️</span>
