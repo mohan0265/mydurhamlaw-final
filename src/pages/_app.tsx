@@ -19,6 +19,7 @@ import { getSupabaseClient } from '@/lib/supabase/client';
 import { TrialBanner } from '@/components/billing/TrialBanner';
 
 // Server-only init
+/*
 if (typeof window === 'undefined') {
   import('@/lib/rss/init')
     .then(({ initializeRSSSystem }) => {
@@ -28,6 +29,7 @@ if (typeof window === 'undefined') {
       console.error('Failed to import RSS initialization:', error);
     });
 }
+*/
 
 // Durmah context bootstrap
 const AppDurmahBootstrap: React.FC<{ children: React.ReactNode }> = ({
