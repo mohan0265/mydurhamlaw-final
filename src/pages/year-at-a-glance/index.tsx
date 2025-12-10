@@ -45,8 +45,8 @@ function PersonalPill({ text }: { text: string }) {
 }
 
 // ----- local types -----
-// Extend the base deadline type to include isPersonal
-type ExtendedDeadline = { label: string; danger?: boolean; isPersonal?: boolean };
+// Extend the base deadline type to include isPersonal and id for linking
+type ExtendedDeadline = { label: string; danger?: boolean; isPersonal?: boolean; id?: string };
 
 type WeekRow = { 
   id: string; 
@@ -71,6 +71,8 @@ type PersonalAssignment = {
 
 // ----- weekly row with topic preview -----
 function WeekRowView({ row, yearKey }: { row: WeekRow; yearKey: YearKey }) {
+  const router = useRouter();
+  
   const weeklyTopics = useMemo(() => {
     if (!row.mondayISO) return [];
     const plan = getDefaultPlanByStudentYear(yearKey);
@@ -87,17 +89,39 @@ function WeekRowView({ row, yearKey }: { row: WeekRow; yearKey: YearKey }) {
     return weekEvents.filter(e => e.kind === 'topic');
   }, [row.mondayISO, yearKey]);
 
+  // Calculate default due date (Friday of the week)
+  const quickAddDate = row.mondayISO 
+    ? format(addDays(new Date(row.mondayISO), 4), 'yyyy-MM-dd') 
+    : undefined;
+
   return (
-    <div className="rounded-xl border px-3 py-2 space-y-2 hover:bg-gray-50 transition-colors">
+    <div className="rounded-xl border px-3 py-2 space-y-2 hover:bg-gray-50 transition-colors group relative">
       <div className="flex items-center justify-between">
-        <div className="text-sm font-medium text-gray-700">
+        <div className="text-sm font-medium text-gray-700 flex items-center gap-2">
           {row.id}{row.dateLabel ? ` · ${row.dateLabel}` : ''}
+          
+          {/* Quick Add Button (visible on hover) */}
+          {quickAddDate && (
+             <Link
+               href={`/assignments?new=true&date=${quickAddDate}`}
+               className="text-gray-300 hover:text-violet-600 opacity-0 group-hover:opacity-100 transition-all p-0.5"
+               title="Add assignment due this week"
+             >
+               <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+             </Link>
+          )}
         </div>
         {row.deadlines.length > 0 && (
           <div className="flex flex-wrap gap-2 justify-end">
             {row.deadlines.map((d, i) =>
               d.isPersonal ? (
-                <PersonalPill key={i} text={d.label} />
+                <Link 
+                  key={i} 
+                  href={`/assignments?assignmentId=${d.id}`} 
+                  className="inline-flex items-center rounded-full bg-emerald-50 text-emerald-700 text-xs px-2 py-1 border border-emerald-100 hover:bg-emerald-100 transition-colors cursor-pointer"
+                >
+                  {d.label}
+                </Link>
               ) : d.danger ? (
                 <DangerPill key={i} text={d.label} />
               ) : (
@@ -260,6 +284,7 @@ const YearAtAGlancePage: React.FC = () => {
           // Simple check to avoid date-fns version issues
           if (due >= start && due <= end) {
             week.deadlines.push({
+              id: a.id,
               label: `My Task: ${a.title}`,
               isPersonal: true
             });

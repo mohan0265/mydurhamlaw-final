@@ -1,4 +1,3 @@
-// src/pages/assignments.tsx
 'use client'
 
 import { useState, useEffect, useContext } from 'react'
@@ -6,93 +5,102 @@ import { useRouter } from 'next/router'
 import { getSupabaseClient } from '@/lib/supabase/client'
 import { AuthContext } from '@/lib/supabase/AuthContext'
 import ModernSidebar from '@/components/layout/ModernSidebar'
-import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/Card'
 import BackToHomeButton from '@/components/ui/BackToHomeButton'
 import { useScrollToTop } from '@/hooks/useScrollToTop'
-import { FileText, ArrowLeft, BookOpen, Clock } from 'lucide-react'
-
-type Assignment = {
-  id: string
-  title: string
-  due_date?: string
-}
-
-const useAssignments = () => {
-  const [assignments, setAssignments] = useState<Assignment[]>([])
-  const { user } = useContext(AuthContext)
-
-  useEffect(() => {
-    const fetchAssignments = async () => {
-      if (!user?.id) return
-      
-      const supabase = getSupabaseClient()
-      if (!supabase) {
-        console.warn('Supabase client not available')
-        return
-      }
-      
-      try {
-        const { data, error } = await supabase
-          .from('assignments')
-          .select('*')
-          .eq('user_id', user.id)
-          .order('due_date', { ascending: true })
-        if (!error && data) setAssignments(data as Assignment[])
-      } catch (error) {
-        console.error('Error fetching assignments:', error)
-      }
-    }
-    fetchAssignments()
-  }, [user?.id])
-
-  return assignments
-}
+import AssignmentList from '@/components/study/AssignmentList'
+import AssignmentDetail from '@/components/study/AssignmentDetail'
+import AssignmentCreateForm from '@/components/study/AssignmentCreateForm'
+import DurmahChat from '@/components/durmah/DurmahChat'
+import { Assignment } from '@/types/assignments'
+import toast from 'react-hot-toast'
 
 export default function AssignmentsPage() {
   useScrollToTop()
-
   const router = useRouter()
-  const { getDashboardRoute } = useContext(AuthContext)
-  const [user, setUser] = useState<any>(null)
+  const { user, getDashboardRoute } = useContext(AuthContext)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [loading, setLoading] = useState(true)
 
-  const assignments = useAssignments()
+  // Data State
+  const [assignments, setAssignments] = useState<Assignment[]>([])
+  const [selectedAssignment, setSelectedAssignment] = useState<Assignment | null>(null)
+  
+  // UI State
+  const [showCreateForm, setShowCreateForm] = useState(false)
+  
+  // Chat State
+  const [chatInitialPrompt, setChatInitialPrompt] = useState<string | undefined>()
+
+  // 1. Fetch Assignments
+  const fetchAssignments = async () => {
+    if (!user?.id) return
+    const supabase = getSupabaseClient()
+    const { data } = await supabase
+      .from('assignments')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('due_date', { ascending: true })
+    
+    if (data) setAssignments(data as Assignment[])
+    setLoading(false)
+  }
 
   useEffect(() => {
-    const getUser = async () => {
-      const supabase = getSupabaseClient()
-      if (!supabase) {
-        console.warn('Supabase client not available')
-        setLoading(false)
-        return
-      }
+    if (user) fetchAssignments()
+  }, [user])
 
-      try {
-        const { data: { session } } = await supabase.auth.getSession()
-        if (!session) {
-          router.push('/login')
-        } else {
-          setUser(session.user)
-        }
-      } catch (error) {
-        console.error('Error getting session:', error)
-      } finally {
-        setLoading(false)
+  // 2. Handle Query Param Selection
+  useEffect(() => {
+    // Handle opening specific assignment
+    if (router.query.assignmentId && assignments.length > 0) {
+      const target = assignments.find(a => a.id === router.query.assignmentId)
+      if (target) {
+        setSelectedAssignment(target)
+        setShowCreateForm(false)
       }
     }
-    getUser()
-  }, [router])
+    
+    // Handle new assignment with date param
+    if (router.query.new === 'true') {
+      setShowCreateForm(true)
+      setSelectedAssignment(null)
+    }
+  }, [router.query, assignments])
+
+  // Handlers
+  const handleCreateSave = () => {
+    setShowCreateForm(false)
+    fetchAssignments()
+    // clear params to avoid re-opening on refresh?
+    router.replace('/assignments', undefined, { shallow: true });
+  }
+
+  const handleUpdate = () => {
+    fetchAssignments()
+    // Optimistically update selected if needed? fetchAssignments handles it.
+  }
+
+  const handleDelete = async () => {
+    if (!selectedAssignment || !user) return;
+    const supabase = getSupabaseClient();
+    try {
+      await supabase.from('assignments').delete().eq('id', selectedAssignment.id);
+      toast.success("Assignment deleted");
+      setSelectedAssignment(null);
+      fetchAssignments();
+    } catch {
+       toast.error("Failed to delete");
+    }
+  }
+
+  const handlePlanWithAI = () => {
+     if (!selectedAssignment) return;
+     setChatInitialPrompt(`I need help planning my assignment: "${selectedAssignment.title}". Here is the brief: ${selectedAssignment.question_text || "No brief provided"}. Can you help me break this down?`);
+     // Force chat re-render or prompt trigger if needed, passing key to component often simplest
+  }
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center">
-        <div className="text-center space-y-4">
-          <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto" />
-          <p className="text-gray-600">Loading Assignment Assistant...</p>
-        </div>
-      </div>
-    )
+     return <div className="min-h-screen bg-gray-50 flex items-center justify-center">Loading...</div>
   }
 
   return (
@@ -103,90 +111,77 @@ export default function AssignmentsPage() {
       />
 
       <div className={`transition-all duration-300 ${sidebarCollapsed ? 'ml-20' : 'ml-72'} lg:ml-0`}>
-        <BackToHomeButton />
-        <main className="p-3 sm:p-6 space-y-4 sm:space-y-8 max-w-7xl mx-auto">
-          <div className="flex items-center gap-2 sm:gap-4">
-            <button
-              onClick={() => router.push(getDashboardRoute?.() || '/dashboard')}
-              className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-white/90 backdrop-blur-sm rounded-xl shadow-lg border border-white/20 hover:shadow-xl transition-all duration-200 text-gray-600 hover:text-blue-600 min-h-[44px]"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              <span className="hidden sm:inline">Back to Dashboard</span>
-            </button>
-
-            <Card gradient className="flex-1">
-              <CardContent className="py-3 sm:py-4">
-                <div className="flex items-center gap-2 sm:gap-4">
-                  <div className="w-8 h-8 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-lg sm:text-2xl">
-                    <FileText className="w-4 h-4 sm:w-6 sm:h-6" />
-                  </div>
-                  <div>
-                    <h1 className="text-lg sm:text-2xl font-bold text-gray-800">Assignment Assistant</h1>
-                    <p className="text-sm sm:text-base text-gray-600 hidden sm:block">Your AI helper for legal coursework and research</p>
-                    <p className="text-xs text-gray-600 sm:hidden">AI coursework helper</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+        <div className="p-4 sm:p-6 max-w-[1600px] mx-auto">
+          {/* Top Nav */}
+          <div className="flex items-center justify-between mb-6">
+             <div className="flex items-center gap-4">
+                <BackToHomeButton />
+                <h1 className="text-2xl font-bold text-gray-800">Assignment Hub</h1>
+             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 sm:gap-8">
-            <div className="lg:col-span-1 space-y-4 sm:space-y-6">
-              <Card hover>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <BookOpen className="w-5 h-5 text-blue-600" />
-                    Current Tasks
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2 sm:space-y-3">
-                  {assignments.length > 0 ? (
-                    assignments.map((assignment) => (
-                      <div
-                        key={assignment.id}
-                        className="bg-blue-50 rounded-lg p-2 sm:p-3 border-l-4 border-blue-500"
-                      >
-                        <p className="font-medium text-gray-800 text-xs sm:text-sm">{assignment.title}</p>
-                        <p className="text-xs text-gray-600">
-                          Due: {assignment.due_date ? new Date(assignment.due_date).toDateString() : 'TBD'}
-                        </p>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="text-xs sm:text-sm text-gray-500">No assignments found.</div>
-                  )}
-                </CardContent>
-              </Card>
-
-              <Card hover>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Clock className="w-5 h-5 text-green-600" />
-                    Assistant Features
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="text-xs sm:text-sm text-gray-600 space-y-1 sm:space-y-2">
-                  <p>• Essay structure guidance</p>
-                  <p>• Research methodology help</p>
-                  <p>• Citation format assistance</p>
-                  <p>• Legal argument development</p>
-                  <p>• Study planning support</p>
-                </CardContent>
-              </Card>
+          {/* 3-Column Layout */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-[calc(100vh-140px)] min-h-[800px]">
+            
+            {/* Left Col: List (3 cols) */}
+            <div className="lg:col-span-3 h-full">
+               <AssignmentList 
+                 assignments={assignments}
+                 selectedId={selectedAssignment?.id || null}
+                 onSelect={(a) => {
+                    setSelectedAssignment(a);
+                    setShowCreateForm(false);
+                    setChatInitialPrompt(undefined);
+                 }}
+                 onNew={() => {
+                    setSelectedAssignment(null);
+                    setShowCreateForm(true);
+                 }}
+               />
             </div>
 
-            <div className="lg:col-span-3">
-              <div className="bg-white rounded-lg shadow-lg p-3 sm:p-6">
-                <h3 className="text-lg sm:text-xl font-semibold mb-3 sm:mb-4">Academic Writing & Research Assistant</h3>
-                <p className="text-sm sm:text-base text-gray-600 mb-3 sm:mb-4">Ask about essay structure, research methods, or get help with your assignments...</p>
-              </div>
+            {/* Center Col: Detail or Form (5 cols) */}
+            <div className="lg:col-span-5 h-full">
+               {showCreateForm ? (
+                 <AssignmentCreateForm 
+                   onCancel={() => setShowCreateForm(false)} 
+                   onSave={handleCreateSave}
+                   initialDate={router.query.date ? new Date(router.query.date as string) : undefined}
+                 />
+               ) : selectedAssignment ? (
+                 <AssignmentDetail 
+                   assignment={selectedAssignment} 
+                   onUpdate={handleUpdate}
+                   onDelete={handleDelete}
+                   onPlanWithAI={handlePlanWithAI} 
+                 />
+               ) : (
+                 <div className="bg-white/50 border border-white/50 rounded-xl h-full flex flex-col items-center justify-center text-gray-500 p-8 text-center dashed-border">
+                    <div className="bg-white p-4 rounded-full shadow-sm mb-4">
+                       <span className="text-4xl">📚</span>
+                    </div>
+                    <h3 className="text-xl font-bold text-gray-700 mb-2">Select an Assignment</h3>
+                    <p className="max-w-xs mx-auto">Choose a task from the list or create a new one to get started with Durmah.</p>
+                 </div>
+               )}
             </div>
+
+            {/* Right Col: Durmah Chat (4 cols) */}
+            <div className="lg:col-span-4 h-full">
+               <DurmahChat 
+                 key={selectedAssignment?.id || 'general'} // Re-mount on assignment change for fresh context
+                 contextType={selectedAssignment ? 'assignment' : 'general'}
+                 contextTitle={selectedAssignment?.title || 'General Study Help'}
+                 contextId={selectedAssignment?.id}
+                 initialPrompt={chatInitialPrompt}
+                 className="h-full"
+               />
+            </div>
+
           </div>
-        </main>
-
-
-
+        </div>
       </div>
     </div>
   )
 }
+
