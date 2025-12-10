@@ -13,9 +13,10 @@ export default function GlobalFooter() {
             <span className="mr-1">⚖️</span>
             My<span className="text-pink-600">Durham</span>Law
           </div>
-          <p className="text-gray-600">
-            Supporting Durham University Law students with tools for academic excellence and personal wellbeing.
-          </p>
+          <div className="space-y-2 text-gray-600 text-xs sm:text-sm">
+            <p>Durmah - Your Legal Eagle AI Mentor</p>
+            <p>Always With You - Emotional presence for Durham Law students and their loved ones.</p>
+          </div>
         </div>
 
         <div>

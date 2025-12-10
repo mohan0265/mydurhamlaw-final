@@ -1,9 +1,8 @@
-// src/pages/index.tsx
 import React from 'react'
 import Head from 'next/head'
 import Link from 'next/link'
 import { useRouter } from 'next/router'
-import { ArrowRight, Play, Heart, Brain, Shield, BookOpen, Clock } from 'lucide-react'
+import { ArrowRight, Brain, Heart } from 'lucide-react'
 import { useAuth } from '@/lib/supabase/AuthContext'
 
 type FeatureCardProps = {
@@ -23,16 +22,26 @@ const FeatureCard: React.FC<FeatureCardProps> = ({ icon, title, description }) =
 type PreviewCardProps = {
   title: string
   description: string
+  imageSrc: string
 }
 
-const PreviewCard: React.FC<PreviewCardProps> = ({ title, description }) => (
-  <div className="bg-white rounded-2xl shadow-2xl overflow-hidden transform hover:scale-105 transition-transform duration-300">
-    <div className="bg-gradient-to-br from-blue-400 to-purple-500 h-32 sm:h-48 flex items-center justify-center">
-      <div className="text-white text-4xl sm:text-6xl">📱</div>
+const PreviewCard: React.FC<PreviewCardProps> = ({ title, description, imageSrc }) => (
+  <div className="bg-white rounded-2xl shadow-xl overflow-hidden transform hover:scale-105 transition-transform duration-300 border border-gray-100 flex flex-col h-full">
+    <div className="relative h-48 sm:h-56 group overflow-hidden bg-gray-100">
+      <img 
+        src={imageSrc} 
+        alt={title} 
+        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+      />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-center pb-4">
+        <span className="text-white text-sm font-medium px-4 py-1.5 bg-white/20 backdrop-blur-md rounded-full border border-white/30">
+          View Feature
+        </span>
+      </div>
     </div>
-    <div className="p-4 sm:p-6">
-      <h3 className="text-lg sm:text-xl font-semibold text-gray-800 mb-2">{title}</h3>
-      <p className="text-gray-600 text-sm">{description}</p>
+    <div className="p-6 flex-1 flex flex-col">
+      <h3 className="text-lg font-bold text-gray-900 mb-2">{title}</h3>
+      <p className="text-gray-600 text-sm leading-relaxed">{description}</p>
     </div>
   </div>
 )
@@ -44,9 +53,9 @@ type TestimonialCardProps = {
 }
 
 const TestimonialCard: React.FC<TestimonialCardProps> = ({ quote, author, role }) => (
-  <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-4 sm:p-8 border border-white/10">
-    <div className="text-4xl sm:text-6xl text-blue-300 mb-3 sm:mb-4">&ldquo;</div>
-    <p className="text-white text-base sm:text-lg mb-4 sm:mb-6 italic leading-relaxed">{quote}</p>
+  <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-6 sm:p-8 border border-white/10">
+    <div className="text-4xl sm:text-6xl text-blue-300 mb-3 sm:mb-4 opacity-50">&ldquo;</div>
+    <p className="text-white text-base sm:text-lg mb-6 italic leading-relaxed">{quote}</p>
     <div>
       <p className="text-white font-semibold text-sm sm:text-base">{author}</p>
       <p className="text-blue-200 text-xs sm:text-sm">{role}</p>
@@ -85,25 +94,25 @@ export default function DurhamLanding() {
   return (
     <>
       <Head>
-        <title>MyDurhamLaw | AI Legal Mentor & Student Wellbeing</title>
+        <title>MyDurhamLaw – AI Study Mentor & Emotional Support for Durham Law Students</title>
         <meta
           name="description"
-          content="MyDurhamLaw: The essential AI companion for Durham University law students. Features Durmah (Legal Eagle Mentor) and Always With You (emotional connection for loved ones)."
+          content="MyDurhamLaw is an AI-powered study companion and emotional lifeline for Durham University Law students and their loved ones. Durmah, your Legal Eagle mentor, and the Always With You (AWY) widget bring structure, clarity and human connection to your law journey."
         />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         
         {/* Open Graph / Facebook */}
         <meta property="og:type" content="website" />
         <meta property="og:url" content="https://mydurhamlaw.com/" />
-        <meta property="og:title" content="MyDurhamLaw | AI Legal Mentor & Student Wellbeing" />
-        <meta property="og:description" content="Your AI-powered Durham Law mentor – and an emotional lifeline for students far from home." />
+        <meta property="og:title" content="MyDurhamLaw - AI Study Mentor & Emotional Support" />
+        <meta property="og:description" content="Your AI-powered Durham Law mentor - and an emotional lifeline for students far from home." />
         <meta property="og:image" content="/assets/images/hero-supreme-court-uk.webp" />
 
         {/* Twitter */}
         <meta property="twitter:card" content="summary_large_image" />
         <meta property="twitter:url" content="https://mydurhamlaw.com/" />
-        <meta property="twitter:title" content="MyDurhamLaw | AI Legal Mentor & Student Wellbeing" />
-        <meta property="twitter:description" content="Your AI-powered Durham Law mentor – and an emotional lifeline for students far from home." />
+        <meta property="twitter:title" content="MyDurhamLaw - AI Study Mentor & Emotional Support" />
+        <meta property="twitter:description" content="Your AI-powered Durham Law mentor - and an emotional lifeline for students far from home." />
         <meta property="twitter:image" content="/assets/images/hero-supreme-court-uk.webp" />
       </Head>
 
@@ -116,86 +125,89 @@ export default function DurhamLanding() {
         <div className="absolute inset-0 bg-black/60" />
 
         {/* Hero content */}
-        <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center py-8 sm:py-12">
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center py-12 sm:py-20">
           <div className="animate-fadeIn">
-            <h1 className="text-3xl sm:text-5xl lg:text-7xl font-bold text-white mb-4 leading-tight">
+            <h1 className="text-4xl sm:text-5xl lg:text-7xl font-bold text-white mb-6 leading-tight tracking-tight">
               Welcome to{' '}
-              <span className="bg-gradient-to-r from-purple-400 via-pink-400 to-red-400 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-purple-300 via-pink-300 to-red-300 bg-clip-text text-transparent">
                 MyDurhamLaw
               </span>
             </h1>
 
-            <div className="mb-4 sm:mb-6 animate-slideUp" style={{ animationDelay: '0.2s' }}>
-              <p className="text-lg sm:text-2xl lg:text-3xl font-medium text-pink-200 leading-relaxed">
-                Your AI-powered Durham Law mentor – and an emotional lifeline for students far from home.
+            <div className="mb-10 sm:mb-14 animate-slideUp max-w-3xl mx-auto" style={{ animationDelay: '0.2s' }}>
+              <p className="text-xl sm:text-2xl lg:text-3xl font-medium text-blue-50 leading-relaxed drop-shadow-md">
+                Your AI-powered Durham Law mentor - and an emotional lifeline for students far from home.
               </p>
             </div>
 
             {/* Role Selection Cards */}
-            <div className="mt-10 grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto animate-slideUp" style={{ animationDelay: '0.4s' }}>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto animate-slideUp" style={{ animationDelay: '0.4s' }}>
               
               {/* Student Card */}
-              <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20 hover:bg-white/20 transition-all duration-300 flex flex-col items-center text-center group">
-                <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-full flex items-center justify-center mb-4 shadow-lg group-hover:scale-110 transition-transform">
-                  <Brain className="w-8 h-8 text-white" />
+              <div className="bg-white/10 backdrop-blur-md rounded-3xl p-8 sm:p-10 border border-white/20 shadow-2xl hover:shadow-purple-500/20 hover:-translate-y-1 hover:bg-white/15 transition-all duration-300 flex flex-col items-center text-center group relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 to-indigo-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                
+                <div className="relative z-10 w-20 h-20 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-2xl flex items-center justify-center mb-6 shadow-lg group-hover:scale-110 group-hover:rotate-3 transition-all duration-300">
+                  <Brain className="w-10 h-10 text-white" />
                 </div>
-                <h3 className="text-2xl font-bold text-white mb-2">I'm a Durham Law Student</h3>
-                <p className="text-blue-100 mb-6 flex-1">
-                  Get your Legal Eagle mentor, personalized study plans, and a calm, organised year at Durham.
+                
+                <h3 className="relative z-10 text-2xl sm:text-3xl font-bold text-white mb-4">I'm a Durham Law Student</h3>
+                <p className="relative z-10 text-blue-100 text-lg mb-8 flex-1 leading-relaxed">
+                  Get your Legal Eagle mentor, personalised study plans, and a calmer, more organised year at Durham Law.
                 </p>
-                <Link href="/login" className="w-full">
-                  <button className="w-full bg-white text-purple-700 font-bold py-3 px-6 rounded-xl hover:bg-purple-50 transition-colors flex items-center justify-center gap-2">
+                
+                <Link href="/login" className="relative z-10 w-full">
+                  <button className="w-full bg-white text-purple-700 font-bold py-4 px-8 rounded-xl hover:bg-purple-50 transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-3 text-lg group-hover:gap-4">
                     Student Login / Free Trial
-                    <ArrowRight className="w-4 h-4" />
+                    <ArrowRight className="w-5 h-5" />
                   </button>
                 </Link>
               </div>
 
               {/* Loved One Card */}
-              <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20 hover:bg-white/20 transition-all duration-300 flex flex-col items-center text-center group">
-                <div className="w-16 h-16 bg-gradient-to-br from-pink-500 to-rose-600 rounded-full flex items-center justify-center mb-4 shadow-lg group-hover:scale-110 transition-transform">
-                  <Heart className="w-8 h-8 text-white fill-white" />
+              <div className="bg-white/10 backdrop-blur-md rounded-3xl p-8 sm:p-10 border border-white/20 shadow-2xl hover:shadow-pink-500/20 hover:-translate-y-1 hover:bg-white/15 transition-all duration-300 flex flex-col items-center text-center group relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-br from-pink-500/10 to-rose-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                
+                <div className="relative z-10 w-20 h-20 bg-gradient-to-br from-pink-500 to-rose-600 rounded-2xl flex items-center justify-center mb-6 shadow-lg group-hover:scale-110 group-hover:-rotate-3 transition-all duration-300">
+                  <Heart className="w-10 h-10 text-white fill-white" />
                 </div>
-                <h3 className="text-2xl font-bold text-white mb-2">I'm a Loved One</h3>
-                <p className="text-blue-100 mb-6 flex-1">
-                  Stay close, see when they’re available, and be just one click away with the “Always With You” widget.
+                
+                <h3 className="relative z-10 text-2xl sm:text-3xl font-bold text-white mb-4">I'm a Loved One</h3>
+                <p className="relative z-10 text-blue-100 text-lg mb-8 flex-1 leading-relaxed">
+                  Stay close, see when they're available, and be just one click away with the "Always With You" widget - even from thousands of miles apart.
                 </p>
-                <Link href="/loved-one-login" className="w-full">
-                  <button className="w-full bg-white text-pink-600 font-bold py-3 px-6 rounded-xl hover:bg-pink-50 transition-colors flex items-center justify-center gap-2">
+                
+                <Link href="/loved-one-login" className="relative z-10 w-full">
+                  <button className="w-full bg-white text-pink-600 font-bold py-4 px-8 rounded-xl hover:bg-pink-50 transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-3 text-lg group-hover:gap-4">
                     Loved Ones Login
-                    <ArrowRight className="w-4 h-4" />
+                    <ArrowRight className="w-5 h-5" />
                   </button>
                 </Link>
               </div>
 
             </div>
-
-            <div className="mt-12 text-sm text-white/60 animate-slideUp" style={{ animationDelay: '0.6s' }}>
-              <p>Powered by Durmah · Your Legal Eagle AI Mentor</p>
-              <p>Always With You · Emotional presence for Durham Law students and their loved ones.</p>
-            </div>
-
           </div>
         </div>
 
         {/* Scroll indicator */}
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce">
-          <div className="w-6 h-10 border-2 border-white/50 rounded-full flex justify-center">
-            <div className="w-1 h-3 bg-white/50 rounded-full mt-2 animate-pulse"></div>
+        <div className="absolute bottom-10 left-1/2 -translate-x-1/2 animate-bounce">
+          <div className="w-6 h-10 border-2 border-white/30 rounded-full flex justify-center backdrop-blur-sm">
+            <div className="w-1 h-3 bg-white/80 rounded-full mt-2 animate-pulse"></div>
           </div>
         </div>
       </div>
 
       {/* Benefits Section */}
-      <section className="py-12 sm:py-20 bg-gradient-to-br from-blue-900 to-purple-900">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 text-center">
-          <h2 className="text-2xl sm:text-4xl font-bold text-white mb-3 sm:mb-4">
+      <section className="py-16 sm:py-24 bg-gradient-to-br from-slate-900 via-blue-900 to-purple-900 relative overflow-hidden">
+        <div className="absolute inset-0 bg-[url('/assets/patterns/grid.svg')] opacity-10"></div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 text-center relative z-10">
+          <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
             Built for Law Students
           </h2>
-          <p className="text-blue-200 text-base sm:text-lg mb-8 sm:mb-12">
+          <p className="text-blue-200 text-lg sm:text-xl mb-12 max-w-2xl mx-auto">
             Everything you need to succeed at Durham and beyond
           </p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             <FeatureCard icon="⚖️" title="Ask AI Legal Questions" description="Instant legal analysis with AI-powered context." />
             <FeatureCard icon="📅" title="Plan Deadlines" description="Schedule, track, and never miss an assignment." />
             <FeatureCard icon="📝" title="Summarise Lecture Notes" description="Turn walls of text into smart recall blocks." />
@@ -204,72 +216,93 @@ export default function DurhamLanding() {
         </div>
       </section>
 
+      {/* See Inside the App Section */}
+      <section className="py-16 sm:py-24 bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
+              See Inside the App
+            </h2>
+            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+              A calm, structured hub for your Durham Law journey - with everything in one place.
+            </p>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            <PreviewCard 
+              title="Personalised Dashboard" 
+              description="See your tasks, deadlines and progress at a glance each day." 
+              imageSrc="/images/dashboard.png"
+            />
+            <PreviewCard 
+              title="Year-at-a-Glance Planner" 
+              description="Visualise your Michaelmas, Epiphany and Easter terms with clarity." 
+              imageSrc="/images/yaag.png"
+            />
+            <PreviewCard 
+              title="Durmah Voice Mentor" 
+              description="Ask questions, plan your week, and get explanations in natural language." 
+              imageSrc="/images/durmah.png"
+            />
+            <PreviewCard 
+              title="Always With You (AWY)" 
+              description="A simple view for loved ones to see availability and stay emotionally close." 
+              imageSrc="/images/awy.png"
+            />
+          </div>
+        </div>
+      </section>
+
       {/* Member Quick Access Section (only when logged in) */}
       {user && (
-        <section className="py-12 sm:py-20 bg-gradient-to-br from-green-50 to-blue-50">
+        <section className="py-12 sm:py-20 bg-gradient-to-br from-green-50 to-blue-50 border-t border-blue-100">
           <div className="max-w-7xl mx-auto px-4 sm:px-6">
-            <div className="text-center mb-8 sm:mb-12">
-              <h2 className="text-2xl sm:text-4xl font-bold mb-3 sm:mb-4 text-gray-900">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl font-bold mb-4 text-gray-900">
                 Welcome back, {displayName}!
               </h2>
-              <p className="text-gray-600 mb-6 sm:mb-8 text-sm sm:text-base">
+              <p className="text-gray-600 text-lg">
                 Quick access to your most used features
               </p>
             </div>
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 mb-8 sm:mb-12">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
               <Link href="/dashboard" className="group">
-                <div className="bg-white rounded-2xl shadow-lg p-3 sm:p-6 border border-blue-100 hover:shadow-xl transition-all duration-300 transform hover:scale-105 min-h-[120px] sm:min-h-[140px]">
-                  <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center text-white text-xl sm:text-2xl mb-2 sm:mb-4 mx-auto">
+                <div className="bg-white rounded-2xl shadow-lg p-6 border border-blue-100 hover:shadow-xl transition-all duration-300 transform hover:scale-105 min-h-[160px] flex flex-col items-center justify-center text-center">
+                  <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center text-white text-2xl mb-4 shadow-md">
                     📊
                   </div>
-                  <h3 className="text-sm sm:text-lg font-semibold text-gray-800 mb-1 sm:mb-2 text-center">
-                    Dashboard
-                  </h3>
-                  <p className="text-xs sm:text-sm text-gray-600 text-center">
-                    Your study overview and progress
-                  </p>
+                  <h3 className="text-lg font-semibold text-gray-800 mb-1">Dashboard</h3>
+                  <p className="text-sm text-gray-500">Your study overview</p>
                 </div>
               </Link>
 
               <Link href="/wellbeing" className="group">
-                <div className="bg-white rounded-2xl shadow-lg p-3 sm:p-6 border border-pink-100 hover:shadow-xl transition-all duration-300 transform hover:scale-105 min-h-[120px] sm:min-h-[140px]">
-                  <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br from-pink-500 to-rose-600 rounded-2xl flex items-center justify-center text-white text-xl sm:text-2xl mb-2 sm:mb-4 mx-auto">
+                <div className="bg-white rounded-2xl shadow-lg p-6 border border-pink-100 hover:shadow-xl transition-all duration-300 transform hover:scale-105 min-h-[160px] flex flex-col items-center justify-center text-center">
+                  <div className="w-14 h-14 bg-gradient-to-br from-pink-500 to-rose-600 rounded-2xl flex items-center justify-center text-white text-2xl mb-4 shadow-md">
                     💬
                   </div>
-                  <h3 className="text-sm sm:text-lg font-semibold text-gray-800 mb-1 sm:mb-2 text-center">
-                    Durmah
-                  </h3>
-                  <p className="text-xs sm:text-sm text-gray-600 text-center">
-                    Your personal wellbeing companion
-                  </p>
+                  <h3 className="text-lg font-semibold text-gray-800 mb-1">Durmah</h3>
+                  <p className="text-sm text-gray-500">Wellbeing companion</p>
                 </div>
               </Link>
 
               <Link href="/study-schedule" className="group">
-                <div className="bg-white rounded-2xl shadow-lg p-3 sm:p-6 border border-green-100 hover:shadow-xl transition-all duration-300 transform hover:scale-105 min-h-[120px] sm:min-h-[140px]">
-                  <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl flex items-center justify-center text-white text-xl sm:text-2xl mb-2 sm:mb-4 mx-auto">
+                <div className="bg-white rounded-2xl shadow-lg p-6 border border-green-100 hover:shadow-xl transition-all duration-300 transform hover:scale-105 min-h-[160px] flex flex-col items-center justify-center text-center">
+                  <div className="w-14 h-14 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl flex items-center justify-center text-white text-2xl mb-4 shadow-md">
                     📅
                   </div>
-                  <h3 className="text-sm sm:text-lg font-semibold text-gray-800 mb-1 sm:mb-2 text-center">
-                    Study Schedule
-                  </h3>
-                  <p className="text-xs sm:text-sm text-gray-600 text-center">
-                    Timetable and calendar management
-                  </p>
+                  <h3 className="text-lg font-semibold text-gray-800 mb-1">Schedule</h3>
+                  <p className="text-sm text-gray-500">Timetable & calendar</p>
                 </div>
               </Link>
 
               <Link href="/assignments" className="group">
-                <div className="bg-white rounded-2xl shadow-lg p-3 sm:p-6 border border-orange-100 hover:shadow-xl transition-all duration-300 transform hover:scale-105 min-h-[120px] sm:min-h-[140px]">
-                  <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br from-orange-500 to-red-600 rounded-2xl flex items-center justify-center text-white text-xl sm:text-2xl mb-2 sm:mb-4 mx-auto">
+                <div className="bg-white rounded-2xl shadow-lg p-6 border border-orange-100 hover:shadow-xl transition-all duration-300 transform hover:scale-105 min-h-[160px] flex flex-col items-center justify-center text-center">
+                  <div className="w-14 h-14 bg-gradient-to-br from-orange-500 to-red-600 rounded-2xl flex items-center justify-center text-white text-2xl mb-4 shadow-md">
                     📝
                   </div>
-                  <h3 className="text-sm sm:text-lg font-semibold text-gray-800 mb-1 sm:mb-2 text-center">
-                    Assignments
-                  </h3>
-                  <p className="text-xs sm:text-sm text-gray-600 text-center">
-                    Writing and Research Buddy
-                  </p>
+                  <h3 className="text-lg font-semibold text-gray-800 mb-1">Assignments</h3>
+                  <p className="text-sm text-gray-500">Writing & Research</p>
                 </div>
               </Link>
             </div>
@@ -277,54 +310,50 @@ export default function DurhamLanding() {
         </section>
       )}
 
-      {/* App Preview */}
-      <section className="py-12 sm:py-20 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 text-center">
-          <h2 className="text-2xl sm:text-4xl font-bold mb-3 sm:mb-4 text-gray-900">Explore the App</h2>
-          <p className="text-gray-600 mb-8 sm:mb-12 text-sm sm:text-base">
-            See how AI elevates your study game
-          </p>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-8">
-            <PreviewCard title="Chat With AI" description="Ask complex legal queries 24/7" />
-            <PreviewCard title="Smart Calendar" description="Visualise deadlines with reminders" />
-            <PreviewCard title="Memory Manager" description="Retain what matters most" />
-          </div>
-        </div>
-      </section>
-
       {/* Testimonials */}
-      <section className="py-12 sm:py-20 bg-gradient-to-br from-gray-900 to-blue-900">
+      <section className="py-16 sm:py-24 bg-white border-t border-gray-100">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 text-center">
-          <h2 className="text-2xl sm:text-4xl font-bold text-white mb-3 sm:mb-4">
+          <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
             What Students & Parents Say
           </h2>
-          <p className="text-blue-200 mb-8 sm:mb-12 text-sm sm:text-base">Real impact, real feedback</p>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-8">
-            <TestimonialCard
-              quote="I looked through the App. I wish I had such an App to support me during my undergrad years."
-              author="SK Soon"
-              role="2020 Batch Durham Law Graduate"
-            />
-            <TestimonialCard
-              quote="I saw the preview of the App and it looks impressive. I am waiting for it to launch officially soon. I think it will help my daughter who is going to start her Foundation Year at Durham."
-              author="Mark D."
-              role="Parent of a 2025 Foundation Student"
-            />
+          <p className="text-gray-500 mb-12 text-lg">Real impact, real feedback</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="bg-gray-50 rounded-3xl p-8 border border-gray-100 text-left">
+              <div className="text-4xl text-purple-300 mb-4 font-serif">“</div>
+              <p className="text-gray-700 text-lg mb-6 italic leading-relaxed">
+                I looked through the App. I wish I had such an App to support me during my undergrad years.
+              </p>
+              <div>
+                <p className="font-bold text-gray-900">SK Soon</p>
+                <p className="text-purple-600 text-sm">2020 Batch Durham Law Graduate</p>
+              </div>
+            </div>
+            <div className="bg-gray-50 rounded-3xl p-8 border border-gray-100 text-left">
+              <div className="text-4xl text-pink-300 mb-4 font-serif">“</div>
+              <p className="text-gray-700 text-lg mb-6 italic leading-relaxed">
+                I saw the preview of the App and it looks impressive. I am waiting for it to launch officially soon. I think it will help my daughter who is going to start her Foundation Year at Durham.
+              </p>
+              <div>
+                <p className="font-bold text-gray-900">Mark D.</p>
+                <p className="text-pink-600 text-sm">Parent of a 2025 Foundation Student</p>
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Pricing CTA */}
-      <section className="py-12 sm:py-20 bg-gradient-to-r from-blue-600 to-purple-600 text-center">
-        <div className="px-4 sm:px-6">
-          <h2 className="text-2xl sm:text-4xl font-bold text-white mb-3 sm:mb-4">
-            A Personalised Study Experience
+      {/* Final CTA */}
+      <section className="py-20 sm:py-28 bg-gradient-to-r from-blue-600 to-purple-600 text-center relative overflow-hidden">
+        <div className="absolute inset-0 bg-[url('/assets/patterns/grid.svg')] opacity-10"></div>
+        <div className="px-4 sm:px-6 relative z-10">
+          <h2 className="text-3xl sm:text-5xl font-bold text-white mb-6">
+            Where future Durham Legal Eagles begin their journey.
           </h2>
-        <p className="text-lg sm:text-xl text-blue-100 mb-6 sm:mb-8">
-            Join thousands of Durham law students already using MyDurhamLaw
+          <p className="text-xl text-blue-100 mb-10 max-w-2xl mx-auto">
+            If you want to study like a true Durham Legal Eagle, this is where you start.
           </p>
           <Link href="/signup">
-            <button className="bg-white text-purple-600 font-bold py-3 px-8 rounded-full text-lg hover:bg-gray-100 transition-all duration-300 transform hover:scale-105">
+            <button className="bg-white text-purple-600 font-bold py-4 px-10 rounded-full text-lg hover:bg-gray-100 transition-all duration-300 transform hover:scale-105 shadow-xl hover:shadow-2xl">
               Get Started Free
             </button>
           </Link>

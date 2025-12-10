@@ -165,7 +165,7 @@ export default function AWYWidget() {
   if (loading) return null
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end space-y-4">
+    <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end space-y-4 group">
       {/* Main Widget */}
       {isOpen && (
         <div className="bg-white rounded-3xl shadow-2xl border border-pink-100 w-80 animate-in slide-in-from-bottom-5 fade-in duration-300 overflow-hidden">
@@ -249,6 +249,18 @@ export default function AWYWidget() {
               )}
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Tooltip - Only show when closed */}
+      {!isOpen && (
+        <div className="absolute right-full mr-4 bottom-2 w-max opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none translate-x-2 group-hover:translate-x-0">
+          <div className="bg-gray-900/90 backdrop-blur-sm text-white text-xs py-2.5 px-4 rounded-xl shadow-xl border border-white/10">
+            <div className="font-bold mb-0.5 text-pink-200">Always With You</div>
+            <div className="text-gray-300">Stay close to the people who care about you.</div>
+          </div>
+          {/* Arrow */}
+          <div className="absolute bottom-4 -right-1.5 w-3 h-3 bg-gray-900/90 rotate-45 border-t border-r border-white/10"></div>
         </div>
       )}
 

@@ -303,20 +303,32 @@ export default function DurmahWidget() {
   // ----------------------------
   if (!isOpen) {
     return (
-      <button
-        onClick={() => setIsOpen(true)}
-        className={`fixed bottom-24 right-6 z-50 flex h-16 w-16 items-center justify-center rounded-full shadow-2xl transition-all duration-300 hover:scale-105 ${
-          isListening 
-            ? "bg-gradient-to-r from-red-500 to-pink-600 ring-4 ring-red-200 animate-pulse" 
-            : "bg-gradient-to-br from-violet-600 to-indigo-700 hover:shadow-violet-500/50"
-        }`}
-      >
-        <span className="font-serif text-3xl font-bold text-white italic">D</span>
-        {/* Listening Ring Animation */}
-        {isListening && (
-          <span className="absolute inset-0 rounded-full border-2 border-white opacity-50 animate-ping"></span>
-        )}
-      </button>
+      <div className="fixed bottom-24 right-6 z-50 flex flex-col items-end group">
+        {/* Tooltip */}
+        <div className="absolute right-full mr-4 top-1/2 -translate-y-1/2 w-max opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none translate-x-2 group-hover:translate-x-0">
+          <div className="bg-gray-900/90 backdrop-blur-sm text-white text-xs py-2.5 px-4 rounded-xl shadow-xl border border-white/10">
+            <div className="font-bold mb-0.5 text-violet-200">Durmah - Your Legal Eagle Buddy</div>
+            <div className="text-gray-300">I'm always here to chat.</div>
+          </div>
+          {/* Arrow */}
+          <div className="absolute top-1/2 -translate-y-1/2 -right-1.5 w-3 h-3 bg-gray-900/90 rotate-45 border-t border-r border-white/10"></div>
+        </div>
+
+        <button
+          onClick={() => setIsOpen(true)}
+          className={`flex h-16 w-16 items-center justify-center rounded-full shadow-2xl transition-all duration-300 hover:scale-105 ${
+            isListening 
+              ? "bg-gradient-to-r from-red-500 to-pink-600 ring-4 ring-red-200 animate-pulse" 
+              : "bg-gradient-to-br from-violet-600 to-indigo-700 hover:shadow-violet-500/50"
+          }`}
+        >
+          <span className="font-serif text-3xl font-bold text-white italic">D</span>
+          {/* Listening Ring Animation */}
+          {isListening && (
+            <span className="absolute inset-0 rounded-full border-2 border-white opacity-50 animate-ping"></span>
+          )}
+        </button>
+      </div>
     );
   }
 
