@@ -5,6 +5,7 @@ import {
   computeNowPhase,
   todayISOInTZ,
 } from "../durmah/phase";
+import { getSupabaseClient } from '@/lib/supabase/client';
 import type { MDLStudentContext, YearKey } from "../durmah/context";
 
 type MinimalUser = { id: string; user_metadata?: Record<string, unknown> };
@@ -30,12 +31,10 @@ export async function loadMDLStudentContext(
 ): Promise<MDLStudentContext> {
   let u = user;
   try {
-    if (typeof window !== 'undefined') {
-      const mod = await import("@/lib/supabase/client");
-      const sb = (mod as any).supabase;
-
-      if (!u && sb) {
-        const { data } = await sb.auth.getSession();
+    const supabase = getSupabaseClient();
+    if (supabase) {
+      if (!u) {
+        const { data } = await supabase.auth.getSession();
         u = (data?.session?.user as MinimalUser) || undefined;
       }
     }

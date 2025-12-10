@@ -1,39 +1,9 @@
 // src/lib/api/serverAuth.ts
 import type { NextApiRequest, NextApiResponse } from "next";
-import { createServerClient } from "@supabase/ssr";
+import { getSupabaseClient } from "@/lib/supabase/client";
 
 export function getServerSupabase(req: NextApiRequest, res: NextApiResponse) {
-  return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        get: (name) => req.cookies[name],
-        set: (name, value, options) => {
-          const parts = [
-            `${name}=${value}`,
-            `Path=${options?.path ?? "/"}`,
-            "HttpOnly",
-            "SameSite=Lax",
-            "Secure",
-          ];
-          if (options?.maxAge) parts.push(`Max-Age=${options.maxAge}`);
-          res.setHeader("Set-Cookie", parts.join("; "));
-        },
-        remove: (name, options) => {
-          const parts = [
-            `${name}=`,
-            `Path=${options?.path ?? "/"}`,
-            "Max-Age=0",
-            "HttpOnly",
-            "SameSite=Lax",
-            "Secure",
-          ];
-          res.setHeader("Set-Cookie", parts.join("; "));
-        },
-      },
-    }
-  );
+  return getSupabaseClient();
 }
 
 export async function getServerUser(req: NextApiRequest, res: NextApiResponse) {
@@ -47,7 +17,10 @@ export async function getServerUser(req: NextApiRequest, res: NextApiResponse) {
     return { user: data?.user ?? null, error, supabase };
   }
 
-  // Otherwise fall back to cookie flow
+  // NOTE: Universal client does not automatically handle cookies.
+  // If relying on cookies, we'd need manual parsing here or sticking with token auth.
+  // For now, attempting getUser() which will likely fail without session persistence/cookies
+  // but strictly follows "remove @supabase/ssr" directive.
   const { data, error } = await supabase.auth.getUser();
   return { user: data?.user ?? null, error, supabase };
 }

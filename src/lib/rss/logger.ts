@@ -1,5 +1,5 @@
 // RSS Logger - Comprehensive logging for RSS operations
-import { getServerSupabaseClient } from '@/lib/supabase/serverClient'
+import { getSupabaseClient } from '@/lib/supabase/client'
 
 export interface RSSLogEntry {
   id?: string
@@ -183,7 +183,7 @@ class RSSLogger {
     this.logQueue = []
 
     try {
-      const supabase = getServerSupabaseClient()
+      const supabase = getSupabaseClient()
       if (!supabase) {
         console.error('Supabase client unavailable for flushing RSS logs')
         return
@@ -210,7 +210,7 @@ class RSSLogger {
    */
   async getRecentLogs(limit: number = 100): Promise<RSSLogEntry[]> {
     try {
-      const supabase = getServerSupabaseClient()
+      const supabase = getSupabaseClient()
       if (!supabase) {
         console.error('Supabase client unavailable for getting recent RSS logs')
         return []
@@ -235,7 +235,7 @@ class RSSLogger {
    */
   async getErrorLogs(hoursBack: number = 24): Promise<RSSLogEntry[]> {
     try {
-      const supabase = getServerSupabaseClient()
+      const supabase = getSupabaseClient()
       if (!supabase) {
         console.error('Supabase client unavailable for getting RSS error logs')
         return []
@@ -269,7 +269,7 @@ class RSSLogger {
     errorRate: number
   }> {
     try {
-      const supabase = getServerSupabaseClient()
+      const supabase = getSupabaseClient()
       if (!supabase) {
         console.error('Supabase client unavailable for getting RSS performance stats')
         return {
@@ -327,7 +327,7 @@ class RSSLogger {
    */
   async cleanupOldLogs(): Promise<void> {
     try {
-      const supabase = getServerSupabaseClient()
+      const supabase = getSupabaseClient()
       if (!supabase) {
         console.error('Supabase client unavailable for RSS logs cleanup')
         return

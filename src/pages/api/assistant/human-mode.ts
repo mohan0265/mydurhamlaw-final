@@ -4,7 +4,7 @@ import { withRateLimit } from '@/lib/middleware/rateLimiter';
 import { sanitizeInput } from '@/lib/security/encryption';
 import { guardrailsPrompt, type HelpLevel } from '@/lib/integrity/humanMode';
 import { logProvenance } from '@/lib/integrity/provenance';
-import { getServerSupabaseClient } from '@/lib/supabase/serverClient';
+import { getSupabaseClient } from '@/lib/supabase/client';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
@@ -31,7 +31,7 @@ async function humanModeHandler(req: NextApiRequest, res: NextApiResponse) {
   }
 
   try {
-    const supabase = getServerSupabaseClient();
+    const supabase = getSupabaseClient();
     if (!supabase) {
       return res.status(500).json({ error: 'Database connection not available' });
     }

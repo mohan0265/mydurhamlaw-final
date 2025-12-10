@@ -1,6 +1,6 @@
 // src/lib/buildUserSystemPrompt.ts
 
-import { getServerSupabaseClient } from '@/lib/supabase/serverClient';
+import { getSupabaseClient } from '@/lib/supabase/client';
 
 const TERMS = {
   MICHALMAS: 'Michaelmas',
@@ -31,7 +31,7 @@ function getCurrentTermAndWeek(): { term: string; week: number } {
 }
 
 export async function buildUserSystemPrompt(userId: string): Promise<string> {
-  const supabase = getServerSupabaseClient();
+  const supabase = getSupabaseClient();
   if (!supabase) {
     return `You are Priya, an AI study buddy for a Durham Law student. Some features are currently unavailable, but I'll do my best to help you.`;
   }

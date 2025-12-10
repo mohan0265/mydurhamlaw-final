@@ -1,6 +1,6 @@
 // API Security utilities for MyDurhamLaw
 import { NextApiRequest, NextApiResponse } from 'next'
-import { getServerSupabaseClient } from '@/lib/supabase/serverClient'
+import { getSupabaseClient } from '@/lib/supabase/client'
 import { createHash, randomBytes } from 'crypto'
 
 // Validate that API keys are never exposed to client
@@ -38,7 +38,7 @@ export function validateOpenAIKeySecurity() {
 
 // Enhanced user authentication for API routes
 export async function authenticateAPIUser(req: NextApiRequest): Promise<{ user: any; profile: any } | null> {
-  const supabase = getServerSupabaseClient()
+  const supabase = getSupabaseClient()
   if (!supabase) return null
   
   try {

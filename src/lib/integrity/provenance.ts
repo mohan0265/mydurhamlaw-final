@@ -1,4 +1,4 @@
-import { getServerSupabaseClient } from '@/lib/supabase/serverClient';
+import { getSupabaseClient } from '@/lib/supabase/client';
 import type { HelpLevel } from './humanMode';
 
 export async function logProvenance(input: {
@@ -13,7 +13,7 @@ export async function logProvenance(input: {
   originalityScore?: number;
   notes?: string;
 }) {
-  const supabase = getServerSupabaseClient();
+  const supabase = getSupabaseClient();
   if (!supabase) {
     console.error('Supabase client unavailable for provenance logging');
     return;
@@ -35,7 +35,7 @@ export async function logProvenance(input: {
 }
 
 export async function getProvenance(userId: string, assignmentId?: string) {
-  const supabase = getServerSupabaseClient();
+  const supabase = getSupabaseClient();
   if (!supabase) {
     console.error('Supabase client unavailable for getting provenance');
     return null;

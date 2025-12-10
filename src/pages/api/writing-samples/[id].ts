@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next'
-import { getServerSupabaseClient } from '@/lib/supabase/serverClient'
+import { getSupabaseClient } from '@/lib/supabase/client'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const { id } = req.query
@@ -16,7 +16,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   const token = authHeader.replace('Bearer ', '')
   
-  const supabase = getServerSupabaseClient()
+  const supabase = getSupabaseClient()
   if (!supabase) {
     console.error('Supabase client is not available.');
     return res.status(500).json({ error: 'Database connection unavailable' });
@@ -42,6 +42,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
 async function handleGetSample(req: NextApiRequest, res: NextApiResponse, userId: string, sampleId: string) {
   try {
+    const supabase = getSupabaseClient()
     if (!supabase) {
       console.error('Supabase client is not available.');
       return res.status(500).json({ error: 'Database connection unavailable' });
@@ -80,6 +81,7 @@ async function handleGetSample(req: NextApiRequest, res: NextApiResponse, userId
 
 async function handleUpdateSample(req: NextApiRequest, res: NextApiResponse, userId: string, sampleId: string) {
   try {
+    const supabase = getSupabaseClient()
     if (!supabase) {
       console.error('Supabase client is not available.');
       return res.status(500).json({ error: 'Database connection unavailable' });
@@ -139,6 +141,7 @@ async function handleUpdateSample(req: NextApiRequest, res: NextApiResponse, use
 
 async function handleDeleteSample(req: NextApiRequest, res: NextApiResponse, userId: string, sampleId: string) {
   try {
+    const supabase = getSupabaseClient()
     if (!supabase) {
       console.error('Supabase client is not available.');
       return res.status(500).json({ error: 'Database connection unavailable' });
