@@ -1,5 +1,5 @@
 // src/lib/durmah/service.ts
-import { getSupabaseClient } from '@/lib/supabase/client';
+import { getServerSupabaseClient } from '@/lib/supabase/serverClient';
 
 export type StudentContext = {
   userId: string | null;
@@ -18,7 +18,7 @@ const EMPTY_CONTEXT: StudentContext = {
 };
 
 export async function getStudentContext(): Promise<StudentContext> {
-  const supabase = getSupabaseClient();
+  const supabase = getServerSupabaseClient();
   if (!supabase) {
     return { ...EMPTY_CONTEXT };
   }

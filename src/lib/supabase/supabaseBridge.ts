@@ -30,15 +30,14 @@ export async function loadMDLStudentContext(
 ): Promise<MDLStudentContext> {
   let u = user;
   try {
-    const mod = await import("@/lib/supabase/client");
-    const sb = (mod as any).supabase as
-      | { auth: { getSession: () => Promise<{ data?: { session?: any } }> } }
-      | null
-      | undefined;
+    if (typeof window !== 'undefined') {
+      const mod = await import("@/lib/supabase/client");
+      const sb = (mod as any).supabase;
 
-    if (!u && sb) {
-      const { data } = await sb.auth.getSession();
-      u = (data?.session?.user as MinimalUser) || undefined;
+      if (!u && sb) {
+        const { data } = await sb.auth.getSession();
+        u = (data?.session?.user as MinimalUser) || undefined;
+      }
     }
   } catch {
     // anonymous fallback ok
