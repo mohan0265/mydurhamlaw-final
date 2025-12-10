@@ -11,7 +11,7 @@ import {
 } from "@/lib/durmah/systemPrompt";
 import { formatTodayForDisplay } from "@/lib/durmah/phase";
 import { useDurmahSettings } from "@/hooks/useDurmahSettings";
-import { Settings, X, ArrowRight, AlertTriangle } from "lucide-react";
+import { Settings, X, ArrowRight, AlertTriangle, Lock } from "lucide-react";
 
 type Msg = { role: "durmah" | "you"; text: string; ts: number };
 
@@ -454,31 +454,55 @@ export default function DurmahWidget() {
         </div>
       )}
 
-      {/* --------------- CHAT HISTORY ---------------- */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50/50">
-        {messages.length === 0 && !ready && (
-           <div className="flex justify-center py-8">
-             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-violet-600"></div>
-           </div>
-        )}
-        
-        {messages.map((m) => (
-          <div key={m.ts} className={`flex ${m.role === "you" ? "justify-end" : "justify-start"}`}>
-            <div
-              className={`px-4 py-3 rounded-2xl max-w-[85%] text-sm shadow-sm leading-relaxed ${
-                m.role === "you"
-                  ? "bg-gradient-to-br from-violet-600 to-indigo-600 text-white rounded-tr-sm"
-                  : "bg-white text-gray-800 border border-gray-100 rounded-tl-sm"
-              }`}
-            >
-              {m.text}
-            </div>
+      {/* --------------- NOT SIGNED IN STATE ---------------- */}
+      {!signedIn && (
+        <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-slate-50/50">
+          <div className="w-20 h-20 bg-gradient-to-br from-violet-100 to-indigo-100 rounded-full flex items-center justify-center mb-6 shadow-inner">
+             <Lock className="w-10 h-10 text-violet-600" />
           </div>
-        ))}
-      </div>
+          <h3 className="text-xl font-bold text-gray-800 mb-2">Unlock Your Legal Buddy</h3>
+          <p className="text-sm text-gray-600 mb-8 leading-relaxed max-w-[260px]">
+            Sign in to chat with Durmah, access your study plan, and get 24/7 legal support.
+          </p>
+          <div className="flex flex-col gap-3 w-full">
+             <a href="/login" className="w-full py-3 bg-violet-600 text-white rounded-xl font-bold hover:bg-violet-700 transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2">
+               Log In
+               <ArrowRight size={16} />
+             </a>
+             <a href="/signup" className="w-full py-3 bg-white text-violet-600 border border-violet-200 rounded-xl font-bold hover:bg-violet-50 transition-all">
+               Start Free Trial
+             </a>
+          </div>
+        </div>
+      )}
+
+      {/* --------------- CHAT HISTORY ---------------- */}
+      {signedIn && (
+        <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50/50">
+          {messages.length === 0 && !ready && (
+             <div className="flex justify-center py-8">
+               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-violet-600"></div>
+             </div>
+          )}
+          
+          {messages.map((m) => (
+            <div key={m.ts} className={`flex ${m.role === "you" ? "justify-end" : "justify-start"}`}>
+              <div
+                className={`px-4 py-3 rounded-2xl max-w-[85%] text-sm shadow-sm leading-relaxed ${
+                  m.role === "you"
+                    ? "bg-gradient-to-br from-violet-600 to-indigo-600 text-white rounded-tr-sm"
+                    : "bg-white text-gray-800 border border-gray-100 rounded-tl-sm"
+                }`}
+              >
+                {m.text}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* --------------- QUICK REPLY CHIPS ---------------- */}
-      {!isListening && !showSettings && (
+      {signedIn && !isListening && !showSettings && (
         <div className="flex gap-2 overflow-x-auto p-3 border-t border-gray-100 bg-white no-scrollbar">
           {chips.map((c) => (
             <button
@@ -493,7 +517,7 @@ export default function DurmahWidget() {
       )}
 
       {/* --------------- TEXT INPUT BAR ---------------- */}
-      {!isListening && !showSettings && (
+      {signedIn && !isListening && !showSettings && (
         <div className="border-t border-gray-100 p-4 flex gap-3 items-center bg-white">
           <input
             value={input}
