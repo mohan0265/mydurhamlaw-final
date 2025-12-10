@@ -11,7 +11,7 @@ import {
 } from "@/lib/durmah/systemPrompt";
 import { formatTodayForDisplay } from "@/lib/durmah/phase";
 import { useDurmahSettings } from "@/hooks/useDurmahSettings";
-import { Settings, X, ArrowRight, AlertTriangle, Lock, Brain } from "lucide-react";
+import { Settings, X, ArrowRight, AlertTriangle, Check, Volume2, Brain, Zap } from "lucide-react";
 import Link from 'next/link';
 
 type Msg = { role: "durmah" | "you"; text: string; ts: number };
@@ -58,7 +58,7 @@ export default function DurmahWidget() {
       academicYear: base.academicYear,
       modules: base.modules,
       nowPhase: base.nowPhase,
-      currentPhase: base.nowPhase, // Map for systemPrompt
+      currentPhase: base.nowPhase,
       keyDates: base.keyDates,
       todayLabel: formatTodayForDisplay(),
       upcomingTasks,
@@ -75,6 +75,7 @@ export default function DurmahWidget() {
   const [callTranscript, setCallTranscript] = useState<Msg[]>([]);
   const [showVoiceTranscript, setShowVoiceTranscript] = useState(false);
   const [memory, setMemory] = useState<DurmahMemorySnapshot | null>(null);
+  const [previewingVoiceId, setPreviewingVoiceId] = useState<string | null>(null);
 
   const streamControllerRef = useRef<AbortController | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -125,15 +126,16 @@ export default function DurmahWidget() {
   // Set initial greeting once ready
   useEffect(() => {
     if (ready && messages.length === 0) {
-      const greeting = composeGreeting(studentContext, memory, upcomingTasks, todaysEvents);
+      // Use preset's welcome message if available, otherwise fallback
+      const greeting = preset?.welcomeMessage || composeGreeting(studentContext, memory, upcomingTasks, todaysEvents);
       setMessages([{ role: "durmah", text: greeting, ts: Date.now() }]);
     }
-  }, [ready, studentContext, memory, messages.length, upcomingTasks, todaysEvents]);
+  }, [ready, preset, studentContext, memory, messages.length, upcomingTasks, todaysEvents]);
 
 
   // 3. Voice Hook
   const systemPrompt = useMemo(() => 
-    buildDurmahSystemPrompt(studentContext, memory, upcomingTasks, todaysEvents, preset), 
+    buildDurmahSystemPrompt(studentContext, memory, upcomingTasks, todaysEvents, { systemTone: preset?.subtitle || "Friendly" }), 
   [studentContext, memory, upcomingTasks, todaysEvents, preset]);
 
   // Pass geminiVoice from the selected preset
@@ -144,9 +146,10 @@ export default function DurmahWidget() {
     status,
     speaking,
     error: voiceError,
+    playVoicePreview // Imported from hook
   } = useDurmahRealtime({
     systemPrompt,
-    voice: preset.geminiVoice, // e.g. "charon"
+    voice: preset?.geminiVoice || "charon", // e.g. "charon"
     audioRef,
     onTurn: (turn) => {
       setCallTranscript((prev) => [
@@ -189,6 +192,17 @@ export default function DurmahWidget() {
     stopListening();
     setShowVoiceTranscript(true);
   }
+
+  const handlePreview = async (vid: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (previewingVoiceId === vid) return; // Already playing or blocking re-click
+    
+    setPreviewingVoiceId(vid);
+    if (playVoicePreview) {
+      await playVoicePreview(vid); // This will play and auto-close
+    }
+    setPreviewingVoiceId(null);
+  };
 
   const saveVoiceTranscript = async () => {
     // Note: Saved to local state + memory hint
@@ -433,38 +447,86 @@ export default function DurmahWidget() {
         </div>
       </header>
 
-      {/* --------------- SETTINGS MODAL ---------------- */}
+      {/* --------------- SETTINGS MODAL (PERSONA CARDS) ---------------- */}
       {showSettings && (
-        <div className="absolute inset-0 z-20 bg-white/98 p-5 flex flex-col animate-in fade-in slide-in-from-bottom-4 backdrop-blur-xl">
-          <div className="flex justify-between items-center mb-6 border-b border-gray-100 pb-4">
-            <h3 className="font-bold text-lg text-gray-800">Durmah Settings</h3>
-            <button onClick={() => setShowSettings(false)} className="p-2 rounded-full hover:bg-gray-100 text-gray-500">
+        <div className="absolute inset-0 z-20 bg-gray-50/95 backdrop-blur-xl flex flex-col animate-in fade-in slide-in-from-bottom-4">
+          <div className="flex justify-between items-center px-6 py-4 border-b border-gray-200 bg-white/50">
+             <div>
+                <h3 className="font-bold text-lg text-gray-800">Durmah's Voice</h3>
+                <p className="text-xs text-gray-500">Select a personality for your mentor</p>
+             </div>
+            <button onClick={() => setShowSettings(false)} className="p-2 rounded-full hover:bg-gray-200 text-gray-500">
               <X size={20} />
             </button>
           </div>
           
-          <div className="space-y-6">
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-3">Voice Style</label>
-              <div className="space-y-3">
-                {availablePresets.map((p) => (
-                  <button
-                    key={p.id}
-                    onClick={() => updateVoice(p.id)}
-                    className={`w-full text-left p-4 rounded-xl border transition-all duration-200 ${
-                      voiceId === p.id 
-                        ? "border-violet-500 bg-violet-50 ring-1 ring-violet-500 shadow-sm" 
-                        : "border-gray-200 hover:border-violet-300 hover:bg-gray-50"
-                    }`}
-                  >
-                    <div className="font-bold text-sm text-gray-900 mb-1">{p.label}</div>
-                    <div className="text-xs text-gray-500 leading-relaxed">{p.subtitle}</div>
-                  </button>
-                ))}
+          <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
+              <div className="grid grid-cols-1 gap-4 pb-4">
+                {availablePresets.map((p) => {
+                  const isSelected = voiceId === p.id;
+                  const isPreviewing = previewingVoiceId === p.id;
+                  
+                  return (
+                    <div 
+                      key={p.id}
+                      onClick={() => updateVoice(p.id)}
+                      className={`relative group rounded-2xl border transition-all duration-300 cursor-pointer overflow-hidden ${
+                        isSelected 
+                          ? "bg-white border-violet-500 shadow-lg ring-1 ring-violet-500 scale-[1.02]" 
+                          : "bg-white border-gray-200 hover:border-violet-200 hover:shadow-md hover:bg-gray-50"
+                      }`}
+                    >
+                      {/* Top Color Band */}
+                      <div className={`h-2 w-full bg-gradient-to-r ${p.colorClass}`}></div>
+                      
+                      {isSelected && (
+                        <div className="absolute top-4 right-4 bg-violet-600 text-white text-[10px] font-bold px-2 py-1 rounded-full flex items-center gap-1 shadow-sm">
+                          <Check size={10} /> Selected
+                        </div>
+                      )}
+
+                      <div className="p-5">
+                          <div className="flex items-start justify-between mb-3">
+                             <div className={`w-10 h-10 rounded-full flex items-center justify-center bg-gradient-to-br ${p.colorClass} text-white shadow-md`}>
+                                {p.icon === 'mentor' && <Brain size={20} />}
+                                {p.icon === 'owl' && <Brain size={20} />} 
+                                {p.icon === 'feather' && <Volume2 size={20} />} 
+                                {p.icon === 'spark' && <Zap size={20} />}
+                             </div>
+                          </div>
+                          
+                          <h4 className="font-bold text-gray-900 mb-1">{p.label}</h4>
+                          <p className="text-xs text-gray-500 mb-4 h-8">{p.subtitle}</p>
+                          
+                          <button
+                             onClick={(e) => handlePreview(p.id, e)}
+                             disabled={Boolean(isPreviewing)}
+                             className={`w-full py-2.5 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition-all ${
+                               isPreviewing 
+                                 ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                                 : "bg-gray-100 text-gray-600 hover:bg-violet-100 hover:text-violet-700"
+                             }`}
+                          >
+                             {isPreviewing ? (
+                               <>
+                                 <span className="w-2 h-2 bg-violet-500 rounded-full animate-pulse"></span>
+                                 Playing...
+                               </>
+                             ) : (
+                               <>
+                                 <Volume2 size={14} /> Play Preview
+                               </>
+                             )}
+                          </button>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
-            </div>
-            
-            <div className="text-xs text-gray-400 text-center mt-auto">
+          </div>
+          
+          <div className="p-4 border-t border-gray-200 bg-white/50 text-center">
+            <div className="text-[10px] text-gray-400 uppercase tracking-widest font-semibold">
                Powered by Gemini Realtime
             </div>
           </div>
