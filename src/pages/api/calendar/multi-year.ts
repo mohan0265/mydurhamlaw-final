@@ -1,6 +1,6 @@
 // src/pages/api/calendar/multi-year.ts
 import { NextApiRequest, NextApiResponse } from 'next'
-import { getServerSupabase } from '@/lib/supabase/server'
+import { getServerSupabase, getServerUser } from '@/lib/api/serverAuth'
 import { MultiYearData, YearOverview, Module } from '@/types/calendar'
 import {
   DURHAM_LLB_2025_26,
@@ -33,17 +33,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // --- AUTH (supports Authorization: Bearer <token>) ---
     const isDemoMode = process.env.NEXT_PUBLIC_DEMO_CALENDAR === 'true'
-    const authHeader = String(req.headers.authorization || '')
-    const bearerPrefix = 'Bearer '
-    const token = authHeader.startsWith(bearerPrefix)
-      ? authHeader.slice(bearerPrefix.length)
-      : undefined
-
-    const supabase = getServerSupabase(req, res)
-    const { data: userData, error: authError } = token
-      ? await supabase.auth.getUser(token)
-      : await supabase.auth.getUser()
-    const user = userData?.user
+    const { user, error: authError, supabase } = await getServerUser(req, res)
 
     // DEMO MODE: unauthenticated -> typed empty payload
     if ((!user || authError) && isDemoMode) {

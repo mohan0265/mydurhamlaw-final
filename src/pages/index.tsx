@@ -75,6 +75,7 @@ export default function DurhamLanding() {
     if (typeof emailName === 'string' && emailName.trim()) {
       return emailName;
     }
+    
     if (typeof fullName === 'string' && fullName.trim()) {
       return fullName;
     }
@@ -84,11 +85,26 @@ export default function DurhamLanding() {
   return (
     <>
       <Head>
-        <title>MyDurhamLaw - Study Companion</title>
+        <title>MyDurhamLaw | AI Legal Mentor & Student Wellbeing</title>
         <meta
           name="description"
-          content="AI for law students: memory, planning, case law, wellbeing"
+          content="MyDurhamLaw: The essential AI companion for Durham University law students. Features Durmah (Legal Eagle Mentor) and Always With You (emotional connection for loved ones)."
         />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        
+        {/* Open Graph / Facebook */}
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://mydurhamlaw.com/" />
+        <meta property="og:title" content="MyDurhamLaw | AI Legal Mentor & Student Wellbeing" />
+        <meta property="og:description" content="Your AI-powered Durham Law mentor – and an emotional lifeline for students far from home." />
+        <meta property="og:image" content="/assets/images/hero-supreme-court-uk.webp" />
+
+        {/* Twitter */}
+        <meta property="twitter:card" content="summary_large_image" />
+        <meta property="twitter:url" content="https://mydurhamlaw.com/" />
+        <meta property="twitter:title" content="MyDurhamLaw | AI Legal Mentor & Student Wellbeing" />
+        <meta property="twitter:description" content="Your AI-powered Durham Law mentor – and an emotional lifeline for students far from home." />
+        <meta property="twitter:image" content="/assets/images/hero-supreme-court-uk.webp" />
       </Head>
 
       {/* Hero Section */}

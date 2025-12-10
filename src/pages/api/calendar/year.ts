@@ -1,6 +1,6 @@
 // src/pages/api/calendar/year.ts
 import { NextApiRequest, NextApiResponse } from 'next'
-import { getServerSupabase } from '@/lib/supabase/server'
+import { getServerSupabase, getServerUser } from '@/lib/api/serverAuth'
 import { YearOverview } from '@/types/calendar'
 import { DURHAM_LLB_2025_26, getDefaultPlanByStudentYear } from '@/data/durham/llb'
 
@@ -18,14 +18,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const isDemoMode = process.env.NEXT_PUBLIC_DEMO_CALENDAR === 'true'
 
     // --- AUTH (supports Bearer token or cookie) ---
-    const authHeader = String(req.headers.authorization || '')
-    const token = authHeader.startsWith('Bearer ') ? authHeader.slice('Bearer '.length) : undefined
-
-    const supabase = getServerSupabase(req, res)
-    const { data: userData, error: authError } = token
-      ? await supabase.auth.getUser(token)
-      : await supabase.auth.getUser()
-    const user = userData?.user
+    const { user, error: authError } = await getServerUser(req, res)
 
     // DEMO MODE: unauthenticated → return a valid, typed YearOverview from dataset
     if ((!user || authError) && isDemoMode) {

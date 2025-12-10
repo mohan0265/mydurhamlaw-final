@@ -1,6 +1,6 @@
 // src/pages/api/calendar/progress.ts
 import { NextApiRequest, NextApiResponse } from 'next'
-import { getServerSupabase } from '@/lib/supabase/server'
+import { getServerSupabase, getServerUser } from '@/lib/api/serverAuth'
 import { ModuleProgress } from '@/types/calendar'
 
 // Force this API to use Node.js runtime instead of Edge Runtime
@@ -18,14 +18,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const isDemoMode = process.env.NEXT_PUBLIC_DEMO_CALENDAR === 'true'
 
     // --- AUTH (supports Authorization: Bearer <token>) ---
-    const authHeader = String(req.headers.authorization || '')
-    const token = authHeader.startsWith('Bearer ') ? authHeader.slice('Bearer '.length) : undefined
-
-    const supabase = getServerSupabase(req, res)
-    const { data: userData, error: authError } = token
-      ? await supabase.auth.getUser(token)
-      : await supabase.auth.getUser()
-    const user = userData?.user
+    const { user, error: authError } = await getServerUser(req, res)
 
     // Demo mode: unauthenticated -> return typed empty list
     if ((!user || authError) && isDemoMode) {

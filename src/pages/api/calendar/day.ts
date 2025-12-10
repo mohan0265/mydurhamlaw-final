@@ -1,6 +1,6 @@
 // src/pages/api/calendar/day.ts
 import { NextApiRequest, NextApiResponse } from 'next'
-import { getServerSupabase, getServerUser } from '@/lib/supabase/server'
+import { getServerSupabase, getServerUser } from '@/lib/api/serverAuth'
 import { DayDetail } from '@/types/calendar'
 import { format } from 'date-fns'
 import { DURHAM_LLB_2025_26, getDefaultPlanByStudentYear } from '@/data/durham/llb'
@@ -47,7 +47,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     console.log(`[CalendarAPI] Request for date=${date}. Checking auth...`)
 
     // Use the shared helper which tries cookies first, then falls back to Authorization header
-    const user = await getServerUser(req, res)
+    const { user } = await getServerUser(req, res)
 
     console.log(`[CalendarAPI] User found: ${user?.id || 'none'}`)
 

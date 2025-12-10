@@ -1,6 +1,6 @@
 // src/pages/api/calendar/month.ts
 import type { NextApiRequest, NextApiResponse } from 'next'
-import { getServerSupabase } from '@/lib/supabase/server'
+import { getServerSupabase, getServerUser } from '@/lib/api/serverAuth'
 import type { MonthData } from '@/types/calendar'
 import {
   format,
@@ -63,15 +63,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // --- AUTH (supports Authorization: Bearer <token>) ---
-    const authHeader = String(req.headers.authorization || '')
-    const bearerPrefix = 'Bearer '
-    const token = authHeader.startsWith(bearerPrefix) ? authHeader.slice(bearerPrefix.length) : undefined
-
-    const supabase = getServerSupabase(req, res)
-    const { data: userData, error: authError } = token
-      ? await supabase.auth.getUser(token)
-      : await supabase.auth.getUser()
-    const user = userData?.user
+    const { user, error: authError } = await getServerUser(req, res)
 
     // DEMO MODE: unauthenticated -> typed empty payload
     if ((!user || authError) && isDemoMode) {
