@@ -11,7 +11,7 @@ import {
 } from "@/lib/durmah/systemPrompt";
 import { formatTodayForDisplay } from "@/lib/durmah/phase";
 import { useDurmahSettings } from "@/hooks/useDurmahSettings";
-import { Settings, X } from "lucide-react";
+import { Settings, X, ArrowRight, AlertTriangle } from "lucide-react";
 
 type Msg = { role: "durmah" | "you"; text: string; ts: number };
 
@@ -305,18 +305,31 @@ export default function DurmahWidget() {
     return (
       <button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-24 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-violet-600 text-white shadow-lg"
+        className={`fixed bottom-24 right-6 z-50 flex h-16 w-16 items-center justify-center rounded-full shadow-2xl transition-all duration-300 hover:scale-105 ${
+          isListening 
+            ? "bg-gradient-to-r from-red-500 to-pink-600 ring-4 ring-red-200 animate-pulse" 
+            : "bg-gradient-to-br from-violet-600 to-indigo-700 hover:shadow-violet-500/50"
+        }`}
       >
-        Chat
+        <span className="font-serif text-3xl font-bold text-white italic">D</span>
+        {/* Listening Ring Animation */}
+        {isListening && (
+          <span className="absolute inset-0 rounded-full border-2 border-white opacity-50 animate-ping"></span>
+        )}
       </button>
     );
   }
 
   return (
-    <div className="fixed bottom-24 right-6 z-50 flex w-full max-w-md flex-col overflow-hidden rounded-2xl border border-violet-200 bg-white shadow-xl sm:w-[400px]">
-      <header className="flex items-center justify-between bg-violet-600 px-4 py-3 text-white">
-        <div className="font-semibold flex items-center gap-2">
-          Durmah <span className="bg-violet-500 rounded-full text-[10px] px-2">Beta</span>
+    <div className="fixed bottom-24 right-6 z-50 flex w-full max-w-md flex-col overflow-hidden rounded-3xl border border-violet-100 bg-white shadow-2xl sm:w-[400px] animate-in slide-in-from-bottom-10 fade-in duration-300">
+      {/* Premium Header Ribbon */}
+      <header className="flex items-center justify-between bg-gradient-to-r from-violet-600 via-indigo-600 to-violet-700 px-5 py-4 text-white shadow-md">
+        <div className="flex flex-col">
+          <div className="font-bold text-lg flex items-center gap-2">
+            Durmah
+            <span className="bg-white/20 backdrop-blur-sm rounded-full text-[10px] px-2 py-0.5 font-medium tracking-wide">BETA</span>
+          </div>
+          <span className="text-xs text-violet-100 font-medium">Your Legal Mentor</span>
         </div>
 
         {/* Hidden audio output for Durmah's voice */}
@@ -328,7 +341,7 @@ export default function DurmahWidget() {
         <div className="flex items-center gap-2">
           <button
             onClick={() => setShowSettings(!showSettings)}
-            className="p-1.5 rounded-full hover:bg-violet-500 hover:text-white"
+            className="p-2 rounded-full hover:bg-white/20 transition-colors"
             title="Voice Settings"
           >
             <Settings size={18} />
@@ -336,48 +349,56 @@ export default function DurmahWidget() {
 
           <button
             onClick={toggleVoice}
-            className={`p-1.5 rounded-full ${
-              isListening ? "bg-red-600 text-white animate-pulse" : "bg-violet-500 text-white"
+            className={`p-2 rounded-full transition-all duration-300 ${
+              isListening 
+                ? "bg-red-500 text-white shadow-lg scale-110" 
+                : "bg-white/20 text-white hover:bg-white/30"
             }`}
           >
-            {isListening ? "Stop" : "Mic"}
+            {isListening ? (
+              <div className="flex items-center gap-1">
+                <span className="w-2 h-2 bg-white rounded-full animate-bounce"></span>
+                <span className="w-2 h-2 bg-white rounded-full animate-bounce delay-75"></span>
+                <span className="w-2 h-2 bg-white rounded-full animate-bounce delay-150"></span>
+              </div>
+            ) : "Mic"}
           </button>
 
           <button
             onClick={() => setIsOpen(false)}
-            className="p-1.5 rounded-full hover:bg-violet-500 hover:text-white"
+            className="p-2 rounded-full hover:bg-white/20 transition-colors"
           >
-            <X size={18} />
+            <X size={20} />
           </button>
         </div>
       </header>
 
       {/* --------------- SETTINGS MODAL ---------------- */}
       {showSettings && (
-        <div className="absolute inset-0 z-10 bg-white/95 p-4 flex flex-col animate-in fade-in slide-in-from-bottom-4">
-          <div className="flex justify-between items-center mb-4 border-b pb-2">
-            <h3 className="font-semibold text-gray-800">Durmah Settings</h3>
-            <button onClick={() => setShowSettings(false)} className="text-gray-500 hover:text-gray-700">
-              <X size={18} />
+        <div className="absolute inset-0 z-20 bg-white/98 p-5 flex flex-col animate-in fade-in slide-in-from-bottom-4 backdrop-blur-xl">
+          <div className="flex justify-between items-center mb-6 border-b border-gray-100 pb-4">
+            <h3 className="font-bold text-lg text-gray-800">Durmah Settings</h3>
+            <button onClick={() => setShowSettings(false)} className="p-2 rounded-full hover:bg-gray-100 text-gray-500">
+              <X size={20} />
             </button>
           </div>
           
-          <div className="space-y-4">
+          <div className="space-y-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Voice Style</label>
-              <div className="space-y-2">
+              <label className="block text-sm font-semibold text-gray-700 mb-3">Voice Style</label>
+              <div className="space-y-3">
                 {availablePresets.map((p) => (
                   <button
                     key={p.id}
                     onClick={() => updateVoice(p.id)}
-                    className={`w-full text-left p-3 rounded-lg border transition-all ${
+                    className={`w-full text-left p-4 rounded-xl border transition-all duration-200 ${
                       voiceId === p.id 
-                        ? "border-violet-600 bg-violet-50 ring-1 ring-violet-600" 
+                        ? "border-violet-500 bg-violet-50 ring-1 ring-violet-500 shadow-sm" 
                         : "border-gray-200 hover:border-violet-300 hover:bg-gray-50"
                     }`}
                   >
-                    <div className="font-medium text-sm text-gray-900">{p.label}</div>
-                    <div className="text-xs text-gray-500">{p.description}</div>
+                    <div className="font-bold text-sm text-gray-900 mb-1">{p.label}</div>
+                    <div className="text-xs text-gray-500 leading-relaxed">{p.description}</div>
                   </button>
                 ))}
               </div>
@@ -388,19 +409,20 @@ export default function DurmahWidget() {
 
       {/* --------------- VOICE TRANSCRIPT ---------------- */}
       {showVoiceTranscript && callTranscript.length > 0 && !showSettings && (
-        <div className="p-3 bg-violet-50 border-b border-violet-200">
-          <div className="text-xs font-semibold text-violet-700 mb-2">
-            Voice Session Transcript
+        <div className="p-4 bg-violet-50/80 backdrop-blur-sm border-b border-violet-100">
+          <div className="text-xs font-bold uppercase tracking-wider text-violet-600 mb-3 flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-violet-500 animate-pulse"></span>
+            Live Transcript
           </div>
 
-          <div className="max-h-40 overflow-y-auto space-y-1">
+          <div className="max-h-48 overflow-y-auto space-y-3 pr-2 custom-scrollbar">
             {callTranscript.map((m) => (
               <div key={m.ts} className={`flex ${m.role === "you" ? "justify-end" : "justify-start"}`}>
                 <div
-                  className={`px-2 py-1 rounded-xl text-xs ${
+                  className={`px-3 py-2 rounded-2xl text-sm shadow-sm ${
                     m.role === "you"
-                      ? "bg-violet-600 text-white"
-                      : "bg-white text-slate-900 border border-violet-200"
+                      ? "bg-violet-600 text-white rounded-tr-none"
+                      : "bg-white text-slate-800 border border-violet-100 rounded-tl-none"
                   }`}
                 >
                   {m.text}
@@ -409,16 +431,16 @@ export default function DurmahWidget() {
             ))}
           </div>
 
-          <div className="flex justify-end gap-2 pt-2">
+          <div className="flex justify-end gap-3 pt-3 mt-2 border-t border-violet-200/50">
             <button
               onClick={discardVoiceTranscript}
-              className="text-xs px-2 py-1 rounded bg-gray-200 hover:bg-gray-300"
+              className="text-xs font-medium px-3 py-1.5 rounded-lg text-gray-600 hover:bg-gray-200/50 transition-colors"
             >
               Discard
             </button>
             <button
               onClick={saveVoiceTranscript}
-              className="text-xs px-2 py-1 rounded bg-violet-600 text-white hover:bg-violet-700"
+              className="text-xs font-medium px-3 py-1.5 rounded-lg bg-violet-600 text-white hover:bg-violet-700 shadow-md transition-all hover:shadow-lg"
             >
               Save to Chat
             </button>
@@ -427,20 +449,26 @@ export default function DurmahWidget() {
       )}
 
       {voiceError && !showSettings && (
-        <div className="px-4 py-2 text-xs text-red-600 bg-red-50 border-y border-red-100">
-          Voice error: {voiceError}
+        <div className="px-4 py-3 text-xs font-medium text-red-600 bg-red-50 border-y border-red-100 flex items-center gap-2">
+           <AlertTriangle size={14} /> {voiceError}
         </div>
       )}
 
       {/* --------------- CHAT HISTORY ---------------- */}
-      <div className="flex-1 overflow-y-auto p-3 space-y-2">
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50/50">
+        {messages.length === 0 && !ready && (
+           <div className="flex justify-center py-8">
+             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-violet-600"></div>
+           </div>
+        )}
+        
         {messages.map((m) => (
           <div key={m.ts} className={`flex ${m.role === "you" ? "justify-end" : "justify-start"}`}>
             <div
-              className={`px-3 py-2 rounded-xl max-w-[80%] text-sm ${
+              className={`px-4 py-3 rounded-2xl max-w-[85%] text-sm shadow-sm leading-relaxed ${
                 m.role === "you"
-                  ? "bg-violet-600 text-white"
-                  : "bg-gray-100 text-gray-800"
+                  ? "bg-gradient-to-br from-violet-600 to-indigo-600 text-white rounded-tr-sm"
+                  : "bg-white text-gray-800 border border-gray-100 rounded-tl-sm"
               }`}
             >
               {m.text}
@@ -451,12 +479,12 @@ export default function DurmahWidget() {
 
       {/* --------------- QUICK REPLY CHIPS ---------------- */}
       {!isListening && !showSettings && (
-        <div className="flex gap-2 overflow-x-auto p-3 border-t border-gray-200">
+        <div className="flex gap-2 overflow-x-auto p-3 border-t border-gray-100 bg-white no-scrollbar">
           {chips.map((c) => (
             <button
               key={c}
               onClick={() => setInput(c)}
-              className="text-xs px-3 py-1 rounded-full bg-violet-100 text-violet-700 hover:bg-violet-200"
+              className="whitespace-nowrap text-xs font-medium px-4 py-2 rounded-full bg-violet-50 text-violet-700 border border-violet-100 hover:bg-violet-100 hover:border-violet-200 transition-all"
             >
               {c}
             </button>
@@ -466,30 +494,54 @@ export default function DurmahWidget() {
 
       {/* --------------- TEXT INPUT BAR ---------------- */}
       {!isListening && !showSettings && (
-        <div className="border-t border-gray-200 p-3 flex gap-2 items-center bg-white">
+        <div className="border-t border-gray-100 p-4 flex gap-3 items-center bg-white">
           <input
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && send()}
-            placeholder="Type your message..."
-            className="flex-1 px-3 py-2 rounded-xl border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400"
+            placeholder="Ask Durmah..."
+            className="flex-1 px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 transition-all bg-gray-50 focus:bg-white"
           />
 
           <button
             onClick={send}
             disabled={!input.trim()}
-            className="px-3 py-2 rounded-xl bg-violet-600 text-white hover:bg-violet-700 disabled:bg-gray-300"
+            className="p-3 rounded-xl bg-violet-600 text-white hover:bg-violet-700 disabled:bg-gray-100 disabled:text-gray-400 transition-all shadow-md hover:shadow-lg disabled:shadow-none"
           >
-            Send
+            <ArrowRight size={18} />
           </button>
         </div>
       )}
 
-      {/* --------------- VOICE MODE FOOTER ---------------- */}
+      {/* --------------- VOICE MODE FOOTER (WAVEFORM) ---------------- */}
       {isListening && !showSettings && (
-        <div className="p-3 text-center text-xs bg-violet-50 border-t border-violet-200">
-          <div className="font-semibold mb-1">Status: {status}</div>
-          {speaking ? "Durmah is speaking..." : "Listening..."}
+        <div className="p-6 text-center bg-white border-t border-gray-100">
+          <div className="flex items-center justify-center gap-1 h-8 mb-2">
+             {/* Simulated Waveform Animation */}
+             {[...Array(5)].map((_, i) => (
+               <div 
+                 key={i} 
+                 className={`w-1 bg-violet-500 rounded-full animate-waveform`}
+                 style={{ 
+                   height: speaking ? '100%' : '30%',
+                   animationDelay: `${i * 0.1}s`,
+                   animationDuration: '0.8s'
+                 }} 
+               />
+             ))}
+          </div>
+          <div className="text-xs font-medium text-violet-600 uppercase tracking-wide">
+            {speaking ? "Durmah is speaking..." : "Listening..."}
+          </div>
+          <style jsx>{`
+            @keyframes waveform {
+              0%, 100% { height: 30%; opacity: 0.5; }
+              50% { height: 100%; opacity: 1; }
+            }
+            .animate-waveform {
+              animation: waveform 1s infinite ease-in-out;
+            }
+          `}</style>
         </div>
       )}
     </div>
