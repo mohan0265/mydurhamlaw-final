@@ -35,5 +35,5 @@ export const DURMAH_VOICE_PRESETS: DurmahVoicePreset[] = [
 export const DEFAULT_DURMAH_VOICE_ID: DurmahVoiceId = "warm_female";
 
 export function getDurmahVoicePreset(id?: string | null): DurmahVoicePreset {
-  return DURMAH_VOICE_PRESETS.find(p => p.id === id) || DURMAH_VOICE_PRESETS[0];
+  return (DURMAH_VOICE_PRESETS.find(p => p.id === id) || DURMAH_VOICE_PRESETS[0]) as DurmahVoicePreset;
 }

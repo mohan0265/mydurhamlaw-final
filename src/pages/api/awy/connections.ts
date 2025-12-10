@@ -32,10 +32,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   try {
     if (req.method === 'GET') {
-      const { data, error } = await supabase
+      const { data, error } = await supabase!
         .from('awy_connections')
         .select('*')
-        .eq('student_id', user.id)
+        .eq('student_id', user!.id)
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -64,7 +64,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
 
       const payload = {
-        student_id: user.id,
+        student_id: user!.id,
         loved_email: lovedEmail,
         display_name: display_name?.trim() || null,
         relationship: relationship?.trim() || null,
@@ -72,7 +72,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         is_visible: true,
       };
 
-      const { error } = await supabase
+      const { error } = await supabase!
         .from('awy_connections')
         .upsert(payload, { onConflict: 'student_id,loved_email' });
 
@@ -90,11 +90,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         return res.status(400).json({ ok: false, error: 'missing_id' });
       }
 
-      const { error } = await supabase
+      const { error } = await supabase!
         .from('awy_connections')
         .delete()
         .eq('id', id)
-        .eq('student_id', user.id);
+        .eq('student_id', user!.id);
 
       if (error) {
         console.warn('[AWY DELETE] connections error:', error);

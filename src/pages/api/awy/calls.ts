@@ -42,7 +42,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         .from("awy_calls")
         .insert({
           id: callId,
-          student_id: user.id,
+          student_id: user!.id,
           loved_email: email,
           status: "initiated",
           created_at: new Date().toISOString(),

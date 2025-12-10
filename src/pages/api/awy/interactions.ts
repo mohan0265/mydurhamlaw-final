@@ -29,10 +29,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const limit = Number.parseInt((qLimit as string) ?? "20", 10) || 20;
 
       try {
-        const { data, error } = await supabase
+        const { data, error } = await supabase!
           .from("awy_interactions")
           .select("*")
-          .or('sender_id.eq.' + user.id + ',recipient_id.eq.' + user.id)
+          .or('sender_id.eq.' + user!.id + ',recipient_id.eq.' + user!.id)
           .order("created_at", { ascending: false })
           .limit(limit);
 
@@ -53,12 +53,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         connection_id: connectionId,
         interaction_type: interactionType,
         message: message ?? null,
-        sender_id: user.id,
+        sender_id: user!.id,
         created_at: new Date().toISOString(),
       };
 
       try {
-        const { data, error } = await supabase
+        const { data, error } = await supabase!
           .from("awy_interactions")
           .insert(payload)
           .select("id")
@@ -84,7 +84,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
 
       try {
-        const { error } = await supabase
+        const { error } = await supabase!
           .from("awy_interactions")
           .update({ is_read: true, read_at: new Date().toISOString() })
           .eq("id", readId);

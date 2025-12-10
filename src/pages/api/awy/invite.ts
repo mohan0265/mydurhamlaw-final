@@ -41,7 +41,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const { data: existingConnection, error: existingError } = await supabaseAdmin
       .from("awy_connections")
       .select("id, status")
-      .eq("student_id", user.id)
+      .eq("student_id", user!.id)
       .eq("loved_email", normalizedEmail)
       .maybeSingle();
 
@@ -54,7 +54,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const invited = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
         data: {
           role: "loved_one",
-          invited_by: user.id,
+          invited_by: user!.id,
           relationship,
         },
         redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback?type=loved_one`,
@@ -77,7 +77,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const { data: connectionData, error: connectionError } = await supabaseAdmin
       .from("awy_connections")
       .insert({
-        student_id: user.id,
+        student_id: user!.id,
         loved_email: normalizedEmail,
         relationship,
         display_name: displayName || null,

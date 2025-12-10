@@ -23,10 +23,10 @@ export function useDurmahSettings() {
 
     const fetchSettings = async () => {
       try {
-        const { data, error } = await supabase
+        const { data, error } = await supabase!
           .from('profiles')
           .select('durmah_voice_id')
-          .eq('id', user.id)
+          .eq('id', user!.id)
           .single();
 
         if (error) throw error;
@@ -58,7 +58,7 @@ export function useDurmahSettings() {
     if (!user?.id) return;
 
     try {
-      const { error } = await supabase
+      const { error } = await supabase!
         .from('profiles')
         .update({ durmah_voice_id: newVoiceId })
         .eq('id', user.id);

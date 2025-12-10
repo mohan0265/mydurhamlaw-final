@@ -24,13 +24,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         lovedOnes: [],
       });
     }
-    const { user, supabase } = got;
+    const { user, supabase } = got as any;
 
     if (!supabase) {
-      console.debug('[AWY] presence supabase client missing for user:', user.id);
+      console.debug('[AWY] presence supabase client missing for user:', user!.id);
       return res.status(200).json({
         connected: true,
-        me: { id: user.id, email: user.email ?? null },
+        me: { id: user!.id, email: user!.email ?? null },
         lovedOnes: [],
       });
     }
@@ -38,7 +38,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Future: hydrate loved ones once relationships are stored.
     return res.status(200).json({
       connected: true,
-      me: { id: user.id, email: user.email ?? null },
+      me: { id: user!.id, email: user!.email ?? null },
       lovedOnes: [],
     });
   } catch (e: any) {

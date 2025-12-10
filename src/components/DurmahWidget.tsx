@@ -308,7 +308,7 @@ export default function DurmahWidget() {
         <div className="absolute right-full mr-4 top-1/2 -translate-y-1/2 w-max opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none translate-x-2 group-hover:translate-x-0">
           <div className="bg-gray-900/90 backdrop-blur-sm text-white text-xs py-2.5 px-4 rounded-xl shadow-xl border border-white/10">
             <div className="font-bold mb-0.5 text-violet-200">Durmah - Your Legal Eagle Buddy</div>
-            <div className="text-gray-300">I'm always here to chat.</div>
+            <div className="text-gray-300">I'm always here to help you study.</div>
           </div>
           {/* Arrow */}
           <div className="absolute top-1/2 -translate-y-1/2 -right-1.5 w-3 h-3 bg-gray-900/90 rotate-45 border-t border-r border-white/10"></div>
@@ -316,6 +316,7 @@ export default function DurmahWidget() {
 
         <button
           onClick={() => setIsOpen(true)}
+          aria-label="Durmah - Your Legal Eagle Buddy"
           className={`flex h-16 w-16 items-center justify-center rounded-full shadow-2xl transition-all duration-300 hover:scale-105 ${
             isListening 
               ? "bg-gradient-to-r from-red-500 to-pink-600 ring-4 ring-red-200 animate-pulse" 
@@ -351,30 +352,34 @@ export default function DurmahWidget() {
         />
 
         <div className="flex items-center gap-2">
-          <button
-            onClick={() => setShowSettings(!showSettings)}
-            className="p-2 rounded-full hover:bg-white/20 transition-colors"
-            title="Voice Settings"
-          >
-            <Settings size={18} />
-          </button>
+          {signedIn && (
+            <button
+              onClick={() => setShowSettings(!showSettings)}
+              className="p-2 rounded-full hover:bg-white/20 transition-colors"
+              title="Voice Settings"
+            >
+              <Settings size={18} />
+            </button>
+          )}
 
-          <button
-            onClick={toggleVoice}
-            className={`p-2 rounded-full transition-all duration-300 ${
-              isListening 
-                ? "bg-red-500 text-white shadow-lg scale-110" 
-                : "bg-white/20 text-white hover:bg-white/30"
-            }`}
-          >
-            {isListening ? (
-              <div className="flex items-center gap-1">
-                <span className="w-2 h-2 bg-white rounded-full animate-bounce"></span>
-                <span className="w-2 h-2 bg-white rounded-full animate-bounce delay-75"></span>
-                <span className="w-2 h-2 bg-white rounded-full animate-bounce delay-150"></span>
-              </div>
-            ) : "Mic"}
-          </button>
+          {signedIn && (
+            <button
+              onClick={toggleVoice}
+              className={`p-2 rounded-full transition-all duration-300 ${
+                isListening 
+                  ? "bg-red-500 text-white shadow-lg scale-110" 
+                  : "bg-white/20 text-white hover:bg-white/30"
+              }`}
+            >
+              {isListening ? (
+                <div className="flex items-center gap-1">
+                  <span className="w-2 h-2 bg-white rounded-full animate-bounce"></span>
+                  <span className="w-2 h-2 bg-white rounded-full animate-bounce delay-75"></span>
+                  <span className="w-2 h-2 bg-white rounded-full animate-bounce delay-150"></span>
+                </div>
+              ) : "Mic"}
+            </button>
+          )}
 
           <button
             onClick={() => setIsOpen(false)}
@@ -474,7 +479,7 @@ export default function DurmahWidget() {
           </div>
           <h3 className="text-xl font-bold text-gray-800 mb-2">Unlock Your Legal Buddy</h3>
           <p className="text-sm text-gray-600 mb-8 leading-relaxed max-w-[260px]">
-            Sign in to chat with Durmah, access your study plan, and get 24/7 legal support.
+            Please log in or start your trial to use your Legal Eagle Buddy.
           </p>
           <div className="flex flex-col gap-3 w-full">
              <a href="/login" className="w-full py-3 bg-violet-600 text-white rounded-xl font-bold hover:bg-violet-700 transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2">

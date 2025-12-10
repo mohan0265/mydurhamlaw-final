@@ -31,10 +31,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const unreadOnly = (raw ?? "false").toLowerCase() === "true";
 
       try {
-        let query = supabase
+        let query = supabase!
           .from("awy_notifications")
           .select("*")
-          .eq("user_id", user.id)
+          .eq("user_id", user!.id)
           .order("created_at", { ascending: false });
 
         const { data, error } = await query;
@@ -65,10 +65,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       if (markAllAsRead) {
         try {
-          const { error } = await supabase
+          const { error } = await supabase!
             .from("awy_notifications")
             .update({ is_read: true, read_at: timestamp })
-            .eq("user_id", user.id);
+            .eq("user_id", user!.id);
 
           if (error) throw error;
           return ok(res, {
@@ -85,11 +85,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       if (notificationId) {
         try {
-          const { error } = await supabase
+          const { error } = await supabase!
             .from("awy_notifications")
             .update({ is_read: true, read_at: timestamp })
             .eq("id", notificationId)
-            .eq("user_id", user.id);
+            .eq("user_id", user!.id);
 
           if (error) throw error;
           return ok(res, {

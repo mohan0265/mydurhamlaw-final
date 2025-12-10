@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect, useRef } from 'react'
-import { Heart, Video, X, Loader2 } from 'lucide-react'
+import { Heart, Video, X, Loader2, Lock, ArrowRight } from 'lucide-react'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import toast from 'react-hot-toast'
 
@@ -28,7 +28,10 @@ export default function AWYWidget() {
   const fetchData = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
+      if (!user) {
+        setLoading(false)
+        return
+      }
 
       setUserId(user.id)
 
@@ -164,6 +167,74 @@ export default function AWYWidget() {
 
   if (loading) return null
 
+  // Logged Out State
+  if (!userId) {
+    return (
+      <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end space-y-4 group">
+        {isOpen && (
+          <div className="bg-white rounded-3xl shadow-2xl border border-pink-100 w-80 animate-in slide-in-from-bottom-5 fade-in duration-300 overflow-hidden">
+             {/* Header */}
+             <div className="bg-gradient-to-r from-pink-500 to-rose-500 px-5 py-4 flex items-center justify-between text-white">
+                <div>
+                  <h3 className="font-bold text-lg flex items-center gap-2">
+                    Always With You
+                  </h3>
+                  <p className="text-xs text-pink-100 font-medium">Emotional Connection</p>
+                </div>
+                <button 
+                  onClick={() => setIsOpen(false)}
+                  className="p-1.5 rounded-full hover:bg-white/20 transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+             </div>
+
+             <div className="p-8 text-center flex flex-col items-center">
+                 <div className="w-16 h-16 bg-pink-50 rounded-full flex items-center justify-center mb-4">
+                    <Lock className="w-8 h-8 text-pink-500" />
+                 </div>
+                 <h4 className="font-bold text-gray-900 mb-2">Connect with Love</h4>
+                 <p className="text-sm text-gray-600 mb-6">
+                   Log in to connect with your loved ones via AWY.
+                 </p>
+                 <div className="flex flex-col gap-3 w-full">
+                   <a href="/login" className="w-full py-2.5 bg-pink-500 text-white rounded-xl font-bold hover:bg-pink-600 transition-colors flex items-center justify-center gap-2">
+                     Log In
+                     <ArrowRight size={16} />
+                   </a>
+                   <a href="/loved-one-login" className="w-full py-2.5 bg-white text-pink-500 border border-pink-200 rounded-xl font-bold hover:bg-pink-50 transition-colors">
+                     Loved One Login
+                   </a>
+                 </div>
+             </div>
+          </div>
+        )}
+
+        {/* Tooltip */}
+        {!isOpen && (
+          <div className="absolute right-full mr-4 bottom-2 w-max opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none translate-x-2 group-hover:translate-x-0">
+            <div className="bg-gray-900/90 backdrop-blur-sm text-white text-xs py-2.5 px-4 rounded-xl shadow-xl border border-white/10">
+              <div className="font-bold mb-0.5 text-pink-200">Always With You</div>
+              <div className="text-gray-300">Stay emotionally close to your loved ones.</div>
+            </div>
+            {/* Arrow */}
+            <div className="absolute bottom-4 -right-1.5 w-3 h-3 bg-gray-900/90 rotate-45 border-t border-r border-white/10"></div>
+          </div>
+        )}
+
+        <button
+          onClick={() => setIsOpen(!isOpen)}
+          aria-label="Always With You - Emotional Presence"
+          className="group flex items-center justify-center w-14 h-14 bg-white border-2 border-pink-100 rounded-full shadow-lg hover:border-pink-200 hover:shadow-xl transition-all duration-200 hover:scale-105"
+        >
+          <div className="relative">
+            <Heart className={`w-6 h-6 text-pink-500 transition-transform duration-200 ${isOpen ? 'scale-110 fill-pink-500' : 'group-hover:scale-110'}`} />
+          </div>
+        </button>
+      </div>
+    )
+  }
+
   return (
     <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end space-y-4 group">
       {/* Main Widget */}
@@ -257,7 +328,7 @@ export default function AWYWidget() {
         <div className="absolute right-full mr-4 bottom-2 w-max opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none translate-x-2 group-hover:translate-x-0">
           <div className="bg-gray-900/90 backdrop-blur-sm text-white text-xs py-2.5 px-4 rounded-xl shadow-xl border border-white/10">
             <div className="font-bold mb-0.5 text-pink-200">Always With You</div>
-            <div className="text-gray-300">Stay close to the people who care about you.</div>
+            <div className="text-gray-300">Stay emotionally close to your loved ones.</div>
           </div>
           {/* Arrow */}
           <div className="absolute bottom-4 -right-1.5 w-3 h-3 bg-gray-900/90 rotate-45 border-t border-r border-white/10"></div>
@@ -267,6 +338,7 @@ export default function AWYWidget() {
       {/* Floating Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
+        aria-label="Always With You - Emotional Presence"
         className="group flex items-center justify-center w-14 h-14 bg-white border-2 border-pink-100 rounded-full shadow-lg hover:border-pink-200 hover:shadow-xl transition-all duration-200 hover:scale-105"
       >
         <div className="relative">
