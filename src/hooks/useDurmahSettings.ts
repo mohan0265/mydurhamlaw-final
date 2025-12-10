@@ -3,16 +3,19 @@ import { useAuth } from '@/lib/supabase/AuthContext';
 import { supabase } from '@/lib/supabase/client';
 import { 
   DURMAH_VOICE_PRESETS, 
-  DurmahVoiceId, 
-  DEFAULT_DURMAH_VOICE_ID,
-  getDurmahVoicePreset
+  DurmahVoiceId,
+  getDefaultDurmahVoiceId 
 } from '@/config/durmahVoicePresets';
 import toast from 'react-hot-toast';
 
 export function useDurmahSettings() {
   const { user } = useAuth();
-  const [voiceId, setVoiceId] = useState<DurmahVoiceId>(DEFAULT_DURMAH_VOICE_ID);
+  const [voiceId, setVoiceId] = useState<DurmahVoiceId>(getDefaultDurmahVoiceId());
   const [loading, setLoading] = useState(true);
+
+  // Helper to find preset by ID
+  const getDurmahVoicePreset = (id: string) => 
+    DURMAH_VOICE_PRESETS.find(p => p.id === id) || DURMAH_VOICE_PRESETS[0];
 
   // Fetch initial setting
   useEffect(() => {
@@ -34,14 +37,14 @@ export function useDurmahSettings() {
         if (data?.durmah_voice_id) {
           // Validate that the ID exists in our presets
           const preset = getDurmahVoicePreset(data.durmah_voice_id);
-          setVoiceId(preset.id);
+          setVoiceId(preset.id as DurmahVoiceId);
         }
       } catch (err: any) {
         // If the column doesn't exist yet (migration not run), just ignore and use default
         if (err?.code === 'PGRST204' || err?.message?.includes('column')) {
            console.warn('[DurmahSettings] Voice setting column missing, using default.');
         } else {
-           console.error('[DurmahSettings] Failed to fetch voice setting:', err);
+           // console.error('[DurmahSettings] Failed to fetch voice setting:', err);
         }
       } finally {
         setLoading(false);
@@ -68,8 +71,6 @@ export function useDurmahSettings() {
     } catch (err) {
       console.error('[DurmahSettings] Failed to update voice:', err);
       toast.error('Failed to save voice preference');
-      // Revert on error (optional, but good practice)
-      // For now we keep the local state as it's less jarring
     }
   }, [user?.id]);
 

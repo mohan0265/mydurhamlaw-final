@@ -1,39 +1,34 @@
-export type DurmahVoiceId = "warm_female" | "calm_male" | "energetic_coach";
+export type DurmahVoiceId =
+  | "warm_female"
+  | "calm_male"
+  | "neutral_british"
+  | "energetic_peer";
 
-export interface DurmahVoicePreset {
-  id: DurmahVoiceId;
-  label: string;
-  description: string;
-  systemTone: string;
-  modelVoiceId?: string; // OpenAI Realtime voice name (alloy, echo, shimmer, etc.)
-}
-
-export const DURMAH_VOICE_PRESETS: DurmahVoicePreset[] = [
+export const DURMAH_VOICE_PRESETS = [
   {
     id: "warm_female",
+    geminiVoice: "charon", // Replace with final Gemini voice label if needed
     label: "Warm Female Mentor",
-    description: "Friendly, encouraging, and supportive.",
-    systemTone: "Adopt a warm, encouraging, and supportive tone, like a kind mentor.",
-    modelVoiceId: "shimmer" 
+    subtitle: "Friendly, encouraging, and supportive.",
   },
   {
     id: "calm_male",
+    geminiVoice: "lumen",
     label: "Calm Male Mentor",
-    description: "Precise, calm, and professional.",
-    systemTone: "Adopt a calm, precise, and professional tone, like a senior partner.",
-    modelVoiceId: "echo"
+    subtitle: "Steady, reassuring, and clear.",
   },
   {
-    id: "energetic_coach",
-    label: "Energetic Coach",
-    description: "Upbeat, motivating, and dynamic.",
-    systemTone: "Adopt an upbeat, motivating, and dynamic tone, like a performance coach.",
-    modelVoiceId: "alloy"
-  }
+    id: "neutral_british",
+    geminiVoice: "ember",
+    label: "Neutral British Mentor",
+    subtitle: "Neutral, precise, and academic.",
+  },
+  {
+    id: "energetic_peer",
+    geminiVoice: "solace",
+    label: "Energetic Study Buddy",
+    subtitle: "Lively, upbeat, and motivating.",
+  },
 ];
 
-export const DEFAULT_DURMAH_VOICE_ID: DurmahVoiceId = "warm_female";
-
-export function getDurmahVoicePreset(id?: string | null): DurmahVoicePreset {
-  return (DURMAH_VOICE_PRESETS.find(p => p.id === id) || DURMAH_VOICE_PRESETS[0]) as DurmahVoicePreset;
-}
+export const getDefaultDurmahVoiceId = (): DurmahVoiceId => "warm_female";

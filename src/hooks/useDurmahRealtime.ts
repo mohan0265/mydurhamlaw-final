@@ -1,17 +1,18 @@
 import { useState, useRef, useCallback, useEffect } from "react";
+import { DURMAH_VOICE_PRESETS } from "@/config/durmahVoicePresets";
 
 export type VoiceTurn = { speaker: "user" | "durmah"; text: string };
 
 interface UseDurmahRealtimeProps {
   systemPrompt: string;
-  voice?: string; // e.g. "alloy", "echo", "shimmer"
+  voice?: string; // Gemini voice name, e.g. "charon"
   onTurn?: (turn: VoiceTurn) => void;
   audioRef: React.RefObject<HTMLAudioElement>;
 }
 
 export function useDurmahRealtime({
   systemPrompt,
-  voice = "alloy",
+  voice = "charon",
   onTurn,
   audioRef,
 }: UseDurmahRealtimeProps) {
@@ -24,29 +25,12 @@ export function useDurmahRealtime({
   const streamRef = useRef<MediaStream | null>(null);
 
   const startListening = useCallback(async () => {
-    console.debug("[DurmahVoice] startListening called");
+    console.debug("[DurmahVoice] startListening (Gemini) called");
     try {
       setError(null);
       setStatus("connecting");
 
-      // 1. Get ephemeral token from Netlify function
-      console.debug("[DurmahVoice] Fetching token from /realtime-session...");
-      const tokenResponse = await fetch("/.netlify/functions/realtime-session", {
-        method: "POST",
-        body: JSON.stringify({ voice }),
-      });
-      const data = await tokenResponse.json();
-      const EPHEMERAL_KEY = data.client_secret?.value;
-
-      if (!EPHEMERAL_KEY) {
-        console.error("No ephemeral key returned", data);
-        setStatus("error");
-        setError("Failed to get auth token");
-        return;
-      }
-      console.debug("[DurmahVoice] Token received.");
-
-      // 2. Create PeerConnection
+      // 1. Create PeerConnection
       const pc = new RTCPeerConnection();
       pcRef.current = pc;
 
@@ -54,18 +38,16 @@ export function useDurmahRealtime({
         console.debug(`[DurmahVoice] ICE connection state: ${pc.iceConnectionState}`);
       };
 
-      // 3. Add local microphone
+      // 2. Add local microphone
       console.debug("[DurmahVoice] Requesting microphone...");
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;
-      console.debug(`[DurmahVoice] Microphone obtained. Tracks: ${stream.getAudioTracks().length}`);
       
       stream.getAudioTracks().forEach((track) => {
         pc.addTrack(track, stream);
-        console.debug("[DurmahVoice] Added audio track to PC");
       });
 
-      // 4. Play remote audio
+      // 3. Play remote audio
       pc.ontrack = (e) => {
         console.debug("[DurmahVoice] Received remote track");
         const remoteStream = e.streams[0] || new MediaStream([e.track]);
@@ -75,106 +57,80 @@ export function useDurmahRealtime({
         }
       };
 
-      // 5. Data Channel for events
-      const dc = pc.createDataChannel("oai-events");
+      // 4. Create Data Channel (Gemini accepts data channel for inputs/events)
+      const dc = pc.createDataChannel("gemini-events");
       dcRef.current = dc;
 
       dc.onopen = () => {
-        console.debug("[DurmahVoice] Data channel open. Sending session update...");
-        // Send initial system instructions
-        const updateEvent = {
-          type: "session.update",
-          session: {
-            model: "gpt-4o-realtime-preview-2024-12-17",
-            instructions: systemPrompt,
-            modalities: ["text", "audio"],
-            input_audio_transcription: {
-              model: "whisper-1",
-            },
-            turn_detection: {
-              type: "server_vad",
-              threshold: 0.5,
-              prefix_padding_ms: 300,
-              silence_duration_ms: 500
-            },
-          },
-        };
-        dc.send(JSON.stringify(updateEvent));
+        console.debug("[DurmahVoice] Data channel open.");
         setStatus("listening");
+
+        // Send initial setup if needed (Gemini Multimodal Live)
+        // Note: Currently, voice selection is often handled via tool config or initial setup
+        // But the exact JSON format for "setup" on the data channel depends on the specific Gemini API version.
+        // For now, we rely on the prompt to set the tone, as voice selection might be fixed per model 
+        // or require a specific 'setup' payload.
+        
+        // We attempt to send a setup message with the system prompt/voice if the API supports it
+        // The structure below is a best-effort based on Gemini Live API patterns.
+        const setupMsg = {
+          setup: {
+            model: "models/gemini-2.0-flash-exp",
+            generation_config: {
+               speech_config: {
+                 voice_config: {
+                   prebuilt_voice_config: {
+                     voice_name: voice // e.g. "charon"
+                   }
+                 }
+               }
+            },
+            system_instruction: {
+              parts: [{ text: systemPrompt }]
+            }
+          }
+        };
+        dc.send(JSON.stringify(setupMsg));
       };
 
       dc.onmessage = (e) => {
         try {
-          const event = JSON.parse(e.data);
+          const msg = JSON.parse(e.data);
           
-          // Log VAD events to debug voice detection
-          if (event.type === "input_audio_buffer.speech_started") {
-            console.debug("[DurmahVoice] VAD: Speech started");
-          }
-          if (event.type === "input_audio_buffer.speech_stopped") {
-            console.debug("[DurmahVoice] VAD: Speech stopped");
-          }
-
-          // Log interesting events (filter out frequent audio deltas)
-          if (!event.type.includes("delta") && !event.type.includes("buffer")) {
-             console.debug("[DurmahVoice] Event:", event.type);
+          if (msg.serverContent?.modelTurn?.parts) {
+             const textPart = msg.serverContent.modelTurn.parts.find((p: any) => p.text);
+             if (textPart) {
+               onTurn?.({ speaker: "durmah", text: textPart.text });
+             }
           }
 
-          // Handle transcriptions
-          if (event.type === "conversation.item.input_audio_transcription.completed") {
-             console.debug("[DurmahVoice] User transcript:", event.transcript);
-             onTurn?.({ speaker: "user", text: event.transcript });
-          }
-          if (event.type === "response.audio_transcript.done") {
-             console.debug("[DurmahVoice] Agent transcript:", event.transcript);
-             onTurn?.({ speaker: "durmah", text: event.transcript });
-          }
-
-          // Handle speaking state
-          if (event.type === "response.content_part.added" && event.part?.type === "audio") {
-             setSpeaking(true);
-             setStatus("speaking");
-          }
-          if (event.type === "response.done") {
-             setSpeaking(false);
-             setStatus("listening");
+          if (msg.toolUse) {
+            // Handle tools if any
           }
           
-          // Error handling from server
-          if (event.type === "error") {
-            console.error("[DurmahVoice] Server error:", event.error);
-            setError(event.error.message || "Server error");
-            setStatus("error");
-          }
         } catch (err) {
-          console.error("Error parsing data channel message", err);
+          // console.error("Error parsing data channel message", err);
         }
       };
 
-      // 6. SDP Offer/Answer
-      console.debug("[DurmahVoice] Creating offer...");
+      // 5. SDP Offer/Answer Exchange via our proxy
       const offer = await pc.createOffer({ offerToReceiveAudio: true });
       await pc.setLocalDescription(offer);
 
-      const baseUrl = "https://api.openai.com/v1/realtime";
-      const model = "gpt-4o-realtime-preview-2024-12-17";
-      console.debug(`[DurmahVoice] Sending SDP to OpenAI (${model})...`);
+      console.debug(`[DurmahVoice] Sending SDP to /api/voice/offer...`);
       
-      const sdpResponse = await fetch(`${baseUrl}?model=${model}`, {
+      const sdpResponse = await fetch("/api/voice/offer", {
         method: "POST",
-        body: offer.sdp,
-        headers: {
-          Authorization: `Bearer ${EPHEMERAL_KEY}`,
-          "Content-Type": "application/sdp",
-        },
+        body: JSON.stringify({ offerSdp: offer.sdp }),
+        headers: { "Content-Type": "application/json" },
       });
 
       if (!sdpResponse.ok) {
-        throw new Error(`SDP error: ${sdpResponse.statusText}`);
+        throw new Error(`SDP negotiation failed: ${sdpResponse.statusText}`);
       }
 
       const answerSdp = await sdpResponse.text();
-      console.debug("[DurmahVoice] Received SDP answer. Setting remote description...");
+      console.debug("[DurmahVoice] Received SDP answer.");
       await pc.setRemoteDescription({
         type: "answer",
         sdp: answerSdp,
@@ -204,7 +160,6 @@ export function useDurmahRealtime({
       streamRef.current.getTracks().forEach((t) => t.stop());
       streamRef.current = null;
     }
-    // Audio ref is managed by parent component, just clear srcObject if needed
     if (audioRef.current) {
       audioRef.current.srcObject = null;
     }
@@ -212,7 +167,6 @@ export function useDurmahRealtime({
     setSpeaking(false);
   }, []);
 
-  // Cleanup on unmount
   useEffect(() => {
     return () => {
       stopListening();
@@ -224,7 +178,7 @@ export function useDurmahRealtime({
     stopListening, 
     isListening: status !== "idle" && status !== "error", 
     status,
-    speaking, 
+    speaking, // Note: Gemini WebRTC doesn't send explicit "speaking" events easily without VAD analysis, so this might be static or inferred
     error 
   };
 }

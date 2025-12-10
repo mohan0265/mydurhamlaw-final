@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from "react";
-import { useAuth } from "@/lib/supabase/AuthContext";
+import { useAuth } from '@/lib/supabase/AuthContext';
 import { useDurmahRealtime } from "@/hooks/useDurmahRealtime";
 import { useDurmahDynamicContext } from "@/hooks/useDurmahDynamicContext";
 import { useDurmah } from "@/lib/durmah/context";
@@ -78,6 +78,14 @@ export default function DurmahWidget() {
 
   const streamControllerRef = useRef<AbortController | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll to bottom whenever messages change
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages, ready, isOpen]);
 
   // Ensure browser is allowed to autoplay incoming WebRTC audio
   useEffect(() => {
@@ -128,6 +136,7 @@ export default function DurmahWidget() {
     buildDurmahSystemPrompt(studentContext, memory, upcomingTasks, todaysEvents, preset), 
   [studentContext, memory, upcomingTasks, todaysEvents, preset]);
 
+  // Pass geminiVoice from the selected preset
   const {
     startListening,
     stopListening,
@@ -137,7 +146,7 @@ export default function DurmahWidget() {
     error: voiceError,
   } = useDurmahRealtime({
     systemPrompt,
-    voice: preset.modelVoiceId,
+    voice: preset.geminiVoice, // e.g. "charon"
     audioRef,
     onTurn: (turn) => {
       setCallTranscript((prev) => [
@@ -182,6 +191,7 @@ export default function DurmahWidget() {
   }
 
   const saveVoiceTranscript = async () => {
+    // Note: Saved to local state + memory hint
     if (callTranscript.length > 0) {
       setMessages((prev) => [...prev, ...callTranscript]);
       
@@ -302,9 +312,6 @@ export default function DurmahWidget() {
   // 1. Logged-out Modal
   if (isOpen && !signedIn) {
     return (
-       // Fixed wrapper to allow positioning relative to launcher if wanted, or center screen.
-       // User requested a "small panel" -> Centered or near launcher. 
-       // We'll put it at the launcher location but shifting up.
       <div className="fixed bottom-24 right-6 z-50 flex w-full max-w-sm flex-col overflow-hidden rounded-3xl border border-violet-100 bg-white shadow-2xl animate-in slide-in-from-bottom-5 fade-in duration-300">
          <div className="bg-gradient-to-r from-violet-600 to-indigo-600 px-5 py-4 flex items-center justify-between text-white">
             <h3 className="font-bold text-lg">Unlock Your Legal Eagle Buddy</h3>
@@ -374,9 +381,9 @@ export default function DurmahWidget() {
 
   // 3. Open Chat Widget (Logged In)
   return (
-    <div className="fixed bottom-24 right-6 z-50 flex w-full max-w-md flex-col overflow-hidden rounded-3xl border border-violet-100 bg-white shadow-2xl sm:w-[400px] animate-in slide-in-from-bottom-10 fade-in duration-300">
+    <div className="fixed bottom-24 right-6 z-50 flex w-full max-w-md flex-col overflow-hidden rounded-3xl border border-violet-100 bg-white shadow-2xl sm:w-[400px] max-h-[80vh] h-[600px] animate-in slide-in-from-bottom-10 fade-in duration-300">
       {/* Premium Header Ribbon */}
-      <header className="flex items-center justify-between bg-gradient-to-r from-violet-600 via-indigo-600 to-violet-700 px-5 py-4 text-white shadow-md">
+      <header className="flex-none flex items-center justify-between bg-gradient-to-r from-violet-600 via-indigo-600 to-violet-700 px-5 py-4 text-white shadow-md z-10">
         <div className="flex flex-col">
           <div className="font-bold text-lg flex items-center gap-2">
             Durmah
@@ -451,10 +458,14 @@ export default function DurmahWidget() {
                     }`}
                   >
                     <div className="font-bold text-sm text-gray-900 mb-1">{p.label}</div>
-                    <div className="text-xs text-gray-500 leading-relaxed">{p.description}</div>
+                    <div className="text-xs text-gray-500 leading-relaxed">{p.subtitle}</div>
                   </button>
                 ))}
               </div>
+            </div>
+            
+            <div className="text-xs text-gray-400 text-center mt-auto">
+               Powered by Gemini Realtime
             </div>
           </div>
         </div>
@@ -462,13 +473,13 @@ export default function DurmahWidget() {
 
       {/* --------------- VOICE TRANSCRIPT ---------------- */}
       {showVoiceTranscript && callTranscript.length > 0 && !showSettings && (
-        <div className="p-4 bg-violet-50/80 backdrop-blur-sm border-b border-violet-100">
-          <div className="text-xs font-bold uppercase tracking-wider text-violet-600 mb-3 flex items-center gap-2">
+        <div className="flex-none p-4 bg-violet-50/80 backdrop-blur-sm border-b border-violet-100 z-10 shadow-sm max-h-[40%] overflow-y-auto custom-scrollbar">
+          <div className="text-xs font-bold uppercase tracking-wider text-violet-600 mb-3 flex items-center gap-2 sticky top-0 bg-violet-50/0">
             <span className="w-2 h-2 rounded-full bg-violet-500 animate-pulse"></span>
             Live Transcript
           </div>
 
-          <div className="max-h-48 overflow-y-auto space-y-3 pr-2 custom-scrollbar">
+          <div className="space-y-3 pr-2">
             {callTranscript.map((m) => (
               <div key={m.ts} className={`flex ${m.role === "you" ? "justify-end" : "justify-start"}`}>
                 <div
@@ -484,7 +495,7 @@ export default function DurmahWidget() {
             ))}
           </div>
 
-          <div className="flex justify-end gap-3 pt-3 mt-2 border-t border-violet-200/50">
+          <div className="flex justify-end gap-3 pt-3 mt-2 border-t border-violet-200/50 sticky bottom-0 bg-violet-50/0">
             <button
               onClick={discardVoiceTranscript}
               className="text-xs font-medium px-3 py-1.5 rounded-lg text-gray-600 hover:bg-gray-200/50 transition-colors"
@@ -501,14 +512,15 @@ export default function DurmahWidget() {
         </div>
       )}
 
+      {/* Error Message */}
       {voiceError && !showSettings && (
-        <div className="px-4 py-3 text-xs font-medium text-red-600 bg-red-50 border-y border-red-100 flex items-center gap-2">
+        <div className="flex-none px-4 py-3 text-xs font-medium text-red-600 bg-red-50 border-y border-red-100 flex items-center gap-2">
            <AlertTriangle size={14} /> {voiceError}
         </div>
       )}
 
-      {/* --------------- CHAT HISTORY ---------------- */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50/50">
+      {/* --------------- CHAT HISTORY (Scrollable Flex Area) ---------------- */}
+      <div className="flex-1 min-h-0 overflow-y-auto glb-scroll p-4 space-y-4 bg-slate-50/50">
         {messages.length === 0 && !ready && (
            <div className="flex justify-center py-8">
              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-violet-600"></div>
@@ -528,11 +540,13 @@ export default function DurmahWidget() {
             </div>
           </div>
         ))}
+        {/* Invisible element to scroll to */}
+        <div ref={messagesEndRef} />
       </div>
 
       {/* --------------- QUICK REPLY CHIPS ---------------- */}
       {!isListening && !showSettings && (
-        <div className="flex gap-2 overflow-x-auto p-3 border-t border-gray-100 bg-white no-scrollbar">
+        <div className="flex-none flex gap-2 overflow-x-auto p-3 border-t border-gray-100 bg-white no-scrollbar z-10">
           {chips.map((c) => (
             <button
               key={c}
@@ -547,7 +561,7 @@ export default function DurmahWidget() {
 
       {/* --------------- TEXT INPUT BAR ---------------- */}
       {!isListening && !showSettings && (
-        <div className="border-t border-gray-100 p-4 flex gap-3 items-center bg-white">
+        <div className="flex-none border-t border-gray-100 p-4 flex gap-3 items-center bg-white z-10">
           <input
             value={input}
             onChange={(e) => setInput(e.target.value)}
@@ -568,7 +582,7 @@ export default function DurmahWidget() {
 
       {/* --------------- VOICE MODE FOOTER (WAVEFORM) ---------------- */}
       {isListening && !showSettings && (
-        <div className="p-6 text-center bg-white border-t border-gray-100">
+        <div className="flex-none p-6 text-center bg-white border-t border-gray-100 z-10">
           <div className="flex items-center justify-center gap-1 h-8 mb-2">
              {/* Simulated Waveform Animation */}
              {[...Array(5)].map((_, i) => (
