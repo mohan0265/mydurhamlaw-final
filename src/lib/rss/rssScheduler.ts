@@ -1,5 +1,5 @@
 // RSS Scheduler - Automated twice-daily RSS fetching with intelligent caching
-import { supabase } from '@/lib/supabase/client'
+import { getServerSupabaseClient } from '@/lib/supabase/serverClient'
 import RSSLogger from './logger'
 
 interface RSSCacheEntry {
@@ -96,6 +96,7 @@ class RSSScheduler {
    * Get cached RSS data from Supabase
    */
   private async getCachedRSSData(): Promise<RSSCacheEntry[]> {
+    const supabase = getServerSupabaseClient()
     if (!supabase) return []
     
     try {
@@ -117,6 +118,7 @@ class RSSScheduler {
    * Update RSS cache in Supabase
    */
   private async updateRSSCache(cacheEntry: Partial<RSSCacheEntry>): Promise<void> {
+    const supabase = getServerSupabaseClient()
     if (!supabase) return
     
     try {
@@ -138,6 +140,7 @@ class RSSScheduler {
    * Log RSS schedule execution to Supabase
    */
   private async logScheduleExecution(logEntry: Omit<RSSScheduleLog, 'id'>): Promise<void> {
+    const supabase = getServerSupabaseClient()
     if (!supabase) return
     
     try {
@@ -363,6 +366,7 @@ class RSSScheduler {
    * Get the last update timestamp from cache
    */
   async getLastUpdateTime(): Promise<Date | null> {
+    const supabase = getServerSupabaseClient()
     if (!supabase) return null
     
     try {
@@ -385,6 +389,7 @@ class RSSScheduler {
    * Get RSS articles from cache for display
    */
   async getCachedArticlesForDisplay(filter?: string): Promise<any[]> {
+    const supabase = getServerSupabaseClient()
     if (!supabase) return []
     
     try {

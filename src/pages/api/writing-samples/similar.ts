@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next'
-import { supabase } from '@/lib/supabase/client'
+import { getServerSupabaseClient } from '@/lib/supabase/serverClient'
 import { generateEmbedding, preprocessTextForEmbedding } from '@/lib/server/embeddings'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -14,6 +14,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   const token = authHeader.replace('Bearer ', '')
+  const supabase = getServerSupabaseClient()
   if (!supabase) {
     console.error('Supabase client is not available.');
     return res.status(500).json({ error: 'Database connection unavailable' });
