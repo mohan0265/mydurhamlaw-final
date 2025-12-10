@@ -35,6 +35,7 @@ export default function AssignmentsPage() {
   const fetchAssignments = async () => {
     if (!user?.id) return
     const supabase = getSupabaseClient()
+    if (!supabase) return
     const { data } = await supabase
       .from('assignments')
       .select('*')
@@ -83,6 +84,7 @@ export default function AssignmentsPage() {
   const handleDelete = async () => {
     if (!selectedAssignment || !user) return;
     const supabase = getSupabaseClient();
+    if (!supabase) return;
     try {
       await supabase.from('assignments').delete().eq('id', selectedAssignment.id);
       toast.success("Assignment deleted");

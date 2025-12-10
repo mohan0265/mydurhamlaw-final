@@ -96,6 +96,7 @@ export function restartRSSSystem(): void {
 
 // Do NOT auto-initialize during build or when imported by Next.js
 // This prevents RSS cron from starting during `next build` on Netlify
+/*
 if (
   typeof window === 'undefined' && 
   process.env.NODE_ENV !== 'test' && 
@@ -108,3 +109,4 @@ if (
     initializeRSSSystem()
   }, 2000)
 }
+*/

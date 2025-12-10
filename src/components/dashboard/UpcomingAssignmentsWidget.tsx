@@ -13,6 +13,7 @@ export default function UpcomingAssignmentsWidget({ userId }: { userId: string }
   useEffect(() => {
     const fetchAssignments = async () => {
       const supabase = getSupabaseClient();
+      if (!supabase) return;
       const { data } = await supabase
         .from('assignments')
         .select('*')

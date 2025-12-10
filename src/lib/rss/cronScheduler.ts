@@ -125,6 +125,7 @@ class CronScheduler {
 export default CronScheduler
 
 // Auto-initialize and start cron jobs when this module is imported in a server environment
+/*
 if (typeof window === 'undefined' && process.env.NODE_ENV !== 'test') {
   const scheduler = CronScheduler.getInstance()
 
@@ -144,3 +145,4 @@ if (typeof window === 'undefined' && process.env.NODE_ENV !== 'test') {
     scheduler.stop()
   })
 }
+*/
