@@ -108,11 +108,51 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         .filter((item): item is NonNullable<typeof item> => item !== null)
     )
 
+    // Fetch timetable events
+    const supabase = getServerSupabase(req, res)
+    const { data: dbTimetableEvents } = await supabase
+      .from('timetable_events')
+      .select('*')
+      .eq('user_id', user.id)
+
+    const events: CalendarEvent[] = [];
+    
+    if (dbTimetableEvents) {
+        const dayOfWeek = d.getDay();
+        const getTimeString = (iso: string) => {
+             const parts = new Date(iso).toISOString().split('T');
+             return (parts[1] || "00:00:00").substring(0, 5); 
+        };
+
+        dbTimetableEvents.forEach((evt) => {
+            const evtDate = new Date(evt.start_time);
+             if (evt.recurrence_pattern === 'weekly') {
+                 if (evtDate.getDay() === dayOfWeek) {
+                     const startHM = getTimeString(evt.start_time);
+                     const endHM = getTimeString(evt.end_time);
+                     
+                     events.push({
+                         id: evt.id,
+                         title: evt.title,
+                         description: evt.location ? `Location: ${evt.location}` : '',
+                         start_at: `${dateStr}T${startHM}:00Z`, 
+                         end_at: `${dateStr}T${endHM}:00Z`,
+                         location: evt.location || '',
+                         type: 'lecture',
+                         module_id: 'timetable',
+                         is_university_fixed: true,
+                         is_all_day: false
+                     });
+                 }
+            }
+        });
+    }
+
     const detail: DayDetail = {
       date: dateStr,
       day_name: dayName,
       is_today: isToday,
-      events: [], // No longer generating fake lectures - these would come from official timetable
+      events,
       assessments_due,
       exams: [],
       personal_items: [], // Will come from Supabase queries later

@@ -58,42 +58,82 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const fromDate = new Date(from)
     const weekStart = startOfWeek(fromDate, { weekStartsOn: 1 })
 
-    // Only generate events from dataset assessments within term time
+    // Fetch structured timetable events from Supabase
+    const supabase = getServerSupabase(req, res)
+    const { data: dbTimetableEvents } = await supabase
+      .from('timetable_events')
+      .select('*')
+      .eq('user_id', user.id)
+
+    // Helpers for time extraction
+    const getTimeString = (iso: string) => {
+        try {
+            const parts = new Date(iso).toISOString().split('T');
+            return (parts[1] || "00:00:00").substring(0, 5); // HH:MM
+        } catch {
+            return "00:00";
+        }
+    }
+
     const events: CalendarEvent[] = []
     for (let i = 0; i < 7; i++) {
-      const day = addDays(weekStart, i)
-      const dateStr = format(day, 'yyyy-MM-dd')
+        const day = addDays(weekStart, i)
+        const dateStr = format(day, 'yyyy-MM-dd')
+        const dayOfWeek = day.getDay() // 0-6
 
-      // Only add assessment events that are due on this specific date
-      plan.modules.forEach((module, moduleIndex) => {
-        module.assessments.forEach((assessment, assessmentIndex) => {
-          // Handle different assessment types with different due date formats
-          let assessmentDate: string | null = null
-          if ('due' in assessment) {
-            assessmentDate = format(new Date(assessment.due), 'yyyy-MM-dd')
-          } else if ('window' in assessment) {
-            // For exams, use the start of the window
-            assessmentDate = format(new Date(assessment.window.start), 'yyyy-MM-dd')
-          }
-          
-          if (assessmentDate === dateStr) {
-            events.push({
-              id: `assessment-${moduleIndex}-${assessmentIndex}`,
-              title: `${module.title} ${assessment.type}`,
-              description: assessment.type === 'Exam' ? 'Examination' : `${assessment.type} due`,
-              start_at: `${dateStr}T23:59:00Z`,
-              end_at: `${dateStr}T23:59:00Z`,
-              location: '',
-              type: assessment.type === 'Exam' ? 'exam' : 'assessment',
-              module_id: String(moduleIndex + 1),
-              is_university_fixed: true,
-              is_all_day: true,
+        // 1. Dataset Assessments
+        plan.modules.forEach((module, moduleIndex) => {
+            module.assessments.forEach((assessment, assessmentIndex) => {
+                let assessmentDate: string | null = null
+                if ('due' in assessment) {
+                    assessmentDate = format(new Date(assessment.due), 'yyyy-MM-dd')
+                } else if ('window' in assessment) {
+                    assessmentDate = format(new Date(assessment.window.start), 'yyyy-MM-dd')
+                }
+
+                if (assessmentDate === dateStr) {
+                    events.push({
+                        id: `assessment-${moduleIndex}-${assessmentIndex}`,
+                        title: `${module.title} ${assessment.type}`,
+                        description: assessment.type === 'Exam' ? 'Examination' : `${assessment.type} due`,
+                        start_at: `${dateStr}T23:59:00Z`,
+                        end_at: `${dateStr}T23:59:00Z`,
+                        location: '',
+                        type: assessment.type === 'Exam' ? 'exam' : 'assessment',
+                        module_id: String(moduleIndex + 1),
+                        is_university_fixed: true,
+                        is_all_day: true,
+                    })
+                }
             })
-          }
         })
-      })
 
-      // No longer generating mock lectures - these would come from official timetable data later
+        // 2. User Timetable Events (Recurring)
+        if (dbTimetableEvents) {
+            dbTimetableEvents.forEach((evt) => {
+                const evtDate = new Date(evt.start_time);
+                if (evt.recurrence_pattern === 'weekly') {
+                     // Check if day matches
+                     if (evtDate.getDay() === dayOfWeek) {
+                         const startHM = getTimeString(evt.start_time);
+                         const endHM = getTimeString(evt.end_time);
+
+                         events.push({
+                             id: evt.id,
+                             title: evt.title,
+                             description: evt.location ? `Location: ${evt.location}` : '',
+                             start_at: `${dateStr}T${startHM}:00Z`, // Simplified TZ handling
+                             end_at: `${dateStr}T${endHM}:00Z`,
+                             location: evt.location || '',
+                             type: 'lecture', // Default mapping
+                             is_university_fixed: true,
+                             is_all_day: false
+                         });
+                     }
+                } 
+                // Handle non-recurring if needed later
+            });
+        }
     }
 
     // Fetch personal items from Supabase (real data, not mock)

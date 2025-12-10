@@ -19,6 +19,7 @@ import { StudyFocusWidget } from '@/components/dashboard/StudyFocusWidget';
 import { QuickActionsWidget } from '@/components/dashboard/QuickActionsWidget';
 import MemoryJournalWidget from '@/components/dashboard/MemoryJournalWidget';
 import WellbeingTipWidget from '@/components/dashboard/WellbeingTipWidget';
+import { DurhamPortalCard } from '@/components/dashboard/DurhamPortalCard';
 
 export default function Dashboard() {
   const router = useRouter();
@@ -90,7 +91,14 @@ export default function Dashboard() {
             </div>
 
             {/* Quick links row (optional, small helper nav) */}
-            <div className="mb-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <div className="mb-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+              <Link
+                href="/profile-timetable"
+                className="rounded-xl border bg-violet-50 p-4 text-sm font-bold text-violet-800 hover:bg-violet-100 border-violet-100 transition-colors"
+                title="Setup your profile and timetable"
+              >
+                Profile & Timetable
+              </Link>
               <Link
                 href="/year-at-a-glance"
                 className="rounded-xl border bg-white p-4 text-sm font-medium text-gray-800 hover:bg-gray-50"
@@ -128,8 +136,8 @@ export default function Dashboard() {
               </div>
 
               {/* Row 2 */}
-              <div>
-                <ProgressWidget />
+              <div className="h-full">
+                <DurhamPortalCard />
               </div>
               <div>
                 <UpcomingDeadlinesWidget />
@@ -143,16 +151,19 @@ export default function Dashboard() {
                 <StudyFocusWidget />
               </div>
               <div>
-                <QuickActionsWidget />
+                <ProgressWidget />
               </div>
               <div>
-                <MemoryJournalWidget />
+                <QuickActionsWidget />
               </div>
 
-              {/* Row 4 - Full width wellbeing tip */}
-              <div className="lg:col-span-3">
-                <WellbeingTipWidget />
-              </div>
+               {/* Row 4 */}
+               <div className="lg:col-span-1">
+                 <MemoryJournalWidget />
+               </div>
+               <div className="lg:col-span-2">
+                 <WellbeingTipWidget />
+               </div>
             </div>
           </>
         )}

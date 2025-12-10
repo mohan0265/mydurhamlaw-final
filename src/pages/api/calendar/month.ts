@@ -87,6 +87,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const calendarEnd = endOfWeek(monthEnd, { weekStartsOn: 1 })
     const allDays = daysInInterval(calendarStart, calendarEnd)
 
+    // Fetch structured timetable events from Supabase
+    const supabase = getServerSupabase(req, res)
+    const { data: dbTimetableEvents } = await supabase
+      .from('timetable_events')
+      .select('*')
+      .eq('user_id', user.id)
+
+    const getTimeString = (iso: string) => {
+        try {
+            const parts = new Date(iso).toISOString().split('T');
+            return (parts[1] || "00:00:00").substring(0, 5); // HH:MM
+        } catch {
+            return "00:00";
+        }
+    }
+
     // Group by weeks (chunks of 7)
     const weeks: MonthData['weeks'] = []
     for (let i = 0; i < allDays.length; i += 7) {
@@ -102,6 +118,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           const dateStr = format(day, 'yyyy-MM-dd')
           const inMonth = isSameMonth(day, fromDate)
           const isToday = format(new Date(), 'yyyy-MM-dd') === dateStr
+          const dayOfWeek = day.getDay(); // 0-6
 
           // Generate events only from dataset assessments and personal items
           const events: Array<{
@@ -148,7 +165,32 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             })
           }
 
-          // No longer generating random lecture events - they will come from Supabase personal items later
+          // 2. User Timetable Events (Recurring)
+          if (dbTimetableEvents) {
+            dbTimetableEvents.forEach((evt) => {
+                const evtDate = new Date(evt.start_time);
+                if (evt.recurrence_pattern === 'weekly') {
+                     // Check if day matches
+                     if (evtDate.getDay() === dayOfWeek) {
+                         const startHM = getTimeString(evt.start_time);
+                         const endHM = getTimeString(evt.end_time);
+
+                         events.push({
+                             id: evt.id,
+                             title: evt.title,
+                             description: evt.location ? `Location: ${evt.location}` : '',
+                             start_at: `${dateStr}T${startHM}:00Z`, 
+                             end_at: `${dateStr}T${endHM}:00Z`,
+                             location: evt.location || '',
+                             type: 'lecture',
+                             module_id: 'timetable',
+                             is_university_fixed: true,
+                             is_all_day: false
+                         });
+                     }
+                } 
+            });
+          }
 
           return {
             date: dateStr,
