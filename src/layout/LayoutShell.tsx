@@ -4,6 +4,7 @@ import { useRouter } from 'next/router'
 import GlobalHeader from '@/components/GlobalHeader'
 import GlobalFooter from '@/components/GlobalFooter'
 import DurmahWidget from '@/components/DurmahWidget'
+import AWYWidget from '@/components/awy/AWYWidget'
 import { CalendarProvider } from '@/context/CalendarContext'
 
 type Props = { children: React.ReactNode }
@@ -17,6 +18,8 @@ export default function LayoutShell({ children }: Props) {
   const isFullBleed = fullBleedPrefixes.some(
     (p) => router.pathname === p || router.pathname.startsWith(p + '/')
   )
+
+  const isAuthPage = ['/login', '/signup', '/auth/redirect'].includes(router.pathname);
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-white to-gray-50">
@@ -45,8 +48,13 @@ export default function LayoutShell({ children }: Props) {
 
       <GlobalFooter />
       
-      {/* Global Floating Widgets */}
-      <DurmahWidget />
+      {/* Global Floating Widgets - Show on all pages except auth pages */}
+      {!isAuthPage && (
+        <>
+          <DurmahWidget />
+          <AWYWidget />
+        </>
+      )}
     </div>
   )
 }

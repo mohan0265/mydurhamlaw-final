@@ -18,11 +18,6 @@ import LayoutShell from '@/layout/LayoutShell';
 import { getSupabaseClient } from '@/lib/supabase/client';
 import { TrialBanner } from '@/components/billing/TrialBanner';
 
-// Bootstrap wrappers (client-only components that self-gate)
-import DurmahBootstrap from '@/components/DurmahBootstrap';
-import AWYBootstrap from '@/components/AWYBootstrap';
-import FloatingAWY from '@/components/FloatingAWY';
-
 // Server-only init
 if (typeof window === 'undefined') {
   import('@/lib/rss/init')
@@ -98,10 +93,6 @@ export default function App({ Component, pageProps }: AppProps) {
       router.events.off('routeChangeComplete', handleRouteChange);
   }, [router.events]);
 
-  // Hide floating widgets on auth/redirect routes
-  const hiddenRoutes = ['/login', '/signup', '/auth/redirect'];
-  const hideWidgets = hiddenRoutes.includes(router.pathname);
-
   return (
     <>
       <Head>
@@ -137,15 +128,6 @@ export default function App({ Component, pageProps }: AppProps) {
                     },
                   }}
                 />
-
-                {/* Floating / global widgets (self-gated via their own feature checks) */}
-                {!hideWidgets && (
-                  <>
-                    <DurmahBootstrap />
-                    <AWYBootstrap />
-                    <FloatingAWY />
-                  </>
-                )}
               </AppDurmahBootstrap>
             </DurmahProvider>
           </HydrationBoundary>

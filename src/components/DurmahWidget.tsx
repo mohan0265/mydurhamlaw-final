@@ -1,8 +1,8 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useAuth } from "@/lib/supabase/AuthContext";
-import { useDurmahRealtime, VoiceTurn } from "@/hooks/useDurmahRealtime";
+import { useDurmahRealtime } from "@/hooks/useDurmahRealtime";
 import { useDurmahDynamicContext } from "@/hooks/useDurmahDynamicContext";
-import { useDurmah, MDLStudentContext } from "@/lib/durmah/context";
+import { useDurmah } from "@/lib/durmah/context";
 import { 
   buildDurmahSystemPrompt, 
   composeGreeting, 
@@ -11,7 +11,8 @@ import {
 } from "@/lib/durmah/systemPrompt";
 import { formatTodayForDisplay } from "@/lib/durmah/phase";
 import { useDurmahSettings } from "@/hooks/useDurmahSettings";
-import { Settings, X, ArrowRight, AlertTriangle, Lock } from "lucide-react";
+import { Settings, X, ArrowRight, AlertTriangle, Lock, Brain } from "lucide-react";
+import Link from 'next/link';
 
 type Msg = { role: "durmah" | "you"; text: string; ts: number };
 
@@ -30,7 +31,6 @@ export default function DurmahWidget() {
   
   // Construct the unified context object
   const studentContext: DurmahStudentContext = useMemo(() => {
-    // Fallback to window if hook is empty/loading (though hook handles window fallback internally)
     const base = durmahCtx.hydrated ? durmahCtx : (typeof window !== 'undefined' ? window.__mdlStudentContext : null);
     
     if (!base) {
@@ -242,9 +242,6 @@ export default function DurmahWidget() {
     })();
 
     // Prepare messages for API
-    // We inject the system prompt as a 'system' message if the API supports it, 
-    // or we rely on the API to use a default. The user requested we use the SAME prompt.
-    // So we will pass it as a system message.
     const payloadMessages = [
       { role: "system", content: systemPrompt },
       ...history.map((m) => ({
@@ -301,9 +298,45 @@ export default function DurmahWidget() {
   // ----------------------------
   // UI RENDER
   // ----------------------------
+
+  // 1. Logged-out Modal
+  if (isOpen && !signedIn) {
+    return (
+       // Fixed wrapper to allow positioning relative to launcher if wanted, or center screen.
+       // User requested a "small panel" -> Centered or near launcher. 
+       // We'll put it at the launcher location but shifting up.
+      <div className="fixed bottom-24 right-6 z-50 flex w-full max-w-sm flex-col overflow-hidden rounded-3xl border border-violet-100 bg-white shadow-2xl animate-in slide-in-from-bottom-5 fade-in duration-300">
+         <div className="bg-gradient-to-r from-violet-600 to-indigo-600 px-5 py-4 flex items-center justify-between text-white">
+            <h3 className="font-bold text-lg">Unlock Your Legal Eagle Buddy</h3>
+            <button onClick={() => setIsOpen(false)} className="p-1 rounded-full hover:bg-white/20">
+               <X size={20} />
+            </button>
+         </div>
+         
+         <div className="p-8 text-center flex flex-col items-center">
+             <div className="w-16 h-16 bg-violet-50 rounded-full flex items-center justify-center mb-4">
+                <Brain className="w-8 h-8 text-violet-600" />
+             </div>
+             <p className="text-gray-600 mb-8 leading-relaxed">
+               Please log in or start your free trial to talk to Durmah, your personal Durham Law study mentor.
+             </p>
+             <div className="flex flex-col gap-3 w-full">
+                <Link href="/login" className="w-full py-3 bg-violet-600 text-white rounded-xl font-bold hover:bg-violet-700 transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2">
+                  Log In
+                </Link>
+                <Link href="/signup" className="w-full py-3 bg-white text-violet-600 border border-violet-200 rounded-xl font-bold hover:bg-violet-50 transition-all">
+                  Start Free Trial
+                </Link>
+             </div>
+         </div>
+      </div>
+    );
+  }
+
+  // 2. Closed Launcher (Pill Style)
   if (!isOpen) {
     return (
-      <div className="fixed bottom-24 right-6 z-50 flex flex-col items-end group">
+      <div className="fixed bottom-20 right-6 z-[60] flex flex-col items-end group">
         {/* Tooltip */}
         <div className="absolute right-full mr-4 top-1/2 -translate-y-1/2 w-max opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none translate-x-2 group-hover:translate-x-0">
           <div className="bg-gray-900/90 backdrop-blur-sm text-white text-xs py-2.5 px-4 rounded-xl shadow-xl border border-white/10">
@@ -316,23 +349,30 @@ export default function DurmahWidget() {
 
         <button
           onClick={() => setIsOpen(true)}
-          aria-label="Durmah - Your Legal Eagle Buddy"
-          className={`flex h-16 w-16 items-center justify-center rounded-full shadow-2xl transition-all duration-300 hover:scale-105 ${
+          className={`flex items-center gap-3 pl-2 pr-5 py-2 rounded-full shadow-xl backdrop-blur-md transition-all duration-300 hover:-translate-y-1 hover:ring-2 hover:ring-violet-400/50 ${
             isListening 
-              ? "bg-gradient-to-r from-red-500 to-pink-600 ring-4 ring-red-200 animate-pulse" 
-              : "bg-gradient-to-br from-violet-600 to-indigo-700 hover:shadow-violet-500/50"
+              ? "bg-gradient-to-r from-red-500 to-pink-600 animate-pulse text-white" 
+              : "bg-gradient-to-r from-violet-600 to-indigo-600 text-white"
           }`}
         >
-          <span className="font-serif text-3xl font-bold text-white italic">D</span>
-          {/* Listening Ring Animation */}
-          {isListening && (
-            <span className="absolute inset-0 rounded-full border-2 border-white opacity-50 animate-ping"></span>
-          )}
+          {/* Icon Circle */}
+          <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center backdrop-blur-sm shadow-inner">
+             <span className="font-serif text-xl font-bold italic">D</span>
+             {isListening && (
+               <span className="absolute inset-0 rounded-full border-2 border-white opacity-50 animate-ping"></span>
+             )}
+          </div>
+          
+          <div className="flex flex-col items-start">
+             <span className="font-bold text-sm leading-tight">Durmah</span>
+             <span className="text-[10px] text-violet-100 font-medium">Your Legal Eagle Buddy</span>
+          </div>
         </button>
       </div>
     );
   }
 
+  // 3. Open Chat Widget (Logged In)
   return (
     <div className="fixed bottom-24 right-6 z-50 flex w-full max-w-md flex-col overflow-hidden rounded-3xl border border-violet-100 bg-white shadow-2xl sm:w-[400px] animate-in slide-in-from-bottom-10 fade-in duration-300">
       {/* Premium Header Ribbon */}
@@ -352,34 +392,30 @@ export default function DurmahWidget() {
         />
 
         <div className="flex items-center gap-2">
-          {signedIn && (
-            <button
-              onClick={() => setShowSettings(!showSettings)}
-              className="p-2 rounded-full hover:bg-white/20 transition-colors"
-              title="Voice Settings"
-            >
-              <Settings size={18} />
-            </button>
-          )}
+          <button
+            onClick={() => setShowSettings(!showSettings)}
+            className="p-2 rounded-full hover:bg-white/20 transition-colors"
+            title="Voice Settings"
+          >
+            <Settings size={18} />
+          </button>
 
-          {signedIn && (
-            <button
-              onClick={toggleVoice}
-              className={`p-2 rounded-full transition-all duration-300 ${
-                isListening 
-                  ? "bg-red-500 text-white shadow-lg scale-110" 
-                  : "bg-white/20 text-white hover:bg-white/30"
-              }`}
-            >
-              {isListening ? (
-                <div className="flex items-center gap-1">
-                  <span className="w-2 h-2 bg-white rounded-full animate-bounce"></span>
-                  <span className="w-2 h-2 bg-white rounded-full animate-bounce delay-75"></span>
-                  <span className="w-2 h-2 bg-white rounded-full animate-bounce delay-150"></span>
-                </div>
-              ) : "Mic"}
-            </button>
-          )}
+          <button
+            onClick={toggleVoice}
+            className={`p-2 rounded-full transition-all duration-300 ${
+              isListening 
+                ? "bg-red-500 text-white shadow-lg scale-110" 
+                : "bg-white/20 text-white hover:bg-white/30"
+            }`}
+          >
+            {isListening ? (
+              <div className="flex items-center gap-1">
+                <span className="w-2 h-2 bg-white rounded-full animate-bounce"></span>
+                <span className="w-2 h-2 bg-white rounded-full animate-bounce delay-75"></span>
+                <span className="w-2 h-2 bg-white rounded-full animate-bounce delay-150"></span>
+              </div>
+            ) : "Mic"}
+          </button>
 
           <button
             onClick={() => setIsOpen(false)}
@@ -471,55 +507,31 @@ export default function DurmahWidget() {
         </div>
       )}
 
-      {/* --------------- NOT SIGNED IN STATE ---------------- */}
-      {!signedIn && (
-        <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-slate-50/50">
-          <div className="w-20 h-20 bg-gradient-to-br from-violet-100 to-indigo-100 rounded-full flex items-center justify-center mb-6 shadow-inner">
-             <Lock className="w-10 h-10 text-violet-600" />
-          </div>
-          <h3 className="text-xl font-bold text-gray-800 mb-2">Unlock Your Legal Buddy</h3>
-          <p className="text-sm text-gray-600 mb-8 leading-relaxed max-w-[260px]">
-            Please log in or start your trial to use your Legal Eagle Buddy.
-          </p>
-          <div className="flex flex-col gap-3 w-full">
-             <a href="/login" className="w-full py-3 bg-violet-600 text-white rounded-xl font-bold hover:bg-violet-700 transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2">
-               Log In
-               <ArrowRight size={16} />
-             </a>
-             <a href="/signup" className="w-full py-3 bg-white text-violet-600 border border-violet-200 rounded-xl font-bold hover:bg-violet-50 transition-all">
-               Start Free Trial
-             </a>
-          </div>
-        </div>
-      )}
-
       {/* --------------- CHAT HISTORY ---------------- */}
-      {signedIn && (
-        <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50/50">
-          {messages.length === 0 && !ready && (
-             <div className="flex justify-center py-8">
-               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-violet-600"></div>
-             </div>
-          )}
-          
-          {messages.map((m) => (
-            <div key={m.ts} className={`flex ${m.role === "you" ? "justify-end" : "justify-start"}`}>
-              <div
-                className={`px-4 py-3 rounded-2xl max-w-[85%] text-sm shadow-sm leading-relaxed ${
-                  m.role === "you"
-                    ? "bg-gradient-to-br from-violet-600 to-indigo-600 text-white rounded-tr-sm"
-                    : "bg-white text-gray-800 border border-gray-100 rounded-tl-sm"
-                }`}
-              >
-                {m.text}
-              </div>
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50/50">
+        {messages.length === 0 && !ready && (
+           <div className="flex justify-center py-8">
+             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-violet-600"></div>
+           </div>
+        )}
+        
+        {messages.map((m) => (
+          <div key={m.ts} className={`flex ${m.role === "you" ? "justify-end" : "justify-start"}`}>
+            <div
+              className={`px-4 py-3 rounded-2xl max-w-[85%] text-sm shadow-sm leading-relaxed ${
+                m.role === "you"
+                  ? "bg-gradient-to-br from-violet-600 to-indigo-600 text-white rounded-tr-sm"
+                  : "bg-white text-gray-800 border border-gray-100 rounded-tl-sm"
+              }`}
+            >
+              {m.text}
             </div>
-          ))}
-        </div>
-      )}
+          </div>
+        ))}
+      </div>
 
       {/* --------------- QUICK REPLY CHIPS ---------------- */}
-      {signedIn && !isListening && !showSettings && (
+      {!isListening && !showSettings && (
         <div className="flex gap-2 overflow-x-auto p-3 border-t border-gray-100 bg-white no-scrollbar">
           {chips.map((c) => (
             <button
@@ -534,7 +546,7 @@ export default function DurmahWidget() {
       )}
 
       {/* --------------- TEXT INPUT BAR ---------------- */}
-      {signedIn && !isListening && !showSettings && (
+      {!isListening && !showSettings && (
         <div className="border-t border-gray-100 p-4 flex gap-3 items-center bg-white">
           <input
             value={input}

@@ -1,9 +1,10 @@
 'use client'
 
 import React, { useState, useEffect, useRef } from 'react'
-import { Heart, Video, X, Loader2, Lock, ArrowRight } from 'lucide-react'
+import { Heart, Video, X, Loader2, Lock, ArrowRight, User } from 'lucide-react'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import toast from 'react-hot-toast'
+import Link from 'next/link'
 
 interface Connection {
   id: string // loved_one_id or student_id
@@ -155,9 +156,6 @@ export default function AWYWidget() {
   const getJitsiUrl = (otherId: string) => {
     if (!userId) return '#'
     // Consistent room name: MyDurhamLaw-{studentId}-{lovedOneId}
-    // We need to know who is who.
-    // If I am student, other is lovedOne. Room: MyDurhamLaw-{me}-{other}
-    // If I am lovedOne, other is student. Room: MyDurhamLaw-{other}-{me}
     
     const studentId = userRole === 'student' ? userId : otherId
     const lovedOneId = userRole === 'student' ? otherId : userId
@@ -167,188 +165,158 @@ export default function AWYWidget() {
 
   if (loading) return null
 
-  // Logged Out State
-  if (!userId) {
+  // Logged Out Modal / Prompt
+  if (isOpen && !userId) {
     return (
-      <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end space-y-4 group">
-        {isOpen && (
-          <div className="bg-white rounded-3xl shadow-2xl border border-pink-100 w-80 animate-in slide-in-from-bottom-5 fade-in duration-300 overflow-hidden">
-             {/* Header */}
-             <div className="bg-gradient-to-r from-pink-500 to-rose-500 px-5 py-4 flex items-center justify-between text-white">
-                <div>
-                  <h3 className="font-bold text-lg flex items-center gap-2">
-                    Always With You
-                  </h3>
-                  <p className="text-xs text-pink-100 font-medium">Emotional Connection</p>
-                </div>
-                <button 
-                  onClick={() => setIsOpen(false)}
-                  className="p-1.5 rounded-full hover:bg-white/20 transition-colors"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-             </div>
+      <div className="fixed bottom-24 right-6 z-50 flex w-full max-w-sm flex-col overflow-hidden rounded-3xl border border-pink-100 bg-white shadow-2xl animate-in slide-in-from-bottom-5 fade-in duration-300">
+         <div className="bg-gradient-to-r from-pink-500 to-rose-500 px-5 py-4 flex items-center justify-between text-white">
+            <h3 className="font-bold text-lg">Connect with Love</h3>
+            <button onClick={() => setIsOpen(false)} className="p-1 rounded-full hover:bg-white/20">
+               <X size={20} />
+            </button>
+         </div>
 
-             <div className="p-8 text-center flex flex-col items-center">
-                 <div className="w-16 h-16 bg-pink-50 rounded-full flex items-center justify-center mb-4">
-                    <Lock className="w-8 h-8 text-pink-500" />
-                 </div>
-                 <h4 className="font-bold text-gray-900 mb-2">Connect with Love</h4>
-                 <p className="text-sm text-gray-600 mb-6">
-                   Log in to connect with your loved ones via AWY.
-                 </p>
-                 <div className="flex flex-col gap-3 w-full">
-                   <a href="/login" className="w-full py-2.5 bg-pink-500 text-white rounded-xl font-bold hover:bg-pink-600 transition-colors flex items-center justify-center gap-2">
-                     Log In
-                     <ArrowRight size={16} />
-                   </a>
-                   <a href="/loved-one-login" className="w-full py-2.5 bg-white text-pink-500 border border-pink-200 rounded-xl font-bold hover:bg-pink-50 transition-colors">
-                     Loved One Login
-                   </a>
-                 </div>
+         <div className="p-8 text-center flex flex-col items-center">
+             <div className="w-16 h-16 bg-pink-50 rounded-full flex items-center justify-center mb-4">
+                <Heart className="w-8 h-8 text-pink-500 fill-pink-500" />
              </div>
-          </div>
-        )}
+             <p className="text-gray-600 mb-8 leading-relaxed">
+               Log in or start a free trial to use the ‘Always With You’ widget and see when your loved ones are online – even from thousands of miles away.
+             </p>
+             <div className="flex flex-col gap-3 w-full">
+               <Link href="/login" className="w-full py-3 bg-pink-500 text-white rounded-xl font-bold hover:bg-pink-600 transition-colors flex items-center justify-center gap-2">
+                 Log In
+               </Link>
+               <Link href="/signup" className="w-full py-3 bg-white text-pink-500 border border-pink-200 rounded-xl font-bold hover:bg-pink-50 transition-colors">
+                 Start Free Trial
+               </Link>
+             </div>
+         </div>
+      </div>
+    );
+  }
 
+  // 1. Closed Launcher (Pill Style)
+  if (!isOpen) {
+    return (
+      <div className="fixed bottom-6 right-6 z-[60] flex flex-col items-end group">
         {/* Tooltip */}
-        {!isOpen && (
-          <div className="absolute right-full mr-4 bottom-2 w-max opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none translate-x-2 group-hover:translate-x-0">
-            <div className="bg-gray-900/90 backdrop-blur-sm text-white text-xs py-2.5 px-4 rounded-xl shadow-xl border border-white/10">
-              <div className="font-bold mb-0.5 text-pink-200">Always With You</div>
-              <div className="text-gray-300">Stay emotionally close to your loved ones.</div>
-            </div>
-            {/* Arrow */}
-            <div className="absolute bottom-4 -right-1.5 w-3 h-3 bg-gray-900/90 rotate-45 border-t border-r border-white/10"></div>
+        <div className="absolute right-full mr-4 top-1/2 -translate-y-1/2 w-max opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none translate-x-2 group-hover:translate-x-0">
+          <div className="bg-gray-900/90 backdrop-blur-sm text-white text-xs py-2.5 px-4 rounded-xl shadow-xl border border-white/10">
+            <div className="font-bold mb-0.5 text-pink-200">Always With You</div>
+            <div className="text-gray-300">See when your loved ones are online.</div>
           </div>
-        )}
+          {/* Arrow */}
+          <div className="absolute top-1/2 -translate-y-1/2 -right-1.5 w-3 h-3 bg-gray-900/90 rotate-45 border-t border-r border-white/10"></div>
+        </div>
 
         <button
-          onClick={() => setIsOpen(!isOpen)}
-          aria-label="Always With You - Emotional Presence"
-          className="group flex items-center justify-center w-14 h-14 bg-white border-2 border-pink-100 rounded-full shadow-lg hover:border-pink-200 hover:shadow-xl transition-all duration-200 hover:scale-105"
+          onClick={() => setIsOpen(true)}
+          className="flex items-center gap-3 pl-2 pr-5 py-2 rounded-full shadow-xl backdrop-blur-md transition-all duration-300 hover:-translate-y-1 hover:ring-2 hover:ring-pink-400/50 bg-gradient-to-r from-pink-500 to-rose-500 text-white"
         >
-          <div className="relative">
-            <Heart className={`w-6 h-6 text-pink-500 transition-transform duration-200 ${isOpen ? 'scale-110 fill-pink-500' : 'group-hover:scale-110'}`} />
+          {/* Icon Circle */}
+          <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center backdrop-blur-sm shadow-inner relative">
+             <Heart className="w-5 h-5 fill-white text-white" />
+             {/* Online Indicator Badge if anyone is online */}
+             {connections.some(c => c.isAvailable) && (
+                <span className="absolute top-0 right-0 w-3 h-3 bg-green-400 border-2 border-pink-500 rounded-full animate-pulse"></span>
+             )}
+          </div>
+          
+          <div className="flex flex-col items-start">
+             <span className="font-bold text-sm leading-tight">Always With You</span>
+             <span className="text-[10px] text-pink-100 font-medium">Connect with Loved Ones</span>
           </div>
         </button>
       </div>
     )
   }
 
+  // 2. Open Widget (Logged In)
   return (
-    <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end space-y-4 group">
-      {/* Main Widget */}
-      {isOpen && (
-        <div className="bg-white rounded-3xl shadow-2xl border border-pink-100 w-80 animate-in slide-in-from-bottom-5 fade-in duration-300 overflow-hidden">
-          {/* Header */}
-          <div className="bg-gradient-to-r from-pink-500 to-rose-500 px-5 py-4 flex items-center justify-between text-white">
-             <div>
-               <h3 className="font-bold text-lg flex items-center gap-2">
-                 Always With You
-               </h3>
-               <p className="text-xs text-pink-100 font-medium">Emotional Connection</p>
-             </div>
-             <button 
-               onClick={() => setIsOpen(false)}
-               className="p-1.5 rounded-full hover:bg-white/20 transition-colors"
-             >
-               <X className="w-5 h-5" />
-             </button>
-          </div>
+    <div className="fixed bottom-24 right-6 z-50 flex flex-col items-end space-y-4 group">
+      <div className="bg-white rounded-3xl shadow-2xl border border-pink-100 w-80 animate-in slide-in-from-bottom-5 fade-in duration-300 overflow-hidden">
+        {/* Header */}
+        <div className="bg-gradient-to-r from-pink-500 to-rose-500 px-5 py-4 flex items-center justify-between text-white">
+           <div>
+             <h3 className="font-bold text-lg flex items-center gap-2">
+               Always With You
+             </h3>
+             <p className="text-xs text-pink-100 font-medium">Emotional Connection</p>
+           </div>
+           <button 
+             onClick={() => setIsOpen(false)}
+             className="p-1.5 rounded-full hover:bg-white/20 transition-colors"
+           >
+             <X className="w-5 h-5" />
+           </button>
+        </div>
 
-          <div className="p-5">
-            {/* My Status Toggle */}
-            <div className="flex items-center justify-between bg-pink-50/50 p-4 rounded-2xl mb-5 border border-pink-100">
-              <div className="flex flex-col">
-                <span className="text-sm font-semibold text-gray-800">I'm Available</span>
-                <span className="text-xs text-gray-500">Let them know you're free</span>
-              </div>
-              <button
-                onClick={toggleAvailability}
-                className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-pink-500 focus:ring-offset-2 ${
-                  isMyAvailabilityOn ? 'bg-pink-500' : 'bg-gray-200'
+        <div className="p-5">
+          {/* My Status Toggle */}
+          <div className="flex items-center justify-between bg-pink-50/50 p-4 rounded-2xl mb-5 border border-pink-100">
+            <div className="flex flex-col">
+              <span className="text-sm font-semibold text-gray-800">I'm Available</span>
+              <span className="text-xs text-gray-500">Let them know you're free</span>
+            </div>
+            <button
+              onClick={toggleAvailability}
+              className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-pink-500 focus:ring-offset-2 ${
+                isMyAvailabilityOn ? 'bg-pink-500' : 'bg-gray-200'
+              }`}
+            >
+              <span
+                className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-sm transition-transform ${
+                  isMyAvailabilityOn ? 'translate-x-6' : 'translate-x-1'
                 }`}
-              >
-                <span
-                  className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-sm transition-transform ${
-                    isMyAvailabilityOn ? 'translate-x-6' : 'translate-x-1'
-                  }`}
-                />
-              </button>
-            </div>
+              />
+            </button>
+          </div>
 
-            {/* Connections List */}
-            <div className="space-y-3">
-              <div className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Connections</div>
-              {connections.length === 0 ? (
-                <div className="text-center py-6 text-gray-400 text-sm bg-gray-50 rounded-2xl border border-dashed border-gray-200">
-                  No active connections yet.
-                </div>
-              ) : (
-                connections.map(conn => (
-                  <div key={conn.id} className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-2xl transition-all border border-transparent hover:border-gray-100 group">
-                    <div className="flex items-center space-x-3">
-                      <div className="relative">
-                        <div className="w-12 h-12 bg-gradient-to-br from-pink-100 to-rose-100 rounded-full flex items-center justify-center text-pink-600 font-bold text-lg shadow-sm">
-                          {conn.displayName.charAt(0)}
-                        </div>
-                        {conn.isAvailable && (
-                          <span className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 border-2 border-white rounded-full shadow-sm animate-pulse"></span>
-                        )}
+          {/* Connections List */}
+          <div className="space-y-3">
+            <div className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Connections</div>
+            {connections.length === 0 ? (
+              <div className="text-center py-6 text-gray-400 text-sm bg-gray-50 rounded-2xl border border-dashed border-gray-200">
+                No active connections yet.
+              </div>
+            ) : (
+              connections.map(conn => (
+                <div key={conn.id} className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-2xl transition-all border border-transparent hover:border-gray-100 group">
+                  <div className="flex items-center space-x-3">
+                    <div className="relative">
+                      <div className="w-12 h-12 bg-gradient-to-br from-pink-100 to-rose-100 rounded-full flex items-center justify-center text-pink-600 font-bold text-lg shadow-sm">
+                        {conn.displayName.charAt(0)}
                       </div>
-                      <div>
-                        <p className="text-sm font-bold text-gray-900">{conn.displayName}</p>
-                        <p className={`text-xs font-medium ${conn.isAvailable ? 'text-green-600' : 'text-gray-400'}`}>
-                          {conn.isAvailable ? 'Available' : 'Away'}
-                        </p>
-                      </div>
+                      {conn.isAvailable && (
+                        <span className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 border-2 border-white rounded-full shadow-sm animate-pulse"></span>
+                      )}
                     </div>
-                    
-                    {conn.isAvailable && (
-                      <a
-                        href={getJitsiUrl(conn.id)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="p-2.5 bg-pink-100 text-pink-600 rounded-full hover:bg-pink-500 hover:text-white transition-all shadow-sm hover:shadow-md transform hover:scale-105"
-                        title="Start Video Call"
-                      >
-                        <Video className="w-4 h-4" />
-                      </a>
-                    )}
+                    <div>
+                      <p className="text-sm font-bold text-gray-900">{conn.displayName}</p>
+                      <p className={`text-xs font-medium ${conn.isAvailable ? 'text-green-600' : 'text-gray-400'}`}>
+                        {conn.isAvailable ? 'Available' : 'Away'}
+                      </p>
+                    </div>
                   </div>
-                ))
-              )}
-            </div>
+                  
+                  {conn.isAvailable && (
+                    <a
+                      href={getJitsiUrl(conn.id)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="p-2.5 bg-pink-100 text-pink-600 rounded-full hover:bg-pink-500 hover:text-white transition-all shadow-sm hover:shadow-md transform hover:scale-105"
+                      title="Start Video Call"
+                    >
+                      <Video className="w-4 h-4" />
+                    </a>
+                  )}
+                </div>
+              ))
+            )}
           </div>
         </div>
-      )}
-
-      {/* Tooltip - Only show when closed */}
-      {!isOpen && (
-        <div className="absolute right-full mr-4 bottom-2 w-max opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none translate-x-2 group-hover:translate-x-0">
-          <div className="bg-gray-900/90 backdrop-blur-sm text-white text-xs py-2.5 px-4 rounded-xl shadow-xl border border-white/10">
-            <div className="font-bold mb-0.5 text-pink-200">Always With You</div>
-            <div className="text-gray-300">Stay emotionally close to your loved ones.</div>
-          </div>
-          {/* Arrow */}
-          <div className="absolute bottom-4 -right-1.5 w-3 h-3 bg-gray-900/90 rotate-45 border-t border-r border-white/10"></div>
-        </div>
-      )}
-
-      {/* Floating Button */}
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        aria-label="Always With You - Emotional Presence"
-        className="group flex items-center justify-center w-14 h-14 bg-white border-2 border-pink-100 rounded-full shadow-lg hover:border-pink-200 hover:shadow-xl transition-all duration-200 hover:scale-105"
-      >
-        <div className="relative">
-          <Heart className={`w-6 h-6 text-pink-500 transition-transform duration-200 ${isOpen ? 'scale-110 fill-pink-500' : 'group-hover:scale-110'}`} />
-          {/* Online Indicator Badge if anyone is online */}
-          {connections.some(c => c.isAvailable) && (
-            <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-green-500 border-2 border-white rounded-full animate-pulse shadow-sm"></span>
-          )}
-        </div>
-      </button>
+      </div>
     </div>
   )
 }
