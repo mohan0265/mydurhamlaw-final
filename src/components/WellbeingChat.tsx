@@ -13,7 +13,9 @@ import {
   streamGPT4oResponse, 
   interruptVoice, 
 } from '@/lib/openai'
-import { supabase } from '@/lib/supabase/client'
+import { getSupabaseClient } from '@/lib/supabase/client'
+
+const supabase = getSupabaseClient()
 // Durmah config removed - using fallback speech detection
 import { AssistanceLevel } from './wellbeing/AssistanceLevelPopover'
 import { speakWithElevenLabs, stop as stopTTS, isSpeaking } from '@/lib/tts/elevenLabsClient'

@@ -1,5 +1,7 @@
 // src/lib/supabase/storage.ts
-import { supabase } from './client'
+import { getSupabaseClient } from './client'
+
+const supabase = getSupabaseClient()
 
 export interface UploadOptions {
   bucket: string

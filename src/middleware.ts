@@ -4,6 +4,13 @@ import type { NextRequest } from 'next/server';
 
 export async function middleware(req: NextRequest) {
   const res = NextResponse.next();
+  
+  // Guard against missing env vars to prevent undici crashes in createMiddlewareClient
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+    console.error("Middleware skipping: Missing Supabase Env Vars");
+    return res;
+  }
+
   const supabase = createMiddlewareClient({ req, res });
 
   const {

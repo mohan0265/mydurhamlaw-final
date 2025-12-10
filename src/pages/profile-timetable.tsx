@@ -3,7 +3,10 @@ import Head from 'next/head';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import { useAuth } from '@/lib/supabase/AuthContext';
-import { supabase } from '@/lib/supabase/client';
+import { getSupabaseClient } from '@/lib/supabase/client';
+// ...
+// Inside component or function
+const supabase = getSupabaseClient();
 import toast from 'react-hot-toast';
 import { parseTimetableText, ParsedTimetableEvent } from '@/lib/durham/timetableParser';
 import { ArrowRight, Check, Calendar, User, BookOpen } from 'lucide-react';

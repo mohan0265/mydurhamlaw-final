@@ -1,5 +1,7 @@
 
-import { supabase } from './client'
+import { getSupabaseClient } from './client'
+
+const supabase = getSupabaseClient()
 import { getAuthRedirect } from '@/lib/authRedirect'
 
 export interface AuthError {

@@ -1,6 +1,8 @@
 import { useEffect, ComponentType } from 'react'
 import { useRouter } from 'next/router'
-import { supabase } from '@/lib/supabase/client'
+import { getSupabaseClient } from '@/lib/supabase/client'
+
+const supabase = getSupabaseClient();
 
 export function withAuthProtection<T extends Record<string, unknown>>(Component: ComponentType<T>) {
   return function ProtectedComponent(props: T) {

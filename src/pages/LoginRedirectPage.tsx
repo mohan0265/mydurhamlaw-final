@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/router'
-import { getSupabaseClient, debugAuthState } from '@/lib/supabase/client'
+import { getSupabaseClient } from '@/lib/supabase/client'
 import { getDashboardRoute } from '@/lib/utils/metadata-storage'
 
 export default function LoginRedirectPage() {
@@ -17,7 +17,9 @@ export default function LoginRedirectPage() {
         setStatus('Processing authentication...')
         
         // ✅ Enhanced session verification with debugging
-        const { session, error: sessionError } = await debugAuthState()
+        const supabaseClient = getSupabaseClient();
+        if (!supabaseClient) throw new Error("Supabase client not available");
+        const { data: { session }, error: sessionError } = await supabaseClient.auth.getSession()
 
         if (sessionError) {
           console.error('🚨 Session error:', sessionError)

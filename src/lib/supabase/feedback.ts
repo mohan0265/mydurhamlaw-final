@@ -1,4 +1,6 @@
-import { supabase } from './client'
+import { getSupabaseClient } from './client'
+
+const supabase = getSupabaseClient()
 
 export interface AIFeedback {
   id: string

@@ -1,7 +1,7 @@
 // Debug page to help troubleshoot OAuth flow issues
 // Access this at: https://www.mydurhamlaw.com/debug-auth
 import { useEffect, useState } from 'react'
-import { getSupabaseClient, debugAuthState } from '@/lib/supabase/client'
+import { getSupabaseClient } from '@/lib/supabase/client'
 import { getAuthRedirect } from '@/lib/authRedirect'
 
 export default function DebugAuthPage() {
@@ -32,7 +32,8 @@ export default function DebugAuthPage() {
     })
 
     // Test 2: Current Session
-    const { session, error } = await debugAuthState()
+    const supabase = getSupabaseClient();
+    const { data: { session }, error } = supabase ? await supabase.auth.getSession() : { data: { session: null }, error: new Error("No client") };
     results.push({
       test: 'Current Session',
       status: session ? 'PASS' : 'FAIL',

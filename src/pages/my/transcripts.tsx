@@ -1,6 +1,8 @@
 // src/pages/my/transcripts.tsx
 import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabase/client";
+import { getSupabaseClient } from "@/lib/supabase/client";
+
+const supabase = getSupabaseClient();
 import { withAuthProtection } from "@/lib/withAuthProtection";
 
 type Row = { id: string; created_at: string; title: string | null; content: string };

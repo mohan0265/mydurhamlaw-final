@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/router'
 import { BookOpen, User, GraduationCap, ArrowRight } from 'lucide-react'
-import { getSupabaseClient, debugAuthState } from '@/lib/supabase/client'
+import { getSupabaseClient } from '@/lib/supabase/client'
 import { getDashboardRoute } from '@/lib/utils/metadata-storage'
 import toast from 'react-hot-toast'
 import { Logo } from '@/components/ui/Logo'
@@ -56,7 +56,9 @@ export default function CompleteProfilePage() {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const { session, error } = await debugAuthState()
+        const supabaseInfo = getSupabaseClient();
+        if (!supabaseInfo) throw new Error("Supabase client not available");
+        const { data: { session }, error } = await supabaseInfo.auth.getSession()
         
         if (error || !session?.user) {
           console.log('❌ No authenticated user, redirecting to signup')

@@ -1,5 +1,4 @@
-import { streamGPT4oResponse } from '@/lib/server/openai'
-import { getServerSupabaseClient } from '@/lib/supabase/serverClient'
+import { getSupabaseClient } from '@/lib/supabase/client'
 import { generateEmbedding, preprocessTextForEmbedding } from '@/lib/server/embeddings'
 
 export const config = { runtime: 'nodejs' };
@@ -34,7 +33,7 @@ export default async function handler(req: Request) {
         const processedPrompt = preprocessTextForEmbedding(prompt)
         const embeddingResult = await generateEmbedding(processedPrompt)
 
-        const supabase = getServerSupabaseClient()
+        const supabase = getSupabaseClient()
         if (!supabase) {
           console.warn('Supabase client not available for Human-Mode features')
           humanModeActive = false

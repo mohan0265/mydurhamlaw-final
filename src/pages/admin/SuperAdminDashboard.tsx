@@ -2,7 +2,9 @@
 
 import React, { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/router'
-import { supabase } from '@/lib/supabase/client'
+import { getSupabaseClient } from '@/lib/supabase/client'
+
+const supabase = getSupabaseClient();
 import { withAuthProtection } from '@/lib/withAuthProtection'
 import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
