@@ -3,17 +3,24 @@ import type { NextApiRequest, NextApiResponse } from "next";
 const REALTIME_URL =
   "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:connectRealtime";
 
+export const config = {
+  maxDuration: 60, // Serverless function timeout
+};
+
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
+  console.log(`[VoiceAPI] ${req.method} request to /api/voice/offer`);
+
   // Allow simple GET check to confirm endpoint exists
   if (req.method === 'GET') {
-     return res.status(200).json({ status: "ok", service: "Durmah Voice" });
+     return res.status(200).json({ status: "ok", service: "Durmah Voice", timestamp: new Date().toISOString() });
   }
 
   if (req.method !== "POST") {
-    res.status(405).json({ error: "Method not allowed" });
+    res.setHeader('Allow', ['POST', 'GET']);
+    res.status(405).json({ error: `Method ${req.method} not allowed` });
     return;
   }
 
@@ -30,6 +37,7 @@ export default async function handler(
     const { offerSdp } = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
 
     if (!offerSdp || typeof offerSdp !== "string") {
+      console.warn("[VoiceAPI] Missing SDP offer in body");
       res.status(400).json({ error: "Missing SDP offer" });
       return;
     }

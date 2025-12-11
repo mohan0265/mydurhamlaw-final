@@ -109,17 +109,26 @@ export function useDurmahRealtime({
 
       console.debug(`[DurmahVoice] Sending SDP to /api/voice/offer...`);
       
-      const sdpResponse = await fetch("/api/voice/offer", {
+      const response = await fetch("/api/voice/offer", {
         method: "POST",
         body: JSON.stringify({ offerSdp: offer.sdp }),
         headers: { "Content-Type": "application/json" },
       });
 
-      if (!sdpResponse.ok) {
-        throw new Error(`SDP negotiation failed: ${sdpResponse.statusText}`);
+      if (!response.ok) {
+        if (response.status === 404) {
+           throw new Error("Voice service endpoint not found (404). Please try again later.");
+        }
+        const errorText = await response.text().catch(() => response.statusText);
+        throw new Error(`Voice service error (${response.status}): ${errorText}`);
       }
 
-      const answerSdp = await sdpResponse.text();
+      const answerSdp = await response.text();
+      // Basic validation that it looks like SDP
+      if (!answerSdp || !answerSdp.includes("v=")) {
+         throw new Error("Invalid response from voice service");
+      }
+
       console.debug("[DurmahVoice] Received SDP answer.");
       await pc.setRemoteDescription({
         type: "answer",
@@ -134,7 +143,7 @@ export function useDurmahRealtime({
       setStatus("error");
       stopListening();
     }
-  }, [systemPrompt, onTurn, voice]);
+  }, [systemPrompt, onTurn, voice, stopListening]);
 
   const stopListening = useCallback(() => {
     console.debug("[DurmahVoice] stopListening called");
