@@ -43,14 +43,6 @@ const nextConfig = {
     Object.assign(alias, {
       'react-query': '@tanstack/react-query',
       'react-query/devtools': '@tanstack/react-query-devtools',
-      // Cleaned — all Durmah/AWY stubs removed for standalone widget
-      'durmah': stub('src/stubs/NullWidget.tsx'),
-      '@/durmah': stub('src/stubs/NullWidget.tsx'),
-      '@durmah': stub('src/stubs/NullWidget.tsx'),
-      '@/awy': stub('src/stubs/awy.ts'),
-      '@awy': stub('src/stubs/awy.ts'),
-      '@/lib/awy': stub('src/stubs/awy.ts'),
-      'awy': stub('src/stubs/awy.ts'),
     })
     config.resolve.alias = alias
     return config;
