@@ -2,7 +2,7 @@ import Head from 'next/head'
 import Link from 'next/link'
 import React, { useEffect, useMemo, useState, useContext } from 'react'
 import { AuthContext } from '@/lib/supabase/AuthContext'
-import { getBrowserSupabase } from '@/lib/supabase/browser'
+import { getSupabaseClient } from '@/lib/supabase/client'
 import { addStudentTopic } from '@/lib/syllabus/fetch'
 import { format } from 'date-fns'
 
@@ -83,7 +83,7 @@ export default function ContributeTool() {
   useEffect(() => {
     (async () => {
       try {
-        const supabase = getBrowserSupabase()
+        const supabase = getSupabaseClient()
         const { data: { user } } = await supabase.auth.getUser()
         if (user?.id) setUserId(user.id)
       } catch {}

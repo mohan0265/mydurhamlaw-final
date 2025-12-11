@@ -1,6 +1,6 @@
 import { NextApiRequest, NextApiResponse } from 'next'
 import { createPagesServerClient } from '@supabase/auth-helpers-nextjs'
-import { getSupabaseServerClient } from '@/lib/supabase/server'
+import { getSupabaseClient } from '@/lib/supabase/client'
 import { Resend } from 'resend'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
@@ -50,7 +50,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // 4. Create Connection Record
-    const adminSupabase = getSupabaseServerClient()
+    const adminSupabase = getSupabaseClient()
     
     // Check if user exists to link immediately
     const { data: { users } } = await adminSupabase.auth.admin.listUsers()

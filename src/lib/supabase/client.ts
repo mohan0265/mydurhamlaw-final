@@ -16,9 +16,13 @@ export function getSupabaseClient(): SupabaseClient {
       throw new Error("Missing NEXT_PUBLIC_SUPABASE_URL or Supabase/Anon Key");
     }
 
+    const isBrowser = typeof window !== 'undefined';
+    
     supabase = createClient(url, key, {
       auth: {
-        persistSession: false,
+        persistSession: isBrowser,
+        autoRefreshToken: isBrowser,
+        detectSessionInUrl: isBrowser,
       },
     });
   }

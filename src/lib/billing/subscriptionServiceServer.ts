@@ -1,4 +1,4 @@
-import { getSupabaseServerClient } from '@/lib/supabase/server';
+import { getSupabaseClient } from '@/lib/supabase/client';
 import { SubscriptionService } from './subscriptionService';
 
 // Create a server-side instance of SubscriptionService
@@ -14,4 +14,4 @@ import { SubscriptionService } from './subscriptionService';
 // BUT, getSupabaseServerClient() uses the SERVICE_ROLE_KEY, so it bypasses RLS.
 // So a singleton is acceptable for admin tasks.
 
-export const serverSubscriptionService = new SubscriptionService(getSupabaseServerClient());
+export const serverSubscriptionService = new SubscriptionService(getSupabaseClient());

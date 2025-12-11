@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next'
-import { getServerSupabase, getServerUser } from '@/lib/supabase/server'
+import { createPagesServerClient } from '@supabase/auth-helpers-nextjs'
 
 const DEBUG = process.env.NODE_ENV !== 'production' || process.env.NEXT_PUBLIC_DEBUG === 'true'
 
@@ -26,10 +26,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       })
     }
 
+    // Get server Supabase client (respects RLS and cookies)
+    const supabase = createPagesServerClient({ req, res })
+
     // Get authenticated user
-    const user = await getServerUser(req, res)
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
     
-    if (!user) {
+    if (authError || !user) {
       if (DEBUG) console.debug('🚫 Update year: No authenticated user')
       return res.status(401).json({ error: 'Not authenticated' })
     }
@@ -38,9 +41,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       userId: user.id,
       yearGroup: year_group 
     })
-
-    // Get server Supabase client (respects RLS)
-    const supabase = getServerSupabase(req, res)
 
     // Update the user's year group
     const { data, error } = await supabase

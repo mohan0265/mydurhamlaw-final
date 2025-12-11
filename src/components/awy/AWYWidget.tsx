@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react'
 import { Heart, Video, X, Loader2, Lock, ArrowRight, User } from 'lucide-react'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { getSupabaseClient } from '@/lib/supabase/client'
 import toast from 'react-hot-toast'
 import Link from 'next/link'
 
@@ -22,7 +22,7 @@ export default function AWYWidget() {
   const [userRole, setUserRole] = useState<'student' | 'loved_one' | null>(null)
   const [userId, setUserId] = useState<string | null>(null)
   
-  const supabase = createClientComponentClient()
+  const supabase = getSupabaseClient()
   const channelRef = useRef<any>(null)
 
   // Fetch initial data

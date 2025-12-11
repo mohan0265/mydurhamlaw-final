@@ -1,10 +1,10 @@
 import { z } from 'zod';
-import { getBrowserSupabase } from '@/lib/supabase/browser';
+import { getSupabaseClient } from '@/lib/supabase/client';
 import { YearZ, TermZ, WeekZ, TopicZ } from './schema';
 
 export async function getStudentYear(): Promise<1|2|3|4|null> {
   try {
-    const supabase = getBrowserSupabase();
+    const supabase = getSupabaseClient();
     if (!supabase) return null;
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return null;
@@ -23,7 +23,7 @@ export async function getStudentYear(): Promise<1|2|3|4|null> {
 }
 
 export async function getYear(year: number) {
-  const supabase = getBrowserSupabase();
+  const supabase = getSupabaseClient();
   if (!supabase) return { available: false, reason: 'missing-keys' as const };
 
   // Pull terms
@@ -99,7 +99,7 @@ export async function addStudentTopic(input: {
   userId: string; year: number; term: string; week: number;
   module_code: string; day: 'Mon'|'Tue'|'Wed'|'Thu'|'Fri'; title: string; notes?: string;
 }) {
-  const supabase = getBrowserSupabase();
+  const supabase = getSupabaseClient();
   if (!supabase) return { ok:false, reason:'missing-keys' as const };
   const { error } = await supabase.from('student_topics').insert({
     user_id: input.userId,

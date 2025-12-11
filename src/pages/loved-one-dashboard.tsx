@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import Head from 'next/head'
 import { Heart, Video, LogOut, User, RefreshCw } from 'lucide-react'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { getSupabaseClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
 import { UKTimeDisplay } from '@/components/ui/UKTimeDisplay'
@@ -22,7 +22,7 @@ export default function LovedOneDashboard() {
   const [loading, setLoading] = useState(true)
   const [isRefreshing, setIsRefreshing] = useState(false)
   const router = useRouter()
-  const supabase = createClientComponentClient()
+  const supabase = getSupabaseClient()
   const channelRef = useRef<any>(null)
 
   const fetchUser = async () => {
