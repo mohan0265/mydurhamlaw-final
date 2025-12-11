@@ -2,9 +2,9 @@
 
 import React, { useState, useEffect, useRef } from 'react'
 import { Heart, Video, X, Loader2, Lock, ArrowRight, User } from 'lucide-react'
-import { getSupabaseClient } from '@/lib/supabase/client'
 import toast from 'react-hot-toast'
 import Link from 'next/link'
+import { AuthContext } from '@/lib/supabase/AuthContext'
 
 interface Connection {
   id: string // loved_one_id or student_id
@@ -20,37 +20,36 @@ export default function AWYWidget() {
   const [connections, setConnections] = useState<Connection[]>([])
   const [isMyAvailabilityOn, setIsMyAvailabilityOn] = useState(false)
   const [userRole, setUserRole] = useState<'student' | 'loved_one' | null>(null)
-  const [userId, setUserId] = useState<string | null>(null)
   
-  const supabase = getSupabaseClient()
+  // Use global auth context instead of creating new client
+  const { user, supabase: contextSupabase, loading: authLoading } = React.useContext(AuthContext)
+  const userId = user?.id || null
+  
   const channelRef = useRef<any>(null)
 
   // Fetch initial data
   const fetchData = async () => {
+    if (!contextSupabase || !userId) {
+      if (!authLoading) setLoading(false)
+      return
+    }
+
     try {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) {
-        setLoading(false)
-        return
-      }
-
-      setUserId(user.id)
-
       // Get role
-      const { data: profile } = await supabase
+      const { data: profile } = await contextSupabase
         .from('profiles')
         .select('role')
-        .eq('id', user.id)
+        .eq('id', userId)
         .single()
       
       const role = profile?.role || 'student'
       setUserRole(role)
 
       // Get my status
-      const { data: myPresence } = await supabase
+      const { data: myPresence } = await contextSupabase
         .from('awy_presence')
         .select('is_available')
-        .eq('user_id', user.id)
+        .eq('user_id', userId)
         .single()
       
       if (myPresence) setIsMyAvailabilityOn(myPresence.is_available)
@@ -98,11 +97,16 @@ export default function AWYWidget() {
   }
 
   useEffect(() => {
-    fetchData()
+    if (!authLoading) {
+      fetchData()
+    }
+  }, [authLoading, userId, contextSupabase])
 
-    // Realtime Subscription
-    if (!channelRef.current) {
-      channelRef.current = supabase
+  useEffect(() => {
+     // Realtime Subscription
+     if (!contextSupabase || !channelRef || channelRef.current) return
+
+      channelRef.current = contextSupabase
         .channel('awy_presence_changes')
         .on(
           'postgres_changes',
@@ -111,7 +115,7 @@ export default function AWYWidget() {
             schema: 'public',
             table: 'awy_presence'
           },
-          (payload) => {
+          (payload: any) => {
             // Update local state if the updated user is in our list
             setConnections(prev => prev.map(c => {
               if (c.id === payload.new.user_id) {
@@ -126,16 +130,18 @@ export default function AWYWidget() {
           }
         )
         .subscribe()
-    }
-
-    // Fallback polling every 15s
-    const interval = setInterval(fetchData, 15000)
+    
+     // Fallback polling every 15s
+     const interval = setInterval(() => {
+         if (userId) fetchData()
+     }, 15000)
 
     return () => {
-      if (channelRef.current) supabase.removeChannel(channelRef.current)
+      if (channelRef.current && contextSupabase) contextSupabase.removeChannel(channelRef.current)
+      channelRef.current = null
       clearInterval(interval)
     }
-  }, [supabase])
+  }, [contextSupabase, userId])
 
   const toggleAvailability = async () => {
     const newState = !isMyAvailabilityOn
