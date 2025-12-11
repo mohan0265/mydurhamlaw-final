@@ -25,6 +25,27 @@ export function useDurmahRealtime({
   const streamRef = useRef<MediaStream | null>(null);
   const previewAudioRef = useRef<HTMLAudioElement | null>(null);
 
+  const stopListening = useCallback(() => {
+    console.debug("[DurmahVoice] stopListening called");
+    if (pcRef.current) {
+      pcRef.current.close();
+      pcRef.current = null;
+    }
+    if (dcRef.current) {
+      dcRef.current.close();
+      dcRef.current = null;
+    }
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((t) => t.stop());
+      streamRef.current = null;
+    }
+    if (audioRef.current) {
+      audioRef.current.srcObject = null;
+    }
+    setStatus("idle");
+    setSpeaking(false);
+  }, []);
+
   const startListening = useCallback(async () => {
     console.debug("[DurmahVoice] startListening (Gemini) called");
     try {
@@ -144,27 +165,6 @@ export function useDurmahRealtime({
       stopListening();
     }
   }, [systemPrompt, onTurn, voice, stopListening]);
-
-  const stopListening = useCallback(() => {
-    console.debug("[DurmahVoice] stopListening called");
-    if (pcRef.current) {
-      pcRef.current.close();
-      pcRef.current = null;
-    }
-    if (dcRef.current) {
-      dcRef.current.close();
-      dcRef.current = null;
-    }
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach((t) => t.stop());
-      streamRef.current = null;
-    }
-    if (audioRef.current) {
-      audioRef.current.srcObject = null;
-    }
-    setStatus("idle");
-    setSpeaking(false);
-  }, []);
 
   // --- PREVIEW HELPER ---
   const playVoicePreview = useCallback(async (preset: { geminiVoice: string; previewText: string }) => {
