@@ -3,8 +3,10 @@ import React from 'react'
 import { useRouter } from 'next/router'
 import GlobalHeader from '@/components/GlobalHeader'
 import GlobalFooter from '@/components/GlobalFooter'
-import DurmahWidget from '@/components/DurmahWidget'
-import AWYWidget from '@/components/awy/AWYWidget'
+import dynamic from 'next/dynamic'
+// Dynamic imports to avoid SSR issues with Voice/WebRTC
+const DurmahWidget = dynamic(() => import('@/components/DurmahWidget'), { ssr: false })
+const AWYWidget = dynamic(() => import('@/components/awy/AWYWidget'), { ssr: false })
 import { CalendarProvider } from '@/context/CalendarContext'
 
 type Props = { children: React.ReactNode }
