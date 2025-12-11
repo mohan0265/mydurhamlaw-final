@@ -4,7 +4,7 @@
   "description": "AI-powered law study app for Durham University students",
   "private": true,
   "engines": {
-    "node": ">=18.18.0",
+    "node": ">=20.0.0",
     "npm": ">=9.0.0"
   },
   "scripts": {

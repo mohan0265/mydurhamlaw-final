@@ -62,10 +62,10 @@ class RSSScheduler {
       }
 
       // Add conditional headers to check for changes
-      if (cachedEtag) {
+      if (typeof cachedEtag === 'string' && cachedEtag) {
         headers['If-None-Match'] = cachedEtag
       }
-      if (cachedLastModified) {
+      if (typeof cachedLastModified === 'string' && cachedLastModified) {
         headers['If-Modified-Since'] = cachedLastModified
       }
 
