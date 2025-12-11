@@ -193,13 +193,13 @@ export default function DurmahWidget() {
     setShowVoiceTranscript(true);
   }
 
-  const handlePreview = async (vid: string, e: React.MouseEvent) => {
+  const handlePreview = async (preset: { id: string, geminiVoice: string, previewText: string }, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (previewingVoiceId === vid) return; // Already playing or blocking re-click
+    if (previewingVoiceId === preset.id) return; // Already playing or blocking re-click
     
-    setPreviewingVoiceId(vid);
+    setPreviewingVoiceId(preset.id);
     if (playVoicePreview) {
-      await playVoicePreview(vid); // This will play and auto-close
+      await playVoicePreview(preset); // This will play and auto-close
     }
     setPreviewingVoiceId(null);
   };
@@ -499,7 +499,7 @@ export default function DurmahWidget() {
                           <p className="text-xs text-gray-500 mb-4 h-8">{p.subtitle}</p>
                           
                           <button
-                             onClick={(e) => handlePreview(p.id, e)}
+                             onClick={(e) => handlePreview(p, e)}
                              disabled={Boolean(isPreviewing)}
                              className={`w-full py-2.5 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition-all ${
                                isPreviewing 

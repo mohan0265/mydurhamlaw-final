@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from "react";
-import { DURMAH_VOICE_PRESETS, getDurmahPresetById } from "@/config/durmahVoicePresets";
+// import { DURMAH_VOICE_PRESETS, getDurmahPresetById } from "@/config/durmahVoicePresets";
 
 export type VoiceTurn = { speaker: "user" | "durmah"; text: string };
 
@@ -167,17 +167,14 @@ export function useDurmahRealtime({
   }, []);
 
   // --- PREVIEW HELPER ---
-  const playVoicePreview = useCallback(async (voiceId: string) => {
+  const playVoicePreview = useCallback(async (preset: { geminiVoice: string; previewText: string }) => {
     // This helper creates a *separate* temporary connection just for the preview
     // to avoid interfering with the main session state if it was cleaner.
-    // However, to reuse the "offer" logic, we duplicate some code or extract it.
-    // Since this is a one-off, we'll implement a miniature version here.
     
-    const preset = getDurmahPresetById(voiceId);
     if (!preset) return;
 
     try {
-      console.debug(`[VoicePreview] Starting preview for ${voiceId}...`);
+      console.debug(`[VoicePreview] Starting preview...`);
       const pc = new RTCPeerConnection();
       
       // We need a temporary audio element for preview if the main one is busy,
