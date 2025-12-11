@@ -1,8 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/lib/supabase/AuthContext';
 import { getSupabaseClient } from '@/lib/supabase/client';
-
-const supabase = getSupabaseClient();
 import { 
   DURMAH_VOICE_PRESETS, 
   DurmahVoiceId,
@@ -28,7 +26,10 @@ export function useDurmahSettings() {
 
     const fetchSettings = async () => {
       try {
-        const { data, error } = await supabase!
+        const supabase = getSupabaseClient();
+        if (!supabase) return;
+
+        const { data, error } = await supabase
           .from('profiles')
           .select('durmah_voice_id')
           .eq('id', user!.id)
@@ -63,7 +64,10 @@ export function useDurmahSettings() {
     if (!user?.id) return;
 
     try {
-      const { error } = await supabase!
+      const supabase = getSupabaseClient();
+      if (!supabase) throw new Error("Supabase not initialized");
+
+      const { error } = await supabase
         .from('profiles')
         .update({ durmah_voice_id: newVoiceId })
         .eq('id', user.id);
