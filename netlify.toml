@@ -31,7 +31,12 @@
 #   from = "/api/legal-news-feed"
 #   to   = "/.netlify/functions/legal-news-feed"
 #   status = 200
-#
+
+[[redirects]]
+  from = "/api/voice/offer"
+  to   = "/.netlify/functions/voice-offer"
+  status = 200
+
 # [[redirects]]
 #   from = "/api/oscola"
 #   to   = "/.netlify/functions/oscola"
