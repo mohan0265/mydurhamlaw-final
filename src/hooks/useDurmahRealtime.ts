@@ -186,27 +186,38 @@ export function useDurmahRealtime({
       };
 
       dc.onmessage = (event) => {
-        try {
-          const payload = JSON.parse(event.data);
-          if (payload.type === "response.output_text.delta") {
-            transcriptBufferRef.current += payload.delta || "";
-          } else if (
-            payload.type === "response.output_text.done" ||
-            payload.type === "response.completed"
-          ) {
-            const text = transcriptBufferRef.current.trim();
-            if (text) {
-              onTurn?.({ speaker: "durmah", text });
+        const chunks = String(event.data)
+          .split("\n")
+          .map((part) => part.trim())
+          .filter(Boolean);
+
+        for (const chunk of chunks) {
+          try {
+            const payload = JSON.parse(chunk);
+            if (payload.type === "response.output_text.delta") {
+              transcriptBufferRef.current += payload.delta || "";
+            } else if (
+              payload.type === "response.output_text.done" ||
+              payload.type === "response.completed"
+            ) {
+              const text = transcriptBufferRef.current.trim();
+              if (text) {
+                onTurn?.({ speaker: "durmah", text });
+              }
+              transcriptBufferRef.current = "";
+            } else if (payload.type === "response.error") {
+              const msg =
+                payload?.error?.message || "Realtime response error detected";
+              console.error("[DurmahVoice] Response error:", msg);
+              setError(msg);
             }
-            transcriptBufferRef.current = "";
-          } else if (payload.type === "response.error") {
-            const msg =
-              payload?.error?.message || "Realtime response error detected";
-            console.error("[DurmahVoice] Response error:", msg);
-            setError(msg);
+          } catch (err) {
+            console.warn(
+              "[DurmahVoice] Failed to parse realtime payload",
+              chunk,
+              err
+            );
           }
-        } catch {
-          // Ignore malformed payloads
         }
       };
 
