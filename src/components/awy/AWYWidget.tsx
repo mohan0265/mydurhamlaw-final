@@ -27,6 +27,16 @@ export default function AWYWidget() {
   
   const channelRef = useRef<any>(null)
 
+  const deriveUserRole = useCallback((): 'student' | 'loved_one' => {
+    const appMeta = user?.app_metadata as Record<string, unknown> | undefined;
+    const metadataRole =
+      (user?.user_metadata?.role as 'student' | 'loved_one' | undefined) ||
+      (user?.user_metadata?.user_role as 'student' | 'loved_one' | undefined) ||
+      (appMeta?.role as 'student' | 'loved_one' | undefined) ||
+      (appMeta?.user_role as 'student' | 'loved_one' | undefined);
+    return metadataRole === 'loved_one' ? 'loved_one' : 'student';
+  }, [user]);
+
   // Fetch initial data without hitting Next.js proxies (prevents 401 spam)
   const fetchData = useCallback(async () => {
     if (!contextSupabase || !userId) {
@@ -110,14 +120,7 @@ export default function AWYWidget() {
     }
 
     try {
-      const { data: profile, error } = await contextSupabase
-        .from('profiles')
-        .select('role')
-        .eq('id', userId)
-        .maybeSingle()
-      if (error) throw error
-
-      const role = (profile?.role as 'student' | 'loved_one') || 'student'
+      const role = deriveUserRole()
       setUserRole(role)
 
       const { data: myPresence, error: presenceError } = await contextSupabase
@@ -139,7 +142,7 @@ export default function AWYWidget() {
     } finally {
       setLoading(false)
     }
-  }, [authLoading, contextSupabase, userId])
+  }, [authLoading, contextSupabase, deriveUserRole, userId])
 
   useEffect(() => {
     if (!authLoading) {

@@ -28,14 +28,32 @@ export async function middleware(req: NextRequest) {
   }
 
   if (session) {
-    // Get user role - check both 'role' (new) and 'user_role' (legacy) just in case
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role, user_role')
-      .eq('id', session.user.id)
-      .single();
+    const meta = session.user;
+    let userRole =
+      ((meta.user_metadata?.role as string) ||
+        (meta.user_metadata?.user_role as string) ||
+        (meta.app_metadata?.role as string) ||
+        (meta.app_metadata?.user_role as string)) ??
+      'student';
 
-    const userRole = profile?.role || profile?.user_role || 'student';
+    if (!userRole || typeof userRole !== 'string') {
+      userRole = 'student';
+    }
+
+    if (userRole === 'student') {
+      const {
+        data: profile,
+        error: profileError,
+      } = await supabase
+        .from('profiles')
+        .select('user_role')
+        .eq('id', session.user.id)
+        .maybeSingle();
+
+      if (!profileError && profile?.user_role) {
+        userRole = profile.user_role as string;
+      }
+    }
 
     // Define allowed paths
     const lovedOnePaths = [

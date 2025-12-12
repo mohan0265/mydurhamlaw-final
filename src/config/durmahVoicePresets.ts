@@ -6,10 +6,10 @@ export type DurmahVoiceId =
 
 export interface DurmahVoicePreset {
   id: DurmahVoiceId;
-  geminiVoice: string; // The specific Gemini voice identifier (e.g. "charon")
+  openaiVoice: string; // OpenAI realtime voice identifier (e.g. "alloy")
   label: string;
   subtitle: string;
-  colorClass: string;      // Tailwind classes for cards
+  colorClass: string; // Tailwind classes for cards
   icon: "mentor" | "owl" | "feather" | "spark";
   previewText: string;
   welcomeMessage: string;
@@ -18,7 +18,7 @@ export interface DurmahVoicePreset {
 export const DURMAH_VOICE_PRESETS: DurmahVoicePreset[] = [
   {
     id: "warm_female",
-    geminiVoice: "charon",
+    openaiVoice: "alloy",
     label: "Warm Female Mentor",
     subtitle: "Friendly, encouraging, and supportive.",
     colorClass: "from-purple-500 to-pink-500",
@@ -30,7 +30,7 @@ export const DURMAH_VOICE_PRESETS: DurmahVoicePreset[] = [
   },
   {
     id: "calm_male",
-    geminiVoice: "lumen",
+    openaiVoice: "verse",
     label: "Calm Male Mentor",
     subtitle: "Steady, reassuring, and clear.",
     colorClass: "from-indigo-500 to-blue-600",
@@ -42,7 +42,7 @@ export const DURMAH_VOICE_PRESETS: DurmahVoicePreset[] = [
   },
   {
     id: "neutral_british",
-    geminiVoice: "ember",
+    openaiVoice: "aria",
     label: "Neutral British Mentor",
     subtitle: "Neutral, precise, and academic.",
     colorClass: "from-slate-600 to-slate-800",
@@ -54,7 +54,7 @@ export const DURMAH_VOICE_PRESETS: DurmahVoicePreset[] = [
   },
   {
     id: "energetic_peer",
-    geminiVoice: "solace",
+    openaiVoice: "pepper",
     label: "Energetic Study Buddy",
     subtitle: "Lively, upbeat, and motivating.",
     colorClass: "from-rose-500 to-orange-500",

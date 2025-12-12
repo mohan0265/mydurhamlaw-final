@@ -29,61 +29,45 @@ export function useDurmahRealtime({
   const previewPcRef = useRef<RTCPeerConnection | null>(null);
   const previewDcRef = useRef<RTCDataChannel | null>(null);
   const previewStreamRef = useRef<MediaStream | null>(null);
+  const transcriptBufferRef = useRef<string>("");
 
-  const requestAnswerSdp = useCallback(async (offerSdp?: string | null) => {
-    if (!offerSdp) {
-      throw new Error("Missing SDP offer");
-    }
+  const requestAnswerSdp = useCallback(
+    async (offerSdp?: string | null, voiceOverride?: string) => {
+      if (!offerSdp) {
+        throw new Error("Missing SDP offer");
+      }
 
-    const response = await fetch("/api/voice/offer", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ offerSdp }),
-    });
+      const headers: Record<string, string> = {
+        "Content-Type": "application/sdp",
+      };
+      const chosenVoice = voiceOverride || voice;
+      if (chosenVoice) {
+        headers["X-Durmah-Voice"] = chosenVoice;
+      }
 
-    const contentType = response.headers.get("content-type") || "";
+      const response = await fetch("/api/voice/offer", {
+        method: "POST",
+        headers,
+        body: offerSdp,
+      });
 
-    if (!response.ok) {
-      if (contentType.includes("application/json")) {
-        let payload: any = {};
-        try {
-          payload = await response.json();
-        } catch {
-          // fall through with empty payload
-        }
-        const detail =
-          (payload?.detail as string) ||
-          (payload?.error as string) ||
-          JSON.stringify(payload);
+      const answerSdp = await response.text();
+
+      if (!response.ok) {
         throw new Error(
-          `Voice service error (${response.status}): ${detail || "unknown"}`
+          `Voice service error (${response.status}): ${
+            answerSdp || response.statusText
+          }`
         );
       }
 
-      const fallback = await response.text().catch(() => response.statusText);
-      throw new Error(
-        `Voice service error (${response.status}): ${fallback || "unknown"}`
-      );
-    }
-
-    if (contentType.includes("application/json")) {
-      const payload = await response.json();
-      const answer =
-        (payload?.answerSdp as string) ||
-        (payload?.answer as string) ||
-        (payload?.sdp as string);
-      if (!answer) {
-        throw new Error("Voice service response missing answer SDP");
+      if (!answerSdp) {
+        throw new Error("Voice service response was empty");
       }
-      return answer;
-    }
-
-    const fallback = await response.text();
-    if (!fallback) {
-      throw new Error("Voice service response was empty");
-    }
-    return fallback;
-  }, []);
+      return answerSdp;
+    },
+    [voice]
+  );
 
   const stopPreview = useCallback(() => {
     if (previewDcRef.current) {
@@ -128,12 +112,13 @@ export function useDurmahRealtime({
       audioRef.current.srcObject = null;
     }
     stopPreview();
+    transcriptBufferRef.current = "";
     setStatus("idle");
     setSpeaking(false);
   }, [audioRef, stopPreview]);
 
   const startListening = useCallback(async () => {
-    console.debug("[DurmahVoice] startListening (Gemini) called");
+    console.debug("[DurmahVoice] startListening (OpenAI) called");
     try {
       setError(null);
       setSpeaking(false);
@@ -174,42 +159,51 @@ export function useDurmahRealtime({
         setStatus("speaking");
       };
 
-      const dc = pc.createDataChannel("gemini-events");
+      const dc = pc.createDataChannel("oai-events");
       dcRef.current = dc;
 
       dc.onopen = () => {
         console.debug("[DurmahVoice] Data channel open");
         setStatus("listening");
-        const setupMsg = {
-          setup: {
-            model: "models/gemini-2.0-flash-exp",
-            generation_config: {
-              speech_config: {
-                voice_config: {
-                  prebuilt_voice_config: {
-                    voice_name: voice,
-                  },
-                },
-              },
+
+        if (systemPrompt) {
+          dc.send(
+            JSON.stringify({
+              type: "session.update",
+              session: { instructions: systemPrompt },
+            })
+          );
+        }
+
+        dc.send(
+          JSON.stringify({
+            type: "response.create",
+            response: {
+              modalities: ["audio", "text"],
             },
-            system_instruction: {
-              parts: [{ text: systemPrompt }],
-            },
-          },
-        };
-        dc.send(JSON.stringify(setupMsg));
+          })
+        );
       };
 
       dc.onmessage = (event) => {
         try {
           const payload = JSON.parse(event.data);
-          if (payload.serverContent?.modelTurn?.parts) {
-            const textPart = payload.serverContent.modelTurn.parts.find(
-              (part: any) => part.text
-            );
-            if (textPart) {
-              onTurn?.({ speaker: "durmah", text: textPart.text });
+          if (payload.type === "response.output_text.delta") {
+            transcriptBufferRef.current += payload.delta || "";
+          } else if (
+            payload.type === "response.output_text.done" ||
+            payload.type === "response.completed"
+          ) {
+            const text = transcriptBufferRef.current.trim();
+            if (text) {
+              onTurn?.({ speaker: "durmah", text });
             }
+            transcriptBufferRef.current = "";
+          } else if (payload.type === "response.error") {
+            const msg =
+              payload?.error?.message || "Realtime response error detected";
+            console.error("[DurmahVoice] Response error:", msg);
+            setError(msg);
           }
         } catch {
           // Ignore malformed payloads
@@ -219,7 +213,7 @@ export function useDurmahRealtime({
       const offer = await pc.createOffer({ offerToReceiveAudio: true });
       await pc.setLocalDescription(offer);
 
-      const answerSdp = await requestAnswerSdp(offer.sdp ?? undefined);
+      const answerSdp = await requestAnswerSdp(offer.sdp ?? undefined, voice);
       if (!answerSdp.includes("v=")) {
         throw new Error("Invalid response from voice service");
       }
@@ -246,8 +240,8 @@ export function useDurmahRealtime({
   ]);
 
   const playVoicePreview = useCallback(
-    async (preset: { geminiVoice: string; previewText: string }) => {
-      if (!preset?.geminiVoice) return;
+    async (preset: { openaiVoice: string; previewText: string }) => {
+      if (!preset?.openaiVoice) return;
       if (pcRef.current) {
         console.debug("[VoicePreview] Skipping preview during active call");
         return;
@@ -280,55 +274,37 @@ export function useDurmahRealtime({
         previewStreamRef.current = stream;
         stream.getAudioTracks().forEach((track) => pc.addTrack(track, stream));
 
-        const dc = pc.createDataChannel("gemini-preview");
+        const dc = pc.createDataChannel("oai-preview");
         previewDcRef.current = dc;
 
         dc.onopen = () => {
-          const setupMsg = {
-            setup: {
-              model: "models/gemini-2.0-flash-exp",
-              generation_config: {
-                speech_config: {
-                  voice_config: {
-                    prebuilt_voice_config: {
-                      voice_name: preset.geminiVoice,
-                    },
-                  },
-                },
+          if (systemPrompt) {
+            dc.send(
+              JSON.stringify({
+                type: "session.update",
+                session: { instructions: systemPrompt },
+              })
+            );
+          }
+          const prompt = `Say exactly this phrase with emotion: "${preset.previewText}"`;
+          dc.send(
+            JSON.stringify({
+              type: "response.create",
+              response: {
+                modalities: ["audio", "text"],
+                instructions: prompt,
               },
-            },
-          };
-          dc.send(JSON.stringify(setupMsg));
-
-          const promptMsg = {
-            client_content: {
-              turns: [
-                {
-                  role: "user",
-                  parts: [
-                    {
-                      text: `Say exactly this phrase with emotion: "${preset.previewText}"`,
-                    },
-                  ],
-                },
-              ],
-              turn_complete: true,
-            },
-          };
-
-          setTimeout(() => {
-            try {
-              dc.send(JSON.stringify(promptMsg));
-            } catch (err) {
-              console.error("[VoicePreview] Failed to send prompt", err);
-            }
-          }, 300);
+            })
+          );
         };
 
         dc.onmessage = (event) => {
           try {
             const payload = JSON.parse(event.data);
-            if (payload.serverContent?.turnComplete) {
+            if (
+              payload.type === "response.completed" ||
+              payload.type === "response.output_audio.done"
+            ) {
               setTimeout(() => stopPreview(), 400);
             }
           } catch {
@@ -339,7 +315,10 @@ export function useDurmahRealtime({
         const offer = await pc.createOffer({ offerToReceiveAudio: true });
         await pc.setLocalDescription(offer);
 
-        const answerSdp = await requestAnswerSdp(offer.sdp ?? undefined);
+        const answerSdp = await requestAnswerSdp(
+          offer.sdp ?? undefined,
+          preset.openaiVoice
+        );
         await pc.setRemoteDescription({ type: "answer", sdp: answerSdp });
       } catch (err: any) {
         console.error("[VoicePreview] Failed:", err);
@@ -348,7 +327,7 @@ export function useDurmahRealtime({
         stopPreview();
       }
     },
-    [requestAnswerSdp, stopPreview]
+    [requestAnswerSdp, stopPreview, systemPrompt]
   );
 
   useEffect(() => {

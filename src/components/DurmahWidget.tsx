@@ -138,7 +138,7 @@ export default function DurmahWidget() {
     buildDurmahSystemPrompt(studentContext, memory, upcomingTasks, todaysEvents, { systemTone: preset?.subtitle || "Friendly" }), 
   [studentContext, memory, upcomingTasks, todaysEvents, preset]);
 
-  // Pass geminiVoice from the selected preset
+  // Pass selected realtime voice from the preset
   const {
     startListening,
     stopListening,
@@ -149,7 +149,7 @@ export default function DurmahWidget() {
     playVoicePreview // Imported from hook
   } = useDurmahRealtime({
     systemPrompt,
-    voice: preset?.geminiVoice || "charon", // e.g. "charon"
+    voice: preset?.openaiVoice || "alloy",
     audioRef,
     onTurn: (turn) => {
       setCallTranscript((prev) => [
@@ -193,7 +193,10 @@ export default function DurmahWidget() {
     setShowVoiceTranscript(true);
   }
 
-  const handlePreview = async (preset: { id: string; geminiVoice: string; previewText: string }, e: React.MouseEvent) => {
+  const handlePreview = async (
+    preset: { id: string; openaiVoice: string; previewText: string },
+    e: React.MouseEvent
+  ) => {
     e.stopPropagation();
     if (isListening || previewingVoiceId === preset.id) return;
 

@@ -1,11 +1,29 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 
-const REALTIME_URL =
-  "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:connectRealtime";
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+const REALTIME_MODEL =
+  process.env.OPENAI_REALTIME_MODEL ||
+  "gpt-4o-realtime-preview-2024-12-17";
 
 export const config = {
-  maxDuration: 60, // Serverless function timeout
+  api: {
+    bodyParser: false,
+  },
+  maxDuration: 60,
 };
+
+async function readRawBody(req: NextApiRequest): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const chunks: Buffer[] = [];
+    req.on("data", (chunk) => {
+      chunks.push(typeof chunk === "string" ? Buffer.from(chunk) : chunk);
+    });
+    req.on("end", () => {
+      resolve(Buffer.concat(chunks).toString("utf8"));
+    });
+    req.on("error", reject);
+  });
+}
 
 export default async function handler(
   req: NextApiRequest,
@@ -29,80 +47,105 @@ export default async function handler(
     return res.status(405).json({ error: `Method ${req.method} not allowed` });
   }
 
-  const apiKey =
-    process.env.GEMINI_LIVE_API_KEY ||
-    process.env.GEMINI_API_KEY ||
-    process.env.NEXT_PUBLIC_GEMINI_API_KEY;
-
-  if (!apiKey) {
-    console.error("[VoiceAPI] GEMINI_API_KEY is not set.");
-    return res
-      .status(500)
-      .json({ error: "Gemini API key is not configured (Server)" });
+  if (!OPENAI_API_KEY) {
+    console.error("[VoiceAPI] OPENAI_API_KEY is not set.");
+    return res.status(500).json({ error: "OPENAI_API_KEY not configured" });
   }
 
   try {
-    const offerSdp = extractOfferSdp(req.body);
+    const offerSdp = req.method === "POST" ? await readRawBody(req) : "";
 
     if (!offerSdp || typeof offerSdp !== "string") {
       console.warn("[VoiceAPI] Missing SDP offer in body");
       return res.status(400).json({ error: "Missing SDP offer" });
     }
 
-    console.log("[VoiceAPI] Sending SDP to Gemini Realtime...");
+    const requestedVoiceHeader = req.headers["x-durmah-voice"];
+    const requestedVoice = Array.isArray(requestedVoiceHeader)
+      ? requestedVoiceHeader[0]
+      : requestedVoiceHeader;
 
-    const response = await fetch(`${REALTIME_URL}?key=${apiKey}`, {
+    console.log("[VoiceAPI] Creating OpenAI Realtime session...");
+
+    const sessionPayload: Record<string, unknown> = {
+      model: REALTIME_MODEL,
+    };
+    if (requestedVoice && typeof requestedVoice === "string") {
+      sessionPayload.voice = requestedVoice;
+    }
+
+    const sessionRes = await fetch("https://api.openai.com/v1/realtime/sessions", {
       method: "POST",
-      headers: { "Content-Type": "application/sdp" },
+      headers: {
+        Authorization: `Bearer ${OPENAI_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(sessionPayload),
+    });
+
+    if (!sessionRes.ok) {
+      const text = await sessionRes.text();
+      console.error(
+        "[VoiceAPI] Failed to create OpenAI Realtime session",
+        sessionRes.status,
+        text
+      );
+      return res.status(502).json({
+        error: "Failed to create Realtime session",
+        status: sessionRes.status,
+        details: text,
+      });
+    }
+
+    const sessionJson = await sessionRes.json();
+    const ephemeralKey =
+      sessionJson?.client_secret?.value ??
+      sessionJson?.client_secret ??
+      null;
+
+    if (!ephemeralKey || typeof ephemeralKey !== "string") {
+      console.error(
+        "[VoiceAPI] Realtime session missing client secret",
+        sessionJson
+      );
+      return res
+        .status(502)
+        .json({ error: "Realtime session missing client secret" });
+    }
+
+    const realtimeUrl = `https://api.openai.com/v1/realtime?model=${encodeURIComponent(
+      REALTIME_MODEL
+    )}`;
+
+    const response = await fetch(realtimeUrl, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${ephemeralKey}`,
+        "Content-Type": "application/sdp",
+      },
       body: offerSdp,
     });
 
+    const answerSdp = await response.text();
+
     if (!response.ok) {
-      const text = await response
-        .text()
-        .catch(() => "Realtime request failed");
-      console.error(`[VoiceAPI] Gemini Error ${response.status}: ${text}`);
+      console.error(
+        "[VoiceAPI] Realtime SDP exchange failed",
+        response.status,
+        answerSdp
+      );
       return res
-        .status(response.status)
-        .json({ error: "Realtime request failed", detail: text });
+        .status(response.status || 502)
+        .send(answerSdp || "Realtime SDP exchange failed");
     }
 
-    console.log("[VoiceAPI] Received SDP answer from Gemini.");
-    const answerSdp = await response.text();
     res.setHeader("Cache-Control", "no-store");
-    return res.status(200).json({ ok: true, answerSdp });
+    return res.status(200).send(answerSdp);
   } catch (error: any) {
     console.error("[VoiceAPI] Unexpected error:", error);
-    return res
-      .status(500)
-      .json({ error: "Realtime negotiation failed", detail: error?.message });
+    return res.status(500).json({
+      error: "Internal server error in voice offer endpoint",
+      detail: error?.message,
+    });
   }
-}
-
-function extractOfferSdp(
-  body: NextApiRequest["body"]
-): string | undefined {
-  if (!body) return undefined;
-
-  const tryParse = (value: unknown) => {
-    if (typeof value !== "object" || value === null) return undefined;
-    const payload = value as Record<string, unknown>;
-    return (
-      (payload.offerSdp as string) ||
-      (payload.offer as string) ||
-      (payload.sdp as string) ||
-      (payload.sessionDescription as string)
-    );
-  };
-
-  if (typeof body === "string") {
-    try {
-      const parsed = JSON.parse(body);
-      return tryParse(parsed) ?? body;
-    } catch {
-      return body;
-    }
-  }
-
-  return tryParse(body);
 }
