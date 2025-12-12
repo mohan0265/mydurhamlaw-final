@@ -104,7 +104,7 @@ export default function DurmahWidget() {
 
     (async () => {
       try {
-        const res = await fetch("/api/durmah/memory");
+        const res = await fetch("/api/durmah/memory", { credentials: "include" });
         if (res.ok) {
           const data = await res.json();
           if (!cancelled && data.ok && data.memory) {

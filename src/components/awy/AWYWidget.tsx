@@ -56,7 +56,7 @@ export default function AWYWidget() {
 
       // Fetch connections based on role
       if (role === 'loved_one') {
-        const res = await fetch('/api/awy/presence/lovedone-view')
+        const res = await fetch('/api/awy/presence/lovedone-view', { credentials: 'include' })
         const data = await res.json()
         if (data.ok) {
           setConnections(data.students.map((s: any) => ({
@@ -68,10 +68,10 @@ export default function AWYWidget() {
           })))
         }
       } else {
-        const res = await fetch('/api/awy/presence/student-view')
+        const res = await fetch('/api/awy/presence/student-view', { credentials: 'include' })
         const data = await res.json()
         if (data.ok) {
-          const connRes = await fetch('/api/awy/loved-ones')
+          const connRes = await fetch('/api/awy/loved-ones', { credentials: 'include' })
           const connData = await connRes.json()
           
           if (connData.ok) {
@@ -152,6 +152,7 @@ export default function AWYWidget() {
       await fetch('/api/awy/presence/update', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ is_available: newState })
       })
       toast.success(newState ? "You are now visible" : "You are hidden")
