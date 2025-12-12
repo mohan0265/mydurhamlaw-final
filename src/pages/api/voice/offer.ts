@@ -14,25 +14,35 @@ export default async function handler(
   console.log(`[VoiceAPI] ${req.method} request to /api/voice/offer`);
 
   // Allow simple GET check to confirm endpoint exists
-  if (req.method === 'GET') {
-     return res.status(200).json({ status: "ok", service: "Durmah Voice", timestamp: new Date().toISOString() });
+  if (req.method === "GET") {
+    return res
+      .status(200)
+      .json({
+        status: "ok",
+        service: "Durmah Voice",
+        timestamp: new Date().toISOString(),
+      });
   }
 
   if (req.method !== "POST") {
-    res.setHeader('Allow', ['POST', 'GET']);
+    res.setHeader("Allow", ["POST", "GET"]);
     return res.status(405).json({ error: `Method ${req.method} not allowed` });
   }
 
   const apiKey =
-    process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+    process.env.GEMINI_LIVE_API_KEY ||
+    process.env.GEMINI_API_KEY ||
+    process.env.NEXT_PUBLIC_GEMINI_API_KEY;
 
   if (!apiKey) {
     console.error("[VoiceAPI] GEMINI_API_KEY is not set.");
-    return res.status(500).json({ error: "Gemini API key is not configured (Server)" });
+    return res
+      .status(500)
+      .json({ error: "Gemini API key is not configured (Server)" });
   }
 
   try {
-    const { offerSdp } = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
+    const offerSdp = extractOfferSdp(req.body);
 
     if (!offerSdp || typeof offerSdp !== "string") {
       console.warn("[VoiceAPI] Missing SDP offer in body");
@@ -48,7 +58,9 @@ export default async function handler(
     });
 
     if (!response.ok) {
-      const text = await response.text().catch(() => "Realtime request failed");
+      const text = await response
+        .text()
+        .catch(() => "Realtime request failed");
       console.error(`[VoiceAPI] Gemini Error ${response.status}: ${text}`);
       return res
         .status(response.status)
@@ -57,12 +69,40 @@ export default async function handler(
 
     console.log("[VoiceAPI] Received SDP answer from Gemini.");
     const answerSdp = await response.text();
-    res.setHeader("Content-Type", "text/plain");
-    return res.status(200).send(answerSdp);
+    res.setHeader("Cache-Control", "no-store");
+    return res.status(200).json({ ok: true, answerSdp });
   } catch (error: any) {
     console.error("[VoiceAPI] Unexpected error:", error);
     return res
       .status(500)
       .json({ error: "Realtime negotiation failed", detail: error?.message });
   }
+}
+
+function extractOfferSdp(
+  body: NextApiRequest["body"]
+): string | undefined {
+  if (!body) return undefined;
+
+  const tryParse = (value: unknown) => {
+    if (typeof value !== "object" || value === null) return undefined;
+    const payload = value as Record<string, unknown>;
+    return (
+      (payload.offerSdp as string) ||
+      (payload.offer as string) ||
+      (payload.sdp as string) ||
+      (payload.sessionDescription as string)
+    );
+  };
+
+  if (typeof body === "string") {
+    try {
+      const parsed = JSON.parse(body);
+      return tryParse(parsed) ?? body;
+    } catch {
+      return body;
+    }
+  }
+
+  return tryParse(body);
 }

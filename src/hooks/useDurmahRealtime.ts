@@ -1,11 +1,10 @@
 import { useState, useRef, useCallback, useEffect } from "react";
-// import { DURMAH_VOICE_PRESETS, getDurmahPresetById } from "@/config/durmahVoicePresets";
 
 export type VoiceTurn = { speaker: "user" | "durmah"; text: string };
 
 interface UseDurmahRealtimeProps {
   systemPrompt: string;
-  voice?: string; // Gemini voice name, e.g. "charon"
+  voice?: string;
   onTurn?: (turn: VoiceTurn) => void;
   audioRef: React.RefObject<HTMLAudioElement>;
 }
@@ -16,18 +15,104 @@ export function useDurmahRealtime({
   onTurn,
   audioRef,
 }: UseDurmahRealtimeProps) {
-  const [status, setStatus] = useState<"idle" | "connecting" | "listening" | "speaking" | "previewing" | "error">("idle");
+  const [status, setStatus] = useState<
+    "idle" | "connecting" | "listening" | "speaking" | "previewing" | "error"
+  >("idle");
   const [speaking, setSpeaking] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const pcRef = useRef<RTCPeerConnection | null>(null);
   const dcRef = useRef<RTCDataChannel | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
+
   const previewAudioRef = useRef<HTMLAudioElement | null>(null);
+  const previewPcRef = useRef<RTCPeerConnection | null>(null);
+  const previewDcRef = useRef<RTCDataChannel | null>(null);
+  const previewStreamRef = useRef<MediaStream | null>(null);
+
+  const requestAnswerSdp = useCallback(async (offerSdp?: string | null) => {
+    if (!offerSdp) {
+      throw new Error("Missing SDP offer");
+    }
+
+    const response = await fetch("/api/voice/offer", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ offerSdp }),
+    });
+
+    const contentType = response.headers.get("content-type") || "";
+
+    if (!response.ok) {
+      if (contentType.includes("application/json")) {
+        let payload: any = {};
+        try {
+          payload = await response.json();
+        } catch {
+          // fall through with empty payload
+        }
+        const detail =
+          (payload?.detail as string) ||
+          (payload?.error as string) ||
+          JSON.stringify(payload);
+        throw new Error(
+          `Voice service error (${response.status}): ${detail || "unknown"}`
+        );
+      }
+
+      const fallback = await response.text().catch(() => response.statusText);
+      throw new Error(
+        `Voice service error (${response.status}): ${fallback || "unknown"}`
+      );
+    }
+
+    if (contentType.includes("application/json")) {
+      const payload = await response.json();
+      const answer =
+        (payload?.answerSdp as string) ||
+        (payload?.answer as string) ||
+        (payload?.sdp as string);
+      if (!answer) {
+        throw new Error("Voice service response missing answer SDP");
+      }
+      return answer;
+    }
+
+    const fallback = await response.text();
+    if (!fallback) {
+      throw new Error("Voice service response was empty");
+    }
+    return fallback;
+  }, []);
+
+  const stopPreview = useCallback(() => {
+    if (previewDcRef.current) {
+      previewDcRef.current.close();
+      previewDcRef.current = null;
+    }
+    if (previewPcRef.current) {
+      previewPcRef.current.ontrack = null;
+      previewPcRef.current.close();
+      previewPcRef.current = null;
+    }
+    if (previewStreamRef.current) {
+      previewStreamRef.current.getTracks().forEach((track) => track.stop());
+      previewStreamRef.current = null;
+    }
+    if (previewAudioRef.current) {
+      try {
+        previewAudioRef.current.pause();
+      } catch {
+        // ignore
+      }
+      previewAudioRef.current.srcObject = null;
+    }
+    setStatus((prev) => (prev === "previewing" ? "idle" : prev));
+  }, []);
 
   const stopListening = useCallback(() => {
-    console.debug("[DurmahVoice] stopListening called");
     if (pcRef.current) {
+      pcRef.current.ontrack = null;
       pcRef.current.close();
       pcRef.current = null;
     }
@@ -36,234 +121,253 @@ export function useDurmahRealtime({
       dcRef.current = null;
     }
     if (streamRef.current) {
-      streamRef.current.getTracks().forEach((t) => t.stop());
+      streamRef.current.getTracks().forEach((track) => track.stop());
       streamRef.current = null;
     }
     if (audioRef.current) {
       audioRef.current.srcObject = null;
     }
+    stopPreview();
     setStatus("idle");
     setSpeaking(false);
-  }, []);
+  }, [audioRef, stopPreview]);
 
   const startListening = useCallback(async () => {
     console.debug("[DurmahVoice] startListening (Gemini) called");
     try {
       setError(null);
+      setSpeaking(false);
+      stopPreview();
       setStatus("connecting");
 
-      // 1. Create PeerConnection
       const pc = new RTCPeerConnection();
       pcRef.current = pc;
 
       pc.oniceconnectionstatechange = () => {
-        console.debug(`[DurmahVoice] ICE connection state: ${pc.iceConnectionState}`);
-      };
-
-      // 2. Add local microphone
-      console.debug("[DurmahVoice] Requesting microphone...");
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      streamRef.current = stream;
-      
-      stream.getAudioTracks().forEach((track) => {
-        pc.addTrack(track, stream);
-      });
-
-      // 3. Play remote audio
-      pc.ontrack = (e) => {
-        console.debug("[DurmahVoice] Received remote track");
-        const remoteStream = e.streams[0] || new MediaStream([e.track]);
-        if (audioRef.current) {
-          audioRef.current.srcObject = remoteStream;
-          audioRef.current.play().catch(err => console.error("Audio play failed:", err));
+        const state = pc.iceConnectionState;
+        console.debug(`[DurmahVoice] ICE state: ${state}`);
+        if (
+          (state === "failed" || state === "disconnected") &&
+          pcRef.current === pc
+        ) {
+          setError("Voice connection lost");
+          stopListening();
         }
       };
 
-      // 4. Create Data Channel (Gemini accepts data channel for inputs/events)
+      console.debug("[DurmahVoice] Requesting microphone...");
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
+      stream.getAudioTracks().forEach((track) => pc.addTrack(track, stream));
+
+      pc.ontrack = (event) => {
+        console.debug("[DurmahVoice] Received remote track");
+        const remoteStream =
+          event.streams[0] || new MediaStream([event.track]);
+        if (audioRef.current) {
+          audioRef.current.srcObject = remoteStream;
+          audioRef.current
+            .play()
+            .catch((err) => console.error("Audio play failed:", err));
+        }
+        setSpeaking(true);
+        setStatus("speaking");
+      };
+
       const dc = pc.createDataChannel("gemini-events");
       dcRef.current = dc;
 
       dc.onopen = () => {
-        console.debug("[DurmahVoice] Data channel open.");
+        console.debug("[DurmahVoice] Data channel open");
         setStatus("listening");
-
-        // Send initial setup
         const setupMsg = {
           setup: {
             model: "models/gemini-2.0-flash-exp",
             generation_config: {
-               speech_config: {
-                 voice_config: {
-                   prebuilt_voice_config: {
-                     voice_name: voice // e.g. "charon"
-                   }
-                 }
-               }
+              speech_config: {
+                voice_config: {
+                  prebuilt_voice_config: {
+                    voice_name: voice,
+                  },
+                },
+              },
             },
             system_instruction: {
-              parts: [{ text: systemPrompt }]
-            }
-          }
+              parts: [{ text: systemPrompt }],
+            },
+          },
         };
         dc.send(JSON.stringify(setupMsg));
       };
 
-      dc.onmessage = (e) => {
+      dc.onmessage = (event) => {
         try {
-          const msg = JSON.parse(e.data);
-          
-          if (msg.serverContent?.modelTurn?.parts) {
-             const textPart = msg.serverContent.modelTurn.parts.find((p: any) => p.text);
-             if (textPart) {
-               onTurn?.({ speaker: "durmah", text: textPart.text });
-             }
+          const payload = JSON.parse(event.data);
+          if (payload.serverContent?.modelTurn?.parts) {
+            const textPart = payload.serverContent.modelTurn.parts.find(
+              (part: any) => part.text
+            );
+            if (textPart) {
+              onTurn?.({ speaker: "durmah", text: textPart.text });
+            }
           }
-          
-        } catch (err) {
-          // console.error("Error parsing data channel message", err);
+        } catch {
+          // Ignore malformed payloads
         }
       };
 
-      // 5. SDP Offer/Answer Exchange
       const offer = await pc.createOffer({ offerToReceiveAudio: true });
       await pc.setLocalDescription(offer);
 
-      console.debug(`[DurmahVoice] Sending SDP to /api/voice/offer...`);
-      
-      const response = await fetch("/api/voice/offer", {
-        method: "POST",
-        body: JSON.stringify({ offerSdp: offer.sdp }),
-        headers: { "Content-Type": "application/json" },
-      });
-
-      if (!response.ok) {
-        if (response.status === 404) {
-           throw new Error("Voice service endpoint not found (404). Please try again later.");
-        }
-        const errorText = await response.text().catch(() => response.statusText);
-        throw new Error(`Voice service error (${response.status}): ${errorText}`);
+      const answerSdp = await requestAnswerSdp(offer.sdp ?? undefined);
+      if (!answerSdp.includes("v=")) {
+        throw new Error("Invalid response from voice service");
       }
 
-      const answerSdp = await response.text();
-      // Basic validation that it looks like SDP
-      if (!answerSdp || !answerSdp.includes("v=")) {
-         throw new Error("Invalid response from voice service");
-      }
-
-      console.debug("[DurmahVoice] Received SDP answer.");
       await pc.setRemoteDescription({
         type: "answer",
         sdp: answerSdp,
       });
-
       console.debug("[DurmahVoice] Call connected.");
-
     } catch (err: any) {
       console.error("Start call failed:", err);
-      setError(err.message || "Failed to start call");
+      setError(err?.message || "Failed to start call");
       setStatus("error");
       stopListening();
     }
-  }, [systemPrompt, onTurn, voice, stopListening]);
+  }, [
+    audioRef,
+    onTurn,
+    requestAnswerSdp,
+    stopListening,
+    stopPreview,
+    systemPrompt,
+    voice,
+  ]);
 
-  // --- PREVIEW HELPER ---
-  const playVoicePreview = useCallback(async (preset: { geminiVoice: string; previewText: string }) => {
-    // This helper creates a *separate* temporary connection just for the preview
-    // to avoid interfering with the main session state if it was cleaner.
-    
-    if (!preset) return;
-
-    try {
-      console.debug(`[VoicePreview] Starting preview...`);
-      const pc = new RTCPeerConnection();
-      
-      // We need a temporary audio element for preview if the main one is busy,
-      // or we can reuse `audioRef` if we aren't in a call.
-      // Ideally, create a new Audio element in memory.
-      const audioEl = new Audio();
-      audioEl.autoplay = true;
-      
-      pc.ontrack = (e) => {
-         const remoteStream = e.streams[0] || new MediaStream([e.track]);
-         audioEl.srcObject = remoteStream;
-      };
-      
-      // We don't necessarily need mic for preview if we just send text?
-      // Actually Gemini Realtime usually expects a mic stream or it might close/fail?
-      // Let's attach a dummy stream or just a silent track if possible.
-      // Or just ask user for mic permission briefly.
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      stream.getAudioTracks().forEach(t => pc.addTrack(t, stream));
-
-      const dc = pc.createDataChannel("gemini-preview");
-      
-      dc.onopen = () => {
-         // Setup with the specific voice
-         const setupMsg = {
-           setup: {
-             model: "models/gemini-2.0-flash-exp",
-             generation_config: { speech_config: { voice_config: { prebuilt_voice_config: { voice_name: preset.geminiVoice } } } },
-           }
-         };
-         dc.send(JSON.stringify(setupMsg));
-
-         // Send the preview text as a user message
-         setTimeout(() => {
-             const promptMsg = {
-                 client_content: {
-                     turns: [{ role: "user", parts: [{ text: `Say exactly this phrase with emotion: "${preset.previewText}"` }] }],
-                     turn_complete: true
-                 }
-             };
-             dc.send(JSON.stringify(promptMsg));
-         }, 500); // Small delay to ensure setup is processed
-      };
-
-      dc.onmessage = (e) => {
-          const msg = JSON.parse(e.data);
-          if (msg.serverContent?.turnComplete) {
-              // Automatically disconnect after response
-              setTimeout(() => {
-                  pc.close();
-                  stream.getTracks().forEach(t => t.stop());
-              }, 4000); // Give it a moment to finish playing
-          }
-      };
-
-      const offer = await pc.createOffer({ offerToReceiveAudio: true });
-      await pc.setLocalDescription(offer);
-      
-      const sdpResponse = await fetch("/api/voice/offer", {
-        method: "POST",
-        body: JSON.stringify({ offerSdp: offer.sdp }),
-        headers: { "Content-Type": "application/json" },
-      });
-      
-      if (!sdpResponse.ok) {
-        throw new Error(`Preview request failed: ${sdpResponse.status}`);
+  const playVoicePreview = useCallback(
+    async (preset: { geminiVoice: string; previewText: string }) => {
+      if (!preset?.geminiVoice) return;
+      if (pcRef.current) {
+        console.debug("[VoicePreview] Skipping preview during active call");
+        return;
       }
 
-      const answerSdp = await sdpResponse.text();
-      await pc.setRemoteDescription({ type: "answer", sdp: answerSdp });
+      try {
+        stopPreview();
+        setStatus((prev) =>
+          prev === "idle" || prev === "error" ? "previewing" : prev
+        );
 
-    } catch (e) {
-      console.error("[VoicePreview] Failed:", e);
-    }
-  }, []);
+        const pc = new RTCPeerConnection();
+        previewPcRef.current = pc;
+
+        const audioEl = previewAudioRef.current ?? new Audio();
+        audioEl.autoplay = true;
+        audioEl.muted = false;
+        previewAudioRef.current = audioEl;
+
+        pc.ontrack = (event) => {
+          const remoteStream =
+            event.streams[0] || new MediaStream([event.track]);
+          audioEl.srcObject = remoteStream;
+          audioEl.play().catch(() => undefined);
+        };
+
+        const stream = await navigator.mediaDevices.getUserMedia({
+          audio: true,
+        });
+        previewStreamRef.current = stream;
+        stream.getAudioTracks().forEach((track) => pc.addTrack(track, stream));
+
+        const dc = pc.createDataChannel("gemini-preview");
+        previewDcRef.current = dc;
+
+        dc.onopen = () => {
+          const setupMsg = {
+            setup: {
+              model: "models/gemini-2.0-flash-exp",
+              generation_config: {
+                speech_config: {
+                  voice_config: {
+                    prebuilt_voice_config: {
+                      voice_name: preset.geminiVoice,
+                    },
+                  },
+                },
+              },
+            },
+          };
+          dc.send(JSON.stringify(setupMsg));
+
+          const promptMsg = {
+            client_content: {
+              turns: [
+                {
+                  role: "user",
+                  parts: [
+                    {
+                      text: `Say exactly this phrase with emotion: "${preset.previewText}"`,
+                    },
+                  ],
+                },
+              ],
+              turn_complete: true,
+            },
+          };
+
+          setTimeout(() => {
+            try {
+              dc.send(JSON.stringify(promptMsg));
+            } catch (err) {
+              console.error("[VoicePreview] Failed to send prompt", err);
+            }
+          }, 300);
+        };
+
+        dc.onmessage = (event) => {
+          try {
+            const payload = JSON.parse(event.data);
+            if (payload.serverContent?.turnComplete) {
+              setTimeout(() => stopPreview(), 400);
+            }
+          } catch {
+            // ignore
+          }
+        };
+
+        const offer = await pc.createOffer({ offerToReceiveAudio: true });
+        await pc.setLocalDescription(offer);
+
+        const answerSdp = await requestAnswerSdp(offer.sdp ?? undefined);
+        await pc.setRemoteDescription({ type: "answer", sdp: answerSdp });
+      } catch (err: any) {
+        console.error("[VoicePreview] Failed:", err);
+        setStatus((prev) => (prev === "previewing" ? "idle" : prev));
+        setError((prev) => prev ?? err?.message ?? "Preview failed");
+        stopPreview();
+      }
+    },
+    [requestAnswerSdp, stopPreview]
+  );
 
   useEffect(() => {
     return () => {
       stopListening();
+      stopPreview();
     };
-  }, [stopListening]);
+  }, [stopListening, stopPreview]);
 
-  return { 
-    startListening, 
-    stopListening, 
-    isListening: status !== "idle" && status !== "error", 
+  const voiceActive =
+    status === "connecting" || status === "listening" || status === "speaking";
+
+  return {
+    startListening,
+    stopListening,
+    isListening: voiceActive,
     status,
-    speaking, 
+    speaking,
     error,
-    playVoicePreview // Exported helper
+    playVoicePreview,
   };
 }

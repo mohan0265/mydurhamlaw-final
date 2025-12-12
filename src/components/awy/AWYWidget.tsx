@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { Heart, Video, X, Loader2, Lock, ArrowRight, User } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Link from 'next/link'
@@ -27,137 +27,194 @@ export default function AWYWidget() {
   
   const channelRef = useRef<any>(null)
 
-  // Fetch initial data
-  const fetchData = async () => {
+  // Fetch initial data without hitting Next.js proxies (prevents 401 spam)
+  const fetchData = useCallback(async () => {
     if (!contextSupabase || !userId) {
-      if (!authLoading) setLoading(false)
+      if (!authLoading) {
+        setConnections([])
+        setLoading(false)
+      }
       return
     }
 
+    const buildPresenceMap = async (ids: string[]) => {
+      if (!ids.length) return new Map<string, any>()
+      const { data, error } = await contextSupabase
+        .from('awy_presence')
+        .select('user_id,is_available,status')
+        .in('user_id', ids)
+      if (error) throw error
+      return new Map((data || []).map((row: any) => [row.user_id, row]))
+    }
+
+    const loadStudentView = async () => {
+      const { data, error } = await contextSupabase
+        .from('awy_connections')
+        .select('loved_one_id,nickname,relationship,status')
+        .eq('student_id', userId)
+        .eq('status', 'active')
+      if (error) throw error
+
+      const lovedOneIds = (data || [])
+        .map((conn: any) => conn.loved_one_id)
+        .filter((id: string | null): id is string => Boolean(id))
+
+      const presenceMap = await buildPresenceMap(lovedOneIds)
+
+      const list: Connection[] = (data || [])
+        .map((conn: any) => {
+          if (!conn.loved_one_id) return null
+          const presence = presenceMap.get(conn.loved_one_id)
+          return {
+            id: conn.loved_one_id,
+            displayName: conn.nickname || conn.relationship || 'Loved One',
+            isAvailable: Boolean(presence?.is_available),
+            status: presence?.status || 'offline',
+            role: 'loved_one'
+          }
+        })
+        .filter(Boolean) as Connection[]
+
+      setConnections(list)
+    }
+
+    const loadLovedOneView = async () => {
+      const { data, error } = await contextSupabase
+        .from('awy_connections')
+        .select('student_id,student:profiles!student_id(display_name)')
+        .eq('loved_one_id', userId)
+        .eq('status', 'active')
+      if (error) throw error
+
+      const studentIds = (data || [])
+        .map((conn: any) => conn.student_id)
+        .filter((id: string | null): id is string => Boolean(id))
+
+      const presenceMap = await buildPresenceMap(studentIds)
+
+      const list: Connection[] = (data || [])
+        .map((conn: any) => {
+          if (!conn.student_id) return null
+          const presence = presenceMap.get(conn.student_id)
+          return {
+            id: conn.student_id,
+            displayName: conn.student?.display_name || 'Student',
+            isAvailable: Boolean(presence?.is_available),
+            status: presence?.status || 'offline',
+            role: 'student'
+          }
+        })
+        .filter(Boolean) as Connection[]
+
+      setConnections(list)
+    }
+
     try {
-      // Get role
-      const { data: profile } = await contextSupabase
+      const { data: profile, error } = await contextSupabase
         .from('profiles')
         .select('role')
         .eq('id', userId)
-        .single()
-      
-      const role = profile?.role || 'student'
+        .maybeSingle()
+      if (error) throw error
+
+      const role = (profile?.role as 'student' | 'loved_one') || 'student'
       setUserRole(role)
 
-      // Get my status
-      const { data: myPresence } = await contextSupabase
+      const { data: myPresence, error: presenceError } = await contextSupabase
         .from('awy_presence')
         .select('is_available')
         .eq('user_id', userId)
-        .single()
-      
-      if (myPresence) setIsMyAvailabilityOn(myPresence.is_available)
+        .maybeSingle()
+      if (presenceError && presenceError.code !== 'PGRST116') throw presenceError
+      setIsMyAvailabilityOn(Boolean(myPresence?.is_available))
 
-      // Fetch connections based on role
       if (role === 'loved_one') {
-        const res = await fetch('/api/awy/presence/lovedone-view', { credentials: 'include' })
-        const data = await res.json()
-        if (data.ok) {
-          setConnections(data.students.map((s: any) => ({
-            id: s.studentId,
-            displayName: s.displayName,
-            isAvailable: s.isAvailable,
-            status: s.status,
-            role: 'student'
-          })))
-        }
+        await loadLovedOneView()
       } else {
-        const res = await fetch('/api/awy/presence/student-view', { credentials: 'include' })
-        const data = await res.json()
-        if (data.ok) {
-          const connRes = await fetch('/api/awy/loved-ones', { credentials: 'include' })
-          const connData = await connRes.json()
-          
-          if (connData.ok) {
-            const presMap = new Map(data.presence.map((p: any) => [p.user_id, p]))
-            
-            const list = connData.connections.map((c: any) => ({
-              id: c.loved_one_id,
-              displayName: c.nickname || c.relationship || 'Loved One',
-              isAvailable: (presMap.get(c.loved_one_id) as any)?.is_available || false,
-              status: (presMap.get(c.loved_one_id) as any)?.status || 'offline',
-              role: 'loved_one'
-            })).filter((c: any) => c.id) // Only active connections
-            
-            setConnections(list)
-          }
-        }
+        await loadStudentView()
       }
     } catch (err) {
       console.error('AWY fetch error:', err)
+      setConnections([])
     } finally {
       setLoading(false)
     }
-  }
+  }, [authLoading, contextSupabase, userId])
 
   useEffect(() => {
-    // Only attempt fetch if we have a user and auth is done loading.
-    // This prevents 401/400 errors from unauthenticated requests.
-    if (!authLoading && userId && contextSupabase) {
+    if (!authLoading) {
       fetchData()
     }
-  }, [authLoading, userId, contextSupabase])
+  }, [authLoading, fetchData])
 
   useEffect(() => {
-     // Realtime Subscription
-     if (!contextSupabase || !channelRef || channelRef.current) return
+    if (!contextSupabase || !userId) return
 
-      channelRef.current = contextSupabase
-        .channel('awy_presence_changes')
-        .on(
-          'postgres_changes',
-          {
-            event: 'UPDATE',
-            schema: 'public',
-            table: 'awy_presence'
-          },
-          (payload: any) => {
-            // Update local state if the updated user is in our list
-            setConnections(prev => prev.map(c => {
-              if (c.id === payload.new.user_id) {
+    if (channelRef.current) {
+      contextSupabase.removeChannel(channelRef.current)
+      channelRef.current = null
+    }
+
+    const channel = contextSupabase
+      .channel('awy_presence_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'awy_presence'
+        },
+        (payload: any) => {
+          setConnections(prev =>
+            prev.map(connection => {
+              if (connection.id === payload.new.user_id) {
                 return {
-                  ...c,
+                  ...connection,
                   isAvailable: payload.new.is_available,
                   status: payload.new.status || 'online'
                 }
               }
-              return c
-            }))
-          }
-        )
-        .subscribe()
-    
-     // Fallback polling every 15s
-     const interval = setInterval(() => {
-         if (userId) fetchData()
-     }, 15000)
+              return connection
+            })
+          )
+        }
+      )
+      .subscribe()
+
+    channelRef.current = channel
+
+    const interval = setInterval(() => {
+      fetchData()
+    }, 15000)
 
     return () => {
-      if (channelRef.current && contextSupabase) contextSupabase.removeChannel(channelRef.current)
-      channelRef.current = null
+      if (channelRef.current) {
+        contextSupabase.removeChannel(channelRef.current)
+        channelRef.current = null
+      }
       clearInterval(interval)
     }
-  }, [contextSupabase, userId])
+  }, [contextSupabase, userId, fetchData])
 
   const toggleAvailability = async () => {
-    const newState = !isMyAvailabilityOn
+    if (!contextSupabase || !userId) {
+      toast.error('Sign in to update your availability')
+      return
+    }
+
+    const previous = isMyAvailabilityOn
+    const newState = !previous
     setIsMyAvailabilityOn(newState)
+
     try {
-      await fetch('/api/awy/presence/update', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ is_available: newState })
+      const { error } = await contextSupabase.rpc('awy_heartbeat', {
+        p_is_available: newState
       })
+      if (error) throw error
       toast.success(newState ? "You are now visible" : "You are hidden")
-    } catch (error) {
-      setIsMyAvailabilityOn(!newState)
+    } catch (err) {
+      console.error('AWY availability update failed:', err)
+      setIsMyAvailabilityOn(previous)
       toast.error('Failed to update status')
     }
   }
@@ -265,8 +322,8 @@ export default function AWYWidget() {
           {/* My Status Toggle */}
           <div className="flex items-center justify-between bg-pink-50/50 p-4 rounded-2xl mb-5 border border-pink-100">
             <div className="flex flex-col">
-              <span className="text-sm font-semibold text-gray-800">I'm Available</span>
-              <span className="text-xs text-gray-500">Let them know you're free</span>
+              <span className="text-sm font-semibold text-gray-800">I&apos;m Available</span>
+              <span className="text-xs text-gray-500">Let them know you&apos;re free</span>
             </div>
             <button
               onClick={toggleAvailability}

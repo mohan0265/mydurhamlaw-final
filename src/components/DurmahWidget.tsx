@@ -193,15 +193,20 @@ export default function DurmahWidget() {
     setShowVoiceTranscript(true);
   }
 
-  const handlePreview = async (preset: { id: string, geminiVoice: string, previewText: string }, e: React.MouseEvent) => {
+  const handlePreview = async (preset: { id: string; geminiVoice: string; previewText: string }, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (previewingVoiceId === preset.id) return; // Already playing or blocking re-click
-    
+    if (isListening || previewingVoiceId === preset.id) return;
+
     setPreviewingVoiceId(preset.id);
-    if (playVoicePreview) {
-      await playVoicePreview(preset); // This will play and auto-close
+    try {
+      if (playVoicePreview) {
+        await playVoicePreview(preset);
+      }
+    } catch (err) {
+      console.error("[DurmahVoice] Preview failed:", err);
+    } finally {
+      setPreviewingVoiceId(null);
     }
-    setPreviewingVoiceId(null);
   };
 
   const saveVoiceTranscript = async () => {
@@ -500,9 +505,9 @@ export default function DurmahWidget() {
                           
                           <button
                              onClick={(e) => handlePreview(p, e)}
-                             disabled={Boolean(isPreviewing)}
+                             disabled={Boolean(isPreviewing) || isListening}
                              className={`w-full py-2.5 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition-all ${
-                               isPreviewing 
+                               isPreviewing || isListening 
                                  ? "bg-gray-100 text-gray-400 cursor-not-allowed"
                                  : "bg-gray-100 text-gray-600 hover:bg-violet-100 hover:text-violet-700"
                              }`}
@@ -511,6 +516,10 @@ export default function DurmahWidget() {
                                <>
                                  <span className="w-2 h-2 bg-violet-500 rounded-full animate-pulse"></span>
                                  Playing...
+                               </>
+                             ) : isListening ? (
+                               <>
+                                 <Volume2 size={14} /> In a call
                                </>
                              ) : (
                                <>
