@@ -19,6 +19,24 @@ export function useRealtimeVoice() {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const counterRef = useRef(0);
+  const assistantTextBufferRef = useRef("");
+  const lastTranscriptIdRef = useRef(0);
+
+  const appendTranscriptDelta = useCallback((delta?: string) => {
+    if (!delta) return;
+    assistantTextBufferRef.current += delta;
+    setPartialTranscript(assistantTextBufferRef.current);
+  }, []);
+
+  const flushTranscriptBuffer = useCallback(() => {
+    const text = assistantTextBufferRef.current.trim();
+    if (text) {
+      const id = String(++lastTranscriptIdRef.current);
+      setTranscript((arr) => [...arr, { id, text }]);
+    }
+    assistantTextBufferRef.current = "";
+    setPartialTranscript(null);
+  }, []);
 
   useEffect(() => {
     const audio = new Audio();
@@ -50,6 +68,7 @@ export function useRealtimeVoice() {
       });
 
       ws.addEventListener("close", () => {
+        flushTranscriptBuffer();
         setIsConnected(false);
         setStatus("idle");
       });
@@ -61,55 +80,71 @@ export function useRealtimeVoice() {
       });
 
       ws.addEventListener("message", async (event) => {
-        const msg = JSON.parse(event.data);
-        // Very small state machine for transcript
-        if (msg.type === "response.output_text.delta") {
-          setPartialTranscript((p) => (p || "") + (msg.delta ?? ""));
-        } else if (msg.type === "response.output_text.done") {
-          const id = String(++counterRef.current);
-          const text = (partialTranscript || "").trim();
-          if (text) {
-            setTranscript((arr) => [...arr, { id, text }]);
-          }
-          setPartialTranscript(null);
-        } else if (msg.type === "response.audio.delta") {
-          // stream audio chunks into a single <audio> element
-          const b64 = msg.delta as string;
-          const bytes = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
-          const blob = new Blob([bytes], { type: "audio/mpeg" });
-          const url = URL.createObjectURL(blob);
-          const audio = audioRef.current!;
-          if (!audio.src) {
-            audio.src = url;
-            audio.onended = () => setIsSpeaking(false);
-            setIsSpeaking(true);
-            audio.play().catch(() => {});
-          } else {
-            // enqueue next segments by appending when current ends
-            audio.addEventListener(
-              "ended",
-              () => {
+        const raw =
+          typeof event.data === "string"
+            ? event.data
+            : await (event.data as Blob).text();
+        const payloads = raw
+          .split("\n")
+          .map((chunk) => chunk.trim())
+          .filter(Boolean);
+
+        for (const chunk of payloads) {
+          try {
+            const msg = JSON.parse(chunk);
+            if (
+              msg.type === "response.output_text.delta" ||
+              msg.type === "response.audio_transcript.delta"
+            ) {
+              appendTranscriptDelta(msg.delta ?? "");
+            } else if (
+              msg.type === "response.output_text.done" ||
+              msg.type === "response.audio_transcript.done" ||
+              msg.type === "response.completed"
+            ) {
+              flushTranscriptBuffer();
+            } else if (msg.type === "response.audio.delta") {
+              const b64 = msg.delta as string;
+              const bytes = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+              const blob = new Blob([bytes], { type: "audio/mpeg" });
+              const url = URL.createObjectURL(blob);
+              const audio = audioRef.current!;
+              if (!audio.src) {
                 audio.src = url;
+                audio.onended = () => setIsSpeaking(false);
                 setIsSpeaking(true);
                 audio.play().catch(() => {});
-              },
-              { once: true }
-            );
+              } else {
+                audio.addEventListener(
+                  "ended",
+                  () => {
+                    audio.src = url;
+                    setIsSpeaking(true);
+                    audio.play().catch(() => {});
+                  },
+                  { once: true }
+                );
+              }
+            } else if (msg.type === "response.error") {
+              setLastError(msg.error?.message ?? "Realtime error");
+            }
+          } catch (err) {
+            console.warn("[RealtimeVoice] Failed to parse message chunk:", err);
           }
-        } else if (msg.type === "response.completed") {
-          // noop
-        } else if (msg.type === "error") {
-          setLastError(msg.error?.message ?? "Realtime error");
         }
       });
     } catch (e: any) {
       setLastError(e?.message || String(e));
       setStatus("idle");
     }
-  }, [partialTranscript]);
+  }, [appendTranscriptDelta, flushTranscriptBuffer]);
 
   const startVoiceMode = useCallback(async () => {
     try {
+      setTranscript([]);
+      setPartialTranscript(null);
+      assistantTextBufferRef.current = "";
+      lastTranscriptIdRef.current = 0;
       await connect();
       if (!wsRef.current) throw new Error("No connection");
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
