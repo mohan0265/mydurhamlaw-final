@@ -97,7 +97,9 @@ export default function AWYWidget() {
   }
 
   useEffect(() => {
-    if (!authLoading) {
+    // Only attempt fetch if we have a user and auth is done loading.
+    // This prevents 401/400 errors from unauthenticated requests.
+    if (!authLoading && userId && contextSupabase) {
       fetchData()
     }
   }, [authLoading, userId, contextSupabase])

@@ -20,8 +20,7 @@ export default async function handler(
 
   if (req.method !== "POST") {
     res.setHeader('Allow', ['POST', 'GET']);
-    res.status(405).json({ error: `Method ${req.method} not allowed` });
-    return;
+    return res.status(405).json({ error: `Method ${req.method} not allowed` });
   }
 
   const apiKey =
@@ -29,8 +28,7 @@ export default async function handler(
 
   if (!apiKey) {
     console.error("[VoiceAPI] GEMINI_API_KEY is not set.");
-    res.status(500).json({ error: "Gemini API key is not configured (Server)" });
-    return;
+    return res.status(500).json({ error: "Gemini API key is not configured (Server)" });
   }
 
   try {
@@ -38,8 +36,7 @@ export default async function handler(
 
     if (!offerSdp || typeof offerSdp !== "string") {
       console.warn("[VoiceAPI] Missing SDP offer in body");
-      res.status(400).json({ error: "Missing SDP offer" });
-      return;
+      return res.status(400).json({ error: "Missing SDP offer" });
     }
 
     console.log("[VoiceAPI] Sending SDP to Gemini Realtime...");
@@ -53,19 +50,18 @@ export default async function handler(
     if (!response.ok) {
       const text = await response.text().catch(() => "Realtime request failed");
       console.error(`[VoiceAPI] Gemini Error ${response.status}: ${text}`);
-      res
+      return res
         .status(response.status)
         .json({ error: "Realtime request failed", detail: text });
-      return;
     }
 
     console.log("[VoiceAPI] Received SDP answer from Gemini.");
     const answerSdp = await response.text();
     res.setHeader("Content-Type", "text/plain");
-    res.status(200).send(answerSdp);
+    return res.status(200).send(answerSdp);
   } catch (error: any) {
     console.error("[VoiceAPI] Unexpected error:", error);
-    res
+    return res
       .status(500)
       .json({ error: "Realtime negotiation failed", detail: error?.message });
   }
