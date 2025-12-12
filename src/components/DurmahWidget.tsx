@@ -11,7 +11,7 @@ import {
 } from "@/lib/durmah/systemPrompt";
 import { formatTodayForDisplay } from "@/lib/durmah/phase";
 import { useDurmahSettings } from "@/hooks/useDurmahSettings";
-import { Settings, X, ArrowRight, AlertTriangle, Check, Volume2, Brain, Zap } from "lucide-react";
+import { Settings, X, ArrowRight, AlertTriangle, Check, Volume2, Brain, Zap, MoreHorizontal } from "lucide-react";
 import Link from 'next/link';
 
 type Msg = { role: "durmah" | "you"; text: string; ts: number };
@@ -74,12 +74,17 @@ export default function DurmahWidget() {
   const [isStreaming, setIsStreaming] = useState(false);
   const [callTranscript, setCallTranscript] = useState<Msg[]>([]);
   const [showVoiceTranscript, setShowVoiceTranscript] = useState(false);
+  const [voiceSessionActive, setVoiceSessionActive] = useState(false);
+  const [voiceSessionHadTurns, setVoiceSessionHadTurns] = useState(false);
+  const [showHeaderMenu, setShowHeaderMenu] = useState(false);
   const [memory, setMemory] = useState<DurmahMemorySnapshot | null>(null);
   const [previewingVoiceId, setPreviewingVoiceId] = useState<string | null>(null);
 
   const streamControllerRef = useRef<AbortController | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const headerMenuRef = useRef<HTMLDivElement | null>(null);
+  const prevListeningRef = useRef(false);
 
   // Auto-scroll to bottom whenever messages change
   useEffect(() => {
@@ -160,6 +165,7 @@ export default function DurmahWidget() {
           ts: Date.now(),
         },
       ]);
+      setVoiceSessionHadTurns(true);
     },
   });
 
@@ -170,6 +176,34 @@ export default function DurmahWidget() {
       stopListening();
     };
   }, [stopListening]);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        showHeaderMenu &&
+        headerMenuRef.current &&
+        !headerMenuRef.current.contains(event.target as Node)
+      ) {
+        setShowHeaderMenu(false);
+      }
+    }
+
+    if (showHeaderMenu) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [showHeaderMenu]);
+
+  useEffect(() => {
+    const wasListening = prevListeningRef.current;
+    if (wasListening && !isListening && voiceSessionActive) {
+      if (callTranscript.length > 0 || voiceSessionHadTurns) {
+        setShowVoiceTranscript(true);
+      }
+      setVoiceSessionActive(false);
+    }
+    prevListeningRef.current = isListening;
+  }, [isListening, voiceSessionActive, voiceSessionHadTurns, callTranscript.length]);
 
   const chips = useMemo(() => {
     if (studentContext.currentPhase === 'exams') return ["Revision tips", "Past papers", "Stress management"];
@@ -185,11 +219,19 @@ export default function DurmahWidget() {
     if (!isListening) {
       setCallTranscript([]);
       setShowVoiceTranscript(false);
-      await startListening();
+      setVoiceSessionActive(true);
+      setVoiceSessionHadTurns(false);
+      try {
+        await startListening();
+      } catch (err) {
+        console.error("[DurmahVoice] Unable to start listening:", err);
+        setVoiceSessionActive(false);
+      }
       return;
     }
 
     stopListening();
+    setVoiceSessionActive(false);
     setShowVoiceTranscript(true);
   }
 
@@ -235,11 +277,13 @@ export default function DurmahWidget() {
     }
     setShowVoiceTranscript(false);
     setCallTranscript([]);
+    setVoiceSessionHadTurns(false);
   };
 
   const discardVoiceTranscript = () => {
     setShowVoiceTranscript(false);
     setCallTranscript([]);
+    setVoiceSessionHadTurns(false);
   };
 
   // ----------------------------
@@ -421,6 +465,30 @@ export default function DurmahWidget() {
         />
 
         <div className="flex items-center gap-2">
+          <div className="relative" ref={headerMenuRef}>
+            <button
+              onClick={() => setShowHeaderMenu((prev) => !prev)}
+              className="p-2 rounded-full hover:bg-white/20 transition-colors"
+              title="More options"
+            >
+              <MoreHorizontal size={18} />
+            </button>
+            {showHeaderMenu && (
+              <div className="absolute right-0 mt-2 w-40 bg-white/95 rounded-2xl shadow-xl border border-violet-100 overflow-hidden text-sm text-gray-700 z-30">
+                <button
+                  className="w-full text-left px-4 py-2.5 hover:bg-violet-50 flex items-center justify-between"
+                  onClick={() => {
+                    setShowVoiceTranscript(true);
+                    setShowSettings(false);
+                    setShowHeaderMenu(false);
+                  }}
+                >
+                  Transcript
+                  <ArrowRight size={14} className="text-violet-500" />
+                </button>
+              </div>
+            )}
+          </div>
           <button
             onClick={() => setShowSettings(!showSettings)}
             className="p-2 rounded-full hover:bg-white/20 transition-colors"
@@ -546,28 +614,34 @@ export default function DurmahWidget() {
       )}
 
       {/* --------------- VOICE TRANSCRIPT ---------------- */}
-      {showVoiceTranscript && callTranscript.length > 0 && !showSettings && (
+      {showVoiceTranscript && !showSettings && (
         <div className="flex-none p-4 bg-violet-50/80 backdrop-blur-sm border-b border-violet-100 z-10 shadow-sm max-h-[40%] overflow-y-auto custom-scrollbar">
           <div className="text-xs font-bold uppercase tracking-wider text-violet-600 mb-3 flex items-center gap-2 sticky top-0 bg-violet-50/0">
             <span className="w-2 h-2 rounded-full bg-violet-500 animate-pulse"></span>
             Live Transcript
           </div>
 
-          <div className="space-y-3 pr-2">
-            {callTranscript.map((m) => (
-              <div key={m.ts} className={`flex ${m.role === "you" ? "justify-end" : "justify-start"}`}>
-                <div
-                  className={`px-3 py-2 rounded-2xl text-sm shadow-sm ${
-                    m.role === "you"
-                      ? "bg-violet-600 text-white rounded-tr-none"
-                      : "bg-white text-slate-800 border border-violet-100 rounded-tl-none"
-                  }`}
-                >
-                  {m.text}
+          {callTranscript.length === 0 ? (
+            <div className="text-sm text-violet-900/80 bg-white/80 border border-violet-100 rounded-2xl px-4 py-3 shadow-sm">
+              No transcript captured for this session.
+            </div>
+          ) : (
+            <div className="space-y-3 pr-2">
+              {callTranscript.map((m) => (
+                <div key={m.ts} className={`flex ${m.role === "you" ? "justify-end" : "justify-start"}`}>
+                  <div
+                    className={`px-3 py-2 rounded-2xl text-sm shadow-sm ${
+                      m.role === "you"
+                        ? "bg-violet-600 text-white rounded-tr-none"
+                        : "bg-white text-slate-800 border border-violet-100 rounded-tl-none"
+                    }`}
+                  >
+                    {m.text}
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
 
           <div className="flex justify-end gap-3 pt-3 mt-2 border-t border-violet-200/50 sticky bottom-0 bg-violet-50/0">
             <button
