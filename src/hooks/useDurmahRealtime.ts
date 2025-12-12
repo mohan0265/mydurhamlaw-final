@@ -239,6 +239,10 @@ export function useDurmahRealtime({
         headers: { "Content-Type": "application/json" },
       });
       
+      if (!sdpResponse.ok) {
+        throw new Error(`Preview request failed: ${sdpResponse.status}`);
+      }
+
       const answerSdp = await sdpResponse.text();
       await pc.setRemoteDescription({ type: "answer", sdp: answerSdp });
 
