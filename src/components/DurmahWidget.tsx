@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useAuth } from '@/lib/supabase/AuthContext';
 import { useDurmahRealtime } from "@/hooks/useDurmahRealtime";
 import { useDurmahDynamicContext } from "@/hooks/useDurmahDynamicContext";
@@ -23,6 +23,58 @@ function inferTopic(text: string) {
 }
 
 const supabaseClient = getSupabaseClient();
+
+const DEDUPE_WINDOW_MS = 2000;
+
+function normalizeTurnText(text: string) {
+  return text.replace(/\s+/g, " ").trim();
+}
+
+function isDuplicateTurn(
+  existing: Msg[],
+  role: Msg["role"],
+  normalizedText: string,
+  ts: number
+) {
+  const last = existing[existing.length - 1];
+  const lowered = normalizedText.toLowerCase();
+
+  if (
+    last &&
+    last.role === role &&
+    normalizeTurnText(last.text).toLowerCase() === lowered
+  ) {
+    return true;
+  }
+
+  for (let i = existing.length - 1; i >= 0; i -= 1) {
+    const candidate = existing[i];
+    if (ts - candidate.ts > DEDUPE_WINDOW_MS) break;
+    if (
+      candidate.role === role &&
+      normalizeTurnText(candidate.text).toLowerCase() === lowered
+    ) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+function mergeDedupedTranscript(turns: Msg[]) {
+  const result: Msg[] = [];
+  const now = Date.now();
+
+  for (const turn of turns) {
+    const normalizedText = normalizeTurnText(turn.text);
+    if (!normalizedText) continue;
+    const ts = typeof turn.ts === "number" ? turn.ts : now;
+    if (isDuplicateTurn(result, turn.role, normalizedText, ts)) continue;
+    result.push({ ...turn, text: normalizedText, ts });
+  }
+
+  return result;
+}
 
 function createVoiceSessionId() {
   const cryptoRef =
@@ -165,6 +217,26 @@ export default function DurmahWidget() {
     buildDurmahSystemPrompt(studentContext, memory, upcomingTasks, todaysEvents, { systemTone: preset?.subtitle || "Friendly" }), 
   [studentContext, memory, upcomingTasks, todaysEvents, preset]);
 
+  const appendTranscriptTurn = useCallback((role: Msg["role"], text: string) => {
+    const normalizedText = normalizeTurnText(text);
+    if (!normalizedText) return;
+
+    const ts = Date.now();
+    let added = false;
+
+    setCallTranscript((prev) => {
+      if (isDuplicateTurn(prev, role, normalizedText, ts)) {
+        return prev;
+      }
+      added = true;
+      return [...prev, { role, text: normalizedText, ts }];
+    });
+
+    if (added) {
+      setVoiceSessionHadTurns(true);
+    }
+  }, []);
+
   // Pass selected realtime voice from the preset
   const {
     startListening,
@@ -179,15 +251,10 @@ export default function DurmahWidget() {
     voice: preset?.openaiVoice || "alloy",
     audioRef,
     onTurn: (turn) => {
-      setCallTranscript((prev) => [
-        ...prev,
-        {
-          role: turn.speaker === "user" ? "you" : "durmah",
-          text: turn.text,
-          ts: Date.now(),
-        },
-      ]);
-      setVoiceSessionHadTurns(true);
+      appendTranscriptTurn(
+        turn.speaker === "user" ? "you" : "durmah",
+        turn.text
+      );
     },
   });
 
@@ -285,7 +352,7 @@ export default function DurmahWidget() {
   };
 
   const saveVoiceTranscript = async () => {
-    const transcriptTurns = [...callTranscript];
+    const transcriptTurns = mergeDedupedTranscript(callTranscript);
     if (transcriptTurns.length > 0) {
       setMessages((prev) => [...prev, ...transcriptTurns]);
 
@@ -537,9 +604,9 @@ export default function DurmahWidget() {
 
   // 3. Open Chat Widget (Logged In)
   return (
-    <div className="fixed bottom-24 right-6 z-50 flex w-full max-w-md flex-col overflow-hidden rounded-3xl border border-violet-100 bg-white shadow-2xl sm:w-[400px] max-h-[80vh] h-[600px] animate-in slide-in-from-bottom-10 fade-in duration-300">
+    <div className="fixed bottom-24 right-6 z-50 flex w-full max-w-md flex-col overflow-visible rounded-3xl border border-violet-100 bg-white shadow-2xl sm:w-[400px] max-h-[80vh] h-[600px] animate-in slide-in-from-bottom-10 fade-in duration-300">
       {/* Premium Header Ribbon */}
-      <header className="flex-none flex items-center justify-between bg-gradient-to-r from-violet-600 via-indigo-600 to-violet-700 px-5 py-4 text-white shadow-md z-10">
+      <header className="relative flex-none flex items-center justify-between bg-gradient-to-r from-violet-600 via-indigo-600 to-violet-700 px-5 py-4 text-white shadow-md z-30">
         <div className="flex flex-col">
           <div className="font-bold text-lg flex items-center gap-2">
             Durmah
@@ -623,7 +690,7 @@ export default function DurmahWidget() {
 
       {/* --------------- SETTINGS MODAL (PERSONA CARDS) ---------------- */}
       {showSettings && (
-        <div className="absolute inset-0 z-20 bg-gray-50/95 backdrop-blur-xl flex flex-col animate-in fade-in slide-in-from-bottom-4">
+        <div className="absolute inset-0 z-40 bg-gray-50/95 backdrop-blur-xl flex flex-col animate-in fade-in slide-in-from-bottom-4">
           <div className="flex justify-between items-center px-6 py-4 border-b border-gray-200 bg-white/50">
              <div>
                 <h3 className="font-bold text-lg text-gray-800">Durmah's Voice</h3>
