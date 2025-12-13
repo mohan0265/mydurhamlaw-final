@@ -1,4 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next'
+import { randomUUID } from 'crypto'
 import { createPagesServerClient } from '@supabase/auth-helpers-nextjs'
 import { getSupabaseClient } from '@/lib/supabase/client'
 import { Resend } from 'resend'
@@ -40,13 +41,45 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // 3. Check if already exists
     const { data: existing } = await supabase
       .from('awy_connections')
-      .select('id')
+      .select('id,invite_token')
       .eq('student_id', session.user.id)
       .ilike('loved_email', email)
       .single()
 
     if (existing) {
-      return res.status(400).json({ error: 'This loved one is already connected or pending' })
+      // Already pending/connected: resend invite email only
+      try {
+        const inviteToken = existing?.invite_token || existing?.id || ''
+        const { data: linkData, error: linkError } = await getSupabaseClient().auth.admin.generateLink({
+          type: 'magiclink',
+          email: email,
+          options: {
+            redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/awy/invite?token=${inviteToken}`,
+            data: { role: 'loved_one' }
+          }
+        })
+        if (linkError) throw linkError
+        await resend.emails.send({
+          from: process.env.EMAIL_FROM || 'MyDurhamLaw <onboarding@resend.dev>',
+          to: email,
+          subject: '[MyDurhamLaw] Your AWY invite',
+          html: `
+            <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+              <h1 style="color: #db2777;">Always With You</h1>
+              <p>You still have a pending invite. Click below to accept.</p>
+              <div style="margin: 30px 0;">
+                <a href="${linkData.properties.action_link}" style="background-color: #db2777; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">
+                  Open MyDurhamLaw
+                </a>
+              </div>
+              <p style="color: #666; font-size: 14px;">If the button doesn't work, copy this link: ${linkData.properties.action_link}</p>
+            </div>
+          `
+        })
+        return res.status(200).json({ ok: true, invited: true, emailSent: true, message: 'Invite resent' })
+      } catch (e: any) {
+        return res.status(400).json({ error: e?.message || 'Could not resend invite' })
+      }
     }
 
     // 4. Create Connection Record
@@ -56,6 +89,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const { data: { users } } = await adminSupabase.auth.admin.listUsers()
     const existingUser = users.find(u => u.email?.toLowerCase() === email.toLowerCase())
 
+    const inviteToken = randomUUID()
+
     const { error: insertError } = await supabase
       .from('awy_connections')
       .insert({
@@ -64,7 +99,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         relationship,
         nickname,
         loved_one_id: existingUser?.id || null, // Link immediately if they exist
-        status: existingUser ? 'active' : 'pending'
+        status: existingUser ? 'active' : 'pending',
+        invite_token: inviteToken
       })
 
     if (insertError) throw insertError
@@ -73,11 +109,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     let emailSent = false
     try {
       // Generate link
+      const inviteTokenForMail = inviteToken
       const { data: linkData, error: linkError } = await adminSupabase.auth.admin.generateLink({
         type: 'magiclink',
         email: email,
         options: {
-          redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/loved-one-dashboard`,
+          redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/awy/invite?token=${inviteTokenForMail}`,
           data: { role: 'loved_one' } // Ensure they get the role if new
         }
       })

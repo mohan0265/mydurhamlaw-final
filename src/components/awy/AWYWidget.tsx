@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect, useRef, useCallback } from 'react'
-import { Heart, Video, X, Loader2, Lock, ArrowRight, User } from 'lucide-react'
+import { Heart, Video, X, Loader2, Lock, ArrowRight, User, Plus, Send, Trash } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Link from 'next/link'
 import { AuthContext } from '@/lib/supabase/AuthContext'
@@ -12,6 +12,8 @@ interface Connection {
   isAvailable: boolean
   status: string
   role?: 'student' | 'loved_one'
+  email?: string
+  lastSeenAt?: string | null
 }
 
 export default function AWYWidget() {
@@ -22,6 +24,11 @@ export default function AWYWidget() {
   const [userRole, setUserRole] = useState<'student' | 'loved_one' | null>(null)
   const [presencePausedUntil, setPresencePausedUntil] = useState<number | null>(null)
   const [presenceError, setPresenceError] = useState<string | null>(null)
+  const [showAddModal, setShowAddModal] = useState(false)
+  const [inviteEmail, setInviteEmail] = useState('')
+  const [inviteRelationship, setInviteRelationship] = useState('Parent')
+  const [inviteSending, setInviteSending] = useState(false)
+  const [pendingInvites, setPendingInvites] = useState<Connection[]>([])
   
   // Use global auth context instead of creating new client
   const { user, supabase: contextSupabase, loading: authLoading } = React.useContext(AuthContext)
@@ -59,7 +66,7 @@ export default function AWYWidget() {
       if (!ids.length) return new Map<string, any>()
       const { data, error } = await contextSupabase
         .from('awy_presence')
-        .select('user_id,is_available,status')
+        .select('user_id,is_available,status,last_seen_at')
         .in('user_id', ids)
       if (error) throw error
       return new Map((data || []).map((row: any) => [row.user_id, row]))
@@ -68,38 +75,54 @@ export default function AWYWidget() {
     const loadStudentView = async () => {
       const { data, error } = await contextSupabase
         .from('awy_connections')
-        .select('loved_one_id,nickname,relationship,status')
+        .select('id,loved_one_id,nickname,relationship,relationship_label,status,loved_email')
         .eq('student_id', userId)
-        .eq('status', 'active')
+        .in('status', ['active','pending','invited'])
       if (error) throw error
 
-      const lovedOneIds = (data || [])
+      const activeIds = (data || [])
+        .filter((conn: any) => conn.status === 'active')
         .map((conn: any) => conn.loved_one_id)
         .filter((id: string | null): id is string => Boolean(id))
 
-      const presenceMap = await buildPresenceMap(lovedOneIds)
+      const presenceMap = await buildPresenceMap(activeIds)
 
-      const list: Connection[] = (data || [])
+      const activeList: Connection[] = (data || [])
+        .filter((conn: any) => conn.status === 'active')
         .map((conn: any) => {
           if (!conn.loved_one_id) return null
           const presence = presenceMap.get(conn.loved_one_id)
           return {
             id: conn.loved_one_id,
-            displayName: conn.nickname || conn.relationship || 'Loved One',
+            displayName: conn.nickname || conn.relationship || conn.relationship_label || 'Loved One',
             isAvailable: Boolean(presence?.is_available),
             status: presence?.status || 'offline',
-            role: 'loved_one'
+            role: 'loved_one',
+            email: conn.loved_email,
+            lastSeenAt: presence?.last_seen_at || null
           }
         })
         .filter(Boolean) as Connection[]
 
-      setConnections(list)
+      const pendingList: Connection[] = (data || [])
+        .filter((conn: any) => conn.status !== 'active')
+        .map((conn: any) => ({
+          id: conn.id,
+          displayName: conn.nickname || conn.relationship || conn.relationship_label || 'Loved One',
+          isAvailable: false,
+          status: conn.status,
+          role: 'loved_one',
+          email: conn.loved_email
+        }))
+
+      setConnections(activeList)
+      setPendingInvites(pendingList)
     }
 
     const loadLovedOneView = async () => {
       const { data, error } = await contextSupabase
         .from('awy_connections')
-        .select('student_id,student:profiles!student_id(display_name)')
+        .select('student_id,student:profiles!student_id(display_name),status')
         .eq('loved_one_id', userId)
         .eq('status', 'active')
       if (error) throw error
@@ -119,7 +142,8 @@ export default function AWYWidget() {
             displayName: conn.student?.display_name || 'Student',
             isAvailable: Boolean(presence?.is_available),
             status: presence?.status || 'offline',
-            role: 'student'
+            role: 'student',
+            lastSeenAt: presence?.last_seen_at || null
           }
         })
         .filter(Boolean) as Connection[]
@@ -165,11 +189,31 @@ export default function AWYWidget() {
     }
   }, [authLoading, contextSupabase, deriveUserRole, presencePausedUntil, userId])
 
+  const sendHeartbeat = useCallback(async (availability?: boolean | null) => {
+    if (!contextSupabase || !userId) return
+    const now = Date.now()
+    if (presencePausedUntil && now < presencePausedUntil) return
+    try {
+      await contextSupabase.rpc('awy_heartbeat', {
+        p_is_available: availability === undefined ? null : availability
+      })
+    } catch (err: any) {
+      const message = err?.message || ''
+      if (!schemaErrorLoggedRef.current && message.includes('awy_heartbeat')) {
+        schemaErrorLoggedRef.current = true
+        console.error('[AWY] heartbeat missing; pausing polling.')
+      }
+      setPresencePausedUntil(Date.now() + 60000)
+      setPresenceError('Presence temporarily unavailable. Retrying shortly.')
+    }
+  }, [contextSupabase, presencePausedUntil, userId])
+
   useEffect(() => {
     if (!authLoading) {
       fetchData()
+      sendHeartbeat(null)
     }
-  }, [authLoading, fetchData])
+  }, [authLoading, fetchData, sendHeartbeat])
 
   useEffect(() => {
     if (!contextSupabase || !userId) return
@@ -209,7 +253,8 @@ export default function AWYWidget() {
 
     const interval = setInterval(() => {
       fetchData()
-    }, 15000)
+      sendHeartbeat(null)
+    }, 30000)
 
     return () => {
       if (channelRef.current) {
@@ -218,7 +263,7 @@ export default function AWYWidget() {
       }
       clearInterval(interval)
     }
-  }, [contextSupabase, userId, fetchData])
+  }, [contextSupabase, userId, fetchData, sendHeartbeat])
 
   const toggleAvailability = async () => {
     if (!contextSupabase || !userId) {
@@ -235,6 +280,7 @@ export default function AWYWidget() {
         p_is_available: newState
       })
       if (error) throw error
+      sendHeartbeat(newState)
       toast.success(newState ? "You are now visible" : "You are hidden")
     } catch (err) {
       console.error('AWY availability update failed:', err)
@@ -251,6 +297,67 @@ export default function AWYWidget() {
     const lovedOneId = userRole === 'student' ? otherId : userId
     
     return `https://meet.jit.si/MyDurhamLaw-${studentId}-${lovedOneId}`
+  }
+
+  const openCall = (otherId: string) => {
+    const url = getJitsiUrl(otherId)
+    window.open(url, '_blank', 'noopener,noreferrer')
+  }
+
+  const handleInvite = async () => {
+    if (!inviteEmail.trim()) {
+      toast.error('Email is required')
+      return
+    }
+    setInviteSending(true)
+    try {
+      const res = await fetch('/api/awy/add-loved-one', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: inviteEmail.trim(),
+          relationship: inviteRelationship || 'Loved one',
+          nickname: inviteRelationship || null
+        })
+      })
+      const json = await res.json()
+      if (!res.ok || json.error) {
+        throw new Error(json.error || 'Failed to send invite')
+      }
+      toast.success('Invite sent')
+      setInviteEmail('')
+      setInviteRelationship('Parent')
+      setShowAddModal(false)
+      fetchData()
+    } catch (err: any) {
+      toast.error(err?.message || 'Failed to send invite')
+    } finally {
+      setInviteSending(false)
+    }
+  }
+
+  const handleResend = async (conn: Connection) => {
+    setInviteEmail(conn.email || '')
+    setInviteRelationship(conn.displayName || 'Loved one')
+    setShowAddModal(true)
+  }
+
+  const handleRevoke = async (conn: Connection) => {
+    if (!contextSupabase) return
+    try {
+      const { error } = await contextSupabase.from('awy_connections').delete().eq('id', conn.id)
+      if (error) throw error
+      toast.success('Invite removed')
+      fetchData()
+    } catch (err) {
+      toast.error('Could not remove invite')
+    }
+  }
+
+  const isOnline = (conn: Connection) => {
+    if (!conn.lastSeenAt) return false
+    const last = new Date(conn.lastSeenAt).getTime()
+    return Date.now() - last < 90_000
   }
 
   if (loading) return null
@@ -324,6 +431,7 @@ export default function AWYWidget() {
 
   // 2. Open Widget (Logged In)
   return (
+    <>
     <div className="fixed bottom-24 right-6 z-50 flex flex-col items-end space-y-4 group">
       <div className="bg-white rounded-3xl shadow-2xl border border-pink-100 w-80 animate-in slide-in-from-bottom-5 fade-in duration-300 overflow-hidden">
         {/* Header */}
@@ -369,6 +477,13 @@ export default function AWYWidget() {
             </div>
           )}
 
+          <button
+            onClick={() => setShowAddModal(true)}
+            className="w-full mb-4 inline-flex items-center justify-center gap-2 px-4 py-3 rounded-2xl border border-pink-200 text-pink-600 bg-white hover:bg-pink-50 transition-all text-sm font-semibold"
+          >
+            <Plus className="w-4 h-4" /> Add Loved One
+          </button>
+
           {/* Connections List */}
           <div className="space-y-3">
             <div className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Connections</div>
@@ -384,35 +499,114 @@ export default function AWYWidget() {
                       <div className="w-12 h-12 bg-gradient-to-br from-pink-100 to-rose-100 rounded-full flex items-center justify-center text-pink-600 font-bold text-lg shadow-sm">
                         {conn.displayName.charAt(0)}
                       </div>
-                      {conn.isAvailable && (
+                      {(conn.isAvailable || isOnline(conn)) && (
                         <span className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 border-2 border-white rounded-full shadow-sm animate-pulse"></span>
                       )}
                     </div>
                     <div>
                       <p className="text-sm font-bold text-gray-900">{conn.displayName}</p>
                       <p className={`text-xs font-medium ${conn.isAvailable ? 'text-green-600' : 'text-gray-400'}`}>
-                        {conn.isAvailable ? 'Available' : 'Away'}
+                        {conn.isAvailable ? 'Available' : isOnline(conn) ? 'Online recently' : 'Away'}
                       </p>
                     </div>
                   </div>
                   
                   {conn.isAvailable && (
-                    <a
-                      href={getJitsiUrl(conn.id)}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                    <button
+                      onClick={() => openCall(conn.id)}
                       className="p-2.5 bg-pink-100 text-pink-600 rounded-full hover:bg-pink-500 hover:text-white transition-all shadow-sm hover:shadow-md transform hover:scale-105"
                       title="Start Video Call"
                     >
                       <Video className="w-4 h-4" />
-                    </a>
+                    </button>
                   )}
                 </div>
               ))
+            )}
+
+            {pendingInvites.length > 0 && (
+              <div className="mt-4 space-y-2">
+                <div className="text-xs font-bold text-gray-400 uppercase tracking-wider">Pending Invites</div>
+                {pendingInvites.map((inv) => (
+                  <div key={inv.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
+                    <div>
+                      <p className="text-sm font-semibold text-gray-800">{inv.displayName}</p>
+                      <p className="text-xs text-gray-500">{inv.email}</p>
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleResend(inv)}
+                        className="p-2 rounded-full bg-white border border-gray-200 text-gray-700 hover:bg-gray-100"
+                        title="Resend"
+                      >
+                        <Send className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleRevoke(inv)}
+                        className="p-2 rounded-full bg-white border border-gray-200 text-red-600 hover:bg-red-50"
+                        title="Remove"
+                      >
+                        <Trash className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
             )}
           </div>
         </div>
       </div>
     </div>
+
+    {showAddModal && (
+      <div className="fixed inset-0 z-[70] bg-black/40 backdrop-blur-sm flex items-center justify-center px-4">
+        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 space-y-4">
+          <div className="flex justify-between items-center">
+            <h3 className="text-lg font-bold text-slate-900">Invite Loved One</h3>
+            <button onClick={() => setShowAddModal(false)} className="p-2 rounded-full hover:bg-slate-100">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+          <div className="space-y-3">
+            <div>
+              <label className="text-xs font-semibold text-slate-600">Email</label>
+              <input
+                type="email"
+                value={inviteEmail}
+                onChange={(e) => setInviteEmail(e.target.value)}
+                className="w-full mt-1 rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-500/40"
+                placeholder="parent@example.com"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-slate-600">Relationship</label>
+              <input
+                value={inviteRelationship}
+                onChange={(e) => setInviteRelationship(e.target.value)}
+                className="w-full mt-1 rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-500/40"
+                placeholder="Mum, Dad, Guardian"
+              />
+            </div>
+          </div>
+          <div className="flex justify-end gap-2">
+            <button
+              onClick={() => setShowAddModal(false)}
+              className="px-4 py-2 rounded-lg text-sm font-semibold text-slate-700 hover:bg-slate-100"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleInvite}
+              disabled={inviteSending}
+              className="px-4 py-2 rounded-lg text-sm font-semibold text-white bg-pink-500 hover:bg-pink-600 disabled:opacity-70 inline-flex items-center gap-2"
+            >
+              {inviteSending && <Loader2 className="w-4 h-4 animate-spin" />}
+              Send Invite
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   )
 }
