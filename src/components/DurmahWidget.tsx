@@ -13,11 +13,30 @@ import { formatTodayForDisplay } from "@/lib/durmah/phase";
 import { useDurmahSettings } from "@/hooks/useDurmahSettings";
 import { Settings, X, ArrowRight, AlertTriangle, Check, Volume2, Brain, Zap, MoreHorizontal } from "lucide-react";
 import Link from 'next/link';
+import toast from "react-hot-toast";
+import { getSupabaseClient } from "@/lib/supabase/client";
 
 type Msg = { role: "durmah" | "you"; text: string; ts: number };
 
 function inferTopic(text: string) {
   return text.split(/\s+/).slice(0, 4).join(" ");
+}
+
+const supabaseClient = getSupabaseClient();
+
+function createVoiceSessionId() {
+  const cryptoRef =
+    typeof globalThis !== "undefined"
+      ? (globalThis.crypto as Crypto & { randomUUID?: () => string })
+      : null;
+  if (cryptoRef?.randomUUID) {
+    try {
+      return cryptoRef.randomUUID();
+    } catch {
+      // Ignore and fall back
+    }
+  }
+  return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
 
 export default function DurmahWidget() {
@@ -76,6 +95,9 @@ export default function DurmahWidget() {
   const [showVoiceTranscript, setShowVoiceTranscript] = useState(false);
   const [voiceSessionActive, setVoiceSessionActive] = useState(false);
   const [voiceSessionHadTurns, setVoiceSessionHadTurns] = useState(false);
+  const [voiceSessionId, setVoiceSessionId] = useState<string | null>(null);
+  const [voiceSessionStartedAt, setVoiceSessionStartedAt] = useState<Date | null>(null);
+  const [voiceSessionEndedAt, setVoiceSessionEndedAt] = useState<Date | null>(null);
   const [showHeaderMenu, setShowHeaderMenu] = useState(false);
   const [memory, setMemory] = useState<DurmahMemorySnapshot | null>(null);
   const [previewingVoiceId, setPreviewingVoiceId] = useState<string | null>(null);
@@ -200,6 +222,7 @@ export default function DurmahWidget() {
       if (callTranscript.length > 0 || voiceSessionHadTurns) {
         setShowVoiceTranscript(true);
       }
+      setVoiceSessionEndedAt(new Date());
       setVoiceSessionActive(false);
     }
     prevListeningRef.current = isListening;
@@ -221,11 +244,17 @@ export default function DurmahWidget() {
       setShowVoiceTranscript(false);
       setVoiceSessionActive(true);
       setVoiceSessionHadTurns(false);
+      setVoiceSessionEndedAt(null);
+      setVoiceSessionStartedAt(new Date());
+      setVoiceSessionId(createVoiceSessionId());
       try {
         await startListening();
       } catch (err) {
         console.error("[DurmahVoice] Unable to start listening:", err);
         setVoiceSessionActive(false);
+        setVoiceSessionId(null);
+        setVoiceSessionStartedAt(null);
+        setVoiceSessionEndedAt(null);
       }
       return;
     }
@@ -233,6 +262,7 @@ export default function DurmahWidget() {
     stopListening();
     setVoiceSessionActive(false);
     setShowVoiceTranscript(true);
+    setVoiceSessionEndedAt(new Date());
   }
 
   const handlePreview = async (
@@ -255,12 +285,11 @@ export default function DurmahWidget() {
   };
 
   const saveVoiceTranscript = async () => {
-    // Note: Saved to local state + memory hint
-    if (callTranscript.length > 0) {
-      setMessages((prev) => [...prev, ...callTranscript]);
-      
-      // Update memory
-      const lastUser = [...callTranscript].reverse().find((m) => m.role === "you");
+    const transcriptTurns = [...callTranscript];
+    if (transcriptTurns.length > 0) {
+      setMessages((prev) => [...prev, ...transcriptTurns]);
+
+      const lastUser = [...transcriptTurns].reverse().find((m) => m.role === "you");
       if (lastUser) {
         const topic = inferTopic(lastUser.text);
         try {
@@ -270,20 +299,81 @@ export default function DurmahWidget() {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ last_topic: topic, last_message: lastUser.text }),
           });
-          // Optimistically update local memory
-          setMemory(prev => ({ ...prev, last_topic: topic, last_message: lastUser.text }));
-        } catch {}
+          setMemory((prev) => ({ ...prev, last_topic: topic, last_message: lastUser.text }));
+        } catch {
+          // Non-blocking memory update failure
+        }
+      }
+
+      try {
+        const sessionStart = voiceSessionStartedAt ?? new Date();
+        const sessionEnd = voiceSessionEndedAt ?? new Date();
+        const durationSeconds = Math.max(
+          0,
+          Math.round((sessionEnd.getTime() - sessionStart.getTime()) / 1000)
+        );
+        const sessionIdentifier = voiceSessionId ?? createVoiceSessionId();
+        const normalizedTranscript = transcriptTurns.map((turn) => ({
+          role: turn.role === "you" ? "user" : "durmah",
+          text: turn.text,
+          timestamp: turn.ts,
+        }));
+        const firstUserTurn = transcriptTurns.find((turn) => turn.role === "you");
+        const topic =
+          firstUserTurn && firstUserTurn.text
+            ? firstUserTurn.text.slice(0, 60)
+            : "Durmah Voice Session";
+
+        let supabaseUserId = user?.id ?? null;
+        if (!supabaseUserId) {
+          try {
+            const { data } = await supabaseClient.auth.getUser();
+            supabaseUserId = data.user?.id ?? null;
+          } catch {
+            supabaseUserId = null;
+          }
+        }
+
+        if (!supabaseUserId) {
+          toast.error("Saved to chat, but couldn't archive transcript.");
+        } else {
+          const { error } = await supabaseClient.from("voice_journals").insert({
+            user_id: supabaseUserId,
+            session_id: sessionIdentifier,
+            started_at: sessionStart.toISOString(),
+            ended_at: sessionEnd.toISOString(),
+            duration_seconds: durationSeconds,
+            topic,
+            summary: null,
+            transcript: normalizedTranscript,
+          });
+          if (error) {
+            throw error;
+          }
+          toast.success("Voice transcript saved to library.");
+        }
+      } catch (err) {
+        console.error("[DurmahVoice] Failed to persist transcript", err);
+        toast.error("Saved to chat, but couldn't archive transcript.");
       }
     }
     setShowVoiceTranscript(false);
     setCallTranscript([]);
     setVoiceSessionHadTurns(false);
+    setVoiceSessionActive(false);
+    setVoiceSessionId(null);
+    setVoiceSessionStartedAt(null);
+    setVoiceSessionEndedAt(null);
   };
 
   const discardVoiceTranscript = () => {
     setShowVoiceTranscript(false);
     setCallTranscript([]);
     setVoiceSessionHadTurns(false);
+    setVoiceSessionActive(false);
+    setVoiceSessionId(null);
+    setVoiceSessionStartedAt(null);
+    setVoiceSessionEndedAt(null);
   };
 
   // ----------------------------
@@ -474,7 +564,7 @@ export default function DurmahWidget() {
               <MoreHorizontal size={18} />
             </button>
             {showHeaderMenu && (
-              <div className="absolute right-0 mt-2 w-40 bg-white/95 rounded-2xl shadow-xl border border-violet-100 overflow-hidden text-sm text-gray-700 z-30">
+              <div className="absolute right-0 mt-2 w-44 bg-white/95 rounded-2xl shadow-xl border border-violet-100 overflow-hidden text-sm text-gray-700 z-30">
                 <button
                   className="w-full text-left px-4 py-2.5 hover:bg-violet-50 flex items-center justify-between"
                   onClick={() => {
@@ -486,6 +576,14 @@ export default function DurmahWidget() {
                   Transcript
                   <ArrowRight size={14} className="text-violet-500" />
                 </button>
+                <Link
+                  href="/my/voice-transcripts"
+                  className="block px-4 py-2.5 hover:bg-violet-50 flex items-center justify-between"
+                  onClick={() => setShowHeaderMenu(false)}
+                >
+                  Transcript Library
+                  <ArrowRight size={14} className="text-violet-500" />
+                </Link>
               </div>
             )}
           </div>

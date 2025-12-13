@@ -5,7 +5,7 @@ import { useContext } from 'react'
 import { useRouter } from 'next/router'
 import { AuthContext } from '@/lib/supabase/AuthContext'
 import { Button } from '@/components/ui/Button'
-import { ArrowLeft, Heart, Brain, Mic } from 'lucide-react'
+import { ArrowLeft, Heart, Brain, Mic, BookOpen } from 'lucide-react'
 
 export default function WellbeingPage() {
   const router = useRouter()
@@ -32,7 +32,7 @@ export default function WellbeingPage() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <div className="bg-white p-6 rounded-lg shadow-sm border">
           <div className="flex items-center gap-3 mb-4">
             <Brain className="w-8 h-8 text-purple-500" />
@@ -63,6 +63,23 @@ export default function WellbeingPage() {
             className="w-full"
           >
             Voice Chat
+          </Button>
+        </div>
+        
+        <div className="bg-white p-6 rounded-lg shadow-sm border">
+          <div className="flex items-center gap-3 mb-4">
+            <BookOpen className="w-8 h-8 text-amber-500" />
+            <h2 className="text-lg font-semibold">Transcript Library</h2>
+          </div>
+          <p className="text-gray-600 mb-4">
+            Review and manage transcripts from your Durmah voice sessions.
+          </p>
+          <Button 
+            onClick={() => router.push('/my/voice-transcripts')}
+            variant="outline"
+            className="w-full"
+          >
+            View Library
           </Button>
         </div>
       </div>
