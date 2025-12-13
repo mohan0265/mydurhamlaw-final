@@ -20,12 +20,15 @@ export default function AWYWidget() {
   const [connections, setConnections] = useState<Connection[]>([])
   const [isMyAvailabilityOn, setIsMyAvailabilityOn] = useState(false)
   const [userRole, setUserRole] = useState<'student' | 'loved_one' | null>(null)
+  const [presencePausedUntil, setPresencePausedUntil] = useState<number | null>(null)
+  const [presenceError, setPresenceError] = useState<string | null>(null)
   
   // Use global auth context instead of creating new client
   const { user, supabase: contextSupabase, loading: authLoading } = React.useContext(AuthContext)
   const userId = user?.id || null
   
   const channelRef = useRef<any>(null)
+  const schemaErrorLoggedRef = useRef(false)
 
   const deriveUserRole = useCallback((): 'student' | 'loved_one' => {
     const appMeta = user?.app_metadata as Record<string, unknown> | undefined;
@@ -39,6 +42,11 @@ export default function AWYWidget() {
 
   // Fetch initial data without hitting Next.js proxies (prevents 401 spam)
   const fetchData = useCallback(async () => {
+    const now = Date.now()
+    if (presencePausedUntil && now < presencePausedUntil) {
+      return
+    }
+
     if (!contextSupabase || !userId) {
       if (!authLoading) {
         setConnections([])
@@ -130,6 +138,7 @@ export default function AWYWidget() {
         .maybeSingle()
       if (presenceError && presenceError.code !== 'PGRST116') throw presenceError
       setIsMyAvailabilityOn(Boolean(myPresence?.is_available))
+      setPresenceError(null)
 
       if (role === 'loved_one') {
         await loadLovedOneView()
@@ -138,11 +147,23 @@ export default function AWYWidget() {
       }
     } catch (err) {
       console.error('AWY fetch error:', err)
+      const message = (err as any)?.message || ''
+      const code = (err as any)?.code || ''
+      if (!schemaErrorLoggedRef.current && (code === '42703' || message.includes('is_available'))) {
+        schemaErrorLoggedRef.current = true
+        console.error('[AWY] presence schema mismatch detected; pausing polling.')
+      }
+      if (code === '42703' || message.includes('is_available')) {
+        setPresencePausedUntil(Date.now() + 60000) // 60s cooldown
+        setPresenceError('Presence temporarily unavailable. Retrying shortly.')
+      } else {
+        setPresenceError('Presence currently unavailable.')
+      }
       setConnections([])
     } finally {
       setLoading(false)
     }
-  }, [authLoading, contextSupabase, deriveUserRole, userId])
+  }, [authLoading, contextSupabase, deriveUserRole, presencePausedUntil, userId])
 
   useEffect(() => {
     if (!authLoading) {
@@ -341,6 +362,12 @@ export default function AWYWidget() {
               />
             </button>
           </div>
+
+          {presenceError && (
+            <div className="mb-4 text-xs text-orange-700 bg-orange-50 border border-orange-100 rounded-2xl px-3 py-2">
+              {presenceError}
+            </div>
+          )}
 
           {/* Connections List */}
           <div className="space-y-3">
