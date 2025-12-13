@@ -6,6 +6,26 @@ const TRANSCRIPTION_MODEL = "whisper-1";
 
 export type VoiceTurn = { speaker: "user" | "durmah"; text: string };
 
+function extractTextFromContent(content: any): string {
+  if (!content) return "";
+  if (typeof content === "string") return content;
+  if (typeof content.text === "string") return content.text;
+  if (typeof content.transcript === "string") return content.transcript;
+  if (Array.isArray(content)) {
+    return content
+      .map((entry) => extractTextFromContent(entry))
+      .filter(Boolean)
+      .join(" ");
+  }
+  if (Array.isArray(content?.parts)) {
+    return content.parts
+      .map((part: any) => extractTextFromContent(part))
+      .filter(Boolean)
+      .join(" ");
+  }
+  return "";
+}
+
 interface UseDurmahRealtimeProps {
   systemPrompt: string;
   voice?: string;
@@ -42,59 +62,61 @@ export function useDurmahRealtime({
     }
   };
 
-  const appendAssistantText = useCallback((delta?: string) => {
-    if (!delta) return;
-    assistantTranscriptRef.current += delta;
+  const normalizeChunk = (text?: string) => text?.trim() ?? "";
+
+  const mergeIncremental = useCallback((current: string, incoming?: string) => {
+    const cur = normalizeChunk(current);
+    const inc = normalizeChunk(incoming);
+    if (!inc) return cur;
+    if (!cur) return inc;
+    const curLower = cur.toLowerCase();
+    const incLower = inc.toLowerCase();
+    if (incLower === curLower) return cur;
+    if (incLower.startsWith(curLower)) return inc;
+    if (curLower.startsWith(incLower)) return cur;
+    return `${cur} ${inc}`.replace(/\s+/g, " ").trim();
   }, []);
+
+  const appendAssistantText = useCallback((delta?: string) => {
+    assistantTranscriptRef.current = mergeIncremental(
+      assistantTranscriptRef.current,
+      delta
+    );
+  }, [mergeIncremental]);
 
   const flushAssistantText = useCallback(
     (extra?: string) => {
-      if (extra) assistantTranscriptRef.current += extra;
+      assistantTranscriptRef.current = mergeIncremental(
+        assistantTranscriptRef.current,
+        extra
+      );
       const text = assistantTranscriptRef.current.trim();
       if (text) {
         onTurn?.({ speaker: "durmah", text });
       }
       assistantTranscriptRef.current = "";
     },
-    [onTurn]
+    [mergeIncremental, onTurn]
   );
 
   const appendUserText = useCallback((delta?: string) => {
-    if (!delta) return;
-    userTranscriptRef.current += delta;
-  }, []);
+    userTranscriptRef.current = mergeIncremental(userTranscriptRef.current, delta);
+  }, [mergeIncremental]);
 
   const flushUserText = useCallback(
     (extra?: string) => {
-      if (extra) userTranscriptRef.current += extra;
+      userTranscriptRef.current = mergeIncremental(
+        userTranscriptRef.current,
+        extra
+      );
       const text = userTranscriptRef.current.trim();
       if (text) {
         onTurn?.({ speaker: "you", text });
       }
       userTranscriptRef.current = "";
     },
-    [onTurn]
+    [mergeIncremental, onTurn]
   );
-
-  const extractTextFromContent = (content: any): string => {
-    if (!content) return "";
-    if (typeof content === "string") return content;
-    if (typeof content.text === "string") return content.text;
-    if (typeof content.transcript === "string") return content.transcript;
-    if (Array.isArray(content)) {
-      return content
-        .map((entry) => extractTextFromContent(entry))
-        .filter(Boolean)
-        .join(" ");
-    }
-    if (Array.isArray(content?.parts)) {
-      return content.parts
-        .map((part: any) => extractTextFromContent(part))
-        .filter(Boolean)
-        .join(" ");
-    }
-    return "";
-  };
 
   const handleConversationItem = useCallback(
     (payload: any) => {
