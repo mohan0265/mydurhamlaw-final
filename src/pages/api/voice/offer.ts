@@ -4,6 +4,8 @@ const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const REALTIME_MODEL =
   process.env.OPENAI_REALTIME_MODEL ||
   "gpt-4o-realtime-preview-2024-12-17";
+const TRANSCRIPTION_MODEL =
+  process.env.OPENAI_TRANSCRIPTION_MODEL || "whisper-1";
 
 export const config = {
   api: {
@@ -69,6 +71,9 @@ export default async function handler(
 
     const sessionPayload: Record<string, unknown> = {
       model: REALTIME_MODEL,
+      input_audio_transcription: {
+        model: TRANSCRIPTION_MODEL,
+      },
     };
     if (requestedVoice && typeof requestedVoice === "string") {
       sessionPayload.voice = requestedVoice;

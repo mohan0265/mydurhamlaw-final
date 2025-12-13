@@ -1,5 +1,9 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 
+const REALTIME_DEBUG =
+  process.env.NEXT_PUBLIC_DURMAH_REALTIME_DEBUG === "true";
+const TRANSCRIPTION_MODEL = "whisper-1";
+
 export type VoiceTurn = { speaker: "user" | "durmah"; text: string };
 
 interface UseDurmahRealtimeProps {
@@ -29,7 +33,83 @@ export function useDurmahRealtime({
   const previewPcRef = useRef<RTCPeerConnection | null>(null);
   const previewDcRef = useRef<RTCDataChannel | null>(null);
   const previewStreamRef = useRef<MediaStream | null>(null);
-  const transcriptBufferRef = useRef<string>("");
+  const assistantTranscriptRef = useRef<string>("");
+  const userTranscriptRef = useRef<string>("");
+
+  const debugLog = (...args: unknown[]) => {
+    if (REALTIME_DEBUG) {
+      console.debug("[DurmahRealtime]", ...args);
+    }
+  };
+
+  const appendAssistantText = useCallback((delta?: string) => {
+    if (!delta) return;
+    assistantTranscriptRef.current += delta;
+  }, []);
+
+  const flushAssistantText = useCallback(
+    (extra?: string) => {
+      if (extra) assistantTranscriptRef.current += extra;
+      const text = assistantTranscriptRef.current.trim();
+      if (text) {
+        onTurn?.({ speaker: "durmah", text });
+      }
+      assistantTranscriptRef.current = "";
+    },
+    [onTurn]
+  );
+
+  const appendUserText = useCallback((delta?: string) => {
+    if (!delta) return;
+    userTranscriptRef.current += delta;
+  }, []);
+
+  const flushUserText = useCallback(
+    (extra?: string) => {
+      if (extra) userTranscriptRef.current += extra;
+      const text = userTranscriptRef.current.trim();
+      if (text) {
+        onTurn?.({ speaker: "you", text });
+      }
+      userTranscriptRef.current = "";
+    },
+    [onTurn]
+  );
+
+  const extractTextFromContent = (content: any): string => {
+    if (!content) return "";
+    if (typeof content === "string") return content;
+    if (typeof content.text === "string") return content.text;
+    if (typeof content.transcript === "string") return content.transcript;
+    if (Array.isArray(content)) {
+      return content
+        .map((entry) => extractTextFromContent(entry))
+        .filter(Boolean)
+        .join(" ");
+    }
+    if (Array.isArray(content?.parts)) {
+      return content.parts
+        .map((part: any) => extractTextFromContent(part))
+        .filter(Boolean)
+        .join(" ");
+    }
+    return "";
+  };
+
+  const handleConversationItem = useCallback(
+    (payload: any) => {
+      const item = payload?.item;
+      if (!item) return;
+      const text = extractTextFromContent(item.content);
+      if (!text) return;
+      if (item.role === "user") {
+        flushUserText(text);
+      } else if (item.role === "assistant") {
+        flushAssistantText(text);
+      }
+    },
+    [flushAssistantText, flushUserText]
+  );
 
   const requestAnswerSdp = useCallback(
     async (offerSdp?: string | null, voiceOverride?: string) => {
@@ -112,7 +192,8 @@ export function useDurmahRealtime({
       audioRef.current.srcObject = null;
     }
     stopPreview();
-    transcriptBufferRef.current = "";
+    assistantTranscriptRef.current = "";
+    userTranscriptRef.current = "";
     setStatus("idle");
     setSpeaking(false);
   }, [audioRef, stopPreview]);
@@ -122,6 +203,8 @@ export function useDurmahRealtime({
     try {
       setError(null);
       setSpeaking(false);
+      assistantTranscriptRef.current = "";
+      userTranscriptRef.current = "";
       stopPreview();
       setStatus("connecting");
 
@@ -166,14 +249,17 @@ export function useDurmahRealtime({
         console.debug("[DurmahVoice] Data channel open");
         setStatus("listening");
 
-        if (systemPrompt) {
-          dc.send(
-            JSON.stringify({
-              type: "session.update",
-              session: { instructions: systemPrompt },
-            })
-          );
-        }
+        dc.send(
+          JSON.stringify({
+            type: "session.update",
+            session: {
+              instructions: systemPrompt,
+              input_audio_transcription: {
+                model: TRANSCRIPTION_MODEL,
+              },
+            },
+          })
+        );
 
         dc.send(
           JSON.stringify({
@@ -194,29 +280,76 @@ export function useDurmahRealtime({
         for (const chunk of chunks) {
           try {
             const payload = JSON.parse(chunk);
-            if (payload.type === "response.output_text.delta") {
-              transcriptBufferRef.current += payload.delta || "";
-            } else if (
-              payload.type === "response.output_text.done" ||
-              payload.type === "response.completed"
+            const type = payload.type;
+            debugLog("event", type);
+            if (!type) continue;
+
+            if (
+              type === "response.audio_transcript.delta" ||
+              type === "response.output_text.delta" ||
+              type === "response.text.delta"
             ) {
-              const text = transcriptBufferRef.current.trim();
-              if (text) {
-                onTurn?.({ speaker: "durmah", text });
+              appendAssistantText(
+                payload.delta ?? payload.text ?? payload.transcript ?? ""
+              );
+            } else if (
+              type === "response.audio_transcript.done" ||
+              type === "response.output_text.done" ||
+              type === "response.text.done" ||
+              type === "response.completed"
+            ) {
+              flushAssistantText(payload.transcript ?? payload.text ?? "");
+            } else if (
+              type === "input_audio_transcription.delta" ||
+              type === "conversation.item.input_audio_transcription.delta"
+            ) {
+              appendUserText(
+                payload.delta ?? payload.text ?? payload.transcript ?? ""
+              );
+            } else if (
+              type === "input_audio_transcription.final" ||
+              type === "input_audio_transcription.done" ||
+              type === "conversation.item.input_audio_transcription.completed"
+            ) {
+              flushUserText(payload.transcript ?? payload.text ?? "");
+            } else if (type === "conversation.item.created") {
+              handleConversationItem(payload);
+            } else if (
+              type === "conversation.item.output_audio_transcription.completed"
+            ) {
+              flushAssistantText(payload.transcript ?? "");
+            } else if (type === "response.audio.delta") {
+              const b64 = payload.delta as string;
+              const bytes = Uint8Array.from(atob(b64), (c) =>
+                c.charCodeAt(0)
+              );
+              const blob = new Blob([bytes], { type: "audio/mpeg" });
+              const url = URL.createObjectURL(blob);
+              const audio = audioRef.current!;
+              if (!audio.src) {
+                audio.src = url;
+                audio.onended = () => setSpeaking(false);
+                setSpeaking(true);
+                audio.play().catch(() => {});
+              } else {
+                audio.addEventListener(
+                  "ended",
+                  () => {
+                    audio.src = url;
+                    setSpeaking(true);
+                    audio.play().catch(() => {});
+                  },
+                  { once: true }
+                );
               }
-              transcriptBufferRef.current = "";
-            } else if (payload.type === "response.error") {
+            } else if (type === "response.error") {
               const msg =
                 payload?.error?.message || "Realtime response error detected";
               console.error("[DurmahVoice] Response error:", msg);
               setError(msg);
             }
           } catch (err) {
-            console.warn(
-              "[DurmahVoice] Failed to parse realtime payload",
-              chunk,
-              err
-            );
+            debugLog("Failed to parse realtime payload", chunk, err);
           }
         }
       };
@@ -243,6 +376,11 @@ export function useDurmahRealtime({
   }, [
     audioRef,
     onTurn,
+    appendAssistantText,
+    appendUserText,
+    flushAssistantText,
+    flushUserText,
+    handleConversationItem,
     requestAnswerSdp,
     stopListening,
     stopPreview,
@@ -289,14 +427,17 @@ export function useDurmahRealtime({
         previewDcRef.current = dc;
 
         dc.onopen = () => {
-          if (systemPrompt) {
-            dc.send(
-              JSON.stringify({
-                type: "session.update",
-                session: { instructions: systemPrompt },
-              })
-            );
-          }
+          dc.send(
+            JSON.stringify({
+              type: "session.update",
+              session: {
+                instructions: systemPrompt,
+                input_audio_transcription: {
+                  model: TRANSCRIPTION_MODEL,
+                },
+              },
+            })
+          );
           const prompt = `Say exactly this phrase with emotion: "${preset.previewText}"`;
           dc.send(
             JSON.stringify({
