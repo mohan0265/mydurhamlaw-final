@@ -21,29 +21,38 @@ export async function fetchAuthed(input: RequestInfo | URL, init: RequestInit = 
 
   // Cookie fallback (e.g., sb-access-token) in case supabase client state lags
   if (!token && typeof document !== 'undefined') {
-    const cookieParts = document.cookie.split(';').map((c) => c.trim());
-    const direct = cookieParts.find((c) => c.startsWith('sb-access-token='));
+    const cookieParts = document.cookie.split(';').map((c) => c.trim()).filter(Boolean);
+    const sbCookies = cookieParts.filter((c) => c.startsWith('sb-'));
+
+    // Try exact sb-access-token first
+    const direct = sbCookies.find((c) => c.startsWith('sb-access-token='));
     if (direct) token = decodeURIComponent(direct.split('=')[1] || '');
+
+    // Then try any sb-* cookie that looks like JSON with access_token
     if (!token) {
-      const jsonCookie = cookieParts.find((c) => c.startsWith('sb-') && c.includes('-auth-token='));
-      if (jsonCookie) {
-        const raw = decodeURIComponent(jsonCookie.split('=')[1] || '');
+      for (const c of sbCookies) {
+        const [, rawVal = ''] = c.split('=');
+        if (!rawVal) continue;
+        const decoded = decodeURIComponent(rawVal);
         try {
-          const parsed = JSON.parse(raw);
-          token =
+          const parsed = JSON.parse(decoded);
+          const candidate =
             parsed?.access_token ||
             parsed?.currentSession?.access_token ||
-            parsed?.currentSession?.accessToken ||
-            undefined;
+            parsed?.currentSession?.accessToken;
+          if (candidate) {
+            token = candidate;
+            break;
+          }
         } catch {
-          // ignore
+          // not JSON; skip
         }
       }
     }
   }
 
   if (!token && process.env.NODE_ENV !== 'production') {
-    console.warn('[fetchAuthed] missing access token; request will likely 401');
+    console.warn('[fetchAuthed] no access token found in session or sb-* cookies; request may 401');
   }
 
   const headers = new Headers(init.headers as HeadersInit | undefined);

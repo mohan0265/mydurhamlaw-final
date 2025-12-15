@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from "react";
+import { normalizeTranscriptLanguageSync } from "@/lib/durmah/normalizeTranscriptLanguage";
 
 const REALTIME_DEBUG =
   process.env.NEXT_PUBLIC_DURMAH_REALTIME_DEBUG === "true";
@@ -92,7 +93,8 @@ export function useDurmahRealtime({
         assistantTranscriptRef.current,
         extra
       );
-      const text = assistantTranscriptRef.current.trim();
+      const raw = assistantTranscriptRef.current.trim();
+      const text = normalizeTranscriptLanguageSync(raw);
       if (text) {
         onTurn?.({ speaker: "durmah", text });
       }
@@ -111,7 +113,8 @@ export function useDurmahRealtime({
         userTranscriptRef.current,
         extra
       );
-      const text = userTranscriptRef.current.trim();
+      const raw = userTranscriptRef.current.trim();
+      const text = normalizeTranscriptLanguageSync(raw);
       if (text) {
         onTurn?.({ speaker: "you", text });
       }
