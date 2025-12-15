@@ -148,8 +148,7 @@ export function useElevenLabsTTS(opts: UseElevenLabsTTSOptions = {}) {
 
   useEffect(() => {
     if (!isSpeaking && queue.length > 0) {
-      // eslint-disable-next-line @typescript-eslint/no-floating-promises
-      driveQueue();
+      void driveQueue();
     }
   }, [queue, isSpeaking, driveQueue]);
 

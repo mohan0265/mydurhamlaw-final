@@ -93,17 +93,15 @@ export function useAwyPresence(): UseAwyPresenceResult {
   const [userId, setUserId] = useState<string | null>(null);
   const wavesUnreadRef = useRef<number>(0);
 
-  // If there is no client (SSR or misconfig), provide harmless no-ops.
-  if (!client) return emptyReturn();
-
   // Boot: who am I?
   useEffect(() => {
+    if (!client) return;
     getCurrentUserId(client).then(setUserId);
   }, [client]);
 
   // Load connections from DB (where user is student or loved one)
   const reloadConnections = useCallback(() => {
-    if (!userId) {
+    if (!client || !userId) {
       setConnections([]);
       return;
     }
@@ -121,13 +119,13 @@ export function useAwyPresence(): UseAwyPresenceResult {
 
   // Load connections once userId available
   useEffect(() => {
-    if (!userId) return;
+    if (!client || !userId) return;
     reloadConnections();
   }, [userId, reloadConnections]);
 
   // Live DB subscription for connections (listen for both roles)
   useEffect(() => {
-    if (!userId) return;
+    if (!client || !userId) return;
 
     const sub = client
       .channel(`connections_${userId}`)
@@ -152,7 +150,7 @@ export function useAwyPresence(): UseAwyPresenceResult {
 
   // Load real-time presence for all loved ones in connections
   useEffect(() => {
-    if (!userId || connections.length === 0) {
+    if (!client || !userId || connections.length === 0) {
       setPresence([]);
       return;
     }
@@ -239,7 +237,7 @@ export function useAwyPresence(): UseAwyPresenceResult {
 
   // Map loved_one_id -> call URL (for widget)
   useEffect(() => {
-    if (!userId || connections.length === 0) {
+    if (!client || !userId || connections.length === 0) {
       setCallLinks({});
       return;
     }
@@ -269,7 +267,7 @@ export function useAwyPresence(): UseAwyPresenceResult {
 
   // Unread waves loader + subscription
   useEffect(() => {
-    if (!userId) {
+    if (!client || !userId) {
       setWaves([]);
       return;
     }
@@ -321,7 +319,7 @@ export function useAwyPresence(): UseAwyPresenceResult {
   // Actions
   const sendWave = useCallback(
     async (lovedOneId: string) => {
-      if (!userId) return { ok: false, error: "not_authenticated" };
+      if (!client || !userId) return { ok: false, error: "not_authenticated" };
       const { error } = await client.from("awy_waves").insert({
         sender_id: userId,
         receiver_id: lovedOneId,
@@ -337,7 +335,7 @@ export function useAwyPresence(): UseAwyPresenceResult {
   // Link by email — returns { ok, status?: 'active' | 'pending' }
   const linkLovedOneByEmail = useCallback(
     async (email: string, relationship: string) => {
-      if (!userId) return { ok: false, error: "not_authenticated" };
+      if (!client || !userId) return { ok: false, error: "not_authenticated" };
 
       try {
         const { data, error } = await client.rpc("awy_link_loved_one_by_email", {
@@ -367,6 +365,7 @@ export function useAwyPresence(): UseAwyPresenceResult {
   );
 
   return useMemo<UseAwyPresenceResult>(() => {
+    if (!client) return emptyReturn();
     return {
       userId,
       connections,
