@@ -39,7 +39,7 @@ export const useCalendarData = ({
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const token = await waitForAccessToken();
+      const { token } = await waitForAccessToken();
       if (!cancelled) {
         setAuthReady(!!token);
       }

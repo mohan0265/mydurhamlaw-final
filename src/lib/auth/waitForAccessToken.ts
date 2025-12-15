@@ -4,6 +4,11 @@ type WaitOptions = {
   timeoutMs?: number;
 };
 
+export type TokenResult = {
+  token: string | null;
+  source: 'session' | 'cookie' | 'timeout';
+};
+
 function readCookieToken(): string | null {
   if (typeof document === 'undefined') return null;
   const cookies: Record<string, string> = {};
@@ -70,28 +75,29 @@ function readCookieToken(): string | null {
  */
 export async function waitForAccessToken(
   options: WaitOptions = {}
-): Promise<string | null> {
+): Promise<TokenResult> {
   const timeoutMs = options.timeoutMs ?? 2000;
   const supabase = getSupabaseClient();
 
   try {
     const { data } = await supabase.auth.getSession();
     if (data.session?.access_token) {
-      return data.session.access_token;
+      return { token: data.session.access_token, source: 'session' };
     }
   } catch {
     // fall through to subscription
   }
 
   const cookieToken = readCookieToken();
-  if (cookieToken) return cookieToken;
+  if (cookieToken) return { token: cookieToken, source: 'cookie' };
 
   return new Promise((resolve) => {
     let resolved = false;
     const timer = setTimeout(() => {
       if (!resolved) {
         resolved = true;
-        resolve(readCookieToken());
+        const fallback = readCookieToken();
+        resolve({ token: fallback, source: fallback ? 'cookie' : 'timeout' });
       }
     }, timeoutMs);
 
@@ -102,7 +108,7 @@ export async function waitForAccessToken(
           resolved = true;
           clearTimeout(timer);
           subscription?.subscription.unsubscribe();
-          resolve(session.access_token);
+          resolve({ token: session.access_token, source: 'session' });
         }
       }
     );

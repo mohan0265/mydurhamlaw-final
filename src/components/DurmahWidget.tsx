@@ -186,7 +186,7 @@ export default function DurmahWidget() {
 
     (async () => {
       try {
-        const token = await waitForAccessToken();
+        const { token } = await waitForAccessToken();
         if (!token) {
           if (!cancelled) setReady(true);
           return;
@@ -380,7 +380,7 @@ export default function DurmahWidget() {
       if (lastUser) {
         const topic = inferTopic(lastUser.text);
         try {
-          const token = await waitForAccessToken();
+          const { token } = await waitForAccessToken();
           if (!token) {
             toast.error("Session expired. Please sign in again to save Durmah updates.");
             return;
@@ -495,7 +495,7 @@ export default function DurmahWidget() {
     // Update memory in background
     void (async () => {
       try {
-        const token = await waitForAccessToken();
+        const { token } = await waitForAccessToken();
         if (!token) {
           return;
         }

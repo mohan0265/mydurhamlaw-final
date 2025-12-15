@@ -1,13 +1,25 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getApiAuth } from '@/lib/apiAuth';
 
+function setDiagnostics(
+  res: NextApiResponse,
+  tokenSource: 'header' | 'cookie' | 'none',
+  cookieNames: string[]
+) {
+  res.setHeader('x-mdl-auth-seen', tokenSource === 'header' ? 'bearer' : tokenSource);
+  res.setHeader('x-mdl-token-source', tokenSource);
+  res.setHeader('x-mdl-cookie-names', cookieNames.join(','));
+}
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const auth = await getApiAuth(req);
   if (auth.status === 'missing_token' || auth.status === 'invalid_token') {
-    return res.status(401).json({ ok: false, error: auth.status });
+    setDiagnostics(res, auth.tokenSource, auth.cookieNames);
+    return res.status(401).json({ ok: false, reason: auth.status });
   }
   if (auth.status === 'misconfigured') {
-    return res.status(500).json({ ok: false, error: 'server_misconfigured' });
+    setDiagnostics(res, auth.tokenSource, auth.cookieNames);
+    return res.status(500).json({ ok: false, reason: 'server_misconfigured' });
   }
 
   const { user, supabase } = auth;

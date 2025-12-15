@@ -36,7 +36,7 @@ export function useDurmahDynamicContext() {
       if (!supabase) return;
 
       try {
-        const token = await waitForAccessToken();
+        const { token } = await waitForAccessToken();
         if (!token) {
           setAuthError(true);
           setTodaysEvents([]);

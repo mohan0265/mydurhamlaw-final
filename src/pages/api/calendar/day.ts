@@ -26,6 +26,16 @@ function emptyDayDetail(dateISO: string): DayDetail {
   }
 }
 
+function setDiagnostics(
+  res: NextApiResponse,
+  tokenSource: 'header' | 'cookie' | 'none',
+  cookieNames: string[]
+) {
+  res.setHeader('x-mdl-auth-seen', tokenSource === 'header' ? 'bearer' : tokenSource);
+  res.setHeader('x-mdl-token-source', tokenSource);
+  res.setHeader('x-mdl-cookie-names', cookieNames.join(','));
+}
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'GET') {
     return res.status(405).json({ message: 'Method not allowed' })
@@ -46,17 +56,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   try {
     console.log(`[CalendarAPI] Request for date=${date}. Checking auth...`)
 
-    const token = getBearerToken(req)
-    if (!token && isDemoMode) {
+    const tokenInfo = getBearerToken(req)
+    if (!tokenInfo.token && isDemoMode) {
       console.log('[CalendarAPI] Returning demo mode data (unauthenticated)')
       return res.status(200).json(emptyDayDetail(date as string))
     }
 
     const auth = await getApiAuth(req)
     if (auth.status === 'missing_token' || auth.status === 'invalid_token') {
+      setDiagnostics(res, auth.tokenSource, auth.cookieNames)
       return res.status(401).json({ error: auth.status })
     }
     if (auth.status === 'misconfigured') {
+      setDiagnostics(res, auth.tokenSource, auth.cookieNames)
       return res.status(500).json({ error: 'server_misconfigured' })
     }
     const { user, supabase } = auth
