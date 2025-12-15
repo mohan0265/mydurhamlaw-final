@@ -7,7 +7,6 @@ export function validateEnv() {
   // Always return env vars safely, don't throw on client
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
-  const elevenLabsApiKey = process.env.ELEVENLABS_API_KEY || ''
   const openaiApiKey = process.env.OPENAI_API_KEY || ''
   
   // Only warn in development, don't crash the app
@@ -15,7 +14,7 @@ export function validateEnv() {
     if (!supabaseUrl || !supabaseAnonKey) {
       console.warn('Missing Supabase environment variables - some features may not work')
     }
-    return { supabaseUrl, supabaseAnonKey, ELEVENLABS_API_KEY: elevenLabsApiKey, OPENAI_API_KEY: openaiApiKey }
+    return { supabaseUrl, supabaseAnonKey, OPENAI_API_KEY: openaiApiKey }
   }
 
   // Server-side validation - only warn, don't throw
@@ -24,5 +23,5 @@ export function validateEnv() {
     console.warn(`Missing environment variables: ${missing.join(', ')}`)
   }
 
-  return { supabaseUrl, supabaseAnonKey, ELEVENLABS_API_KEY: elevenLabsApiKey, OPENAI_API_KEY: openaiApiKey }
+  return { supabaseUrl, supabaseAnonKey, OPENAI_API_KEY: openaiApiKey }
 }
