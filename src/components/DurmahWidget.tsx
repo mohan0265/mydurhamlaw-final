@@ -3,7 +3,7 @@ import { useAuth } from '@/lib/supabase/AuthContext';
 import { useDurmahRealtime } from "@/hooks/useDurmahRealtime";
 import { useDurmahDynamicContext } from "@/hooks/useDurmahDynamicContext";
 import { useDurmah } from "@/lib/durmah/context";
-import { fetchAuthed } from "@/lib/fetchAuthed";
+import { fetchAuthed, getAccessTokenFromClient } from "@/lib/fetchAuthed";
 import { 
   buildDurmahSystemPrompt, 
   composeGreeting, 
@@ -184,6 +184,15 @@ export default function DurmahWidget() {
 
     (async () => {
       try {
+        const token = await getAccessTokenFromClient();
+        if (!token) {
+          if (!cancelled && process.env.NODE_ENV !== "production") {
+            console.warn("[DurmahWidget] memory request skipped; no access token yet");
+          }
+          if (!cancelled) setReady(true);
+          return;
+        }
+
         const res = await fetchAuthed("/api/durmah/memory");
         if (res.status === 401 || res.status === 403) {
           if (!cancelled && process.env.NODE_ENV !== "production") {
@@ -375,6 +384,12 @@ export default function DurmahWidget() {
       if (lastUser) {
         const topic = inferTopic(lastUser.text);
         try {
+          const token = await getAccessTokenFromClient();
+          if (!token) {
+            toast.error("Session expired. Please sign in again to save Durmah updates.");
+            return;
+          }
+
           const res = await fetchAuthed("/api/durmah/memory", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -482,6 +497,14 @@ export default function DurmahWidget() {
     // Update memory in background
     void (async () => {
       try {
+        const token = await getAccessTokenFromClient();
+        if (!token) {
+          if (process.env.NODE_ENV !== "production") {
+            console.warn("[DurmahWidget] memory update skipped; no token");
+          }
+          return;
+        }
+
         const res = await fetchAuthed("/api/durmah/memory", {
           method: "POST",
           headers: { "Content-Type": "application/json" },

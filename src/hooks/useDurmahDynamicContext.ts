@@ -2,7 +2,7 @@ import { useState, useEffect, useContext } from 'react';
 import { getSupabaseClient } from '@/lib/supabase/client';
 import { AuthContext } from '@/lib/supabase/AuthContext';
 import { format } from 'date-fns';
-import { fetchAuthed } from '@/lib/fetchAuthed';
+import { fetchAuthed, getAccessTokenFromClient } from '@/lib/fetchAuthed';
 
 export type DurmahTask = {
   id: string;
@@ -35,6 +35,15 @@ export function useDurmahDynamicContext() {
       if (!supabase) return;
 
       try {
+        const token = await getAccessTokenFromClient();
+        if (!token) {
+          setAuthError(true);
+          setTodaysEvents([]);
+          setUpcomingTasks([]);
+          setLoading(false);
+          return;
+        }
+
         const today = new Date();
         const todayStr = format(today, 'yyyy-MM-dd');
         
@@ -82,6 +91,7 @@ export function useDurmahDynamicContext() {
               type: e.type || 'personal'
             })));
           }
+          setAuthError(false);
         }
 
       } catch (err) {

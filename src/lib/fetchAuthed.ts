@@ -1,6 +1,9 @@
 import { getSupabaseClient } from '@/lib/supabase/client';
 
-export async function fetchAuthed(input: RequestInfo | URL, init: RequestInit = {}) {
+/**
+ * Resolve an access token from Supabase auth or sb-* cookies (client-side).
+ */
+export async function getAccessTokenFromClient(): Promise<string | undefined> {
   const supabase = getSupabaseClient();
   let token: string | undefined;
 
@@ -50,6 +53,12 @@ export async function fetchAuthed(input: RequestInfo | URL, init: RequestInit = 
       }
     }
   }
+
+  return token;
+}
+
+export async function fetchAuthed(input: RequestInfo | URL, init: RequestInit = {}) {
+  const token = await getAccessTokenFromClient();
 
   if (!token && process.env.NODE_ENV !== 'production') {
     const target =

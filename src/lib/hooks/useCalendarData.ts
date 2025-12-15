@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getSupabaseClient } from '@/lib/supabase/client';
-import { fetchAuthed } from '@/lib/fetchAuthed';
+import { fetchAuthed, getAccessTokenFromClient } from '@/lib/fetchAuthed';
 
 import {
   CalendarFilter,
@@ -33,6 +33,20 @@ export const useCalendarData = ({
   academicYear = '2025/26',
 }: UseCalendarDataProps) => {
   const queryClient = useQueryClient();
+  const [authReady, setAuthReady] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const token = await getAccessTokenFromClient();
+      if (!cancelled) {
+        setAuthReady(!!token);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [userId]);
 
   // -- Year overview (single year)
   const {
@@ -41,7 +55,7 @@ export const useCalendarData = ({
     error: yearError,
   } = useQuery<YearOverview>({
     queryKey: ['calendar', 'year', userId, programme, yearOfStudy, academicYear],
-    enabled: !!userId,
+    enabled: !!userId && authReady,
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
     queryFn: async () => {
@@ -60,7 +74,7 @@ export const useCalendarData = ({
     error: multiYearError,
   } = useQuery<MultiYearData>({
     queryKey: ['calendar', 'multiyear', userId, programme, academicYear],
-    enabled: !!userId,
+    enabled: !!userId && authReady,
     staleTime: 10 * 60 * 1000,
     gcTime: 20 * 60 * 1000,
     queryFn: async () => {
@@ -83,8 +97,8 @@ export const useCalendarData = ({
 
   const useMonthData = (year: number, month: number) =>
     useQuery<MonthData>({
-      queryKey: ['calendar', 'month', userId, year, month],
-      enabled: !!userId && !!year && !!month,
+    queryKey: ['calendar', 'month', userId, year, month],
+    enabled: !!userId && !!year && !!month && authReady,
       staleTime: 2 * 60 * 1000,
       queryFn: () => fetchMonthData(year, month),
     });
@@ -100,8 +114,8 @@ export const useCalendarData = ({
 
   const useWeekData = (date: Date) =>
     useQuery({
-      queryKey: ['calendar', 'week', userId, format(date, 'yyyy-MM-dd')],
-      enabled: !!userId && !!date,
+    queryKey: ['calendar', 'week', userId, format(date, 'yyyy-MM-dd')],
+    enabled: !!userId && !!date && authReady,
       staleTime: 60 * 1000,
       queryFn: () => fetchWeekData(date),
     });
@@ -115,8 +129,8 @@ export const useCalendarData = ({
 
   const useDayDetail = (date: string) =>
     useQuery<DayDetail>({
-      queryKey: ['calendar', 'day', userId, date],
-      enabled: !!userId && !!date,
+    queryKey: ['calendar', 'day', userId, date],
+    enabled: !!userId && !!date && authReady,
       staleTime: 30 * 1000,
       queryFn: () => fetchDayDetail(date),
     });
@@ -124,7 +138,7 @@ export const useCalendarData = ({
   // -- Module progress
   const { data: moduleProgress, isLoading: progressLoading } = useQuery<ModuleProgress[]>({
     queryKey: ['calendar', 'progress', userId, programme, yearOfStudy],
-    enabled: !!userId,
+    enabled: !!userId && authReady,
     staleTime: 2 * 60 * 1000,
     queryFn: async () => {
       const res = await fetchAuthed(`/api/calendar/progress?programme=${programme}&year=${yearOfStudy}`);
