@@ -52,7 +52,13 @@ export async function fetchAuthed(input: RequestInfo | URL, init: RequestInit = 
   }
 
   if (!token && process.env.NODE_ENV !== 'production') {
-    console.warn('[fetchAuthed] no access token found in session or sb-* cookies; request may 401');
+    const target =
+      typeof input === 'string'
+        ? input
+        : (input as any)?.toString?.() || '[unknown]';
+    console.warn(
+      `[fetchAuthed] no access token found in session or sb-* cookies for request to ${target}; request may 401`
+    );
   }
 
   const headers = new Headers(init.headers as HeadersInit | undefined);

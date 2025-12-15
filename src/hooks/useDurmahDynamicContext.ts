@@ -2,6 +2,7 @@ import { useState, useEffect, useContext } from 'react';
 import { getSupabaseClient } from '@/lib/supabase/client';
 import { AuthContext } from '@/lib/supabase/AuthContext';
 import { format } from 'date-fns';
+import { fetchAuthed } from '@/lib/fetchAuthed';
 
 export type DurmahTask = {
   id: string;
@@ -23,6 +24,7 @@ export function useDurmahDynamicContext() {
   const [upcomingTasks, setUpcomingTasks] = useState<DurmahTask[]>([]);
   const [todaysEvents, setTodaysEvents] = useState<DurmahEvent[]>([]);
   const [loading, setLoading] = useState(true);
+  const [authError, setAuthError] = useState(false);
 
   useEffect(() => {
     if (!user?.id) return;
@@ -59,18 +61,26 @@ export function useDurmahDynamicContext() {
         // or rely on the /api/calendar/day endpoint which aggregates everything.
         // Using the API is safer to get the unified view (timetable + personal).
         
-        const res = await fetch(`/api/calendar/day?date=${todayStr}`, { credentials: 'include' });
+        const res = await fetchAuthed(`/api/calendar/day?date=${todayStr}`);
+        if (res.status === 401 || res.status === 403) {
+          setAuthError(true);
+          setTodaysEvents([]);
+          setUpcomingTasks((prev) => prev ?? []);
+          setLoading(false);
+          return;
+        }
+
         if (res.ok) {
           const dayData = await res.json();
           // dayData.events is expected to be an array
           if (dayData.events && Array.isArray(dayData.events)) {
-             setTodaysEvents(dayData.events.map((e: any) => ({
-               id: e.id,
-               title: e.title,
-               start: e.start_time || e.start, // Handle potential variations
-               end: e.end_time || e.end,
-               type: e.type || 'personal'
-             })));
+            setTodaysEvents(dayData.events.map((e: any) => ({
+              id: e.id,
+              title: e.title,
+              start: e.start_time || e.start, // Handle potential variations
+              end: e.end_time || e.end,
+              type: e.type || 'personal'
+            })));
           }
         }
 
@@ -84,5 +94,5 @@ export function useDurmahDynamicContext() {
     fetchData();
   }, [user?.id]);
 
-  return { upcomingTasks, todaysEvents, loading };
+  return { upcomingTasks, todaysEvents, loading, authError };
 }

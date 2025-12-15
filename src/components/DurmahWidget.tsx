@@ -3,6 +3,7 @@ import { useAuth } from '@/lib/supabase/AuthContext';
 import { useDurmahRealtime } from "@/hooks/useDurmahRealtime";
 import { useDurmahDynamicContext } from "@/hooks/useDurmahDynamicContext";
 import { useDurmah } from "@/lib/durmah/context";
+import { fetchAuthed } from "@/lib/fetchAuthed";
 import { 
   buildDurmahSystemPrompt, 
   composeGreeting, 
@@ -97,7 +98,7 @@ export default function DurmahWidget() {
   
   // 1. Source Context
   const durmahCtx = useDurmah();
-  const { upcomingTasks, todaysEvents } = useDurmahDynamicContext();
+  const { upcomingTasks, todaysEvents, authError } = useDurmahDynamicContext();
   const { preset, updateVoice, availablePresets, voiceId } = useDurmahSettings();
   
   // Construct the unified context object
@@ -183,7 +184,15 @@ export default function DurmahWidget() {
 
     (async () => {
       try {
-        const res = await fetch("/api/durmah/memory", { credentials: "include" });
+        const res = await fetchAuthed("/api/durmah/memory");
+        if (res.status === 401 || res.status === 403) {
+          if (!cancelled && process.env.NODE_ENV !== "production") {
+            console.warn("[DurmahWidget] memory request unauthorized; likely expired session");
+          }
+          if (!cancelled) setReady(true);
+          return;
+        }
+
         if (res.ok) {
           const data = await res.json();
           if (!cancelled && data.ok && data.memory) {
@@ -210,6 +219,12 @@ export default function DurmahWidget() {
       setMessages([{ role: "durmah", text: greeting, ts: Date.now() }]);
     }
   }, [ready, preset, studentContext, memory, messages.length, upcomingTasks, todaysEvents]);
+
+  useEffect(() => {
+    if (authError) {
+      toast.error("Your session expired. Please sign in again.");
+    }
+  }, [authError]);
 
 
   // 3. Voice Hook
@@ -360,12 +375,15 @@ export default function DurmahWidget() {
       if (lastUser) {
         const topic = inferTopic(lastUser.text);
         try {
-          await fetch("/api/durmah/memory", {
+          const res = await fetchAuthed("/api/durmah/memory", {
             method: "POST",
-            credentials: "include",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ last_topic: topic, last_message: lastUser.text }),
           });
+          if (res.status === 401 || res.status === 403) {
+            toast.error("Session expired. Please sign in again to save Durmah updates.");
+            return;
+          }
           setMemory((prev) => ({ ...prev, last_topic: topic, last_message: lastUser.text }));
         } catch {
           // Non-blocking memory update failure
@@ -464,12 +482,17 @@ export default function DurmahWidget() {
     // Update memory in background
     void (async () => {
       try {
-        await fetch("/api/durmah/memory", {
+        const res = await fetchAuthed("/api/durmah/memory", {
           method: "POST",
-          credentials: "include",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ last_topic: inferredTopic, last_message: userText }),
         });
+        if (res.status === 401 || res.status === 403) {
+          if (process.env.NODE_ENV !== "production") {
+            console.warn("[DurmahWidget] memory update unauthorized during text send");
+          }
+          return;
+        }
         setMemory(prev => ({ ...prev, last_topic: inferredTopic, last_message: userText }));
       } catch {}
     })();
