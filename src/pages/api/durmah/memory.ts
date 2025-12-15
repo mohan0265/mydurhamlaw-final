@@ -1,15 +1,16 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { getUserOrThrow } from '@/lib/apiAuth';
+import { getApiAuth } from '@/lib/apiAuth';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  let user, supabase;
-  try {
-    const auth = await getUserOrThrow(req, res);
-    user = auth.user;
-    supabase = auth.supabase;
-  } catch {
-    return;
+  const auth = await getApiAuth(req);
+  if (auth.status === 'missing_token' || auth.status === 'invalid_token') {
+    return res.status(401).json({ ok: false, error: auth.status });
   }
+  if (auth.status === 'misconfigured') {
+    return res.status(500).json({ ok: false, error: 'server_misconfigured' });
+  }
+
+  const { user, supabase } = auth;
 
   if (req.method === 'GET') {
     try {

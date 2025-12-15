@@ -3,7 +3,7 @@ import { NextApiRequest, NextApiResponse } from 'next'
 import { DayDetail } from '@/types/calendar'
 import { format } from 'date-fns'
 import { DURHAM_LLB_2025_26, getDefaultPlanByStudentYear } from '@/data/durham/llb'
-import { getBearerToken, getUserOrThrow } from '@/lib/apiAuth'
+import { getApiAuth, getBearerToken } from '@/lib/apiAuth'
 
 // Force Node.js runtime (Netlify/Next)
 export const config = { runtime: 'nodejs' }
@@ -52,14 +52,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(200).json(emptyDayDetail(date as string))
     }
 
-    let user, supabase
-    try {
-      const auth = await getUserOrThrow(req, res)
-      user = auth.user
-      supabase = auth.supabase
-    } catch {
-      return
+    const auth = await getApiAuth(req)
+    if (auth.status === 'missing_token' || auth.status === 'invalid_token') {
+      return res.status(401).json({ error: auth.status })
     }
+    if (auth.status === 'misconfigured') {
+      return res.status(500).json({ error: 'server_misconfigured' })
+    }
+    const { user, supabase } = auth
 
     console.log(`[CalendarAPI] User found: ${user?.id || 'none'}`)
 

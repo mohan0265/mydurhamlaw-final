@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { createClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!;
@@ -33,20 +33,18 @@ function tryParseSupabaseAuthToken(raw: string | undefined | null): string | nul
 }
 
 export function getBearerToken(req: NextApiRequest): string | null {
-  const authHeader = req.headers.authorization || req.headers.Authorization;
+  const authHeader = req.headers.authorization || (req.headers as any)?.Authorization;
   if (typeof authHeader === 'string') {
     const match = authHeader.match(/^Bearer\s+(.+)$/i);
     if (match && match[1]) return match[1].trim();
   }
 
   const cookies = parseCookies(req);
-  // Supabase v2 sets sb-access-token; older helpers may set supabase-auth-token JSON
   if (cookies['sb-access-token']) return cookies['sb-access-token'];
   if (cookies['supabase-auth-token']) {
     const token = tryParseSupabaseAuthToken(cookies['supabase-auth-token']);
     if (token) return token;
   }
-  // Supabase hosted cookies (sb-<project>-auth-token) contain JSON
   const sbKeys = Object.keys(cookies).filter((k) => k.startsWith('sb-'));
   for (const key of sbKeys) {
     const token = tryParseSupabaseAuthToken(cookies[key]);
@@ -55,24 +53,28 @@ export function getBearerToken(req: NextApiRequest): string | null {
   return null;
 }
 
+type ApiAuthResult =
+  | { status: 'ok'; user: any; supabase: SupabaseClient }
+  | { status: 'missing_token' }
+  | { status: 'invalid_token' }
+  | { status: 'misconfigured' };
+
 function logMissingToken(reason: string) {
   if (process.env.NODE_ENV !== 'production') {
     console.warn(`[apiAuth] missing token (${reason})`);
   }
 }
 
-export async function getUserOrThrow(req: NextApiRequest, res?: NextApiResponse) {
+export async function getApiAuth(req: NextApiRequest): Promise<ApiAuthResult> {
   const token = getBearerToken(req);
   if (!token) {
     logMissingToken('no Authorization header or auth cookies');
-    if (res && !res.headersSent) res.status(401).json({ error: 'unauthorized' });
-    throw new Error('unauthorized');
+    return { status: 'missing_token' };
   }
 
   if (!SUPABASE_URL || !SERVICE_KEY) {
     console.error('[apiAuth] missing Supabase env vars');
-    if (res && !res.headersSent) res.status(500).json({ error: 'server_misconfigured' });
-    throw new Error('server_misconfigured');
+    return { status: 'misconfigured' };
   }
 
   const supabase = createClient(SUPABASE_URL, SERVICE_KEY, {
@@ -82,9 +84,22 @@ export async function getUserOrThrow(req: NextApiRequest, res?: NextApiResponse)
   const { data, error } = await supabase.auth.getUser(token);
   if (error || !data?.user) {
     logMissingToken(error?.message || 'getUser failed');
-    if (res && !res.headersSent) res.status(401).json({ error: 'unauthorized' });
-    throw new Error('unauthorized');
+    return { status: 'invalid_token' };
   }
 
-  return { user: data.user, supabase };
+  return { status: 'ok', user: data.user, supabase };
+}
+
+export async function getUserOrThrow(req: NextApiRequest, res?: NextApiResponse) {
+  const result = await getApiAuth(req);
+  if (result.status === 'ok') return result;
+
+  if (res && !res.headersSent) {
+    if (result.status === 'misconfigured') {
+      res.status(500).json({ error: 'server_misconfigured' });
+    } else {
+      res.status(401).json({ error: 'unauthorized' });
+    }
+  }
+  throw new Error(result.status);
 }

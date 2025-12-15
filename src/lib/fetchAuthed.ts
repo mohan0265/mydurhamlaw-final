@@ -1,5 +1,16 @@
 import { getSupabaseClient } from '@/lib/supabase/client';
 
+export class AuthMissingError extends Error {
+  constructor() {
+    super('missing_token');
+    this.name = 'AuthMissingError';
+  }
+}
+
+export type FetchAuthedOptions = {
+  requireAuth?: boolean;
+};
+
 /**
  * Resolve an access token from Supabase auth or sb-* cookies (client-side).
  */
@@ -57,17 +68,27 @@ export async function getAccessTokenFromClient(): Promise<string | undefined> {
   return token;
 }
 
-export async function fetchAuthed(input: RequestInfo | URL, init: RequestInit = {}) {
+export async function fetchAuthed(
+  input: RequestInfo | URL,
+  init: RequestInit = {},
+  options: FetchAuthedOptions = {}
+) {
   const token = await getAccessTokenFromClient();
 
-  if (!token && process.env.NODE_ENV !== 'production') {
+  if (process.env.NODE_ENV !== 'production') {
     const target =
       typeof input === 'string'
         ? input
         : (input as any)?.toString?.() || '[unknown]';
-    console.warn(
-      `[fetchAuthed] no access token found in session or sb-* cookies for request to ${target}; request may 401`
-    );
+    console.info('[fetchAuthed]', target, { hasToken: !!token });
+  }
+
+  if (!token && options.requireAuth !== false) {
+    // Do not fire network call; return synthetic 401 response
+    return new Response(JSON.stringify({ error: 'missing_token' }), {
+      status: 401,
+      headers: { 'Content-Type': 'application/json' },
+    });
   }
 
   const headers = new Headers(init.headers as HeadersInit | undefined);
@@ -79,8 +100,8 @@ export async function fetchAuthed(input: RequestInfo | URL, init: RequestInit = 
   }
 
   return fetch(input, {
-    credentials: 'same-origin',
     ...init,
+    credentials: 'include',
     headers,
   });
 }
