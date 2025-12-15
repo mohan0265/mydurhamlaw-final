@@ -19,6 +19,17 @@ export async function fetchAuthed(input: RequestInfo | URL, init: RequestInit = 
     }
   }
 
+  // Cookie fallback (e.g., sb-access-token) in case supabase client state lags
+  if (!token && typeof document !== 'undefined') {
+    const cookieToken = document.cookie
+      .split(';')
+      .map(c => c.trim())
+      .find(c => c.startsWith('sb-access-token='));
+    if (cookieToken) {
+      token = decodeURIComponent(cookieToken.split('=')[1] || '');
+    }
+  }
+
   if (!token && process.env.NODE_ENV !== 'production') {
     console.warn('[fetchAuthed] missing access token; request will likely 401');
   }
