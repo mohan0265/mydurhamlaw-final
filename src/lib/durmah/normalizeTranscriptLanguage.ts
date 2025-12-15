@@ -1,7 +1,9 @@
 const ASCII_LETTERS = /[A-Za-z]/g;
+const MALAY_MARKERS = /\b(saya|anda|akan|dengan|yang|tidak|boleh|kerana|jadi|berapa|terima kasih)\b/i;
 
 function isLikelyNonEnglish(text: string): boolean {
   if (!text) return false;
+  if (MALAY_MARKERS.test(text)) return true;
   const letters = text.match(ASCII_LETTERS)?.length || 0;
   return letters / Math.max(text.length, 1) < 0.4;
 }

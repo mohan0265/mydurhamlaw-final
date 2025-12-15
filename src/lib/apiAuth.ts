@@ -39,17 +39,50 @@ export function getBearerToken(req: NextApiRequest): string | null {
     if (match && match[1]) return match[1].trim();
   }
 
+  const xHeader = req.headers['x-mdl-access-token'];
+  if (typeof xHeader === 'string' && xHeader.trim()) {
+    return xHeader.trim();
+  }
+
   const cookies = parseCookies(req);
-  if (cookies['sb-access-token']) return cookies['sb-access-token'];
+  const cookieKeys = Object.keys(cookies);
+
+  // Handle chunked Supabase cookies: sb-<ref>-auth-token.0, .1, ...
+  const chunkGroups = cookieKeys
+    .filter((k) => /\.?\d+$/.test(k) && k.includes('auth-token'))
+    .reduce<Record<string, string[]>>((acc, key) => {
+      const base = key.replace(/\.\d+$/, '');
+      if (!acc[base]) acc[base] = [];
+      acc[base].push(key);
+      return acc;
+    }, {});
+
+  for (const base in chunkGroups) {
+    const parts = chunkGroups[base]
+      .sort((a, b) => {
+        const ai = Number(a.split('.').pop());
+        const bi = Number(b.split('.').pop());
+        return ai - bi;
+      })
+      .map((k) => cookies[k]);
+    const combined = decodeURIComponent(parts.join(''));
+    const token = tryParseSupabaseAuthToken(combined);
+    if (token) return token;
+  }
+
+  // Non-chunked Supabase JSON cookie (sb-<ref>-auth-token)
+  const sbJson = cookieKeys.find((k) => k.includes('auth-token'));
+  if (sbJson) {
+    const token = tryParseSupabaseAuthToken(cookies[sbJson]);
+    if (token) return token;
+  }
+
+  // Legacy supabase-auth-token
   if (cookies['supabase-auth-token']) {
     const token = tryParseSupabaseAuthToken(cookies['supabase-auth-token']);
     if (token) return token;
   }
-  const sbKeys = Object.keys(cookies).filter((k) => k.startsWith('sb-'));
-  for (const key of sbKeys) {
-    const token = tryParseSupabaseAuthToken(cookies[key]);
-    if (token) return token;
-  }
+
   return null;
 }
 

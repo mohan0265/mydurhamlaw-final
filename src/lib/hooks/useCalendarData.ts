@@ -2,7 +2,8 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getSupabaseClient } from '@/lib/supabase/client';
-import { fetchAuthed, getAccessTokenFromClient } from '@/lib/fetchAuthed';
+import { fetchAuthed } from '@/lib/fetchAuthed';
+import { waitForAccessToken } from '@/lib/auth/waitForAccessToken';
 
 import {
   CalendarFilter,
@@ -38,7 +39,7 @@ export const useCalendarData = ({
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const token = await getAccessTokenFromClient();
+      const token = await waitForAccessToken();
       if (!cancelled) {
         setAuthReady(!!token);
       }

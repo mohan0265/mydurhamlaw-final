@@ -2,7 +2,8 @@ import { useState, useEffect, useContext } from 'react';
 import { getSupabaseClient } from '@/lib/supabase/client';
 import { AuthContext } from '@/lib/supabase/AuthContext';
 import { format } from 'date-fns';
-import { fetchAuthed, getAccessTokenFromClient } from '@/lib/fetchAuthed';
+import { fetchAuthed } from '@/lib/fetchAuthed';
+import { waitForAccessToken } from '@/lib/auth/waitForAccessToken';
 
 export type DurmahTask = {
   id: string;
@@ -35,7 +36,7 @@ export function useDurmahDynamicContext() {
       if (!supabase) return;
 
       try {
-        const token = await getAccessTokenFromClient();
+        const token = await waitForAccessToken();
         if (!token) {
           setAuthError(true);
           setTodaysEvents([]);

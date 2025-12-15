@@ -3,7 +3,9 @@ import { useAuth } from '@/lib/supabase/AuthContext';
 import { useDurmahRealtime } from "@/hooks/useDurmahRealtime";
 import { useDurmahDynamicContext } from "@/hooks/useDurmahDynamicContext";
 import { useDurmah } from "@/lib/durmah/context";
-import { fetchAuthed, getAccessTokenFromClient } from "@/lib/fetchAuthed";
+import { fetchAuthed } from "@/lib/fetchAuthed";
+import { waitForAccessToken } from "@/lib/auth/waitForAccessToken";
+import { normalizeTranscriptLanguage } from "@/lib/durmah/normalizeTranscriptLanguage";
 import { 
   buildDurmahSystemPrompt, 
   composeGreeting, 
@@ -184,20 +186,14 @@ export default function DurmahWidget() {
 
     (async () => {
       try {
-        const token = await getAccessTokenFromClient();
+        const token = await waitForAccessToken();
         if (!token) {
-          if (!cancelled && process.env.NODE_ENV !== "production") {
-            console.warn("[DurmahWidget] memory request skipped; no access token yet");
-          }
           if (!cancelled) setReady(true);
           return;
         }
 
         const res = await fetchAuthed("/api/durmah/memory");
         if (res.status === 401 || res.status === 403) {
-          if (!cancelled && process.env.NODE_ENV !== "production") {
-            console.warn("[DurmahWidget] memory request unauthorized; likely expired session");
-          }
           if (!cancelled) setReady(true);
           return;
         }
@@ -384,7 +380,7 @@ export default function DurmahWidget() {
       if (lastUser) {
         const topic = inferTopic(lastUser.text);
         try {
-          const token = await getAccessTokenFromClient();
+          const token = await waitForAccessToken();
           if (!token) {
             toast.error("Session expired. Please sign in again to save Durmah updates.");
             return;
@@ -413,11 +409,13 @@ export default function DurmahWidget() {
           Math.round((sessionEnd.getTime() - sessionStart.getTime()) / 1000)
         );
         const sessionIdentifier = voiceSessionId ?? createVoiceSessionId();
-        const normalizedTranscript = transcriptTurns.map((turn) => ({
-          role: turn.role === "you" ? "user" : "durmah",
-          text: turn.text,
-          timestamp: turn.ts,
-        }));
+        const normalizedTranscript = await Promise.all(
+          transcriptTurns.map(async (turn) => ({
+            role: turn.role === "you" ? "user" : "durmah",
+            text: await normalizeTranscriptLanguage(turn.text),
+            timestamp: turn.ts,
+          }))
+        );
         const firstUserTurn = transcriptTurns.find((turn) => turn.role === "you");
         const topic =
           firstUserTurn && firstUserTurn.text
@@ -497,11 +495,8 @@ export default function DurmahWidget() {
     // Update memory in background
     void (async () => {
       try {
-        const token = await getAccessTokenFromClient();
+        const token = await waitForAccessToken();
         if (!token) {
-          if (process.env.NODE_ENV !== "production") {
-            console.warn("[DurmahWidget] memory update skipped; no token");
-          }
           return;
         }
 
