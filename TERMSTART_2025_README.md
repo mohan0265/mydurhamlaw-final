@@ -140,7 +140,7 @@ SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 
 # Analytics
-PLAUSIBLE_DOMAIN=mydurhamlaw-final.netlify.app
+PLAUSIBLE_DOMAIN=mydurhamlaw.com
 
 # Netlify Deployment  
 NETLIFY_AUTH_TOKEN=nfp_k3g2G5iKCUjXWGRE6dWmvqVAdMp7djTv5ece

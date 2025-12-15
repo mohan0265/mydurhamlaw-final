@@ -18,7 +18,15 @@ class Telemetry {
   private enabled: boolean;
 
   constructor(options: TelemetryOptions = {}) {
-    this.domain = options.domain || 'mydurhamlaw-final.netlify.app';
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || '';
+    const parsedHost = (() => {
+      try {
+        return appUrl ? new URL(appUrl).host : '';
+      } catch {
+        return '';
+      }
+    })();
+    this.domain = options.domain || parsedHost || 'mydurhamlaw.com';
     this.apiHost = options.apiHost || 'https://plausible.io';
     this.enabled = options.enabled !== false && typeof window !== 'undefined';
   }

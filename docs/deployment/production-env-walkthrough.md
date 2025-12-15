@@ -4,12 +4,12 @@
 This document outlines the environment variables used in production on Netlify and the process for triggering deployments.
 
 ## Environment Variables
-The following environment variables are configured in Netlify for the production site (`https://mydurhamlaw-final.netlify.app`).
+The following environment variables are configured in Netlify for the production site (`https://mydurhamlaw.com`).
 
 **Source of Truth:** Netlify Environment Variables UI (Site settings > Environment variables).
 
 ### Core Configuration
-- `NEXT_PUBLIC_APP_URL`: `https://mydurhamlaw-final.netlify.app`
+- `NEXT_PUBLIC_APP_URL`: `https://mydurhamlaw.com`
 - `NEXT_PUBLIC_APP_NAME`: `MyDurhamLaw AI Study App`
 - `NODE_ENV`: `production`
 - `NEXT_TELEMETRY_DISABLED`: `1`

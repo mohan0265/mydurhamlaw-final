@@ -93,7 +93,7 @@ export const handler: Handler = async (event: HandlerEvent, context: HandlerCont
           }
 
           // Generate podcast via internal API call
-          const apiResponse = await fetch(`${process.env.URL || 'http://localhost:3000'}/api/podcast/generate`, {
+          const apiResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || process.env.URL || 'http://localhost:3000'}/api/podcast/generate`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',

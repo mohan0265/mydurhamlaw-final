@@ -31,11 +31,12 @@ export const handler: Handler = async (event) => {
     // IMPORTANT: USE YOUR *PRICE* ID HERE (not product id)
     const priceId = process.env.NEXT_PUBLIC_STRIPE_PRICE_ID as string;
 
-    // Your deployed site base (Netlify injects URL in request headers on prod; fallback local)
+    // Your deployed site base (prefer env, then headers, then local)
     const siteURL =
-      (event.headers['x-forwarded-proto'] && event.headers.host)
+      process.env.NEXT_PUBLIC_APP_URL ||
+      ((event.headers['x-forwarded-proto'] && event.headers.host)
         ? `${event.headers['x-forwarded-proto']}://${event.headers.host}`
-        : 'http://localhost:8888';
+        : 'http://localhost:8888');
 
     // Stripe Checkout session with trial via free period on the Price (or pass trial_period_days)
     const session = await stripe.checkout.sessions.create({
