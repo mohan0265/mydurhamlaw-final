@@ -76,8 +76,8 @@ export async function getUserOrThrow(req: NextApiRequest, res?: NextApiResponse)
   const { data, error } = await supabase.auth.getUser(token);
   if (error || !data?.user) {
     logMissingToken(error?.message || 'getUser failed');
-    if (res && !res.headersSent) res.status(401).json({ error: 'unauthorized' });
-    throw new Error('unauthorized');
+    if (res && !res.headersSent) res.status(403).json({ error: 'forbidden' });
+    throw new Error('forbidden');
   }
 
   return { user: data.user, supabase };

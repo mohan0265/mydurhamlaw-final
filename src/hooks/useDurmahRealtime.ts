@@ -2,7 +2,9 @@ import { useState, useRef, useCallback, useEffect } from "react";
 
 const REALTIME_DEBUG =
   process.env.NEXT_PUBLIC_DURMAH_REALTIME_DEBUG === "true";
-const TRANSCRIPTION_MODEL = "whisper-1";
+const TRANSCRIPTION_MODEL = "gpt-4o-mini-transcribe";
+const ENGLISH_SYSTEM_INSTRUCTION =
+  "You are Durmah, an English-only legal mentor. Always transcribe and respond in English suitable for a Durham law student, even if the user speaks another language. Do not output Malay or any other language.";
 
 export type VoiceTurn = { speaker: "user" | "durmah"; text: string };
 
@@ -453,9 +455,10 @@ export function useDurmahRealtime({
             JSON.stringify({
               type: "session.update",
               session: {
-                instructions: systemPrompt,
+                instructions: `${ENGLISH_SYSTEM_INSTRUCTION}\n\n${systemPrompt}`,
                 input_audio_transcription: {
                   model: TRANSCRIPTION_MODEL,
+                  language: "en",
                 },
               },
             })

@@ -7,6 +7,12 @@ export async function fetchAuthed(input: RequestInfo | URL, init: RequestInit = 
   try {
     const { data } = await supabase.auth.getSession();
     token = data.session?.access_token ?? undefined;
+    if (!token) {
+      const { data: userData, error } = await supabase.auth.getUser();
+      if (!error && userData.session?.access_token) {
+        token = userData.session.access_token;
+      }
+    }
   } catch (err) {
     if (process.env.NODE_ENV !== 'production') {
       console.warn('[fetchAuthed] token lookup failed:', err);

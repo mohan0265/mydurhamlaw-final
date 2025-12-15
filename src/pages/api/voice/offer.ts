@@ -5,7 +5,9 @@ const REALTIME_MODEL =
   process.env.OPENAI_REALTIME_MODEL ||
   "gpt-4o-realtime-preview-2024-12-17";
 const TRANSCRIPTION_MODEL =
-  process.env.OPENAI_TRANSCRIPTION_MODEL || "whisper-1";
+  process.env.OPENAI_TRANSCRIPTION_MODEL || "gpt-4o-mini-transcribe";
+const ENGLISH_SYSTEM_INSTRUCTION =
+  "You are Durmah, an English-only legal mentor. Always transcribe and respond in English suitable for a Durham law student, even if the user speaks another language. Do not output Malay or any other language.";
 
 export const config = {
   api: {
@@ -71,8 +73,10 @@ export default async function handler(
 
     const sessionPayload: Record<string, unknown> = {
       model: REALTIME_MODEL,
+      instructions: ENGLISH_SYSTEM_INSTRUCTION,
       input_audio_transcription: {
         model: TRANSCRIPTION_MODEL,
+        language: "en",
       },
     };
     if (requestedVoice && typeof requestedVoice === "string") {
