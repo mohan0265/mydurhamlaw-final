@@ -46,6 +46,12 @@ export function getBearerToken(req: NextApiRequest): string | null {
     const token = tryParseSupabaseAuthToken(cookies['supabase-auth-token']);
     if (token) return token;
   }
+  // Supabase hosted cookie (sb-<project>-auth-token) contains JSON
+  const fallbackKey = Object.keys(cookies).find((k) => k.startsWith('sb-') && k.endsWith('-auth-token'));
+  if (fallbackKey) {
+    const token = tryParseSupabaseAuthToken(cookies[fallbackKey]);
+    if (token) return token;
+  }
   return null;
 }
 

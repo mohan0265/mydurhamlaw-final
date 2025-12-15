@@ -21,12 +21,24 @@ export async function fetchAuthed(input: RequestInfo | URL, init: RequestInit = 
 
   // Cookie fallback (e.g., sb-access-token) in case supabase client state lags
   if (!token && typeof document !== 'undefined') {
-    const cookieToken = document.cookie
-      .split(';')
-      .map(c => c.trim())
-      .find(c => c.startsWith('sb-access-token='));
-    if (cookieToken) {
-      token = decodeURIComponent(cookieToken.split('=')[1] || '');
+    const cookieParts = document.cookie.split(';').map((c) => c.trim());
+    const direct = cookieParts.find((c) => c.startsWith('sb-access-token='));
+    if (direct) token = decodeURIComponent(direct.split('=')[1] || '');
+    if (!token) {
+      const jsonCookie = cookieParts.find((c) => c.startsWith('sb-') && c.includes('-auth-token='));
+      if (jsonCookie) {
+        const raw = decodeURIComponent(jsonCookie.split('=')[1] || '');
+        try {
+          const parsed = JSON.parse(raw);
+          token =
+            parsed?.access_token ||
+            parsed?.currentSession?.access_token ||
+            parsed?.currentSession?.accessToken ||
+            undefined;
+        } catch {
+          // ignore
+        }
+      }
     }
   }
 
