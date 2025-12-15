@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { getSupabaseClient } from '@/lib/supabase/client';
-import { authedFetch } from '@/lib/api/authedFetch';
+import { fetchAuthed } from '@/lib/fetchAuthed';
 
 interface StudentProfile {
   display_name?: string;
@@ -36,8 +36,8 @@ export default function LovedOneDashboard() {
     try {
       setLoading(true);
       const [connectionsRes, presenceRes] = await Promise.all([
-        authedFetch('/api/awy/connections'),
-        authedFetch('/api/awy/presence')
+        fetchAuthed('/api/awy/connections'),
+        fetchAuthed('/api/awy/presence')
       ]);
 
       const connectionsData = await connectionsRes.json();
@@ -54,7 +54,7 @@ export default function LovedOneDashboard() {
 
   const loadPresence = async () => {
     try {
-      const res = await authedFetch('/api/awy/presence');
+      const res = await fetchAuthed('/api/awy/presence');
       const data = await res.json();
       setPresence(data || {});
     } catch (error) {
@@ -64,7 +64,7 @@ export default function LovedOneDashboard() {
 
   const startCall = async (studentId: string) => {
     try {
-      const res = await authedFetch('/api/awy/calls', {
+      const res = await fetchAuthed('/api/awy/calls', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ targetUserId: studentId })

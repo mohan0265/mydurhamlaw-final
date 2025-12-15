@@ -5,6 +5,7 @@ import { Heart, Video, X, Loader2, Lock, ArrowRight, User, Plus, Send, Trash } f
 import toast from 'react-hot-toast'
 import Link from 'next/link'
 import { AuthContext } from '@/lib/supabase/AuthContext'
+import { fetchAuthed } from '@/lib/fetchAuthed'
 
 interface Connection {
   id: string // loved_one_id or student_id
@@ -66,7 +67,7 @@ export default function AWYWidget() {
       if (!ids.length) return new Map<string, any>()
       const { data, error } = await contextSupabase
         .from('awy_presence')
-        .select('user_id,is_available,status,last_seen_at')
+        .select('user_id,is_available,status,last_seen_at,last_seen')
         .in('user_id', ids)
       if (error) throw error
       return new Map((data || []).map((row: any) => [row.user_id, row]))
@@ -75,44 +76,48 @@ export default function AWYWidget() {
     const loadStudentView = async () => {
       const { data, error } = await contextSupabase
         .from('awy_connections')
-        .select('id,loved_one_id,nickname,relationship,relationship_label,status,loved_email')
-        .eq('student_id', userId)
-        .in('status', ['active','pending','invited'])
+        .select('id,student_id,student_user_id,loved_one_id,loved_user_id,nickname,relationship,relationship_label,status,loved_email,email,invite_token,invited_at,accepted_at')
+        .or(`student_id.eq.${userId},student_user_id.eq.${userId}`)
+        .in('status', ['active','accepted','pending','invited'])
       if (error) throw error
 
+      const activeStatuses = ['active', 'accepted']
+
       const activeIds = (data || [])
-        .filter((conn: any) => conn.status === 'active')
-        .map((conn: any) => conn.loved_one_id)
+        .filter((conn: any) => activeStatuses.includes((conn.status || '').toLowerCase()))
+        .map((conn: any) => conn.loved_one_id || conn.loved_user_id)
         .filter((id: string | null): id is string => Boolean(id))
 
       const presenceMap = await buildPresenceMap(activeIds)
 
       const activeList: Connection[] = (data || [])
-        .filter((conn: any) => conn.status === 'active')
+        .filter((conn: any) => activeStatuses.includes((conn.status || '').toLowerCase()))
         .map((conn: any) => {
-          if (!conn.loved_one_id) return null
-          const presence = presenceMap.get(conn.loved_one_id)
+          const lovedId = conn.loved_one_id || conn.loved_user_id
+          if (!lovedId) return null
+          const presence = presenceMap.get(lovedId)
+          const status = (conn.status || '').toLowerCase()
           return {
-            id: conn.loved_one_id,
+            id: lovedId,
             displayName: conn.nickname || conn.relationship || conn.relationship_label || 'Loved One',
             isAvailable: Boolean(presence?.is_available),
-            status: presence?.status || 'offline',
+            status: presence?.status || (status === 'accepted' || status === 'active' ? 'online' : 'offline'),
             role: 'loved_one',
-            email: conn.loved_email,
-            lastSeenAt: presence?.last_seen_at || null
+            email: conn.loved_email || conn.email,
+            lastSeenAt: presence?.last_seen_at || presence?.last_seen || null
           }
         })
         .filter(Boolean) as Connection[]
 
       const pendingList: Connection[] = (data || [])
-        .filter((conn: any) => conn.status !== 'active')
+        .filter((conn: any) => !activeStatuses.includes((conn.status || '').toLowerCase()))
         .map((conn: any) => ({
           id: conn.id,
           displayName: conn.nickname || conn.relationship || conn.relationship_label || 'Loved One',
           isAvailable: false,
           status: conn.status,
           role: 'loved_one',
-          email: conn.loved_email
+          email: conn.loved_email || conn.email
         }))
 
       setConnections(activeList)
@@ -122,28 +127,29 @@ export default function AWYWidget() {
     const loadLovedOneView = async () => {
       const { data, error } = await contextSupabase
         .from('awy_connections')
-        .select('student_id,student:profiles!student_id(display_name),status')
-        .eq('loved_one_id', userId)
-        .eq('status', 'active')
+        .select('student_id,student_user_id,student:profiles!student_id(display_name),status')
+        .or(`loved_one_id.eq.${userId},loved_user_id.eq.${userId}`)
+        .in('status', ['active','accepted'])
       if (error) throw error
 
       const studentIds = (data || [])
-        .map((conn: any) => conn.student_id)
+        .map((conn: any) => conn.student_id || conn.student_user_id)
         .filter((id: string | null): id is string => Boolean(id))
 
       const presenceMap = await buildPresenceMap(studentIds)
 
       const list: Connection[] = (data || [])
         .map((conn: any) => {
-          if (!conn.student_id) return null
-          const presence = presenceMap.get(conn.student_id)
+          const studentId = conn.student_id || conn.student_user_id
+          if (!studentId) return null
+          const presence = presenceMap.get(studentId)
           return {
-            id: conn.student_id,
+            id: studentId,
             displayName: conn.student?.display_name || 'Student',
             isAvailable: Boolean(presence?.is_available),
             status: presence?.status || 'offline',
             role: 'student',
-            lastSeenAt: presence?.last_seen_at || null
+            lastSeenAt: presence?.last_seen_at || presence?.last_seen || null
           }
         })
         .filter(Boolean) as Connection[]
@@ -311,7 +317,7 @@ export default function AWYWidget() {
     }
     setInviteSending(true)
     try {
-      const res = await fetch('/api/awy/add-loved-one', {
+      const res = await fetchAuthed('/api/awy/add-loved-one', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

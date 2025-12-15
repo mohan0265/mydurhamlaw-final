@@ -1,13 +1,15 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { requireUser, softOk } from '@/lib/server/auth';
+import { getUserOrThrow } from '@/lib/apiAuth';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  const got = await requireUser(req, res);
-  if (!got || 'error' in got) {
-    return res.status(401).json({ ok: false, error: 'unauthorized', details: (got as any)?.error });
+  let user, supabase;
+  try {
+    const auth = await getUserOrThrow(req, res);
+    user = auth.user;
+    supabase = auth.supabase;
+  } catch {
+    return;
   }
-
-  const { user, supabase } = got;
 
   if (req.method === 'GET') {
     try {
@@ -19,13 +21,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       if (error && error.code !== 'PGRST116') {
         console.debug('[durmah] memory GET soft-fail:', error);
-        return softOk(res, { ok: true, memory: null });
+        return res.status(200).json({ ok: true, memory: null });
       }
 
-      return softOk(res, { ok: true, memory: data ?? null });
+      return res.status(200).json({ ok: true, memory: data ?? null });
     } catch (e) {
       console.debug('[durmah] memory GET exception:', e);
-      return softOk(res, { ok: true, memory: null });
+      return res.status(200).json({ ok: true, memory: null });
     }
   }
 
@@ -52,13 +54,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       if (error) {
         console.debug('[durmah] memory POST soft-fail:', error);
-        return softOk(res, { ok: true });
+        return res.status(200).json({ ok: true });
       }
 
-      return softOk(res, { ok: true });
+      return res.status(200).json({ ok: true });
     } catch (e) {
       console.debug('[durmah] memory POST exception:', e);
-      return softOk(res, { ok: true });
+      return res.status(200).json({ ok: true });
     }
   }
 

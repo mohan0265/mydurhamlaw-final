@@ -1,9 +1,9 @@
 // src/pages/api/calendar/day.ts
 import { NextApiRequest, NextApiResponse } from 'next'
-import { getServerSupabase, getServerUser } from '@/lib/api/serverAuth'
 import { DayDetail } from '@/types/calendar'
 import { format } from 'date-fns'
 import { DURHAM_LLB_2025_26, getDefaultPlanByStudentYear } from '@/data/durham/llb'
+import { getBearerToken, getUserOrThrow } from '@/lib/apiAuth'
 
 // Force Node.js runtime (Netlify/Next)
 export const config = { runtime: 'nodejs' }
@@ -46,22 +46,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   try {
     console.log(`[CalendarAPI] Request for date=${date}. Checking auth...`)
 
-    // Use the shared helper which tries cookies first, then falls back to Authorization header
-    const { user } = await getServerUser(req, res)
-
-    console.log(`[CalendarAPI] User found: ${user?.id || 'none'}`)
-
-    // DEMO MODE: if unauthenticated + demo enabled, return typed empty day
-    if (!user && isDemoMode) {
+    const token = getBearerToken(req)
+    if (!token && isDemoMode) {
       console.log('[CalendarAPI] Returning demo mode data (unauthenticated)')
       return res.status(200).json(emptyDayDetail(date as string))
     }
 
-    // Otherwise require auth
-    if (!user) {
-      console.warn('[CalendarAPI] Returning 401 Unauthorized - No user found via cookies or header')
-      return res.status(401).json({ message: 'Unauthorized' })
+    let user, supabase
+    try {
+      const auth = await getUserOrThrow(req, res)
+      user = auth.user
+      supabase = auth.supabase
+    } catch {
+      return
     }
+
+    console.log(`[CalendarAPI] User found: ${user?.id || 'none'}`)
 
     // ----- Mock real data (typed) -----
     const d = new Date(date)
@@ -109,7 +109,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     )
 
     // Fetch timetable events
-    const supabase = getServerSupabase(req, res)
     const { data: dbTimetableEvents } = await supabase
       .from('timetable_events')
       .select('*')

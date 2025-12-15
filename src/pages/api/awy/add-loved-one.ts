@@ -1,166 +1,143 @@
 import { NextApiRequest, NextApiResponse } from 'next'
 import { randomUUID } from 'crypto'
-import { createPagesServerClient } from '@supabase/auth-helpers-nextjs'
-import { getSupabaseClient } from '@/lib/supabase/client'
 import { Resend } from 'resend'
+import { getUserOrThrow } from '@/lib/apiAuth'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
+    res.setHeader('Allow', ['POST'])
     return res.status(405).json({ error: 'Method not allowed' })
   }
 
-  // 1. Authenticate the student
-  const supabase = createPagesServerClient({ req, res })
-  const {
-    data: { session },
-  } = await supabase.auth.getSession()
-
-  if (!session) {
-    return res.status(401).json({ error: 'Unauthorized' })
+  let user, supabase
+  try {
+    const auth = await getUserOrThrow(req, res)
+    user = auth.user
+    supabase = auth.supabase
+  } catch {
+    return
   }
+  const { email, relationship, nickname } = req.body || {}
+  const normalizedEmail = String(email || '').trim().toLowerCase()
+  const relationshipLabel = String(relationship || '').trim()
+  const nicknameLabel = String(nickname || '').trim()
 
-  const { email, relationship, nickname } = req.body
-
-  if (!email || !relationship) {
+  if (!normalizedEmail || !relationshipLabel) {
     return res.status(400).json({ error: 'Email and relationship are required' })
   }
 
   try {
-    // 2. Check limit (max 3)
+    // Enforce a small cap to prevent spam
     const { count } = await supabase
       .from('awy_connections')
       .select('*', { count: 'exact', head: true })
-      .eq('student_id', session.user.id)
+      .or(`student_id.eq.${user!.id},student_user_id.eq.${user!.id}`)
 
-    if (count && count >= 3) {
+    if ((count ?? 0) >= 3) {
       return res.status(400).json({ error: 'Maximum 3 loved ones allowed' })
     }
 
-    // 3. Check if already exists
-    const { data: existing } = await supabase
+    // Existing connection?
+    const { data: existing, error: existingError } = await supabase
       .from('awy_connections')
-      .select('id,invite_token')
-      .eq('student_id', session.user.id)
-      .ilike('loved_email', email)
-      .single()
+      .select('id,invite_token,status,loved_user_id,loved_one_id,accepted_at')
+      .eq('loved_email', normalizedEmail)
+      .or(`student_id.eq.${user!.id},student_user_id.eq.${user!.id}`)
+      .maybeSingle()
 
-    if (existing) {
-      // Already pending/connected: resend invite email only
-      try {
-        const inviteToken = existing?.invite_token || existing?.id || ''
-        const { data: linkData, error: linkError } = await getSupabaseClient().auth.admin.generateLink({
-          type: 'magiclink',
-          email: email,
-          options: {
-            redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/awy/invite?token=${inviteToken}`,
-            data: { role: 'loved_one' }
-          }
-        })
-        if (linkError) throw linkError
-        await resend.emails.send({
-          from: process.env.EMAIL_FROM || 'MyDurhamLaw <onboarding@resend.dev>',
-          to: email,
-          subject: '[MyDurhamLaw] Your AWY invite',
-          html: `
-            <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
-              <h1 style="color: #db2777;">Always With You</h1>
-              <p>You still have a pending invite. Click below to accept.</p>
-              <div style="margin: 30px 0;">
-                <a href="${linkData.properties.action_link}" style="background-color: #db2777; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">
-                  Open MyDurhamLaw
-                </a>
-              </div>
-              <p style="color: #666; font-size: 14px;">If the button doesn't work, copy this link: ${linkData.properties.action_link}</p>
-            </div>
-          `
-        })
-        return res.status(200).json({ ok: true, invited: true, emailSent: true, message: 'Invite resent' })
-      } catch (e: any) {
-        return res.status(400).json({ error: e?.message || 'Could not resend invite' })
-      }
+    if (existingError) {
+      console.warn('[awy/add-loved-one] lookup issue:', existingError.message)
     }
 
-    // 4. Create Connection Record
-    const adminSupabase = getSupabaseClient()
-    
-    // Check if user exists to link immediately
-    const { data: { users } } = await adminSupabase.auth.admin.listUsers()
-    const existingUser = users.find(u => u.email?.toLowerCase() === email.toLowerCase())
+    if (existing && ['active', 'accepted'].includes((existing.status || '').toLowerCase())) {
+      return res.status(200).json({ ok: true, invited: false, alreadyConnected: true })
+    }
 
-    const inviteToken = randomUUID()
+    // Attempt to link to an existing user by email
+    let lovedUserId: string | null = existing?.loved_user_id || existing?.loved_one_id || null
+    try {
+      const { data } = await supabase.auth.admin.listUsers()
+      const found = data?.users?.find(u => u.email?.toLowerCase() === normalizedEmail)
+      if (found?.id) lovedUserId = found.id
+    } catch (lookupError: any) {
+      console.warn('[awy/add-loved-one] user lookup skipped:', lookupError?.message || lookupError)
+    }
 
-    const { error: insertError } = await supabase
+    const inviteToken = existing?.invite_token || randomUUID()
+    const nowIso = new Date().toISOString()
+    const status = lovedUserId ? 'accepted' : 'pending'
+
+    const { error: upsertError } = await supabase
       .from('awy_connections')
-      .insert({
-        student_id: session.user.id,
-        loved_email: email,
-        relationship,
-        nickname,
-        loved_one_id: existingUser?.id || null, // Link immediately if they exist
-        status: existingUser ? 'active' : 'pending',
-        invite_token: inviteToken
-      })
+      .upsert(
+        {
+          id: existing?.id,
+          student_id: user!.id,
+          student_user_id: user!.id,
+          loved_email: normalizedEmail,
+          email: normalizedEmail,
+          relationship: relationshipLabel,
+          nickname: nicknameLabel || relationshipLabel,
+          loved_one_id: lovedUserId,
+          loved_user_id: lovedUserId,
+          status,
+          invite_token: inviteToken,
+          invited_at: nowIso,
+          accepted_at: lovedUserId ? nowIso : null,
+          updated_at: nowIso
+        },
+        { onConflict: 'student_id,loved_email' }
+      )
 
-    if (insertError) throw insertError
+    if (upsertError) throw upsertError
 
-    // 5. Generate Magic Link & Send Email
+    // Prepare invite link + email
     let emailSent = false
     try {
-      // Generate link
-      const inviteTokenForMail = inviteToken
-      const { data: linkData, error: linkError } = await adminSupabase.auth.admin.generateLink({
+      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+      const { data: linkData, error: linkError } = await supabase.auth.admin.generateLink({
         type: 'magiclink',
-        email: email,
+        email: normalizedEmail,
         options: {
-          redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/awy/invite?token=${inviteTokenForMail}`,
-          data: { role: 'loved_one' } // Ensure they get the role if new
+          redirectTo: `${siteUrl}/awy/invite?token=${inviteToken}`,
+          data: { role: 'loved_one' }
         }
       })
 
       if (linkError) throw linkError
 
-      // Send email via Resend
-      const { error: emailError } = await resend.emails.send({
-        from: process.env.EMAIL_FROM || 'MyDurhamLaw <onboarding@resend.dev>', // Default fallback
-        to: email,
-        subject: '[MyDurhamLaw] You’ve been invited to Always With You',
+      await resend.emails.send({
+        from: process.env.EMAIL_FROM || 'MyDurhamLaw <onboarding@resend.dev>',
+        to: normalizedEmail,
+        subject: "[MyDurhamLaw] You've been invited to Always With You",
         html: `
           <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
             <h1 style="color: #db2777;">Welcome to MyDurhamLaw</h1>
-            <p>You have been invited by a student to be their "Always With You" connection.</p>
-            <p>This allows you to see when they are studying and available to talk, and lets you show them your support.</p>
+            <p>You have been invited to be part of a student's "Always With You" circle.</p>
             <div style="margin: 30px 0;">
-              <a href="${linkData.properties.action_link}" style="background-color: #db2777; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">
+              <a href="${linkData?.properties?.action_link}" style="background-color: #db2777; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">
                 Open MyDurhamLaw
               </a>
             </div>
-            <p style="color: #666; font-size: 14px;">If the button doesn't work, copy this link: ${linkData.properties.action_link}</p>
+            <p style="color: #666; font-size: 14px;">If the button doesn't work, copy this link: ${linkData?.properties?.action_link}</p>
           </div>
         `
       })
-
-      if (emailError) {
-        console.error('Resend error:', emailError)
-      } else {
-        emailSent = true
-      }
-
-    } catch (err) {
-      console.error('Email sending failed:', err)
-      // We don't fail the request, just report it
+      emailSent = true
+    } catch (emailErr) {
+      console.error('[awy/add-loved-one] email send skipped:', (emailErr as any)?.message || emailErr)
     }
 
-    return res.status(200).json({ 
-      ok: true, 
-      invited: true, 
+    return res.status(200).json({
+      ok: true,
+      invited: true,
       emailSent,
-      message: emailSent ? 'Invitation sent successfully' : 'Connection created, but email failed to send.'
+      status
     })
-
   } catch (error: any) {
     console.error('Add loved one error:', error)
-    return res.status(500).json({ error: error.message })
+    return res.status(500).json({ error: error.message || 'Internal error' })
   }
 }

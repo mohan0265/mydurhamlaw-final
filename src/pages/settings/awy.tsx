@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import Head from 'next/head'
 import { Heart, Plus, Trash2, Shield, AlertCircle } from 'lucide-react'
-import { authedFetch } from '@/lib/api/authedFetch'
+import { fetchAuthed } from '@/lib/fetchAuthed'
 import toast from 'react-hot-toast'
 
 interface Connection {
@@ -27,7 +27,7 @@ export default function AWYSettingsPage() {
 
   const fetchConnections = async () => {
     try {
-      const res = await authedFetch('/api/awy/loved-ones')
+      const res = await fetchAuthed('/api/awy/loved-ones')
       const data = await res.json()
       if (data.ok) {
         setConnections(data.connections)
@@ -49,7 +49,7 @@ export default function AWYSettingsPage() {
     if (!email || !relationship) return
 
     try {
-      const res = await authedFetch('/api/awy/add-loved-one', {
+      const res = await fetchAuthed('/api/awy/add-loved-one', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, relationship, nickname })

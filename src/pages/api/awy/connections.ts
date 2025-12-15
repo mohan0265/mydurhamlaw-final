@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { requireUser } from '@/lib/server/auth';
+import { getUserOrThrow } from '@/lib/apiAuth';
 
 type ConnectionRow = {
   id: string;
@@ -22,13 +22,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(204).end();
   }
 
-  const got = await requireUser(req, res);
-  if (!got) {
-    console.debug('[AWY] requireUser: unauthenticated (connections)');
-    return res.status(401).json({ ok: false, error: 'unauthorized' });
+  let user, supabase;
+  try {
+    const auth = await getUserOrThrow(req, res);
+    user = auth.user;
+    supabase = auth.supabase;
+  } catch {
+    return;
   }
-
-  const { user, supabase } = got;
 
   try {
     if (req.method === 'GET') {
