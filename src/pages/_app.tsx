@@ -112,6 +112,19 @@ export default function App({ Component, pageProps }: AppProps) {
     };
   }, []);
 
+  // Belt-and-suspenders: suppress unhandled promise rejections for known route aborts
+  useEffect(() => {
+    const swallowAbort = (event: PromiseRejectionEvent) => {
+      if (isRouteAbortError(event.reason)) {
+        event.preventDefault();
+      }
+    };
+    window.addEventListener('unhandledrejection', swallowAbort);
+    return () => {
+      window.removeEventListener('unhandledrejection', swallowAbort);
+    };
+  }, []);
+
   return (
     <>
       <Head>
