@@ -158,15 +158,17 @@ export default function LoginRedirectPage() {
             agreed_to_terms: userRole === 'loved_one' ? true : false,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
+            created_via: 'manual',
           };
 
           if (userRole === 'student') {
-            baseProfileData.year_group = null;
+            baseProfileData.year_group = 'year1';
+          } else {
+            // Loved ones are not constrained by year_group; provide a safe default anyway
+            baseProfileData.year_group = 'year1';
           }
 
-          const { error: createError } = await supabase
-            .from('profiles')
-            .insert([baseProfileData]);
+          const { error: createError } = await supabase.from('profiles').insert([baseProfileData]);
 
           if (createError) {
             console.error('🚨 Profile creation error:', createError);
