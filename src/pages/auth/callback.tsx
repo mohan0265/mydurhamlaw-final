@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import { getSupabaseClient } from '@/lib/supabase/client';
+import { safePush, safeReplace } from '@/lib/navigation/safeNavigate';
 
 const REDIRECT_DELAY = 3000;
 
@@ -21,6 +22,7 @@ export default function AuthCallbackPage() {
 
   useEffect(() => {
     let cancelled = false;
+    const didNavigateRef = { current: false };
 
     async function run() {
       if (typeof window === 'undefined') return;
@@ -29,7 +31,7 @@ export default function AuthCallbackPage() {
       if (!supabase) {
         setError('Authentication service is unavailable.');
         setStatus('Redirecting to login...');
-        setTimeout(() => router.push('/login?error=client_unavailable'), REDIRECT_DELAY);
+        setTimeout(() => safeReplace(router, '/login?error=client_unavailable'), REDIRECT_DELAY);
         return;
       }
 
@@ -39,20 +41,20 @@ export default function AuthCallbackPage() {
       const authCode = params.get('code');
 
       // 1. Handle explicit errors from provider
-      if (looksLikeProfileSaveError(errorCode, errorDescription)) {
-        setError('We could not finish setting up your profile yet. Please try again in a moment.');
-        setStatus('Sending you back to the login page...');
-        setTimeout(() => router.push('/login?error=profile_setup'), REDIRECT_DELAY + 1000);
-        return;
-      }
+        if (looksLikeProfileSaveError(errorCode, errorDescription)) {
+          setError('We could not finish setting up your profile yet. Please try again in a moment.');
+          setStatus('Sending you back to the login page...');
+          setTimeout(() => safeReplace(router, '/login?error=profile_setup'), REDIRECT_DELAY + 1000);
+          return;
+        }
 
-      if (errorCode || errorDescription) {
-        const message = errorDescription || errorCode || 'Unexpected authentication error.';
-        setError(message);
-        setStatus('Redirecting to login...');
-        setTimeout(() => router.push('/login?error=oauth'), REDIRECT_DELAY);
-        return;
-      }
+        if (errorCode || errorDescription) {
+          const message = errorDescription || errorCode || 'Unexpected authentication error.';
+          setError(message);
+          setStatus('Redirecting to login...');
+          setTimeout(() => safeReplace(router, '/login?error=oauth'), REDIRECT_DELAY);
+          return;
+        }
 
       try {
         // 2. If we have a code, exchange it.
@@ -75,7 +77,7 @@ export default function AuthCallbackPage() {
            // If no code and no session, maybe they just navigated here manually?
            if (!authCode) {
              // Just navigated here?
-             router.push('/login');
+             safeReplace(router, '/login');
              return;
            }
            throw new Error('Session was not created after code exchange.');
@@ -83,14 +85,17 @@ export default function AuthCallbackPage() {
 
         if (cancelled) return;
         setStatus('Redirecting to complete your setup...');
-        router.push('/LoginRedirectPage');
+        if (!didNavigateRef.current) {
+          didNavigateRef.current = true;
+          safeReplace(router, '/LoginRedirectPage');
+        }
 
       } catch (err: any) {
         console.error('[auth/callback] error:', err);
         const message = err?.message || 'Unexpected authentication error.';
         setError(message);
         setStatus('Redirecting to login...');
-        setTimeout(() => router.push('/login?error=oauth_callback'), REDIRECT_DELAY);
+        setTimeout(() => safeReplace(router, '/login?error=oauth_callback'), REDIRECT_DELAY);
       }
     }
 
@@ -125,7 +130,7 @@ export default function AuthCallbackPage() {
           <div className="mt-6 rounded-lg border border-red-200 bg-red-50 p-4 text-left text-sm text-red-700">
             <p className="mb-3">{error}</p>
             <button
-              onClick={() => router.push('/login')}
+              onClick={() => safeReplace(router, '/login')}
               className="block w-full rounded-md bg-red-600 px-4 py-2 text-white hover:bg-red-700"
             >
               Return to login

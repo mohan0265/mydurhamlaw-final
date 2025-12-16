@@ -17,6 +17,8 @@ import { Toaster } from 'react-hot-toast';
 import LayoutShell from '@/layout/LayoutShell';
 import { getSupabaseClient } from '@/lib/supabase/client';
 import { TrialBanner } from '@/components/billing/TrialBanner';
+import Router from 'next/router';
+import { isRouteAbortError } from '@/lib/navigation/safeNavigate';
 
 // Server-only init
 /*
@@ -94,6 +96,21 @@ export default function App({ Component, pageProps }: AppProps) {
     return () =>
       router.events.off('routeChangeComplete', handleRouteChange);
   }, [router.events]);
+
+  // Swallow route abort errors globally (Next.js cancels prior routes on rapid redirects)
+  useEffect(() => {
+    const handler = (err: unknown) => {
+      if (isRouteAbortError(err)) {
+        return;
+      }
+      // Let other errors propagate
+      console.error(err);
+    };
+    Router.events.on('routeChangeError', handler);
+    return () => {
+      Router.events.off('routeChangeError', handler);
+    };
+  }, []);
 
   return (
     <>
