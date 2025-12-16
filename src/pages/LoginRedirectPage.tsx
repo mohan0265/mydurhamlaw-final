@@ -120,6 +120,11 @@ export default function LoginRedirectPage() {
           const profileRole = existingProfile.user_role || userRole;
           const displayName =
             existingProfile.display_name || user.email?.split('@')[0] || 'User';
+          const metaYear =
+            (user.user_metadata as any)?.year_group ||
+            (user.user_metadata as any)?.user_type ||
+            existingProfile.year_group ||
+            'year1';
 
           if (existingProfile.user_role !== userRole) {
             console.log(
@@ -129,6 +134,7 @@ export default function LoginRedirectPage() {
               .from('profiles')
               .update({
                 user_role: userRole,
+                year_group: metaYear,
                 updated_at: new Date().toISOString(),
               })
               .eq('id', user.id);
