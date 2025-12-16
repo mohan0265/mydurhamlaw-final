@@ -103,8 +103,7 @@ export default function App({ Component, pageProps }: AppProps) {
       if (isRouteAbortError(err)) {
         return;
       }
-      // Let other errors propagate
-      console.error(err);
+      // Let other errors propagate quietly
     };
     Router.events.on('routeChangeError', handler);
     return () => {
@@ -122,6 +121,31 @@ export default function App({ Component, pageProps }: AppProps) {
     window.addEventListener('unhandledrejection', swallowAbort);
     return () => {
       window.removeEventListener('unhandledrejection', swallowAbort);
+    };
+  }, []);
+
+  // Global guard: wrap Router.push/replace to swallow cancellation errors
+  useEffect(() => {
+    const originalPush = Router.push;
+    const originalReplace = Router.replace;
+
+    Router.push = (...args: Parameters<typeof Router.push>) => {
+      return originalPush.apply(Router, args).catch((err) => {
+        if (isRouteAbortError(err)) return;
+        throw err;
+      });
+    };
+
+    Router.replace = (...args: Parameters<typeof Router.replace>) => {
+      return originalReplace.apply(Router, args).catch((err) => {
+        if (isRouteAbortError(err)) return;
+        throw err;
+      });
+    };
+
+    return () => {
+      Router.push = originalPush;
+      Router.replace = originalReplace;
     };
   }, []);
 
