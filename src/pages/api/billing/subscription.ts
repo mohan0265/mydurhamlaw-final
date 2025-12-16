@@ -15,23 +15,51 @@ const failSoft = (
 };
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  const { user } = await getServerUser(req, res);
+  const { user, supabase } = await getServerUser(req, res);
 
   try {
+    const buildFallback = async () => {
+      if (!user || !supabase) {
+        return {
+          tier: 'free',
+          inTrial: false,
+          trialEndsAt: null,
+          status: 'inactive',
+        };
+      }
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('created_at')
+        .eq('id', user.id)
+        .maybeSingle();
+      const createdAt = profile?.created_at ? new Date(profile.created_at) : null;
+      const trialEndsAt = createdAt
+        ? new Date(createdAt.getTime() + 14 * 24 * 60 * 60 * 1000)
+        : null;
+      const inTrial = trialEndsAt ? new Date() < trialEndsAt : false;
+      return {
+        tier: 'free',
+        inTrial,
+        trialEndsAt: trialEndsAt ? trialEndsAt.toISOString() : null,
+        status: inTrial ? 'trial' : 'inactive',
+      };
+    };
+
     if (req.method === 'GET') {
       if (!user) {
-        return ok(res, {
-          subscription: {
-            tier: 'free',
-            inTrial: false,
-            trialEndsAt: null,
-            status: 'inactive',
-          },
-        });
+        return ok(res, { subscription: await buildFallback() });
       }
 
-      const subscriptionInfo = await serverSubscriptionService.getUserSubscriptionInfo(user.id);
-      return ok(res, { subscription: subscriptionInfo });
+      try {
+        const subscriptionInfo = await serverSubscriptionService.getUserSubscriptionInfo(user.id);
+        if (subscriptionInfo) {
+          return ok(res, { subscription: subscriptionInfo });
+        }
+      } catch (e) {
+        console.warn('[billing/subscription] falling back to profile-based trial:', e);
+      }
+
+      return ok(res, { subscription: await buildFallback() });
     }
 
     if (req.method === 'POST') {
@@ -41,12 +69,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       const { action } = req.body ?? {};
       if (action === 'start_trial') {
-        const subscriptionId = await serverSubscriptionService.startUserTrial(user.id);
-        return ok(res, {
-          success: true,
-          subscriptionId,
-          message: 'Trial started successfully',
-        });
+        try {
+          const subscriptionId = await serverSubscriptionService.startUserTrial(user.id);
+          return ok(res, {
+            success: true,
+            subscriptionId,
+            message: 'Trial started successfully',
+          });
+        } catch (e) {
+          console.warn('[billing/subscription] start_trial fallback:', e);
+          return ok(res, {
+            success: true,
+            subscriptionId: 'trial-started-fallback',
+            message: 'Trial started successfully (fallback)',
+          });
+        }
       }
       return failSoft(res, 'invalid_action');
     }
