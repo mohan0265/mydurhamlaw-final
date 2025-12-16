@@ -162,7 +162,10 @@ export default function LoginRedirectPage() {
           };
 
           if (userRole === 'student') {
-            baseProfileData.year_group = 'year1';
+            baseProfileData.year_group =
+              (user.user_metadata as any)?.year_group ||
+              (user.user_metadata as any)?.user_type ||
+              'year1';
           } else {
             // Loved ones are not constrained by year_group; provide a safe default anyway
             baseProfileData.year_group = 'year1';

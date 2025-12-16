@@ -52,8 +52,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       try {
         const subscriptionInfo = await serverSubscriptionService.getUserSubscriptionInfo(user.id);
+        const fallback = await buildFallback();
         if (subscriptionInfo) {
-          return ok(res, { subscription: subscriptionInfo });
+          // If the stored subscription says inactive but fallback says still in trial window, prefer fallback
+          const merged =
+            fallback.inTrial && (!subscriptionInfo.inTrial || subscriptionInfo.status === 'inactive')
+              ? { ...subscriptionInfo, ...fallback, status: 'trial' }
+              : subscriptionInfo;
+          return ok(res, { subscription: merged });
         }
       } catch (e) {
         console.warn('[billing/subscription] falling back to profile-based trial:', e);
