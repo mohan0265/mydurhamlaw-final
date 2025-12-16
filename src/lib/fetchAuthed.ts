@@ -48,9 +48,20 @@ export async function fetchAuthed(
     });
   }
 
-  return fetch(input, {
-    ...init,
-    credentials: 'include',
-    headers,
-  });
+  try {
+    return await fetch(input, {
+      ...init,
+      credentials: 'include',
+      headers,
+    });
+  } catch (err) {
+    // Never throw to calling code; return a synthetic 503 so callers can handle gracefully.
+    if (process.env.NODE_ENV !== 'production' && isDiagnosticEndpoint) {
+      console.info('[fetchAuthed] network error', target, { err: (err as any)?.message });
+    }
+    return new Response(JSON.stringify({ error: 'network_error' }), {
+      status: 503,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
 }
