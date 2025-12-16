@@ -74,6 +74,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .upsert(
         {
           id: existing?.id,
+          user_id: user!.id, // fallback for schemas that still have user_id
           student_id: user!.id,
           student_user_id: user!.id,
           loved_email: normalizedEmail,
