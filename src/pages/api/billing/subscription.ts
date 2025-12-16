@@ -29,12 +29,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
       const { data: profile } = await supabase
         .from('profiles')
-        .select('created_at')
+        .select('created_at, trial_started_at, trial_ever_used')
         .eq('id', user.id)
         .maybeSingle();
-      const createdAt = profile?.created_at ? new Date(profile.created_at) : null;
-      const trialEndsAt = createdAt
-        ? new Date(createdAt.getTime() + 14 * 24 * 60 * 60 * 1000)
+
+      // Use trial_started_at if present; else use profile.created_at; else user.created_at
+      const trialStart =
+        (profile?.trial_started_at && new Date(profile.trial_started_at)) ||
+        (profile?.created_at && new Date(profile.created_at)) ||
+        (user.created_at && new Date(user.created_at)) ||
+        null;
+
+      const trialEndsAt = trialStart
+        ? new Date(trialStart.getTime() + 14 * 24 * 60 * 60 * 1000)
         : null;
       const inTrial = trialEndsAt ? new Date() < trialEndsAt : false;
       return {
@@ -81,6 +88,29 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const { action } = req.body ?? {};
       if (action === 'start_trial') {
         try {
+          // One free trial per profile
+          if (supabase) {
+            const { data: prof } = await supabase
+              .from('profiles')
+              .select('trial_started_at, trial_ever_used')
+              .eq('id', user.id)
+              .maybeSingle();
+            if (prof?.trial_ever_used || prof?.trial_started_at) {
+              return ok(res, {
+                success: false,
+                error: 'trial_already_used',
+              });
+            }
+            // stamp trial start
+            await supabase
+              .from('profiles')
+              .update({
+                trial_started_at: new Date().toISOString(),
+                trial_ever_used: true,
+              })
+              .eq('id', user.id);
+          }
+
           const subscriptionId = await serverSubscriptionService.startUserTrial(user.id);
           return ok(res, {
             success: true,

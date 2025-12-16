@@ -52,7 +52,9 @@ export function useStudentProfile() {
         }
 
         if (!cancelled) {
-          setYearKey(toYearKey(data?.year_group));
+          // Fall back to user metadata year_group if profile missing
+          const metaYear = toYearKey((user.user_metadata as any)?.year_group);
+          setYearKey(toYearKey(data?.year_group) || metaYear);
           setDisplayName(data?.display_name ?? undefined);
           setLoading(false);
         }
