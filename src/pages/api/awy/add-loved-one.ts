@@ -97,6 +97,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // Prepare invite link + email
     let emailSent = false
+    let magicLink: string | undefined
     try {
       const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
       const { data: linkData, error: linkError } = await supabase.auth.admin.generateLink({
@@ -109,6 +110,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       })
 
       if (linkError) throw linkError
+      magicLink = linkData?.properties?.action_link as string | undefined
 
       await resend.emails.send({
         from: process.env.EMAIL_FROM || 'MyDurhamLaw <onboarding@resend.dev>',
@@ -136,7 +138,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       ok: true,
       invited: true,
       emailSent,
-      status
+      status,
+      inviteLink: magicLink
     })
   } catch (error: any) {
     console.error('Add loved one error:', error)
