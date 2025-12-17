@@ -179,19 +179,14 @@ export default function DurmahWidget() {
     (el as any).playsInline = true;
   }, []);
 
-  // 2. Memory & Greeting
+  // 2. Memory & Greeting (now driven by durmah context)
   useEffect(() => {
     if (!signedIn) return;
     let cancelled = false;
 
     (async () => {
       try {
-        const { token } = await waitForAccessToken();
-        if (!token) {
-          if (!cancelled) setReady(true);
-          return;
-        }
-
+        await waitForAccessToken();
         const res = await fetchAuthed("/api/durmah/memory");
         if (res.status === 401 || res.status === 403) {
           if (!cancelled) setReady(true);
@@ -200,12 +195,36 @@ export default function DurmahWidget() {
 
         if (res.ok) {
           const data = await res.json();
-          if (!cancelled && data.ok && data.memory) {
-            setMemory(data.memory);
+          const ctx = data?.context;
+          if (!cancelled && ctx) {
+            const mapped = (ctx.recentMessages || []).map((m: any) => ({
+              role: m.role === 'assistant' ? 'durmah' : 'you',
+              text: m.content,
+              ts: new Date(m.created_at).getTime(),
+            }));
+            if (mapped.length > 0) setMessages(mapped);
+            if (ctx.lastSummary) {
+              setMemory({
+                lastTopic: 'continuation',
+                lastMessage: ctx.lastSummary,
+                lastSeenAt: ctx.last_message_at,
+              });
+            }
+            if (ctx.onboardingState === 'new') {
+            setMessages((prev) => [
+              ...prev,
+              {
+                role: 'durmah',
+                text:
+                    "Welcome to MyDurhamLaw! You're on a 14-day trial. I'll keep this quick: Which year are you in (foundation/year1/year2/year3)? Any key modules or deadlines this month?",
+                ts: Date.now(),
+              },
+            ]);
+          }
           }
         }
       } catch (e) {
-        console.error("Failed to fetch memory", e);
+        console.error("Failed to fetch durmah context", e);
       }
       
       if (!cancelled) {
@@ -216,10 +235,9 @@ export default function DurmahWidget() {
     return () => { cancelled = true; };
   }, [signedIn]);
 
-  // Set initial greeting once ready
+  // Set initial greeting once ready (only if nothing loaded)
   useEffect(() => {
     if (ready && messages.length === 0) {
-      // Use preset's welcome message if available, otherwise fallback
       const greeting = preset?.welcomeMessage || composeGreeting(studentContext, memory, upcomingTasks, todaysEvents);
       setMessages([{ role: "durmah", text: greeting, ts: Date.now() }]);
     }
@@ -515,47 +533,21 @@ export default function DurmahWidget() {
       } catch {}
     })();
 
-    // Prepare messages for API
-    const payloadMessages = [
-      { role: "system", content: systemPrompt },
-      ...history.map((m) => ({
-        role: m.role === "durmah" ? "assistant" : "user",
-        content: m.text,
-      }))
-    ];
-
     try {
-      const controller = new AbortController();
-      streamControllerRef.current = controller;
-
-      const response = await fetch("/api/chat-stream", {
+      const response = await fetch("/api/durmah/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: payloadMessages }),
-        signal: controller.signal,
+        body: JSON.stringify({ message: payload, source: "dashboard" }),
       });
 
       if (!response.ok) throw new Error(await response.text());
-      if (!response.body) return;
+      const data = await response.json();
+      const replyText = data?.reply || "I'm here if you want to continue.";
 
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let buf = "";
-
-      while (true) {
-        const { value, done } = await reader.read();
-        if (done) break;
-
-        buf += decoder.decode(value, { stream: true });
-
-        setMessages((current) =>
-          current.map((m) => (m.ts === assistantId ? { ...m, text: buf } : m))
-        );
-      }
-
-      buf += decoder.decode();
       setMessages((current) =>
-        current.map((m) => (m.ts === assistantId ? { ...m, text: buf.trim() } : m))
+        mergeDedupedTranscript([
+          ...current.map((m) => (m.ts === assistantId ? { ...m, text: replyText } : m)),
+        ])
       );
     } catch (err: any) {
       setMessages((current) =>
