@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { createPagesServerClient } from '@supabase/auth-helpers-nextjs';
+import { createClient } from '@supabase/supabase-js';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'GET') {
@@ -7,12 +8,40 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const supabase = createPagesServerClient({ req, res });
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  let user = null;
+  let supabase = null;
 
+  // 1. Try Bearer Token (Header)
+  const authHeader = req.headers.authorization;
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    const token = authHeader.split(' ')[1];
+    const supabaseAnon = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    );
+    const { data, error } = await supabaseAnon.auth.getUser(token);
+    if (!error && data.user) {
+      user = data.user;
+      // create a client with the user's token for RLS
+      supabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        { global: { headers: { Authorization: `Bearer ${token}` } } }
+      );
+    }
+  }
+
+  // 2. Try Cookie (Standard Next.js helper)
   if (!user) {
+    const supabaseCookies = createPagesServerClient({ req, res });
+    const { data } = await supabaseCookies.auth.getUser();
+    if (data.user) {
+      user = data.user;
+      supabase = supabaseCookies;
+    }
+  }
+
+  if (!user || !supabase) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 

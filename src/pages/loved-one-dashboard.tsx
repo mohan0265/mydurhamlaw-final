@@ -50,7 +50,13 @@ export default function LovedOneDashboard() {
       }
 
       // 2. Fetch connected students via API
-      const res = await fetch('/api/awy/presence/lovedone-view')
+      const { data: { session } } = await supabase.auth.getSession()
+      const headers: HeadersInit = {}
+      if (session?.access_token) {
+        headers['Authorization'] = `Bearer ${session.access_token}`
+      }
+
+      const res = await fetch('/api/awy/presence/lovedone-view', { headers })
       const data = await res.json()
       
       if (data.ok) {
@@ -111,9 +117,15 @@ export default function LovedOneDashboard() {
     setIsMyAvailabilityOn(newState) // Optimistic update
     
     try {
+      const { data: { session } } = await supabase.auth.getSession()
+      const headers: HeadersInit = { 'Content-Type': 'application/json' }
+      if (session?.access_token) {
+        headers['Authorization'] = `Bearer ${session.access_token}`
+      }
+
       const res = await fetch('/api/awy/presence/update', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({ is_available: newState })
       })
       
