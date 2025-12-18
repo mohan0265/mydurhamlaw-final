@@ -80,8 +80,8 @@ export default function AWYWidget() {
     const loadStudentView = async () => {
       const { data, error } = await contextSupabase
         .from('awy_connections')
-        .select('id,student_id,student_user_id,loved_one_id,loved_user_id,nickname,relationship,relationship_label,status,loved_email,email,invite_token,invited_at,accepted_at')
-        .or(`student_id.eq.${userId},student_user_id.eq.${userId}`)
+        .select('id,student_id,loved_one_id,nickname,relationship,relationship_label,status,loved_email,email,invite_token,invited_at,accepted_at')
+        .eq('student_id', userId)
         .in('status', ['active','accepted','pending','invited'])
       if (error) throw error
 
@@ -89,7 +89,7 @@ export default function AWYWidget() {
 
       const activeIds = (data || [])
         .filter((conn: any) => activeStatuses.includes((conn.status || '').toLowerCase()))
-        .map((conn: any) => conn.loved_one_id || conn.loved_user_id)
+        .map((conn: any) => conn.loved_one_id)
         .filter((id: string | null): id is string => Boolean(id))
 
       const presenceMap = await buildPresenceMap(activeIds)
@@ -97,7 +97,7 @@ export default function AWYWidget() {
       const activeList: Connection[] = (data || [])
         .filter((conn: any) => activeStatuses.includes((conn.status || '').toLowerCase()))
         .map((conn: any) => {
-          const lovedId = conn.loved_one_id || conn.loved_user_id
+          const lovedId = conn.loved_one_id
           if (!lovedId) return null
           const presence = presenceMap.get(lovedId)
           const status = (conn.status || '').toLowerCase()
@@ -131,13 +131,13 @@ export default function AWYWidget() {
     const loadLovedOneView = async () => {
       const { data, error } = await contextSupabase
         .from('awy_connections')
-        .select('student_id,student_user_id,student:profiles!student_id(display_name),status')
-        .or(`loved_one_id.eq.${userId},loved_user_id.eq.${userId}`)
+        .select('student_id,student:profiles!student_id(display_name),status')
+        .eq('loved_one_id', userId)
         .in('status', ['active','accepted'])
       if (error) throw error
 
       const studentIds = (data || [])
-        .map((conn: any) => conn.student_id || conn.student_user_id)
+        .map((conn: any) => conn.student_id)
         .filter((id: string | null): id is string => Boolean(id))
 
       const presenceMap = await buildPresenceMap(studentIds)
