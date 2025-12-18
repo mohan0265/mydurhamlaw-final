@@ -77,7 +77,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const inviteToken = existing?.invite_token || randomUUID()
     const nowIso = new Date().toISOString()
-    const status = lovedUserId ? 'accepted' : 'pending'
+    const status = lovedUserId ? 'active' : 'pending'
 
     const { error: upsertError } = await supabase
       .from('awy_connections')
