@@ -106,27 +106,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (upsertError) throw upsertError
 
     // Prepare invite link
-    let magicLink: string | undefined
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+    const magicLink = `${siteUrl}/awy/invite?token=${inviteToken}`
+    
     let emailStatus: 'sent' | 'failed' = 'failed'
     let emailError: string | undefined
-
-    try {
-      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
-      // USE ADMIN CLIENT FOR LINK GENERATION
-      const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
-        type: 'magiclink',
-        email: normalizedEmail,
-        options: {
-          redirectTo: `${siteUrl}/awy/invite?token=${inviteToken}`,
-          data: { role: 'loved_one' }
-        }
-      })
-
-      if (linkError) throw linkError
-      magicLink = linkData?.properties?.action_link as string | undefined
-    } catch (err: any) {
-      console.error('[awy/add-loved-one] Link generation failed:', err)
-    }
 
     // Attempt Verification Email
     if (magicLink) {
