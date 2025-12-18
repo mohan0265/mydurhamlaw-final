@@ -144,7 +144,7 @@ export default function LoginRedirectPage() {
 
           if (userRole === 'loved_one') {
             setStatus(`Welcome back, ${displayName}! Redirecting to your family dashboard...`);
-            navigateOnce('/loved-one/dashboard', 1500);
+            navigateOnce('/loved-one-dashboard', 1500);
           } else {
             const yearGroup = existingProfile.year_group;
             setStatus(
@@ -189,7 +189,7 @@ export default function LoginRedirectPage() {
 
           if (userRole === 'loved_one') {
             setStatus(`Welcome! Redirecting to your family dashboard...`);
-            navigateOnce('/loved-one/dashboard', 1500);
+            navigateOnce('/loved-one-dashboard', 1500);
           } else {
             setStatus("Welcome! Let's complete your profile...");
             navigateOnce('/complete-profile', 1500);
@@ -237,7 +237,7 @@ export default function LoginRedirectPage() {
             <p className="text-sm text-gray-600 mb-4">Taking longer than expected?</p>
             <div className="space-y-3">
               <button
-                onClick={() => safeReplace(router, '/loved-one/dashboard')}
+                onClick={() => safeReplace(router, '/loved-one-dashboard')}
                 className="block w-full bg-violet-600 text-white px-4 py-2 rounded-md hover:bg-violet-700 transition-colors"
               >
                 Family Dashboard
