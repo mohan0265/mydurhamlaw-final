@@ -2,6 +2,7 @@ import { NextApiRequest, NextApiResponse } from 'next'
 import { randomUUID } from 'crypto'
 import { Resend } from 'resend'
 import { getUserOrThrow } from '@/lib/apiAuth'
+import { supabaseAdmin } from '@/lib/server/supabaseAdmin'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
@@ -15,10 +16,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   if (!apiKey || !emailFrom) {
     console.error('[awy/add-loved-one] Missing env vars: RESEND_API_KEY or EMAIL_FROM')
-    // We don't block everything if we can still generate a link, but we should log it clearly.
-    // However, user requested "return 500 with clear message" in Phase 3 (Case C) but let's stick to the sophisticated plan:
-    // "Ensure response ALWAYS returns inviteLink... warning text if email failed"
-    // So we proceed, but we know email will fail.
   }
 
   const resend = apiKey ? new Resend(apiKey) : null
@@ -115,7 +112,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     try {
       const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
-      const { data: linkData, error: linkError } = await supabase.auth.admin.generateLink({
+      // USE ADMIN CLIENT FOR LINK GENERATION
+      const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
         type: 'magiclink',
         email: normalizedEmail,
         options: {
@@ -128,8 +126,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       magicLink = linkData?.properties?.action_link as string | undefined
     } catch (err: any) {
       console.error('[awy/add-loved-one] Link generation failed:', err)
-      // If we can't generate a link, we can't really invite them properly via email either usually,
-      // but maybe the DB part is done. We'll continue but this is bad.
     }
 
     // Attempt Verification Email
