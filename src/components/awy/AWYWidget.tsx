@@ -339,20 +339,10 @@ export default function AWYWidget() {
         throw new Error(json.error || 'Failed to send invite')
       }
 
-      if (json.inviteLink) {
-        setInviteSuccessLink(json.inviteLink)
-        if (json.emailSent) {
-          setInviteSuccessMessage('Email sent successfully!')
-          toast.success('Invite sent!')
-        } else {
-          setInviteSuccessMessage('Email sending failed, but you can copy the link below.')
-          toast('Email failed, please copy link', { icon: '⚠️' })
-        }
-        // Do NOT close modal
-      } else {
-        toast.success(json.invited === false ? 'Already connected or pending' : 'Invite processed')
-        setShowAddModal(false)
-        setInviteEmail('')
+      if (true) { // Always success path now, backend returns { ok: true, message: ... }
+        setInviteSuccessMessage(`Access authorized for ${inviteEmail}.`)
+        setInviteSuccessLink(`${window.location.origin}/loved-one-login`) // Use login page link
+        toast.success('Access granted!')
       }
       
       fetchData()
@@ -612,7 +602,7 @@ export default function AWYWidget() {
         <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 space-y-4">
           <div className="flex justify-between items-center">
             <h3 className="text-lg font-bold text-slate-900">
-              {inviteSuccessLink ? 'Invite Created' : 'Invite Loved One'}
+              {inviteSuccessLink ? 'Access Granted' : 'Add Loved One'}
             </h3>
             <button onClick={closeAndReset} className="p-2 rounded-full hover:bg-slate-100">
               <X className="w-5 h-5" />
@@ -624,8 +614,10 @@ export default function AWYWidget() {
                <div className="bg-green-50 text-green-800 p-4 rounded-xl text-sm font-medium flex gap-3 items-start">
                   <Check className="w-5 h-5 mt-0.5 shrink-0" />
                   <div>
-                    <p>{inviteSuccessMessage || 'Invite link generated!'}</p>
-                    <p className="text-green-700/80 mt-1 text-xs font-normal">If they don't see the email, send them this link directly.</p>
+                    <p>They can now log in immediately!</p>
+                    <p className="text-green-700/80 mt-1 text-xs font-normal">
+                      Share the login link below with them. They can sign in using their Google account ({inviteEmail}).
+                    </p>
                   </div>
                </div>
 
@@ -636,10 +628,10 @@ export default function AWYWidget() {
                     className="w-full bg-slate-50 border border-slate-200 text-slate-600 text-xs rounded-xl px-3 py-3 font-mono pr-12 focus:outline-none"
                   />
                   <button 
-                    onClick={copyToClipboard}
-                    className="absolute right-1 top-1 bottom-1 px-3 bg-white border border-slate-200 rounded-lg text-slate-600 hover:text-pink-600 hover:border-pink-200 transition-colors flex items-center justify-center"
-                    title="Copy Link"
-                  >
+                     onClick={copyToClipboard}
+                     className="absolute right-1 top-1 bottom-1 px-3 bg-white border border-slate-200 rounded-lg text-slate-600 hover:text-pink-600 hover:border-pink-200 transition-colors flex items-center justify-center"
+                     title="Copy Login Link"
+                   >
                     {inviteCopied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
                   </button>
                </div>
@@ -687,7 +679,7 @@ export default function AWYWidget() {
                    className="px-4 py-2 rounded-lg text-sm font-semibold text-white bg-pink-500 hover:bg-pink-600 disabled:opacity-70 inline-flex items-center gap-2"
                  >
                    {inviteSending && <Loader2 className="w-4 h-4 animate-spin" />}
-                   Send Invite
+                   Grant Access
                  </button>
                </div>
              </>

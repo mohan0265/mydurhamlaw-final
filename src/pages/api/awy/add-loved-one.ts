@@ -105,63 +105,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     if (upsertError) throw upsertError
 
-    // Prepare invite link
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
-    const magicLink = `${siteUrl}/awy/invite?token=${inviteToken}`
-    
-    let emailStatus: 'sent' | 'failed' = 'failed'
-    let emailError: string | undefined
-
-    // Attempt Verification Email
-    if (magicLink) {
-      if (!resend || !emailFrom) {
-         emailError = 'Service configuration missing (RESEND_API_KEY or EMAIL_FROM).'
-         console.warn(`[awy/add-loved-one] ${emailError}`)
-      } else {
-        try {
-          const { data: emailData, error: sendError } = await resend.emails.send({
-            from: emailFrom,
-            to: normalizedEmail,
-            subject: "[MyDurhamLaw] You've been invited to Always With You",
-            html: `
-              <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
-                <h1 style="color: #db2777;">Welcome to MyDurhamLaw</h1>
-                <p>You have been invited to be part of a student's "Always With You" circle.</p>
-                <div style="margin: 30px 0;">
-                  <a href="${magicLink}" style="background-color: #db2777; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">
-                    Open MyDurhamLaw
-                  </a>
-                </div>
-                <p style="color: #666; font-size: 14px;">If the button doesn't work, copy this link: ${magicLink}</p>
-              </div>
-            `
-          })
-
-          if (sendError) {
-             console.error('[awy/add-loved-one] Resend API error:', sendError)
-             emailError = sendError.message
-          } else {
-             console.log(`[awy/add-loved-one] Email sent to ${normalizedEmail.replace(/(.{2})(.*)(@.*)/, '$1***$3')} | ID: ${emailData?.id}`)
-             emailStatus = 'sent'
-          }
-        } catch (postErr: any) {
-          console.error('[awy/add-loved-one] Resend exception:', postErr)
-          emailError = postErr.message
-        }
-      }
-    } else {
-      emailError = 'Could not generate magic link.'
-    }
+    // Simplified Flow: Just grant access (database record)
+    // The user can now log in via Google/Auth and will be linked via trigger or existing check.
 
     return res.status(200).json({
       ok: true,
-      invited: true,
-      emailSent: emailStatus === 'sent',
-      emailStatus,
-      emailError,
-      status,
-      inviteLink: magicLink,
-      warning: emailStatus === 'failed' ? 'Email failed to send, please share link manually.' : undefined
+      invited: true, // Legacy flag, effectively "Authorized"
+      message: 'Access granted. Loved one can log in now.'
     })
 
   } catch (error: any) {
