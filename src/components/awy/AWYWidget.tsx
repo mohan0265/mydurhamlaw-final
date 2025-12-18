@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect, useRef, useCallback } from 'react'
-import { Heart, Video, X, Loader2, Lock, ArrowRight, User, Plus, Send, Trash } from 'lucide-react'
+import { Heart, Video, X, Loader2, Lock, ArrowRight, User, Plus, Send, Trash, Check, Copy } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Link from 'next/link'
 import { AuthContext } from '@/lib/supabase/AuthContext'
@@ -30,6 +30,10 @@ export default function AWYWidget() {
   const [inviteRelationship, setInviteRelationship] = useState('Parent')
   const [inviteSending, setInviteSending] = useState(false)
   const [pendingInvites, setPendingInvites] = useState<Connection[]>([])
+  
+  const [inviteSuccessLink, setInviteSuccessLink] = useState<string | null>(null)
+  const [inviteSuccessMessage, setInviteSuccessMessage] = useState<string | null>(null)
+  const [inviteCopied, setInviteCopied] = useState(false)
   
   // Use global auth context instead of creating new client
   const { user, supabase: contextSupabase, loading: authLoading } = React.useContext(AuthContext)
@@ -316,6 +320,10 @@ export default function AWYWidget() {
       return
     }
     setInviteSending(true)
+    setInviteSuccessLink(null)
+    setInviteSuccessMessage(null)
+    setInviteCopied(false)
+
     try {
       const res = await fetchAuthed('/api/awy/add-loved-one', {
         method: 'POST',
@@ -330,15 +338,50 @@ export default function AWYWidget() {
       if (!res.ok || json.error) {
         throw new Error(json.error || 'Failed to send invite')
       }
-      toast.success('Invite sent')
-      setInviteEmail('')
-      setInviteRelationship('Parent')
-      setShowAddModal(false)
+
+      if (json.inviteLink) {
+        setInviteSuccessLink(json.inviteLink)
+        if (json.emailSent) {
+          setInviteSuccessMessage('Email sent successfully!')
+          toast.success('Invite sent!')
+        } else {
+          setInviteSuccessMessage('Email sending failed, but you can copy the link below.')
+          toast('Email failed, please copy link', { icon: '⚠️' })
+        }
+        // Do NOT close modal
+      } else {
+        toast.success(json.invited === false ? 'Already connected or pending' : 'Invite processed')
+        setShowAddModal(false)
+        setInviteEmail('')
+      }
+      
       fetchData()
     } catch (err: any) {
       toast.error(err?.message || 'Failed to send invite')
     } finally {
       setInviteSending(false)
+    }
+  }
+
+  const closeAndReset = () => {
+    setShowAddModal(false)
+    setInviteEmail('')
+    setInviteRelationship('Parent')
+    setInviteSuccessLink(null)
+    setInviteSuccessMessage(null)
+    setInviteCopied(false)
+  }
+
+  const copyToClipboard = async () => {
+    if (inviteSuccessLink) {
+      try {
+        await navigator.clipboard.writeText(inviteSuccessLink)
+        setInviteCopied(true)
+        toast.success('Link copied!')
+        setTimeout(() => setInviteCopied(false), 2000)
+      } catch (err) {
+        toast.error('Failed to copy')
+      }
     }
   }
 
@@ -568,48 +611,87 @@ export default function AWYWidget() {
       <div className="fixed inset-0 z-[70] bg-black/40 backdrop-blur-sm flex items-center justify-center px-4">
         <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 space-y-4">
           <div className="flex justify-between items-center">
-            <h3 className="text-lg font-bold text-slate-900">Invite Loved One</h3>
-            <button onClick={() => setShowAddModal(false)} className="p-2 rounded-full hover:bg-slate-100">
+            <h3 className="text-lg font-bold text-slate-900">
+              {inviteSuccessLink ? 'Invite Created' : 'Invite Loved One'}
+            </h3>
+            <button onClick={closeAndReset} className="p-2 rounded-full hover:bg-slate-100">
               <X className="w-5 h-5" />
             </button>
           </div>
-          <div className="space-y-3">
-            <div>
-              <label className="text-xs font-semibold text-slate-600">Email</label>
-              <input
-                type="email"
-                value={inviteEmail}
-                onChange={(e) => setInviteEmail(e.target.value)}
-                className="w-full mt-1 rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-500/40"
-                placeholder="parent@example.com"
-              />
-            </div>
-            <div>
-              <label className="text-xs font-semibold text-slate-600">Relationship</label>
-              <input
-                value={inviteRelationship}
-                onChange={(e) => setInviteRelationship(e.target.value)}
-                className="w-full mt-1 rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-500/40"
-                placeholder="Mum, Dad, Guardian"
-              />
-            </div>
-          </div>
-          <div className="flex justify-end gap-2">
-            <button
-              onClick={() => setShowAddModal(false)}
-              className="px-4 py-2 rounded-lg text-sm font-semibold text-slate-700 hover:bg-slate-100"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleInvite}
-              disabled={inviteSending}
-              className="px-4 py-2 rounded-lg text-sm font-semibold text-white bg-pink-500 hover:bg-pink-600 disabled:opacity-70 inline-flex items-center gap-2"
-            >
-              {inviteSending && <Loader2 className="w-4 h-4 animate-spin" />}
-              Send Invite
-            </button>
-          </div>
+
+          {inviteSuccessLink ? (
+             <div className="space-y-5 animate-in fade-in zoom-in-95 duration-300">
+               <div className="bg-green-50 text-green-800 p-4 rounded-xl text-sm font-medium flex gap-3 items-start">
+                  <Check className="w-5 h-5 mt-0.5 shrink-0" />
+                  <div>
+                    <p>{inviteSuccessMessage || 'Invite link generated!'}</p>
+                    <p className="text-green-700/80 mt-1 text-xs font-normal">If they don't see the email, send them this link directly.</p>
+                  </div>
+               </div>
+
+               <div className="relative">
+                  <input 
+                    readOnly 
+                    value={inviteSuccessLink} 
+                    className="w-full bg-slate-50 border border-slate-200 text-slate-600 text-xs rounded-xl px-3 py-3 font-mono pr-12 focus:outline-none"
+                  />
+                  <button 
+                    onClick={copyToClipboard}
+                    className="absolute right-1 top-1 bottom-1 px-3 bg-white border border-slate-200 rounded-lg text-slate-600 hover:text-pink-600 hover:border-pink-200 transition-colors flex items-center justify-center"
+                    title="Copy Link"
+                  >
+                    {inviteCopied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
+                  </button>
+               </div>
+               
+               <button
+                 onClick={closeAndReset}
+                 className="w-full py-3 rounded-xl font-bold bg-pink-500 text-white hover:bg-pink-600 transition-colors shadow-lg shadow-pink-200"
+               >
+                 Done
+               </button>
+             </div>
+          ) : (
+             <>
+               <div className="space-y-3">
+                 <div>
+                   <label className="text-xs font-semibold text-slate-600">Email</label>
+                   <input
+                     type="email"
+                     value={inviteEmail}
+                     onChange={(e) => setInviteEmail(e.target.value)}
+                     className="w-full mt-1 rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-500/40"
+                     placeholder="parent@example.com"
+                   />
+                 </div>
+                 <div>
+                   <label className="text-xs font-semibold text-slate-600">Relationship</label>
+                   <input
+                     value={inviteRelationship}
+                     onChange={(e) => setInviteRelationship(e.target.value)}
+                     className="w-full mt-1 rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-500/40"
+                     placeholder="Mum, Dad, Guardian"
+                   />
+                 </div>
+               </div>
+               <div className="flex justify-end gap-2">
+                 <button
+                   onClick={closeAndReset}
+                   className="px-4 py-2 rounded-lg text-sm font-semibold text-slate-700 hover:bg-slate-100"
+                 >
+                   Cancel
+                 </button>
+                 <button
+                   onClick={handleInvite}
+                   disabled={inviteSending}
+                   className="px-4 py-2 rounded-lg text-sm font-semibold text-white bg-pink-500 hover:bg-pink-600 disabled:opacity-70 inline-flex items-center gap-2"
+                 >
+                   {inviteSending && <Loader2 className="w-4 h-4 animate-spin" />}
+                   Send Invite
+                 </button>
+               </div>
+             </>
+          )}
         </div>
       </div>
     )}

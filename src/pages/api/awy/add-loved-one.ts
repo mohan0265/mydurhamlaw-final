@@ -3,13 +3,25 @@ import { randomUUID } from 'crypto'
 import { Resend } from 'resend'
 import { getUserOrThrow } from '@/lib/apiAuth'
 
-const resend = new Resend(process.env.RESEND_API_KEY)
-
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
     res.setHeader('Allow', ['POST'])
     return res.status(405).json({ error: 'Method not allowed' })
   }
+
+  // 1. Validate Env Vars
+  const apiKey = process.env.RESEND_API_KEY
+  const emailFrom = process.env.EMAIL_FROM
+
+  if (!apiKey || !emailFrom) {
+    console.error('[awy/add-loved-one] Missing env vars: RESEND_API_KEY or EMAIL_FROM')
+    // We don't block everything if we can still generate a link, but we should log it clearly.
+    // However, user requested "return 500 with clear message" in Phase 3 (Case C) but let's stick to the sophisticated plan:
+    // "Ensure response ALWAYS returns inviteLink... warning text if email failed"
+    // So we proceed, but we know email will fail.
+  }
+
+  const resend = apiKey ? new Resend(apiKey) : null
 
   let user, supabase
   try {
@@ -19,6 +31,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   } catch {
     return
   }
+
   const { email, relationship, nickname } = req.body || {}
   const normalizedEmail = String(email || '').trim().toLowerCase()
   const relationshipLabel = String(relationship || '').trim()
@@ -75,7 +88,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         {
           id: existing?.id,
           owner_user_id: user!.id,
-          user_id: user!.id, // fallback for schemas that still have user_id
+          user_id: user!.id,
           student_id: user!.id,
           student_user_id: user!.id,
           loved_email: normalizedEmail,
@@ -95,9 +108,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     if (upsertError) throw upsertError
 
-    // Prepare invite link + email
-    let emailSent = false
+    // Prepare invite link
     let magicLink: string | undefined
+    let emailStatus: 'sent' | 'failed' = 'failed'
+    let emailError: string | undefined
+
     try {
       const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
       const { data: linkData, error: linkError } = await supabase.auth.admin.generateLink({
@@ -111,36 +126,64 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       if (linkError) throw linkError
       magicLink = linkData?.properties?.action_link as string | undefined
+    } catch (err: any) {
+      console.error('[awy/add-loved-one] Link generation failed:', err)
+      // If we can't generate a link, we can't really invite them properly via email either usually,
+      // but maybe the DB part is done. We'll continue but this is bad.
+    }
 
-      await resend.emails.send({
-        from: process.env.EMAIL_FROM || 'MyDurhamLaw <onboarding@resend.dev>',
-        to: normalizedEmail,
-        subject: "[MyDurhamLaw] You've been invited to Always With You",
-        html: `
-          <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
-            <h1 style="color: #db2777;">Welcome to MyDurhamLaw</h1>
-            <p>You have been invited to be part of a student's "Always With You" circle.</p>
-            <div style="margin: 30px 0;">
-              <a href="${linkData?.properties?.action_link}" style="background-color: #db2777; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">
-                Open MyDurhamLaw
-              </a>
-            </div>
-            <p style="color: #666; font-size: 14px;">If the button doesn't work, copy this link: ${linkData?.properties?.action_link}</p>
-          </div>
-        `
-      })
-      emailSent = true
-    } catch (emailErr) {
-      console.error('[awy/add-loved-one] email send skipped:', (emailErr as any)?.message || emailErr)
+    // Attempt Verification Email
+    if (magicLink) {
+      if (!resend || !emailFrom) {
+         emailError = 'Service configuration missing (RESEND_API_KEY or EMAIL_FROM).'
+         console.warn(`[awy/add-loved-one] ${emailError}`)
+      } else {
+        try {
+          const { data: emailData, error: sendError } = await resend.emails.send({
+            from: emailFrom,
+            to: normalizedEmail,
+            subject: "[MyDurhamLaw] You've been invited to Always With You",
+            html: `
+              <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+                <h1 style="color: #db2777;">Welcome to MyDurhamLaw</h1>
+                <p>You have been invited to be part of a student's "Always With You" circle.</p>
+                <div style="margin: 30px 0;">
+                  <a href="${magicLink}" style="background-color: #db2777; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">
+                    Open MyDurhamLaw
+                  </a>
+                </div>
+                <p style="color: #666; font-size: 14px;">If the button doesn't work, copy this link: ${magicLink}</p>
+              </div>
+            `
+          })
+
+          if (sendError) {
+             console.error('[awy/add-loved-one] Resend API error:', sendError)
+             emailError = sendError.message
+          } else {
+             console.log(`[awy/add-loved-one] Email sent to ${normalizedEmail.replace(/(.{2})(.*)(@.*)/, '$1***$3')} | ID: ${emailData?.id}`)
+             emailStatus = 'sent'
+          }
+        } catch (postErr: any) {
+          console.error('[awy/add-loved-one] Resend exception:', postErr)
+          emailError = postErr.message
+        }
+      }
+    } else {
+      emailError = 'Could not generate magic link.'
     }
 
     return res.status(200).json({
       ok: true,
       invited: true,
-      emailSent,
+      emailSent: emailStatus === 'sent',
+      emailStatus,
+      emailError,
       status,
-      inviteLink: magicLink
+      inviteLink: magicLink,
+      warning: emailStatus === 'failed' ? 'Email failed to send, please share link manually.' : undefined
     })
+
   } catch (error: any) {
     console.error('Add loved one error:', error)
     return res.status(500).json({ error: error.message || 'Internal error' })
