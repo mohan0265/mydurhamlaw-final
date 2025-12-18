@@ -129,27 +129,44 @@ export default function AWYWidget() {
     }
 
     const loadLovedOneView = async () => {
+      // 1. Get connections
       const { data, error } = await contextSupabase
         .from('awy_connections')
-        .select('student_id,student:profiles!student_id(display_name),status')
+        .select('student_id,status')
         .eq('loved_one_id', userId)
         .in('status', ['active','accepted'])
       if (error) throw error
 
-      const studentIds = (data || [])
+      if (!data || data.length === 0) {
+        setConnections([])
+        return
+      }
+
+      const studentIds = data
         .map((conn: any) => conn.student_id)
         .filter((id: string | null): id is string => Boolean(id))
 
+      // 2. Get names
+      const { data: profiles } = await contextSupabase
+        .from('profiles')
+        .select('id,display_name')
+        .in('id', studentIds)
+      
+      const nameMap = new Map((profiles || []).map((p: any) => [p.id, p.display_name]))
+
+      // 3. Get presence
       const presenceMap = await buildPresenceMap(studentIds)
 
-      const list: Connection[] = (data || [])
+      const list: Connection[] = data
         .map((conn: any) => {
-          const studentId = conn.student_id || conn.student_user_id
+          const studentId = conn.student_id
           if (!studentId) return null
           const presence = presenceMap.get(studentId)
+          const name = nameMap.get(studentId) || 'Student'
+          
           return {
             id: studentId,
-            displayName: conn.student?.display_name || 'Student',
+            displayName: name,
             isAvailable: Boolean(presence?.is_available),
             status: presence?.status || 'offline',
             role: 'student',
