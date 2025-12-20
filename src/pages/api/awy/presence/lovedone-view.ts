@@ -50,7 +50,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const { data: connections, error: connError } = await supabase
       .from('awy_connections')
       .select('id, student_id, last_seen_at')
-      .eq('loved_one_id', user.id)
+      .or(`loved_one_id.eq.${user.id},loved_user_id.eq.${user.id}`)
       .in('status', ['active', 'granted', 'accepted']);
 
     if (connError) throw connError;

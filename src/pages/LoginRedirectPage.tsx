@@ -98,6 +98,25 @@ export default function LoginRedirectPage() {
         console.log(`✅ Final user role determined: ${userRole}`);
         setDebugInfo(`User role: ${userRole}`);
 
+        // Link AWY connection for loved ones (ensure IDs/status are updated)
+        if (userRole === 'loved_one' && user.email) {
+          try {
+            const normalizedEmail = user.email.toLowerCase();
+            await supabase
+              .from('awy_connections')
+              .update({
+                loved_one_id: user.id,
+                loved_user_id: user.id,
+                status: 'active',
+                accepted_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+              })
+              .eq('loved_email', normalizedEmail);
+          } catch (linkErr: any) {
+            console.warn('Failed to link loved one connection:', linkErr?.message || linkErr);
+          }
+        }
+
         // Check profile
         const {
           data: existingProfile,
