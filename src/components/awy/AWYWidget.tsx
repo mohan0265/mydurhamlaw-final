@@ -30,6 +30,8 @@ export default function AWYWidget() {
   const [inviteRelationship, setInviteRelationship] = useState('Parent')
   const [inviteSending, setInviteSending] = useState(false)
   const [pendingInvites, setPendingInvites] = useState<Connection[]>([])
+  const [availabilityLockUntil, setAvailabilityLockUntil] = useState<number | null>(null)
+  const [editingEmail, setEditingEmail] = useState<string | null>(null)
   
   const [inviteSuccessLink, setInviteSuccessLink] = useState<string | null>(null)
   const [inviteSuccessMessage, setInviteSuccessMessage] = useState<string | null>(null)
@@ -133,8 +135,8 @@ export default function AWYWidget() {
       const { data, error } = await contextSupabase
         .from('awy_connections')
         .select('student_id,status')
-        .eq('loved_one_id', userId)
-        .in('status', ['active','accepted'])
+        .or(`loved_one_id.eq.${userId},loved_user_id.eq.${userId}`)
+        .in('status', ['active','accepted','granted'])
       if (error) throw error
 
       if (!data || data.length === 0) {
@@ -188,7 +190,21 @@ export default function AWYWidget() {
         .eq('user_id', userId)
         .maybeSingle()
       if (presenceError && presenceError.code !== 'PGRST116') throw presenceError
-      setIsMyAvailabilityOn(Boolean(myPresence?.is_available))
+
+      // If no presence row yet, create one so toggles persist
+      if (!myPresence) {
+        try {
+          await contextSupabase
+            .from('awy_presence')
+            .upsert({ user_id: userId, is_available: false }, { onConflict: 'user_id' })
+        } catch (insertErr) {
+          console.warn('[AWY] presence bootstrap skipped:', (insertErr as any)?.message || insertErr)
+        }
+      }
+
+      if (!availabilityLockUntil || Date.now() > availabilityLockUntil) {
+        setIsMyAvailabilityOn(Boolean(myPresence?.is_available))
+      }
       setPresenceError(null)
 
       if (role === 'loved_one') {
@@ -308,6 +324,9 @@ export default function AWYWidget() {
       })
       if (error) throw error
       sendHeartbeat(newState)
+      setAvailabilityLockUntil(Date.now() + 15000) // keep UI stable for 15s
+      setTimeout(() => setAvailabilityLockUntil(null), 15000)
+      fetchData()
       toast.success(newState ? "You are now visible" : "You are hidden")
     } catch (err) {
       console.error('AWY availability update failed:', err)
@@ -356,11 +375,9 @@ export default function AWYWidget() {
         throw new Error(json.error || 'Failed to send invite')
       }
 
-      if (true) { // Always success path now, backend returns { ok: true, message: ... }
-        setInviteSuccessMessage(`Access authorized for ${inviteEmail}.`)
-        setInviteSuccessLink(`${window.location.origin}/loved-one-login`) // Use login page link
-        toast.success('Access granted!')
-      }
+      setInviteSuccessMessage(editingEmail ? `Updated details for ${inviteEmail}.` : `Access authorized for ${inviteEmail}.`)
+      setInviteSuccessLink(`${window.location.origin}/loved-one-login`) // Use login page link
+      toast.success(editingEmail ? 'Details updated' : 'Access granted!')
       
       fetchData()
     } catch (err: any) {
@@ -374,6 +391,7 @@ export default function AWYWidget() {
     setShowAddModal(false)
     setInviteEmail('')
     setInviteRelationship('Parent')
+    setEditingEmail(null)
     setInviteSuccessLink(null)
     setInviteSuccessMessage(null)
     setInviteCopied(false)
@@ -395,6 +413,7 @@ export default function AWYWidget() {
   const handleResend = async (conn: Connection) => {
     setInviteEmail(conn.email || '')
     setInviteRelationship(conn.displayName || 'Loved one')
+    setEditingEmail(conn.email || null)
     setShowAddModal(true)
   }
 
@@ -608,11 +627,12 @@ export default function AWYWidget() {
                     </div>
                     
                     <div className="flex gap-2">
-                       {conn.isAvailable && conn.status !== 'revoked' && (
+                       {conn.status !== 'revoked' && (
                          <button
                            onClick={() => openCall(conn.id)}
-                           className="p-2 bg-pink-100 text-pink-600 rounded-full hover:bg-pink-500 hover:text-white transition-all shadow-sm"
-                           title="Start Video Call"
+                           disabled={!conn.isAvailable}
+                           className={`p-2 rounded-full transition-all shadow-sm ${conn.isAvailable ? 'bg-pink-100 text-pink-600 hover:bg-pink-500 hover:text-white' : 'bg-gray-100 text-gray-400 cursor-not-allowed'}`}
+                           title={conn.isAvailable ? "Start Video Call" : "Available when online"}
                          >
                            <Video className="w-4 h-4" />
                          </button>
@@ -665,7 +685,7 @@ export default function AWYWidget() {
                         <button
                           onClick={() => handleResend(inv)}
                           className="p-2 rounded-full bg-white border border-gray-200 text-gray-700 hover:bg-gray-100"
-                          title="Resend"
+                          title="Edit / Resend"
                         >
                           <Send className="w-4 h-4" />
                         </button>
