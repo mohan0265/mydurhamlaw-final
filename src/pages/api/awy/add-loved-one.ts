@@ -77,9 +77,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const inviteToken = existing?.invite_token || randomUUID()
     const nowIso = new Date().toISOString()
-    const status = lovedUserId ? 'active' : 'pending'
+    // Use 'granted' as the standard status for the new flow, unless they are already linked ('active')
+    const status = lovedUserId ? 'active' : 'granted'
 
-    const { error: upsertError } = await supabase
+    const { data: connectionData, error: upsertError } = await supabase
       .from('awy_connections')
       .upsert(
         {
@@ -96,14 +97,32 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           loved_user_id: lovedUserId,
           status,
           invite_token: inviteToken,
-          invited_at: nowIso,
+          invited_at: nowIso, // kept for legacy
+          granted_at: nowIso,
+          granted_by: user!.id,
+          revoked_at: null,
+          revoked_by: null,
           accepted_at: lovedUserId ? nowIso : null,
           updated_at: nowIso
         },
         { onConflict: 'student_id,loved_email' }
       )
+      .select()
+      .single()
 
     if (upsertError) throw upsertError
+
+    // Audit Log
+    const { error: auditError } = await supabase.from('awy_audit_log').insert({
+      connection_id: connectionData.id,
+      action: 'grant',
+      actor_user_id: user!.id,
+      actor_role: 'student',
+      details: { email: normalizedEmail, relationship: relationshipLabel }
+    })
+    
+    if (auditError) console.error('Audit log error:', auditError)
+
 
     // Simplified Flow: Just grant access (database record)
     // The user can now log in via Google/Auth and will be linked via trigger or existing check.

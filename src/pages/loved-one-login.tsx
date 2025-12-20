@@ -98,10 +98,16 @@ export default function LovedOneLoginPage() {
               )}
             </button>
 
-            <div className="bg-blue-50 border border-blue-100 rounded-xl p-4">
-              <p className="text-sm text-blue-800 text-center">
-                <strong>Note:</strong> Your student must grant you access first using your Google email address.
-              </p>
+            <div className="bg-blue-50 border border-blue-100 rounded-xl p-5 space-y-4">
+              <h3 className="font-bold text-blue-900 text-sm">How to Connect</h3>
+              <ul className="text-sm text-blue-800 space-y-2 list-disc list-inside">
+                <li>You must sign in with the <strong>exact email</strong> your student added.</li>
+                <li>If you use a different email, you won&apos;t be able to connect.</li>
+                <li>No password needed — just sign in securely with Google.</li>
+              </ul>
+              <div className="text-xs text-blue-600 pt-2 border-t border-blue-200">
+                Tip: Ask your student to re-check the email address if you can&apos;t access the dashboard.
+              </div>
             </div>
           </div>
           

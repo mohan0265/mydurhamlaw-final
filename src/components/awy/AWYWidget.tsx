@@ -82,10 +82,10 @@ export default function AWYWidget() {
         .from('awy_connections')
         .select('id,student_id,loved_one_id,nickname,relationship,relationship_label,status,loved_email,email,invite_token,invited_at,accepted_at')
         .eq('student_id', userId)
-        .in('status', ['active','accepted','pending','invited'])
+        .in('status', ['active','accepted','pending','invited','granted','revoked'])
       if (error) throw error
 
-      const activeStatuses = ['active', 'accepted']
+      const activeStatuses = ['active', 'accepted', 'granted']
 
       const activeIds = (data || [])
         .filter((conn: any) => activeStatuses.includes((conn.status || '').toLowerCase()))
@@ -400,13 +400,47 @@ export default function AWYWidget() {
 
   const handleRevoke = async (conn: Connection) => {
     if (!contextSupabase) return
+    if (!confirm(`Are you sure you want to revoke access for ${conn.displayName}?`)) return
+    
     try {
-      const { error } = await contextSupabase.from('awy_connections').delete().eq('id', conn.id)
-      if (error) throw error
-      toast.success('Invite removed')
+      const res = await fetchAuthed('/api/awy/revoke-loved-one', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ connectionId: conn.id })
+      })
+      
+      if (!res.ok) throw new Error('Failed to revoke')
+      
+      toast.success('Access revoked')
       fetchData()
+    } catch (err: any) {
+      toast.error(err.message || 'Could not revoke access')
+    }
+  }
+
+  // Audit Log State
+  const [showAudit, setShowAudit] = useState(false)
+  const [auditLogs, setAuditLogs] = useState<any[]>([])
+  const [auditLoading, setAuditLoading] = useState(false)
+
+  const openAuditLog = async (connId: string) => {
+    setShowAudit(true)
+    setAuditLoading(true)
+    setAuditLogs([])
+    try {
+      const { data, error } = await contextSupabase
+        .from('awy_audit_log')
+        .select('*')
+        .eq('connection_id', connId)
+        .order('created_at', { ascending: false })
+        .limit(20)
+      
+      if (error) throw error
+      setAuditLogs(data || [])
     } catch (err) {
-      toast.error('Could not remove invite')
+      toast.error('Failed to load logs')
+    } finally {
+      setAuditLoading(false)
     }
   }
 
@@ -549,61 +583,104 @@ export default function AWYWidget() {
               </div>
             ) : (
               connections.map(conn => (
-                <div key={conn.id} className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-2xl transition-all border border-transparent hover:border-gray-100 group">
-                  <div className="flex items-center space-x-3">
-                    <div className="relative">
-                      <div className="w-12 h-12 bg-gradient-to-br from-pink-100 to-rose-100 rounded-full flex items-center justify-center text-pink-600 font-bold text-lg shadow-sm">
-                        {conn.displayName.charAt(0)}
+                <div key={conn.id} className="flex flex-col p-3 hover:bg-gray-50 rounded-2xl transition-all border border-transparent hover:border-gray-100 group">
+                  <div className="flex items-center justify-between w-full">
+                    <div className="flex items-center space-x-3">
+                      <div className="relative">
+                        <div className="w-12 h-12 bg-gradient-to-br from-pink-100 to-rose-100 rounded-full flex items-center justify-center text-pink-600 font-bold text-lg shadow-sm">
+                          {conn.displayName.charAt(0)}
+                        </div>
+                        {(conn.isAvailable || isOnline(conn)) && (
+                          <span className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 border-2 border-white rounded-full shadow-sm animate-pulse"></span>
+                        )}
                       </div>
-                      {(conn.isAvailable || isOnline(conn)) && (
-                        <span className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 border-2 border-white rounded-full shadow-sm animate-pulse"></span>
-                      )}
+                      <div>
+                        <p className="text-sm font-bold text-gray-900">{conn.displayName}</p>
+                        <p className={`text-xs font-medium ${conn.isAvailable ? 'text-green-600' : 'text-gray-400'}`}>
+                          {conn.status === 'revoked' ? 'Revoked' : 
+                           conn.isAvailable ? 'Available' : 
+                           isOnline(conn) ? 'Online recently' : 'Away'}
+                        </p>
+                        {conn.lastSeenAt && (
+                           <p className="text-[10px] text-gray-400">Last seen: {new Date(conn.lastSeenAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</p>
+                        )}
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-sm font-bold text-gray-900">{conn.displayName}</p>
-                      <p className={`text-xs font-medium ${conn.isAvailable ? 'text-green-600' : 'text-gray-400'}`}>
-                        {conn.isAvailable ? 'Available' : isOnline(conn) ? 'Online recently' : 'Away'}
-                      </p>
+                    
+                    <div className="flex gap-2">
+                       {conn.isAvailable && conn.status !== 'revoked' && (
+                         <button
+                           onClick={() => openCall(conn.id)}
+                           className="p-2 bg-pink-100 text-pink-600 rounded-full hover:bg-pink-500 hover:text-white transition-all shadow-sm"
+                           title="Start Video Call"
+                         >
+                           <Video className="w-4 h-4" />
+                         </button>
+                       )}
+                       {/* Activity Log */}
+                       <button
+                         onClick={() => openAuditLog(conn.id)}
+                         className="p-2 bg-gray-100 text-gray-600 rounded-full hover:bg-gray-200 transition-all font-mono text-[10px]"
+                         title="Activity Log"
+                       >
+                         LOG
+                       </button> 
+                       {/* Revoke for Active Users */}
+                       {conn.status !== 'revoked' && (
+                         <button
+                           onClick={() => handleRevoke(conn)}
+                           className="p-2 bg-gray-100 text-red-500 rounded-full hover:bg-red-50 transition-all"
+                           title="Revoke Access"
+                         >
+                           <Trash className="w-4 h-4" />
+                         </button>
+                       )}
                     </div>
                   </div>
-                  
-                  {conn.isAvailable && (
-                    <button
-                      onClick={() => openCall(conn.id)}
-                      className="p-2.5 bg-pink-100 text-pink-600 rounded-full hover:bg-pink-500 hover:text-white transition-all shadow-sm hover:shadow-md transform hover:scale-105"
-                      title="Start Video Call"
-                    >
-                      <Video className="w-4 h-4" />
-                    </button>
-                  )}
                 </div>
               ))
             )}
 
             {pendingInvites.length > 0 && (
               <div className="mt-4 space-y-2">
-                <div className="text-xs font-bold text-gray-400 uppercase tracking-wider">Pending Invites</div>
+                <div className="text-xs font-bold text-gray-400 uppercase tracking-wider">Pending / Revoked</div>
                 {pendingInvites.map((inv) => (
                   <div key={inv.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
                     <div>
                       <p className="text-sm font-semibold text-gray-800">{inv.displayName}</p>
                       <p className="text-xs text-gray-500">{inv.email}</p>
+                      <span className={`text-[10px] px-1.5 py-0.5 rounded ${inv.status === 'revoked' ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700'}`}>
+                        {inv.status}
+                      </span>
                     </div>
                     <div className="flex gap-2">
                       <button
-                        onClick={() => handleResend(inv)}
-                        className="p-2 rounded-full bg-white border border-gray-200 text-gray-700 hover:bg-gray-100"
-                        title="Resend"
+                        onClick={() => openAuditLog(inv.id)}
+                        className="p-2 rounded-full bg-white border border-gray-200 text-gray-500 hover:bg-gray-100"
+                         title="Log"
                       >
-                        <Send className="w-4 h-4" />
+                         LOG
                       </button>
-                      <button
-                        onClick={() => handleRevoke(inv)}
-                        className="p-2 rounded-full bg-white border border-gray-200 text-red-600 hover:bg-red-50"
-                        title="Remove"
-                      >
-                        <Trash className="w-4 h-4" />
-                      </button>
+                      {inv.status !== 'revoked' && (
+                        <button
+                          onClick={() => handleResend(inv)}
+                          className="p-2 rounded-full bg-white border border-gray-200 text-gray-700 hover:bg-gray-100"
+                          title="Resend"
+                        >
+                          <Send className="w-4 h-4" />
+                        </button>
+                      )}
+                      
+                      {/* For pending, delete is fine? Or revoke? Revoke is better for audit. */}
+                      {inv.status !== 'revoked' && (
+                        <button
+                          onClick={() => handleRevoke(inv)}
+                          className="p-2 rounded-full bg-white border border-gray-200 text-red-600 hover:bg-red-50"
+                          title="Revoke"
+                        >
+                          <Trash className="w-4 h-4" />
+                        </button>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -701,6 +778,45 @@ export default function AWYWidget() {
                </div>
              </>
           )}
+        </div>
+      </div>
+    )}
+    
+    {/* Audit Log Modal */}
+    {showAudit && (
+      <div className="fixed inset-0 z-[80] bg-black/40 backdrop-blur-sm flex items-center justify-center px-4">
+        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 max-h-[80vh] flex flex-col">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-lg font-bold text-slate-900">Activity Log</h3>
+            <button onClick={() => setShowAudit(false)} className="p-2 rounded-full hover:bg-slate-100">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+          
+          <div className="flex-1 overflow-y-auto space-y-3">
+            {auditLoading ? (
+               <div className="flex justify-center py-8"><Loader2 className="animate-spin text-pink-500" /></div>
+            ) : auditLogs.length === 0 ? (
+               <p className="text-gray-400 text-center py-8 text-sm">No activity recorded for this connection.</p>
+            ) : (
+               auditLogs.map(log => (
+                 <div key={log.id} className="text-xs border-b border-slate-100 pb-2 mb-2 last:border-0">
+                    <div className="flex justify-between mb-1">
+                      <span className="font-bold text-slate-700 uppercase">{log.action}</span>
+                      <span className="text-slate-400">{new Date(log.created_at).toLocaleString()}</span>
+                    </div>
+                    <div className="text-slate-500">
+                      {log.actor_role === 'student' ? 'By You' : 'By Loved One'}
+                       {log.details && Object.keys(log.details).length > 0 && (
+                         <span className="block mt-1 font-mono bg-slate-50 p-1 rounded text-[10px] break-all">
+                           {JSON.stringify(log.details)}
+                         </span>
+                       )}
+                    </div>
+                 </div>
+               ))
+            )}
+          </div>
         </div>
       </div>
     )}
