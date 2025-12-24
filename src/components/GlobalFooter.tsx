@@ -34,6 +34,7 @@ export default function GlobalFooter() {
             <li><Link className="hover:underline" href="/legal/privacy-policy">Privacy Policy</Link></li>
             <li><Link className="hover:underline" href="/legal/terms-of-use">Terms of Use</Link></li>
             <li><Link className="hover:underline" href="/legal/ethics">Ethics & AI Integrity</Link></li>
+            <li><Link className="hover:underline text-xs" href="/admin/login">Admin Login</Link></li>
           </ul>
         </div>
       </div>
