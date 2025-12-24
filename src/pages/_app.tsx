@@ -19,6 +19,7 @@ import { getSupabaseClient } from '@/lib/supabase/client';
 import { TrialBanner } from '@/components/billing/TrialBanner';
 import Router from 'next/router';
 import { isRouteAbortError } from '@/lib/navigation/safeNavigate';
+import { SupportWidget } from '@/components/support/SupportWidget';
 
 // Server-only init
 /*
@@ -167,6 +168,7 @@ export default function App({ Component, pageProps }: AppProps) {
                 <LayoutShell>
                   <Component {...pageProps} />
                 </LayoutShell>
+                <SupportWidget />
 
                 {/* Global Toaster */}
                 <Toaster
