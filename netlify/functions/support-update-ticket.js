@@ -1,6 +1,7 @@
 const { supabaseAdmin } = require('./_lib/supabase')
 const { parse } = require('cookie')
 const { createHmac } = require('crypto')
+const { Resend } = require('resend')
 
 const COOKIE_NAME = 'admin_session'
 function expectedToken() {
@@ -41,5 +42,29 @@ exports.handler = async (event) => {
     .eq('id', ticket_id)
 
   if (error) return { statusCode: 500, body: JSON.stringify({ error: error.message }) }
+
+  // Escalation placeholder: if pending/urgent, send email via Resend if configured, else log
+  const shouldEscalate = updates.status === 'pending' || updates.priority === 'urgent'
+  if (shouldEscalate) {
+    try {
+      const resendKey = process.env.RESEND_API_KEY
+      const emailFrom = process.env.EMAIL_FROM
+      const emailTo = process.env.SUPPORT_ESCALATION_EMAIL || emailFrom
+      if (resendKey && emailFrom && emailTo) {
+        const resend = new Resend(resendKey)
+        await resend.emails.send({
+          from: emailFrom,
+          to: emailTo,
+          subject: `Support escalation: ${ticket_id}`,
+          html: `<p>Ticket ${ticket_id} marked ${updates.status || ''} / ${updates.priority || ''}</p>`
+        })
+      } else {
+        console.log('[support-update-ticket] escalate', ticket_id, updates)
+      }
+    } catch (e) {
+      console.warn('[support-update-ticket] escalation failed', e?.message || e)
+    }
+  }
+
   return { statusCode: 200, body: JSON.stringify({ ok: true }) }
 }

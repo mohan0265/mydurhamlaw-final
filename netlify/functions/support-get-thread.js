@@ -1,6 +1,16 @@
 const { supabaseAdmin } = require('./_lib/supabase')
 const { sanitizeString } = require('./_lib/validate')
 const { rateLimit } = require('./_lib/rateLimit')
+const { parse } = require('cookie')
+const { createHmac } = require('crypto')
+
+const COOKIE_NAME = 'admin_session'
+function expectedToken() {
+  const user = process.env.ADMIN_USERNAME
+  const pass = process.env.ADMIN_PASSWORD
+  if (!user || !pass) return null
+  return createHmac('sha256', pass).update(user).digest('hex')
+}
 
 exports.handler = async (event) => {
   if (event.httpMethod !== 'POST') {
@@ -23,6 +33,9 @@ exports.handler = async (event) => {
   const visitor_token = sanitizeString(body.visitor_token, 128)
   const user_id = body.user_id || null
 
+  const adminToken = parse(event.headers.cookie || '')[COOKIE_NAME]
+  const isAdmin = adminToken && expectedToken() && adminToken === expectedToken()
+
   if (!ticket_id) {
     return { statusCode: 400, body: JSON.stringify({ error: 'ticket_id_required' }) }
   }
@@ -39,14 +52,16 @@ exports.handler = async (event) => {
   }
 
   // Auth check: visitor token or user ownership
-  if (ticket.is_visitor) {
-    const tokenInTicket = ticket.client_meta?.visitor_token
-    if (!visitor_token || !tokenInTicket || tokenInTicket !== visitor_token) {
-      return { statusCode: 401, body: JSON.stringify({ error: 'unauthorized' }) }
-    }
-  } else {
-    if (!user_id || ticket.user_id !== user_id) {
-      return { statusCode: 401, body: JSON.stringify({ error: 'unauthorized' }) }
+  if (!isAdmin) {
+    if (ticket.is_visitor) {
+      const tokenInTicket = ticket.client_meta?.visitor_token
+      if (!visitor_token || !tokenInTicket || tokenInTicket !== visitor_token) {
+        return { statusCode: 401, body: JSON.stringify({ error: 'unauthorized' }) }
+      }
+    } else {
+      if (!user_id || ticket.user_id !== user_id) {
+        return { statusCode: 401, body: JSON.stringify({ error: 'unauthorized' }) }
+      }
     }
   }
 

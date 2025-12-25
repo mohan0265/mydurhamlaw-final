@@ -27,6 +27,40 @@ exports.handler = async (event) => {
     return { statusCode: 400, body: JSON.stringify({ error: 'invalid_json' }) }
   }
 
+  // Upsert path
+  if (body.action === 'upsert' && body.article) {
+    const { id, title, slug, body: articleBody, tags = [], is_published = true } = body.article
+    if (!title || !slug || !articleBody) {
+      return { statusCode: 400, body: JSON.stringify({ error: 'missing_fields' }) }
+    }
+    const { data, error } = await supabaseAdmin
+      .from('support_kb_articles')
+      .upsert({
+        id: id || undefined,
+        title,
+        slug,
+        body: articleBody,
+        tags,
+        is_published
+      })
+      .select()
+      .single()
+    if (error) return { statusCode: 500, body: JSON.stringify({ error: error.message }) }
+    return { statusCode: 200, body: JSON.stringify({ ok: true, article: data }) }
+  }
+
+  // List all (limited)
+  if (body.action === 'list') {
+    const { data, error } = await supabaseAdmin
+      .from('support_kb_articles')
+      .select('id, title, slug, body, tags, is_published')
+      .order('updated_at', { ascending: false })
+      .limit(100)
+    if (error) return { statusCode: 500, body: JSON.stringify({ error: error.message }) }
+    return { statusCode: 200, body: JSON.stringify({ ok: true, results: data || [] }) }
+  }
+
+  // Search
   const query = (body.query || '').toLowerCase()
   const { data, error } = await supabaseAdmin
     .from('support_kb_articles')
