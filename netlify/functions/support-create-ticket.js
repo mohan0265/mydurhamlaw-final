@@ -1,7 +1,8 @@
 const { supabaseAdmin } = require('./_lib/supabase')
-const { validateTicketInput } = require('./_lib/validate')
+const { validateTicketInput, sanitizeString } = require('./_lib/validate')
 const { rateLimit } = require('./_lib/rateLimit')
 const { randomUUID } = require('crypto')
+const { logSupport } = require('./_lib/log')
 
 exports.handler = async (event) => {
   if (event.httpMethod !== 'POST') {
@@ -40,8 +41,8 @@ exports.handler = async (event) => {
   const display_name = body.display_name || visitor_name || null
   const is_visitor = !user_id
   const visitor_token = is_visitor ? randomUUID() : null
-  const page_url = body.page_url || null
-  const user_agent = body.user_agent || null
+  const page_url = sanitizeString(body.page_url, 300) || null
+  const user_agent = sanitizeString(body.user_agent, 300) || null
   const client_meta = body.client_meta || {}
 
   const { data: ticket, error } = await supabaseAdmin
@@ -82,6 +83,8 @@ exports.handler = async (event) => {
   if (msgError) {
     return { statusCode: 500, body: JSON.stringify({ error: msgError.message }) }
   }
+
+  logSupport('ticket_created', { ticket_id: ticket.id, is_visitor, source: body.source || 'widget' })
 
   return {
     statusCode: 200,

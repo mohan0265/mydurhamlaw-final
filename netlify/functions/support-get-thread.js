@@ -2,15 +2,7 @@ const { supabaseAdmin } = require('./_lib/supabase')
 const { sanitizeString } = require('./_lib/validate')
 const { rateLimit } = require('./_lib/rateLimit')
 const { parse } = require('cookie')
-const { createHmac } = require('crypto')
-
-const COOKIE_NAME = 'admin_session'
-function expectedToken() {
-  const user = process.env.ADMIN_USERNAME
-  const pass = process.env.ADMIN_PASSWORD
-  if (!user || !pass) return null
-  return createHmac('sha256', pass).update(user).digest('hex')
-}
+const { isAdmin, COOKIE_NAME } = require('./_lib/adminAuth')
 
 exports.handler = async (event) => {
   if (event.httpMethod !== 'POST') {
@@ -34,7 +26,7 @@ exports.handler = async (event) => {
   const user_id = body.user_id || null
 
   const adminToken = parse(event.headers.cookie || '')[COOKIE_NAME]
-  const isAdmin = adminToken && expectedToken() && adminToken === expectedToken()
+  const isAdminRequest = isAdmin(event)
 
   if (!ticket_id) {
     return { statusCode: 400, body: JSON.stringify({ error: 'ticket_id_required' }) }
@@ -52,7 +44,7 @@ exports.handler = async (event) => {
   }
 
   // Auth check: visitor token or user ownership
-  if (!isAdmin) {
+  if (!isAdminRequest) {
     if (ticket.is_visitor) {
       const tokenInTicket = ticket.client_meta?.visitor_token
       if (!visitor_token || !tokenInTicket || tokenInTicket !== visitor_token) {

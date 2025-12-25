@@ -21,7 +21,7 @@
     "update:deps": "npm update",
     "clean:all": "rimraf .next node_modules package-lock.json && npm install",
     "export": "next build && next export",
-    "prebuild": "node scripts/check-utf8.mjs"
+    "prebuild": "node scripts/check-utf8.mjs && node scripts/guard-env.js"
   },
   "dependencies": {
     "@google/genai": "^1.30.0",

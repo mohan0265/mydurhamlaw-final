@@ -26,9 +26,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   const token = buildToken(adminUser, adminPass)
+  const secure = process.env.NODE_ENV === 'production'
   res.setHeader(
     'Set-Cookie',
-    `${COOKIE_NAME}=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${COOKIE_MAX_AGE}`
+    `${COOKIE_NAME}=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${COOKIE_MAX_AGE};${secure ? ' Secure;' : ''}`
   )
   return res.status(200).json({ ok: true })
 }
