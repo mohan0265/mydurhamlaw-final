@@ -4,13 +4,18 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
 let adminClient: SupabaseClient | null = null;
 
-function ensureAdminClient(): SupabaseClient {
+function ensureAdminClient(): SupabaseClient | null {
   if (adminClient) return adminClient;
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  // Use server-side vars only; never rely on public env here.
+  const url = (process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || '').trim();
+  const serviceKey = (process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim();
+
   if (!url || !serviceKey) {
-    throw new Error('Supabase admin env missing: ensure NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are set');
+    console.warn('[supabaseAdmin] Missing Supabase admin env (url or service key). Returning null.');
+    return null;
   }
+
   adminClient = createClient(url, serviceKey, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
@@ -24,7 +29,7 @@ export const supabaseAdmin = new Proxy(
     get(_target, prop) {
       const client = ensureAdminClient();
       // @ts-expect-error dynamic proxy access
-      return client[prop];
+      return client ? client[prop] : undefined;
     },
   }
 ) as SupabaseClient;

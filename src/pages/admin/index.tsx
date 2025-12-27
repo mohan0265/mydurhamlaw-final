@@ -1,7 +1,9 @@
 import { GetServerSideProps } from 'next'
 import { parse } from 'cookie'
 import { createHmac } from 'crypto'
-import { supabaseAdmin } from '@/lib/server/supabaseAdmin'
+import { getSupabaseAdmin } from '@/lib/server/supabaseAdmin'
+
+// ... type definitions omitted for brevity
 
 type AdminRow = {
   id: string
@@ -46,8 +48,20 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
     }
   }
 
+  const adminClient = getSupabaseAdmin()
+  if (!adminClient) {
+    return {
+      props: {
+        authorized: true,
+        rows: [],
+        users: [],
+        error: 'Server misconfigured: missing Supabase admin env vars'
+      }
+    }
+  }
+
   // Fetch profile + trial info
-  const { data, error } = await supabaseAdmin
+  const { data, error } = await adminClient
     .from('profiles')
     .select('id, display_name, user_role, year_group, trial_started_at, trial_ever_used')
     .order('updated_at', { ascending: false })
@@ -56,7 +70,7 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
   let users: AdminUser[] = []
   let errMsg: string | null = null
   try {
-    const { data: list } = await supabaseAdmin.auth.admin.listUsers()
+    const { data: list } = await adminClient.auth.admin.listUsers()
     users =
       list?.users?.map((u) => ({
         id: u.id,
@@ -183,10 +197,10 @@ export default function AdminDashboard({ authorized, rows, users, error }: Props
               {rows.map((r) => (
                 <tr key={r.id} className="border-t border-slate-100">
                   <td className="px-3 py-2 font-mono text-xs text-slate-600">{r.id}</td>
-                  <td className="px-3 py-2">{r.display_name || 'â€”'}</td>
-                  <td className="px-3 py-2">{r.user_role || 'â€”'}</td>
-                  <td className="px-3 py-2">{r.year_group || 'â€”'}</td>
-                  <td className="px-3 py-2">{r.trial_started_at || 'â€”'}</td>
+                  <td className="px-3 py-2">{r.display_name || '—'}</td>
+                  <td className="px-3 py-2">{r.user_role || '—'}</td>
+                  <td className="px-3 py-2">{r.year_group || '—'}</td>
+                  <td className="px-3 py-2">{r.trial_started_at || '—'}</td>
                   <td className="px-3 py-2">{r.trial_ever_used ? 'Yes' : 'No'}</td>
                 </tr>
               ))}
@@ -217,10 +231,10 @@ export default function AdminDashboard({ authorized, rows, users, error }: Props
               {users.map((u) => (
                 <tr key={u.id} className="border-t border-slate-100">
                   <td className="px-3 py-2 font-mono text-xs text-slate-600">{u.id}</td>
-                  <td className="px-3 py-2">{u.email || 'â€”'}</td>
-                  <td className="px-3 py-2">{u.provider || 'â€”'}</td>
-                  <td className="px-3 py-2">{u.created_at || 'â€”'}</td>
-                  <td className="px-3 py-2">{u.last_sign_in_at || 'â€”'}</td>
+                  <td className="px-3 py-2">{u.email || '—'}</td>
+                  <td className="px-3 py-2">{u.provider || '—'}</td>
+                  <td className="px-3 py-2">{u.created_at || '—'}</td>
+                  <td className="px-3 py-2">{u.last_sign_in_at || '—'}</td>
                 </tr>
               ))}
               {users.length === 0 && (
