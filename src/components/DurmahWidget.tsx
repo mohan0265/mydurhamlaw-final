@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useAuth } from '@/lib/supabase/AuthContext';
 import { useDurmahRealtime } from "@/hooks/useDurmahRealtime";
+import { useDurmahGeminiLive } from "@/hooks/useDurmahGeminiLive";
 import { useDurmahDynamicContext } from "@/hooks/useDurmahDynamicContext";
 import { useDurmah } from "@/lib/durmah/context";
 import { fetchAuthed } from "@/lib/fetchAuthed";
@@ -18,6 +19,9 @@ import { Settings, X, ArrowRight, AlertTriangle, Check, Volume2, Brain, Zap, Mor
 import Link from 'next/link';
 import toast from "react-hot-toast";
 import { getSupabaseClient } from "@/lib/supabase/client";
+
+const VOICE_PROVIDER = process.env.NEXT_PUBLIC_DURMAH_VOICE_PROVIDER || 'gemini';
+const useVoiceHook = VOICE_PROVIDER === 'gemini' ? useDurmahGeminiLive : useDurmahRealtime;
 
 type Msg = { role: "durmah" | "you"; text: string; ts: number };
 
@@ -52,6 +56,7 @@ function isDuplicateTurn(
 
   for (let i = existing.length - 1; i >= 0; i -= 1) {
     const candidate = existing[i];
+    if (!candidate) continue;
     if (ts - candidate.ts > DEDUPE_WINDOW_MS) break;
     if (
       candidate.role === role &&
@@ -205,9 +210,9 @@ export default function DurmahWidget() {
             if (mapped.length > 0) setMessages(mapped);
             if (ctx.lastSummary) {
               setMemory({
-                lastTopic: 'continuation',
-                lastMessage: ctx.lastSummary,
-                lastSeenAt: ctx.last_message_at,
+                last_topic: 'continuation',
+                last_message: ctx.lastSummary,
+                last_seen_at: ctx.last_message_at,
               });
             }
             if (ctx.onboardingState === 'new') {
@@ -263,7 +268,15 @@ export default function DurmahWidget() {
     let added = false;
 
     setCallTranscript((prev) => {
-      if (isDuplicateTurn(prev, role, normalizedText, ts)) {
+      // Fix undefined candidate error
+      const last = prev[prev.length - 1];
+      const lowered = normalizedText.toLowerCase();
+
+      if (
+        last &&
+        last.role === role &&
+        normalizeTurnText(last.text).toLowerCase() === lowered
+      ) {
         return prev;
       }
       added = true;
@@ -284,7 +297,7 @@ export default function DurmahWidget() {
     speaking,
     error: voiceError,
     playVoicePreview // Imported from hook
-  } = useDurmahRealtime({
+  } = useVoiceHook({
     systemPrompt,
     voice: preset?.openaiVoice || "alloy",
     audioRef,
@@ -537,7 +550,7 @@ export default function DurmahWidget() {
       const response = await fetch("/api/durmah/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: payload, source: "dashboard" }),
+        body: JSON.stringify({ message: userText, source: "dashboard" }),
       });
 
       if (!response.ok) throw new Error(await response.text());

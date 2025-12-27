@@ -1,0 +1,26 @@
+{
+  "name": "durmah-gemini-live-proxy",
+  "version": "1.0.0",
+  "description": "WebSocket proxy for Durmah Voice (Gemini Live)",
+  "main": "dist/server.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "dev": "ts-node src/server.ts"
+  },
+  "dependencies": {
+    "ws": "^8.13.0",
+    "google-auth-library": "^9.0.0",
+    "@supabase/supabase-js": "^2.38.0",
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {
+    "typescript": "^5.2.2",
+    "@types/ws": "^8.5.5",
+    "@types/node": "^20.6.0",
+    "ts-node": "^10.9.1"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
