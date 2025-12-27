@@ -8,8 +8,6 @@
   AWS_LAMBDA_JS_RUNTIME = "nodejs20.x"
   NPM_FLAGS = "--legacy-peer-deps"
   SECRETS_SCAN_OMIT_KEYS = "NEXT_PUBLIC_GEMINI_API_KEY,GEMINI_API_KEY"
-  NEXT_PUBLIC_SUPABASE_URL = ""
-  NEXT_PUBLIC_SUPABASE_ANON_KEY = ""
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
