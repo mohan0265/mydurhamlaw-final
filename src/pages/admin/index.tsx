@@ -1,9 +1,7 @@
-import { GetServerSideProps } from 'next'
-import { parse } from 'cookie'
-import { createHmac } from 'crypto'
-import { getSupabaseAdmin } from '@/lib/server/supabaseAdmin'
-
-// ... type definitions omitted for brevity
+ï»¿import { GetServerSideProps } from "next"
+import { parse } from "cookie"
+import { createHmac } from "crypto"
+import { getSupabaseAdmin } from "@/lib/server/supabaseAdmin"
 
 type AdminRow = {
   id: string
@@ -29,21 +27,21 @@ type Props = {
   error?: string | null
 }
 
-const COOKIE_NAME = 'admin_session'
+const COOKIE_NAME = "admin_session"
 
 function expectedToken() {
   const adminUser = process.env.ADMIN_USERNAME
   const adminPass = process.env.ADMIN_PASSWORD
   if (!adminUser || !adminPass) return null
-  return createHmac('sha256', adminPass).update(adminUser).digest('hex')
+  return createHmac("sha256", adminPass).update(adminUser).digest("hex")
 }
 
 export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
-  const token = parse(ctx.req.headers.cookie || '')[COOKIE_NAME]
+  const token = parse(ctx.req.headers.cookie || "")[COOKIE_NAME]
   const exp = expectedToken()
   if (!token || !exp || token !== exp) {
     return {
-      redirect: { destination: '/admin/login', permanent: false },
+      redirect: { destination: "/admin/login", permanent: false },
       props: { authorized: false, rows: [], users: [], error: null }
     }
   }
@@ -55,16 +53,15 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
         authorized: true,
         rows: [],
         users: [],
-        error: 'Server misconfigured: missing Supabase admin env vars'
+        error: "Server misconfigured: missing Supabase admin env vars"
       }
     }
   }
 
-  // Fetch profile + trial info
   const { data, error } = await adminClient
-    .from('profiles')
-    .select('id, display_name, user_role, year_group, trial_started_at, trial_ever_used')
-    .order('updated_at', { ascending: false })
+    .from("profiles")
+    .select("id, display_name, user_role, year_group, trial_started_at, trial_ever_used")
+    .order("updated_at", { ascending: false })
     .limit(200)
 
   let users: AdminUser[] = []
@@ -80,7 +77,7 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
         provider: u.app_metadata?.provider ?? null
       })) ?? []
   } catch (e: any) {
-    errMsg = e?.message || 'Failed to load auth users'
+    errMsg = e?.message || "Failed to load auth users"
   }
 
   return {
@@ -99,39 +96,39 @@ export default function AdminDashboard({ authorized, rows, users, error }: Props
   const onUpdateProfile = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     const form = e.currentTarget
-    const id = (form.elements.namedItem('profile_id') as HTMLInputElement).value
-    const display_name = (form.elements.namedItem('display_name') as HTMLInputElement).value
-    const user_role = (form.elements.namedItem('user_role') as HTMLInputElement).value
-    const year_group = (form.elements.namedItem('year_group') as HTMLInputElement).value
-    const res = await fetch('/api/admin/update-profile', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+    const id = (form.elements.namedItem("profile_id") as HTMLInputElement).value
+    const display_name = (form.elements.namedItem("display_name") as HTMLInputElement).value
+    const user_role = (form.elements.namedItem("user_role") as HTMLInputElement).value
+    const year_group = (form.elements.namedItem("year_group") as HTMLInputElement).value
+    const res = await fetch("/api/admin/update-profile", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id, display_name, user_role, year_group })
     })
     if (!res.ok) {
-      alert('Update failed')
+      alert("Update failed")
     } else {
-      alert('Profile updated')
+      alert("Profile updated")
     }
   }
 
   const onUpdateConnection = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     const form = e.currentTarget
-    const connection_id = (form.elements.namedItem('connection_id') as HTMLInputElement).value
-    const loved_email = (form.elements.namedItem('loved_email') as HTMLInputElement).value
-    const relationship = (form.elements.namedItem('relationship') as HTMLInputElement).value
-    const nickname = (form.elements.namedItem('nickname') as HTMLInputElement).value
-    const status = (form.elements.namedItem('status') as HTMLInputElement).value
-    const res = await fetch('/api/admin/update-connection', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+    const connection_id = (form.elements.namedItem("connection_id") as HTMLInputElement).value
+    const loved_email = (form.elements.namedItem("loved_email") as HTMLInputElement).value
+    const relationship = (form.elements.namedItem("relationship") as HTMLInputElement).value
+    const nickname = (form.elements.namedItem("nickname") as HTMLInputElement).value
+    const status = (form.elements.namedItem("status") as HTMLInputElement).value
+    const res = await fetch("/api/admin/update-connection", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ connection_id, loved_email, relationship, nickname, status })
     })
     if (!res.ok) {
-      alert('Update failed')
+      alert("Update failed")
     } else {
-      alert('Connection updated')
+      alert("Connection updated")
     }
   }
 
@@ -192,15 +189,15 @@ export default function AdminDashboard({ authorized, rows, users, error }: Props
                 <th className="text-left px-3 py-2">Trial Started</th>
                 <th className="text-left px-3 py-2">Ever Used Trial</th>
               </tr>
-              </thead>
+            </thead>
             <tbody>
               {rows.map((r) => (
                 <tr key={r.id} className="border-t border-slate-100">
                   <td className="px-3 py-2 font-mono text-xs text-slate-600">{r.id}</td>
-                  <td className="px-3 py-2">{r.display_name || '—'}</td>
-                  <td className="px-3 py-2">{r.user_role || '—'}</td>
-                  <td className="px-3 py-2">{r.year_group || '—'}</td>
-                  <td className="px-3 py-2">{r.trial_started_at || '—'}</td>
+                  <td className="px-3 py-2">{r.display_name || '-'}</td>
+                  <td className="px-3 py-2">{r.user_role || '-'}</td>
+                  <td className="px-3 py-2">{r.year_group || '-'}</td>
+                  <td className="px-3 py-2">{r.trial_started_at || '-'}</td>
                   <td className="px-3 py-2">{r.trial_ever_used ? 'Yes' : 'No'}</td>
                 </tr>
               ))}
@@ -231,10 +228,10 @@ export default function AdminDashboard({ authorized, rows, users, error }: Props
               {users.map((u) => (
                 <tr key={u.id} className="border-t border-slate-100">
                   <td className="px-3 py-2 font-mono text-xs text-slate-600">{u.id}</td>
-                  <td className="px-3 py-2">{u.email || '—'}</td>
-                  <td className="px-3 py-2">{u.provider || '—'}</td>
-                  <td className="px-3 py-2">{u.created_at || '—'}</td>
-                  <td className="px-3 py-2">{u.last_sign_in_at || '—'}</td>
+                  <td className="px-3 py-2">{u.email || '-'}</td>
+                  <td className="px-3 py-2">{u.provider || '-'}</td>
+                  <td className="px-3 py-2">{u.created_at || '-'}</td>
+                  <td className="px-3 py-2">{u.last_sign_in_at || '-'}</td>
                 </tr>
               ))}
               {users.length === 0 && (
