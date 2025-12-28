@@ -7,6 +7,21 @@ const PROXY_URL =
   RAW_PROXY_URL ||
   (process.env.NODE_ENV === "development" ? DEFAULT_DEV_PROXY_URL : "");
 
+const RAW_LIVE_MODEL = process.env.NEXT_PUBLIC_GEMINI_LIVE_MODEL?.trim();
+const DEFAULT_LIVE_MODEL = "gemini-live-2.5-flash-native-audio";
+
+function sanitizeModelId(raw?: string) {
+  const value = (raw || "").trim();
+  if (!value) return "";
+  const modelMatch = value.match(/models\/([^/]+)$/);
+  if (modelMatch?.[1]) return modelMatch[1];
+  return value
+    .replace(/^models\//, "")
+    .replace(/^projects\/[^/]+\/locations\/[^/]+\/publishers\/[^/]+\/models\//, "");
+}
+
+const LIVE_MODEL_ID = sanitizeModelId(RAW_LIVE_MODEL) || DEFAULT_LIVE_MODEL;
+
 type VoiceTurn = { speaker: "user" | "durmah"; text: string };
 
 interface UseDurmahGeminiLiveProps {
@@ -56,13 +71,22 @@ export function useDurmahGeminiLive({
   const streamRef = useRef<MediaStream | null>(null);
   const handshakeSentRef = useRef(false);
   const pendingAudioRef = useRef<string[]>([]);
+  const manualCloseRef = useRef(false);
+  const statusRef = useRef(status);
   
   // Audio Playback Queue
   const nextPlayTimeRef = useRef<number>(0);
   const playbackContextRef = useRef<AudioContext | null>(null);
 
+  useEffect(() => {
+    statusRef.current = status;
+  }, [status]);
+
   // Helper to safely stop everything
-  const stopListening = useCallback(() => {
+  const cleanup = useCallback((manual: boolean) => {
+    if (manual) {
+      manualCloseRef.current = true;
+    }
     setStatus("idle");
     setSpeaking(false);
     handshakeSentRef.current = false;
@@ -98,6 +122,8 @@ export function useDurmahGeminiLive({
         playbackContextRef.current = null;
     }
   }, []);
+
+  const stopListening = useCallback(() => cleanup(true), [cleanup]);
 
   const playAudioChunk = useCallback((base64Audio: string) => {
     try {
@@ -221,9 +247,9 @@ export function useDurmahGeminiLive({
         const setupMsg = {
             auth: token ?? null, 
             setup: {
-                model: "models/gemini-2.0-flash-exp",
+                model: LIVE_MODEL_ID,
                 generation_config: {
-                    response_modalities: ["AUDIO"],
+                    response_modalities: ["AUDIO", "TEXT"],
                     speech_config: {
                          voice_config: { prebuilt_voice_config: { voice_name: voice || "Charon" } }
                     }
@@ -252,6 +278,25 @@ export function useDurmahGeminiLive({
                      json = JSON.parse(data as string);
                 }
                 
+                if (json?.error) {
+                  const msg =
+                    typeof json.error === "string"
+                      ? json.error
+                      : json.error?.message || "Voice error";
+                  setError(msg);
+                  setStatus("error");
+                  cleanup(false);
+                  return;
+                }
+
+                if (json?.serverContent?.error) {
+                  const msg = json.serverContent.error?.message || "Voice error";
+                  setError(msg);
+                  setStatus("error");
+                  cleanup(false);
+                  return;
+                }
+
                 // Handle Server Content
                 if (json.serverContent) {
                     const turn = json.serverContent.modelTurn;
@@ -282,17 +327,22 @@ export function useDurmahGeminiLive({
          }
       };
 
-      ws.onclose = () => {
-        console.info("[DurmahGemini] WS closed");
-        if (status !== "idle") {
-            stopListening();
+      ws.onclose = (ev) => {
+        console.warn("[DurmahGemini] WS closed", { code: ev.code, reason: ev.reason, wasClean: ev.wasClean });
+        cleanup(false);
+        if (!manualCloseRef.current && statusRef.current !== "idle") {
+          const reason = ev.reason ? `: ${ev.reason}` : "";
+          setError(`Voice connection closed (${ev.code})${reason}`);
+          setStatus("error");
         }
+        manualCloseRef.current = false;
       };
       
       ws.onerror = (e) => {
         console.error("[DurmahGemini] WS error", e);
         setError("Connection failed");
         setStatus("error");
+        cleanup(false);
       };
 
       // 3. Audio Processing Loop
@@ -337,9 +387,9 @@ export function useDurmahGeminiLive({
       console.error("Start listening failed", err);
       setError(err.message);
       setStatus("error");
-      stopListening();
+      cleanup(false);
     }
-  }, [systemPrompt, voice, onTurn, stopListening, queueAudioPayload, flushAudioQueue]);
+  }, [systemPrompt, voice, onTurn, stopListening, queueAudioPayload, flushAudioQueue, cleanup]);
 
   return {
     status,
@@ -348,6 +398,7 @@ export function useDurmahGeminiLive({
     stopListening,
     playVoicePreview: async () => {}, // No-op for now
     error,
+    lastError: error,
     speaking
   };
 }

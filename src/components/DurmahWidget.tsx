@@ -311,11 +311,14 @@ export default function DurmahWidget() {
 
   const isVoiceActive = isListening || status === "connecting";
   const showVoiceStatus = status !== "idle";
+  const voiceErrorShort = voiceError
+    ? voiceError.replace(/\s+/g, " ").slice(0, 48)
+    : "";
   const voiceStatusLabel =
     status === "connecting"
       ? "Connecting..."
       : status === "error"
-        ? "Voice error"
+        ? `Voice error${voiceErrorShort ? `: ${voiceErrorShort}` : ""}`
         : speaking
           ? "Speaking"
           : status === "listening"
