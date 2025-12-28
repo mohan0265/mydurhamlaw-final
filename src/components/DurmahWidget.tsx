@@ -309,6 +309,25 @@ export default function DurmahWidget() {
     },
   });
 
+  const isVoiceActive = isListening || status === "connecting";
+  const showVoiceStatus = status !== "idle";
+  const voiceStatusLabel =
+    status === "connecting"
+      ? "Connecting..."
+      : status === "error"
+        ? "Voice error"
+        : speaking
+          ? "Speaking"
+          : status === "listening"
+            ? "Connected"
+            : "Idle";
+  const voiceStatusClass =
+    status === "error"
+      ? "text-red-200"
+      : status === "connecting"
+        ? "text-yellow-100"
+        : "text-emerald-100";
+
   // Cleanup on unmount
   useEffect(() => {
     return () => {
@@ -357,7 +376,7 @@ export default function DurmahWidget() {
   // ----------------------------
   async function toggleVoice() {
     console.log("[DurmahVoice] Mic button clicked");
-    if (!isListening) {
+    if (!isVoiceActive) {
       setCallTranscript([]);
       setShowVoiceTranscript(false);
       setVoiceSessionActive(true);
@@ -388,7 +407,7 @@ export default function DurmahWidget() {
     e: React.MouseEvent
   ) => {
     e.stopPropagation();
-    if (isListening || previewingVoiceId === preset.id) return;
+    if (isVoiceActive || previewingVoiceId === preset.id) return;
 
     setPreviewingVoiceId(preset.id);
     try {
@@ -509,7 +528,7 @@ export default function DurmahWidget() {
   // TEXT CHAT SEND
   // ----------------------------
   async function send() {
-    if (!signedIn || !input.trim() || isStreaming || isListening) return;
+    if (!signedIn || !input.trim() || isStreaming || isVoiceActive) return;
 
     const userText = input.trim();
     const now = Date.now();
@@ -626,7 +645,7 @@ export default function DurmahWidget() {
         <button
           onClick={() => setIsOpen(true)}
           className={`flex items-center gap-3 pl-2 pr-5 py-2 rounded-full shadow-xl backdrop-blur-md transition-all duration-300 hover:-translate-y-1 hover:ring-2 hover:ring-violet-400/50 ${
-            isListening 
+            isVoiceActive 
               ? "bg-gradient-to-r from-red-500 to-pink-600 animate-pulse text-white" 
               : "bg-gradient-to-r from-violet-600 to-indigo-600 text-white"
           }`}
@@ -634,7 +653,7 @@ export default function DurmahWidget() {
           {/* Icon Circle */}
           <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center backdrop-blur-sm shadow-inner">
              <span className="font-serif text-xl font-bold italic">D</span>
-             {isListening && (
+             {isVoiceActive && (
                <span className="absolute inset-0 rounded-full border-2 border-white opacity-50 animate-ping"></span>
              )}
           </div>
@@ -659,6 +678,11 @@ export default function DurmahWidget() {
             <span className="bg-white/20 backdrop-blur-sm rounded-full text-[10px] px-2 py-0.5 font-medium tracking-wide">BETA</span>
           </div>
           <span className="text-xs text-violet-100 font-medium">Your Legal Mentor</span>
+          {showVoiceStatus && (
+            <span className={`text-[10px] font-medium ${voiceStatusClass}`}>
+              {voiceStatusLabel}
+            </span>
+          )}
         </div>
 
         {/* Hidden audio output for Durmah's voice */}
@@ -711,12 +735,12 @@ export default function DurmahWidget() {
           <button
             onClick={toggleVoice}
             className={`p-2 rounded-full transition-all duration-300 ${
-              isListening 
+              isVoiceActive 
                 ? "bg-red-500 text-white shadow-lg scale-110" 
                 : "bg-white/20 text-white hover:bg-white/30"
             }`}
           >
-            {isListening ? (
+            {isVoiceActive ? (
               <div className="flex items-center gap-1">
                 <span className="w-2 h-2 bg-white rounded-full animate-bounce"></span>
                 <span className="w-2 h-2 bg-white rounded-full animate-bounce delay-75"></span>
@@ -787,9 +811,9 @@ export default function DurmahWidget() {
                           
                           <button
                              onClick={(e) => handlePreview(p, e)}
-                             disabled={Boolean(isPreviewing) || isListening}
+                             disabled={Boolean(isPreviewing) || isVoiceActive}
                              className={`w-full py-2.5 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition-all ${
-                               isPreviewing || isListening 
+                               isPreviewing || isVoiceActive 
                                  ? "bg-gray-100 text-gray-400 cursor-not-allowed"
                                  : "bg-gray-100 text-gray-600 hover:bg-violet-100 hover:text-violet-700"
                              }`}
@@ -799,7 +823,7 @@ export default function DurmahWidget() {
                                  <span className="w-2 h-2 bg-violet-500 rounded-full animate-pulse"></span>
                                  Playing...
                                </>
-                             ) : isListening ? (
+                             ) : isVoiceActive ? (
                                <>
                                  <Volume2 size={14} /> In a call
                                </>
@@ -904,7 +928,7 @@ export default function DurmahWidget() {
       </div>
 
       {/* --------------- QUICK REPLY CHIPS ---------------- */}
-      {!isListening && !showSettings && (
+      {!isVoiceActive && !showSettings && (
         <div className="flex-none flex gap-2 overflow-x-auto p-3 border-t border-gray-100 bg-white no-scrollbar z-10">
           {chips.map((c) => (
             <button
@@ -919,7 +943,7 @@ export default function DurmahWidget() {
       )}
 
       {/* --------------- TEXT INPUT BAR ---------------- */}
-      {!isListening && !showSettings && (
+      {!isVoiceActive && !showSettings && (
         <div className="flex-none border-t border-gray-100 p-4 flex gap-3 items-center bg-white z-10">
           <input
             value={input}
@@ -940,7 +964,7 @@ export default function DurmahWidget() {
       )}
 
       {/* --------------- VOICE MODE FOOTER (WAVEFORM) ---------------- */}
-      {isListening && !showSettings && (
+      {isVoiceActive && !showSettings && (
         <div className="flex-none p-6 text-center bg-white border-t border-gray-100 z-10">
           <div className="flex items-center justify-center gap-1 h-8 mb-2">
              {/* Simulated Waveform Animation */}
@@ -957,7 +981,11 @@ export default function DurmahWidget() {
              ))}
           </div>
           <div className="text-xs font-medium text-violet-600 uppercase tracking-wide">
-            {speaking ? "Durmah is speaking..." : "Listening..."}
+            {status === "connecting"
+              ? "Connecting..."
+              : speaking
+                ? "Durmah is speaking..."
+                : "Listening..."}
           </div>
           <style jsx>{`
             @keyframes waveform {

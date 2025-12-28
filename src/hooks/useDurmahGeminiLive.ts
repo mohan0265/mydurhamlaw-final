@@ -1,7 +1,11 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { waitForAccessToken } from "@/lib/auth/waitForAccessToken";
 
-const PROXY_URL = process.env.NEXT_PUBLIC_DURMAH_GEMINI_PROXY_WS_URL || "ws://localhost:8080";
+const RAW_PROXY_URL = process.env.NEXT_PUBLIC_DURMAH_GEMINI_PROXY_WS_URL?.trim();
+const DEFAULT_DEV_PROXY_URL = "ws://localhost:8080";
+const PROXY_URL =
+  RAW_PROXY_URL ||
+  (process.env.NODE_ENV === "development" ? DEFAULT_DEV_PROXY_URL : "");
 
 type VoiceTurn = { speaker: "user" | "durmah"; text: string };
 
@@ -50,6 +54,8 @@ export function useDurmahGeminiLive({
   const audioInputRef = useRef<MediaStreamAudioSourceNode | null>(null);
   const processorRef = useRef<ScriptProcessorNode | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const handshakeSentRef = useRef(false);
+  const pendingAudioRef = useRef<string[]>([]);
   
   // Audio Playback Queue
   const nextPlayTimeRef = useRef<number>(0);
@@ -59,6 +65,8 @@ export function useDurmahGeminiLive({
   const stopListening = useCallback(() => {
     setStatus("idle");
     setSpeaking(false);
+    handshakeSentRef.current = false;
+    pendingAudioRef.current = [];
 
     if (wsRef.current) {
       wsRef.current.close();
@@ -143,10 +151,40 @@ export function useDurmahGeminiLive({
     }
   }, []);
 
+  const queueAudioPayload = useCallback((payload: string) => {
+    const queue = pendingAudioRef.current;
+    if (queue.length > 30) {
+      queue.shift();
+    }
+    queue.push(payload);
+  }, []);
+
+  const flushAudioQueue = useCallback((ws: WebSocket) => {
+    if (!handshakeSentRef.current) return;
+    const queue = pendingAudioRef.current;
+    while (queue.length > 0) {
+      const next = queue.shift();
+      if (next) ws.send(next);
+    }
+  }, []);
+
   const startListening = useCallback(async () => {
     try {
       setStatus("connecting");
       setError(null);
+      handshakeSentRef.current = false;
+      pendingAudioRef.current = [];
+
+      if (!PROXY_URL) {
+        setError("Voice proxy not configured.");
+        setStatus("error");
+        return;
+      }
+      if (process.env.NODE_ENV !== "development" && PROXY_URL.startsWith("ws://")) {
+        setError("Voice proxy must use wss:// in production.");
+        setStatus("error");
+        return;
+      }
 
       const { token } = await waitForAccessToken(); // might be null if anon
 
@@ -178,9 +216,10 @@ export function useDurmahGeminiLive({
       wsRef.current = ws;
 
       ws.onopen = () => {
+        console.info("[DurmahGemini] WS open");
         // Send Handshake
         const setupMsg = {
-            auth: token, 
+            auth: token ?? null, 
             setup: {
                 model: "models/gemini-2.0-flash-exp",
                 generation_config: {
@@ -195,6 +234,9 @@ export function useDurmahGeminiLive({
             }
         };
         ws.send(JSON.stringify(setupMsg));
+        handshakeSentRef.current = true;
+        console.info("[DurmahGemini] Handshake sent", { hasAuth: Boolean(token) });
+        flushAudioQueue(ws);
         setStatus("listening");
       };
 
@@ -241,21 +283,20 @@ export function useDurmahGeminiLive({
       };
 
       ws.onclose = () => {
+        console.info("[DurmahGemini] WS closed");
         if (status !== "idle") {
             stopListening();
         }
       };
       
       ws.onerror = (e) => {
-        console.error("WS Error", e);
+        console.error("[DurmahGemini] WS error", e);
         setError("Connection failed");
         setStatus("error");
       };
 
       // 3. Audio Processing Loop
       processor.onaudioprocess = (e) => {
-        if (ws.readyState !== WebSocket.OPEN) return;
-
         const inputData = e.inputBuffer.getChannelData(0); // Float32 -1 to 1
         // Convert to PCM16
         const pcm16 = new Int16Array(inputData.length);
@@ -268,16 +309,28 @@ export function useDurmahGeminiLive({
         // Send base64
         const base64 = arrayBufferToBase64(pcm16.buffer);
         
-        ws.send(JSON.stringify({
-            realtime_input: {
-                media_chunks: [
-                    {
-                        mime_type: "audio/pcm",
-                        data: base64
-                    }
-                ]
-            }
-        }));
+        const payload = JSON.stringify({
+          realtime_input: {
+            media_chunks: [
+              {
+                mime_type: "audio/pcm",
+                data: base64
+              }
+            ]
+          }
+        });
+
+        if (ws.readyState !== WebSocket.OPEN) {
+          queueAudioPayload(payload);
+          return;
+        }
+
+        if (!handshakeSentRef.current) {
+          queueAudioPayload(payload);
+          return;
+        }
+
+        ws.send(payload);
       };
 
     } catch (err: any) {
@@ -286,7 +339,7 @@ export function useDurmahGeminiLive({
       setStatus("error");
       stopListening();
     }
-  }, [systemPrompt, voice, onTurn, stopListening]);
+  }, [systemPrompt, voice, onTurn, stopListening, queueAudioPayload, flushAudioQueue]);
 
   return {
     status,
