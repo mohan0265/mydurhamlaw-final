@@ -566,12 +566,23 @@ export default function DurmahWidget() {
     })();
 
     try {
-      const response = await fetch("/api/durmah/chat", {
+      const authError = "Please sign in again to chat with Durmah.";
+      const { token } = await waitForAccessToken();
+      if (!token) {
+        toast.error(authError);
+        throw new Error(authError);
+      }
+
+      const response = await fetchAuthed("/api/durmah/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: userText, source: "dashboard" }),
       });
 
+      if (response.status === 401 || response.status === 403) {
+        toast.error(authError);
+        throw new Error(authError);
+      }
       if (!response.ok) throw new Error(await response.text());
       const data = await response.json();
       const replyText = data?.reply || "I'm here if you want to continue.";

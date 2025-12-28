@@ -50,6 +50,29 @@ wss.on("connection", (ws: WebSocket, req) => {
   const messageQueue: string[] = [];
   let isUpstreamOpen = false;
 
+  function normalizeModelResource(rawModel?: string): string {
+    const trimmed = (rawModel || "").trim();
+    if (trimmed.startsWith("projects/")) {
+      return trimmed;
+    }
+
+    let modelId = "";
+    if (trimmed.includes("/models/")) {
+      modelId = trimmed.split("/models/").pop() || "";
+    } else if (trimmed.startsWith("models/")) {
+      modelId = trimmed.slice("models/".length);
+    } else {
+      modelId = trimmed;
+    }
+
+    const fallback = GEMINI_LIVE_MODEL;
+    const resolved = modelId || fallback;
+    if (resolved.startsWith("projects/")) {
+      return resolved;
+    }
+    return `projects/${PROJECT_ID}/locations/${LOCATION}/publishers/google/models/${resolved}`;
+  }
+
   ws.on("message", async (data: any) => {
     // 1) First message must contain Auth (handshake)
     if (!isAuthenticated) {
@@ -95,9 +118,9 @@ wss.on("connection", (ws: WebSocket, req) => {
           }
 
           // Construct Vertex WebSocket URL
-          // Endpoint: wss://us-central1-aiplatform.googleapis.com/ws/google.cloud.aiplatform.v1beta1.LlmBidiService/BidiGenerateContent
+          // Endpoint: wss://{location}-aiplatform.googleapis.com/ws/google.cloud.aiplatform.v1.LlmBidiService/BidiGenerateContent
           const host = `${LOCATION}-aiplatform.googleapis.com`;
-          const path = `/ws/google.cloud.aiplatform.v1beta1.LlmBidiService/BidiGenerateContent`;
+          const path = `/ws/google.cloud.aiplatform.v1.LlmBidiService/BidiGenerateContent`;
           const url = `wss://${host}${path}`;
 
           console.log(`Connecting upstream to ${url}`);
@@ -116,6 +139,19 @@ wss.on("connection", (ws: WebSocket, req) => {
             // If the payload had other fields, forward them now (minus "auth")
             delete payload.auth;
 
+            const setup =
+              payload.setup && typeof payload.setup === "object" ? payload.setup : {};
+            const normalizedModel = normalizeModelResource(setup.model);
+            setup.model = normalizedModel;
+            if (!setup.generation_config) {
+              setup.generation_config = {};
+            }
+            if (!setup.generation_config.response_modalities) {
+              setup.generation_config.response_modalities = ["AUDIO", "TEXT"];
+            }
+            payload.setup = setup;
+            console.log(`Forwarding setup model=${normalizedModel}`);
+
             // If payload is not empty (beyond auth), send it
             if (Object.keys(payload).length > 0) {
               upstream?.send(JSON.stringify(payload));
@@ -131,6 +167,15 @@ wss.on("connection", (ws: WebSocket, req) => {
           });
 
           upstream.on("message", (uData) => {
+            try {
+              const text = typeof uData === "string" ? uData : uData.toString();
+              const parsed = JSON.parse(text);
+              if (parsed?.error) {
+                console.error("Upstream error payload:", parsed.error);
+              }
+            } catch {
+              // ignore parse errors
+            }
             // Forward FROM upstream TO client
             if (ws.readyState === WebSocket.OPEN) {
               ws.send(uData);
