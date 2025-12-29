@@ -2,10 +2,9 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import { waitForAccessToken } from "@/lib/auth/waitForAccessToken";
 
 const RAW_PROXY_URL = process.env.NEXT_PUBLIC_DURMAH_GEMINI_PROXY_WS_URL?.trim();
-const DEFAULT_DEV_PROXY_URL = "ws://localhost:8080";
-const PROXY_URL =
-  RAW_PROXY_URL ||
-  (process.env.NODE_ENV === "development" ? DEFAULT_DEV_PROXY_URL : "");
+const DEFAULT_PROXY_URL =
+  "wss://durmah-gemini-live-proxy-us-482960166397.us-central1.run.app";
+const PROXY_URL = RAW_PROXY_URL || DEFAULT_PROXY_URL;
 
 const RAW_LIVE_MODEL = process.env.NEXT_PUBLIC_GEMINI_LIVE_MODEL?.trim();
 const DEFAULT_LIVE_MODEL = "gemini-live-2.5-flash-native-audio";
@@ -238,6 +237,7 @@ export function useDurmahGeminiLive({
       processor.connect(inputsCtx.destination); // Required for script processor to run
 
       // 2. Setup WebSocket
+      console.log("[DurmahGemini] proxy ws url =", PROXY_URL);
       const ws = new WebSocket(PROXY_URL);
       wsRef.current = ws;
 

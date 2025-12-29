@@ -26,6 +26,16 @@ SUPABASE_URL=https://your-project.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=ey...
 ```
 
+## Health Check
+
+If you deploy the US proxy, verify:
+
+- `https://durmah-gemini-live-proxy-us-482960166397.us-central1.run.app/health`
+
+The WebSocket client should use:
+
+- `wss://durmah-gemini-live-proxy-us-482960166397.us-central1.run.app`
+
 ## Deployment (Cloud Run)
 
 1.  **Build Container**:
