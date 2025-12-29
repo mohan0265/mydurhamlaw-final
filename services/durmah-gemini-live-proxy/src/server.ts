@@ -107,6 +107,35 @@ wss.on("connection", (ws: WebSocket, req) => {
     target.send(JSON.stringify(payload));
   }
 
+  function toCamelCaseKey(key: string): string {
+    if (!key.includes("_")) return key;
+    return key.replace(/_([a-z])/g, (_m, chr: string) => chr.toUpperCase());
+  }
+
+  function toCamelCase(value: unknown): unknown {
+    if (Array.isArray(value)) {
+      return value.map((item) => toCamelCase(item));
+    }
+    if (value && typeof value === "object") {
+      const out: Record<string, unknown> = {};
+      for (const [key, val] of Object.entries(value as Record<string, unknown>)) {
+        out[toCamelCaseKey(key)] = toCamelCase(val);
+      }
+      return out;
+    }
+    return value;
+  }
+
+  function normalizeClientPayload(raw: string): string {
+    try {
+      const parsed = JSON.parse(raw);
+      const normalized = toCamelCase(parsed);
+      return JSON.stringify(normalized);
+    } catch {
+      return raw;
+    }
+  }
+
   ws.on("message", async (data: any) => {
     // 1) First message must contain Auth (handshake)
     if (!isAuthenticated) {
@@ -188,7 +217,7 @@ wss.on("connection", (ws: WebSocket, req) => {
 
             // If payload is not empty (beyond auth), send it
             if (Object.keys(payload).length > 0) {
-              upstream?.send(JSON.stringify(payload));
+              upstream?.send(normalizeClientPayload(JSON.stringify(payload)));
             }
 
             // Process queued messages (IMPORTANT: shift() can return undefined)
@@ -232,7 +261,11 @@ wss.on("connection", (ws: WebSocket, req) => {
               code,
               { reason: reasonText }
             );
-            ws.close(code, reasonText);
+            setTimeout(() => {
+              if (ws.readyState === WebSocket.OPEN) {
+                ws.close(code, reasonText);
+              }
+            }, 40);
           });
 
           upstream.on("error", (err) => {
@@ -243,7 +276,11 @@ wss.on("connection", (ws: WebSocket, req) => {
               "upstream_error",
               { error: String(err) }
             );
-            ws.close(1011, "Upstream Error");
+            setTimeout(() => {
+              if (ws.readyState === WebSocket.OPEN) {
+                ws.close(1011, "Upstream Error");
+              }
+            }, 40);
           });
 
           // Allow subsequent messages to flow
@@ -255,7 +292,11 @@ wss.on("connection", (ws: WebSocket, req) => {
             err instanceof Error ? err.message : "Upstream connection failed",
             "upstream_connect_failed"
           );
-          ws.close(1011, "Upstream Connection Failed");
+          setTimeout(() => {
+            if (ws.readyState === WebSocket.OPEN) {
+              ws.close(1011, "Upstream Connection Failed");
+            }
+          }, 40);
         }
       } catch (e) {
         console.error("Bad handshake payload:", e);
@@ -264,18 +305,23 @@ wss.on("connection", (ws: WebSocket, req) => {
           e instanceof Error ? e.message : "Invalid handshake",
           "invalid_handshake"
         );
-        ws.close(1008, "Invalid Handshake");
+        setTimeout(() => {
+          if (ws.readyState === WebSocket.OPEN) {
+            ws.close(1008, "Invalid Handshake");
+          }
+        }, 40);
       }
 
       return;
     }
 
     // 2) Subsequent messages: Forward to Upstream
+    const normalized = normalizeClientPayload(data.toString());
     if (isUpstreamOpen && upstream) {
-      upstream.send(data);
+      upstream.send(normalized);
     } else {
       // Queue until open
-      messageQueue.push(data.toString());
+      messageQueue.push(normalized);
     }
   });
 
