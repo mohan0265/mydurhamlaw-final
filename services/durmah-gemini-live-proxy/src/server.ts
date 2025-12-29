@@ -18,7 +18,8 @@ const PROJECT_ID = mustEnv("GCP_PROJECT_ID");
 const LOCATION = process.env.GCP_LOCATION || "us-central1";
 // Note: You can override model via client setup, but strict ENV default is safer for cost control if needed.
 // However, the client (frontend) usually dictates the session config (system prompt, etc).
-const GEMINI_LIVE_MODEL = process.env.GEMINI_LIVE_MODEL || "gemini-2.0-flash-exp";
+const GEMINI_LIVE_MODEL =
+  process.env.GEMINI_LIVE_MODEL || "gemini-live-2.5-flash-native-audio";
 
 const SUPABASE_URL = mustEnv("SUPABASE_URL");
 // Use SERVICE ROLE key to verify JWTs properly or admin tasks if needed.
@@ -31,7 +32,20 @@ const auth = new GoogleAuth({
 });
 
 const server = http.createServer((req, res) => {
-  res.writeHead(200);
+  if (req.url?.startsWith("/health")) {
+    const payload = {
+      ok: true,
+      project: PROJECT_ID,
+      location: LOCATION,
+      model: GEMINI_LIVE_MODEL,
+      time: new Date().toISOString(),
+    };
+    res.writeHead(200, { "Content-Type": "application/json" });
+    res.end(JSON.stringify(payload));
+    return;
+  }
+
+  res.writeHead(200, { "Content-Type": "text/plain" });
   res.end("Durmah Gemini Proxy Logic Ready");
 });
 
@@ -50,27 +64,47 @@ wss.on("connection", (ws: WebSocket, req) => {
   const messageQueue: string[] = [];
   let isUpstreamOpen = false;
 
-  function normalizeModelResource(rawModel?: string): string {
+  function extractModelId(rawModel?: string): string {
     const trimmed = (rawModel || "").trim();
+    if (!trimmed) return "";
     if (trimmed.startsWith("projects/")) {
-      return trimmed;
+      const match = trimmed.match(/\/models\/([^/]+)$/);
+      return match?.[1] || trimmed;
     }
-
-    let modelId = "";
     if (trimmed.includes("/models/")) {
-      modelId = trimmed.split("/models/").pop() || "";
-    } else if (trimmed.startsWith("models/")) {
-      modelId = trimmed.slice("models/".length);
-    } else {
-      modelId = trimmed;
+      return trimmed.split("/models/").pop() || "";
     }
+    if (trimmed.startsWith("models/")) {
+      return trimmed.slice("models/".length);
+    }
+    return trimmed.replace(/^models\//, "");
+  }
 
-    const fallback = GEMINI_LIVE_MODEL;
-    const resolved = modelId || fallback;
+  function normalizeModelResource(rawModel?: string): string {
+    const fallbackId = extractModelId(GEMINI_LIVE_MODEL);
+    const candidateId = extractModelId(rawModel);
+    const resolved = candidateId || fallbackId;
     if (resolved.startsWith("projects/")) {
       return resolved;
     }
     return `projects/${PROJECT_ID}/locations/${LOCATION}/publishers/google/models/${resolved}`;
+  }
+
+  function sendClientError(
+    target: WebSocket,
+    message: string,
+    code?: string | number,
+    details?: Record<string, unknown>
+  ) {
+    if (target.readyState !== WebSocket.OPEN) return;
+    const payload = {
+      error: {
+        message,
+        code: code ?? "upstream_error",
+        details: details ?? {},
+      },
+    };
+    target.send(JSON.stringify(payload));
   }
 
   ws.on("message", async (data: any) => {
@@ -123,7 +157,7 @@ wss.on("connection", (ws: WebSocket, req) => {
           const path = `/ws/google.cloud.aiplatform.v1.LlmBidiService/BidiGenerateContent`;
           const url = `wss://${host}${path}`;
 
-          console.log(`Connecting upstream to ${url}`);
+          console.log(`Upstream location=${LOCATION} url=${url}`);
 
           upstream = new WebSocket(url, {
             headers: {
@@ -170,8 +204,15 @@ wss.on("connection", (ws: WebSocket, req) => {
             try {
               const text = typeof uData === "string" ? uData : uData.toString();
               const parsed = JSON.parse(text);
-              if (parsed?.error) {
-                console.error("Upstream error payload:", parsed.error);
+              if (parsed?.error || parsed?.serverContent?.error) {
+                const upstreamError = parsed?.error || parsed?.serverContent?.error;
+                console.error("Upstream error payload:", upstreamError);
+                sendClientError(
+                  ws,
+                  upstreamError?.message || "Upstream error",
+                  upstreamError?.code,
+                  { upstream: upstreamError }
+                );
               }
             } catch {
               // ignore parse errors
@@ -183,12 +224,25 @@ wss.on("connection", (ws: WebSocket, req) => {
           });
 
           upstream.on("close", (code, reason) => {
-            console.log(`Upstream closed: ${code} ${reason.toString()}`);
-            ws.close(code, reason.toString());
+            const reasonText = reason?.toString() || "";
+            console.log(`Upstream closed: ${code} ${reasonText}`);
+            sendClientError(
+              ws,
+              `Upstream closed (${code})${reasonText ? `: ${reasonText}` : ""}`,
+              code,
+              { reason: reasonText }
+            );
+            ws.close(code, reasonText);
           });
 
           upstream.on("error", (err) => {
             console.error("Upstream error:", err);
+            sendClientError(
+              ws,
+              err instanceof Error ? err.message : "Upstream error",
+              "upstream_error",
+              { error: String(err) }
+            );
             ws.close(1011, "Upstream Error");
           });
 
@@ -196,10 +250,20 @@ wss.on("connection", (ws: WebSocket, req) => {
           isAuthenticated = true;
         } catch (err) {
           console.error("Failed to connect upstream:", err);
+          sendClientError(
+            ws,
+            err instanceof Error ? err.message : "Upstream connection failed",
+            "upstream_connect_failed"
+          );
           ws.close(1011, "Upstream Connection Failed");
         }
       } catch (e) {
         console.error("Bad handshake payload:", e);
+        sendClientError(
+          ws,
+          e instanceof Error ? e.message : "Invalid handshake",
+          "invalid_handshake"
+        );
         ws.close(1008, "Invalid Handshake");
       }
 
