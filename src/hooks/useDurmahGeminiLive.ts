@@ -7,7 +7,7 @@ const DEFAULT_PROXY_URL =
 const PROXY_URL = RAW_PROXY_URL || DEFAULT_PROXY_URL;
 
 const RAW_LIVE_MODEL = process.env.NEXT_PUBLIC_GEMINI_LIVE_MODEL?.trim();
-const DEFAULT_LIVE_MODEL = "gemini-2.0-flash-exp";
+const DEFAULT_LIVE_MODEL = "gemini-1.5-flash-002";
 
 function sanitizeModelId(raw?: string) {
   const value = (raw || "").trim();
@@ -251,7 +251,7 @@ export function useDurmahGeminiLive({
                 generationConfig: {
                     responseModalities: ["AUDIO", "TEXT"],
                     speechConfig: {
-                         voiceConfig: { prebuiltVoiceConfig: { voiceName: voice || "Charon" } }
+                         voiceConfig: { prebuiltVoiceConfig: { voiceName: "Puck" } }
                     }
                 },
                 systemInstruction: {
