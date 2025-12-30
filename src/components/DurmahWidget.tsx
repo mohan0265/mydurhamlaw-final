@@ -138,7 +138,7 @@ function getLocalDateKey(timeZone: string) {
   return `${map.year}-${map.month}-${map.day}`;
 }
 
-function buildContextChipText(
+function buildContextChipParts(
   context: DurmahContextPacket | null,
   timeLabel: string | null
 ) {
@@ -148,8 +148,7 @@ function buildContextChipText(
   const weekLabel = context.academic.weekOfTerm
     ? `Week ${context.academic.weekOfTerm}`
     : null;
-  const parts = [termLabel, weekLabel, timeLabel].filter(Boolean) as string[];
-  return parts.join(" | ");
+  return [termLabel, weekLabel, timeLabel].filter(Boolean) as string[];
 }
 
 function buildContextGreeting(context: DurmahContextPacket) {
@@ -454,10 +453,10 @@ export default function DurmahWidget() {
         ? "text-yellow-100"
         : "text-emerald-100";
 
-  const contextChipText = useMemo(() => {
+  const contextChipParts = useMemo(() => {
     if (!contextPacket) return null;
     const time = contextTimeLabel || formatContextDayTimeLabel(new Date(), contextPacket.academic.timezone || "Europe/London");
-    return buildContextChipText(contextPacket, time);
+    return buildContextChipParts(contextPacket, time);
   }, [contextPacket, contextTimeLabel]);
 
   // Cleanup on unmount
@@ -822,9 +821,16 @@ export default function DurmahWidget() {
           </div>
           <span className="text-xs text-violet-100 font-medium">Your Legal Mentor</span>
           
-          {contextChipText && (
+          {contextChipParts && contextChipParts.length > 0 && (
             <div className="mt-1 inline-flex self-start items-center px-2 py-0.5 rounded-full border border-white/10 bg-white/5 text-[10px] text-white/70 backdrop-blur-sm">
-               {contextChipText}
+                {contextChipParts.map((part, i) => (
+                  <span key={i} className="flex items-center">
+                    {part}
+                    {i < contextChipParts.length - 1 && (
+                      <span className="mx-1.5 opacity-50">&bull;</span>
+                    )}
+                  </span>
+                ))}
             </div>
           )}
 

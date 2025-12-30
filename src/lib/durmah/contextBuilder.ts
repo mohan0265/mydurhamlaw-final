@@ -75,7 +75,7 @@ function computeAcademicContext(timeZone: string) {
     }
   }
 
-  if (term === 'Unknown' && parts.month >= 7 && parts.month <= 9) {
+  if (term === 'Unknown') {
     term = 'Vacation';
   }
 
