@@ -14,12 +14,19 @@ function mustEnv(name: string): string {
 
 const PORT = Number(process.env.PORT) || 8080;
 
-const PROJECT_ID = mustEnv("GCP_PROJECT_ID");
-const LOCATION = process.env.GCP_LOCATION || "us-central1";
-// Note: You can override model via client setup, but strict ENV default is safer for cost control if needed.
-// However, the client (frontend) usually dictates the session config (system prompt, etc).
-const GEMINI_LIVE_MODEL =
-  process.env.GEMINI_LIVE_MODEL || "gemini-live-2.5-flash-native-audio";
+const PROJECT_ID =
+  process.env.GCP_PROJECT_ID ||
+  process.env.GOOGLE_CLOUD_PROJECT ||
+  process.env.PROJECT_ID;
+if (!PROJECT_ID) {
+  throw new Error("Missing required env var: GCP_PROJECT_ID (or GOOGLE_CLOUD_PROJECT/PROJECT_ID)");
+}
+const LOCATION =
+  process.env.GCP_LOCATION ||
+  process.env.GOOGLE_CLOUD_LOCATION ||
+  process.env.LOCATION ||
+  "us-central1";
+const MODEL_ID = process.env.GEMINI_LIVE_MODEL || "gemini-live-2.5-flash-native-audio";
 
 const SUPABASE_URL = mustEnv("SUPABASE_URL");
 // Use SERVICE ROLE key to verify JWTs properly or admin tasks if needed.
@@ -31,7 +38,42 @@ const auth = new GoogleAuth({
   scopes: ["https://www.googleapis.com/auth/cloud-platform"],
 });
 
-const UPSTREAM_PATH = "/ws/google.cloud.aiplatform.v1.LlmBidiService/BidiGenerateContent";
+const UPSTREAM_PATH = "/ws/google.cloud.aiplatform.v1beta1.LlmBidiService/BidiGenerateContent";
+
+const MODEL_RE =
+  /^projects\/[^/]+\/locations\/[^/]+\/publishers\/[^/]+\/models\/[^/]+$/;
+
+function extractModelId(rawModel?: string): string {
+  const trimmed = (rawModel || "").trim();
+  if (!trimmed) return "";
+  if (trimmed.includes("/models/")) {
+    return trimmed.split("/models/").pop() || "";
+  }
+  if (trimmed.startsWith("models/")) {
+    return trimmed.slice("models/".length);
+  }
+  if (trimmed.startsWith("publishers/")) {
+    const match = trimmed.match(/models\/([^/]+)$/);
+    return match?.[1] || "";
+  }
+  if (trimmed.startsWith("projects/")) {
+    const match = trimmed.match(/\/models\/([^/]+)$/);
+    return match?.[1] || "";
+  }
+  return trimmed;
+}
+
+function normalizeModelResource(rawModel?: string): string {
+  const fallbackId = extractModelId(MODEL_ID);
+  const candidateId = extractModelId(rawModel);
+  const resolved = candidateId || fallbackId;
+  let normalized = `projects/${PROJECT_ID}/locations/${LOCATION}/publishers/google/models/${resolved}`;
+  if (!MODEL_RE.test(normalized)) {
+    normalized = `projects/${PROJECT_ID}/locations/${LOCATION}/publishers/google/models/${fallbackId}`;
+    console.warn("Invalid model input; forcing env default");
+  }
+  return normalized;
+}
 
 const server = http.createServer((req, res) => {
   if (req.url?.startsWith("/health")) {
@@ -39,7 +81,7 @@ const server = http.createServer((req, res) => {
       ok: true,
       project: PROJECT_ID,
       location: LOCATION,
-      model: GEMINI_LIVE_MODEL,
+      model: normalizeModelResource(MODEL_ID),
       upstream_path: UPSTREAM_PATH,
       time: new Date().toISOString(),
     };
@@ -66,32 +108,8 @@ wss.on("connection", (ws: WebSocket, req) => {
   // Buffer messages until upstream is ready
   const messageQueue: string[] = [];
   let isUpstreamOpen = false;
-
-  function extractModelId(rawModel?: string): string {
-    const trimmed = (rawModel || "").trim();
-    if (!trimmed) return "";
-    if (trimmed.startsWith("projects/")) {
-      const match = trimmed.match(/\/models\/([^/]+)$/);
-      return match?.[1] || trimmed;
-    }
-    if (trimmed.includes("/models/")) {
-      return trimmed.split("/models/").pop() || "";
-    }
-    if (trimmed.startsWith("models/")) {
-      return trimmed.slice("models/".length);
-    }
-    return trimmed.replace(/^models\//, "");
-  }
-
-  function normalizeModelResource(rawModel?: string): string {
-    const fallbackId = extractModelId(GEMINI_LIVE_MODEL);
-    const candidateId = extractModelId(rawModel);
-    const resolved = candidateId || fallbackId;
-    if (resolved.startsWith("projects/")) {
-      return resolved;
-    }
-    return `projects/${PROJECT_ID}/locations/${LOCATION}/publishers/google/models/${resolved}`;
-  }
+  let setupComplete = false;
+  const realtimeQueue: string[] = [];
 
   function sendClientError(
     target: WebSocket,
@@ -230,7 +248,7 @@ wss.on("connection", (ws: WebSocket, req) => {
           }
 
           // Construct Vertex WebSocket URL
-          // Endpoint: wss://{location}-aiplatform.googleapis.com/ws/google.cloud.aiplatform.v1.LlmBidiService/BidiGenerateContent
+          // Endpoint: wss://{location}-aiplatform.googleapis.com/ws/google.cloud.aiplatform.v1beta1.LlmBidiService/BidiGenerateContent
           const host = `${LOCATION}-aiplatform.googleapis.com`;
           const url = `wss://${host}${UPSTREAM_PATH}`;
 
@@ -246,6 +264,8 @@ wss.on("connection", (ws: WebSocket, req) => {
           upstream.on("open", () => {
             console.log("Upstream connected");
             isUpstreamOpen = true;
+            setupComplete = false;
+            realtimeQueue.length = 0;
 
             // If the payload had other fields, forward them now (minus "auth")
             delete payload.auth;
@@ -290,6 +310,16 @@ wss.on("connection", (ws: WebSocket, req) => {
             try {
               const text = typeof uData === "string" ? uData : uData.toString();
               const parsed = JSON.parse(text);
+              const setupAck = parsed?.setupComplete ?? parsed?.setup_complete;
+              if (setupAck !== undefined && !setupComplete) {
+                setupComplete = true;
+                while (realtimeQueue.length > 0) {
+                  const queued = realtimeQueue.shift();
+                  if (queued !== undefined && upstream?.readyState === WebSocket.OPEN) {
+                    upstream.send(queued);
+                  }
+                }
+              }
               if (parsed?.error || parsed?.serverContent?.error) {
                 const upstreamError = parsed?.error || parsed?.serverContent?.error;
                 console.error("Upstream error payload:", upstreamError);
@@ -344,17 +374,17 @@ wss.on("connection", (ws: WebSocket, req) => {
           isAuthenticated = true;
         } catch (err) {
           console.error("Failed to connect upstream:", err);
-        sendClientError(
-          ws,
-          err instanceof Error ? err.message : "Upstream connection failed",
-          "upstream_connect_failed"
-        );
-        setTimeout(() => {
-          if (ws.readyState === WebSocket.OPEN) {
-            ws.close(1011, "Upstream Connection Failed");
-          }
-        }, 150);
-      }
+          sendClientError(
+            ws,
+            err instanceof Error ? err.message : "Upstream connection failed",
+            "upstream_connect_failed"
+          );
+          setTimeout(() => {
+            if (ws.readyState === WebSocket.OPEN) {
+              ws.close(1011, "Upstream Connection Failed");
+            }
+          }, 150);
+        }
       } catch (e) {
         console.error("Bad handshake payload:", e);
         sendClientError(
@@ -385,6 +415,11 @@ wss.on("connection", (ws: WebSocket, req) => {
       } else {
         console.log(`Forwarding: ${normalized.kept}`);
       }
+    }
+
+    if (normalized.kept === "realtimeInput" && !setupComplete) {
+      realtimeQueue.push(normalized.text);
+      return;
     }
 
     if (isUpstreamOpen && upstream) {
