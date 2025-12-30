@@ -248,13 +248,13 @@ export function useDurmahGeminiLive({
             auth: token ?? null, 
             setup: {
                 model: LIVE_MODEL_ID,
-                generation_config: {
-                    response_modalities: ["AUDIO", "TEXT"],
-                    speech_config: {
-                         voice_config: { prebuilt_voice_config: { voice_name: voice || "Charon" } }
+                generationConfig: {
+                    responseModalities: ["AUDIO", "TEXT"],
+                    speechConfig: {
+                         voiceConfig: { prebuiltVoiceConfig: { voiceName: voice || "Charon" } }
                     }
                 },
-                system_instruction: {
+                systemInstruction: {
                     parts: [{ text: systemPrompt }]
                 }
             }
@@ -360,10 +360,10 @@ export function useDurmahGeminiLive({
         const base64 = arrayBufferToBase64(pcm16.buffer);
         
         const payload = JSON.stringify({
-          realtime_input: {
-            media_chunks: [
+          realtimeInput: {
+            mediaChunks: [
               {
-                mime_type: "audio/pcm",
+                mimeType: "audio/pcm",
                 data: base64
               }
             ]

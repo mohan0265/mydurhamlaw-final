@@ -110,6 +110,7 @@ wss.on("connection", (ws: WebSocket, req) => {
   let isUpstreamOpen = false;
   let setupComplete = false;
   const realtimeQueue: string[] = [];
+  let lastSetupModel = "";
 
   function sendClientError(
     target: WebSocket,
@@ -270,22 +271,30 @@ wss.on("connection", (ws: WebSocket, req) => {
             // If the payload had other fields, forward them now (minus "auth")
             delete payload.auth;
 
-            const setup =
-              payload.setup && typeof payload.setup === "object" ? payload.setup : {};
+            // Normalize ENTIRE initial payload to camelCase immediately
+            // This ensures we always work with 'generationConfig', not 'generation_config'
+            let initialPayload = toCamelCase(payload) as Record<string, any>;
+            
+            const setup = initialPayload.setup || {};
             const normalizedModel = normalizeModelResource(setup.model);
             setup.model = normalizedModel;
-            if (!setup.generation_config) {
-              setup.generation_config = {};
+            lastSetupModel = normalizedModel; // Capture for logging
+
+            if (!setup.generationConfig) {
+              setup.generationConfig = {};
             }
-            if (!setup.generation_config.response_modalities) {
-              setup.generation_config.response_modalities = ["AUDIO", "TEXT"];
+            if (!setup.generationConfig.responseModalities) {
+              setup.generationConfig.responseModalities = ["AUDIO", "TEXT"];
             }
-            payload.setup = setup;
+            initialPayload.setup = setup;
+            
             console.log(`Forwarding setup model=${normalizedModel}`);
 
-            // If payload is not empty (beyond auth), send it
-            if (Object.keys(payload).length > 0) {
-              const normalized = normalizeClientPayload(JSON.stringify(payload));
+            // If payload is not empty, send it
+            if (Object.keys(initialPayload).length > 0) {
+              // Re-use normalizeClientPayload just for the sanitization of oneof logic,
+              // but we pass in our already-camelCased structure
+              const normalized = normalizeClientPayload(JSON.stringify(initialPayload));
               if (normalized.dropped.length > 0) {
                 console.warn(
                   `Sanitized oneof (dropped: ${normalized.dropped.join(", ")})`
@@ -341,7 +350,7 @@ wss.on("connection", (ws: WebSocket, req) => {
 
           upstream.on("close", (code, reason) => {
             const reasonText = reason?.toString() || "";
-            console.log(`Upstream closed: ${code} ${reasonText}`);
+            console.log(`Upstream closed: ${code} ${reasonText} (model: ${lastSetupModel})`);
             sendClientError(
               ws,
               `Upstream closed (${code})${reasonText ? `: ${reasonText}` : ""}`,
