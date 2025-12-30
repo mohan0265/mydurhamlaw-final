@@ -149,7 +149,7 @@ function buildContextChipText(
     ? `Week ${context.academic.weekOfTerm}`
     : null;
   const parts = [termLabel, weekLabel, timeLabel].filter(Boolean) as string[];
-  return parts.join(" • ");
+  return parts.join(" | ");
 }
 
 function buildContextGreeting(context: DurmahContextPacket) {
@@ -165,11 +165,12 @@ function buildContextGreeting(context: DurmahContextPacket) {
     context.continuity.followUpQuestion || "Want to continue from there?";
 
   if (lastIntent) {
-    return `Hi ${name} — last time we discussed ${lastIntent}. ${followUp}`;
+    return `Hi ${name} - last time we discussed ${lastIntent}. ${followUp}`;
   }
 
   const termPhrase = weekLabel ? `${termLabel} ${weekLabel}` : termLabel;
-  return `Hi ${name} — it’s ${timeOfDay} and we’re in ${termPhrase}. Want to review this week, plan your study, or practice a quick quiz?`;
+  return `Hi ${name} - it's ${timeOfDay} and we're in ${termPhrase}. Want to review this week, plan your study, or practice a quick quiz?`;
+
 }
 
 export default function DurmahWidget() {
@@ -301,7 +302,7 @@ export default function DurmahWidget() {
           const ctx = data?.context as DurmahContextPacket | undefined;
           if (!cancelled && ctx) {
             const mapped = (ctx.recent?.lastMessages || []).map((m) => ({
-              role: m.role === 'assistant' ? 'durmah' : 'you',
+              role: (m.role === 'assistant' ? 'durmah' : 'you') as "durmah" | "you",
               text: m.content,
               ts: new Date(m.created_at).getTime(),
             }));
@@ -453,10 +454,11 @@ export default function DurmahWidget() {
         ? "text-yellow-100"
         : "text-emerald-100";
 
-  const contextChipText = useMemo(
-    () => buildContextChipText(contextPacket, contextTimeLabel),
-    [contextPacket, contextTimeLabel]
-  );
+  const contextChipText = useMemo(() => {
+    if (!contextPacket) return null;
+    const time = contextTimeLabel || formatContextDayTimeLabel(new Date(), contextPacket.academic.timezone || "Europe/London");
+    return buildContextChipText(contextPacket, time);
+  }, [contextPacket, contextTimeLabel]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -819,6 +821,13 @@ export default function DurmahWidget() {
             <span className="bg-white/20 backdrop-blur-sm rounded-full text-[10px] px-2 py-0.5 font-medium tracking-wide">BETA</span>
           </div>
           <span className="text-xs text-violet-100 font-medium">Your Legal Mentor</span>
+          
+          {contextChipText && (
+            <div className="mt-1 inline-flex self-start items-center px-2 py-0.5 rounded-full border border-white/10 bg-white/5 text-[10px] text-white/70 backdrop-blur-sm">
+               {contextChipText}
+            </div>
+          )}
+
           {showVoiceStatus && (
             <span className={`text-[10px] font-medium ${voiceStatusClass}`}>
               {voiceStatusLabel}
