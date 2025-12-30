@@ -116,7 +116,7 @@ export function useDurmahRealtime({
       const raw = userTranscriptRef.current.trim();
       const text = normalizeTranscriptLanguageSync(raw);
       if (text) {
-        onTurn?.({ speaker: "you", text });
+        onTurn?.({ speaker: "user", text });
       }
       userTranscriptRef.current = "";
     },
@@ -403,7 +403,6 @@ export function useDurmahRealtime({
     }
   }, [
     audioRef,
-    onTurn,
     appendAssistantText,
     appendUserText,
     flushAssistantText,
@@ -415,6 +414,27 @@ export function useDurmahRealtime({
     systemPrompt,
     voice,
   ]);
+
+  // Handle dynamic system prompt updates (e.g. valid context loaded after connection start)
+  useEffect(() => {
+    if (status !== 'listening' && status !== 'speaking') return;
+    if (!dcRef.current || dcRef.current.readyState !== 'open') return;
+
+    // We only update the instructions, keeping other settings same
+    const payload = {
+      type: "session.update",
+      session: {
+        instructions: `${ENGLISH_SYSTEM_INSTRUCTION}\n\n${systemPrompt}`,
+      },
+    };
+
+    try {
+      console.debug("[DurmahVoice] Updating session with new context/prompt");
+      dcRef.current.send(JSON.stringify(payload));
+    } catch (e) {
+      console.error("Failed to update session context", e);
+    }
+  }, [systemPrompt, status]);
 
   const playVoicePreview = useCallback(
     async (preset: { openaiVoice: string; previewText: string }) => {
