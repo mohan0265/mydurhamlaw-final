@@ -152,7 +152,7 @@ function buildContextChipParts(
 }
 
 function buildContextGreeting(context: DurmahContextPacket) {
-  const name = context.profile.displayName || "there";
+  const name = context.profile.displayName || "Student";
   const termLabel =
     context.academic.term === "Unknown" ? "this term" : context.academic.term;
   const weekLabel = context.academic.weekOfTerm
@@ -185,10 +185,22 @@ export default function DurmahWidget() {
   const studentContext: DurmahStudentContext = useMemo(() => {
     const base = durmahCtx.hydrated ? durmahCtx : (typeof window !== 'undefined' ? window.__mdlStudentContext : null);
     
+    // Robust name resolution
+    const rawName = (base as any)?.profile?.displayName || 
+                    base?.firstName || 
+                    user?.user_metadata?.full_name || 
+                    user?.user_metadata?.name || 
+                    "Student";
+
+    // Robust role resolution
+    const rawRole = base?.yearKey || 
+                    (base as any)?.profile?.yearGroup || 
+                    "Law Student";
+
     if (!base) {
-      return {
+       return {
         userId: user?.id || "anon",
-        firstName: "Student",
+        firstName: rawName,
         university: "Durham University",
         programme: "LLB",
         yearGroup: "year1",
@@ -202,21 +214,21 @@ export default function DurmahWidget() {
     }
 
     return {
-      userId: base.userId,
-      firstName: base.firstName,
-      university: base.university,
-      programme: base.programme,
-      yearGroup: base.yearKey,
-      academicYear: base.academicYear,
-      modules: base.modules,
-      nowPhase: base.nowPhase,
-      currentPhase: base.nowPhase,
-      keyDates: base.keyDates,
+      userId: base?.userId || user?.id || "anon",
+      firstName: rawName, // Map full name to firstName field for system prompt
+      university: base?.university || "Durham University",
+      programme: base?.programme || "LLB",
+      yearGroup: rawRole,
+      academicYear: base?.academicYear || "2025/26",
+      modules: base?.modules || [],
+      nowPhase: base?.nowPhase || "term time" as any,
+      currentPhase: base?.nowPhase || "Unknown Term",
+      keyDates: base?.keyDates,
       todayLabel: formatTodayForDisplay(),
       upcomingTasks,
       todaysEvents
     };
-  }, [durmahCtx, user?.id, upcomingTasks, todaysEvents]);
+  }, [durmahCtx, user, upcomingTasks, todaysEvents]);
 
   const [isOpen, setIsOpen] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
