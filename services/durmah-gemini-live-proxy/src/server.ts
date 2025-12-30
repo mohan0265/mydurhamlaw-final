@@ -31,6 +31,8 @@ const auth = new GoogleAuth({
   scopes: ["https://www.googleapis.com/auth/cloud-platform"],
 });
 
+const UPSTREAM_PATH = "/ws/google.cloud.aiplatform.v1.LlmBidiService/BidiGenerateContent";
+
 const server = http.createServer((req, res) => {
   if (req.url?.startsWith("/health")) {
     const payload = {
@@ -38,6 +40,7 @@ const server = http.createServer((req, res) => {
       project: PROJECT_ID,
       location: LOCATION,
       model: GEMINI_LIVE_MODEL,
+      upstream_path: UPSTREAM_PATH,
       time: new Date().toISOString(),
     };
     res.writeHead(200, { "Content-Type": "application/json" });
@@ -126,13 +129,59 @@ wss.on("connection", (ws: WebSocket, req) => {
     return value;
   }
 
-  function normalizeClientPayload(raw: string): string {
+  const ONEOF_KEYS = ["setup", "realtimeInput", "clientContent", "toolResponse"] as const;
+
+  function sanitizeOneof(payload: Record<string, unknown>): {
+    sanitized: Record<string, unknown>;
+    dropped: string[];
+    kept: string | null;
+  } {
+    const cloned = JSON.parse(JSON.stringify(payload)) as Record<string, unknown>;
+    delete cloned.messageType;
+    delete cloned.message_type;
+
+    const present = ONEOF_KEYS.filter((key) => key in cloned);
+    if (present.length <= 1) {
+      return { sanitized: cloned, dropped: [], kept: present[0] ?? null };
+    }
+
+    let kept: (typeof ONEOF_KEYS)[number] | null = null;
+    if (cloned.realtimeInput !== undefined) {
+      kept = "realtimeInput";
+    } else if (cloned.setup !== undefined) {
+      kept = "setup";
+    } else if (cloned.clientContent !== undefined) {
+      kept = "clientContent";
+    } else if (cloned.toolResponse !== undefined) {
+      kept = "toolResponse";
+    }
+
+    const dropped = kept ? present.filter((key) => key !== kept) : present;
+    for (const key of dropped) {
+      delete cloned[key];
+    }
+
+    return { sanitized: cloned, dropped, kept };
+  }
+
+  function normalizeClientPayload(raw: string): {
+    text: string;
+    kept: string | null;
+    dropped: string[];
+    sanitized: Record<string, unknown> | null;
+  } {
     try {
       const parsed = JSON.parse(raw);
       const normalized = toCamelCase(parsed);
-      return JSON.stringify(normalized);
+      const { sanitized, dropped, kept } = sanitizeOneof(normalized as Record<string, unknown>);
+      return {
+        text: JSON.stringify(sanitized),
+        kept,
+        dropped,
+        sanitized,
+      };
     } catch {
-      return raw;
+      return { text: raw, kept: null, dropped: [], sanitized: null };
     }
   }
 
@@ -183,8 +232,7 @@ wss.on("connection", (ws: WebSocket, req) => {
           // Construct Vertex WebSocket URL
           // Endpoint: wss://{location}-aiplatform.googleapis.com/ws/google.cloud.aiplatform.v1.LlmBidiService/BidiGenerateContent
           const host = `${LOCATION}-aiplatform.googleapis.com`;
-          const path = `/ws/google.cloud.aiplatform.v1.LlmBidiService/BidiGenerateContent`;
-          const url = `wss://${host}${path}`;
+          const url = `wss://${host}${UPSTREAM_PATH}`;
 
           console.log(`Upstream location=${LOCATION} url=${url}`);
 
@@ -217,7 +265,16 @@ wss.on("connection", (ws: WebSocket, req) => {
 
             // If payload is not empty (beyond auth), send it
             if (Object.keys(payload).length > 0) {
-              upstream?.send(normalizeClientPayload(JSON.stringify(payload)));
+              const normalized = normalizeClientPayload(JSON.stringify(payload));
+              if (normalized.dropped.length > 0) {
+                console.warn(
+                  `Sanitized oneof (dropped: ${normalized.dropped.join(", ")})`
+                );
+              }
+              if (normalized.kept) {
+                console.log(`Forwarding: ${normalized.kept}`);
+              }
+              upstream?.send(normalized.text);
             }
 
             // Process queued messages (IMPORTANT: shift() can return undefined)
@@ -265,7 +322,7 @@ wss.on("connection", (ws: WebSocket, req) => {
               if (ws.readyState === WebSocket.OPEN) {
                 ws.close(code, reasonText);
               }
-            }, 40);
+            }, 150);
           });
 
           upstream.on("error", (err) => {
@@ -280,24 +337,24 @@ wss.on("connection", (ws: WebSocket, req) => {
               if (ws.readyState === WebSocket.OPEN) {
                 ws.close(1011, "Upstream Error");
               }
-            }, 40);
+            }, 150);
           });
 
           // Allow subsequent messages to flow
           isAuthenticated = true;
         } catch (err) {
           console.error("Failed to connect upstream:", err);
-          sendClientError(
-            ws,
-            err instanceof Error ? err.message : "Upstream connection failed",
-            "upstream_connect_failed"
-          );
-          setTimeout(() => {
-            if (ws.readyState === WebSocket.OPEN) {
-              ws.close(1011, "Upstream Connection Failed");
-            }
-          }, 40);
-        }
+        sendClientError(
+          ws,
+          err instanceof Error ? err.message : "Upstream connection failed",
+          "upstream_connect_failed"
+        );
+        setTimeout(() => {
+          if (ws.readyState === WebSocket.OPEN) {
+            ws.close(1011, "Upstream Connection Failed");
+          }
+        }, 150);
+      }
       } catch (e) {
         console.error("Bad handshake payload:", e);
         sendClientError(
@@ -309,7 +366,7 @@ wss.on("connection", (ws: WebSocket, req) => {
           if (ws.readyState === WebSocket.OPEN) {
             ws.close(1008, "Invalid Handshake");
           }
-        }, 40);
+        }, 150);
       }
 
       return;
@@ -317,11 +374,24 @@ wss.on("connection", (ws: WebSocket, req) => {
 
     // 2) Subsequent messages: Forward to Upstream
     const normalized = normalizeClientPayload(data.toString());
+    if (normalized.dropped.length > 0) {
+      console.warn(`Sanitized oneof (dropped: ${normalized.dropped.join(", ")})`);
+    }
+    if (normalized.kept) {
+      if (normalized.kept === "realtimeInput") {
+        const chunks = (normalized.sanitized as any)?.realtimeInput?.mediaChunks;
+        const count = Array.isArray(chunks) ? chunks.length : 0;
+        console.log(`Forwarding: realtimeInput mediaChunks=${count}`);
+      } else {
+        console.log(`Forwarding: ${normalized.kept}`);
+      }
+    }
+
     if (isUpstreamOpen && upstream) {
-      upstream.send(normalized);
+      upstream.send(normalized.text);
     } else {
       // Queue until open
-      messageQueue.push(normalized);
+      messageQueue.push(normalized.text);
     }
   });
 
