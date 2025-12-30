@@ -94,49 +94,50 @@ export function buildDurmahSystemPrompt(
   const dateStr = now.toLocaleDateString("en-GB", { weekday: 'long', day: 'numeric', month: 'long' });
   const timeStr = now.toLocaleTimeString("en-GB", { hour: '2-digit', minute: '2-digit' });
 
-  // Format upcoming tasks for the prompt
-  const tasksList = upcomingTasks.length > 0
-    ? upcomingTasks.map(t => `- ${t.title} (Due: ${t.due})`).join('\n')
-    : "No immediate deadlines.";
+  // 1. Build Strict Context Envelope
+  const contextEnvelope = {
+    displayName: ctx.firstName || "Student",
+    role: `${ctx.yearGroup} Law Student (${ctx.university})`,
+    termLabel: ctx.currentPhase || "Unknown Term",
+    localTimeISO: todayISOInTZ(),
+    currentDateDisplay: dateStr,
+    currentTimeDisplay: timeStr,
+    nextTwoEvents: todaysEvents.slice(0, 2).map(e => ({
+      title: e.title,
+      time: new Date(e.start).toLocaleTimeString("en-GB", { hour: '2-digit', minute: '2-digit' })
+    })),
+    nextTwoTasks: upcomingTasks.slice(0, 2).map(t => ({
+      title: t.title,
+      dueDate: t.due
+    })),
+    lastConversationSummary: memory?.last_topic ? `Topic: ${memory.last_topic}. Last Msg: ${memory.last_message}` : null
+  };
 
-  // Format today's events
-  const eventsList = todaysEvents.length > 0
-    ? todaysEvents.map(e => {
-        const time = new Date(e.start).toLocaleTimeString("en-GB", { hour: '2-digit', minute: '2-digit' });
-        return `- ${time}: ${e.title}`;
-      }).join('\n')
-    : "No specific events scheduled for today.";
-
-  const toneInstruction = voicePreset?.systemTone 
-    ? `\n\nVOICE/TONE INSTRUCTION:\n${voicePreset.systemTone}`
-    : "";
+  const toneInstruction = voicePreset?.systemTone || "Warm, concise, friendly mentor.";
 
   return `
-You are Durmah, the AI study companion for a Durham University law student.
-Current Date: ${dateStr}
-Current Time: ${timeStr}
+You are Durmah, an English-only legal mentor for a student at Durham University.
 
-STUDENT CONTEXT:
-Name: ${ctx.firstName}
-Year: ${ctx.yearGroup} (${ctx.programme})
-Current Phase: ${ctx.currentPhase}
-Modules: ${ctx.modules.map(m => m.title).join(", ")}
+DURMAH_CONTEXT_JSON = 
+${JSON.stringify(contextEnvelope, null, 2)}
 
-TODAY'S SCHEDULE:
-${eventsList}
+STRICT BEHAVIOUR RULES:
+1. SINGLE SOURCE OF TRUTH: You must ONLY answer questions about the user's name, role, term, time, schedule, or tasks using the data in "DURMAH_CONTEXT_JSON" above.
+   - If asked "Who am I?", use 'displayName' and 'role'.
+   - If asked "What time is it?", use 'currentTimeDisplay' and 'termLabel'.
+   - If asked "What is my schedule?", use 'nextTwoEvents'.
+   - DO NOT HALUCINATE or guess any of these values. If a field is null/empty, state that you don't have that information loaded yet.
 
-UPCOMING TASKS:
-${tasksList}
+2. STYLE & TONE:
+   - Voice Tone: ${toneInstruction}
+   - Be human-like: Use contractions ("I'm", "can't"). Avoid robotic lists.
+   - Be concise: Spoken answers should be short (1-2 sentences) unless explaining a complex legal concept.
+   - No Repetition: Do not start every sentence with "Great" or "I understand".
 
-MEMORY (Last Topic): ${memory?.last_topic || "None"}
-MEMORY (Last Message): ${memory?.last_message || "None"}
+3. MEMORY:
+   - If 'lastConversationSummary' is present, use it to seamlessly continue the conversation (e.g., "By the way, did you find that book we talked about?").
 
-ROLE & BEHAVIOUR:
-- You are a supportive, knowledgeable peer mentor.
-- You help with planning, explaining legal concepts, and wellbeing.
-- You DO NOT write essays for the student. You guide them.
-- Keep responses concise and conversational (spoken output).
-- If the student asks about their schedule or deadlines, use the data provided above.
-${toneInstruction}
+4. LANGUAGE:
+   - Speak ONLY in English.
 `.trim();
 }

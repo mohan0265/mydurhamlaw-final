@@ -58,6 +58,7 @@ export function useDurmahRealtime({
   const previewStreamRef = useRef<MediaStream | null>(null);
   const assistantTranscriptRef = useRef<string>("");
   const userTranscriptRef = useRef<string>("");
+  const hasGreetedRef = useRef(false);
 
   const debugLog = (...args: unknown[]) => {
     if (REALTIME_DEBUG) {
@@ -230,8 +231,10 @@ export function useDurmahRealtime({
     try {
       setError(null);
       setSpeaking(false);
+      setSpeaking(false);
       assistantTranscriptRef.current = "";
       userTranscriptRef.current = "";
+      hasGreetedRef.current = false;
       stopPreview();
       setStatus("connecting");
 
@@ -280,7 +283,7 @@ export function useDurmahRealtime({
           JSON.stringify({
             type: "session.update",
             session: {
-              instructions: `${ENGLISH_SYSTEM_INSTRUCTION}\n\n${systemPrompt}`,
+              instructions: systemPrompt,
               input_audio_transcription: {
                 model: TRANSCRIPTION_MODEL,
                 language: "en",
@@ -424,12 +427,15 @@ export function useDurmahRealtime({
     const payload = {
       type: "session.update",
       session: {
-        instructions: `${ENGLISH_SYSTEM_INSTRUCTION}\n\n${systemPrompt}`,
+        instructions: systemPrompt,
       },
     };
 
     try {
-      console.debug("[DurmahVoice] Updating session with new context/prompt");
+      if (REALTIME_DEBUG || true) {
+        console.log(`[DurmahRealtime] session.update sent (len=${systemPrompt.length})`);
+        console.log(`[DurmahRealtime] Instructions prefix: ${systemPrompt.slice(0, 120)}...`);
+      }
       dcRef.current.send(JSON.stringify(payload));
     } catch (e) {
       console.error("Failed to update session context", e);
