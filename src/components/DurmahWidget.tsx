@@ -13,6 +13,7 @@ import {
   DurmahStudentContext, 
   DurmahMemorySnapshot 
 } from "@/lib/durmah/systemPrompt";
+import type { DurmahContextPacket } from "@/types/durmah";
 import { formatTodayForDisplay } from "@/lib/durmah/phase";
 import { useDurmahSettings } from "@/hooks/useDurmahSettings";
 import { Settings, X, ArrowRight, AlertTriangle, Check, Volume2, Brain, Zap, MoreHorizontal } from "lucide-react";
@@ -99,6 +100,78 @@ function createVoiceSessionId() {
   return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
 
+function formatContextDayTimeLabel(date: Date, timeZone: string) {
+  const formatter = new Intl.DateTimeFormat("en-GB", {
+    timeZone,
+    weekday: "short",
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  });
+  const parts = formatter.formatToParts(date);
+  const day = parts.find((part) => part.type === "weekday")?.value ?? "";
+  const hour = parts.find((part) => part.type === "hour")?.value ?? "";
+  const minute = parts.find((part) => part.type === "minute")?.value ?? "";
+  const dayPeriod =
+    parts.find((part) => part.type === "dayPeriod")?.value ?? "";
+  const time = `${hour}:${minute}${dayPeriod ? dayPeriod.toLowerCase() : ""}`;
+  return day ? `${day} ${time}` : time;
+}
+
+function getLocalDateKey(timeZone: string) {
+  const formatter = new Intl.DateTimeFormat("en-CA", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  });
+  const parts = formatter.formatToParts(new Date());
+  const map: Record<string, string> = {};
+  for (const part of parts) {
+    if (part.type !== "literal") {
+      map[part.type] = part.value;
+    }
+  }
+  if (!map.year || !map.month || !map.day) {
+    return new Date().toISOString().slice(0, 10);
+  }
+  return `${map.year}-${map.month}-${map.day}`;
+}
+
+function buildContextChipText(
+  context: DurmahContextPacket | null,
+  timeLabel: string | null
+) {
+  if (!context) return null;
+  const termLabel =
+    context.academic.term === "Unknown" ? "Unknown term" : context.academic.term;
+  const weekLabel = context.academic.weekOfTerm
+    ? `Week ${context.academic.weekOfTerm}`
+    : null;
+  const parts = [termLabel, weekLabel, timeLabel].filter(Boolean) as string[];
+  return parts.join(" • ");
+}
+
+function buildContextGreeting(context: DurmahContextPacket) {
+  const name = context.profile.displayName || "there";
+  const termLabel =
+    context.academic.term === "Unknown" ? "this term" : context.academic.term;
+  const weekLabel = context.academic.weekOfTerm
+    ? `week ${context.academic.weekOfTerm}`
+    : null;
+  const timeOfDay = context.academic.timeOfDay || "day";
+  const lastIntent = context.continuity.lastUserIntent;
+  const followUp =
+    context.continuity.followUpQuestion || "Want to continue from there?";
+
+  if (lastIntent) {
+    return `Hi ${name} — last time we discussed ${lastIntent}. ${followUp}`;
+  }
+
+  const termPhrase = weekLabel ? `${termLabel} ${weekLabel}` : termLabel;
+  return `Hi ${name} — it’s ${timeOfDay} and we’re in ${termPhrase}. Want to review this week, plan your study, or practice a quick quiz?`;
+}
+
 export default function DurmahWidget() {
   const { user } = useAuth() || { user: null };
   const signedIn = !!user?.id;
@@ -161,6 +234,8 @@ export default function DurmahWidget() {
   const [showHeaderMenu, setShowHeaderMenu] = useState(false);
   const [memory, setMemory] = useState<DurmahMemorySnapshot | null>(null);
   const [previewingVoiceId, setPreviewingVoiceId] = useState<string | null>(null);
+  const [contextPacket, setContextPacket] = useState<DurmahContextPacket | null>(null);
+  const [contextTimeLabel, setContextTimeLabel] = useState<string | null>(null);
 
   const streamControllerRef = useRef<AbortController | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -175,6 +250,24 @@ export default function DurmahWidget() {
     }
   }, [messages, ready, isOpen]);
 
+  useEffect(() => {
+    if (!signedIn) {
+      setContextPacket(null);
+      setContextTimeLabel(null);
+    }
+  }, [signedIn]);
+
+  useEffect(() => {
+    if (!contextPacket) return;
+    const timeZone = contextPacket.academic.timezone || "Europe/London";
+    const updateLabel = () => {
+      setContextTimeLabel(formatContextDayTimeLabel(new Date(), timeZone));
+    };
+    updateLabel();
+    const interval = window.setInterval(updateLabel, 60_000);
+    return () => window.clearInterval(interval);
+  }, [contextPacket]);
+
   // Ensure browser is allowed to autoplay incoming WebRTC audio
   useEffect(() => {
     if (!audioRef.current) return;
@@ -184,15 +277,20 @@ export default function DurmahWidget() {
     (el as any).playsInline = true;
   }, []);
 
-  // 2. Memory & Greeting (now driven by durmah context)
+  // 2. Memory & Context
   useEffect(() => {
-    if (!signedIn) return;
+    if (!signedIn || !isOpen) return;
     let cancelled = false;
 
     (async () => {
       try {
-        await waitForAccessToken();
-        const res = await fetchAuthed("/api/durmah/memory");
+        const { token } = await waitForAccessToken();
+        if (!token) {
+          if (!cancelled) setReady(true);
+          return;
+        }
+
+        const res = await fetchAuthed("/api/durmah/context");
         if (res.status === 401 || res.status === 403) {
           if (!cancelled) setReady(true);
           return;
@@ -200,9 +298,9 @@ export default function DurmahWidget() {
 
         if (res.ok) {
           const data = await res.json();
-          const ctx = data?.context;
+          const ctx = data?.context as DurmahContextPacket | undefined;
           if (!cancelled && ctx) {
-            const mapped = (ctx.recentMessages || []).map((m: any) => ({
+            const mapped = (ctx.recent?.lastMessages || []).map((m) => ({
               role: m.role === 'assistant' ? 'durmah' : 'you',
               text: m.content,
               ts: new Date(m.created_at).getTime(),
@@ -212,20 +310,19 @@ export default function DurmahWidget() {
               setMemory({
                 last_topic: 'continuation',
                 last_message: ctx.lastSummary,
-                last_seen_at: ctx.last_message_at,
+                last_seen_at: ctx.academic.localTimeISO,
               });
             }
-            if (ctx.onboardingState === 'new') {
-            setMessages((prev) => [
-              ...prev,
-              {
-                role: 'durmah',
-                text:
-                    "Welcome to MyDurhamLaw! You're on a 14-day trial. I'll keep this quick: Which year are you in (foundation/year1/year2/year3)? Any key modules or deadlines this month?",
-                ts: Date.now(),
-              },
-            ]);
-          }
+            setContextPacket(ctx);
+            if (process.env.NODE_ENV !== "production") {
+              console.log("[Durmah] Context loaded", {
+                displayName: ctx.profile.displayName,
+                yearGroup: ctx.profile.yearGroup,
+                term: ctx.academic.term,
+                weekOfTerm: ctx.academic.weekOfTerm,
+                lastThreadId: ctx.threadId,
+              });
+            }
           }
         }
       } catch (e) {
@@ -238,15 +335,40 @@ export default function DurmahWidget() {
     })();
 
     return () => { cancelled = true; };
-  }, [signedIn]);
+  }, [signedIn, isOpen]);
 
-  // Set initial greeting once ready (only if nothing loaded)
+  // Set initial greeting once ready (context aware)
   useEffect(() => {
-    if (ready && messages.length === 0) {
-      const greeting = preset?.welcomeMessage || composeGreeting(studentContext, memory, upcomingTasks, todaysEvents);
-      setMessages([{ role: "durmah", text: greeting, ts: Date.now() }]);
+    if (!ready || !isOpen) return;
+    const timeZone = contextPacket?.academic.timezone || "Europe/London";
+    const dateKey = getLocalDateKey(timeZone);
+    const greetKey = user?.id ? `durmahGreeted:${user.id}:${dateKey}` : null;
+    if (greetKey && sessionStorage.getItem(greetKey)) return;
+
+    const greeting = contextPacket
+      ? buildContextGreeting(contextPacket)
+      : preset?.welcomeMessage ||
+        composeGreeting(studentContext, memory, upcomingTasks, todaysEvents);
+
+    if (greetKey) {
+      sessionStorage.setItem(greetKey, "1");
     }
-  }, [ready, preset, studentContext, memory, messages.length, upcomingTasks, todaysEvents]);
+
+    setMessages((prev) => [
+      ...prev,
+      { role: "durmah", text: greeting, ts: Date.now() },
+    ]);
+  }, [
+    ready,
+    isOpen,
+    contextPacket,
+    preset,
+    studentContext,
+    memory,
+    upcomingTasks,
+    todaysEvents,
+    user?.id,
+  ]);
 
   useEffect(() => {
     if (authError) {
@@ -330,6 +452,11 @@ export default function DurmahWidget() {
       : status === "connecting"
         ? "text-yellow-100"
         : "text-emerald-100";
+
+  const contextChipText = useMemo(
+    () => buildContextChipText(contextPacket, contextTimeLabel),
+    [contextPacket, contextTimeLabel]
+  );
 
   // Cleanup on unmount
   useEffect(() => {
