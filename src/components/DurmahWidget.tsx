@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useAuth } from '@/lib/supabase/AuthContext';
 import { useDurmahRealtime } from "@/hooks/useDurmahRealtime";
-import { useDurmahGeminiLive } from "@/hooks/useDurmahGeminiLive";
+// import { useDurmahGeminiLive } from "@/hooks/useDurmahGeminiLive";
 import { useDurmahDynamicContext } from "@/hooks/useDurmahDynamicContext";
 import { useDurmah } from "@/lib/durmah/context";
 import { fetchAuthed } from "@/lib/fetchAuthed";
@@ -21,8 +21,8 @@ import Link from 'next/link';
 import toast from "react-hot-toast";
 import { getSupabaseClient } from "@/lib/supabase/client";
 
-const VOICE_PROVIDER = process.env.NEXT_PUBLIC_DURMAH_VOICE_PROVIDER || 'openai';
-const useVoiceHook = VOICE_PROVIDER === 'gemini' ? useDurmahGeminiLive : useDurmahRealtime;
+// const VOICE_PROVIDER = 'openai'; 
+const useVoiceHook = useDurmahRealtime;
 
 type Msg = { role: "durmah" | "you"; text: string; ts: number };
 
