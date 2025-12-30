@@ -21,7 +21,7 @@ import Link from 'next/link';
 import toast from "react-hot-toast";
 import { getSupabaseClient } from "@/lib/supabase/client";
 
-const VOICE_PROVIDER = process.env.NEXT_PUBLIC_DURMAH_VOICE_PROVIDER || 'gemini';
+const VOICE_PROVIDER = process.env.NEXT_PUBLIC_DURMAH_VOICE_PROVIDER || 'openai';
 const useVoiceHook = VOICE_PROVIDER === 'gemini' ? useDurmahGeminiLive : useDurmahRealtime;
 
 type Msg = { role: "durmah" | "you"; text: string; ts: number };
