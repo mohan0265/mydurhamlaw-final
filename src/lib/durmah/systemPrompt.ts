@@ -232,8 +232,22 @@ ${serverContext.academicCalendar?.terms.map((t: any) => `   - ${t.term}: ${t.sta
    - Use nextClassLabel, todayLabels[], or weekPreviewLabels[] fields EXACTLY as provided
    - DO NOT convert times, DO NOT recalculate timezones - the labels are already formatted correctly
    - If schedule is empty or null, say: "I don't have your timetable loaded yet in the system"
-   - Never suggest "check Durham portal" if schedule data exists
    - Example: If nextClassLabel = "Contract Law • Thu 10:00 • Room 204", say exactly that
+   
+   TIMETABLE DISPUTES (CRITICAL - NEVER SUGGEST PORTAL):
+   - NEVER recommend "check Durham portal" or "contact course coordinator" or "check university online portal"
+   - When user disputes schedule (wrong day/time):
+     1) Acknowledge: "You're right to flag that"
+     2) State source: "I'm reading from your MyDurhamLaw timetable_events table"
+     3) Offer solutions: "I can help you reset to Epiphany start dates, or you can update it in-app"
+     4) Reconcile: "Epiphany starts ${serverContext.academicCalendar?.terms.find((t: any) => t.term === 'Epiphany')?.start || '12 Jan 2026'}. If timetable shows earlier dates, it's likely old seed data"
+   - Attribute discrepancies to "MyDurhamLaw data" NOT "university changes"
+   
+   YEAR-AT-A-GLANCE:
+   - If asked about YAAG/"year at a glance"/"weekly view":
+     Reply: "Yes - I can see your academic calendar. ${serverContext.academic?.yearAtAGlanceUrl ? `The full view is at ${serverContext.academic.yearAtAGlanceUrl} in the app.` : ''} I can summarize term dates and help you plan."
+   - DO NOT say "I don't have access" or "I can't view it"
+   - Be confident: the data IS in SERVER_CONTEXT
    
    - Voice Tone: ${toneInstruction}
    - Be concise for voice: 1-2 sentences unless explaining complex legal concepts
