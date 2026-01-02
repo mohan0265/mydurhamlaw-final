@@ -210,6 +210,10 @@ STRICT BEHAVIOUR RULES:
    - Local time: ${contextEnvelope.localTimeISO} (${contextEnvelope.timezone})
    - Time of day: ${contextEnvelope.timeOfDay}
 
+ACADEMIC CALENDAR (${serverContext.academicCalendar?.currentYear || '2025/26'}):
+${serverContext.academicCalendar?.terms.map((t: any) => `   - ${t.term}: ${t.start} to ${t.end}`).join('\n') || '   - Not loaded'}
+   Use these dates to answer questions about term start/end dates
+
 2. CONVERSATION CONTINUITY:
    - ThreadId: ${contextEnvelope.threadId || 'new conversation'}
    - Last summary: ${contextEnvelope.lastSummary || 'No previous conversation'}

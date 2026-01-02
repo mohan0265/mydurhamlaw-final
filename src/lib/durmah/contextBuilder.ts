@@ -326,5 +326,9 @@ export async function buildDurmahContext(req: any): Promise<
       },
       schedule,
     },
+    academicCalendar: {
+      currentYear: '2025/26',
+      terms: DURHAM_TERM_CALENDAR_2025_26,
+    },
   };
 }

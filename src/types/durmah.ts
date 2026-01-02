@@ -53,5 +53,9 @@ export type DurmahContextPacket = {
     todayLabels: string[];
     weekPreviewLabels: string[];
   };
+  academicCalendar?: {
+    currentYear: string;
+    terms: Array<{ term: DurmahTerm; start: string; end: string }>;
+  };
 };
 

@@ -706,7 +706,6 @@ export default function DurmahWidget() {
     setVoiceSessionEndedAt(null);
   };
 
-  // ----------------------------
   // SEED TIMETABLE (DEV ONLY)
   // ----------------------------
   const seedTimetable = async () => {
@@ -716,29 +715,51 @@ export default function DurmahWidget() {
     }
 
     try {
-      const now = new Date();
+      // Create dates in Durham timezone (Europe/London)
+      const createDurhamDate = (daysFromNow: number, hour: number, minute: number = 0) => {
+        const date = new Date();
+        date.setDate(date.getDate() + daysFromNow);
+        
+        // Format as YYYY-MM-DD HH:MM in Durham timezone
+        const formatter = new Intl.DateTimeFormat('en-GB', {
+          timeZone: 'Europe/London',
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+        });
+        const parts = formatter.formatToParts(date);
+        const year = parts.find(p => p.type === 'year')?.value;
+        const month = parts.find(p => p.type === 'month')?.value;
+        const day = parts.find(p => p.type === 'day')?.value;
+        
+        // Create ISO string for Durham timezone
+        // Note: This creates a UTC time that represents the Durham local time
+        const durhamDate = new Date(`${year}-${month}-${day}T${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}:00+00:00`);
+        return durhamDate.toISOString();
+      };
+
       const events = [
         {
           user_id: user.id,
           title: "Contract Law Lecture",
-          start_time: new Date(now.getTime() + 2 * 24 * 60 * 60 * 1000).toISOString(),
-          end_time: new Date(now.getTime() + 2 * 24 * 60 * 60 * 1000 + 2 * 60 * 60 * 1000).toISOString(),
+          start_time: createDurhamDate(2, 10, 0), // +2 days, 10:00 AM Durham time
+          end_time: createDurhamDate(2, 12, 0),   // 12:00 PM Durham time
           location: "Law Building, Room 204",
           source: "seed",
         },
         {
           user_id: user.id,
           title: "Tort Law Seminar",
-          start_time: new Date(now.getTime() + 4 * 24 * 60 * 60 * 1000).toISOString(),
-          end_time: new Date(now.getTime() + 4 * 24 * 60 * 60 * 1000 + 90 * 60 * 1000).toISOString(),
+          start_time: createDurhamDate(4, 14, 0), // +4 days, 2:00 PM Durham time
+          end_time: createDurhamDate(4, 15, 30),  // 3:30 PM Durham time
           location: "Tutorial Room 3B",
           source: "seed",
         },
         {
           user_id: user.id,
           title: "Criminal Law Workshop",
-          start_time: new Date(now.getTime() + 6 * 24 * 60 * 60 * 1000).toISOString(),
-          end_time: new Date(now.getTime() + 6 * 24 * 60 * 60 * 1000 + 3 * 60 * 60 * 1000).toISOString(),
+          start_time: createDurhamDate(6, 9, 0),  // +6 days, 9:00 AM Durham time
+          end_time: createDurhamDate(6, 12, 0),   // 12:00 PM Durham time
           location: "Seminar Hall A",
           source: "seed",
         },
@@ -770,6 +791,7 @@ export default function DurmahWidget() {
             if (process.env.NODE_ENV !== "production") {
               console.log("[DurmahWidget] Context refetched after seed:", {
                 scheduleCount: ctx.schedule?.weekPreview?.length || 0,
+                nextClassLabel: ctx.schedule?.nextClassLabel,
               });
             }
           }
@@ -785,6 +807,7 @@ export default function DurmahWidget() {
       toast.error("Failed to seed timetable");
     }
   };
+
 
   // ----------------------------
   // TEXT CHAT SEND
