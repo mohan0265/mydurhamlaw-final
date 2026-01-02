@@ -21,7 +21,7 @@ export default function ProfileTimetablePage() {
 
   // Step 1: Profile
   const [profile, setProfile] = useState({
-    preferred_name: '',
+    display_name: '',
     year_of_study: 'year1', // DB canonical value
     degree_type: 'LLB',
     modules: '' // stored as text, comma separated locally
@@ -50,7 +50,7 @@ export default function ProfileTimetablePage() {
       const { error } = await supabase
         .from('profiles')
         .update({
-          preferred_name: profile.preferred_name,
+          display_name: profile.display_name,
           year_of_study: profile.year_of_study, // Already in canonical format
           degree_type: profile.degree_type,
           modules: modulesArray,
@@ -163,13 +163,13 @@ export default function ProfileTimetablePage() {
       try {
         const { data, error } = await supabase
           .from('profiles')
-          .select('preferred_name, year_of_study, degree_type, modules')
+          .select('display_name, year_of_study, degree_type, modules')
           .eq('id', user.id)
           .single();
 
         if (data) {
           setProfile({
-            preferred_name: data.preferred_name || '',
+            display_name: data.display_name || '',
             year_of_study: data.year_of_study || 'year1', // canonical
             degree_type: data.degree_type || 'LLB',
             modules: Array.isArray(data.modules) ? data.modules.join(', ') : (data.modules || '')

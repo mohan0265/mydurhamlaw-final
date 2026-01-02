@@ -176,11 +176,22 @@ export default function LoginRedirectPage() {
         } else {
           console.log(`🆕 New ${userRole} detected, creating profile...`);
 
+          // ✅ CRITICAL FIX: Get display_name from signup metadata!
+          const { retrieveSignupMetadata } = await import('@/lib/utils/metadata-storage');
+          const signupMetadata = retrieveSignupMetadata();
+          console.log('📋 Retrieved signup metadata:', signupMetadata);
+          
+          const actualDisplayName = signupMetadata?.display_name || 
+                                    user.user_metadata?.display_name ||
+                                    user.user_metadata?.full_name ||
+                                    user.email?.split('@')[0] || 
+                                    'User';
+
           const baseProfileData: any = {
             id: user.id,
             user_role: userRole,
-            display_name: user.email?.split('@')[0] || 'User',
-            agreed_to_terms: userRole === 'loved_one' ? true : false,
+            display_name: actualDisplayName,  // ✅ Use actual name from signup!
+            agreed_to_terms: userRole === 'loved_one' ? true : (signupMetadata?.agreed_to_terms || false),
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
             created_via: 'manual',
@@ -188,9 +199,11 @@ export default function LoginRedirectPage() {
 
           if (userRole === 'student') {
             baseProfileData.year_group =
+              signupMetadata?.year_group ||
               (user.user_metadata as any)?.year_group ||
               (user.user_metadata as any)?.user_type ||
               'year1';
+            console.log('📚 Year group assigned:', baseProfileData.year_group);
           } else {
             // Loved ones are not constrained by year_group; provide a safe default anyway
             baseProfileData.year_group = 'year1';
