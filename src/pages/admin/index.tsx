@@ -2,14 +2,20 @@
 import { parse } from "cookie"
 import { createHmac } from "crypto"
 import { getSupabaseAdmin } from "@/lib/server/supabaseAdmin"
+import { useState } from "react"
 
 type AdminRow = {
   id: string
+  email: string | null
   display_name: string | null
   user_role: string | null
   year_group: string | null
   trial_started_at: string | null
+  trial_ends_at: string | null
   trial_ever_used: boolean | null
+  is_test_account: boolean | null
+  subscription_status: string | null
+  subscription_ends_at: string | null
 }
 
 type AdminUser = {
@@ -20,10 +26,20 @@ type AdminUser = {
   provider: string | null
 }
 
+type AWYConn = {
+  id: string
+  studentEmail: string
+  lovedEmail: string
+  relationship: string
+  status: string
+  createdAt: string
+}
+
 type Props = {
   authorized: boolean
   rows: AdminRow[]
   users: AdminUser[]
+  connections: AWYConn[]
   error?: string | null
 }
 
@@ -42,7 +58,7 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
   if (!token || !exp || token !== exp) {
     return {
       redirect: { destination: "/admin/login", permanent: false },
-      props: { authorized: false, rows: [], users: [], error: null }
+      props: { authorized: false, rows: [], users: [], connections: [], error: null }
     }
   }
 
@@ -53,6 +69,7 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
         authorized: true,
         rows: [],
         users: [],
+        connections: [],
         error: "Server misconfigured: missing Supabase admin env vars"
       }
     }
@@ -60,11 +77,12 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
 
   const { data, error } = await adminClient
     .from("profiles")
-    .select("id, display_name, user_role, year_group, trial_started_at, trial_ever_used")
+    .select("id, email, display_name, user_role, year_group, trial_started_at, trial_ends_at, trial_ever_used, is_test_account, subscription_status, subscription_ends_at")
     .order("updated_at", { ascending: false })
     .limit(200)
 
   let users: AdminUser[] = []
+  let connections: AWYConn[] = []
   let errMsg: string | null = null
   try {
     const { data: list } = await adminClient.auth.admin.listUsers()
@@ -73,9 +91,33 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
         id: u.id,
         email: u.email ?? null,
         created_at: u.created_at ?? null,
-        last_sign_in_at: u.last_sign_in_at ?? null,
+        last_sign_in_at: u.last_sign_at ?? null,
         provider: u.app_metadata?.provider ?? null
       })) ?? []
+
+    // Fetch AWY connections
+    const { data: conns } = await adminClient
+      .from('awy_connections')
+      .select(`
+        id,
+        loved_email,
+        relationship,
+        status,
+        created_at,
+        student:profiles!awy_connections_student_user_id_fkey(email),
+        loved:profiles!awy_connections_loved_user_id_fkey(email)
+      `)
+      .order('created_at', { ascending: false })
+      .limit(100)
+
+    connections = (conns || []).map((c: any) => ({
+      id: c.id,
+      studentEmail: c.student?.email || '-',
+      lovedEmail: c.loved_email || c.loved?.email || '-',
+      relationship: c.relationship || '-',
+      status: c.status || '-',
+      createdAt: c.created_at || '-'
+    }))
   } catch (e: any) {
     errMsg = e?.message || "Failed to load auth users"
   }
@@ -85,60 +127,106 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
       authorized: true,
       rows: (data as AdminRow[]) || [],
       users,
+      connections,
       error: error ? error.message : errMsg
     }
   }
 }
 
-export default function AdminDashboard({ authorized, rows, users, error }: Props) {
+export default function AdminDashboard({ authorized, rows, users, connections, error }: Props) {
   if (!authorized) return null
 
-  const onUpdateProfile = async (e: React.FormEvent<HTMLFormElement>) => {
+  const [showCreateStudent, setShowCreateStudent] = useState(false)
+  const [showCreateLovedOne, setShowCreateLovedOne] = useState(false)
+  const [filter, setFilter] = useState<'all' | 'test' | 'real'>('all')
+
+  const onCreateStudent = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     const form = e.currentTarget
-    const id = (form.elements.namedItem("profile_id") as HTMLInputElement).value
-    const display_name = (form.elements.namedItem("display_name") as HTMLInputElement).value
-    const user_role = (form.elements.namedItem("user_role") as HTMLInputElement).value
-    const year_group = (form.elements.namedItem("year_group") as HTMLInputElement).value
-    const res = await fetch("/api/admin/update-profile", {
+    const email = (form.elements.namedItem("email") as HTMLInputElement).value
+    const displayName = (form.elements.namedItem("displayName") as HTMLInputElement).value
+    const yearGroup = (form.elements.namedItem("yearGroup") as HTMLSelectElement).value
+    
+    const res = await fetch("/api/admin/create-test-student", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id, display_name, user_role, year_group })
+      body: JSON.stringify({ email, displayName, yearGroup })
     })
+    
     if (!res.ok) {
-      alert("Update failed")
+      const err = await res.json()
+      alert(`Failed: ${err.error}`)
     } else {
-      alert("Profile updated")
+      const data = await res.json()
+      alert(`Student created! Trial ends: ${data.trialEndsAt}`)
+      window.location.reload()
     }
   }
 
-  const onUpdateConnection = async (e: React.FormEvent<HTMLFormElement>) => {
+  const onCreateLovedOne = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     const form = e.currentTarget
-    const connection_id = (form.elements.namedItem("connection_id") as HTMLInputElement).value
-    const loved_email = (form.elements.namedItem("loved_email") as HTMLInputElement).value
-    const relationship = (form.elements.namedItem("relationship") as HTMLInputElement).value
+    const email = (form.elements.namedItem("email") as HTMLInputElement).value
+    const displayName = (form.elements.namedItem("displayName") as HTMLInputElement).value
+    const studentUserId = (form.elements.namedItem("studentUserId") as HTMLSelectElement).value
+    const relationship = (form.elements.namedItem("relationship") as HTMLSelectElement).value
     const nickname = (form.elements.namedItem("nickname") as HTMLInputElement).value
-    const status = (form.elements.namedItem("status") as HTMLInputElement).value
-    const res = await fetch("/api/admin/update-connection", {
+    
+    const res = await fetch("/api/admin/create-test-loved-one", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ connection_id, loved_email, relationship, nickname, status })
+      body: JSON.stringify({ email, displayName, studentUserId, relationship, nickname })
     })
+    
     if (!res.ok) {
-      alert("Update failed")
+      const err = await res.json()
+      alert(`Failed: ${err.error}`)
     } else {
-      alert("Connection updated")
+      alert(`Loved one created and linked!`)
+      window.location.reload()
     }
   }
+
+  const extendTrial = async (userId: string, days: number) => {
+    const res = await fetch("/api/admin/extend-trial", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId, extensionDays: days })
+    })
+    if (!res.ok) {
+      alert("Failed to extend trial")
+    } else {
+      alert(`Trial extended by ${days} days`)
+      window.location.reload()
+    }
+  }
+
+  const deleteAccount = async (userId: string) => {
+    if (!confirm("Delete this test account?")) return
+    const res = await fetch("/api/admin/delete-test-account", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId })
+    })
+    if (!res.ok) {
+      const err = await res.json()
+      alert(`Failed: ${err.error}`)
+    } else {
+      alert("Account deleted")
+      window.location.reload()
+    }
+  }
+
+  const students = rows.filter(r => r.user_role === 'student')
+  const filteredRows = filter === 'all' ? rows : filter === 'test' ? rows.filter(r => r.is_test_account) : rows.filter(r => !r.is_test_account)
 
   return (
     <div className="min-h-screen bg-slate-50 px-6 py-10">
-      <div className="max-w-6xl mx-auto bg-white rounded-2xl shadow border border-slate-200 p-6">
+      <div className="max-w-7xl mx-auto bg-white rounded-2xl shadow border border-slate-200 p-6">
         <div className="flex justify-between items-center mb-6">
           <div>
             <h1 className="text-2xl font-bold text-slate-900">Admin Dashboard</h1>
-            <p className="text-sm text-slate-500">Profiles, trial flags, and roles.</p>
+            <p className="text-sm text-slate-500">Manage students, trials, and AWY connections</p>
           </div>
           <form method="POST" action="/api/admin/logout">
             <button
@@ -156,95 +244,154 @@ export default function AdminDashboard({ authorized, rows, users, error }: Props
           </div>
         )}
 
-        <div className="grid gap-6 md:grid-cols-2 mb-8">
-          <form onSubmit={onUpdateProfile} className="p-4 border border-slate-200 rounded-xl bg-white shadow-sm space-y-3">
-            <h2 className="text-sm font-semibold text-slate-800">Edit Profile</h2>
-            <input name="profile_id" placeholder="Profile ID" className="w-full border rounded px-3 py-2 text-sm" required />
-            <input name="display_name" placeholder="Display Name" className="w-full border rounded px-3 py-2 text-sm" />
-            <input name="user_role" placeholder="Role (student/loved_one)" className="w-full border rounded px-3 py-2 text-sm" />
-            <input name="year_group" placeholder="Year (year1/year2/year3/foundation)" className="w-full border rounded px-3 py-2 text-sm" />
-            <button type="submit" className="w-full py-2 rounded bg-slate-800 text-white text-sm font-semibold">Save Profile</button>
-          </form>
-
-          <form onSubmit={onUpdateConnection} className="p-4 border border-slate-200 rounded-xl bg-white shadow-sm space-y-3">
-            <h2 className="text-sm font-semibold text-slate-800">Edit AWY Connection</h2>
-            <input name="connection_id" placeholder="Connection ID" className="w-full border rounded px-3 py-2 text-sm" required />
-            <input name="loved_email" placeholder="Loved Email" className="w-full border rounded px-3 py-2 text-sm" />
-            <input name="relationship" placeholder="Relationship" className="w-full border rounded px-3 py-2 text-sm" />
-            <input name="nickname" placeholder="Nickname" className="w-full border rounded px-3 py-2 text-sm" />
-            <input name="status" placeholder="Status (active/granted/pending/revoked)" className="w-full border rounded px-3 py-2 text-sm" />
-            <button type="submit" className="w-full py-2 rounded bg-slate-800 text-white text-sm font-semibold">Save Connection</button>
-          </form>
+        {/* Quick Actions */}
+        <div className="mb-6 p-4 border border-blue-100 bg-blue-50 rounded-xl">
+          <h2 className="text-sm font-semibold text-slate-800 mb-3">Quick Actions</h2>
+          <div className="flex gap-2 flex-wrap">
+            <button 
+              onClick={() => setShowCreateStudent(true)}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700"
+            >
+              + Create Test Student
+            </button>
+            <button 
+              onClick={() => setShowCreateLovedOne(true)}
+              className="px-4 py-2 bg-purple-600 text-white rounded-lg text-sm font-semibold hover:bg-purple-700"
+            >
+              + Create Loved One
+            </button>
+          </div>
         </div>
 
-        <h2 className="text-lg font-semibold text-slate-800 mb-2">Profiles</h2>
-        <div className="overflow-auto border border-slate-100 rounded-xl">
+        {/* Filter */}
+        <div className="mb-4 flex gap-2">
+          <button onClick={() => setFilter('all')} className={`px-3 py-1 rounded text-sm ${filter === 'all' ? 'bg-slate-800 text-white' : 'bg-slate-100'}`}>All</button>
+          <button onClick={() => setFilter('test')} className={`px-3 py-1 rounded text-sm ${filter === 'test' ? 'bg-slate-800 text-white' : 'bg-slate-100'}`}>Test Only</button>
+          <button onClick={() => setFilter('real')} className={`px-3 py-1 rounded text-sm ${filter === 'real' ? 'bg-slate-800 text-white' : 'bg-slate-100'}`}>Real Only</button>
+        </div>
+
+        {/* Profiles Table */}
+        <h2 className="text-lg font-semibold text-slate-800 mb-2">Profiles ({filteredRows.length})</h2>
+        <div className="overflow-auto border border-slate-100 rounded-xl mb-8">
           <table className="min-w-full text-sm">
             <thead className="bg-slate-100">
               <tr>
-                <th className="text-left px-3 py-2">ID</th>
+                <th className="text-left px-3 py-2">Email</th>
                 <th className="text-left px-3 py-2">Name</th>
                 <th className="text-left px-3 py-2">Role</th>
                 <th className="text-left px-3 py-2">Year</th>
-                <th className="text-left px-3 py-2">Trial Started</th>
-                <th className="text-left px-3 py-2">Ever Used Trial</th>
+                <th className="text-left px-3 py-2">Subscription</th>
+                <th className="text-left px-3 py-2">Trial Ends</th>
+                <th className="text-left px-3 py-2">Actions</th>
               </tr>
             </thead>
             <tbody>
-              {rows.map((r) => (
+              {filteredRows.map((r) => (
                 <tr key={r.id} className="border-t border-slate-100">
-                  <td className="px-3 py-2 font-mono text-xs text-slate-600">{r.id}</td>
+                  <td className="px-3 py-2">
+                    {r.email || '-'}
+                    {r.is_test_account && <span className="ml-2 text-xs bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded">TEST</span>}
+                  </td>
                   <td className="px-3 py-2">{r.display_name || '-'}</td>
                   <td className="px-3 py-2">{r.user_role || '-'}</td>
                   <td className="px-3 py-2">{r.year_group || '-'}</td>
-                  <td className="px-3 py-2">{r.trial_started_at || '-'}</td>
-                  <td className="px-3 py-2">{r.trial_ever_used ? 'Yes' : 'No'}</td>
-                </tr>
-              ))}
-              {rows.length === 0 && (
-                <tr>
-                  <td className="px-3 py-4 text-center text-slate-500" colSpan={6}>
-                    No profiles found.
+                  <td className="px-3 py-2">{r.subscription_status || 'trial'}</td>
+                  <td className="px-3 py-2">{r.trial_ends_at ? new Date(r.trial_ends_at).toLocaleDateString() : '-'}</td>
+                  <td className="px-3 py-2 space-x-2">
+                    <button onClick={() => extendTrial(r.id, 7)} className="text-blue-600 hover:underline text-xs">+7d</button>
+                    {r.is_test_account && (
+                      <button onClick={() => deleteAccount(r.id)} className="text-red-600 hover:underline text-xs">Del</button>
+                    )}
                   </td>
                 </tr>
-              )}
+              ))}
             </tbody>
           </table>
         </div>
 
-        <h2 className="text-lg font-semibold text-slate-800 mt-8 mb-2">Auth Users</h2>
+        {/* AWY Connections */}
+        <h2 className="text-lg font-semibold text-slate-800 mb-2">AWY Connections ({connections.length})</h2>
         <div className="overflow-auto border border-slate-100 rounded-xl">
           <table className="min-w-full text-sm">
             <thead className="bg-slate-100">
               <tr>
-                <th className="text-left px-3 py-2">ID</th>
-                <th className="text-left px-3 py-2">Email</th>
-                <th className="text-left px-3 py-2">Provider</th>
+                <th className="text-left px-3 py-2">Student</th>
+                <th className="text-left px-3 py-2">Loved One</th>
+                <th className="text-left px-3 py-2">Relationship</th>
+                <th className="text-left px-3 py-2">Status</th>
                 <th className="text-left px-3 py-2">Created</th>
-                <th className="text-left px-3 py-2">Last Sign In</th>
               </tr>
             </thead>
             <tbody>
-              {users.map((u) => (
-                <tr key={u.id} className="border-t border-slate-100">
-                  <td className="px-3 py-2 font-mono text-xs text-slate-600">{u.id}</td>
-                  <td className="px-3 py-2">{u.email || '-'}</td>
-                  <td className="px-3 py-2">{u.provider || '-'}</td>
-                  <td className="px-3 py-2">{u.created_at || '-'}</td>
-                  <td className="px-3 py-2">{u.last_sign_in_at || '-'}</td>
+              {connections.map((c) => (
+                <tr key={c.id} className="border-t border-slate-100">
+                  <td className="px-3 py-2">{c.studentEmail}</td>
+                  <td className="px-3 py-2">{c.lovedEmail}</td>
+                  <td className="px-3 py-2">{c.relationship}</td>
+                  <td className="px-3 py-2">{c.status}</td>
+                  <td className="px-3 py-2">{new Date(c.createdAt).toLocaleDateString()}</td>
                 </tr>
               ))}
-              {users.length === 0 && (
-                <tr>
-                  <td className="px-3 py-4 text-center text-slate-500" colSpan={5}>
-                    No auth users found.
-                  </td>
-                </tr>
-              )}
             </tbody>
           </table>
         </div>
       </div>
+
+      {/* Create Student Modal */}
+      {showCreateStudent && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-6 w-full max-w-md">
+            <h3 className="text-lg font-bold mb-4">Create Test Student</h3>
+            <form onSubmit={onCreateStudent} className="space-y-3">
+              <input name="email" placeholder="Email" className="w-full border rounded px-3 py-2" required />
+              <input name="displayName" placeholder="Display Name" className="w-full border rounded px-3 py-2" required />
+              <select name="yearGroup" className="w-full border rounded px-3 py-2" required>
+                <option value="">Select Year</option>
+                <option value="foundation">Foundation</option>
+                <option value="year1">Year 1</option>
+                <option value="year2">Year 2</option>
+                <option value="year3">Year 3</option>
+              </select>
+              <div className="flex gap-2">
+                <button type="submit" className="flex-1 py-2 bg-blue-600 text-white rounded font-semibold">Create</button>
+                <button type="button" onClick={() => setShowCreateStudent(false)} className="px-4 py-2 bg-slate-200 rounded">Cancel</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Create Loved One Modal */}
+      {showCreateLovedOne && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-6 w-full max-w-md">
+            <h3 className="text-lg font-bold mb-4">Create Test Loved One</h3>
+            <form onSubmit={onCreateLovedOne} className="space-y-3">
+              <input name="email" placeholder="Email" className="w-full border rounded px-3 py-2" required />
+              <input name="displayName" placeholder="Display Name" className="w-full border rounded px-3 py-2" required />
+              <select name="studentUserId" className="w-full border rounded px-3 py-2" required>
+                <option value="">Link to Student</option>
+                {students.map(s => (
+                  <option key={s.id} value={s.id}>{s.email} ({s.display_name})</option>
+                ))}
+              </select>
+              <select name="relationship" className="w-full border rounded px-3 py-2" required>
+                <option value="">Relationship</option>
+                <option value="parent">Parent</option>
+                <option value="guardian">Guardian</option>
+                <option value="sibling">Sibling</option>
+                <option value="partner">Partner</option>
+                <option value="friend">Friend</option>
+              </select>
+              <input name="nickname" placeholder="Nickname (e.g., Mum, Dad)" className="w-full border rounded px-3 py-2" />
+              <div className="flex gap-2">
+                <button type="submit" className="flex-1 py-2 bg-purple-600 text-white rounded font-semibold">Create</button>
+                <button type="button" onClick={() => setShowCreateLovedOne(false)} className="px-4 py-2 bg-slate-200 rounded">Cancel</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
