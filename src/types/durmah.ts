@@ -45,4 +45,10 @@ export type DurmahContextPacket = {
       created_at: string;
     }>;
   };
+  schedule?: {
+    nextClass: { title: string; start: string; end: string; location?: string } | null;
+    today: Array<{ title: string; start: string; end: string; location?: string }>;
+    weekPreview: Array<{ title: string; start: string; end: string; location?: string }>;
+  };
 };
+

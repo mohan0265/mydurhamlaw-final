@@ -205,6 +205,45 @@ export async function buildDurmahContext(req: any): Promise<
   const profile = await fetchProfile(supabase, user.id);
   const academic = computeAcademicContext(DEFAULT_TIMEZONE);
 
+  // Fetch timetable events (next 10 upcoming events within next 14 days)
+  const now = new Date();
+  const twoWeeksFromNow = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
+  const { data: timetableEvents } = await supabase
+    .from('timetable_events')
+    .select('title, start_time, end_time, location, module_code')
+    .eq('user_id', user.id)
+    .gte('start_time', now.toISOString())
+    .lte('start_time', twoWeeksFromNow.toISOString())
+    .order('start_time', { ascending: true })
+    .limit(10);
+
+  // Build schedule summary
+  const schedule = timetableEvents ? {
+    nextClass: timetableEvents[0] ? {
+      title: timetableEvents[0].title,
+      start: timetableEvents[0].start_time,
+      end: timetableEvents[0].end_time,
+      location: timetableEvents[0].location || undefined,
+    } : null,
+    today: timetableEvents.filter(e => {
+      const eventDate = new Date(e.start_time);
+      const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const todayEnd = new Date(todayStart.getTime() + 24 * 60 * 60 * 1000);
+      return eventDate >= todayStart && eventDate < todayEnd;
+    }).map(e => ({
+      title: e.title,
+      start: e.start_time,
+      end: e.end_time,
+      location: e.location || undefined,
+    })),
+    weekPreview: timetableEvents.slice(0, 6).map(e => ({
+      title: e.title,
+      start: e.start_time,
+      end: e.end_time,
+      location: e.location || undefined,
+    })),
+  } : undefined;
+
   const recentMessages = messages || [];
   const lastUser = [...recentMessages].reverse().find((m) => m.role === 'user');
   const lastAssistant = [...recentMessages].reverse().find((m) => m.role === 'assistant');
@@ -246,6 +285,7 @@ export async function buildDurmahContext(req: any): Promise<
       recent: {
         lastMessages: lastMessagesSnippet,
       },
+      schedule,
     },
   };
 }

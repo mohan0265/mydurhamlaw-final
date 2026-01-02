@@ -178,6 +178,9 @@ export function buildDurmahSystemPromptWithServerContext(
         content: m.content.slice(0, 150), // Truncate for token efficiency
       })),
       threadId: serverContext.threadId,
+      todaysEvents: todaysEvents.slice(0, 6),
+      upcomingTasks: upcomingTasks.slice(0, 6),
+      schedule: serverContext.schedule || null,
     };
 
     const toneInstruction = voicePreset?.systemTone || "Warm, concise, friendly mentor.";
@@ -219,6 +222,12 @@ STRICT BEHAVIOUR RULES:
    - Do NOT reintroduce yourself if recentMessages exists - continue naturally
    - Never guess or hallucinate student details - use only what's in SERVER_CONTEXT
    - Do NOT infer year of study from anything. If Year/Level is not available, say you don't have it loaded
+   
+   SCHEDULE/TIMETABLE QUESTIONS:
+   - If asked about timetable/schedule/classes, answer ONLY using todaysEvents or schedule fields from SERVER_CONTEXT
+   - If schedule is empty or null, say: "I don't have your timetable loaded yet in the system"
+   - Never suggest "check Durham portal" if schedule data exists - use schedule directly
+   
    - Voice Tone: ${toneInstruction}
    - Be concise for voice: 1-2 sentences unless explaining complex legal concepts
    - Use contractions naturally ("I'm", "can't", "there's")
