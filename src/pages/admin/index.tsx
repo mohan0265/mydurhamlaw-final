@@ -6,6 +6,7 @@ import { useState } from "react"
 
 type AdminRow = {
   id: string
+  user_id?: string
   email: string | null
   display_name: string | null
   user_role: string | null
@@ -75,15 +76,53 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
     }
   }
 
+  // Fetch profiles - use only fields that definitely exist
   const { data, error } = await adminClient
     .from("profiles")
-    .select("id, email, display_name, user_role, year_group, trial_started_at, trial_ends_at, trial_ever_used, is_test_account, subscription_status, subscription_ends_at")
+    .select("id, user_id, display_name, user_role, year_group, trial_started_at, trial_ever_used")
     .order("updated_at", { ascending: false })
     .limit(200)
 
   let users: AdminUser[] = []
   let connections: AWYConn[] = []
   let errMsg: string | null = null
+  
+  // Fetch new fields separately to handle gracefully if they don't exist
+  let profilesWithNewFields: AdminRow[] = []
+  
+  if (data) {
+    try {
+      // Try to fetch new fields (is_test_account, subscription_status, etc.)
+      const { data: extendedData } = await adminClient
+        .from("profiles")
+        .select("id, is_test_account, subscription_status, subscription_ends_at, trial_ends_at")
+        .in('id', data.map(p => p.id))
+      
+      // Merge the data
+      profilesWithNewFields = data.map((profile: any) => {
+        const extended = extendedData?.find((e: any) => e.id === profile.id)
+        return {
+          ...profile,
+          email: null, // Will be populated from auth users
+          is_test_account: extended?.is_test_account ?? false,
+          subscription_status: extended?.subscription_status ?? 'trial',
+          subscription_ends_at: extended?.subscription_ends_at ?? null,
+          trial_ends_at: extended?.trial_ends_at ?? null,
+        }
+      })
+    } catch {
+      // If new fields don't exist, use base data
+      profilesWithNewFields = data.map((profile: any) => ({
+        ...profile,
+        email: null,
+        is_test_account: false,
+        subscription_status: 'trial',
+        subscription_ends_at: null,
+        trial_ends_at: null,
+      }))
+    }
+  }
+
   try {
     const { data: list } = await adminClient.auth.admin.listUsers()
     users =
@@ -91,9 +130,18 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
         id: u.id,
         email: u.email ?? null,
         created_at: u.created_at ?? null,
-        last_sign_in_at: u.last_sign_at ?? null,
+        last_sign_in_at: u.last_sign_in_at ?? null,
         provider: u.app_metadata?.provider ?? null
       })) ?? []
+
+    // Map emails to profiles
+    profilesWithNewFields = profilesWithNewFields.map(profile => {
+      const authUser = users.find(u => u.id === profile.user_id || u.id === profile.id)
+      return {
+        ...profile,
+        email: authUser?.email ?? null
+      }
+    })
 
     // Fetch AWY connections
     const { data: conns } = await adminClient
@@ -104,20 +152,26 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
         relationship,
         status,
         created_at,
-        student:profiles!awy_connections_student_user_id_fkey(email),
-        loved:profiles!awy_connections_loved_user_id_fkey(email)
+        student:profiles!awy_connections_student_user_id_fkey(user_id),
+        loved:profiles!awy_connections_loved_user_id_fkey(user_id)
       `)
       .order('created_at', { ascending: false })
       .limit(100)
 
-    connections = (conns || []).map((c: any) => ({
-      id: c.id,
-      studentEmail: c.student?.email || '-',
-      lovedEmail: c.loved_email || c.loved?.email || '-',
-      relationship: c.relationship || '-',
-      status: c.status || '-',
-      createdAt: c.created_at || '-'
-    }))
+    if (conns) {
+      connections = conns.map((c: any) => {
+        const studentEmail = users.find(u => u.id === c.student?.user_id)?.email || '-'
+        const lovedEmail = c.loved_email || users.find(u => u.id === c.loved?.user_id)?.email || '-'
+        return {
+          id: c.id,
+          studentEmail,
+          lovedEmail,
+          relationship: c.relationship || '-',
+          status: c.status || '-',
+          createdAt: c.created_at || '-'
+        }
+      })
+    }
   } catch (e: any) {
     errMsg = e?.message || "Failed to load auth users"
   }
@@ -125,7 +179,7 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
   return {
     props: {
       authorized: true,
-      rows: (data as AdminRow[]) || [],
+      rows: profilesWithNewFields,
       users,
       connections,
       error: error ? error.message : errMsg
