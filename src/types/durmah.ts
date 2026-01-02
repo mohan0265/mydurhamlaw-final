@@ -4,10 +4,10 @@ export type DurmahTimeOfDay = 'morning' | 'afternoon' | 'evening' | 'night';
 
 export type DurmahContextPacket = {
   userId: string;
-  threadId?: string | null;
-  onboardingState?: 'new' | 'onboarding' | 'active';
-  lastSummary?: string | null;
-  recentMessages?: Array<{
+  threadId: string | null;
+  onboardingState: 'new' | 'onboarding' | 'active';
+  lastSummary: string | null;
+  recentMessages: Array<{
     role: 'user' | 'assistant' | 'system';
     content: string;
     source?: string;
@@ -16,8 +16,8 @@ export type DurmahContextPacket = {
   profile: {
     displayName: string | null;
     yearGroup: string | null;
-    yearOfStudy?: string | null;
-    role?: string;
+    yearOfStudy: string | null;
+    role: string;
     trialStatus?: string | null;
     trialEndsAt?: string | null;
   };

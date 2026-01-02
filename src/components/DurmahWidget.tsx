@@ -138,7 +138,17 @@ function getLocalDateKey(timeZone: string) {
   return `${map.year}-${map.month}-${map.day}`;
 }
 
-function buildContextChipParts(
+async function resolveAccessToken() {
+  try {
+    const result = await waitForAccessToken();
+    if (typeof result === "string") return result;
+    return result?.token ?? null;
+  } catch {
+    return null;
+  }
+}
+
+function buildContextChipText(
   context: DurmahContextPacket | null,
   timeLabel: string | null
 ) {
@@ -148,7 +158,8 @@ function buildContextChipParts(
   const weekLabel = context.academic.weekOfTerm
     ? `Week ${context.academic.weekOfTerm}`
     : null;
-  return [termLabel, weekLabel, timeLabel].filter(Boolean) as string[];
+  const parts = [termLabel, weekLabel, timeLabel].filter(Boolean) as string[];
+  return parts.length > 0 ? parts.join(" | ") : null;
 }
 
 function buildContextGreeting(context: DurmahContextPacket) {
@@ -296,7 +307,7 @@ export default function DurmahWidget() {
 
     (async () => {
       try {
-        const { token } = await waitForAccessToken();
+        const token = await resolveAccessToken();
         if (!token) {
           if (!cancelled) setReady(true);
           return;
@@ -317,7 +328,9 @@ export default function DurmahWidget() {
               text: m.content,
               ts: new Date(m.created_at).getTime(),
             }));
-            if (mapped.length > 0) setMessages(mapped);
+            if (mapped.length > 0) {
+              setMessages((prev) => (prev.length > 0 ? prev : mapped));
+            }
             if (ctx.lastSummary) {
               setMemory({
                 last_topic: 'continuation',
@@ -352,6 +365,8 @@ export default function DurmahWidget() {
   // Set initial greeting once ready (context aware)
   useEffect(() => {
     if (!ready || !isOpen) return;
+    if (messages.length > 0) return;
+    if (contextPacket?.recent?.lastMessages?.length) return;
     const timeZone = contextPacket?.academic.timezone || "Europe/London";
     const dateKey = getLocalDateKey(timeZone);
     const greetKey = user?.id ? `durmahGreeted:${user.id}:${dateKey}` : null;
@@ -380,6 +395,7 @@ export default function DurmahWidget() {
     upcomingTasks,
     todaysEvents,
     user?.id,
+    messages.length,
   ]);
 
   useEffect(() => {
@@ -465,10 +481,15 @@ export default function DurmahWidget() {
         ? "text-yellow-100"
         : "text-emerald-100";
 
-  const contextChipParts = useMemo(() => {
+  const contextChipText = useMemo(() => {
     if (!contextPacket) return null;
-    const time = contextTimeLabel || formatContextDayTimeLabel(new Date(), contextPacket.academic.timezone || "Europe/London");
-    return buildContextChipParts(contextPacket, time);
+    const time =
+      contextTimeLabel ||
+      formatContextDayTimeLabel(
+        new Date(),
+        contextPacket.academic.timezone || "Europe/London"
+      );
+    return buildContextChipText(contextPacket, time);
   }, [contextPacket, contextTimeLabel]);
 
   // Cleanup on unmount
@@ -573,7 +594,7 @@ export default function DurmahWidget() {
       if (lastUser) {
         const topic = inferTopic(lastUser.text);
         try {
-          const { token } = await waitForAccessToken();
+          const token = await resolveAccessToken();
           if (!token) {
             toast.error("Session expired. Please sign in again to save Durmah updates.");
             return;
@@ -833,16 +854,9 @@ export default function DurmahWidget() {
           </div>
           <span className="text-xs text-violet-100 font-medium">Your Legal Mentor</span>
           
-          {contextChipParts && contextChipParts.length > 0 && (
-            <div className="mt-1 inline-flex self-start items-center px-2 py-0.5 rounded-full border border-white/10 bg-white/5 text-[10px] text-white/70 backdrop-blur-sm">
-                {contextChipParts.map((part, i) => (
-                  <span key={i} className="flex items-center">
-                    {part}
-                    {i < contextChipParts.length - 1 && (
-                      <span className="mx-1.5 opacity-50">&bull;</span>
-                    )}
-                  </span>
-                ))}
+          {contextChipText && (
+            <div className="mt-1 inline-flex self-start items-center rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[11px] font-medium text-white/70 backdrop-blur-sm">
+              {contextChipText}
             </div>
           )}
 
@@ -883,7 +897,7 @@ export default function DurmahWidget() {
                 </button>
                 <Link
                   href="/my/voice-transcripts"
-                  className="block px-4 py-2.5 hover:bg-violet-50 flex items-center justify-between"
+                  className="px-4 py-2.5 hover:bg-violet-50 flex items-center justify-between"
                   onClick={() => setShowHeaderMenu(false)}
                 >
                   Transcript Library
