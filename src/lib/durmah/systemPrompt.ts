@@ -97,7 +97,7 @@ export function buildDurmahSystemPrompt(
   // 1. Build Strict Context Envelope
   const contextEnvelope = {
     displayName: ctx.firstName || "Student",
-    role: `${ctx.yearGroup} Law Student (${ctx.university})`,
+    role: `Law student (${ctx.university})`,
     termLabel: ctx.currentPhase || "Unknown Term",
     localTimeISO: todayISOInTZ(),
     currentDateDisplay: dateStr,
@@ -155,11 +155,15 @@ export function buildDurmahSystemPromptWithServerContext(
   if (serverContext) {
     const profile = serverContext.profile || {};
     const academic = serverContext.academic || {};
-    const recentMsgs = (serverContext.recentMessages || []).slice(-8);
+    const recentMsgsRaw =
+      serverContext?.recent?.lastMessages ??
+      serverContext?.recentMessages ??
+      [];
+    const recentMsgs = Array.isArray(recentMsgsRaw) ? recentMsgsRaw.slice(-8) : [];
     
     const contextEnvelope = {
       displayName: profile.displayName || ctx.firstName || "Student",
-      yearGroup: profile.yearGroup || profile.yearOfStudy || ctx.yearGroup,
+      yearGroup: profile.yearGroup ?? profile.yearOfStudy ?? null,
       role: profile.role || "student",
       term: academic.term || ctx.currentPhase || "Unknown",
       weekOfTerm: academic.weekOfTerm,
@@ -198,7 +202,7 @@ ${JSON.stringify(contextEnvelope, null, 2)}
 STRICT BEHAVIOUR RULES:
 1. IDENTITY & TIME:
    - Student name: ${contextEnvelope.displayName}
-   - Year/Level: ${contextEnvelope.yearGroup}
+   ${contextEnvelope.yearGroup ? `- Year/Level: ${contextEnvelope.yearGroup}` : '- Year/Level: (not available)'}
    - Current term: ${contextEnvelope.term}${contextEnvelope.weekOfTerm ? ` (Week ${contextEnvelope.weekOfTerm})` : ''}
    - Local time: ${contextEnvelope.localTimeISO} (${contextEnvelope.timezone})
    - Time of day: ${contextEnvelope.timeOfDay}
@@ -214,6 +218,7 @@ STRICT BEHAVIOUR RULES:
    - If asked about previous discussions, reference the recent chat history
    - Do NOT reintroduce yourself if recentMessages exists - continue naturally
    - Never guess or hallucinate student details - use only what's in SERVER_CONTEXT
+   - Do NOT infer year of study from anything. If Year/Level is not available, say you don't have it loaded
    - Voice Tone: ${toneInstruction}
    - Be concise for voice: 1-2 sentences unless explaining complex legal concepts
    - Use contractions naturally ("I'm", "can't", "there's")
