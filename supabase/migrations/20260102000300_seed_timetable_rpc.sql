@@ -37,12 +37,12 @@ BEGIN
     
     INSERT INTO public.timetable_events (user_id, title, start_time, end_time, location, source)
     VALUES
-      -- Monday 12 Jan 2026, 10:00-11:00
+      -- Monday 12 Jan 2026, 10:00-11:00 (Epiphany term first weekday)
       (
         current_user_id,
         'Contract Law Lecture',
-        make_timestamptz(2026, 1, 13, 10, 0, 0, 'Europe/London'),
-        make_timestamptz(2026, 1, 13, 11, 0, 0, 'Europe/London'),
+        make_timestamptz(2026, 1, 12, 10, 0, 0, 'Europe/London'),
+        make_timestamptz(2026, 1, 12, 11, 0, 0, 'Europe/London'),
         'Law Building, Room 204',
         'dev-seed-v1'
       ),

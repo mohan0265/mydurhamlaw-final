@@ -243,12 +243,33 @@ export async function buildDurmahContext(req: any): Promise<
   const twoWeeksFromNow = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
   const { data: timetableEvents } = await supabase
     .from('timetable_events')
-    .select('title, start_time, end_time, location, module_code')
+    .select('title, start_time, end_time, location, module_code, source')
     .eq('user_id', user.id)
     .gte('start_time', now.toISOString())
     .lte('start_time', twoWeeksFromNow.toISOString())
     .order('start_time', { ascending: true })
     .limit(10);
+
+  // Data confidence: determine timetable source and profile completeness
+  const timetableDataSource = timetableEvents && timetableEvents.length > 0
+    ? (timetableEvents.every((e: any) => e.source?.startsWith('dev-')) ? 'dev-seed' : 'user')
+    : 'none';
+
+  const profileCompleteness = {
+    isComplete: !!(profile.yearOfStudy && profile.displayName),
+    missingFields: [
+      ...(!profile.yearOfStudy ? ['year of study'] : []),
+      ...(!profile.displayName ? ['name'] : []),
+    ],
+  };
+
+  const timetableMeta = {
+    hasEvents: (timetableEvents?.length || 0) > 0,
+    dataSource: timetableDataSource as 'dev-seed' | 'user' | 'none',
+    isVerified: timetableDataSource === 'user',
+    verificationUrl: '/profile-timetable',
+  };
+
 
   // Build schedule summary with Durham timezone formatting
   const schedule = timetableEvents ? (() => {
@@ -366,6 +387,8 @@ export async function buildDurmahContext(req: any): Promise<
         last_seen_at: lastSeenAt?.toISOString() || null,
         greetingSuppressed,
       },
+      profileCompleteness,
+      timetableMeta,
     },
   };
 }

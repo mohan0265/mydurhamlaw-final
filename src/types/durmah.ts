@@ -63,5 +63,15 @@ export type DurmahContextPacket = {
     last_seen_at: string | null;
     greetingSuppressed: boolean;
   };
+  profileCompleteness?: {
+    isComplete: boolean;
+    missingFields: string[];
+  };
+  timetableMeta?: {
+    hasEvents: boolean;
+    dataSource: 'dev-seed' | 'user' | 'none';
+    isVerified: boolean;
+    verificationUrl: string;
+  };
 };
 
