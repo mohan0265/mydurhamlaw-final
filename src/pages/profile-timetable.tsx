@@ -22,7 +22,7 @@ export default function ProfileTimetablePage() {
   // Step 1: Profile
   const [profile, setProfile] = useState({
     preferred_name: '',
-    year_of_study: 'Year 1',
+    year_of_study: 'year1', // DB canonical value
     degree_type: 'LLB',
     modules: '' // stored as text, comma separated locally
   });
@@ -51,7 +51,7 @@ export default function ProfileTimetablePage() {
         .from('profiles')
         .update({
           preferred_name: profile.preferred_name,
-          year_of_study: profile.year_of_study,
+          year_of_study: profile.year_of_study, // Already in canonical format
           degree_type: profile.degree_type,
           modules: modulesArray,
           last_profile_updated_at: new Date().toISOString()
@@ -170,7 +170,7 @@ export default function ProfileTimetablePage() {
         if (data) {
           setProfile({
             preferred_name: data.preferred_name || '',
-            year_of_study: data.year_of_study || 'Year 1',
+            year_of_study: data.year_of_study || 'year1', // canonical
             degree_type: data.degree_type || 'LLB',
             modules: Array.isArray(data.modules) ? data.modules.join(', ') : (data.modules || '')
           });
@@ -236,17 +236,22 @@ export default function ProfileTimetablePage() {
                   <div>
                     <label className="block text-sm font-medium text-gray-700">Year of Study <span className="text-red-500">*</span></label>
                     <div className="mt-2 grid grid-cols-2 gap-3 sm:grid-cols-4">
-                      {['Foundation', 'Year 1', 'Year 2', 'Year 3'].map((opt) => (
+                      {[
+                        { label: 'Foundation', value: 'foundation' },
+                        { label: 'Year 1', value: 'year1' },
+                        { label: 'Year 2', value: 'year2' },
+                        { label: 'Year 3', value: 'year3' },
+                      ].map(({label, value}) => (
                         <div
-                          key={opt}
-                          onClick={() => setProfile({...profile, year_of_study: opt})}
+                          key={value}
+                          onClick={() => setProfile({...profile, year_of_study: value})}
                           className={`cursor-pointer text-center py-3 px-2 rounded-lg border text-sm font-medium transition-all ${
-                            profile.year_of_study === opt
+                            profile.year_of_study === value
                               ? 'bg-violet-50 border-violet-500 text-violet-700 ring-1 ring-violet-500'
                               : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
                           }`}
                         >
-                          {opt}
+                          {label}
                         </div>
                       ))}
                     </div>

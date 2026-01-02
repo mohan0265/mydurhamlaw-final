@@ -217,15 +217,41 @@ export async function buildDurmahContext(req: any): Promise<
     .order('start_time', { ascending: true })
     .limit(10);
 
-  // Build schedule summary
-  const schedule = timetableEvents ? {
-    nextClass: timetableEvents[0] ? {
+  // Build schedule summary with Durham timezone formatting
+  const schedule = timetableEvents ? (() => {
+    const timezone = academic.timezone || DEFAULT_TIMEZONE;
+    
+    // Helper to format time in Durham timezone
+    const formatTime = (isoString: string) => {
+      const date = new Date(isoString);
+      return new Intl.DateTimeFormat('en-GB', {
+        timeZone: timezone,
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+      }).format(date);
+    };
+
+    const formatDayTime = (isoString: string) => {
+      const date = new Date(isoString);
+      return new Intl.DateTimeFormat('en-GB', {
+        timeZone: timezone,
+        weekday: 'short',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+      }).format(date);
+    };
+
+    const nextClass = timetableEvents[0] ? {
       title: timetableEvents[0].title,
       start: timetableEvents[0].start_time,
       end: timetableEvents[0].end_time,
       location: timetableEvents[0].location || undefined,
-    } : null,
-    today: timetableEvents.filter(e => {
+      label: `${timetableEvents[0].title} • ${formatDayTime(timetableEvents[0].start_time)}${timetableEvents[0].location ? ` • ${timetableEvents[0].location}` : ''}`,
+    } : null;
+
+    const today = timetableEvents.filter(e => {
       const eventDate = new Date(e.start_time);
       const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
       const todayEnd = new Date(todayStart.getTime() + 24 * 60 * 60 * 1000);
@@ -235,14 +261,27 @@ export async function buildDurmahContext(req: any): Promise<
       start: e.start_time,
       end: e.end_time,
       location: e.location || undefined,
-    })),
-    weekPreview: timetableEvents.slice(0, 6).map(e => ({
+      label: `${e.title} • ${formatTime(e.start_time)}${e.location ? ` • ${e.location}` : ''}`,
+    }));
+
+    const weekPreview = timetableEvents.slice(0, 6).map(e => ({
       title: e.title,
       start: e.start_time,
       end: e.end_time,
       location: e.location || undefined,
-    })),
-  } : undefined;
+      label: `${e.title} • ${formatDayTime(e.start_time)}${e.location ? ` • ${e.location}` : ''}`,
+    }));
+
+    return {
+      nextClass,
+      today,
+      weekPreview,
+      nextClassLabel: nextClass?.label || null,
+      todayLabels: today.map(t => t.label),
+      weekPreviewLabels: weekPreview.map(w => w.label),
+    };
+  })() : undefined;
+
 
   const recentMessages = messages || [];
   const lastUser = [...recentMessages].reverse().find((m) => m.role === 'user');

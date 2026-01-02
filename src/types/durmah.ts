@@ -46,9 +46,12 @@ export type DurmahContextPacket = {
     }>;
   };
   schedule?: {
-    nextClass: { title: string; start: string; end: string; location?: string } | null;
-    today: Array<{ title: string; start: string; end: string; location?: string }>;
-    weekPreview: Array<{ title: string; start: string; end: string; location?: string }>;
+    nextClass: { title: string; start: string; end: string; location?: string; label: string } | null;
+    today: Array<{ title: string; start: string; end: string; location?: string; label: string }>;
+    weekPreview: Array<{ title: string; start: string; end: string; location?: string; label: string }>;
+    nextClassLabel: string | null;
+    todayLabels: string[];
+    weekPreviewLabels: string[];
   };
 };
 
