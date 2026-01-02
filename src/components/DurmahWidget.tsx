@@ -707,6 +707,86 @@ export default function DurmahWidget() {
   };
 
   // ----------------------------
+  // SEED TIMETABLE (DEV ONLY)
+  // ----------------------------
+  const seedTimetable = async () => {
+    if (!user?.id) {
+      toast.error("Not authenticated");
+      return;
+    }
+
+    try {
+      const now = new Date();
+      const events = [
+        {
+          user_id: user.id,
+          title: "Contract Law Lecture",
+          start_time: new Date(now.getTime() + 2 * 24 * 60 * 60 * 1000).toISOString(),
+          end_time: new Date(now.getTime() + 2 * 24 * 60 * 60 * 1000 + 2 * 60 * 60 * 1000).toISOString(),
+          location: "Law Building, Room 204",
+          source: "seed",
+        },
+        {
+          user_id: user.id,
+          title: "Tort Law Seminar",
+          start_time: new Date(now.getTime() + 4 * 24 * 60 * 60 * 1000).toISOString(),
+          end_time: new Date(now.getTime() + 4 * 24 * 60 * 60 * 1000 + 90 * 60 * 1000).toISOString(),
+          location: "Tutorial Room 3B",
+          source: "seed",
+        },
+        {
+          user_id: user.id,
+          title: "Criminal Law Workshop",
+          start_time: new Date(now.getTime() + 6 * 24 * 60 * 60 * 1000).toISOString(),
+          end_time: new Date(now.getTime() + 6 * 24 * 60 * 60 * 1000 + 3 * 60 * 60 * 1000).toISOString(),
+          location: "Seminar Hall A",
+          source: "seed",
+        },
+      ];
+
+      const { error } = await supabaseClient
+        .from("timetable_events")
+        .insert(events);
+
+      if (error) {
+        console.error("[SeedTimetable] Insert error:", error);
+        toast.error("Failed to seed timetable: " + error.message);
+        return;
+      }
+
+      toast.success("Timetable seeded for your account");
+
+      // Refetch context to update schedule
+      try {
+        const token = await resolveAccessToken();
+        if (!token) return;
+
+        const res = await fetchAuthed("/api/durmah/context");
+        if (res.ok) {
+          const data = await res.json();
+          const ctx = data?.context;
+          if (ctx) {
+            setContextPacket(ctx);
+            if (process.env.NODE_ENV !== "production") {
+              console.log("[DurmahWidget] Context refetched after seed:", {
+                scheduleCount: ctx.schedule?.weekPreview?.length || 0,
+              });
+            }
+          }
+        }
+      } catch (e) {
+        console.error("[SeedTimetable] Failed to refetch context:", e);
+      }
+
+      // Close menu
+      setShowHeaderMenu(false);
+    } catch (err: any) {
+      console.error("[SeedTimetable] Unexpected error:", err);
+      toast.error("Failed to seed timetable");
+    }
+  };
+
+  // ----------------------------
   // TEXT CHAT SEND
   // ----------------------------
   async function send() {
@@ -921,6 +1001,15 @@ export default function DurmahWidget() {
                   Transcript Library
                   <ArrowRight size={14} className="text-violet-500" />
                 </Link>
+                {user?.email === "mohan0265@gmail.com" && (
+                  <button
+                    className="w-full text-left px-4 py-2.5 hover:bg-violet-50 flex items-center justify-between border-t border-violet-100"
+                    onClick={seedTimetable}
+                  >
+                    Seed Timetable (dev)
+                    <Zap size={14} className="text-amber-500" />
+                  </button>
+                )}
               </div>
             )}
           </div>
