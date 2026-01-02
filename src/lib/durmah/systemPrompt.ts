@@ -141,3 +141,88 @@ STRICT BEHAVIOUR RULES:
    - Speak ONLY in English.
 `.trim();
 }
+
+// Enhanced version that uses server DurmahContextPacket for voice
+export function buildDurmahSystemPromptWithServerContext(
+  serverContext: any | null, // DurmahContextPacket from /api/durmah/context
+  ctx: DurmahStudentContext,
+  memory: DurmahMemorySnapshot | null,
+  upcomingTasks: { title: string; due: string }[] = [],
+  todaysEvents: { title: string; start: string; end: string }[] = [],
+  voicePreset?: { systemTone: string }
+): string {
+  // If server context is available, use it for rich DB-backed context
+  if (serverContext) {
+    const profile = serverContext.profile || {};
+    const academic = serverContext.academic || {};
+    const recentMsgs = (serverContext.recentMessages || []).slice(-8);
+    
+    const contextEnvelope = {
+      displayName: profile.displayName || ctx.firstName || "Student",
+      yearGroup: profile.yearGroup || profile.yearOfStudy || ctx.yearGroup,
+      role: profile.role || "student",
+      term: academic.term || ctx.currentPhase || "Unknown",
+      weekOfTerm: academic.weekOfTerm,
+      dayLabel: academic.dayLabel,
+      timezone: academic.timezone || "Europe/London",
+      localTimeISO: academic.localTimeISO || todayISOInTZ(),
+      timeOfDay: academic.timeOfDay,
+      academicYear: academic.academicYearLabel || ctx.academicYear,
+      lastSummary: serverContext.lastSummary || memory?.last_message || null,
+      recentMessages: recentMsgs.map((m: any) => ({
+        role: m.role,
+        content: m.content.slice(0, 150), // Truncate for token efficiency
+      })),
+      threadId: serverContext.threadId,
+    };
+
+    const toneInstruction = voicePreset?.systemTone || "Warm, concise, friendly mentor.";
+    
+    // Add debug log in dev
+    if (typeof process !== 'undefined' && process.env.NODE_ENV !== "production") {
+      console.log("[DurmahVoice] Server context for voice:", {
+        displayName: contextEnvelope.displayName,
+        term: contextEnvelope.term,
+        weekOfTerm: contextEnvelope.weekOfTerm,
+        hasRecentMessages: recentMsgs.length > 0,
+        threadId: contextEnvelope.threadId,
+      });
+    }
+
+    return `
+You are Durmah, an English-only legal mentor for Durham University law students.
+
+SERVER_CONTEXT (source of truth from database):
+${JSON.stringify(contextEnvelope, null, 2)}
+
+STRICT BEHAVIOUR RULES:
+1. IDENTITY & TIME:
+   - Student name: ${contextEnvelope.displayName}
+   - Year/Level: ${contextEnvelope.yearGroup}
+   - Current term: ${contextEnvelope.term}${contextEnvelope.weekOfTerm ? ` (Week ${contextEnvelope.weekOfTerm})` : ''}
+   - Local time: ${contextEnvelope.localTimeISO} (${contextEnvelope.timezone})
+   - Time of day: ${contextEnvelope.timeOfDay}
+
+2. CONVERSATION CONTINUITY:
+   - ThreadId: ${contextEnvelope.threadId || 'new conversation'}
+   - Last summary: ${contextEnvelope.lastSummary || 'No previous conversation'}
+   - Recent messages count: ${contextEnvelope.recentMessages.length}
+   ${contextEnvelope.recentMessages.length > 0 ? `- Recent chat history:\n${contextEnvelope.recentMessages.map((m: any, i: number) => `  ${i + 1}. [${m.role}]: ${m.content}`).join('\n')}` : ''}
+
+3. CORE INSTRUCTIONS:
+   - Always use the SERVER_CONTEXT above as the single source of truth
+   - If asked about previous discussions, reference the recent chat history
+   - Do NOT reintroduce yourself if recentMessages exists - continue naturally
+   - Never guess or hallucinate student details - use only what's in SERVER_CONTEXT
+   - Voice Tone: ${toneInstruction}
+   - Be concise for voice: 1-2 sentences unless explaining complex legal concepts
+   - Use contractions naturally ("I'm", "can't", "there's")
+
+4. LANGUAGE:
+   - Speak ONLY in English
+`.trim();
+  }
+
+  // Fallback to standard prompt if server context not available
+  return buildDurmahSystemPrompt(ctx, memory, upcomingTasks, todaysEvents, voicePreset);
+}

@@ -1,7 +1,6 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useAuth } from '@/lib/supabase/AuthContext';
 import { useDurmahRealtime } from "@/hooks/useDurmahRealtime";
-// import { useDurmahGeminiLive } from "@/hooks/useDurmahGeminiLive";
 import { useDurmahDynamicContext } from "@/hooks/useDurmahDynamicContext";
 import { useDurmah } from "@/lib/durmah/context";
 import { fetchAuthed } from "@/lib/fetchAuthed";
@@ -9,6 +8,7 @@ import { waitForAccessToken } from "@/lib/auth/waitForAccessToken";
 import { normalizeTranscriptLanguage } from "@/lib/durmah/normalizeTranscriptLanguage";
 import { 
   buildDurmahSystemPrompt, 
+  buildDurmahSystemPromptWithServerContext,
   composeGreeting, 
   DurmahStudentContext, 
   DurmahMemorySnapshot 
@@ -405,10 +405,28 @@ export default function DurmahWidget() {
   }, [authError]);
 
 
-  // 3. Voice Hook
-  const systemPrompt = useMemo(() => 
-    buildDurmahSystemPrompt(studentContext, memory, upcomingTasks, todaysEvents, { systemTone: preset?.subtitle || "Friendly" }), 
-  [studentContext, memory, upcomingTasks, todaysEvents, preset]);
+  // 3. Voice Hook - use server context when available for rich DB-backed instructions
+  const systemPrompt = useMemo(() => {
+    // If we have server context packet, use it for voice (includes DB messages, accurate term/week)
+    if (contextPacket) {
+      return buildDurmahSystemPromptWithServerContext(
+        contextPacket,
+        studentContext,
+        memory,
+        upcomingTasks,
+        todaysEvents,
+        { systemTone: preset?.subtitle || "Friendly" }
+      );
+    }
+    // Fallback to client-side context
+    return buildDurmahSystemPrompt(
+      studentContext,
+      memory,
+      upcomingTasks,
+      todaysEvents,
+      { systemTone: preset?.subtitle || "Friendly" }
+    );
+  }, [contextPacket, studentContext, memory, upcomingTasks, todaysEvents, preset]);
 
   const appendTranscriptTurn = useCallback((role: Msg["role"], text: string) => {
     const normalizedText = normalizeTurnText(text);
