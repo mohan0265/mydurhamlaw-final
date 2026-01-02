@@ -6,16 +6,14 @@ UPDATE public.profiles
 SET display_name = 'Bhavani',
     year_of_study = 'year2',  -- You selected Year 2
     updated_at = NOW()
-WHERE email = 'ttboss65@gmail.com'
-  OR user_id = (SELECT id FROM auth.users WHERE email = 'ttboss65@gmail.com');
+WHERE id = (SELECT id FROM auth.users WHERE email = 'ttboss65@gmail.com');
 
 -- Verify the update
 SELECT 
   id,
-  email,
   display_name,
   year_of_study,
-  user_role
+  user_role,
+  created_at
 FROM public.profiles
-WHERE email = 'ttboss65@gmail.com'
-  OR user_id = (SELECT id FROM auth.users WHERE email = 'ttboss65@gmail.com');
+WHERE id = (SELECT id FROM auth.users WHERE email = 'ttboss65@gmail.com');
