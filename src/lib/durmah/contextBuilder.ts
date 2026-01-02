@@ -11,7 +11,10 @@ const DURHAM_TERM_CALENDAR_2025_26: Array<{ term: DurmahTerm; start: string; end
 ];
 
 function toUtcDateFromYmd(ymd: string) {
-  const [year, month, day] = ymd.split('-').map((part) => Number(part));
+  const parts = ymd.split('-').map((part) => Number(part));
+  const year = parts[0] ?? 2025;
+  const month = parts[1] ?? 1;
+  const day = parts[2] ?? 1;
   return new Date(Date.UTC(year, month - 1, day, 0, 0, 0));
 }
 
@@ -180,7 +183,7 @@ async function fetchProfile(supabase: SupabaseClient, userId: string) {
 
 export async function buildDurmahContext(req: any): Promise<
   | { ok: false; status: 'unauthorized' | 'misconfigured' }
-  | { ok: true; context: DurmahContextPacket; supabase: SupabaseClient; userId: string }
+  | { ok: true; context: DurmahContextPacket; supabase: SupabaseClient; userId: string; academicCalendar?: any }
 > {
   const auth = await getApiAuth(req);
   if (auth.status === 'missing_token' || auth.status === 'invalid_token') {
