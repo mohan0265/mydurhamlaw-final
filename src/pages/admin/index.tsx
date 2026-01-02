@@ -271,6 +271,24 @@ export default function AdminDashboard({ authorized, rows, users, connections, e
     }
   }
 
+  const setTrialDate = async (userId: string) => {
+    const dateStr = prompt("Enter new trial end date (YYYY-MM-DD):")
+    if (!dateStr) return
+    
+    const res = await fetch("/api/admin/set-trial-date", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId, trialEndsAt: dateStr })
+    })
+    if (!res.ok) {
+      const err = await res.json()
+      alert(`Failed: ${err.error}`)
+    } else {
+      alert("Trial date updated")
+      window.location.reload()
+    }
+  }
+
   const students = rows.filter(r => r.user_role === 'student')
   const filteredRows = filter === 'all' ? rows : filter === 'test' ? rows.filter(r => r.is_test_account) : rows.filter(r => !r.is_test_account)
 
@@ -352,9 +370,10 @@ export default function AdminDashboard({ authorized, rows, users, connections, e
                   <td className="px-3 py-2">{r.subscription_status || 'trial'}</td>
                   <td className="px-3 py-2">{r.trial_ends_at ? new Date(r.trial_ends_at).toLocaleDateString() : '-'}</td>
                   <td className="px-3 py-2 space-x-2">
-                    <button onClick={() => extendTrial(r.id, 7)} className="text-blue-600 hover:underline text-xs">+7d</button>
+                    <button onClick={() => extendTrial(r.user_id || r.id, 7)} className="text-blue-600 hover:underline text-xs">+7d</button>
+                    <button onClick={() => setTrialDate(r.user_id || r.id)} className="text-green-600 hover:underline text-xs">Edit</button>
                     {r.is_test_account && (
-                      <button onClick={() => deleteAccount(r.id)} className="text-red-600 hover:underline text-xs">Del</button>
+                      <button onClick={() => deleteAccount(r.user_id || r.id)} className="text-red-600 hover:underline text-xs">Del</button>
                     )}
                   </td>
                 </tr>

@@ -59,11 +59,14 @@ export const TrialBanner: React.FC<Props> = ({ onUpgrade }) => {
 
   if (loading) return null;
 
-  // If already active paid subscription, no banner
-  if (info?.status === 'active' && (info?.tier || '').toLowerCase() !== 'free') return null;
-
-  // If in trial, show remaining
-  if (info?.inTrial) {
+  // If user already has any profile/subscription data at all, hide banner
+  // (This means they've already signed up - banner only for completely new visitors)
+  if (info) {
+    // If already active paid subscription, no banner
+    if (info.status === 'active' && (info.tier || '').toLowerCase() !== 'free') return null;
+    
+    // If in trial, show remaining
+    if (info.inTrial) {
     return (
       <div className="rounded-xl border bg-blue-50 p-4 text-blue-900">
         <div className="flex items-center justify-between">
@@ -86,7 +89,12 @@ export const TrialBanner: React.FC<Props> = ({ onUpgrade }) => {
     );
   }
 
-  // Not in trial: offer to start one
+    // If logged in but not in trial and not paid, hide banner
+    // (They already have an account, shouldn't see "start trial")
+    return null;
+  }
+
+  // Not in trial: offer to start one (only for visitors without any info)
   return (
     <div className="rounded-xl border bg-indigo-50 p-4 text-indigo-900">
       <div className="flex items-center justify-between">
