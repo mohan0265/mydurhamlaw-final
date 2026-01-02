@@ -206,7 +206,37 @@ export async function buildDurmahContext(req: any): Promise<
     .limit(12);
 
   const profile = await fetchProfile(supabase, user.id);
-  const academic = computeAcademicContext(DEFAULT_TIMEZONE);
+  let academic = computeAcademicContext(DEFAULT_TIMEZONE);
+
+  // Add YAAG awareness
+  const yearGroup = profile.yearGroup || profile.yearOfStudy || 'year1';
+  const yearAtAGlanceUrl = `/year-at-a-glance?y=${yearGroup}`;
+  academic = {
+    ...(academic as any),
+    yearAtAGlanceAvailable: true,
+    yearAtAGlanceUrl,
+  } as any;
+
+  // Track last_seen_at for greeting suppression
+  const { data: existingMemory } = await supabase
+    .from('durmah_user_memory')
+    .select('last_seen_at')
+    .eq('user_id', user.id)
+    .single();
+
+  const lastSeenAt = existingMemory?.last_seen_at ? new Date(existingMemory.last_seen_at) : null;
+  const nowTime = new Date();
+  const sixHoursAgo = new Date(nowTime.getTime() - 6 * 60 * 60 * 1000);
+  const greetingSuppressed = lastSeenAt ? lastSeenAt > sixHoursAgo : false;
+
+  // Upsert last_seen_at
+  await supabase
+    .from('durmah_user_memory')
+    .upsert({
+      user_id: user.id,
+      last_seen_at: nowTime.toISOString(),
+      updated_at: nowTime.toISOString(),
+    }, { onConflict: 'user_id' });
 
   // Fetch timetable events (next 10 upcoming events within next 14 days)
   const now = new Date();
@@ -328,10 +358,14 @@ export async function buildDurmahContext(req: any): Promise<
         lastMessages: lastMessagesSnippet,
       },
       schedule,
-    },
-    academicCalendar: {
-      currentYear: '2025/26',
-      terms: DURHAM_TERM_CALENDAR_2025_26,
+      academicCalendar: {
+        currentYear: '2025/26',
+        terms: DURHAM_TERM_CALENDAR_2025_26,
+      },
+      memory: {
+        last_seen_at: lastSeenAt?.toISOString() || null,
+        greetingSuppressed,
+      },
     },
   };
 }

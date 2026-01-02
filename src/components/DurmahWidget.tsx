@@ -16,7 +16,7 @@ import {
 import type { DurmahContextPacket } from "@/types/durmah";
 import { formatTodayForDisplay } from "@/lib/durmah/phase";
 import { useDurmahSettings } from "@/hooks/useDurmahSettings";
-import { Settings, X, ArrowRight, AlertTriangle, Check, Volume2, Brain, Zap, MoreHorizontal } from "lucide-react";
+import { Settings, X, ArrowRight, AlertTriangle, Check, Volume2, Brain, Zap, RefreshCw, MoreHorizontal } from "lucide-react";
 import Link from 'next/link';
 import toast from "react-hot-toast";
 import { getSupabaseClient } from "@/lib/supabase/client";
@@ -706,7 +706,7 @@ export default function DurmahWidget() {
     setVoiceSessionEndedAt(null);
   };
 
-  // SEED TIMETABLE (DEV ONLY)
+  // SEED TIMETABLE (DEV ONLY) - Uses DB RPC for timezone-correct seeding
   // ----------------------------
   const seedTimetable = async () => {
     if (!user?.id) {
@@ -715,67 +715,17 @@ export default function DurmahWidget() {
     }
 
     try {
-      // Create dates in Durham timezone (Europe/London)
-      const createDurhamDate = (daysFromNow: number, hour: number, minute: number = 0) => {
-        const date = new Date();
-        date.setDate(date.getDate() + daysFromNow);
-        
-        // Format as YYYY-MM-DD HH:MM in Durham timezone
-        const formatter = new Intl.DateTimeFormat('en-GB', {
-          timeZone: 'Europe/London',
-          year: 'numeric',
-          month: '2-digit',
-          day: '2-digit',
-        });
-        const parts = formatter.formatToParts(date);
-        const year = parts.find(p => p.type === 'year')?.value;
-        const month = parts.find(p => p.type === 'month')?.value;
-        const day = parts.find(p => p.type === 'day')?.value;
-        
-        // Create ISO string for Durham timezone
-        // Note: This creates a UTC time that represents the Durham local time
-        const durhamDate = new Date(`${year}-${month}-${day}T${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}:00+00:00`);
-        return durhamDate.toISOString();
-      };
-
-      const events = [
-        {
-          user_id: user.id,
-          title: "Contract Law Lecture",
-          start_time: createDurhamDate(2, 10, 0), // +2 days, 10:00 AM Durham time
-          end_time: createDurhamDate(2, 12, 0),   // 12:00 PM Durham time
-          location: "Law Building, Room 204",
-          source: "seed",
-        },
-        {
-          user_id: user.id,
-          title: "Tort Law Seminar",
-          start_time: createDurhamDate(4, 14, 0), // +4 days, 2:00 PM Durham time
-          end_time: createDurhamDate(4, 15, 30),  // 3:30 PM Durham time
-          location: "Tutorial Room 3B",
-          source: "seed",
-        },
-        {
-          user_id: user.id,
-          title: "Criminal Law Workshop",
-          start_time: createDurhamDate(6, 9, 0),  // +6 days, 9:00 AM Durham time
-          end_time: createDurhamDate(6, 12, 0),   // 12:00 PM Durham time
-          location: "Seminar Hall A",
-          source: "seed",
-        },
-      ];
-
-      const { error } = await supabaseClient
-        .from("timetable_events")
-        .insert(events);
+      const { data, error } = await supabaseClient.rpc('seed_timetable_events_v1', {
+        mode: 'epiphany2026'
+      });
 
       if (error) {
-        console.error("[SeedTimetable] Insert error:", error);
+        console.error("[SeedTimetable] RPC error:", error);
         toast.error("Failed to seed timetable: " + error.message);
         return;
       }
 
-      toast.success("Timetable seeded for your account");
+      toast.success(`Timetable seeded (${data} events)`);
 
       // Refetch context to update schedule
       try {
@@ -805,6 +755,70 @@ export default function DurmahWidget() {
     } catch (err: any) {
       console.error("[SeedTimetable] Unexpected error:", err);
       toast.error("Failed to seed timetable");
+    }
+  };
+
+  // RESET TIMETABLE (DEV ONLY) - Clears and reseeds
+  // ----------------------------
+  const resetTimetable = async () => {
+    if (!user?.id) {
+      toast.error("Not authenticated");
+      return;
+    }
+
+    try {
+      // First clear
+      const { data: cleared, error: clearError } = await supabaseClient.rpc('clear_timetable_events_v1');
+
+      if (clearError) {
+        console.error("[ResetTimetable] Clear error:", clearError);
+        toast.error("Failed to clear timetable: " + clearError.message);
+        return;
+      }
+
+      console.log(`[ResetTimetable] Cleared ${cleared} events`);
+
+      // Then seed
+      const { data: seeded, error: seedError } = await supabaseClient.rpc('seed_timetable_events_v1', {
+        mode: 'epiphany2026'
+      });
+
+      if (seedError) {
+        console.error("[ResetTimetable] Seed error:", seedError);
+        toast.error("Failed to seed timetable: " + seedError.message);
+        return;
+      }
+
+      toast.success(`Timetable reset (cleared ${cleared}, seeded ${seeded})`);
+
+      // Refetch context
+      try {
+        const token = await resolveAccessToken();
+        if (!token) return;
+
+        const res = await fetchAuthed("/api/durmah/context");
+        if (res.ok) {
+          const data = await res.json();
+          const ctx = data?.context;
+          if (ctx) {
+            setContextPacket(ctx);
+            if (process.env.NODE_ENV !== "production") {
+              console.log("[DurmahWidget] Context refetched after reset:", {
+                scheduleCount: ctx.schedule?.weekPreview?.length || 0,
+                nextClassLabel: ctx.schedule?.nextClassLabel,
+              });
+            }
+          }
+        }
+      } catch (e) {
+        console.error("[ResetTimetable] Failed to refetch context:", e);
+      }
+
+      // Close menu
+      setShowHeaderMenu(false);
+    } catch (err: any) {
+      console.error("[ResetTimetable] Unexpected error:", err);
+      toast.error("Failed to reset timetable");
     }
   };
 
@@ -1025,13 +1039,22 @@ export default function DurmahWidget() {
                   <ArrowRight size={14} className="text-violet-500" />
                 </Link>
                 {user?.email === "mohan0265@gmail.com" && (
-                  <button
-                    className="w-full text-left px-4 py-2.5 hover:bg-violet-50 flex items-center justify-between border-t border-violet-100"
-                    onClick={seedTimetable}
-                  >
-                    Seed Timetable (dev)
-                    <Zap size={14} className="text-amber-500" />
-                  </button>
+                  <>
+                    <button
+                      className="w-full text-left px-4 py-2.5 hover:bg-violet-50 flex items-center justify-between border-t border-violet-100"
+                      onClick={seedTimetable}
+                    >
+                      Seed Timetable (dev)
+                      <Zap size={14} className="text-amber-500" />
+                    </button>
+                    <button
+                      className="w-full text-left px-4 py-2.5 hover:bg-violet-50 flex items-center justify-between"
+                      onClick={resetTimetable}
+                    >
+                      Reset Timetable (dev)
+                      <RefreshCw size={14} className="text-red-500" />
+                    </button>
+                  </>
                 )}
               </div>
             )}

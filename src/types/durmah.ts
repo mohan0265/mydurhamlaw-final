@@ -30,6 +30,8 @@ export type DurmahContextPacket = {
     localTimeISO: string;
     timeOfDay: DurmahTimeOfDay;
     academicYearLabel: string;
+    yearAtAGlanceAvailable?: boolean;
+    yearAtAGlanceUrl?: string;
   };
   continuity: {
     lastUserIntent: string | null;
@@ -56,6 +58,10 @@ export type DurmahContextPacket = {
   academicCalendar?: {
     currentYear: string;
     terms: Array<{ term: DurmahTerm; start: string; end: string }>;
+  };
+  memory?: {
+    last_seen_at: string | null;
+    greetingSuppressed: boolean;
   };
 };
 
