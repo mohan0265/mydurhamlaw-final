@@ -366,32 +366,24 @@ export default function DurmahWidget() {
   useEffect(() => {
     if (!ready || !isOpen) return;
     if (messages.length > 0) return;
-    if (contextPacket?.recent?.lastMessages?.length) return;
-    // if (contextPacket?.recent?.lastMessages?.length) return; // This line is replaced by the more explicit check below
-    const timeZone = contextPacket?.academic.timezone || "Europe/London";
-    const dateKey = getLocalDateKey(timeZone);
-    const greetKey = user?.id ? `durmahGreeted:${user.id}:${dateKey}` : null;
-    if (greetKey && sessionStorage.getItem(greetKey)) return;
-
-    // Skip greeting if suppressed (seen within 6 hours)
-    if (contextPacket?.memory?.greetingSuppressed) {
-      return;
-    }
+    // DISABLED: All greeting suppression to always show welcome message
+    // if (contextPacket?.recent?.lastMessages?.length) return;
+    // const timeZone = contextPacket?.academic.timezone || "Europe/London";
+    // const dateKey = getLocalDateKey(timeZone);
+    // const greetKey = user?.id ? `durmahGreeted:${user.id}:${dateKey}` : null;
+    // if (greetKey && sessionStorage.getItem(greetKey)) return;
+    // if (contextPacket?.memory?.greetingSuppressed) return;
+    // const hasRecentActivity = (contextPacket?.recent?.lastMessages?.length ?? 0) > 0;
+    // if (hasRecentActivity) return;
 
     // Skip greeting if there are recent messages (ongoing conversation)
-    const hasRecentActivity = (contextPacket?.recent?.lastMessages?.length ?? 0) > 0;
-    if (hasRecentActivity) {
-      return;
-    }
-
     const greeting = contextPacket
       ? buildContextGreeting(contextPacket)
       : preset?.welcomeMessage ||
         composeGreeting(studentContext, memory, upcomingTasks, todaysEvents);
 
-    if (greetKey) {
-      sessionStorage.setItem(greetKey, "1");
-    }
+    // DISABLED: Don't save greeting state (always show it)
+    // if (greetKey) sessionStorage.setItem(greetKey, "1");
 
     setMessages((prev) => [
       ...prev,
