@@ -15,54 +15,55 @@ export interface DurmahVoicePreset {
   welcomeMessage: string;
 }
 
+// Valid OpenAI Realtime voices: alloy, ash, ballad, coral, echo, sage, shimmer, verse
 export const DURMAH_VOICE_PRESETS: DurmahVoicePreset[] = [
   {
     id: "warm_female",
-    openaiVoice: "alloy",
+    openaiVoice: "shimmer", // FIXED: Warm, friendly female voice
     label: "Warm Female Mentor",
     subtitle: "Friendly, encouraging, and supportive.",
     colorClass: "from-purple-500 to-pink-500",
     icon: "mentor",
     previewText:
-      "Hi, I’m Durmah, your warm Legal Eagle mentor. I’m here to help you stay calm and confident throughout your law journey.",
+      "Hi, I'm Durmah, your warm Legal Eagle mentor. I'm here to help you stay calm and confident throughout your law journey.",
     welcomeMessage:
-      "Good to see you. I’m your warm Legal Eagle mentor — let’s take things one step at a time and keep your year at Durham feeling manageable."
+      "Good to see you. I'm your warm Legal Eagle mentor — let's take things one step at a time and keep your year at Durham feeling manageable."
   },
   {
     id: "calm_male",
-    openaiVoice: "verse",
+    openaiVoice: "ballad", // FIXED: Calm, steady male voice
     label: "Calm Male Mentor",
     subtitle: "Steady, reassuring, and clear.",
     colorClass: "from-indigo-500 to-blue-600",
     icon: "owl",
     previewText:
-      "Hello, I’m your calm study mentor. I’ll walk you through even the toughest topics at a steady, clear pace.",
+      "Hello, I'm your calm study mentor. I'll walk you through even the toughest topics at a steady, clear pace.",
     welcomeMessage:
-      "Let’s approach your workload calmly and methodically. Tell me what’s on your plate, and we’ll break it down together."
+      "Let's approach your workload calmly and methodically. Tell me what's on your plate, and we'll break it down together."
   },
   {
     id: "neutral_british",
-    openaiVoice: "aria",
+    openaiVoice: "echo", // FIXED: Neutral, clear voice (was "aria")
     label: "Neutral British Mentor",
     subtitle: "Neutral, precise, and academic.",
     colorClass: "from-slate-600 to-slate-800",
     icon: "feather",
     previewText:
-      "Good day. I’m your neutral British legal mentor, here to help you think clearly and write with precision.",
+      "Good day. I'm your neutral British legal mentor, here to help you think clearly and write with precision.",
     welcomeMessage:
-      "Let’s work on sharpening your legal reasoning and written arguments. What would you like to focus on today?"
+      "Let's work on sharpening your legal reasoning and written arguments. What would you like to focus on today?"
   },
   {
     id: "energetic_peer",
-    openaiVoice: "pepper",
+    openaiVoice: "coral", // FIXED: Energetic, upbeat voice (was "pepper")
     label: "Energetic Study Buddy",
     subtitle: "Lively, upbeat, and motivating.",
     colorClass: "from-rose-500 to-orange-500",
     icon: "spark",
     previewText:
-      "Hey! I’m your energetic study buddy. We’ll turn big tasks into quick wins and keep your motivation high.",
+      "Hey! I'm your energetic study buddy. We'll turn big tasks into quick wins and keep your motivation high.",
     welcomeMessage:
-      "Let’s make progress together. What’s one thing we can tackle right now that would make your week feel lighter?"
+      "Let's make progress together. What's one thing we can tackle right now that would make your week feel lighter?"
   },
 ];
 
