@@ -153,10 +153,43 @@ export default function GlobalHeader() {
     []
   );
 
-  const displayName =
-    user?.user_metadata?.full_name ||
-    user?.email?.split('@')[0]?.replace(/[0-9]/g, '') ||
-    'Student';
+  // Fetch actual display_name from profiles table
+  const [displayName, setDisplayName] = useState<string>('Student');
+
+  useEffect(() => {
+    if (!user) {
+      setDisplayName('Student');
+      return;
+    }
+
+    const fetchDisplayName = async () => {
+      try {
+        const {getSupabaseClient} = await import('@/lib/supabase/client');
+        const supabase = getSupabaseClient();
+        if (!supabase) {
+          setDisplayName(user.email?.split('@')[0] || 'Student');
+          return;
+        }
+
+        const {data, error} = await supabase
+          .from('profiles')
+          .select('display_name')
+          .eq('id', user.id)
+          .single();
+
+        if (data?.display_name) {
+          setDisplayName(data.display_name);
+        } else {
+          setDisplayName(user.email?.split('@')[0] || 'Student');
+        }
+      } catch (err) {
+        console.error('Failed to fetch display name:', err);
+        setDisplayName(user.email?.split('@')[0] || 'Student');
+      }
+    };
+
+    fetchDisplayName();
+  }, [user]);
 
   return (
     <>
