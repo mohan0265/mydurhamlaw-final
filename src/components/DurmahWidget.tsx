@@ -707,7 +707,7 @@ export default function DurmahWidget() {
     if (!confirm('Clear entire conversation? This cannot be undone.')) return;
     
     setMessages([]);
-    setTranscript([]);
+    setCallTranscript([]);
     
     // Also clear from database
     if (user?.id && supabaseClient) {
@@ -927,6 +927,10 @@ export default function DurmahWidget() {
   // 1. Logged-out Modal
   if (isOpen && !signedIn) {
     return (
+      <>
+        {/* Persistent audio for voice - ALWAYS rendered */}
+        <audio ref={audioRef} style={{ display: 'none' }} />
+        
       <div className="fixed bottom-24 right-6 z-50 flex w-full max-w-sm flex-col overflow-hidden rounded-3xl border border-violet-100 bg-white shadow-2xl animate-in slide-in-from-bottom-5 fade-in duration-300">
          <div className="bg-gradient-to-r from-violet-600 to-indigo-600 px-5 py-4 flex items-center justify-between text-white">
             <h3 className="font-bold text-lg">Unlock Your Legal Eagle Buddy</h3>
@@ -952,12 +956,17 @@ export default function DurmahWidget() {
              </div>
          </div>
       </div>
+      </>
     );
   }
 
   // 2. Closed Launcher (Pill Style)
   if (!isOpen) {
     return (
+      <>
+        {/* Persistent audio for voice - ALWAYS rendered */}
+        <audio ref={audioRef} style={{ display: 'none' }} />
+        
       <div className="fixed bottom-20 right-6 z-[60] flex flex-col items-end group">
         {/* Tooltip */}
         <div className="absolute right-full mr-4 top-1/2 -translate-y-1/2 w-max opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none translate-x-2 group-hover:translate-x-0">
@@ -991,11 +1000,16 @@ export default function DurmahWidget() {
           </div>
         </button>
       </div>
+      </>
     );
   }
 
   // 3. Open Chat Widget (Logged In)
   return (
+    <>
+      {/* Persistent audio for voice - ALWAYS rendered */}
+      <audio ref={audioRef} style={{ display: 'none' }} />
+      
     <div className="fixed bottom-24 right-6 z-50 flex w-full max-w-md flex-col overflow-visible rounded-3xl border border-violet-100 bg-white shadow-2xl sm:w-[400px] max-h-[80vh] h-[600px] animate-in slide-in-from-bottom-10 fade-in duration-300">
       {/* Premium Header Ribbon */}
       <header className="relative flex-none flex items-center justify-between bg-gradient-to-r from-violet-600 via-indigo-600 to-violet-700 px-5 py-4 text-white shadow-md z-30">
@@ -1368,5 +1382,6 @@ export default function DurmahWidget() {
         </div>
       )}
     </div>
+    </>
   );
 }
