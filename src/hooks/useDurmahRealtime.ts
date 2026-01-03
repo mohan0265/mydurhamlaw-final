@@ -537,12 +537,14 @@ export function useDurmahRealtime({
     [requestAnswerSdp, stopPreview, systemPrompt]
   );
 
+  // Cleanup on component unmount ONLY - don't stop when other things re-render!
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     return () => {
       stopListening();
       stopPreview();
     };
-  }, [stopListening, stopPreview]);
+  }, []); // Empty array = cleanup runs ONLY on unmount, not on re-renders!
 
   const voiceActive =
     status === "connecting" || status === "listening" || status === "speaking";
