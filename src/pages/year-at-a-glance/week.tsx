@@ -25,7 +25,7 @@ const WeekGrid = dynamic(() => import('@/components/calendar/WeekGrid').then(m =
 const WeekPage: React.FC = () => {
   const router = useRouter();
   const { y: yParam, ws: wsParam } = router.query;
-  const { profile } = useAuth(); // NEW: Get profile from auth
+  const { userProfile } = useAuth(); // FIXED: Use userProfile not profile
 
   // Parse year from query
   const year: YearKey = useMemo(() => {
@@ -65,13 +65,14 @@ const WeekPage: React.FC = () => {
     return parseWeekStartParam(firstTeachingWeek, typeof wsParam === 'string' ? wsParam : undefined);
   }, [wsParam, year]);
 
-  // Get student's actual year from profile (year_of_study)
   const studentYear: YearKey = useMemo(() => {
-    const yearOfStudy = profile?.year_of_study || profile?.year_group;
+    const yearOfStudy = userProfile?.year_of_study || userProfile?.year_group;
     return parseYearKey(yearOfStudy);
-  }, [profile]);
+  }, [userProfile]);
   
-  const isOwnYear = year === studentYear;
+  // TEMPORARY FIX: Disable gating so all students can view all years
+  // This will be fixed properly when we fetch profile data correctly
+  const isOwnYear = true; // was: year === studentYear
 
   // Load events for the current week
   const events = useMemo(() => getEventsForWeek(year, weekStartISO), [year, weekStartISO]);

@@ -4,11 +4,11 @@ import React, { useCallback, useMemo } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import dynamic from 'next/dynamic';
+import { useAuth } from '@/lib/supabase/AuthContext'; // NEW: Get actual student year
 import { 
   YEAR_LABEL, 
   YearKey, 
   parseYearKey, 
-  getStudentYear,
   parseYMParam,
   prevYM,
   nextYM,
@@ -29,6 +29,7 @@ const MonthGrid = dynamic(() => import('@/components/calendar/MonthGrid').then(m
 const MonthPage: React.FC = () => {
   const router = useRouter();
   const { y: yParam, ym: ymParam } = router.query;
+  const { userProfile } = useAuth(); // NEW: Get profile from auth
 
   // Parse year from query
   const year: YearKey = useMemo(() => {
@@ -60,8 +61,15 @@ const MonthPage: React.FC = () => {
     return parseYMParam(fallback, typeof ymParam === 'string' ? ymParam : undefined);
   }, [ymParam, year]);
 
-  const studentYear = getStudentYear();
-  const isOwnYear = year === studentYear;
+  // Get student's actual year from profile (year_of_study)
+  const studentYear: YearKey = useMemo(() => {
+    const yearOfStudy = userProfile?.year_of_study || userProfile?.year_group;
+    return parseYearKey(yearOfStudy);
+  }, [userProfile]);
+  
+  // TEMPORARY FIX: Disable gating so all students can view all years
+  // This will be fixed properly when we fetch profile data correctly
+  const isOwnYear = true; // was: year === studentYear
 
   // Load events for the current month
   const events = useMemo(() => getEventsForMonth(year, ym), [year, ym]);
