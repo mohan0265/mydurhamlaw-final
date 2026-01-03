@@ -38,17 +38,12 @@ const MonthPage: React.FC = () => {
 
   // Parse month from query, with vacation period handling
   const ym: YM = useMemo(() => {
-    // Get current date and term boundaries
-    const now = new Date();
-    const today = format(now, 'yyyy-MM-dd');
-    const plan = getDefaultPlanByStudentYear(year);
-    
-    // Check if we're in vacation period (outside all teaching terms)
-    const isInVacation = today < plan.termDates.michaelmas.start || today > plan.termDates.easter.end;
-    
-    // If no specific month requested and we're in vacation, default to October 2025
-    if (!ymParam && isInVacation) {
-      return { year: 2025, month: 10 }; // October 2025
+    // If no specific month requested, use CURRENT month (not October 2025)
+    if (!ymParam) {
+      const now = new Date();
+      const currentYear = now.getFullYear();
+      const currentMonth = now.getMonth() + 1; // getMonth() returns 0-11
+      return { year: currentYear, month: currentMonth };
     }
     
     // Otherwise use academic year defaults

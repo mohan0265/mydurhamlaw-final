@@ -37,29 +37,19 @@ const WeekPage: React.FC = () => {
     const plan = getDefaultPlanByStudentYear(year);
     const firstTeachingWeek = plan.termDates.michaelmas.weeks[0] || '2025-10-06';
     
-    // If no specific week requested, check if we're in vacation and jump to first teaching week
+    // If no specific week requested, use CURRENT week (not first teaching week)
     if (!wsParam) {
       const now = new Date();
-     const today = format(now, 'yyyy-MM-dd');
+      const today = format(now, 'yyyy-MM-dd');
       
-      // Check if current date falls outside any teaching week
-      const allTeachingWeeks = [
-        ...plan.termDates.michaelmas.weeks,
-        ...plan.termDates.epiphany.weeks,
-        ...plan.termDates.easter.weeks
-      ];
+      // Find Monday of current week
+      const currentDate = new Date(today + 'T00:00:00.000Z');
+      const dayOfWeek = currentDate.getUTCDay(); // 0 = Sunday, 1 = Monday, etc.
+      const daysToMonday = dayOfWeek === 0 ? -6 : -(dayOfWeek - 1); // Adjust to get Monday
+      const mondayDate = new Date(currentDate);
+      mondayDate.setUTCDate(currentDate.getUTCDate() + daysToMonday);
       
-      const isInTeachingWeek = allTeachingWeeks.some(weekStart => {
-        const weekStartDate = new Date(weekStart + 'T00:00:00.000Z');
-        const weekEndDate = new Date(weekStartDate.getTime() + 6 * 24 * 60 * 60 * 1000);
-        const todayDate = new Date(today + 'T00:00:00.000Z');
-        return todayDate >= weekStartDate && todayDate <= weekEndDate;
-      });
-      
-      // If not in any teaching week, default to first teaching week
-      if (!isInTeachingWeek) {
-        return firstTeachingWeek;
-      }
+      return mondayDate.toISOString().split('T')[0]!;
     }
     
     return parseWeekStartParam(firstTeachingWeek, typeof wsParam === 'string' ? wsParam : undefined);
