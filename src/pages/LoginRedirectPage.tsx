@@ -198,15 +198,17 @@ export default function LoginRedirectPage() {
           };
 
           if (userRole === 'student') {
-            baseProfileData.year_group =
-              signupMetadata?.year_group ||
+            const yearValue = signupMetadata?.year_group ||
               (user.user_metadata as any)?.year_group ||
               (user.user_metadata as any)?.user_type ||
               'year1';
-            console.log('📚 Year group assigned:', baseProfileData.year_group);
+            baseProfileData.year_group = yearValue;
+            baseProfileData.year_of_study = yearValue; // Sync both columns!
+            console.log('📚 Year assigned:', yearValue);
           } else {
-            // Loved ones are not constrained by year_group; provide a safe default anyway
+            // Loved ones - sync both columns
             baseProfileData.year_group = 'year1';
+            baseProfileData.year_of_study = 'year1';
           }
 
           const { error: createError } = await supabase.from('profiles').insert([baseProfileData]);

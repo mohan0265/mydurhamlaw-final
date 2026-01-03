@@ -155,7 +155,7 @@ async function ensureThread(supabase: SupabaseClient, userId: string) {
 async function fetchProfile(supabase: SupabaseClient, userId: string) {
   const { data } = await supabase
     .from('profiles')
-    .select('display_name, year_group, created_at, trial_started_at, trial_ever_used')
+    .select('display_name, year_group, year_of_study, created_at, trial_started_at, trial_ever_used')
     .eq('id', userId)
     .maybeSingle();
 
@@ -173,8 +173,8 @@ async function fetchProfile(supabase: SupabaseClient, userId: string) {
 
   return {
     displayName: data?.display_name ?? null,
-    yearGroup: data?.year_group ?? null,
-    yearOfStudy: data?.year_group ?? null,
+    yearGroup: data?.year_of_study ?? data?.year_group ?? null, // Prefer year_of_study
+    yearOfStudy: data?.year_of_study ?? data?.year_group ?? null, // Prefer year_of_study
     trialStatus,
     trialEndsAt,
     role: 'student',
