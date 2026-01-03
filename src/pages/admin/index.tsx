@@ -76,11 +76,11 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
     }
   }
 
-  // Fetch profiles - use only fields that definitely exist
+  // Fetch profiles - only select columns that exist (NO user_id!)
   const { data, error } = await adminClient
     .from("profiles")
-    .select("id, user_id, display_name, user_role, year_group, trial_started_at, trial_ever_used")
-    .order("updated_at", { ascending: false })
+    .select("id, display_name, user_role, year_of_study, year_group, trial_started_at, trial_ever_used")
+    .order("created_at", { ascending: false })
     .limit(200)
 
   let users: AdminUser[] = []
@@ -134,16 +134,17 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
         provider: u.app_metadata?.provider ?? null
       })) ?? []
 
-    // Map emails to profiles
+    // Map emails to profiles (use id only, no user_id column exists)
     profilesWithNewFields = profilesWithNewFields.map(profile => {
-      const authUser = users.find(u => u.id === profile.user_id || u.id === profile.id)
+      const authUser = users.find(u => u.id === profile.id)
       return {
         ...profile,
+        user_id: profile.id, // Add user_id field = id for compatibility
         email: authUser?.email ?? null
       }
     })
 
-    // Fetch AWY connections
+    // Fetch AWY connections (use id not user_id)
     const { data: conns } = await adminClient
       .from('awy_connections')
       .select(`
@@ -152,16 +153,16 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
         relationship,
         status,
         created_at,
-        student:profiles!awy_connections_student_user_id_fkey(user_id),
-        loved:profiles!awy_connections_loved_user_id_fkey(user_id)
+        student:profiles!awy_connections_student_user_id_fkey(id),
+        loved:profiles!awy_connections_loved_user_id_fkey(id)
       `)
       .order('created_at', { ascending: false })
       .limit(100)
 
     if (conns) {
       connections = conns.map((c: any) => {
-        const studentEmail = users.find(u => u.id === c.student?.user_id)?.email || '-'
-        const lovedEmail = c.loved_email || users.find(u => u.id === c.loved?.user_id)?.email || '-'
+        const studentEmail = users.find(u => u.id === c.student?.id)?.email || '-'
+        const lovedEmail = c.loved_email || users.find(u => u.id === c.loved?.id)?.email || '-'
         return {
           id: c.id,
           studentEmail,
