@@ -7,6 +7,7 @@ export type DurmahVoiceId =
 export interface DurmahVoicePreset {
   id: DurmahVoiceId;
   openaiVoice: string; // OpenAI realtime voice identifier (e.g. "alloy")
+  geminiVoice: string; // Gemini Live voice identifier (e.g. "Puck")
   label: string;
   subtitle: string;
   colorClass: string; // Tailwind classes for cards
@@ -16,10 +17,12 @@ export interface DurmahVoicePreset {
 }
 
 // Valid OpenAI Realtime voices: alloy, ash, ballad, coral, echo, sage, shimmer, verse
+// Valid Gemini Live voices: Aoede, Charon, Fenrir, Kore, Puck
 export const DURMAH_VOICE_PRESETS: DurmahVoicePreset[] = [
   {
     id: "warm_female",
     openaiVoice: "shimmer", // FIXED: Warm, friendly female voice
+    geminiVoice: "Puck", // Friendly, warm, encouraging female voice
     label: "Warm Female Mentor",
     subtitle: "Friendly, encouraging, and supportive.",
     colorClass: "from-purple-500 to-pink-500",
@@ -32,6 +35,7 @@ export const DURMAH_VOICE_PRESETS: DurmahVoicePreset[] = [
   {
     id: "calm_male",
     openaiVoice: "ballad", // FIXED: Calm, steady male voice
+    geminiVoice: "Charon", // Deep, calm, steady male voice
     label: "Calm Male Mentor",
     subtitle: "Steady, reassuring, and clear.",
     colorClass: "from-indigo-500 to-blue-600",
@@ -44,6 +48,7 @@ export const DURMAH_VOICE_PRESETS: DurmahVoicePreset[] = [
   {
     id: "neutral_british",
     openaiVoice: "echo", // FIXED: Neutral, clear voice (was "aria")
+    geminiVoice: "Aoede", // Neutral, clear, professional female voice
     label: "Neutral British Mentor",
     subtitle: "Neutral, precise, and academic.",
     colorClass: "from-slate-600 to-slate-800",
@@ -56,6 +61,7 @@ export const DURMAH_VOICE_PRESETS: DurmahVoicePreset[] = [
   {
     id: "energetic_peer",
     openaiVoice: "coral", // FIXED: Energetic, upbeat voice (was "pepper")
+    geminiVoice: "Fenrir", // Energetic, dynamic male voice
     label: "Energetic Study Buddy",
     subtitle: "Lively, upbeat, and motivating.",
     colorClass: "from-rose-500 to-orange-500",

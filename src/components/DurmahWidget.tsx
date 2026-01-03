@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useAuth } from '@/lib/supabase/AuthContext';
 import { useDurmahRealtime } from "@/hooks/useDurmahRealtime";
+import { useDurmahGeminiLive } from "@/hooks/useDurmahGeminiLive"; // NEW: Gemini Live
 import { useDurmahDynamicContext } from "@/hooks/useDurmahDynamicContext";
 import { useDurmah } from "@/lib/durmah/context";
 import { fetchAuthed } from "@/lib/fetchAuthed";
@@ -21,8 +22,10 @@ import Link from 'next/link';
 import toast from "react-hot-toast";
 import { getSupabaseClient } from "@/lib/supabase/client";
 
-// const VOICE_PROVIDER = 'openai'; 
-const useVoiceHook = useDurmahRealtime;
+// Voice Provider Selection - checks environment variable
+const VOICE_PROVIDER = (process.env.NEXT_PUBLIC_DURMAH_VOICE_PROVIDER || 'openai').toLowerCase();
+const useVoiceHook = VOICE_PROVIDER === 'gemini' ? useDurmahGeminiLive : useDurmahRealtime;
+console.log('[DurmahWidget] Using voice provider:', VOICE_PROVIDER);
 
 type Msg = { role: "durmah" | "you"; text: string; ts: number };
 
@@ -411,25 +414,9 @@ export default function DurmahWidget() {
 
   // 3. Voice Hook - use server context when available for rich DB-backed instructions
   const systemPrompt = useMemo(() => {
-    // If we have server context packet, use it for voice (includes DB messages, accurate term/week)
-    if (contextPacket) {
-      return buildDurmahSystemPromptWithServerContext(
-        contextPacket,
-        studentContext,
-        memory,
-        upcomingTasks,
-        todaysEvents,
-        { systemTone: preset?.subtitle || "Friendly" }
-      );
-    }
-    // Fallback to client-side context
-    return buildDurmahSystemPrompt(
-      studentContext,
-      memory,
-      upcomingTasks,
-      todaysEvents,
-      { systemTone: preset?.subtitle || "Friendly" }
-    );
+    return contextPacket
+      ? buildDurmahSystemPromptWithServerContext(contextPacket, studentContext, memory, upcomingTasks, todaysEvents, { systemTone: preset?.subtitle || "Friendly" })
+      : buildDurmahSystemPrompt(studentContext, memory, upcomingTasks, todaysEvents, { systemTone: preset?.subtitle || "Friendly" });
   }, [contextPacket, studentContext, memory, upcomingTasks, todaysEvents, preset]);
 
   const appendTranscriptTurn = useCallback((role: Msg["role"], text: string) => {
@@ -460,6 +447,11 @@ export default function DurmahWidget() {
     }
   }, []);
 
+  // Choose voice name based on provider
+  const voiceName = VOICE_PROVIDER === 'gemini' 
+    ? (preset?.geminiVoice || 'Puck') 
+    : (preset?.openaiVoice || 'alloy');
+
   // Pass selected realtime voice from the preset
   const {
     startListening,
@@ -471,7 +463,7 @@ export default function DurmahWidget() {
     playVoicePreview // Imported from hook
   } = useVoiceHook({
     systemPrompt,
-    voice: preset?.openaiVoice || "alloy",
+    voice: voiceName, // Use provider-specific voice
     audioRef,
     onTurn: (turn) => {
       appendTranscriptTurn(
