@@ -17,7 +17,7 @@ import {
 import type { DurmahContextPacket } from "@/types/durmah";
 import { formatTodayForDisplay } from "@/lib/durmah/phase";
 import { useDurmahSettings } from "@/hooks/useDurmahSettings";
-import { Settings, X, ArrowRight, AlertTriangle, Check, Volume2, Brain, Zap, RefreshCw, MoreHorizontal } from "lucide-react";
+import { Settings, X, ArrowRight, AlertTriangle, Check, Volume2, Brain, Zap, RefreshCw, MoreHorizontal, Trash2 } from "lucide-react";
 import Link from 'next/link';
 import toast from "react-hot-toast";
 import { getSupabaseClient } from "@/lib/supabase/client";
@@ -701,6 +701,27 @@ export default function DurmahWidget() {
     setVoiceSessionStartedAt(null);
     setVoiceSessionEndedAt(null);
   };
+  
+  // CLEAR CHAT - Clears entire conversation history
+  const clearChat = async () => {
+    if (!confirm('Clear entire conversation? This cannot be undone.')) return;
+    
+    setMessages([]);
+    setTranscript([]);
+    
+    // Also clear from database
+    if (user?.id && supabaseClient) {
+      try {
+        await supabaseClient
+          .from('durmah_messages')
+          .delete()
+          .eq('user_id', user.id);
+        toast.success('Chat cleared');
+      } catch (err) {
+        console.error('[DurmahWidget] Failed to clear messages:', err);
+      }
+    }
+  };
 
   // SEED TIMETABLE (DEV ONLY) - Uses DB RPC for timezone-correct seeding
   // ----------------------------
@@ -1065,24 +1086,31 @@ export default function DurmahWidget() {
 
           <button
             onClick={toggleVoice}
-            className={`p-2 rounded-full transition-all duration-300 ${
+            className={`flex items-center gap-2 px-3 py-2 rounded-full transition-all duration-300 ${
               isVoiceActive 
                 ? "bg-red-500 text-white shadow-lg scale-110" 
                 : "bg-white/20 text-white hover:bg-white/30"
             }`}
+            title={isVoiceActive ? "End voice chat" : "Start voice chat"}
           >
             {isVoiceActive ? (
-              <div className="flex items-center gap-1">
-                <span className="w-2 h-2 bg-white rounded-full animate-bounce"></span>
-                <span className="w-2 h-2 bg-white rounded-full animate-bounce delay-75"></span>
-                <span className="w-2 h-2 bg-white rounded-full animate-bounce delay-150"></span>
-              </div>
-            ) : "Mic"}
+              <>
+                <div className="flex items-center gap-1">
+                  <span className="w-2 h-2 bg-white rounded-full animate-bounce"></span>
+                  <span className="w-2 h-2 bg-white rounded-full animate-bounce delay-75"></span>
+                  <span className="w-2 h-2 bg-white rounded-full animate-bounce delay-150"></span>
+                </div>
+                <span className="text-xs font-medium">End Voice Chat</span>
+              </>
+            ) : (
+              <span className="text-sm font-medium">Mic</span>
+            )}
           </button>
 
           <button
             onClick={() => setIsOpen(false)}
             className="p-2 rounded-full hover:bg-white/20 transition-colors"
+            title="Minimize (voice continues)"
           >
             <X size={20} />
           </button>
@@ -1209,19 +1237,29 @@ export default function DurmahWidget() {
             </div>
           )}
 
-          <div className="flex justify-end gap-3 pt-3 mt-2 border-t border-violet-200/50 sticky bottom-0 bg-violet-50/0">
+          <div className="flex justify-between gap-3 pt-3 mt-2 border-t border-violet-200/50 sticky bottom-0 bg-violet-50/0">
             <button
-              onClick={discardVoiceTranscript}
-              className="text-xs font-medium px-3 py-1.5 rounded-lg text-gray-600 hover:bg-gray-200/50 transition-colors"
+              onClick={clearChat}
+              className="text-xs font-medium px-3 py-1.5 rounded-lg text-gray-600  hover:bg-gray-200/50 transition-colors flex items-center gap-1"
+              title="Clear entire conversation"
             >
-              Discard
+              <Trash2 size={12} />
+              Clear Chat
             </button>
-            <button
-              onClick={saveVoiceTranscript}
-              className="text-xs font-medium px-3 py-1.5 rounded-lg bg-violet-600 text-white hover:bg-violet-700 shadow-md transition-all hover:shadow-lg"
-            >
-              Save to Chat
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={discardVoiceTranscript}
+                className="text-xs font-medium px-3 py-1.5 rounded-lg text-gray-600 hover:bg-gray-200/50 transition-colors"
+              >
+                Discard
+              </button>
+              <button
+                onClick={saveVoiceTranscript}
+                className="text-xs font-medium px-3 py-1.5 rounded-lg bg-violet-600 text-white hover:bg-violet-700 shadow-md transition-all hover:shadow-lg"
+              >
+                Save to Chat
+              </button>
+            </div>
           </div>
         </div>
       )}
