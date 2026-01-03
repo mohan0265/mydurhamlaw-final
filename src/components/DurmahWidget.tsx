@@ -269,6 +269,20 @@ export default function DurmahWidget() {
   const headerMenuRef = useRef<HTMLDivElement | null>(null);
   const prevListeningRef = useRef(false);
 
+  // Ensure audio remains playable when isOpen changes
+  useEffect(() => {
+    // When audio element exists and has content, ensure it can play
+    if (audioRef.current && audioRef.current.srcObject) {
+      const audio = audioRef.current;
+      // Resume playback if it was paused
+      if (audio.paused) {
+        audio.play().catch(err => {
+          console.warn('[DurmahWidget] Could not resume audio:', err);
+        });
+      }
+    }
+  }, [isOpen]); // Re-run when isOpen changes
+
   // Auto-scroll to bottom whenever messages change
   useEffect(() => {
     if (messagesEndRef.current) {
