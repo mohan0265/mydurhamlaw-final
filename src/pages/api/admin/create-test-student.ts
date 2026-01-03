@@ -58,15 +58,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const now = new Date();
     const trialEnds = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
 
-    // 3. Create profile
+    // 3. Create profile (email is in auth.users, not profiles!)
     const { data: profileData, error: profileError } = await adminClient
       .from('profiles')
       .insert({
         user_id: userId,
         display_name: displayName,
-        email,
+        // REMOVED: email (not a column in profiles table!)
         user_role: 'student',
         year_group: yearGroup,
+        year_of_study: yearGroup, // Sync both year columns
         is_test_account: true,
         trial_started_at: now.toISOString(),
         trial_ends_at: trialEnds.toISOString(),
