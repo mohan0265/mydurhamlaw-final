@@ -53,13 +53,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const lovedUserId = authData.user.id;
 
-    // 2. Create profile for loved one
+    // 2. Create loved one profile (email is in auth.users, not profiles!)
     const { data: profileData, error: profileError } = await adminClient
       .from('profiles')
       .insert({
         user_id: lovedUserId,
         display_name: displayName,
-        email,
+        // REMOVED: email (not a column in profiles table!)
         user_role: 'loved_one',
         is_test_account: true,
       })
