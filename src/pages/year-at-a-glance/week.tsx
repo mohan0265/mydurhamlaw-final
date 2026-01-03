@@ -4,11 +4,11 @@ import React, { useCallback, useMemo } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import dynamic from 'next/dynamic';
+import { useAuth } from '@/lib/supabase/AuthContext'; // NEW: Get actual student year
 import { 
   YEAR_LABEL, 
   YearKey, 
   parseYearKey, 
-  getStudentYear,
   parseWeekStartParam,
   addWeeksISO,
   hrefWeekWS,
@@ -25,6 +25,7 @@ const WeekGrid = dynamic(() => import('@/components/calendar/WeekGrid').then(m =
 const WeekPage: React.FC = () => {
   const router = useRouter();
   const { y: yParam, ws: wsParam } = router.query;
+  const { profile } = useAuth(); // NEW: Get profile from auth
 
   // Parse year from query
   const year: YearKey = useMemo(() => {
@@ -39,7 +40,7 @@ const WeekPage: React.FC = () => {
     // If no specific week requested, check if we're in vacation and jump to first teaching week
     if (!wsParam) {
       const now = new Date();
-      const today = format(now, 'yyyy-MM-dd');
+     const today = format(now, 'yyyy-MM-dd');
       
       // Check if current date falls outside any teaching week
       const allTeachingWeeks = [
@@ -64,7 +65,12 @@ const WeekPage: React.FC = () => {
     return parseWeekStartParam(firstTeachingWeek, typeof wsParam === 'string' ? wsParam : undefined);
   }, [wsParam, year]);
 
-  const studentYear = getStudentYear();
+  // Get student's actual year from profile (year_of_study)
+  const studentYear: YearKey = useMemo(() => {
+    const yearOfStudy = profile?.year_of_study || profile?.year_group;
+    return parseYearKey(yearOfStudy);
+  }, [profile]);
+  
   const isOwnYear = year === studentYear;
 
   // Load events for the current week
