@@ -192,6 +192,7 @@ export default function AdminDashboard({ authorized, rows, users, connections, e
   if (!authorized) return null
 
   const [showInviteStudent, setShowInviteStudent] = useState(false)
+  const [showCreateStudent, setShowCreateStudent] = useState(false)
   const [showCreateLovedOne, setShowCreateLovedOne] = useState(false)
   const [filter, setFilter] = useState<'all' | 'test' | 'real'>('all')
   const [inviteResult, setInviteResult] = useState<any>(null)
@@ -216,7 +217,30 @@ export default function AdminDashboard({ authorized, rows, users, connections, e
     } else {
       const data = await res.json()
       setInviteResult(data)
-      // Don't close modal - show result instead
+    }
+  }
+
+  const onCreateStudent = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    const form = e.currentTarget
+    const email = (form.elements.namedItem("email") as HTMLInputElement).value
+    const displayName = (form.elements.namedItem("displayName") as HTMLInputElement).value
+    const yearGroup = (form.elements.namedItem("yearGroup") as HTMLSelectElement).value
+    const password = (form.elements.namedItem("password") as HTMLInputElement).value || undefined
+    
+    const res = await fetch("/api/admin/create-test-student", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, displayName, yearGroup, password })
+    })
+    
+    if (!res.ok) {
+      const err = await res.json()
+      alert(`Failed: ${err.error}`)
+    } else {
+      const data = await res.json()
+      alert(`Student created! Password: ${password || 'TestPass123!'}\nTrial ends: ${data.trialEndsAt}`)
+      window.location.reload()
     }
   }
 
@@ -336,7 +360,13 @@ export default function AdminDashboard({ authorized, rows, users, connections, e
               }}
               className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700"
             >
-              📧 Invite Test Student
+              📧 Invite Student (needs DB migration)
+            </button>
+            <button 
+              onClick={() => setShowCreateStudent(true)}
+              className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-semibold hover:bg-green-700"
+            >
+              + Create with Password (works now)
             </button>
             <button 
               onClick={() => setShowCreateLovedOne(true)}
@@ -485,6 +515,37 @@ export default function AdminDashboard({ authorized, rows, users, connections, e
                 </div>
               </>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Create Student Modal (Password-based - works without migration) */}
+      {showCreateStudent && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-6 w-full max-w-md">
+            <h3 className="text-lg font-bold mb-4">Create Test Student (Password)</h3>
+            <form onSubmit={onCreateStudent} className="space-y-3">
+              <input name="email" placeholder="Email" className="w-full border rounded px-3 py-2" required />
+              <input name="displayName" placeholder="Display Name" className="w-full border rounded px-3 py-2" required />
+              <select name="yearGroup" className="w-full border rounded px-3 py-2" required>
+                <option value="">Select Year</option>
+                <option value="foundation">Foundation</option>
+                <option value="year1">Year 1</option>
+                <option value="year2">Year 2</option>
+                <option value="year3">Year 3</option>
+              </select>
+              <input 
+                name="password" 
+                type="text"
+                placeholder="Password (optional, default: TestPass123!)" 
+                className="w-full border rounded px-3 py-2 text-sm"
+              />
+              <p className="text-xs text-gray-500">Leave blank for default password: TestPass123!</p>
+              <div className="flex gap-2">
+                <button type="submit" className="flex-1 py-2 bg-green-600 text-white rounded font-semibold">Create</button>
+                <button type="button" onClick={() => setShowCreateStudent(false)} className="px-4 py-2 bg-slate-200 rounded">Cancel</button>
+              </div>
+            </form>
           </div>
         </div>
       )}
