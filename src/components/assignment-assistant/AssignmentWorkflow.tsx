@@ -24,6 +24,17 @@ export default function AssignmentWorkflow({
   assignmentData, 
   onClose 
 }: AssignmentWorkflowProps) {
+  // Defensive null checks - prevent crashes if data is incomplete
+  const safeAssignmentData = {
+    title: assignmentData?.title || 'Untitled Assignment',
+    module_code: assignmentData?.module_code || '',
+    module_name: assignmentData?.module_name || '',
+    due_date: assignmentData?.due_date || null,
+    question_text: assignmentData?.question_text || '',
+    word_limit: assignmentData?.word_limit || 1500,
+    ...assignmentData
+  };
+
   const [mode, setMode] = useState<'normal' | 'express' | null>(null);
   const [currentStage, setCurrentStage] = useState(0); // 0 = upload, 1-6 = stages
   const [briefData, setBriefData] = useState<any>(null);
@@ -40,8 +51,10 @@ export default function AssignmentWorkflow({
   ];
 
   useEffect(() => {
-    loadProgress();
-  }, []);
+    if (assignmentId) {
+      loadProgress();
+    }
+  }, [assignmentId]);
 
   const loadProgress = async () => {
     const supabase = getSupabaseClient();
@@ -168,7 +181,7 @@ export default function AssignmentWorkflow({
           {!mode ? (
             <ModeSelector 
               onSelectMode={(selectedMode) => setMode(selectedMode)}
-              assignmentData={assignmentData}
+              assignmentData={safeAssignmentData}
             />
           ) : uploadMode ? (
             <div className="h-full flex flex-col justify-center">
