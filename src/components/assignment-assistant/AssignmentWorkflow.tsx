@@ -39,7 +39,7 @@ export default function AssignmentWorkflow({
   const [currentStage, setCurrentStage] = useState(0); // 0 = upload, 1-6 = stages
   const [briefData, setBriefData] = useState<any>(null);
   const [stageData, setStageData] = useState<any>({});
-  const [uploadMode, setUploadMode] = useState(true);
+  const [uploadMode, setUploadMode] = useState(false); // Start with false - students already uploaded during creation
 
   const stages = [
     { num: 1, name: 'Understanding', completed: false },
@@ -144,6 +144,13 @@ export default function AssignmentWorkflow({
     setCurrentStage(1);
   };
 
+  const handleModeSelection = (selectedMode: 'normal' | 'express') => {
+    setMode(selectedMode);
+    // Skip upload and go straight to Stage 1 since brief already uploaded during assignment creation
+    setCurrentStage(1);
+    setUploadMode(false);
+  };
+
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-7xl h-[90vh] flex flex-col">
@@ -184,7 +191,7 @@ export default function AssignmentWorkflow({
         <div className="flex-1 overflow-hidden p-6">
           {!mode ? (
             <ModeSelector 
-              onSelectMode={(selectedMode) => setMode(selectedMode)}
+              onSelectMode={handleModeSelection}
               assignmentData={safeAssignmentData}
             />
           ) : uploadMode ? (
