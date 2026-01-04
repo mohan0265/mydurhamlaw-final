@@ -58,24 +58,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const now = new Date();
     const trialEnds = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
 
-    // 3. Create profile (email is in auth.users, not profiles!)
-    const { data: profileData, error: profileError } = await adminClient
+    // 4. Create profile with trial
+    const { error: profileError } = await adminClient
       .from('profiles')
-      .insert({
-        user_id: userId,
+      .upsert({
+        id: userId, // profiles table uses 'id' not 'user_id'
         display_name: displayName,
-        // REMOVED: email (not a column in profiles table!)
         user_role: 'student',
         year_group: yearGroup,
-        year_of_study: yearGroup, // Sync both year columns
+        year_of_study: yearGroup,
         is_test_account: true,
         trial_started_at: now.toISOString(),
         trial_ends_at: trialEnds.toISOString(),
         trial_ever_used: true,
         subscription_status: 'trial',
-      })
-      .select()
-      .single();
+      });
 
     if (profileError) {
       // Rollback: delete auth user
