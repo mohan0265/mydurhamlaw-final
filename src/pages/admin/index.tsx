@@ -191,22 +191,23 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
 export default function AdminDashboard({ authorized, rows, users, connections, error }: Props) {
   if (!authorized) return null
 
-  const [showCreateStudent, setShowCreateStudent] = useState(false)
+  const [showInviteStudent, setShowInviteStudent] = useState(false)
   const [showCreateLovedOne, setShowCreateLovedOne] = useState(false)
   const [filter, setFilter] = useState<'all' | 'test' | 'real'>('all')
+  const [inviteResult, setInviteResult] = useState<any>(null)
 
-  const onCreateStudent = async (e: React.FormEvent<HTMLFormElement>) => {
+  const onInviteStudent = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     const form = e.currentTarget
     const email = (form.elements.namedItem("email") as HTMLInputElement).value
     const displayName = (form.elements.namedItem("displayName") as HTMLInputElement).value
     const yearGroup = (form.elements.namedItem("yearGroup") as HTMLSelectElement).value
-    const password = (form.elements.namedItem("password") as HTMLInputElement).value || undefined
+    const trialDays = parseInt((form.elements.namedItem("trialDays") as HTMLInputElement).value) || 14
     
-    const res = await fetch("/api/admin/create-test-student", {
+    const res = await fetch("/api/admin/invite-student", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, displayName, yearGroup, password })
+      body: JSON.stringify({ email, displayName, yearGroup, trialDays })
     })
     
     if (!res.ok) {
@@ -214,8 +215,8 @@ export default function AdminDashboard({ authorized, rows, users, connections, e
       alert(`Failed: ${err.error}`)
     } else {
       const data = await res.json()
-      alert(`Student created! Trial ends: ${data.trialEndsAt}`)
-      window.location.reload()
+      setInviteResult(data)
+      // Don't close modal - show result instead
     }
   }
 
@@ -323,10 +324,13 @@ export default function AdminDashboard({ authorized, rows, users, connections, e
           <h2 className="text-sm font-semibold text-slate-800 mb-3">Quick Actions</h2>
           <div className="flex gap-2 flex-wrap">
             <button 
-              onClick={() => setShowCreateStudent(true)}
+              onClick={() => {
+                setInviteResult(null);
+                setShowInviteStudent(true);
+              }}
               className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700"
             >
-              + Create Test Student
+              📧 Invite Test Student
             </button>
             <button 
               onClick={() => setShowCreateLovedOne(true)}
@@ -412,33 +416,72 @@ export default function AdminDashboard({ authorized, rows, users, connections, e
         </div>
       </div>
 
-      {/* Create Student Modal */}
-      {showCreateStudent && (
+      {/* Invite Student Modal */}
+      {showInviteStudent && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-6 w-full max-w-md">
-            <h3 className="text-lg font-bold mb-4">Create Test Student</h3>
-            <form onSubmit={onCreateStudent} className="space-y-3">
-              <input name="email" placeholder="Email" className="w-full border rounded px-3 py-2" required />
-              <input name="displayName" placeholder="Display Name" className="w-full border rounded px-3 py-2" required />
-              <select name="yearGroup" className="w-full border rounded px-3 py-2" required>
-                <option value="">Select Year</option>
-                <option value="foundation">Foundation</option>
-                <option value="year1">Year 1</option>
-                <option value="year2">Year 2</option>
-                <option value="year3">Year 3</option>
-              </select>
-              <input 
-                name="password" 
-                type="text"
-                placeholder="Password (optional, default: TestPass123!)" 
-                className="w-full border rounded px-3 py-2 text-sm"
-              />
-              <p className="text-xs text-gray-500">Leave blank to use default password: TestPass123!</p>
-              <div className="flex gap-2">
-                <button type="submit" className="flex-1 py-2 bg-blue-600 text-white rounded font-semibold">Create</button>
-                <button type="button" onClick={() => setShowCreateStudent(false)} className="px-4 py-2 bg-slate-200 rounded">Cancel</button>
-              </div>
-            </form>
+          <div className="bg-white rounded-xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+            {!inviteResult ? (
+              <>
+                <h3 className="text-lg font-bold mb-4">Invite Test Student</h3>
+                <form onSubmit={onInviteStudent} className="space-y-3">
+                  <input name="email" placeholder="Gmail address" type="email" className="w-full border rounded px-3 py-2" required />
+                  <input name="displayName" placeholder="Display Name" className="w-full border rounded px-3 py-2" required />
+                  <select name="yearGroup" className="w-full border rounded px-3 py-2" required>
+                    <option value="">Select Year</option>
+                    <option value="foundation">Foundation</option>
+                    <option value="year1">Year 1</option>
+                    <option value="year2">Year 2</option>
+                    <option value="year3">Year 3</option>
+                  </select>
+                  <input name="trialDays" type="number" placeholder="Trial days (default: 14)" className="w-full border rounded px-3 py-2" defaultValue="14" />
+                  <div className="flex gap-2">
+                    <button type="submit" className="flex-1 py-2 bg-blue-600 text-white rounded font-semibold">Send Invite</button>
+                    <button type="button" onClick={() => setShowInviteStudent(false)} className="px-4 py-2 bg-slate-200 rounded">Cancel</button>
+                  </div>
+                </form>
+              </>
+            ) : (
+              <>
+                <h3 className="text-lg font-bold mb-4 text-green-600">✅ Invite Sent!</h3>
+                <div className="space-y-3">
+                  <div className="bg-green-50 border border-green-200 rounded p-3">
+                    <p className="text-sm text-gray-700 mb-1"><strong>Email:</strong> {inviteResult.email}</p>
+                    <p className="text-sm text-gray-700 mb-1"><strong>Expires:</strong> {new Date(inviteResult.expiresAt).toLocaleDateString()}</p>
+                    <p className="text-sm text-gray-700"><strong>Email sent:</strong> {inviteResult.emailSent ? 'Yes ✓' : 'No (configure RESEND_API_KEY)'}</p>
+                  </div>
+                  <div className="bg-blue-50 border border-blue-200 rounded p-3">
+                    <p className="text-xs font-semibold text-gray-700 mb-2">Invite Link:</p>
+                    <input 
+                      readOnly 
+                      value={inviteResult.inviteUrl} 
+                      className="w-full text-xs p-2 border rounded bg-white"
+                      onClick={(e) => e.currentTarget.select()}
+                    />
+                  </div>
+                  <button 
+                    onClick={() => {
+                      navigator.clipboard.writeText(inviteResult.inviteUrl);
+                      alert('Copied to clipboard!');
+                    }}
+                    className="w-full py-2 bg-blue-600 text-white rounded font-semibold"
+                  >
+                    Copy Link
+                  </button>
+                  <button 
+                    onClick={() => {
+                      setShowInviteStudent(false);
+                      window.location.reload();
+                    }}
+                    className="w-full py-2 bg-slate-200 rounded"
+                  >
+                    Done
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
           </div>
         </div>
       )}
