@@ -106,7 +106,7 @@ export default function AssignmentCreateForm({ onCancel, onSave, initialDate }: 
       const fileName = `${userId}/${crypto.randomUUID()}-${file.name}`;
       
       const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('assignment_uploads')
+        .from('assignment-uploads')
         .upload(fileName, file, {
           contentType: file.type || undefined,
           upsert: false,
@@ -122,7 +122,7 @@ export default function AssignmentCreateForm({ onCancel, onSave, initialDate }: 
           'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({
-          bucket: 'assignment_uploads',
+          bucket: 'assignment-uploads',
           path: fileName,
           originalName: file.name,
           mimeType: file.type,
