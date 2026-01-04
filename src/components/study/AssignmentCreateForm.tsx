@@ -112,38 +112,43 @@ export default function AssignmentCreateForm({ onCancel, onSave, initialDate }: 
           upsert: false,
         });
 
-      // Parse the document
-      const parseResponse = await fetch('/api/assignment/parse', {
+      if (uploadError) throw uploadError;
+
+      // Call ingest API with Bearer token
+      const parseResponse = await fetch('/api/assignments/ingest-upload', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include', // Important: send cookies for auth
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
         body: JSON.stringify({
-          fileUrl: publicUrl,
-          fileName: file.name,
-          assignmentId: null // No assignment yet
-        })
+          bucket: 'assignment_uploads',
+          path: fileName,
+          originalName: file.name,
+          mimeType: file.type,
+          sizeBytes: file.size,
+        }),
       });
 
       if (!parseResponse.ok) {
         const error = await parseResponse.json();
-        throw new Error(error.error || 'Failed to parse document');
+        throw new Error(error.error || 'Failed to process document');
       }
 
-      const parsed = await parseResponse.json();
+      const result = await parseResponse.json();
       
-      // Auto-fill form with parsed data
-      setFormData(prev => ({
-        ...prev,
-        title: parsed.parsedData?.title || prev.title,
-        module_code: parsed.parsedData?.moduleCode || prev.module_code,
-        module_name: parsed.parsedData?.moduleName || prev.module_name,
-        assignment_type: parsed.parsedData?.type || prev.assignment_type,
-        due_date: parsed.parsedData?.dueDate?.split('T')[0] || prev.due_date,
-        question_text: parsed.parsedData?.fullText || prev.question_text,
-        estimated_effort_hours: parsed.parsedData?.wordLimit ? String(Math.ceil(parseInt(parsed.parsedData.wordLimit) / 250)) : prev.estimated_effort_hours
-      }));
+      // Auto-fill form with extracted data
+      if (result.assignment) {
+        setFormData(prev => ({
+          ...prev,
+          title: result.assignment.title || prev.title,
+          module_code: result.assignment.module_code || prev.module_code,
+          module_name: result.assignment.module_name || prev.module_name,
+          question_text: result.extractedPreview?.slice(0, 500) || prev.question_text,
+        }));
+      }
 
-      toast.success('✅ Document parsed! Form auto-filled.');
+      toast.success('✅ File uploaded successfully!');
     } catch (error: any) {
       console.error('Upload error:', error);
       toast.error(error.message || 'Failed to parse document');
