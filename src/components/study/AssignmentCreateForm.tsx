@@ -15,6 +15,7 @@ export default function AssignmentCreateForm({ onCancel, onSave, initialDate }: 
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [uploadedFileData, setUploadedFileData] = useState<any>(null); // Store upload result for linking
   
   const [formData, setFormData] = useState({
     title: '',
@@ -42,7 +43,7 @@ export default function AssignmentCreateForm({ onCancel, onSave, initialDate }: 
     const dueDateTime = new Date(`${formData.due_date}T${formData.due_time || '23:59'}:00`).toISOString();
 
     try {
-      const { error } = await supabase
+      const { data: newAssignment, error } = await supabase
         .from('assignments')
         .insert({
           user_id: user.id,
@@ -54,9 +55,26 @@ export default function AssignmentCreateForm({ onCancel, onSave, initialDate }: 
           question_text: formData.question_text,
           estimated_effort_hours: formData.estimated_effort_hours ? parseFloat(formData.estimated_effort_hours) : null,
           status: 'not_started'
-        });
+        })
+        .select()
+        .single();
 
       if (error) throw error;
+
+      // Link uploaded file to assignment if exists
+      if (newAssignment && uploadedFileData?.uploadedFile) {
+        const fileData = uploadedFileData.uploadedFile;
+        await supabase.from('assignment_files').insert({
+          assignment_id: newAssignment.id,
+          user_id: user.id,
+          bucket: fileData.bucket,
+          path: fileData.path,
+          original_name: fileData.originalName,
+          mime_type: fileData.mimeType,
+          size_bytes: fileData.sizeBytes,
+        });
+      }
+
       toast.success("Assignment created!");
       onSave();
     } catch (err) {
@@ -162,6 +180,10 @@ export default function AssignmentCreateForm({ onCancel, onSave, initialDate }: 
         }
         
         setFormData(updates);
+        // Store uploaded file data for linking after assignment creation
+        if (result.uploadedFile) {
+          setUploadedFileData(result);
+        }
       }
 
       toast.success('✅ File uploaded successfully!');
