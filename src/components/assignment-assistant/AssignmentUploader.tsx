@@ -180,7 +180,7 @@ export default function AssignmentUploader({
         </div>
       )}
 
-      {!checking && !existingBrief && !file ? (
+      {!checking && !existingBrief && !file && (
         <div
           className={`border-2 border-dashed rounded-xl p-12 text-center transition-colors ${
             dragActive ? 'border-violet-500 bg-violet-50' : 'border-gray-300 bg-gray-50'
@@ -208,7 +208,9 @@ export default function AssignmentUploader({
           </label>
           <p className="text-xs text-gray-400 mt-4">Supports PDF and Word documents</p>
         </div>
-      ) : (
+      )}
+
+      {!checking && !existingBrief && file && (
         <div className="border border-gray-200 rounded-xl p-6">
           <div className="flex items-start gap-4">
             <FileText className="text-violet-600 flex-shrink-0" size={40} />
