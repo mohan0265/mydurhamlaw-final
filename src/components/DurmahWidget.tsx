@@ -261,6 +261,11 @@ export default function DurmahWidget() {
   const [previewingVoiceId, setPreviewingVoiceId] = useState<string | null>(null);
   const [contextPacket, setContextPacket] = useState<DurmahContextPacket | null>(null);
   const [contextTimeLabel, setContextTimeLabel] = useState<string | null>(null);
+  
+  // NEW: Unified Durmah Intelligence - StudentContext from Phase 1
+  const [studentContextData, setStudentContextData] = useState<StudentContext | null>(null);
+  const [contextLoading, setContextLoading] = useState(false);
+  const [lastProactiveGreeting, setLastProactiveGreeting] = useState<string | null>(null);
 
   const streamControllerRef = useRef<AbortController | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -313,6 +318,52 @@ export default function DurmahWidget() {
     const interval = window.setInterval(updateLabel, 60_000);
     return () => window.clearInterval(interval);
   }, [contextPacket]);
+
+  // NEW: Fetch Student Context from Phase 1 API
+  const fetchStudentContext = useCallback(async () => {
+    if (!signedIn || contextLoading) return;
+    
+    setContextLoading(true);
+    try {
+      const res = await fetch('/api/durmah/context');
+      if (res.ok) {
+        const data: StudentContext = await res.json();
+        setStudentContextData(data);
+        
+        // Generate proactive greeting ONCE per session
+        if (!lastProactiveGreeting) {
+          const greeting = generateProactiveGreeting(data);
+          if (greeting) {
+            setLastProactiveGreeting(greeting);
+          }
+        }
+      } else {
+        console.error('Failed to fetch student context:', res.status);
+      }
+    } catch (error) {
+      console.error('Error fetching student context:', error);
+    } finally {
+      setContextLoading(false);
+    }
+  }, [signedIn, contextLoading, lastProactiveGreeting]);
+
+  // Fetch context when widget opens
+  useEffect(() => {
+    if (isOpen && signedIn && !studentContextData) {
+      fetchStudentContext();
+    }
+  }, [isOpen, signedIn, studentContextData, fetchStudentContext]);
+
+  // Refresh context periodically while widget is open (every 10 minutes)
+  useEffect(() => {
+    if (!isOpen || !signedIn) return;
+    
+    const interval = setInterval(() => {
+      fetchStudentContext();
+    }, 10 * 60 * 1000); // 10 minutes
+
+    return () => clearInterval(interval);
+  }, [isOpen, signedIn, fetchStudentContext]);
 
   // Ensure browser is allowed to autoplay incoming WebRTC audio
   useEffect(() => {
