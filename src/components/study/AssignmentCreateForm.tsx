@@ -151,10 +151,6 @@ export default function AssignmentCreateForm({ onCancel, onSave, initialDate }: 
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 h-full overflow-y-auto">
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-xl font-bold text-gray-800">New Assignment</h2>
-        <button onClick={onCancel} className="p-2 hover:bg-gray-100 rounded-full text-gray-500">
     <div className="bg-white rounded-xl shadow-lg border border-violet-100 p-6 max-h-[85vh] overflow-y-auto">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
