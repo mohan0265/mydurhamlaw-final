@@ -37,7 +37,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const limiter = createUserRateLimit({
       maxRequests: 5,
       windowMs: 10 * 60 * 1000,
-      getUserId: async () => user.id,
+      getUserId: () => user.id, // FIXED: removed async - user.id is already available
     });
 
     await runMiddleware(req, res, limiter);
