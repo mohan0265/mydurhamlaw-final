@@ -15,6 +15,7 @@ interface AssignmentDetailProps {
 export default function AssignmentDetail({ assignment, onUpdate, onPlanWithAI, onDelete }: AssignmentDetailProps) {
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<AssignmentStatus>(assignment.status);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   useEffect(() => {
     setStatus(assignment.status);
@@ -46,7 +47,7 @@ export default function AssignmentDetail({ assignment, onUpdate, onPlanWithAI, o
         <div className="flex justify-between items-start mb-2">
           <h2 className="text-2xl font-bold text-gray-800 leading-tight">{assignment.title}</h2>
           <button 
-            onClick={onDelete}
+            onClick={() => setShowDeleteConfirm(true)}
             className="px-3 py-1.5 bg-red-500 text-white text-sm rounded-lg hover:bg-red-600 transition flex items-center gap-1.5"
             title="Delete this assignment"
           >
