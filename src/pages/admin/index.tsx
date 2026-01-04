@@ -488,9 +488,6 @@ export default function AdminDashboard({ authorized, rows, users, connections, e
           </div>
         </div>
       )}
-          </div>
-        </div>
-      )}
 
       {/* Create Loved One Modal */}
       {showCreateLovedOne && (
