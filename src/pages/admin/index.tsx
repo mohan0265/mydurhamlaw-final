@@ -201,11 +201,12 @@ export default function AdminDashboard({ authorized, rows, users, connections, e
     const email = (form.elements.namedItem("email") as HTMLInputElement).value
     const displayName = (form.elements.namedItem("displayName") as HTMLInputElement).value
     const yearGroup = (form.elements.namedItem("yearGroup") as HTMLSelectElement).value
+    const password = (form.elements.namedItem("password") as HTMLInputElement).value || undefined
     
     const res = await fetch("/api/admin/create-test-student", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, displayName, yearGroup })
+      body: JSON.stringify({ email, displayName, yearGroup, password })
     })
     
     if (!res.ok) {
@@ -426,6 +427,13 @@ export default function AdminDashboard({ authorized, rows, users, connections, e
                 <option value="year2">Year 2</option>
                 <option value="year3">Year 3</option>
               </select>
+              <input 
+                name="password" 
+                type="text"
+                placeholder="Password (optional, default: TestPass123!)" 
+                className="w-full border rounded px-3 py-2 text-sm"
+              />
+              <p className="text-xs text-gray-500">Leave blank to use default password: TestPass123!</p>
               <div className="flex gap-2">
                 <button type="submit" className="flex-1 py-2 bg-blue-600 text-white rounded font-semibold">Create</button>
                 <button type="button" onClick={() => setShowCreateStudent(false)} className="px-4 py-2 bg-slate-200 rounded">Cancel</button>
