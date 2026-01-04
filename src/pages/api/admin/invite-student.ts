@@ -88,8 +88,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     if (insertError) throw insertError;
 
-    // 5. Build invite URL - use production domain
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://mydurhamlaw.com';
+    // 5. Build invite URL - use existing env var
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_BASE_URL || 'https://mydurhamlaw.com';
     const inviteUrl = `${baseUrl}/invite/accept?token=${inviteToken}`;
 
     // 6. Send invite email (if configured)
