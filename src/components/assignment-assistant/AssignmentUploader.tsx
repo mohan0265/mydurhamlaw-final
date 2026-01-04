@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
-import { Upload, FileText, X, Loader2, AlertCircle } from 'lucide-react';
+import React, { useState, useCallback, useEffect } from 'react';
+import { Upload, FileText, X, Loader2, AlertCircle, CheckCircle } from 'lucide-react';
 import { getSupabaseClient } from '@/lib/supabase/client';
 import toast from 'react-hot-toast';
 
@@ -20,6 +20,12 @@ export default function AssignmentUploader({
   const [uploading, setUploading] = useState(false);
   const [parsing, setParsing] = useState(false);
   const [dragActive, setDragActive] = useState(false);
+  const [checking, setChecking] = useState(true);
+  const [existingBrief, setExistingBrief] = useState<{
+    bucket: string;
+    path: string;
+    originalName: string;
+  } | null>(null);
 
   const handleDrag = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -47,6 +53,32 @@ export default function AssignmentUploader({
       }
     }
   }, []);
+
+  // Check for existing brief on mount
+  useEffect(() => {
+    if (!assignmentId) {
+      setChecking(false);
+      return;
+    }
+
+    async function checkExistingBrief() {
+      try {
+        const res = await fetch(`/api/assignments/get-brief?assignmentId=${assignmentId}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.file) {
+            setExistingBrief(data.file);
+          }
+        }
+      } catch (error) {
+        console.error('Error checking for existing brief:', error);
+      } finally {
+        setChecking(false);
+      }
+    }
+
+    checkExistingBrief();
+  }, [assignmentId]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -117,13 +149,38 @@ export default function AssignmentUploader({
   return (
     <div className="bg-white rounded-xl shadow-lg p-6 max-w-2xl mx-auto">
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-bold text-gray-800">Upload Assignment Brief</h2>
+        <h2 className="text-2xl font-bold text-gray-800">Assignment Brief</h2>
         <button onClick={onCancel} className="p-2 hover:bg-gray-100 rounded-full">
           <X size={20} />
         </button>
       </div>
 
-      {!file ? (
+      {checking && (
+        <div className="p-6 text-center">
+          <Loader2 className="animate-spin mx-auto mb-3 text-violet-600" size={32} />
+          <p className="text-gray-600">Checking for existing brief...</p>
+        </div>
+      )}
+
+      {!checking && existingBrief && (
+        <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+          <div className="flex items-start gap-3">
+            <CheckCircle className="text-green-600 flex-shrink-0 mt-0.5" size={24} />
+            <div className="flex-1">
+              <p className="font-semibold text-green-800 mb-1">Brief already uploaded</p>
+              <p className="text-sm text-green-700">{existingBrief.originalName}</p>
+              <button
+                onClick={() => setExistingBrief(null)}
+                className="mt-2 text-sm text-green-700 underline hover:text-green-800"
+              >
+                Upload different file
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {!checking && !existingBrief && !file ? (
         <div
           className={`border-2 border-dashed rounded-xl p-12 text-center transition-colors ${
             dragActive ? 'border-violet-500 bg-violet-50' : 'border-gray-300 bg-gray-50'
