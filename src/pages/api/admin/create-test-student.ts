@@ -58,8 +58,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const now = new Date();
     const trialEnds = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
 
+
     // 4. Create profile with trial
-    const { error: profileError } = await adminClient
+    const { data: profileData, error: profileError } = await adminClient
       .from('profiles')
       .upsert({
         id: userId, // profiles table uses 'id' not 'user_id'
@@ -72,7 +73,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         trial_ends_at: trialEnds.toISOString(),
         trial_ever_used: true,
         subscription_status: 'trial',
-      });
+      })
+      .select()
+      .single();
 
     if (profileError) {
       // Rollback: delete auth user
