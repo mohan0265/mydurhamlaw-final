@@ -21,6 +21,7 @@ export default function Stage1Understanding({
   const [quizPassed, setQuizPassed] = useState(false);
   const [quizScore, setQuizScore] = useState(0);
   const [legalIssues, setLegalIssues] = useState<string[]>([]);
+  const [autoSaving, setAutoSaving] = useState(false);
 
   useEffect(() => {
     // Initial Durmah greeting
@@ -30,6 +31,33 @@ export default function Stage1Understanding({
     };
     setMessages([initialMessage]);
   }, []);
+
+  // AUTO-SAVE: Save progress every 30 seconds
+  useEffect(() => {
+    const autoSaveInterval = setInterval(async () => {
+      if (messages.length > 1) { // Only save if there's actual conversation
+        setAutoSaving(true);
+        try {
+          await fetch('/api/assignment/save-progress', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({
+              assignmentId,
+              stage: 1,
+              data: { messages, quizPassed, quizScore, legalIssues },
+            }),
+          });
+        } catch (error) {
+          console.error('Auto-save failed:', error);
+        } finally {
+          setAutoSaving(false);
+        }
+      }
+    }, 30000); // Every 30 seconds
+
+    return () => clearInterval(autoSaveInterval);
+  }, [messages, quizPassed, quizScore, legalIssues, assignmentId]);
 
   const sendMessage = async () => {
     if (!userInput.trim() || loading) return;
@@ -43,6 +71,7 @@ export default function Stage1Understanding({
       const response = await fetch('/api/assignment/durmah-stage', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include', // FIX: Include cookies for authentication
         body: JSON.stringify({
           assignmentId,
           stage: 1,
@@ -50,7 +79,7 @@ export default function Stage1Understanding({
           context: {
             questionText: briefData?.questionText,
             moduleCode: briefData?.moduleCode,
-messages: newMessages.slice(-6), // Last 3 exchanges for context
+            messages: newMessages.slice(-6), // Last 3 exchanges for context
           },
         }),
       });

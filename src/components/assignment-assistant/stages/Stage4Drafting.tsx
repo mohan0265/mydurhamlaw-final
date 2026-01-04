@@ -59,6 +59,7 @@ export default function Stage4Drafting({ assignmentId, briefData, outline, onCom
       const response = await fetch('/api/assignment/durmah-stage', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include', // FIX: Include cookies for authentication
         body: JSON.stringify({
           assignmentId,
           stage: 4,

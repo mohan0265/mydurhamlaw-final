@@ -78,6 +78,7 @@ export default function Stage2Research({ assignmentId, briefData, onComplete }: 
       const response = await fetch('/api/assignment/durmah-stage', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include', // FIX: Include cookies for authentication
         body: JSON.stringify({
           assignmentId,
           stage: 2,
