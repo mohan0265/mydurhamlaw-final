@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { getSupabaseClient } from '@/lib/supabase/client';
 import { useAuth } from '@/lib/supabase/AuthContext';
-import { Loader2, Calendar as CalendarIcon, Save, X } from 'lucide-react';
+import { Loader2, Calendar as CalendarIcon, Save, X, Upload, FileText, CheckCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 interface AssignmentCreateFormProps {
@@ -13,6 +13,8 @@ interface AssignmentCreateFormProps {
 export default function AssignmentCreateForm({ onCancel, onSave, initialDate }: AssignmentCreateFormProps) {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   
   const [formData, setFormData] = useState({
     title: '',
@@ -70,6 +72,83 @@ export default function AssignmentCreateForm({ onCancel, onSave, initialDate }: 
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    const validTypes = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/msword'];
+    if (!validTypes.includes(file.type)) {
+      toast.error('Please upload a PDF or Word document');
+      return;
+    }
+
+    // Validate file size (10MB max)
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error('File size must be less than 10MB');
+      return;
+    }
+
+    setUploading(true);
+    setUploadedFile(file);
+
+    try {
+      const supabase = getSupabaseClient();
+      if (!supabase || !user) throw new Error('Not authenticated');
+
+      // Upload file to Supabase storage
+      const fileName = `${user.id}/${Date.now()}_${file.name}`;
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('assignments')
+        .upload(fileName, file);
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('assignments')
+        .getPublicUrl(fileName);
+
+      // Parse the document
+      const parseResponse = await fetch('/api/assignment/parse', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fileUrl: publicUrl,
+          fileName: file.name,
+          assignmentId: null // No assignmentassignment yet
+        })
+      });
+
+      if (!parseResponse.ok) {
+        const error = await parseResponse.json();
+        throw new Error(error.error || 'Failed to parse document');
+      }
+
+      const parsed = await parseResponse.json();
+      
+      // Auto-fill form with parsed data
+      setFormData(prev => ({
+        ...prev,
+        title: parsed.parsedData?.title || prev.title,
+        module_code: parsed.parsedData?.moduleCode || prev.module_code,
+        module_name: parsed.parsedData?.moduleName || prev.module_name,
+        assignment_type: parsed.parsedData?.type || prev.assignment_type,
+        due_date: parsed.parsedData?.dueDate?.split('T')[0] || prev.due_date,
+        question_text: parsed.parsedData?.fullText || prev.question_text,
+        estimated_effort_hours: parsed.parsedData?.wordLimit ? String(Math.ceil(parseInt(parsed.parsedData.wordLimit) / 250)) : prev.estimated_effort_hours
+      }));
+
+      toast.success('✅ Document parsed! Form auto-filled.');
+    } catch (error: any) {
+      console.error('Upload error:', error);
+      toast.error(error.message || 'Failed to parse document');
+      setUploadedFile(null);
+    } finally {
+      setUploading(false);
+    }
+  };
+
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 h-full overflow-y-auto">
       <div className="flex justify-between items-center mb-6">
@@ -80,6 +159,60 @@ export default function AssignmentCreateForm({ onCancel, onSave, initialDate }: 
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
+        {/* File Upload Section */}
+        <div className="bg-gradient-to-r from-violet-50 to-indigo-50 border-2 border-dashed border-violet-300 rounded-xl p-4">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <Upload className="w-5 h-5 text-violet-600" />
+              <h3 className="font-semibold text-gray-800">Upload Assignment Brief (Optional)</h3>
+            </div>
+            {uploadedFile && (
+              <div className="flex items-center gap-1 text-green-600 text-sm">
+                <CheckCircle size={16} />
+                <span>{uploadedFile.name}</span>
+              </div>
+            )}
+          </div>
+          <p className="text-sm text-gray-600 mb-3">
+            Upload a PDF or Word document to auto-fill the form below
+          </p>
+          <label className="block">
+            <input
+              type="file"
+              accept=".pdf,.doc,.docx"
+              onChange={handleFileUpload}
+              disabled={uploading}
+              className="hidden"
+              id="brief-upload"
+            />
+            <label
+              htmlFor="brief-upload"
+              className={`flex items-center justify-center gap-2 w-full py-3 px-4 border-2 border-violet-300 rounded-lg font-medium transition-colors cursor-pointer ${
+                uploading 
+                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+                  : 'bg-white text-violet-600 hover:bg-violet-50'
+              }`}
+            >
+              {uploading ? (
+                <>
+                  <Loader2 className="animate-spin w-5 h-5" />
+                  Parsing document...
+                </>
+              ) : uploadedFile ? (
+                <>
+                  <FileText className="w-5 h-5" />
+                  Upload different file
+                </>
+              ) : (
+                <>
+                  <Upload className="w-5 h-5" />
+                  Choose PDF or Word Doc
+                </>
+              )}
+            </label>
+          </label>
+        </div>
+
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Title <span className="text-red-500">*</span></label>
           <input
