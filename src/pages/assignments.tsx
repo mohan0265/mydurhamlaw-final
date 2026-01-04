@@ -74,8 +74,7 @@ export default function AssignmentsPage() {
   const handleCreateSave = () => {
     setShowCreateForm(false)
     fetchAssignments()
-    // clear params to avoid re-opening on refresh?
-    router.replace('/assignments', undefined, { shallow: true });
+    // State update handles UI refresh, no router navigation needed
   }
 
   const handleUpdate = () => {
