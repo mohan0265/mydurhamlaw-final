@@ -155,7 +155,22 @@ export default function AssignmentCreateForm({ onCancel, onSave, initialDate }: 
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-xl font-bold text-gray-800">New Assignment</h2>
         <button onClick={onCancel} className="p-2 hover:bg-gray-100 rounded-full text-gray-500">
-          <X size={20} />
+    <div className="bg-white rounded-xl shadow-lg border border-violet-100 p-6 max-h-[85vh] overflow-y-auto">
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-3">
+          <div className="bg-gradient-to-br from-violet-500 to-purple-600 p-3 rounded-lg shadow-lg">
+            <FileText className="w-6 h-6 text-white" />
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900">New Assignment</h2>
+            <p className="text-sm text-gray-500">Add your assignment details below</p>
+          </div>
+        </div>
+        <button
+          onClick={onCancel}
+          className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+        >
+          <X size={20} className="text-gray-500" />
         </button>
       </div>
 
