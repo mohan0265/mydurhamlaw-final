@@ -168,7 +168,7 @@ export default function AssignmentUploader({
             <CheckCircle className="text-green-600 flex-shrink-0 mt-0.5" size={24} />
             <div className="flex-1">
               <p className="font-semibold text-green-800 mb-1">Brief already uploaded</p>
-              <p className="text-sm text-green-700">{existingBrief.originalName}</p>
+              <p className="text-sm text-green-700">{existingBrief?.originalName || 'assignment-brief.pdf'}</p>
               <button
                 onClick={() => setExistingBrief(null)}
                 className="mt-2 text-sm text-green-700 underline hover:text-green-800"

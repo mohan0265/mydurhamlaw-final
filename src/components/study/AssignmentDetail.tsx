@@ -45,18 +45,14 @@ export default function AssignmentDetail({ assignment, onUpdate, onPlanWithAI, o
       <div className="mb-6">
         <div className="flex justify-between items-start mb-2">
           <h2 className="text-2xl font-bold text-gray-800 leading-tight">{assignment.title}</h2>
-          <div className="relative group">
-             <button className="p-2 hover:bg-red-50 text-gray-400 hover:text-red-500 rounded-lg transition-colors">
-               <Trash2 size={18} />
-             </button>
-             {/* Delete Confirm Tooltip/Popover would go here, simplistic for now */}
-             <div className="absolute right-0 top-full mt-2 hidden group-hover:block bg-white shadow-xl border border-gray-200 p-3 rounded-lg z-10 w-48">
-               <p className="text-xs text-gray-600 mb-2">Are you sure?</p>
-               <button onClick={onDelete} className="w-full px-3 py-1.5 bg-red-500 text-white text-xs rounded-md hover:bg-red-600">
-                 Confirm Delete
-               </button>
-             </div>
-          </div>
+          <button 
+            onClick={onDelete}
+            className="px-3 py-1.5 bg-red-500 text-white text-sm rounded-lg hover:bg-red-600 transition flex items-center gap-1.5"
+            title="Delete this assignment"
+          >
+            <Trash2 size={16} />
+            Delete
+          </button>
         </div>
         
         <div className="flex flex-wrap gap-3 text-sm text-gray-600 mb-4">
