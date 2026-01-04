@@ -299,7 +299,7 @@ export default function AdminDashboard({ authorized, rows, users, connections, e
       ? rows 
       : filter === 'test' 
         ? rows.filter(r => r.is_test_account) 
-        : rows.filter(r => !r.is_test_account)
+        : rows.filter(r => !r.is_test_account);
 
   return (
     <div className="min-h-screen bg-slate-50 px-6 py-10">
