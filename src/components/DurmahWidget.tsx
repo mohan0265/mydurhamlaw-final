@@ -7,13 +7,12 @@ import { useDurmah } from "@/lib/durmah/context";
 import { fetchAuthed } from "@/lib/fetchAuthed";
 import { waitForAccessToken } from "@/lib/auth/waitForAccessToken";
 import { normalizeTranscriptLanguage } from "@/lib/durmah/normalizeTranscriptLanguage";
-import { 
-  buildDurmahSystemPrompt, 
-  buildDurmahSystemPromptWithServerContext,
-  composeGreeting, 
-  DurmahStudentContext, 
-  DurmahMemorySnapshot 
+import {
+  buildDurmahSystemPrompt,
+  buildDurmahContextBlock,
+  generateProactiveGreeting
 } from "@/lib/durmah/systemPrompt";
+import type { StudentContext } from "@/types/durmahContext";
 import type { DurmahContextPacket } from "@/types/durmah";
 import { formatTodayForDisplay } from "@/lib/durmah/phase";
 import { useDurmahSettings } from "@/hooks/useDurmahSettings";
