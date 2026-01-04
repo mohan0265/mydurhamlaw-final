@@ -61,26 +61,30 @@ export default function AssignmentWorkflow({
     if (!supabase) return;
 
     try {
-      // Load brief
-      const { data: brief } = await supabase
+      // Load brief - use maybeSingle() to handle cases where no data exists yet
+      const { data: brief, error: briefError } = await supabase
         .from('assignment_briefs')
         .select('*')
         .eq('assignment_id', assignmentId)
-        .single();
+        .maybeSingle();
 
-      if (brief) {
+      if (briefError) {
+        console.error('Brief load error:', briefError);
+      } else if (brief) {
         setBriefData(brief.parsed_data);
         setUploadMode(false);
       }
 
-      // Load stage progress
-      const { data: progress } = await supabase
+      // Load stage progress - use maybeSingle() to handle cases where no data exists yet
+      const { data: progress, error: progressError } = await supabase
         .from('assignment_stages')
         .select('*')
         .eq('assignment_id', assignmentId)
-        .single();
+        .maybeSingle();
 
-      if (progress) {
+      if (progressError) {
+        console.error('Progress load error:', progressError);
+      } else if (progress) {
         setCurrentStage(progress.current_stage);
         setStageData(progress.stage_data || {});
       }
