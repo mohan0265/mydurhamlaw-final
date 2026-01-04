@@ -84,9 +84,15 @@ export default function AssignmentWorkflow({
 
       if (progressError) {
         console.error('Progress load error:', progressError);
-      } else if (progress) {
+      } else if (progress && progress.current_stage > 0) {
+        // RESUME PROGRESS: Student has already started this assignment
+        // Skip mode selection and go directly to their saved stage
+        console.log(`Resuming at Stage ${progress.current_stage}`);
+        setMode('normal'); // Assume normal mode if resuming
         setCurrentStage(progress.current_stage);
         setStageData(progress.stage_data || {});
+        setUploadMode(false);
+        toast.success(`Resuming at Stage ${progress.current_stage}: ${stages[progress.current_stage - 1]?.name}`);
       }
 
     } catch (error) {
