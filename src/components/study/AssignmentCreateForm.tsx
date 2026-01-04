@@ -137,14 +137,15 @@ export default function AssignmentCreateForm({ onCancel, onSave, initialDate }: 
 
       const result = await parseResponse.json();
       
-      // Auto-fill form with extracted data
-      if (result.assignment) {
+      // Auto-fill form with extracted data (API now returns extractedData instead of assignment)
+      if (result.extractedData) {
         setFormData(prev => ({
           ...prev,
-          title: result.assignment.title || prev.title,
-          module_code: result.assignment.module_code || prev.module_code,
-          module_name: result.assignment.module_name || prev.module_name,
+          title: result.extractedData.title || prev.title,
+          module_code: result.extractedData.module || prev.module_code,
+          module_name: result.extractedData.module || prev.module_name,
           question_text: result.extractedPreview?.slice(0, 500) || prev.question_text,
+          word_limit: result.extractedData.word_limit ? result.extractedData.word_limit.toString() : prev.word_limit,
         }));
       }
 

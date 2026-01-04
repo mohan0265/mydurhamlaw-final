@@ -106,46 +106,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Parse fields
     const fields = parseFields(text);
 
-    // Insert assignment (matches YOUR schema exactly)
-    const ins = await admin
-      .from('assignments')
-      .insert({
-        user_id: userId,
-        title: fields.title,
-        module_code: fields.module,
-        module_name: fields.module,
-        description: fields.description,
-        due_date: fields.due_date,
-        status: 'not_started',
-        estimated_effort_hours: fields.word_limit ? Math.ceil(fields.word_limit / 500) : null,
-        assignment_type: 'Essay', // Default
-        question_text: text.slice(0, 1000),
-        updated_at: new Date().toISOString(),
-      })
-      .select('*')
-      .single();
-
-    if (ins.error) throw ins.error;
-
-    // Save file reference in assignment_files table
-    const fileIns = await admin.from('assignment_files').insert({
-      assignment_id: ins.data.id,
-      user_id: userId,
-      bucket: body.bucket,
-      path: body.path,
-      original_name: body.originalName || null,
-      mime_type: body.mimeType || null,
-      size_bytes: body.sizeBytes ?? null,
-    });
-
-    if (fileIns.error) {
-      console.error('Failed to save file reference:', fileIns.error);
-      // Don't fail the whole request
-    }
-
+    // DON'T create assignment here - the form will do it!
+    // Just return extracted data for form auto-fill
     return res.status(200).json({
-      assignment: ins.data,
+      extractedData: {
+        title: fields.title,
+        module: fields.module,
+        word_limit: fields.word_limit,
+        description: fields.description,
+      },
       extractedPreview: text.slice(0, 1200),
+      // Store upload path so form can link it later
+      uploadedFile: {
+        bucket: body.bucket,
+        path: body.path,
+        originalName: body.originalName,
+        mimeType: body.mimeType,
+        sizeBytes: body.sizeBytes,
+      },
     });
   } catch (e: any) {
     console.error('Ingest error:', e);
