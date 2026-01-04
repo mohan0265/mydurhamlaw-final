@@ -1,10 +1,43 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
+import formidable from 'formidable';
+import { getServerUser } from '@/lib/api/serverAuth';
+import { createUserRateLimit } from '@/lib/middleware/rateLimiter';
 import { getSupabaseClient } from '@/lib/supabase/client';
+
+// Disable bodyParser for file uploads
+export const config = {
+  api: {
+    bodyParser: false,
+  },
+};
+
+// Rate limiter middleware runner
+function runMiddleware(req: NextApiRequest, res: NextApiResponse, fn: any) {
+  return new Promise<void>((resolve) => {
+    fn(req, res, (result: any) => resolve(result));
+  });
+}
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
+
+  // 1) AUTH: require logged-in user
+  const { user } = await getServerUser(req, res);
+  if (!user) {
+    return res.status(401).json({ error: 'Unauthorized - please sign in' });
+  }
+
+  // 2) RATE LIMIT: 5 uploads per 10 minutes (prevent abuse)
+  const limiter = createUserRateLimit({
+    maxRequests: 5,
+    windowMs: 10 * 60 * 1000,
+    getUserId: async () => user.id,
+  });
+
+  await runMiddleware(req, res, limiter);
+  if (res.writableEnded) return;
 
   const { fileUrl, fileName, assignmentId } = req.body;
 

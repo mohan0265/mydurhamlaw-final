@@ -1,9 +1,36 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
+import { getServerUser } from '@/lib/api/serverAuth';
+import { createUserRateLimit } from '@/lib/middleware/rateLimiter';
+
+// Rate limiter middleware runner
+function runMiddleware(req: NextApiRequest, res: NextApiResponse, fn: any) {
+  return new Promise<void>((resolve) => {
+    fn(req, res, (result: any) => resolve(result));
+  });
+}
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
+
+  // 1) AUTH: require a logged-in user
+  const { user } = await getServerUser(req, res);
+  if (!user) {
+    return res.status(401).json({ error: 'Unauthorized - please sign in' });
+  }
+
+  // 2) RATE LIMIT: 12 requests / 5 minutes per user
+  const limiter = createUserRateLimit({
+    maxRequests: 12,
+    windowMs: 5 * 60 * 1000,
+    getUserId: async () => user.id,
+  });
+
+  await runMiddleware(req, res, limiter);
+
+  // If limiter blocked, it already responded (429)
+  if (res.writableEnded) return;
 
   const { assignmentId, stage, userMessage, context } = req.body;
 

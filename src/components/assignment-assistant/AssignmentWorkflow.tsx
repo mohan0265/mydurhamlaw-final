@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { X, CheckCircle, Circle } from 'lucide-react';
+import ModeSelector from './ModeSelector';
 import AssignmentUploader from './AssignmentUploader';
 import Stage1Understanding from './stages/Stage1Understanding';
 import Stage2Research from './stages/Stage2Research';
@@ -23,6 +24,7 @@ export default function AssignmentWorkflow({
   assignmentData, 
   onClose 
 }: AssignmentWorkflowProps) {
+  const [mode, setMode] = useState<'normal' | 'express' | null>(null);
   const [currentStage, setCurrentStage] = useState(0); // 0 = upload, 1-6 = stages
   const [briefData, setBriefData] = useState<any>(null);
   const [stageData, setStageData] = useState<any>({});
@@ -163,7 +165,12 @@ export default function AssignmentWorkflow({
 
         {/* Content Area */}
         <div className="flex-1 overflow-hidden p-6">
-          {uploadMode ? (
+          {!mode ? (
+            <ModeSelector 
+              onSelectMode={(selectedMode) => setMode(selectedMode)}
+              assignmentData={assignmentData}
+            />
+          ) : uploadMode ? (
             <div className="h-full flex flex-col justify-center">
               <AssignmentUploader
                 assignmentId={assignmentId}
