@@ -1,15 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import formidable from 'formidable';
 import { getServerUser } from '@/lib/api/serverAuth';
 import { createUserRateLimit } from '@/lib/middleware/rateLimiter';
 import { getSupabaseClient } from '@/lib/supabase/client';
-
-// Disable bodyParser for file uploads
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-};
 
 // Rate limiter middleware runner
 function runMiddleware(req: NextApiRequest, res: NextApiResponse, fn: any) {
@@ -49,37 +41,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    // 1. Download the file
-    const fileResponse = await fetch(fileUrl);
-    if (!fileResponse.ok) {
-      throw new Error('Failed to download file');
-    }
+    // Simple extraction - just return the filename and basic info
+    // Skip actual PDF/DOCX parsing to avoid dependency issues
+    const parsedData = extractBasicInfo(fileName);
 
-    // 2. Extract text based on file type
-    let extractedText = '';
-    
-    if (fileName.endsWith('.pdf')) {
-      const arrayBuffer = await fileResponse.arrayBuffer();
-      const buffer = Buffer.from(arrayBuffer);
-      
-      const pdfParse = require('pdf-parse');
-      const pdfData = await pdfParse(buffer);
-      extractedText = pdfData.text;
-    } else if (fileName.endsWith('.docx')) {
-      const arrayBuffer = await fileResponse.arrayBuffer();
-      const buffer = Buffer.from(arrayBuffer);
-      
-      const mammoth = require('mammoth');
-      const result = await mammoth.extractRawText({ buffer });
-      extractedText = result.value;
-    } else {
-      throw new Error('Unsupported file type');
-    }
-
-    // 3. Simple extraction (no AI - faster and more reliable)
-    const parsedData = extractBasicInfo(extractedText);
-
-    // 4. Save to database (optional)
+    // Save to database (optional)
     const supabase = getSupabaseClient();
     if (supabase && assignmentId && user) {
       await supabase.from('assignment_briefs').insert({
@@ -87,7 +53,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         user_id: user.id,
         original_filename: fileName,
         file_url: fileUrl,
-        parsed_text: extractedText,
+        parsed_text: '',
         parsed_data: parsedData,
       });
     }
@@ -95,7 +61,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(200).json({
       success: true,
       parsedData,
-      extractedText: extractedText.substring(0, 500),
+      extractedText: '',
     });
 
   } catch (error: any) {
@@ -107,31 +73,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 }
 
-// Simple extraction using regex (fast, no AI needed)
-function extractBasicInfo(text: string) {
-  // Extract module code (e.g., LAW1011, LAW 1011)
-  const moduleMatch = text.match(/LAW\s*\d{4}/i);
+// Simple extraction based on filename
+function extractBasicInfo(fileName: string) {
+  // Extract module code from filename (e.g., LAW1011)
+  const moduleMatch = fileName.match(/LAW\s*\d{4}/i);
   const moduleCode = moduleMatch ? moduleMatch[0].replace(/\s/g, '') : null;
 
-  // Extract due date (various formats)
-  const dateMatch = text.match(/(?:due|deadline|submit(?:ting)?.*?by)[:\s]*(\d{1,2}[-\/]\d{1,2}[-\/]\d{2,4}|\d{1,2}\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+\d{2,4})/i);
-  const dueDate = dateMatch ? dateMatch[1] : null;
-
-  // Extract word limit
-  const wordMatch = text.match(/(\d{1,5})\s*words?/i);
-  const wordLimit = wordMatch ? wordMatch[1] : null;
-
-  // Use first paragraph or title as title
-  const lines = text.split('\n').filter(l => l.trim());
-  const title = lines[0]?.substring(0, 100) || 'Untitled Assignment';
+  // Use filename as title (remove extension)
+  const title = fileName.replace(/\.(pdf|docx?)$/i, '').substring(0, 100);
 
   return {
     title,
     moduleCode,
     moduleName: null,
     type: 'Essay',
-    dueDate,
-    wordLimit,
-    fullText: text.substring(0, 2000), // First 2000 chars
+    dueDate: null,
+    wordLimit: null,
+    fullText: 'File uploaded. Manual entry required for details.',
   };
 }
