@@ -96,18 +96,21 @@ export default function AssignmentCreateForm({ onCancel, onSave, initialDate }: 
       const supabase = getSupabaseClient();
       if (!supabase || !user) throw new Error('Not authenticated');
 
-      // Upload file to Supabase storage
-      const fileName = `${user.id}/${Date.now()}_${file.name}`;
+      // Get session token for Bearer auth
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData?.session?.access_token;
+      if (!token) throw new Error('No session token');
+
+      // Upload file to assignment_uploads bucket
+      const userId = user.id;
+      const fileName = `${userId}/${crypto.randomUUID()}-${file.name}`;
+      
       const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('assignments')
-        .upload(fileName, file);
-
-      if (uploadError) throw uploadError;
-
-      // Get public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from('assignments')
-        .getPublicUrl(fileName);
+        .from('assignment_uploads')
+        .upload(fileName, file, {
+          contentType: file.type || undefined,
+          upsert: false,
+        });
 
       // Parse the document
       const parseResponse = await fetch('/api/assignment/parse', {
