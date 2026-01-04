@@ -292,8 +292,14 @@ export default function AdminDashboard({ authorized, rows, users, connections, e
     }
   }
 
+
   const students = rows.filter(r => r.user_role === 'student')
-  const filteredRows = filter === 'all' ? rows : filter === 'test' ? rows.filter(r => r.is_test_account) : rows.filter(r => !r.is_test_account)
+  const filteredRows = 
+    filter === 'all' 
+      ? rows 
+      : filter === 'test' 
+        ? rows.filter(r => r.is_test_account) 
+        : rows.filter(r => !r.is_test_account)
 
   return (
     <div className="min-h-screen bg-slate-50 px-6 py-10">
