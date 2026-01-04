@@ -37,25 +37,73 @@ async function extractText(buf: Buffer, ext: string) {
   throw new Error(`Unsupported file type: ${ext}`);
 }
 
-// Simple deterministic parser (no AI)
+// Improved parser for Durham Law assignment briefs
 function parseFields(text: string) {
   const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
-  const title = (lines[0] || 'Untitled Assignment').slice(0, 180);
-
-  // Find module
-  const moduleLine = lines.find(l => /module|course|paper/i.test(l));
-  const module = moduleLine ? moduleLine.slice(0, 120) : null;
-
-  // Find word limit
-  const wlMatch = text.match(/word\s*limit\s*[:\s]*([0-9]{3,5})/i);
-  const word_limit = wlMatch ? parseInt(wlMatch[1], 10) : null;
-
+  
+  // Extract module code (e.g., "LAW 1081", "LAW1081", "LAW 2035")
+  const moduleCodeMatch = text.match(/LAW\s*\d{4}/i);
+  const module_code = moduleCodeMatch ? moduleCodeMatch[0].replace(/\s+/g, ' ') : null;
+  
+  // Extract module name - usually follows module code on same line or next line
+  let module_name = null;
+  if (module_code) {
+    // Try to find the line with module code and extract what follows
+    const moduleLineMatch = text.match(new RegExp(`${module_code}\\s+(.+?)(?:Formative|Summative|Assignment|\\n)`, 'i'));
+    if (moduleLineMatch) {
+      module_name = moduleLineMatch[1].trim();
+    }
+  }
+  
+  // Extract deadline (various formats)
+  const deadlinePatterns = [
+    /Deadline:\s*(.+?)(?:\n|at\s+\d)/i,
+    /Due(?:\s+date)?:\s*(.+?)(?:\n|at\s+\d)/i,
+    /Submit(?:.*?)by:?\s*(.+?)(?:\n|at\s+\d)/i
+  ];
+  
+  let due_date = null;
+  for (const pattern of deadlinePatterns) {
+    const match = text.match(pattern);
+    if (match) {
+      const dateStr = match[1].trim();
+      // Try to parse into ISO format
+      try {
+        const parsed = new Date(dateStr);
+        if (!isNaN(parsed.getTime())) {
+          due_date = parsed.toISOString();
+          break;
+        }
+      } catch {
+        // Keep as string if can't parse
+        due_date = dateStr;
+        break;
+      }
+    }
+  }
+  
+  // Extract word limit
+  const wlMatch = text.match(/word\s*limit[:\s]*([0-9]{1,3}(?:,\d{3})*)/i);
+  const word_limit = wlMatch ? parseInt(wlMatch[1].replace(/,/g, ''), 10) : null;
+  
+  // Title - try to get assignment title, fallback to module name + "Assignment"
+  let title = 'Untitled Assignment';
+  const titleMatch = text.match(/(?:LAW\s*\d{4}\s+)(.+?)(?:Formative|Summative|Assignment)/i);
+  if (titleMatch) {
+    title = titleMatch[1].trim() + ' Assignment';
+  } else if (module_name) {
+    title = `${module_name} Assignment`;
+  } else if (lines[0]) {
+    title = lines[0].slice(0, 180);
+  }
+  
   const description = text.slice(0, 2000); // Store excerpt
-
+  
   return { 
     title, 
-    module, 
-    due_date: null as string | null,
+    module_code,
+    module_name,
+    due_date,
     word_limit, 
     description, 
     submission_requirements: null 
@@ -111,7 +159,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(200).json({
       extractedData: {
         title: fields.title,
-        module: fields.module,
+        module_code: fields.module_code,
+        module_name: fields.module_name,
+        due_date: fields.due_date,
         word_limit: fields.word_limit,
         description: fields.description,
       },

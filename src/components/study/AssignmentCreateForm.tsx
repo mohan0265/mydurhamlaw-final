@@ -139,14 +139,29 @@ export default function AssignmentCreateForm({ onCancel, onSave, initialDate }: 
       
       // Auto-fill form with extracted data (API now returns extractedData instead of assignment)
       if (result.extractedData) {
-        setFormData(prev => ({
-          ...prev,
-          title: result.extractedData.title || prev.title,
-          module_code: result.extractedData.module || prev.module_code,
-          module_name: result.extractedData.module || prev.module_name,
-          question_text: result.extractedPreview?.slice(0, 500) || prev.question_text,
-          word_limit: result.extractedData.word_limit ? result.extractedData.word_limit.toString() : prev.word_limit,
-        }));
+        const updates: any = {
+          ...formData,
+        };
+        
+        if (result.extractedData.title) updates.title = result.extractedData.title;
+        if (result.extractedData.module_code) updates.module_code = result.extractedData.module_code;
+        if (result.extractedData.module_name) updates.module_name = result.extractedData.module_name;
+        if (result.extractedPreview) updates.question_text = result.extractedPreview.slice(0, 500);
+        if (result.extractedData.word_limit) updates.word_limit = result.extractedData.word_limit.toString();
+        
+        // Handle due date if extracted
+        if (result.extractedData.due_date) {
+          try {
+            const date = new Date(result.extractedData.due_date);
+            if (!isNaN(date.getTime())) {
+              updates.due_date = date.toISOString().split('T')[0]; // YYYY-MM-DD format
+            }
+          } catch {
+            // Ignore if can't parse
+          }
+        }
+        
+        setFormData(updates);
       }
 
       toast.success('✅ File uploaded successfully!');
