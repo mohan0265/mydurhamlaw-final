@@ -113,10 +113,11 @@ export default function AssignmentCreateForm({ onCancel, onSave, initialDate }: 
       const parseResponse = await fetch('/api/assignment/parse', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include', // Important: send cookies for auth
         body: JSON.stringify({
           fileUrl: publicUrl,
           fileName: file.name,
-          assignmentId: null // No assignmentassignment yet
+          assignmentId: null // No assignment yet
         })
       });
 
