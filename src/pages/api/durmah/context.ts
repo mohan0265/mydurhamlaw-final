@@ -1,4 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
+import { createPagesServerClient } from '@supabase/auth-helpers-nextjs';
 import { getSupabaseAdmin } from '@/lib/server/supabaseAdmin';
 import { differenceInDays } from 'date-fns';
 import type { StudentContext } from '@/types/durmahContext';
@@ -12,22 +13,16 @@ export default async function handler(
   }
 
   try {
-    // Get user from Authorization header
-    const authHeader = req.headers.authorization;
-    if (!authHeader?.startsWith('Bearer ')) {
+    // Use cookie-based session auth (recommended by ChatGPT)
+    const supabase = createPagesServerClient({ req, res });
+    
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (!user || authError) {
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    const token = authHeader.substring(7);
-    const admin = getSupabaseAdmin();
-
-    // Verify user
-    const { data: { user }, error: authError } = await admin.auth.getUser(token);
-    if (authError || !user) {
-      return res.status(401).json({ error: 'Invalid session' });
-    }
-
     const userId = user.id;
+    const admin = getSupabaseAdmin();
     const now = new Date();
 
     // Fetch student profile
