@@ -11,6 +11,7 @@ import AssignmentList from '@/components/study/AssignmentList'
 import AssignmentDetail from '@/components/study/AssignmentDetail'
 import AssignmentCreateForm from '@/components/study/AssignmentCreateForm'
 import DurmahChat from '@/components/durmah/DurmahChat'
+import AssignmentWorkflow from '@/components/assignment-assistant/AssignmentWorkflow'
 import { Assignment } from '@/types/assignments'
 import toast from 'react-hot-toast'
 
@@ -27,6 +28,7 @@ export default function AssignmentsPage() {
   
   // UI State
   const [showCreateForm, setShowCreateForm] = useState(false)
+  const [showWorkflow, setShowWorkflow] = useState(false)
   
   // Chat State
   const [chatInitialPrompt, setChatInitialPrompt] = useState<string | undefined>()
@@ -97,8 +99,7 @@ export default function AssignmentsPage() {
 
   const handlePlanWithAI = () => {
      if (!selectedAssignment) return;
-     setChatInitialPrompt(`I need help planning my assignment: "${selectedAssignment.title}". Here is the brief: ${selectedAssignment.question_text || "No brief provided"}. Can you help me break this down?`);
-     // Force chat re-render or prompt trigger if needed, passing key to component often simplest
+     setShowWorkflow(true);
   }
 
   if (loading) {
@@ -183,6 +184,18 @@ export default function AssignmentsPage() {
           </div>
         </div>
       </div>
+
+      {/* Assignment Workflow Modal */}
+      {showWorkflow && selectedAssignment && (
+        <AssignmentWorkflow
+          assignmentId={selectedAssignment.id}
+          assignmentData={selectedAssignment}
+          onClose={() => {
+            setShowWorkflow(false);
+            fetchAssignments(); // Refresh in case brief was uploaded
+          }}
+        />
+      )}
     </div>
   )
 }
