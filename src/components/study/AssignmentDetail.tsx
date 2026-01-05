@@ -2,9 +2,10 @@ import { useState, useEffect } from 'react';
 import { format, differenceInDays } from 'date-fns';
 import { getSupabaseClient } from '@/lib/supabase/client';
 import {Assignment, AssignmentStatus } from '@/types/assignments';
-import { Calendar, CheckCircle, Clock, Trash2, Brain, Download } from 'lucide-react';
+import { Calendar, CheckCircle, Clock, Trash2, Brain, Download, Eye } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useScrollToTop } from '@/hooks/useScrollToTop';
+import AssignmentPreviewModal from './AssignmentPreviewModal';
 
 interface AssignmentDetailProps {
   assignment: Assignment;
@@ -19,6 +20,7 @@ export default function AssignmentDetail({ assignment, onUpdate, onPlanWithAI, o
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [finalDraft, setFinalDraft] = useState<string | null>(null);
   const [aiUsageLog, setAiUsageLog] = useState<string[]>([]);
+  const [showPreviewModal, setShowPreviewModal] = useState(false);
 
   // Scroll to top when component mounts
   useScrollToTop();
@@ -221,14 +223,14 @@ export default function AssignmentDetail({ assignment, onUpdate, onPlanWithAI, o
 
       {/* Actions */}
       <div className="flex flex-col gap-3">
-        {/* Download button for completed assignments */}
+        {/* Preview & Download button for completed assignments */}
         {status === 'completed' && finalDraft && (
           <button
-            onClick={downloadAssignment}
+            onClick={() => setShowPreviewModal(true)}
             className="w-full py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl font-bold shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2"
           >
-            <Download size={18} />
-            Download Final Assignment (.docx)
+            <Eye size={18} />
+            Review & Download
           </button>
         )}
         
@@ -250,6 +252,16 @@ export default function AssignmentDetail({ assignment, onUpdate, onPlanWithAI, o
           )}
         </div>
       </div>
+
+      {/* Preview Modal */}
+      <AssignmentPreviewModal
+        assignment={assignment}
+        finalDraft={finalDraft}
+        aiUsageLog={aiUsageLog}
+        isOpen={showPreviewModal}
+        onClose={() => setShowPreviewModal(false)}
+        onDownload={downloadAssignment}
+      />
 
       {/* Delete Confirmation Modal */}
       {showDeleteConfirm && (
