@@ -190,19 +190,21 @@ export default function Stage4Drafting({ assignmentId, briefData, outline, onCom
           ))}
         </div>
 
-        {/* Editor */}
+        {/* Editor - Fixed height so buttons stay visible */}
         <textarea
           value={content}
           onChange={(e) => setContent(e.target.value)}
           placeholder="Start writing your essay here... Remember to cite sources as you go!"
-          className="flex-1 w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-orange-500 resize-none font-serif text-gray-800 leading-relaxed"
+          className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-orange-500 resize-none font-serif text-gray-800 leading-relaxed"
+          style={{height: '400px'}}
         />
 
+        {/* Action buttons - ALWAYS visible at bottom */}
         <div className="mt-4 flex gap-2">
           <button onClick={getFeedback} className="flex-1 px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700">
             Get Durmah Feedback
           </button>
-          <button onClick={handleComplete} className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center justify-center gap-2">
+          <button onClick={handleComplete} className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center justify-center gap-2 font-semibold">
             Continue to Formatting <ArrowRight size={20} />
           </button>
         </div>
