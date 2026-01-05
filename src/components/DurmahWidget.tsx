@@ -483,12 +483,12 @@ export default function DurmahWidget() {
   }, [authError]);
 
 
-  // 3. Voice Hook - use server context when available for rich DB-backed instructions
+  // 3. Voice Hook - FIXED: Use correct system prompt function signature
   const systemPrompt = useMemo(() => {
-    return contextPacket
-      ? buildDurmahSystemPromptWithServerContext(contextPacket, studentContext, memory, upcomingTasks, todaysEvents, { systemTone: preset?.subtitle || "Friendly" })
-      : buildDurmahSystemPrompt(studentContext, memory, upcomingTasks, todaysEvents, { systemTone: preset?.subtitle || "Friendly" });
-  }, [contextPacket, studentContext, memory, upcomingTasks, todaysEvents, preset]);
+    // buildDurmahSystemPrompt() takes NO parameters - it's a simple identity/ethics prompt
+    // Context is injected separately via the voice hook's onTurn handler
+    return buildDurmahSystemPrompt();
+  }, []);
 
   const appendTranscriptTurn = useCallback((role: Msg["role"], text: string) => {
     const normalizedText = normalizeTurnText(text);
