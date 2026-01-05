@@ -204,23 +204,27 @@ export default function Stage2Research({ assignmentId, briefData, onComplete }: 
           </button>
         </div>
 
-        {/* Sources List - SCROLLABLE in remaining space */}
-        <div className="flex-1 overflow-y-auto space-y-2 pr-2 min-h-[200px]">
-          {notes.length === 0 && (
-            <p className="text-sm text-gray-500 text-center py-8">No sources added yet. Add your first source above!</p>
-          )}
-          {notes.map(note => (
-            <div key={note.id} className="p-3 bg-white border-2 border-gray-200 rounded-lg hover:border-blue-300 transition">
-              <div className="flex items-start justify-between mb-1">
-                <span className="text-xs font-semibold text-blue-600 uppercase px-2 py-1 bg-blue-50 rounded">{note.source_type}</span>
-                <button onClick={() => deleteNote(note.id)} className="text-red-500 hover:text-red-700 p-1 hover:bg-red-50 rounded">
-                  <Trash2 size={16} />
-                </button>
+
+        {/* Sources List - SCROLLABLE with max height to show 2-3 sources */}
+        <div className="border-t-2 border-gray-200 pt-3">
+          <h3 className="text-sm font-semibold text-gray-700 mb-2">Added Sources ({notes.length}):</h3>
+          <div className="overflow-y-auto space-y-2 pr-2" style={{maxHeight: '300px'}}>
+            {notes.length === 0 && (
+              <p className="text-sm text-gray-500 text-center py-8">No sources added yet. Add your first source above!</p>
+            )}
+            {notes.map(note => (
+              <div key={note.id} className="p-3 bg-white border-2 border-gray-200 rounded-lg hover:border-blue-300 transition">
+                <div className="flex items-start justify-between mb-1">
+                  <span className="text-xs font-semibold text-blue-600 uppercase px-2 py-1 bg-blue-50 rounded">{note.source_type}</span>
+                  <button onClick={() => deleteNote(note.id)} className="text-red-500 hover:text-red-700 p-1 hover:bg-red-50 rounded">
+                    <Trash2 size={16} />
+                  </button>
+                </div>
+                <p className="text-sm font-semibold mb-1">{note.citation}</p>
+                <p className="text-xs text-gray-600">{note.notes}</p>
               </div>
-              <p className="text-sm font-semibold mb-1">{note.citation}</p>
-              <p className="text-xs text-gray-600">{note.notes}</p>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </div>
 
