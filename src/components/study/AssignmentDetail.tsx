@@ -95,12 +95,13 @@ export default function AssignmentDetail({ assignment, onUpdate, onPlanWithAI, o
 
   const downloadAssignment = async () => {
     if (!finalDraft) {
-      toast.error('No draft available for download');
+      toast.error(' draft available for download');
       return;
     }
 
     try {
       setLoading(true);
+      toast.info('🔄 Generating document...');
       
       // Call server-side function to generate document
       const response = await fetch('/.netlify/functions/generate-assignment-doc', {
@@ -119,7 +120,8 @@ export default function AssignmentDetail({ assignment, onUpdate, onPlanWithAI, o
       });
 
       if (!response.ok) {
-        throw new Error('Failed to generate document');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to generate document');
       }
 
       // Get the blob from response
@@ -130,20 +132,28 @@ export default function AssignmentDetail({ assignment, onUpdate, onPlanWithAI, o
       const filenameMatch = contentDisposition?.match(/filename="(.+)"/);
       const filename = filenameMatch?.[1] || `${assignment.module_code || 'Assignment'}_${assignment.title.replace(/\s+/g, '_')}.docx`;
 
-      // Create download link
+      // CRITICAL: Use a download link with immediate click
+      // This must happen synchronously in the same call stack as the user click
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
+      a.style.display = 'none';
       a.href = url;
       a.download = filename;
+      
+      // Add to DOM, click immediately, then remove
       document.body.appendChild(a);
       a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      
+      // Clean up after a short delay
+      setTimeout(() => {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }, 100);
       
       toast.success('✅ Downloaded your assignment!');
     } catch (error) {
-      console.error('Download error:', error);
-      toast.error('Failed to generate document');
+      console.error('[Download Error]:', error);
+      toast.error('Failed to generate document: ' + (error.message || 'Unknown error'));
     } finally {
       setLoading(false);
     }
