@@ -131,18 +131,18 @@ export default function Stage2Research({ assignmentId, briefData, onComplete }: 
   };
 
   return (
-    <div className="h-full grid grid-cols-2 gap-4">
-      {/* Left: Research Notes */}
-      <div className="bg-white rounded-xl shadow-lg p-6 flex flex-col">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="p-2 bg-blue-600 rounded-lg">
-            <BookOpen className="text-white" size={24} />
-          </div>
-          <div className="flex-1">
-            <h2 className="text-xl font-bold">Stage 2: Research</h2>
-            <p className="text-sm text-gray-600">
-              {notes.length}/{minSources} sources minimum
-            </p>
+    <div className="grid grid-cols-2 gap-6 h-full">
+      {/* Left: Research Entry - USE FLEX COLUMN to ensure button stays at bottom */}
+      <div className="bg-white rounded-xl shadow-lg p-6 flex flex-col h-full">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-blue-600 rounded-lg">
+              <BookOpen className="text-white" size={24} />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold">Stage 2: Research</h2>
+              <p className="text-sm text-gray-600">{notes.length}/5 sources minimum</p>
+            </div>
           </div>
           {/* Autosave indicator */}
           <div className="text-xs flex items-center gap-1">
@@ -197,7 +197,7 @@ export default function Stage2Research({ assignmentId, briefData, onComplete }: 
           </button>
         </div>
 
-        {/* Notes List - Scrollable */}
+        {/* Notes List - Scrollable - TAKES REMAINING SPACE */}
         <div className="flex-1 overflow-y-auto space-y-2 min-h-0 mb-4">
           {notes.length === 0 && (
             <p className="text-sm text-gray-500 text-center py-8">No sources added yet</p>
@@ -216,9 +216,9 @@ export default function Stage2Research({ assignmentId, briefData, onComplete }: 
           ))}
         </div>
 
-        {/* Continue Button - Fixed at bottom */}
+        {/* Continue Button - ALWAYS AT BOTTOM */}
         {researchComplete && (
-          <button onClick={handleComplete} className="w-full px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center justify-center gap-2 font-semibold">
+          <button onClick={handleComplete} className="w-full px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center justify-center gap-2 font-semibold mt-auto">
             Continue to Structure <ArrowRight size={20} />
           </button>
         )}
