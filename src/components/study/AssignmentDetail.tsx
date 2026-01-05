@@ -99,6 +99,12 @@ export default function AssignmentDetail({ assignment, onUpdate, onPlanWithAI, o
     }
 
     try {
+      // Split draft into paragraphs and filter empty ones
+      const paragraphs = finalDraft
+        .split(/\n+/)
+        .map(p => p.trim())
+        .filter(p => p.length > 0);
+
       const doc = new Document({
         creator: "MyDurhamLaw",
         title: assignment.module_name || "Law Assignment",
@@ -129,13 +135,16 @@ export default function AssignmentDetail({ assignment, onUpdate, onPlanWithAI, o
               spacing: { after: 400 },
             }),
             new Paragraph({ text: "", pageBreakBefore: true }),
-            ...finalDraft.split('\n\n').map(para => 
+            
+            // Essay body - create paragraphs from filtered array
+            ...paragraphs.map(para => 
               new Paragraph({
                 children: [new TextRun({ text: para, font: "Times New Roman", size: 24 })],
                 spacing: { before: 120, after: 120 },
                 alignment: AlignmentType.JUSTIFIED,
               })
             ),
+            
             new Paragraph({ text: "", pageBreakBefore: true }),
             new Paragraph({
               text: "Academic Integrity Declaration",
