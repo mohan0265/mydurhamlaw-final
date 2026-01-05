@@ -25,7 +25,8 @@ export default function AssignmentCreateForm({ onCancel, onSave, initialDate }: 
     due_date: initialDate ? initialDate.toISOString().split('T')[0] : '',
     due_time: '12:00',
     question_text: '',
-    estimated_effort_hours: ''
+    estimated_effort_hours: '',
+    word_limit: '' // NEW: Word limit field
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -54,6 +55,7 @@ export default function AssignmentCreateForm({ onCancel, onSave, initialDate }: 
           due_date: dueDateTime,
           question_text: formData.question_text,
           estimated_effort_hours: formData.estimated_effort_hours ? parseFloat(formData.estimated_effort_hours) : null,
+          word_limit: formData.word_limit ? parseInt(formData.word_limit) : null, // NEW: Save word limit
           status: 'not_started'
         })
         .select()
@@ -335,7 +337,7 @@ export default function AssignmentCreateForm({ onCancel, onSave, initialDate }: 
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-3 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Due Date <span className="text-red-500">*</span></label>
             <div className="relative">
@@ -357,6 +359,17 @@ export default function AssignmentCreateForm({ onCancel, onSave, initialDate }: 
               name="due_time"
               value={formData.due_time}
               onChange={handleChange}
+              className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-200 outline-none"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Word Limit</label>
+            <input
+              type="number"
+              name="word_limit"
+              value={formData.word_limit}
+              onChange={handleChange}
+              placeholder="1500"
               className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-200 outline-none"
             />
           </div>
