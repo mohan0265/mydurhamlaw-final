@@ -175,13 +175,23 @@ export default function AssignmentWorkflow({
               {stages.map((stage, idx) => (
                 <div key={stage.num} className="flex items-center">
                   <div className="flex flex-col items-center">
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold ${
-                      currentStage > stage.num ? 'bg-green-500' :
-                      currentStage === stage.num ? 'bg-white text-violet-600' :
-                      'bg-white/30'
-                    }`}>
+                    <button
+                      onClick={() => {
+                        if (stage.num < currentStage) {
+                          // Allow going back to previous stages
+                          setCurrentStage(stage.num);
+                          toast.success(`Returned to Stage ${stage.num}: ${stage.name}`);
+                        }
+                      }}
+                      disabled={stage.num > currentStage}
+                      className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold transition-all ${
+                        currentStage > stage.num ? 'bg-green-500 cursor-pointer hover:bg-green-600' :
+                        currentStage === stage.num ? 'bg-white text-violet-600' :
+                        'bg-white/30 cursor-not-allowed'
+                      }`}
+                    >
                       {currentStage > stage.num ? <CheckCircle size={20} /> : stage.num}
-                    </div>
+                    </button>
                     <span className="text-xs mt-1 whitespace-nowrap">{stage.name}</span>
                   </div>
                   {idx < stages.length - 1 && (

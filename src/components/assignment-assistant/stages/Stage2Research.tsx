@@ -198,11 +198,14 @@ export default function Stage2Research({ assignmentId, briefData, onComplete }: 
         </div>
 
         {/* Notes List */}
-        <div className="flex-1 overflow-y-auto space-y-2">
+        <div className="flex-1 overflow-y-auto space-y-2 min-h-0">
+          {notes.length === 0 && (
+            <p className="text-sm text-gray-500 text-center py-8">No sources added yet</p>
+          )}
           {notes.map(note => (
             <div key={note.id} className="p-3 bg-white border rounded-lg">
               <div className="flex items-start justify-between mb-1">
-                <span className= "text-xs font-semibold text-blue-600 uppercase">{note.source_type}</span>
+                <span className="text-xs font-semibold text-blue-600 uppercase">{note.source_type}</span>
                 <button onClick={() => deleteNote(note.id)} className="text-red-500 hover:text-red-700">
                   <Trash2 size={16} />
                 </button>
