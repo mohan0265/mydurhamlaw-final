@@ -121,7 +121,7 @@ export default function Stage4Drafting({ assignmentId, briefData, outline, onCom
       <div className="grid grid-cols-3 gap-4 pb-6">
         {/* Left: Writing Area (2 cols) */}
         <div className="col-span-2 bg-white rounded-xl shadow-lg p-6 flex flex-col">
-        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-orange-600 rounded-lg">
               <Edit3 className="text-white" size={24} />
@@ -137,13 +137,22 @@ export default function Stage4Drafting({ assignmentId, briefData, outline, onCom
             {/* Autosave indicator - More prominent */}
             <div className="px-3 py-1 rounded-full bg-gray-50 flex items-center gap-2 text-sm font-medium">
               {saving && (
-                <><Cloud className="animate-pulse text-blue-600" size={16} /><span className="text-blue-600">Saving...</span></>
+                <>
+                  <Cloud className="animate-pulse text-blue-600" size={16} />
+                  <span className="text-blue-600">Saving...</span>
+                </>
               )}
               {saved && !saving && (
-                <><CheckCircle size={16} className="text-green-600" /><span className="text-green-600">✓ Saved</span></>
+                <>
+                  <CheckCircle size={16} className="text-green-600" />
+                  <span className="text-green-600">✓ Saved</span>
+                </>
               )}
               {saveError && (
-                <><CloudOff size={16} className="text-orange-600" /><span className="text-orange-600">⚠ Saved locally</span></>
+                <>
+                  <CloudOff size={16} className="text-orange-600" />
+                  <span className="text-orange-600">⚠ Saved locally</span>
+                </>
               )}
             </div>
           </div>
@@ -224,6 +233,7 @@ export default function Stage4Drafting({ assignmentId, briefData, outline, onCom
             )}
           </div>
         </div>
+      </div>
       </div>
     </div>
   );
