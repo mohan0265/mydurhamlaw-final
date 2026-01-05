@@ -2,6 +2,8 @@
 
 export type DurmahTimeOfDay = 'morning' | 'afternoon' | 'evening' | 'night';
 
+export type DurmahMode = 'general' | 'assignment' | 'lounge' | 'support' | 'planner' | 'awy';
+
 export type DurmahContextPacket = {
   userId: string;
   threadId: string | null;
@@ -73,5 +75,51 @@ export type DurmahContextPacket = {
     isVerified: boolean;
     verificationUrl: string;
   };
+  
+  // NEW: Assignment awareness from AW tables
+  assignments?: {
+    active: Array<{
+      id: string;
+      title: string;
+      module: string;
+      status: string;
+      currentStage?: string;
+      nextStep?: string;
+      dueDate?: string;
+      progress?: number;
+    }>;
+    recentlyCompleted: Array<{
+      id: string;
+      title: string;
+      module: string;
+      completedAt: string;
+    }>;
+    overdue: Array<{
+      id: string;
+      title: string;
+      module: string;
+      daysOver: number;
+    }>;
+    total: number;
+  };
+  
+  // NEW: AWY presence (if connected loved ones exist)
+  awy?: {
+    lovedOnes: Array<{
+      id: string;
+      name: string;
+      relation: string;
+      status: 'online' | 'away' | 'offline';
+      lastSeen: string | null;
+      isAvailable: boolean;
+    }>;
+    hasConnections: boolean;
+  };
+  
+  // NEW: Mode-specific context
+  modeContext?: {
+    mode: DurmahMode;
+    assignmentId?: string;
+    relevantData?: any;
+  };
 };
-
