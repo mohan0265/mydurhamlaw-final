@@ -197,8 +197,8 @@ export default function Stage2Research({ assignmentId, briefData, onComplete }: 
           </button>
         </div>
 
-        {/* Notes List */}
-        <div className="flex-1 overflow-y-auto space-y-2 min-h-0">
+        {/* Notes List - Scrollable */}
+        <div className="flex-1 overflow-y-auto space-y-2 min-h-0 mb-4">
           {notes.length === 0 && (
             <p className="text-sm text-gray-500 text-center py-8">No sources added yet</p>
           )}
@@ -216,8 +216,9 @@ export default function Stage2Research({ assignmentId, briefData, onComplete }: 
           ))}
         </div>
 
+        {/* Continue Button - Fixed at bottom */}
         {researchComplete && (
-          <button onClick={handleComplete} className="mt-4 w-full px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center justify-center gap-2">
+          <button onClick={handleComplete} className="w-full px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center justify-center gap-2 font-semibold">
             Continue to Structure <ArrowRight size={20} />
           </button>
         )}

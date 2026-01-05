@@ -134,11 +134,15 @@ export default function AssignmentWorkflow({
   const handleStageComplete = async (stage: number, data: any) => {
     const newStageData = { ...stageData, [`stage${stage}`]: data };
     setStageData(newStageData);
-    await saveProgress(stage, data);
+    
+    // CRITICAL: Save the NEXT stage (where we're going), not the completed stage
+    // This ensures resume opens at the correct location
+    const nextStage = stage < 6 ? stage + 1 : 6;
+    await saveProgress(nextStage, data);
 
     if (stage < 6) {
-      setCurrentStage(stage + 1);
-      toast.success(`Stage ${stage} complete! Moving to Stage ${stage + 1}`);
+      setCurrentStage(nextStage);
+      toast.success(`Stage ${stage} complete! Moving to Stage ${nextStage}`);
     } else {
       toast.success('All stages complete! 🎉');
       setTimeout(onClose, 2000);
