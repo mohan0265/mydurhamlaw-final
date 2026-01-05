@@ -75,24 +75,35 @@ export default function AssignmentWorkflow({
         setUploadMode(false);
       }
 
-      // Load stage progress - use maybeSingle() to handle cases where no data exists yet
+      // Load stage progress - CRITICAL: Must filter by user_id
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData?.user) {
+        console.log('No authenticated user - cannot load progress');
+        return;
+      }
+
       const { data: progress, error: progressError } = await supabase
         .from('assignment_stages')
         .select('*')
         .eq('assignment_id', assignmentId)
+        .eq('user_id', userData.user.id) // CRITICAL FIX: Filter by user
         .maybeSingle();
+
+      console.log('[RESUME DEBUG] Progress query result:', { progress, progressError, userId: userData.user.id });
 
       if (progressError) {
         console.error('Progress load error:', progressError);
       } else if (progress && progress.current_stage > 0) {
         // RESUME PROGRESS: Student has already started this assignment
         // Skip mode selection and go directly to their saved stage
-        console.log(`Resuming at Stage ${progress.current_stage}`);
+        console.log(`✅ Resuming at Stage ${progress.current_stage}`);
         setMode('normal'); // Assume normal mode if resuming
         setCurrentStage(progress.current_stage);
         setStageData(progress.stage_data || {});
         setUploadMode(false);
         toast.success(`Resuming at Stage ${progress.current_stage}: ${stages[progress.current_stage - 1]?.name}`);
+      } else {
+        console.log('[RESUME DEBUG] No saved progress found or current_stage is 0');
       }
 
     } catch (error) {
