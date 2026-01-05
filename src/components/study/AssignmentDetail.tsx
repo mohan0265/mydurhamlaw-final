@@ -93,7 +93,7 @@ export default function AssignmentDetail({ assignment, onUpdate, onPlanWithAI, o
     }
   }, [status, assignment.id]);
 
-  const downloadAssignment = async () => {
+  const downloadAssignment = () => {
     if (!finalDraft) {
       toast.error('No draft available for download');
       return;
@@ -101,38 +101,25 @@ export default function AssignmentDetail({ assignment, onUpdate, onPlanWithAI, o
 
     try {
       setLoading(true);
-      toast.loading('🔄 Preparing your document...');
       
-      // Step 1: POST to get download token
-      const response = await fetch('/.netlify/functions/generate-assignment-doc', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          assignment: {
-            module_code: assignment.module_code,
-            module_name: assignment.module_name,
-            title: assignment.title,
-            due_date: assignment.due_date ? format(new Date(assignment.due_date), 'PPP') : null,
-          },
-          finalDraft,
-          aiUsageLog,
-        }),
-      });
+      // Encode all data as base64 to pass in URL
+      const payload = {
+        assignment: {
+          module_code: assignment.module_code,
+          module_name: assignment.module_name,
+          title: assignment.title,
+          due_date: assignment.due_date ? format(new Date(assignment.due_date), 'PPP') : null,
+        },
+        finalDraft,
+        aiUsageLog,
+      };
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-        throw new Error(errorData.error || 'Failed to prepare document');
-      }
+      const jsonString = JSON.stringify(payload);
+      const base64Data = btoa(unescape(encodeURIComponent(jsonString))); // Proper UTF-8 handling
+      const downloadUrl = `/.netlify/functions/generate-assignment-doc?data=${encodeURIComponent(base64Data)}`;
 
-      const result = await response.json();
-      
-      if (!result.downloadUrl) {
-        throw new Error('No download URL received from server');
-      }
-
-      // Step 2: Open download URL in new window
-      // This is a native browser download - no blob blocking!
-      window.open(result.downloadUrl, '_blank');
+      // Open download URL directly - triggers native browser download
+      window.open(downloadUrl, '_blank');
       
       toast.success('✅ Download started! Check your Downloads folder.');
     } catch (error) {
