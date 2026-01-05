@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Brain, CheckCircle, Loader2, ArrowRight } from 'lucide-react';
+import { Brain, CheckCircle, Loader2, ArrowRight, Cloud, CloudOff } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useAutosave } from '@/hooks/useAutosave';
 
 interface Stage1UnderstandingProps {
   assignmentId: string;
@@ -21,7 +22,13 @@ export default function Stage1Understanding({
   const [quizPassed, setQuizPassed] = useState(false);
   const [quizScore, setQuizScore] = useState(0);
   const [legalIssues, setLegalIssues] = useState<string[]>([]);
-  const [autoSaving, setAutoSaving] = useState(false);
+
+  // NEW: Use comprehensive autosave hook
+  const { saving, saved, error: saveError, saveToAutosave } = useAutosave({
+    assignmentId,
+    stepKey: 'stage_1_understanding',
+    workflowKey: 'assignment_workflow',
+  });
 
   useEffect(() => {
     // Initial Durmah greeting
@@ -32,32 +39,12 @@ export default function Stage1Understanding({
     setMessages([initialMessage]);
   }, []);
 
-  // AUTO-SAVE: Save progress every 30 seconds
+  // AUTO-SAVE: Trigger autosave whenever state changes
   useEffect(() => {
-    const autoSaveInterval = setInterval(async () => {
-      if (messages.length > 1) { // Only save if there's actual conversation
-        setAutoSaving(true);
-        try {
-          await fetch('/api/assignment/save-progress', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify({
-              assignmentId,
-              stage: 1,
-              data: { messages, quizPassed, quizScore, legalIssues },
-            }),
-          });
-        } catch (error) {
-          console.error('Auto-save failed:', error);
-        } finally {
-          setAutoSaving(false);
-        }
-      }
-    }, 30000); // Every 30 seconds
-
-    return () => clearInterval(autoSaveInterval);
-  }, [messages, quizPassed, quizScore, legalIssues, assignmentId]);
+    if (messages.length > 1) {
+      saveToAutosave({ messages, quizPassed, quizScore, legalIssues });
+    }
+  }, [messages, quizPassed, quizScore, legalIssues, saveToAutosave]);
 
   const sendMessage = async () => {
     if (!userInput.trim() || loading) return;
@@ -182,6 +169,28 @@ export default function Stage1Understanding({
 
       {/* Input Area */}
       <div className="p-4 border-t bg-gray-50">
+        {/* Autosave Status Indicator */}
+        <div className="mb-2 flex items-center gap-2 text-xs">
+          {saving && (
+            <div className="flex items-center gap-1 text-blue-600">
+              <Cloud className="animate-pulse" size={14} />
+              <span>Saving...</span>
+            </div>
+          )}
+          {saved && !saving && (
+            <div className="flex items-center gap-1 text-green-600">
+              <CheckCircle size={14} />
+              <span>Saved</span>
+            </div>
+          )}
+          {saveError && (
+            <div className="flex items-center gap-1 text-orange-600">
+              <CloudOff size={14} />
+              <span>Saved locally</span>
+            </div>
+          )}
+        </div>
+
         <div className="flex gap-2">
           <textarea
             value={userInput}
