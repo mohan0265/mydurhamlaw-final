@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { CheckCircle, Download, FileText, AlertCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { Document, Packer, Paragraph, TextRun, Alignment Type, HeadingLevel } from 'docx';
+import { Document, Packer, Paragraph, TextRun, AlignmentType, HeadingLevel } from 'docx';
 
 interface Stage6ReviewProps {
   assignmentId: string;
