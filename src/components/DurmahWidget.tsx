@@ -37,7 +37,10 @@ const supabaseClient = getSupabaseClient();
 const DEDUPE_WINDOW_MS = 2000;
 
 function normalizeTurnText(text: string) {
-  return text.replace(/\s+/g, " ").trim();
+  return text
+    .replace(/\s+([,.!?;:])/g, "$1")  // Remove space before punctuation
+    .replace(/\s+/g, " ")              // Collapse multiple spaces
+    .trim();
 }
 
 function isDuplicateTurn(

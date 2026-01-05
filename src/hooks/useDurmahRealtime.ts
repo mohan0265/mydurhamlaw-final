@@ -60,6 +60,11 @@ export function useDurmahRealtime({
   const userTranscriptRef = useRef<string>("");
   const hasGreetedRef = useRef(false);
 
+  // DEDUPE GUARDS: Prevent duplicate turn flushes
+  const processedItemIdsRef = useRef<Set<string>>(new Set());
+  const lastFlushedAssistantRef = useRef<{ text: string; ts: number } | null>(null);
+  const lastFlushedUserRef = useRef<{ text: string; ts: number } | null>(null);
+
   const debugLog = (...args: unknown[]) => {
     if (REALTIME_DEBUG) {
       console.debug("[DurmahRealtime]", ...args);
@@ -97,11 +102,21 @@ export function useDurmahRealtime({
       const raw = assistantTranscriptRef.current.trim();
       const text = normalizeTranscriptLanguageSync(raw);
       if (text) {
+        // DEDUPE: Check if we just flushed identical text within 3 seconds
+        const now = Date.now();
+        const last = lastFlushedAssistantRef.current;
+        if (last && last.text === text && (now - last.ts) < 3000) {
+          debugLog('[DEDUPE] Skipping duplicate assistant flush:', text.slice(0, 50));
+          assistantTranscriptRef.current = "";
+          return;
+        }
+        
         onTurn?.({ speaker: "durmah", text });
+        lastFlushedAssistantRef.current = { text, ts: now };
       }
       assistantTranscriptRef.current = "";
     },
-    [mergeIncremental, onTurn]
+    [mergeIncremental, onTurn, debugLog]
   );
 
   const appendUserText = useCallback((delta?: string) => {
@@ -117,26 +132,48 @@ export function useDurmahRealtime({
       const raw = userTranscriptRef.current.trim();
       const text = normalizeTranscriptLanguageSync(raw);
       if (text) {
+        // DEDUPE: Check if we just flushed identical text within 3 seconds
+        const now = Date.now();
+        const last = lastFlushedUserRef.current;
+        if (last && last.text === text && (now - last.ts) < 3000) {
+          debugLog('[DEDUPE] Skipping duplicate user flush:', text.slice(0, 50));
+          userTranscriptRef.current = "";
+          return;
+        }
+        
         onTurn?.({ speaker: "user", text });
+        lastFlushedUserRef.current = { text, ts: now };
       }
       userTranscriptRef.current = "";
     },
-    [mergeIncremental, onTurn]
+    [mergeIncremental, onTurn, debugLog]
   );
 
   const handleConversationItem = useCallback(
     (payload: any) => {
       const item = payload?.item;
       if (!item) return;
+      
+      // DEDUPE: Only process each item.id once
+      if (item.id && processedItemIdsRef.current.has(item.id)) {
+        debugLog('[DEDUPE] Skipping already-processed item:', item.id);
+        return;
+      }
+      
       const text = extractTextFromContent(item.content);
       if (!text) return;
+      
+      if (item.id) {
+        processedItemIdsRef.current.add(item.id);
+      }
+      
       if (item.role === "user") {
         flushUserText(text);
       } else if (item.role === "assistant") {
         flushAssistantText(text);
       }
     },
-    [flushAssistantText, flushUserText]
+    [flushAssistantText, flushUserText, debugLog]
   );
 
   const requestAnswerSdp = useCallback(
@@ -231,10 +268,13 @@ export function useDurmahRealtime({
     try {
       setError(null);
       setSpeaking(false);
-      setSpeaking(false);
       assistantTranscriptRef.current = "";
       userTranscriptRef.current = "";
       hasGreetedRef.current = false;
+      // Reset dedupe state for new session
+      processedItemIdsRef.current.clear();
+      lastFlushedAssistantRef.current = null;
+      lastFlushedUserRef.current = null;
       stopPreview();
       setStatus("connecting");
 
@@ -329,7 +369,9 @@ export function useDurmahRealtime({
               type === "response.text.done" ||
               type === "response.completed"
             ) {
-              flushAssistantText(payload.transcript ?? payload.text ?? "");
+              // DISABLED: conversation.item.created is now authoritative for finalization
+              // flushAssistantText(payload.transcript ?? payload.text ?? "");
+              debugLog('[SKIP] response.*.done (using conversation.item.created instead)');
             } else if (
               type === "input_audio_transcription.delta" ||
               type === "conversation.item.input_audio_transcription.delta"
@@ -342,13 +384,17 @@ export function useDurmahRealtime({
               type === "input_audio_transcription.done" ||
               type === "conversation.item.input_audio_transcription.completed"
             ) {
-              flushUserText(payload.transcript ?? payload.text ?? "");
+              // DISABLED: conversation.item.created is now authoritative for finalization
+              // flushUserText(payload.transcript ?? payload.text ?? "");
+              debugLog('[SKIP] input_audio_transcription.* (using conversation.item.created instead)');
             } else if (type === "conversation.item.created") {
               handleConversationItem(payload);
             } else if (
               type === "conversation.item.output_audio_transcription.completed"
             ) {
-              flushAssistantText(payload.transcript ?? "");
+              // DISABLED: conversation.item.created handles this
+              // flushAssistantText(payload.transcript ?? "");
+              debugLog('[SKIP] conversation.item.output_audio_transcription.completed');
             } else if (type === "response.audio.delta") {
               const b64 = payload.delta as string;
               const bytes = Uint8Array.from(atob(b64), (c) =>
@@ -408,14 +454,13 @@ export function useDurmahRealtime({
     audioRef,
     appendAssistantText,
     appendUserText,
-    flushAssistantText,
-    flushUserText,
     handleConversationItem,
     requestAnswerSdp,
     stopListening,
     stopPreview,
     systemPrompt,
     voice,
+    debugLog,
   ]);
 
   // Handle dynamic system prompt updates (e.g. valid context loaded after connection start)
