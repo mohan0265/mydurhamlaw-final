@@ -95,15 +95,15 @@ export default function AssignmentDetail({ assignment, onUpdate, onPlanWithAI, o
 
   const downloadAssignment = async () => {
     if (!finalDraft) {
-      toast.error(' draft available for download');
+      toast.error('No draft available for download');
       return;
     }
 
     try {
       setLoading(true);
-      toast.info('🔄 Generating document...');
+      toast.info('🔄 Preparing your document...');
       
-      // Call server-side function to generate document
+      // Step 1: POST to get download token
       const response = await fetch('/.netlify/functions/generate-assignment-doc', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -120,37 +120,21 @@ export default function AssignmentDetail({ assignment, onUpdate, onPlanWithAI, o
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to generate document');
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        throw new Error(errorData.error || 'Failed to prepare document');
       }
 
-      // Get the blob from response
-      const blob = await response.blob();
+      const result = await response.json();
       
-      // Extract filename from Content-Disposition header or use default
-      const contentDisposition = response.headers.get('Content-Disposition');
-      const filenameMatch = contentDisposition?.match(/filename="(.+)"/);
-      const filename = filenameMatch?.[1] || `${assignment.module_code || 'Assignment'}_${assignment.title.replace(/\s+/g, '_')}.docx`;
+      if (!result.downloadUrl) {
+        throw new Error('No download URL received from server');
+      }
 
-      // CRITICAL: Use a download link with immediate click
-      // This must happen synchronously in the same call stack as the user click
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.style.display = 'none';
-      a.href = url;
-      a.download = filename;
+      // Step 2: Open download URL in new window
+      // This is a native browser download - no blob blocking!
+      window.open(result.downloadUrl, '_blank');
       
-      // Add to DOM, click immediately, then remove
-      document.body.appendChild(a);
-      a.click();
-      
-      // Clean up after a short delay
-      setTimeout(() => {
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-      }, 100);
-      
-      toast.success('✅ Downloaded your assignment!');
+      toast.success('✅ Download started! Check your Downloads folder.');
     } catch (error) {
       console.error('[Download Error]:', error);
       toast.error('Failed to generate document: ' + (error.message || 'Unknown error'));

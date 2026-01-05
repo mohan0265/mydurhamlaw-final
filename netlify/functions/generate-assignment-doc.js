@@ -1,35 +1,50 @@
 const { Document, Packer, Paragraph, TextRun, AlignmentType, HeadingLevel } = require('docx');
 
-exports.handler = async (event) => {
-  // Only allow POST
-  if (event.httpMethod !== 'POST') {
-    return { statusCode: 405, body: 'Method Not Allowed' };
+// In-memory store for temporary download data (expires after 5 minutes)
+const downloadStore = new Map();
+
+// Clean up expired entries every minute
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, value] of downloadStore.entries()) {
+    if (now - value.timestamp > 5 * 60 * 1000) {
+      downloadStore.delete(key);
+    }
   }
+}, 60 * 1000);
 
-  try {
-    const body = JSON.parse(event.body);
-    console.log('[DEBUG] Received request body keys:', Object.keys(body));
-    console.log('[DEBUG] Has assignment:', !!body.assignment);
-    console.log('[DEBUG] Has finalDraft:', !!body.finalDraft, 'Length:', body.finalDraft?.length);
-    console.log('[DEBUG] Has aiUsageLog:', !!body.aiUsageLog);
+exports.handler = async (event) => {
+  // Handle GET requests for downloading
+  if (event.httpMethod === 'GET') {
+    const token = event.queryStringParameters?.token;
     
-    const { assignment, finalDraft, aiUsageLog } = body;
-
-    if (!finalDraft) {
-      console.error('[ERROR] No draft content - finalDraft is:', finalDraft);
-      return { 
-        statusCode: 400, 
-        body: JSON.stringify({ error: 'No draft content provided' }) 
+    if (!token) {
+      return {
+        statusCode: 400,
+        body: 'Missing download token'
       };
     }
 
-    // Split draft into paragraphs and filter empty ones
+    const data = downloadStore.get(token);
+    
+    if (!data) {
+      return {
+        statusCode: 404,
+        body: 'Download token expired or invalid'
+      };
+    }
+
+    // Delete token after use (one-time download)
+    downloadStore.delete(token);
+
+    const { assignment, finalDraft, aiUsageLog } = data.payload;
+
+    // Generate document (same logic as before)
     const paragraphs = finalDraft
       .split(/\n+/)
       .map(p => p.trim())
       .filter(p => p.length > 0);
 
-    // Create document
     const doc = new Document({
       creator: "MyDurhamLaw",
       title: assignment.module_name || "Law Assignment",
@@ -37,7 +52,6 @@ exports.handler = async (event) => {
       sections: [{
         properties: {},
         children: [
-          // Title Page
           new Paragraph({
             text: assignment.module_code || "LAW MODULE",
             heading: HeadingLevel.HEADING_1,
@@ -61,7 +75,6 @@ exports.handler = async (event) => {
           }),
           new Paragraph({ text: "", pageBreakBefore: true }),
           
-          // Essay body
           ...paragraphs.map(para => 
             new Paragraph({
               children: [new TextRun({ text: para, font: "Times New Roman", size: 24 })],
@@ -97,27 +110,62 @@ exports.handler = async (event) => {
       }],
     });
 
-    // Generate document buffer
     const buffer = await Packer.toBuffer(doc);
     const filename = `${assignment.module_code || 'Assignment'}_${(assignment.title || 'Document').replace(/\s+/g, '_')}.docx`;
 
-    // Return as downloadable file
     return {
       statusCode: 200,
       headers: {
         'Content-Type': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
         'Content-Disposition': `attachment; filename="${filename}"`,
         'Content-Length': buffer.length.toString(),
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
       },
       body: buffer.toString('base64'),
       isBase64Encoded: true,
     };
-
-  } catch (error) {
-    console.error('Error generating document:', error);
-    return { 
-      statusCode: 500, 
-      body: JSON.stringify({ error: 'Failed to generate document', details: error.message }) 
-    };
   }
+
+  // Handle POST requests to prepare download
+  if (event.httpMethod === 'POST') {
+    try {
+      const body = JSON.parse(event.body);
+      const { assignment, finalDraft, aiUsageLog } = body;
+
+      if (!finalDraft) {
+        return { 
+          statusCode: 400, 
+          body: JSON.stringify({ error: 'No draft content provided' }) 
+        };
+      }
+
+      // Generate unique token
+      const token = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      
+      // Store data temporarily
+      downloadStore.set(token, {
+        payload: { assignment, finalDraft, aiUsageLog },
+        timestamp: Date.now()
+      });
+
+      // Return token for download
+      return {
+        statusCode: 200,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          success: true,
+          downloadUrl: `/.netlify/functions/generate-assignment-doc?token=${token}`
+        })
+      };
+
+    } catch (error) {
+      console.error('Error preparing download:', error);
+      return { 
+        statusCode: 500, 
+        body: JSON.stringify({ error: 'Failed to prepare document', details: error.message }) 
+      };
+    }
+  }
+
+  return { statusCode: 405, body: 'Method Not Allowed' };
 };
