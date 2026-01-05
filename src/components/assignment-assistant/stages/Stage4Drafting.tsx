@@ -117,9 +117,10 @@ export default function Stage4Drafting({ assignmentId, briefData, outline, onCom
   };
 
   return (
-    <div className="h-full grid grid-cols-3 gap-4">
-      {/* Left: Writing Area (2 cols) */}
-      <div className="col-span-2 bg-white rounded-xl shadow-lg p-6 flex flex-col">
+    <div className="h-full overflow-y-auto">
+      <div className="grid grid-cols-3 gap-4 pb-6">
+        {/* Left: Writing Area (2 cols) */}
+        <div className="col-span-2 bg-white rounded-xl shadow-lg p-6 flex flex-col"
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-orange-600 rounded-lg">
