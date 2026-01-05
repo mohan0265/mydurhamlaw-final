@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { buildDurmahContext } from '@/lib/durmah/contextBuilder';
+import { enhanceDurmahContext } from '@/lib/durmah/contextBuilderEnhanced';
 
 async function callOpenAI(messages: { role: 'system' | 'user' | 'assistant'; content: string }[]) {
   const resp = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -19,7 +20,7 @@ async function callOpenAI(messages: { role: 'system' | 'user' | 'assistant'; con
     throw new Error(`OpenAI error: ${resp.status} ${txt}`);
   }
   const json = await resp.json();
-  return json.choices?.[0]?.message?.content || 'I’m here if you want to continue.';
+  return json.choices?.[0]?.message?.content || 'I'm here if you want to continue.';
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -32,7 +33,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(result.status === 'unauthorized' ? 401 : 500).json({ ok: false });
   }
 
-  const { supabase, userId, context } = result;
+  const { supabase, userId, context: baseContext } = result;
+  
+  // NEW: Enhance context with assignments and AWY data
+  const context = await enhanceDurmahContext(supabase, userId, baseContext);
   const { message, source } = (req.body || {}) as { message?: string; source?: string };
   const incoming = (message || '').trim();
   const nowIso = new Date().toISOString();
