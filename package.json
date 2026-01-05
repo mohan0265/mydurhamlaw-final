@@ -39,6 +39,7 @@
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
     "date-fns-tz": "^3.2.0",
+    "docx": "^9.5.1",
     "dotenv": "^16.6.1",
     "elevenlabs-node": "^2.0.3",
     "eventsource-parser": "^3.0.3",
