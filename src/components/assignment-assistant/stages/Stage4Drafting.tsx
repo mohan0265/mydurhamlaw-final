@@ -193,12 +193,12 @@ export default function Stage4Drafting({ assignmentId, briefData, outline, onCom
         </div>
       </div>
 
-      {/* Right: Durmah Feedback & AI Usage */}
+      {/* Right: Durmah Feedback & AI Usage - Max height to prevent overflow */}
       <div className="bg-white rounded-xl shadow-lg p-6 flex flex-col">
         <h3 className="text-lg font-bold mb-4">Durmah Feedback</h3>
         
         {durmahFeedback ? (
-          <div className="flex-1 overflow-y-auto mb-4">
+          <div className="mb-4 max-h-[400px] overflow-y-auto">
             <div className="p-4 bg-gray-100 rounded-lg">
               <p className="text-sm whitespace-pre-wrap">{durmahFeedback}</p>
             </div>
