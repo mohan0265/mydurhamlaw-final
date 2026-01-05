@@ -49,17 +49,44 @@ export default function AssignmentDetail({ assignment, onUpdate, onPlanWithAI, o
     if (status === 'completed') {
       const fetchDraft = async () => {
         const supabase = getSupabaseClient();
-        const { data } = await supabase
-          .from('assignment_progress')
-          .select('data')
-          .eq('assignment_id', assignment.id)
-          .eq('step_key', 'stage_6_review')
-          .single();
         
-        if (data?.data) {
-          setFinalDraft(data.data.finalDraft || null);
-          setAiUsageLog(data.data.aiUsageLog || []);
+        // Try Stage 5 (formatted draft) first, then fall back to Stage 4 (raw draft)
+        let draft = null;
+        let aiLog: string[] = [];
+        
+        // Stage 5: Formatting & Citations (has formattedDraft)
+        const { data: stage5Data } = await supabase
+          .from('assignment_progress')
+          .select('content')
+          .eq('assignment_id', assignment.id)
+          .eq('step_key', 'stage_5_formatting')
+          .maybeSingle();
+        
+        if (stage5Data?.content?.formattedDraft) {
+          draft = stage5Data.content.formattedDraft;
         }
+        
+        // Fallback to Stage 4 if Stage 5 doesn't exist
+        if (!draft) {
+          const { data: stage4Data } = await supabase
+            .from('assignment_progress')
+            .select('content')
+            .eq('assignment_id', assignment.id)
+            .eq('step_key', 'stage_4_drafting')
+            .maybeSingle();
+          
+          if (stage4Data?.content?.content) {
+            draft = stage4Data.content.content;
+          }
+          
+          // Get AI usage log from Stage 4
+          if (stage4Data?.content?.aiUsageLog) {
+            aiLog = stage4Data.content.aiUsageLog;
+          }
+        }
+        
+        setFinalDraft(draft);
+        setAiUsageLog(aiLog);
       };
       fetchDraft();
     }
