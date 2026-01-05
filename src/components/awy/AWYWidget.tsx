@@ -474,7 +474,7 @@ export default function AWYWidget() {
   // Logged Out Modal / Prompt
   if (isOpen && !userId) {
     return (
-      <div className="fixed bottom-24 right-6 z-50 flex w-full max-w-sm flex-col overflow-hidden rounded-3xl border border-pink-100 bg-white shadow-2xl animate-in slide-in-from-bottom-5 fade-in duration-300">
+      <div className="fixed bottom-24 right-6 z-[45] flex w-full max-w-sm flex-col overflow-hidden rounded-3xl border border-pink-100 bg-white shadow-2xl animate-in slide-in-from-bottom-5 fade-in duration-300">
          <div className="bg-gradient-to-r from-pink-500 to-rose-500 px-5 py-4 flex items-center justify-between text-white">
             <h3 className="font-bold text-lg">Connect with Love</h3>
             <button onClick={() => setIsOpen(false)} className="p-1 rounded-full hover:bg-white/20">
@@ -505,7 +505,7 @@ export default function AWYWidget() {
   // 1. Closed Launcher (Pill Style)
   if (!isOpen) {
     return (
-      <div className="fixed bottom-6 right-6 z-[60] flex flex-col items-end group">
+      <div className="fixed bottom-6 right-6 z-[45] flex flex-col items-end group">
         {/* Tooltip */}
         <div className="absolute right-full mr-4 top-1/2 -translate-y-1/2 w-max opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none translate-x-2 group-hover:translate-x-0">
           <div className="bg-gray-900/90 backdrop-blur-sm text-white text-xs py-2.5 px-4 rounded-xl shadow-xl border border-white/10">
@@ -541,7 +541,7 @@ export default function AWYWidget() {
   // 2. Open Widget (Logged In)
   return (
     <>
-    <div className="fixed bottom-24 right-6 z-50 flex flex-col items-end space-y-4 group">
+    <div className="fixed bottom-24 right-6 z-[45] flex flex-col items-end space-y-4 group">
       <div className="bg-white rounded-3xl shadow-2xl border border-pink-100 w-80 animate-in slide-in-from-bottom-5 fade-in duration-300 overflow-hidden">
         {/* Header */}
         <div className="bg-gradient-to-r from-pink-500 to-rose-500 px-5 py-4 flex items-center justify-between text-white">
