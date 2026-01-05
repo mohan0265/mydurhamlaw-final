@@ -4,6 +4,7 @@ import { getSupabaseClient } from '@/lib/supabase/client';
 import { Assignment, AssignmentStatus } from '@/types/assignments';
 import { Calendar, CheckCircle, Clock, Trash2, Brain } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useScrollToTop } from '@/hooks/useScrollToTop';
 
 interface AssignmentDetailProps {
   assignment: Assignment;
@@ -16,6 +17,9 @@ export default function AssignmentDetail({ assignment, onUpdate, onPlanWithAI, o
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<AssignmentStatus>(assignment.status);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  // Scroll to top when component mounts
+  useScrollToTop();
 
   useEffect(() => {
     setStatus(assignment.status);
