@@ -14,7 +14,6 @@ interface Stage4DraftingProps {
 
 export default function Stage4Drafting({ assignmentId, briefData, outline, onComplete }: Stage4DraftingProps) {
   const [content, setContent] = useState('');
-  const [currentSection, setCurrentSection] = useState(0);
   const [durmahFeedback, setDurmahFeedback] = useState('');
   const [aiUsageLog, setAiUsageLog] = useState<string[]>([]);
 
@@ -41,7 +40,7 @@ export default function Stage4Drafting({ assignmentId, briefData, outline, onCom
   // Trigger autosave when content or AI usage log changes
   useEffect(() => {
     if (content.trim()) {
-      saveToAutosave({ content, wordCount, aiUsageLog, currentSection });
+      saveToAutosave({ content, wordCount, aiUsageLog });
     }
   }, [content, aiUsageLog, saveToAutosave]);
 
@@ -175,20 +174,6 @@ export default function Stage4Drafting({ assignmentId, briefData, outline, onCom
           </div>
         </div>
 
-        {/* Section Navigator */}
-        <div className="mb-4 flex gap-2 overflow-x-auto">
-          {sections.map((section, idx) => (
-            <button
-              key={idx}
-              onClick={() => setCurrentSection(idx)}
-              className={`px-3 py-1 rounded-lg text-sm whitespace-nowrap ${
-                currentSection === idx ? 'bg-orange-600 text-white' : 'bg-gray-200'
-              }`}
-            >
-              {section.title}
-            </button>
-          ))}
-        </div>
 
         {/* Editor - Fixed height so buttons stay visible */}
         <textarea
