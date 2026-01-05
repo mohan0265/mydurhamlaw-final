@@ -78,9 +78,9 @@ All substantive content and analysis is the student's original work. AI tools we
       <div className="mb-6 p-4 bg-blue-50 rounded-lg">
         <h3 className="font-semibold mb-2">Assignment Details</h3>
         <div className="space-y-1 text-sm">
-          <p><strong>Module:</strong> {briefData?.moduleCode} {briefData?.moduleName}</p>
-          <p><strong>Deadline:</strong> {briefData?.deadline || 'Not specified'}</p>
-          <p><strong>Word Limit:</strong> {briefData?.wordLimit} words</p>
+          <p><strong>Module:</strong> {briefData?.module_code || 'Not specified'} {briefData?.module_name || ''}</p>
+          <p><strong>Deadline:</strong> {briefData?.due_date ? new Date(briefData.due_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Not specified'}</p>
+          <p><strong>Word Limit:</strong> {briefData?.word_limit || 'Not specified'} words</p>
           <p><strong>Citation Style:</strong> OSCOLA</p>
         </div>
       </div>

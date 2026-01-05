@@ -31,13 +31,17 @@ export default function Stage1Understanding({
   });
 
   useEffect(() => {
-    // Initial Durmah greeting
+    // Initial Durmah greeting - INCLUDE assignment context
+    const assignmentContext = briefData?.question_text 
+      ? `\n\nThe assignment question is:\n"${briefData.question_text}"`
+      : '';
+    
     const initialMessage = {
       role: 'assistant',
-      content: `Hi! Let's make sure you fully understand this assignment before we start working on it. I'll explain it to you and then quiz you to check your understanding. Ready to begin?`
+      content: `Hi! Let's make sure you fully understand this assignment before we start working on it. I'll explain it to you and then quiz you to check your understanding.${assignmentContext}\n\nReady to begin?`
     };
     setMessages([initialMessage]);
-  }, []);
+  }, [briefData]);
 
   // AUTO-SAVE: Trigger autosave whenever state changes
   useEffect(() => {
@@ -64,9 +68,9 @@ export default function Stage1Understanding({
           stage: 1,
           userMessage: userInput,
           context: {
-            questionText: briefData?.questionText,
-            moduleCode: briefData?.moduleCode,
-            messages: newMessages.slice(-6), // Last 3 exchanges for context
+            questionText: briefData?.question_text || '', // CRITICAL: Pass assignment brief
+            currentUnderstanding: legalIssues,
+            messages: newMessages.slice(-4),
           },
         }),
       });

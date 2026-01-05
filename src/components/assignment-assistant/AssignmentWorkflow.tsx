@@ -155,6 +155,18 @@ export default function AssignmentWorkflow({
       setCurrentStage(nextStage);
       toast.success(`Stage ${stage} complete! Moving to Stage ${nextStage}`);
     } else {
+      // Stage 6 complete - mark assignment as completed
+      const supabase = getSupabaseClient();
+      if (supabase) {
+        const { data: userData } = await supabase.auth.getUser();
+        if (userData?.user) {
+          await supabase
+            .from('assignments')
+            .update({ status: 'completed', updated_at: new Date().toISOString() })
+            .eq('id', assignmentId)
+            .eq('user_id', userData.user.id);
+        }
+      }
       toast.success('All stages complete! 🎉');
       setTimeout(onClose, 2000);
     }

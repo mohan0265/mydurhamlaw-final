@@ -29,7 +29,7 @@ export default function Stage3Structure({ assignmentId, briefData, onComplete }:
   ]);
 
   const totalWords = sections.reduce((sum, s) => sum + s.estimatedWords, 0);
-  const wordLimit = briefData?.wordLimit || 1500;
+  const wordLimit = briefData?.word_limit || 1500;
 
   // Autosave integration
   const { saving, saved, error: saveError, saveToAutosave } = useAutosave({
