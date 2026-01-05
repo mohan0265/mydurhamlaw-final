@@ -132,8 +132,9 @@ export default function Stage2Research({ assignmentId, briefData, onComplete }: 
 
   return (
     <div className="grid grid-cols-2 gap-6 h-full">
-      {/* Left: Research Entry - USE FLEX COLUMN to ensure button stays at bottom */}
+      {/* Left: Research Entry - FIXED Continue button + form, SCROLLABLE sources list */}
       <div className="bg-white rounded-xl shadow-lg p-6 flex flex-col h-full">
+        {/* Header - FIXED */}
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-blue-600 rounded-lg">
@@ -158,21 +159,21 @@ export default function Stage2Research({ assignmentId, briefData, onComplete }: 
           </div>
         </div>
 
+        {/* Research complete + Continue button - FIXED, always visible when complete */}
         {researchComplete && (
           <div className="mb-4">
             <div className="mb-3 p-3 bg-green-100 rounded-lg flex items-center gap-2">
               <CheckCircle className="text-green-600" size={20} />
-              <span className="text-sm font-semibold text-green-800">Research complete!</span>
+              <span className="text-sm font-semibold text-green-800">Research complete! ✅</span>
             </div>
-            {/* Continue Button - MOVED UP for visibility */}
-            <button onClick={handleComplete} className="w-full px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center justify-center gap-2 font-semibold">
+            <button onClick={handleComplete} className="w-full px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center justify-center gap-2 font-semibold shadow-md">
               Continue to Structure <ArrowRight size={20} />
             </button>
           </div>
         )}
 
-        {/* Add Note Form */}
-        <div className="mb-4 p-4 bg-gray-50 rounded-lg space-y-2">
+        {/* Add Source Form - FIXED, always visible */}
+        <div className="mb-4 p-4 bg-gray-50 rounded-lg space-y-2 border-2 border-blue-100">
           <select
             value={newNote.source_type}
             onChange={(e) => setNewNote({...newNote, source_type: e.target.value})}
@@ -197,22 +198,22 @@ export default function Stage2Research({ assignmentId, briefData, onComplete }: 
             className="w-full px-3 py-2 border rounded-lg"
             rows={3}
           />
-          <button onClick={addNote} className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg flex items-center justify-center gap-2">
+          <button onClick={addNote} className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg flex items-center justify-center gap-2 hover:bg-blue-700">
             <Plus size={20} />
             Add Source
           </button>
         </div>
 
-        {/* Notes List - Scrollable - TAKES REMAINING SPACE */}
-        <div className="flex-1 overflow-y-auto space-y-2 min-h-0">
+        {/* Sources List - SCROLLABLE in remaining space */}
+        <div className="flex-1 overflow-y-auto space-y-2 pr-2 min-h-[200px]">
           {notes.length === 0 && (
-            <p className="text-sm text-gray-500 text-center py-8">No sources added yet</p>
+            <p className="text-sm text-gray-500 text-center py-8">No sources added yet. Add your first source above!</p>
           )}
           {notes.map(note => (
-            <div key={note.id} className="p-3 bg-white border rounded-lg">
+            <div key={note.id} className="p-3 bg-white border-2 border-gray-200 rounded-lg hover:border-blue-300 transition">
               <div className="flex items-start justify-between mb-1">
-                <span className="text-xs font-semibold text-blue-600 uppercase">{note.source_type}</span>
-                <button onClick={() => deleteNote(note.id)} className="text-red-500 hover:text-red-700">
+                <span className="text-xs font-semibold text-blue-600 uppercase px-2 py-1 bg-blue-50 rounded">{note.source_type}</span>
+                <button onClick={() => deleteNote(note.id)} className="text-red-500 hover:text-red-700 p-1 hover:bg-red-50 rounded">
                   <Trash2 size={16} />
                 </button>
               </div>
