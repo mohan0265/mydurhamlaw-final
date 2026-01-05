@@ -96,16 +96,20 @@ export default function Stage4Drafting({ assignmentId, briefData, outline, onCom
   };
 
   const handleComplete = () => {
-    if (wordCount < wordLimit * 0.8) {
-      toast.error(`Essay is too short (${wordCount}/${wordLimit} words)`);
-      return;
+    // Soft validation - warn but don't block
+    if (wordCount < wordLimit * 0.5) {
+      toast('⚠️ Draft is quite short. Consider adding more content before finalizing.', {
+        duration: 4000,
+        icon: '📝',
+      });
+    } else if (wordCount > wordLimit * 1.1) {
+      toast('⚠️ Draft exceeds word limit. Consider trimming before submission.', {
+        duration: 4000,
+        icon: '✂️',
+      });
     }
 
-    if (wordCount > wordLimit * 1.1) {
-      toast.error(`Essay exceeds word limit (${wordCount}/${wordLimit} words)`);
-      return;
-    }
-
+    // Always allow progression (students can save partial drafts)
     onComplete({
       currentWordCount: wordCount,
       sectionsCompleted: sections.map(s => s.title),
@@ -131,16 +135,16 @@ export default function Stage4Drafting({ assignmentId, briefData, outline, onCom
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {/* Autosave indicator */}
-            <div className="text-xs flex items-center gap-1">
+            {/* Autosave indicator - More prominent */}
+            <div className="px-3 py-1 rounded-full bg-gray-50 flex items-center gap-2 text-sm font-medium">
               {saving && (
-                <><Cloud className="animate-pulse text-blue-600" size={14} /><span className="text-blue-600">Saving...</span></>
+                <><Cloud className="animate-pulse text-blue-600" size={16} /><span className="text-blue-600">Saving...</span></>
               )}
               {saved && !saving && (
-                <><CheckCircle size={14} className="text-green-600" /><span className="text-green-600">Saved</span></>
+                <><CheckCircle size={16} className="text-green-600" /><span className="text-green-600">✓ Saved</span></>
               )}
               {saveError && (
-                <><CloudOff size={14} className="text-orange-600" /><span className="text-orange-600">Saved locally</span></>
+                <><CloudOff size={16} className="text-orange-600" /><span className="text-orange-600">⚠ Saved locally</span></>
               )}
             </div>
           </div>
