@@ -78,7 +78,6 @@ export default function Stage4Drafting({ assignmentId, briefData, outline, onCom
             questionText: briefData?.questionText,
             wordCount,
             wordLimit,
-            currentSection: sections[currentSection]?.title,
           },
         }),
       });
@@ -86,7 +85,7 @@ export default function Stage4Drafting({ assignmentId, briefData, outline, onCom
       const data = await response.json();
       setDurmahFeedback(data.response);
       
-      const logEntry = `Feedback on ${sections[currentSection]?.title || 'section'} - ${new Date().toLocaleTimeString()}`;
+      const logEntry = `Feedback requested - ${new Date().toLocaleTimeString()}`;
       setAiUsageLog([...aiUsageLog, logEntry]);
       
     } catch (error) {
@@ -180,8 +179,7 @@ export default function Stage4Drafting({ assignmentId, briefData, outline, onCom
           value={content}
           onChange={(e) => setContent(e.target.value)}
           placeholder="Start writing your essay here... Remember to cite sources as you go!"
-          className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-orange-500 resize-none font-serif text-gray-800 leading-relaxed"
-          style={{height: '400px'}}
+          className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-orange-500 resize-none font-serif text-gray-800 leading-relaxed h-[400px]"
         />
 
         {/* Action buttons - ALWAYS visible at bottom */}

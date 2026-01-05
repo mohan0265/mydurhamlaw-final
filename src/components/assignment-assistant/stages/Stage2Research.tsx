@@ -208,7 +208,7 @@ export default function Stage2Research({ assignmentId, briefData, onComplete }: 
         {/* Sources List - SCROLLABLE with max height to show 2-3 sources */}
         <div className="border-t-2 border-gray-200 pt-3">
           <h3 className="text-sm font-semibold text-gray-700 mb-2">Added Sources ({notes.length}):</h3>
-          <div className="overflow-y-auto space-y-2 pr-2" style={{maxHeight: '300px'}}>
+          <div className="overflow-y-auto space-y-2 pr-2 max-h-[300px]">
             {notes.length === 0 && (
               <p className="text-sm text-gray-500 text-center py-8">No sources added yet. Add your first source above!</p>
             )}
