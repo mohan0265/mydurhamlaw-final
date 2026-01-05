@@ -40,6 +40,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   try {
     const aiProvider = process.env.ASSIGNMENT_AI_PROVIDER || 'openai';
+    console.log('[Durmah-Stage] Provider:', aiProvider);
+    console.log('[Durmah-Stage] Stage:', stage);
+    console.log('[Durmah-Stage] Has API key:', aiProvider === 'openai' ? !!process.env.OPENAI_API_KEY : !!process.env.GEMINI_API_KEY);
+    
     const systemPrompt = getStageSystemPrompt(stage, context);
     
     const response = await getAIResponse(systemPrompt, userMessage, aiProvider);
@@ -51,7 +55,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
 
   } catch (error: any) {
-    console.error('Durmah stage error:', error);
+    console.error('[Durmah-Stage] Error details:', {
+      message: error.message,
+      stack: error.stack,
+      name: error.name,
+      provider: process.env.ASSIGNMENT_AI_PROVIDER || 'openai'
+    });
     res.status(500).json({ error: error.message || 'Failed to get response' });
   }
 }
@@ -187,43 +196,79 @@ Remind student:
 }
 
 async function getAIResponse(systemPrompt: string, userMessage: string, provider: string): Promise<string> {
+  console.log('[getAIResponse] Called with provider:', provider);
+  
   if (provider === 'openai') {
-    const OpenAI = require('openai');
-    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    // Validate API key exists
+    if (!process.env.OPENAI_API_KEY) {
+      throw new Error('OPENAI_API_KEY environment variable is not set');
+    }
+    
+    console.log('[getAIResponse] OpenAI API key exists, length:', process.env.OPENAI_API_KEY.length);
+    
+    try {
+      const OpenAI = require('openai');
+      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-    const response = await openai.chat.completions.create({
-      model: 'gpt-4-turbo-preview',
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: userMessage }
-      ],
-      temperature: 0.7,
-      max_tokens: 1000,
-    });
+      console.log('[getAIResponse] OpenAI client created, calling API...');
+      
+      const response = await openai.chat.completions.create({
+        model: 'gpt-4-turbo-preview',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userMessage }
+        ],
+        temperature: 0.7,
+        max_tokens: 1000,
+      });
 
-    return response.choices[0].message.content;
+      console.log('[getAIResponse] OpenAI API responded successfully');
+      
+      if (!response?.choices?.[0]?.message?.content) {
+        throw new Error('OpenAI returned empty response');
+      }
+      
+      return response.choices[0].message.content;
+    } catch (error: any) {
+      console.error('[getAIResponse] OpenAI Error:', {
+        message: error.message,
+        type: error.type,
+        code: error.code,
+        status: error.status
+      });
+      throw new Error(`OpenAI API Error: ${error.message}`);
+    }
 
   } else if (provider === 'gemini') {
-    const { GoogleGenerativeAI } = require('@google/generative-ai');
-    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
+    if (!process.env.GEMINI_API_KEY) {
+      throw new Error('GEMINI_API_KEY environment variable is not set');
+    }
+    
+    try {
+      const { GoogleGenerativeAI } = require('@google/generative-ai');
+      const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+      const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
 
-    const chat = model.startChat({
-      history: [
-        {
-          role: 'user',
-          parts: [{ text: systemPrompt }],
-        },
-        {
-          role: 'model',
-          parts: [{ text: 'Understood. I will follow these guidelines.' }],
-        },
-      ],
-    });
+      const chat = model.startChat({
+        history: [
+          {
+            role: 'user',
+            parts: [{ text: systemPrompt }],
+          },
+          {
+            role: 'model',
+            parts: [{ text: 'Understood. I will follow these guidelines.' }],
+          },
+        ],
+      });
 
-    const result = await chat.sendMessage(userMessage);
-    return result.response.text();
+      const result = await chat.sendMessage(userMessage);
+      return result.response.text();
+    } catch (error: any) {
+      console.error('[getAIResponse] Gemini Error:', error);
+      throw new Error(`Gemini API Error: ${error.message}`);
+    }
   }
 
-  throw new Error('Invalid AI provider');
+  throw new Error(`Invalid AI provider: ${provider}`);
 }
