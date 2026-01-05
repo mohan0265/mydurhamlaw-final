@@ -93,6 +93,19 @@ export default function AssignmentDetail({ assignment, onUpdate, onPlanWithAI, o
     }
   }, [status, assignment.id]);
 
+  const copyToClipboard = async () => {
+    if (!finalDraft) {
+      toast.error('No draft available');
+      return;
+    }
+   try {
+      await navigator.clipboard.writeText(finalDraft);
+      toast.success('✅ Essay copied! Paste into Microsoft Word.');
+    } catch (error) {
+      toast.error('Failed to copy text');
+    }
+  };
+
   const downloadAssignment = () => {
     if (!finalDraft) {
       toast.error('No draft available for download');
@@ -102,8 +115,28 @@ export default function AssignmentDetail({ assignment, onUpdate, onPlanWithAI, o
     try {
       setLoading(true);
       
-      // Encode all data as base64 to pass in URL
-      const payload = {
+      // Create form to submit data via POST
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = '/.netlify/functions/generate-assignment-doc';
+      form.target = 'download_iframe';
+      form.style.display = 'none';
+
+      // Add hidden iframe to receive response
+      let iframe = document.getElementById('download_iframe') as HTMLIFrameElement;
+      if (!iframe) {
+        iframe = document.createElement('iframe');
+        iframe.id = 'download_iframe';
+        iframe.name = 'download_iframe';
+        iframe.style.display = 'none';
+        document.body.appendChild(iframe);
+      }
+
+      // Add data as form field
+      const input = document.createElement('input');
+      input.type = 'hidden';
+      input.name = 'payload';
+      input.value = JSON.stringify({
         assignment: {
           module_code: assignment.module_code,
           module_name: assignment.module_name,
@@ -112,16 +145,14 @@ export default function AssignmentDetail({ assignment, onUpdate, onPlanWithAI, o
         },
         finalDraft,
         aiUsageLog,
-      };
+      });
 
-      const jsonString = JSON.stringify(payload);
-      const base64Data = btoa(unescape(encodeURIComponent(jsonString))); // Proper UTF-8 handling
-      const downloadUrl = `/.netlify/functions/generate-assignment-doc?data=${encodeURIComponent(base64Data)}`;
-
-      // Open download URL directly - triggers native browser download
-      window.open(downloadUrl, '_blank');
+      form.appendChild(input);
+      document.body.appendChild(form);
+      form.submit();
+      document.body.removeChild(form);
       
-      toast.success('✅ Download started! Check your Downloads folder.');
+      toast.success('✅ Generating download...');
     } catch (error) {
       console.error('[Download Error]:', error);
       toast.error('Failed to generate document: ' + (error.message || 'Unknown error'));
@@ -204,15 +235,23 @@ export default function AssignmentDetail({ assignment, onUpdate, onPlanWithAI, o
 
       {/* Actions */}
       <div className="flex flex-col gap-3">
-        {/* Preview & Download button for completed assignments */}
+        {/* Quick copy button for completed assignments */}
         {status === 'completed' && finalDraft && (
-          <button
-            onClick={() => setShowPreviewModal(true)}
-            className="w-full py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl font-bold shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2"
-          >
-            <Eye size={18} />
-            Review & Download
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={copyToClipboard}
+              className="flex-1 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-xl font-bold shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2"
+            >
+              📋 Copy Text
+            </button>
+            <button
+              onClick={() => setShowPreviewModal(true)}
+              className="flex-1 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl font-bold shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2"
+            >
+              <Eye size={18} />
+              Review & Download
+            </button>
+          </div>
         )}
         
         <div className="flex gap-3">
