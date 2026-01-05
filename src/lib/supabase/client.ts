@@ -1,10 +1,14 @@
-import { createClient, SupabaseClient } from "@supabase/supabase-js";
+import { createPagesBrowserClient } from "@supabase/auth-helpers-nextjs";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 let supabase: SupabaseClient | null = null;
 
 export function getSupabaseClient(): SupabaseClient {
   if (!supabase) {
-    // Never use the service role key in the browser. Only use the public anon key.
+    // CRITICAL FIX: Use auth-helpers to enable cookie-based authentication
+    // This allows server-side API routes to read the auth session
+    // Previous implementation only used localStorage which is inaccessible to Next.js API routes
+    
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
@@ -17,13 +21,21 @@ export function getSupabaseClient(): SupabaseClient {
 
     const isBrowser = typeof window !== 'undefined';
 
-    supabase = createClient(url, key, {
-      auth: {
-        persistSession: isBrowser,
-        autoRefreshToken: isBrowser,
-        detectSessionInUrl: isBrowser,
-      },
-    });
+    if (isBrowser) {
+      // Use auth-helpers for browser client - manages both localStorage AND cookies
+      supabase = createPagesBrowserClient();
+    } else {
+      // This shouldn't happen (this file is for client-side only)
+      // But provide fallback
+      const { createClient } = require("@supabase/supabase-js");
+      supabase = createClient(url, key, {
+        auth: {
+          persistSession: false,
+          autoRefreshToken: false,
+          detectSessionInUrl: false,
+        },
+      });
+    }
   }
   return supabase;
 }
