@@ -1,6 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getServerUser } from '@/lib/api/serverAuth';
-import { getSupabaseClient } from '@/lib/supabase/client';
 
 /**
  * Assignment Progress Autosave API
@@ -17,12 +16,11 @@ import { getSupabaseClient } from '@/lib/supabase/client';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   // 1. Authenticate user
-  const { user } = await getServerUser(req, res);
+  const { user, supabase } = await getServerUser(req, res);
   if (!user) {
     return res.status(401).json({ error: 'Unauthorized - please sign in' });
   }
 
-  const supabase = getSupabaseClient();
   if (!supabase) {
     return res.status(500).json({ error: 'Database connection failed' });
   }

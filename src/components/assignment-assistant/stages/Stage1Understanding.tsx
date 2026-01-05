@@ -210,15 +210,36 @@ export default function Stage1Understanding({
           </button>
         </div>
 
-        {quizPassed && (
-          <button
-            onClick={handleComplete}
-            className="w-full mt-4 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-semibold flex items-center justify-center gap-2"
-          >
-            <span>Continue to Research</span>
-            <ArrowRight size={20} />
-          </button>
-        )}
+        {/* Action Buttons - Always show Skip option */}
+        <div className="mt-4 space-y-2">
+          {quizPassed && (
+            <button
+              onClick={handleComplete}
+              className="w-full px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-semibold flex items-center justify-center gap-2"
+            >
+              <span>Continue to Research</span>
+              <ArrowRight size={20} />
+            </button>
+          )}
+          
+          {/* Manual Skip Button - Always Available */}
+          {!quizPassed && messages.length > 2 && (
+            <button
+              onClick={() => {
+                toast.success('Skipping to Research');
+                onComplete({
+                  quizScore: 0,
+                  legalIssuesIdentified: legalIssues,
+                  understandingLevel: 'skipped',
+                  transcript: messages,
+                });
+              }}
+              className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-semibold flex items-center justify-center gap-2"
+            >
+              <span>Skip to Research →</span>
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );
