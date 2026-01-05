@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { BookOpen, Plus, Trash2, CheckCircle, ArrowRight } from 'lucide-react';
+import { BookOpen, Plus, Trash2, CheckCircle, ArrowRight, Cloud, CloudOff } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useAutosave } from '@/hooks/useAutosave';
 
 interface ResearchNote {
   id: string;
@@ -27,6 +28,13 @@ export default function Stage2Research({ assignmentId, briefData, onComplete }: 
   const minSources = 5;
   const researchComplete = notes.length >= minSources;
 
+  // Autosave integration
+  const { saving, saved, error: saveError, saveToAutosave } = useAutosave({
+    assignmentId,
+    stepKey: 'stage_2_research',
+    workflowKey: 'assignment_workflow',
+  });
+
   useEffect(() => {
     loadNotes();
     const initial = {
@@ -35,6 +43,13 @@ export default function Stage2Research({ assignmentId, briefData, onComplete }: 
     };
     setDurmahMessages([initial]);
   }, []);
+
+  // Trigger autosave when data changes
+  useEffect(() => {
+    if (notes.length > 0 || durmahMessages.length > 1) {
+      saveToAutosave({ notes, durmahMessages, researchComplete });
+    }
+  }, [notes, durmahMessages, saveToAutosave]);
 
   const loadNotes = async () => {
     // Load from Supabase in real implementation
@@ -128,6 +143,18 @@ export default function Stage2Research({ assignmentId, briefData, onComplete }: 
             <p className="text-sm text-gray-600">
               {notes.length}/{minSources} sources minimum
             </p>
+          </div>
+          {/* Autosave indicator */}
+          <div className="text-xs flex items-center gap-1">
+            {saving && (
+              <><Cloud className="animate-pulse text-blue-600" size={14} /><span className="text-blue-600">Saving...</span></>
+            )}
+            {saved && !saving && (
+              <><CheckCircle size={14} className="text-green-600" /><span className="text-green-600">Saved</span></>
+            )}
+            {saveError && (
+              <><CloudOff size={14} className="text-orange-600" /><span className="text-orange-600">Saved locally</span></>
+            )}
           </div>
         </div>
 

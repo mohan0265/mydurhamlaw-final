@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState } from 'react';
-import { FileText, Plus, GripVertical, Trash2, ArrowRight } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { FileText, Plus, GripVertical, Trash2, ArrowRight, CheckCircle, Cloud, CloudOff } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useAutosave } from '@/hooks/useAutosave';
 
 interface OutlineSection {
   id: string;
@@ -29,6 +30,20 @@ export default function Stage3Structure({ assignmentId, briefData, onComplete }:
 
   const totalWords = sections.reduce((sum, s) => sum + s.estimatedWords, 0);
   const wordLimit = briefData?.wordLimit || 1500;
+
+  // Autosave integration
+  const { saving, saved, error: saveError, saveToAutosave } = useAutosave({
+    assignmentId,
+    stepKey: 'stage_3_structure',
+    workflowKey: 'assignment_workflow',
+  });
+
+  // Trigger autosave when sections change
+  useEffect(() => {
+    if (sections.length > 0) {
+      saveToAutosave({ sections, totalWords, wordLimit });
+    }
+  }, [sections, saveToAutosave]);
 
   const addSection = () => {
     const newSection: OutlineSection = {
@@ -78,10 +93,24 @@ export default function Stage3Structure({ assignmentId, briefData, onComplete }:
             <p className="text-sm text-gray-600">Using IRAC/ILAC framework</p>
           </div>
         </div>
-        <button onClick={addSection} className="px-4 py-2 bg-purple-600 text-white rounded-lg flex items-center gap-2">
-          <Plus size={20} />
-          Add Section
-        </button>
+        <div className="flex items-center gap-3">
+          {/* Autosave indicator */}
+          <div className="text-xs flex items-center gap-1">
+            {saving && (
+              <><Cloud className="animate-pulse text-blue-600" size={14} /><span className="text-blue-600">Saving...</span></>
+            )}
+            {saved && !saving && (
+              <><CheckCircle size={14} className="text-green-600" /><span className="text-green-600">Saved</span></>
+            )}
+            {saveError && (
+              <><CloudOff size={14} className="text-orange-600" /><span className="text-orange-600">Saved locally</span></>
+            )}
+          </div>
+          <button onClick={addSection} className="px-4 py-2 bg-purple-600 text-white rounded-lg flex items-center gap-2">
+            <Plus size={20} />
+            Add Section
+          </button>
+        </div>
       </div>
 
       {/* Word Count Summary */}

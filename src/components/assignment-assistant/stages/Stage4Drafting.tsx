@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Edit3, AlertTriangle, ArrowRight, Save } from 'lucide-react';
+import { Edit3, AlertTriangle, ArrowRight, Save, CheckCircle, Cloud, CloudOff } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useAutosave } from '@/hooks/useAutosave';
 
 interface Stage4DraftingProps {
   assignmentId: string;
@@ -16,11 +17,17 @@ export default function Stage4Drafting({ assignmentId, briefData, outline, onCom
   const [currentSection, setCurrentSection] = useState(0);
   const [durmahFeedback, setDurmahFeedback] = useState('');
   const [aiUsageLog, setAiUsageLog] = useState<string[]>([]);
-  const [autoSaving, setAutoSaving] = useState(false);
 
   const wordCount = content.trim().split(/\s+/).filter(w => w).length;
   const wordLimit = briefData?.wordLimit || 1500;
   const sections = outline || [];
+
+  // Autosave integration - replaces old localStorage-only autosave
+  const { saving, saved, error: saveError, saveToAutosave } = useAutosave({
+    assignmentId,
+    stepKey: 'stage_4_drafting',
+    workflowKey: 'assignment_workflow',
+  });
 
   useEffect(() => {
     const saved = localStorage.getItem(`draft_${assignmentId}`);
@@ -31,23 +38,27 @@ export default function Stage4Drafting({ assignmentId, briefData, outline, onCom
     }
   }, []);
 
+  // Trigger autosave when content or AI usage log changes
+  useEffect(() => {
+    if (content.trim()) {
+      saveToAutosave({ content, wordCount, aiUsageLog, currentSection });
+    }
+  }, [content, aiUsageLog, saveToAutosave]);
+
+  // Also keep localStorage as fallback
   useEffect(() => {
     const timer = setTimeout(() => {
-      autoSave();
-    }, 2000);
+      localStorage.setItem(`draft_${assignmentId}`, JSON.stringify({
+        content,
+        wordCount,
+        aiUsageLog,
+        savedAt: new Date().toISOString()
+      }));
+    }, 1000);
     return () => clearTimeout(timer);
-  }, [content]);
+  }, [content, aiUsageLog]);
 
-  const autoSave = () => {
-    setAutoSaving(true);
-    localStorage.setItem(`draft_${assignmentId}`, JSON.stringify({
-      content,
-      wordCount,
-      aiUsageLog,
-      savedAt: new Date().toISOString()
-    }));
-    setTimeout(() => setAutoSaving(false), 500);
-  };
+
 
   const getFeedback = async () => {
     if (!content.trim()) {
@@ -120,8 +131,18 @@ export default function Stage4Drafting({ assignmentId, briefData, outline, onCom
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {autoSaving && <span className="text-xs text-gray-500">Saving...</span>}
-            <Save className={autoSaving ? 'text-green-600' : 'text-gray-400'} size={16} />
+            {/* Autosave indicator */}
+            <div className="text-xs flex items-center gap-1">
+              {saving && (
+                <><Cloud className="animate-pulse text-blue-600" size={14} /><span className="text-blue-600">Saving...</span></>
+              )}
+              {saved && !saving && (
+                <><CheckCircle size={14} className="text-green-600" /><span className="text-green-600">Saved</span></>
+              )}
+              {saveError && (
+                <><CloudOff size={14} className="text-orange-600" /><span className="text-orange-600">Saved locally</span></>
+              )}
+            </div>
           </div>
         </div>
 
