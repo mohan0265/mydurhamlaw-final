@@ -101,7 +101,7 @@ export default function AssignmentDetail({ assignment, onUpdate, onPlanWithAI, o
 
     try {
       setLoading(true);
-      toast.info('🔄 Preparing your document...');
+      toast.loading('🔄 Preparing your document...');
       
       // Step 1: POST to get download token
       const response = await fetch('/.netlify/functions/generate-assignment-doc', {
