@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState } from 'react';
-import { FileCheck, Wand2, ArrowRight } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { FileCheck, Wand2, ArrowRight, CheckCircle, Cloud, CloudOff } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useAutosave } from '@/hooks/useAutosave';
 
 interface Stage5FormattingProps {
   assignmentId: string;
@@ -16,6 +17,20 @@ export default function Stage5Formatting({ assignmentId, briefData, draft, onCom
   const [citations, setCitations] = useState<any[]>([]);
   const [formatting, setFormatting] = useState(false);
   const [oscolaCompliant, setOscolaCompliant] = useState(false);
+
+  // Autosave integration
+  const { saving, saved, error: saveError, saveToAutosave } = useAutosave({
+    assignmentId,
+    stepKey: 'stage_5_formatting',
+    workflowKey: 'assignment_workflow',
+  });
+
+  // Trigger autosave when formatted text or citations change
+  useEffect(() => {
+    if (formattedText !== draft || citations.length > 0) {
+      saveToAutosave({ formattedText, citations, oscolaCompliant });
+    }
+  }, [formattedText, citations, oscolaCompliant, saveToAutosave]);
 
   const applyOSCOLAFormatting = async () => {
     setFormatting(true);
@@ -73,14 +88,28 @@ export default function Stage5Formatting({ assignmentId, briefData, draft, onCom
               </p>
             </div>
           </div>
-          <button
-            onClick={applyOSCOLAFormatting}
-            disabled={formatting}
-            className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 flex items-center gap-2"
-          >
-            <Wand2 size={20} />
-            {formatting ? 'Formatting...' : 'Apply OSCOLA'}
-          </button>
+          <div className="flex items-center gap-3">
+            {/* Autosave indicator */}
+            <div className="text-xs flex items-center gap-1">
+              {saving && (
+                <><Cloud className="animate-pulse text-blue-600" size={14} /><span className="text-blue-600">Saving...</span></>
+              )}
+              {saved && !saving && (
+                <><CheckCircle size={14} className="text-green-600" /><span className="text-green-600">Saved</span></>
+              )}
+              {saveError && (
+                <><CloudOff size={14} className="text-orange-600" /><span className="text-orange-600">Saved locally</span></>
+              )}
+            </div>
+            <button
+              onClick={applyOSCOLAFormatting}
+              disabled={formatting}
+              className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 flex items-center gap-2"
+            >
+              <Wand2 size={20} />
+              {formatting ? 'Formatting...' : 'Apply OSCOLA'}
+            </button>
+          </div>
         </div>
 
         {oscolaCompliant && (
