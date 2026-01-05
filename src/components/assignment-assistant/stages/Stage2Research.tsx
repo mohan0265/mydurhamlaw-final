@@ -159,9 +159,15 @@ export default function Stage2Research({ assignmentId, briefData, onComplete }: 
         </div>
 
         {researchComplete && (
-          <div className="mb-4 p-3 bg-green-100 rounded-lg flex items-center gap-2">
-            <CheckCircle className="text-green-600" size={20} />
-            <span className="text-sm font-semibold text-green-800">Research complete!</span>
+          <div className="mb-4">
+            <div className="mb-3 p-3 bg-green-100 rounded-lg flex items-center gap-2">
+              <CheckCircle className="text-green-600" size={20} />
+              <span className="text-sm font-semibold text-green-800">Research complete!</span>
+            </div>
+            {/* Continue Button - MOVED UP for visibility */}
+            <button onClick={handleComplete} className="w-full px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center justify-center gap-2 font-semibold">
+              Continue to Structure <ArrowRight size={20} />
+            </button>
           </div>
         )}
 
@@ -198,7 +204,7 @@ export default function Stage2Research({ assignmentId, briefData, onComplete }: 
         </div>
 
         {/* Notes List - Scrollable - TAKES REMAINING SPACE */}
-        <div className="flex-1 overflow-y-auto space-y-2 min-h-0 mb-4">
+        <div className="flex-1 overflow-y-auto space-y-2 min-h-0">
           {notes.length === 0 && (
             <p className="text-sm text-gray-500 text-center py-8">No sources added yet</p>
           )}
@@ -215,13 +221,6 @@ export default function Stage2Research({ assignmentId, briefData, onComplete }: 
             </div>
           ))}
         </div>
-
-        {/* Continue Button - ALWAYS AT BOTTOM */}
-        {researchComplete && (
-          <button onClick={handleComplete} className="w-full px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center justify-center gap-2 font-semibold mt-auto">
-            Continue to Structure <ArrowRight size={20} />
-          </button>
-        )}
       </div>
 
       {/* Right: Durmah Guidance */}
