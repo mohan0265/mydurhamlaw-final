@@ -20,7 +20,7 @@ async function callOpenAI(messages: { role: 'system' | 'user' | 'assistant'; con
     throw new Error(`OpenAI error: ${resp.status} ${txt}`);
   }
   const json = await resp.json();
-  return json.choices?.[0]?.message?.content || 'I'm here if you want to continue.';
+  return json.choices?.[0]?.message?.content || 'I am here if you want to continue.';
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -58,8 +58,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   // Onboarding path
   if (context.onboardingState === 'new') {
     const welcome =
-      `Welcome to MyDurhamLaw! You’re on a 14-day trial. ` +
-      `I’ll keep this quick: Which year are you in (foundation/year1/year2/year3)? ` +
+      `Welcome to MyDurhamLaw! You're on a 14-day trial. ` +
+      `I'll keep this quick: Which year are you in (foundation/year1/year2/year3)? ` +
       `Any key modules or deadlines this month?`;
 
     await supabase.from('durmah_messages').insert([
