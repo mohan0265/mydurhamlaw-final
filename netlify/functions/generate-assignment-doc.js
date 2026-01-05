@@ -7,9 +7,16 @@ exports.handler = async (event) => {
   }
 
   try {
-    const { assignment, finalDraft, aiUsageLog } = JSON.parse(event.body);
+    const body = JSON.parse(event.body);
+    console.log('[DEBUG] Received request body keys:', Object.keys(body));
+    console.log('[DEBUG] Has assignment:', !!body.assignment);
+    console.log('[DEBUG] Has finalDraft:', !!body.finalDraft, 'Length:', body.finalDraft?.length);
+    console.log('[DEBUG] Has aiUsageLog:', !!body.aiUsageLog);
+    
+    const { assignment, finalDraft, aiUsageLog } = body;
 
     if (!finalDraft) {
+      console.error('[ERROR] No draft content - finalDraft is:', finalDraft);
       return { 
         statusCode: 400, 
         body: JSON.stringify({ error: 'No draft content provided' }) 
