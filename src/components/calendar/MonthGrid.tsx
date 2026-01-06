@@ -82,6 +82,7 @@ export const MonthGrid: React.FC<MonthGridProps> = ({
   onEventsChange,
   onEventClick,
 }) => {
+  const router = useRouter();
   const [showOverflow, setShowOverflow] = useState<string | null>(null);
   
   // Layer toggles (Part F + Assignments)
