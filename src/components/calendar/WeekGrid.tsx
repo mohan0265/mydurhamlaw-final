@@ -8,6 +8,7 @@ import { YEAR_LABEL } from '@/lib/calendar/links';
 import type { YearKey } from '@/lib/calendar/links';
 import type { NormalizedEvent } from '@/lib/calendar/normalize';
 import PersonalItemModal from './PersonalItemModal';
+import { PlanEventModal } from './PlanEventModal';
 
 interface WeekGridProps {
   yearKey: YearKey;
@@ -180,8 +181,12 @@ export const WeekGrid: React.FC<WeekGridProps> = ({
     } else if (event.meta?.source === 'assignment' && event.meta.assignmentId) {
       // Navigate to assignment page
       router.push(`/assignments?assignmentId=${event.meta.assignmentId}`);
+    } else if (event.meta?.source === 'plan' || event.meta?.source === 'plan_override') {
+      // Open plan event modal
+      setPlanModalEvent(event);
+      setPlanModalOpen(true);
     } else {
-      // Plan/timetable - pass to optional handler
+      // Timetable - pass to optional handler
       onEventClick?.(event);
     }
   };

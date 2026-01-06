@@ -18,6 +18,7 @@ import { YEAR_LABEL } from '@/lib/calendar/links';
 import type { YearKey, YM } from '@/lib/calendar/links';
 import type { NormalizedEvent } from '@/lib/calendar/normalize';
 import PersonalItemModal from './PersonalItemModal';
+import { PlanEventModal } from './PlanEventModal';
 
 interface MonthGridProps {
   yearKey: YearKey;
@@ -96,6 +97,10 @@ export const MonthGrid: React.FC<MonthGridProps> = ({
   const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
   const [modalDate, setModalDate] = useState<string | undefined>();
   const [modalItem, setModalItem] = useState<any>(null);
+  
+  // Plan event modal (Part G - editable plan events)
+  const [planModalOpen, setPlanModalOpen] = useState(false);
+  const [planModalEvent, setPlanModalEvent] = useState<NormalizedEvent | null>(null);
 
   const currentDate = new Date(ym.year, ym.month - 1);
   const monthStart  = startOfMonth(currentDate);
@@ -165,8 +170,12 @@ export const MonthGrid: React.FC<MonthGridProps> = ({
     } else if (event.meta?.source === 'assignment' && event.meta.assignmentId) {
       // Navigate to assignment page
       router.push(`/assignments?assignmentId=${event.meta.assignmentId}`);
+    } else if (event.meta?.source === 'plan' || event.meta?.source === 'plan_override') {
+      // Open plan event modal for customization
+      setPlanModalEvent(event);
+      setPlanModalOpen(true);
     } else {
-      // Plan/timetable events - just call the optional handler
+      // Timetable/other events - just call the optional handler
       onEventClick?.(event);
     }
   };
