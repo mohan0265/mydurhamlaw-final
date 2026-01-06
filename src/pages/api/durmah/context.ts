@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-<parameter name="CreatePagesServerClient } from '@supabase/auth-helpers-nextjs';
+import { createPagesServerClient } from '@supabase/auth-helpers-nextjs';
 import { createClient } from '@supabase/supabase-js';
 import type { StudentContext } from '@/types/durmahContext';
 
