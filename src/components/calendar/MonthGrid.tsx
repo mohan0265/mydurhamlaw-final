@@ -34,9 +34,14 @@ interface MonthGridProps {
 const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 function badgeStyle(kind: NormalizedEvent['kind'], source?: string): string {
-  // Personal items get different styling
-  if (source === 'personal') {
+  // Assignments get green styling (from Year View)
+  if (source === 'assignment') {
     return 'bg-green-50 text-green-800 border-green-200';
+  }
+  
+  // Personal items get emerald styling 
+  if (source === 'personal') {
+    return 'bg-emerald-50 text-emerald-800 border-emerald-200';
   }
   
   switch (kind) {
@@ -78,9 +83,10 @@ export const MonthGrid: React.FC<MonthGridProps> = ({
 }) => {
   const [showOverflow, setShowOverflow] = useState<string | null>(null);
   
-  // Layer toggles (Part F)
+  // Layer toggles (Part F + Assignments)
   const [showPlan, setShowPlan] = useState(true);
   const [showPersonal, setShowPersonal] = useState(true);
+  const [showAssignments, setShowAssignments] = useState(true);
   const [showTimetable, setShowTimetable] = useState(true);
   
   // Personal item modal (Part E integration)
@@ -102,10 +108,11 @@ export const MonthGrid: React.FC<MonthGridProps> = ({
       const source = ev.meta?.source;
       if (source === 'plan' && !showPlan) return false;
       if (source === 'personal' && !showPersonal) return false;
+      if (source === 'assignment' && !showAssignments) return false;
       if (source === 'timetable' && !showTimetable) return false;
       return true;
     });
-  }, [events, showPlan, showPersonal, showTimetable]);
+  }, [events, showPlan, showPersonal, showAssignments, showTimetable]);
 
   // Group by ISO date
   const eventsByDate = useMemo(() => {
@@ -218,7 +225,7 @@ export const MonthGrid: React.FC<MonthGridProps> = ({
         </div>
       </div>
 
-      {/* Layer Toggles (Part F) */}
+      {/* Layer Toggles (Part F + Assignments) */}
       <div className="flex items-center gap-4 mb-4 p-3 bg-white rounded-lg border">
         <span className="text-sm font-medium text-gray-700">Show:</span>
         <label className="flex items-center gap-2 cursor-pointer">
@@ -238,6 +245,15 @@ export const MonthGrid: React.FC<MonthGridProps> = ({
             className="w-4 h-4 rounded"
           />
           <span className="text-sm">Personal</span>
+        </label>
+        <label className="flex items-center gap-2 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={showAssignments}
+            onChange={(e) => setShowAssignments(e.target.checked)}
+            className="w-4 h-4 rounded"
+          />
+          <span className="text-sm">Assignments</span>
         </label>
         <label className="flex items-center gap-2 cursor-pointer">
           <input

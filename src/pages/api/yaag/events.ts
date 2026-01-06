@@ -131,7 +131,33 @@ export default async function handler(
       }
     });
 
-    // 3. GET TIMETABLE EVENTS (optional, read-only for now)
+    // 3. GET ASSIGNMENTS (DB, user's homework/coursework)
+    const {data: assignments} = await supabase
+      .from('assignments')
+      .select('*')
+      .eq('user_id', user.id)
+      .gte('due_date', from)
+      .lte('due_date', to)
+      .order('due_date', { ascending: true });
+
+    const assignmentEvents: NormalizedEvent[] = (assignments || []).map(assignment => ({
+      id: `assignment-${assignment.id}`,
+      title: assignment.title,
+      date: assignment.due_date, // Already in YYYY-MM-DD format
+      allDay: true, // Assignments are deadlines, not timed events
+      kind: 'deadline' as const, // Use deadline kind for visual distinction
+      meta: {
+        source: 'assignment',
+        assignmentId: assignment.id,
+        editable: true, // Can edit/delete assignments
+        module_id: assignment.module_id,
+        question: assignment.question,
+        status: assignment.status,
+        progress: assignment.progress,
+      },
+    }));
+
+    // 4. GET TIMETABLE EVENTS (optional, read-only for now)
     const { data: timetableEvents } = await supabase
       .from('timetable_events')
       .select('*')
@@ -167,10 +193,11 @@ export default async function handler(
       };
     });
 
-    // 4. MERGE ALL EVENTS
+    // 5. MERGE ALL EVENTS
     const allEvents = [
       ...planEventsWithMeta,
       ...personalEvents,
+      ...assignmentEvents,
       ...timetableEventsNormalized,
     ];
 
@@ -192,7 +219,7 @@ export default async function handler(
       return 0;
     });
 
-    console.log(`[yaag/events] ✓ Returned ${dedupedEvents.length} events (plan=${planEventsWithMeta.length}, personal=${personalEvents.length}, timetable=${timetableEventsNormalized.length})`);
+    console.log(`[yaag/events] ✓ Returned ${dedupedEvents.length} events (plan=${planEventsWithMeta.length}, personal=${personalEvents.length}, assignments=${assignmentEvents.length}, timetable=${timetableEventsNormalized.length})`);
 
     return res.status(200).json({ events: dedupedEvents });
 
