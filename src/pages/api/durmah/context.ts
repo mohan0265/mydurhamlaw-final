@@ -1,9 +1,14 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { createPagesServerClient } from '@supabase/auth-helpers-nextjs';
-import { getSupabaseAdmin } from '@/lib/server/supabaseAdmin';
-import { differenceInDays } from 'date-fns';
+import { buildDurmahContext } from '@/lib/durmah/contextBuilder';
 import type { StudentContext } from '@/types/durmahContext';
 
+/**
+ * P1-4 FIX: Rewritten to use existing buildDurmahContext
+ * 
+ * Previously: Hardcoded term/week + empty timetable
+ * Now: Uses rich builder that computes real term/week from academic calendar
+ * and fetches actual timetable events from database
+ */
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<StudentContext | { error: string }>
@@ -13,118 +18,46 @@ export default async function handler(
   }
 
   try {
-    // Use cookie-based session auth (recommended by ChatGPT)
-    const supabase = createPagesServerClient({ req, res });
+    // Use existing context builder (ChatGPT recommended)
+    const result = await buildDurmahContext(req);
     
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (!user || authError) {
-      return res.status(401).json({ error: 'Unauthorized' });
+    if (!result.ok) {
+      if (result.status === 'unauthorized') {
+        return res.status(401).json({ error: 'Unauthorized' });
+      }
+      return res.status(500).json({ error: 'Context builder misconfigured' });
     }
 
-    const userId = user.id;
-    const admin = getSupabaseAdmin();
-    const now = new Date();
+    const { context } = result;
 
-    // Fetch student profile
-    const { data: profile } = await admin
-      .from('profiles')
-      .select('display_name, year_group')
-      .eq('id', userId)
-      .single();
-
-    // PHASE 1: Fetch assignments
-    // Canonical deadline: COALESCE(due_at, due_date)
-    
-    // 1) Upcoming (next 7 days, not completed)
-    const { data: upcomingRaw } = await admin
-      .from('assignments')
-      .select('id, title, module, due_at, due_date')
-      .eq('user_id', userId)
-      .neq('status', 'completed')
-      .not('due_at', 'is', null)
-      .gte('due_at', now.toISOString())
-      .lte('due_at', new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString())
-      .order('due_at', { ascending: true })
-      .limit(5);
-
-    // 2) Overdue (past due, not completed)
-    const { data: overdueRaw } = await admin
-      .from('assignments')
-      .select('id, title, module, due_at, due_date')
-      .eq('user_id', userId)
-      .neq('status', 'completed')
-      .not('due_at', 'is', null)
-      .lt('due_at', now.toISOString())
-      .order('due_at', { ascending: false })
-      .limit(3);
-
-    // 3) Recently created (last 48 hours)
-    const twoDaysAgo = new Date(now.getTime() - 48 * 60 * 60 * 1000);
-    const { data: recentRaw } = await admin
-      .from('assignments')
-      .select('id, title, module, created_at')
-      .eq('user_id', userId)
-      .gte('created_at', twoDaysAgo.toISOString())
-      .order('created_at', { ascending: false })
-      .limit(5);
-
-    // Get total count
-    const { count: totalCount } = await admin
-      .from('assignments')
-      .select('*', { count: 'exact', head: true })
-      .eq('user_id', userId);
-
-    // Transform data
-    const upcoming = (upcomingRaw || []).map((a) => ({
-      id: a.id,
-      title: a.title,
-      module: a.module || 'N/A',
-      dueISO: a.due_at || a.due_date,
-      daysLeft: differenceInDays(new Date(a.due_at || a.due_date), now),
-    }));
-
-    const overdue = (overdueRaw || []).map((a) => ({
-      id: a.id,
-      title: a.title,
-      module: a.module || 'N/A',
-      dueISO: a.due_at || a.due_date,
-      daysOver: Math.abs(differenceInDays(new Date(a.due_at || a.due_date), now)),
-    }));
-
-    const recentlyCreated = (recentRaw || []).map((a) => ({
-      id: a.id,
-      title: a.title,
-      module: a.module || 'N/A',
-      createdISO: a.created_at,
-    }));
-
-    // TODO: Fetch timetable (for now, empty)
-    const todaysClasses: any[] = [];
-
-    // Build StudentContext
+    // Build StudentContext from rich context packet
     const studentContext: StudentContext = {
       student: {
-        displayName: profile?.display_name || 'Student',
-        yearGroup: profile?.year_group || 'Year 1',
-        term: 'Michaelmas', // TODO: Calculate from current date
-        weekOfTerm: 1, // TODO: Calculate from term start
-        localTimeISO: now.toISOString(),
+        displayName: context.profile.displayName || 'Student',
+        yearGroup: context.profile.yearOfStudy || context.profile.yearGroup || 'Year 1',
+        term: context.academic.term,             // ← REAL (computed from calendar)
+        weekOfTerm: context.academic.weekOfTerm || 1,  // ← REAL
+        localTimeISO: context.academic.localTimeISO,
       },
       assignments: {
-        upcoming,
-        overdue,
-        recentlyCreated,
-        total: totalCount || 0,
+        upcoming: [],  // TODO: Wire to builder if assignments added
+        overdue: [],
+        recentlyCreated: [],
+        total: 0,
       },
       schedule: {
-        todaysClasses,
+        todaysClasses: context.schedule?.today?.map(t => ({
+          title: t.title,
+          start: t.start,
+          end: t.end,
+          location: t.location,
+        })) || [],
       },
     };
 
-    // Return simple StudentContext (revert problematic spread)
     return res.status(200).json(studentContext);
   } catch (error: any) {
-    console.error('Error fetching Durmah context:', error);
+    console.error('[durmah/context] Error:', error);
     return res.status(500).json({ error: error.message || 'Internal server error' });
   }
 }

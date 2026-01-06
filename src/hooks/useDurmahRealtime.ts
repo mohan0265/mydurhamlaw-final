@@ -308,7 +308,14 @@ export function useDurmahRealtime({
       };
 
       console.debug("[DurmahVoice] Requesting microphone...");
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      // P2 FIX #5: Echo cancellation to prevent stray transcript fragments
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        },
+      });
       streamRef.current = stream;
       stream.getAudioTracks().forEach((track) => pc.addTrack(track, stream));
 
