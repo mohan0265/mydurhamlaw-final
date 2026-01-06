@@ -12,10 +12,11 @@ import {
 } from 'date-fns';
 
 const parseISOUTC = (date: string) => new Date(date + 'T00:00:00.000Z');
-import { ChevronLeft, ChevronRight, ArrowLeft } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ArrowLeft, Plus } from 'lucide-react';
 import { YEAR_LABEL } from '@/lib/calendar/links';
 import type { YearKey, YM } from '@/lib/calendar/links';
 import type { NormalizedEvent } from '@/lib/calendar/normalize';
+import PersonalItemModal from './PersonalItemModal';
 
 interface MonthGridProps {
   yearKey: YearKey;
@@ -32,7 +33,12 @@ interface MonthGridProps {
 
 const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
-function badgeStyle(kind: NormalizedEvent['kind']): string {
+function badgeStyle(kind: NormalizedEvent['kind'], source?: string): string {
+  // Personal items get different styling
+  if (source === 'personal') {
+    return 'bg-green-50 text-green-800 border-green-200';
+  }
+  
   switch (kind) {
     case 'topic':      return 'bg-blue-50 text-blue-800 border-blue-100';
     case 'assessment': return 'bg-red-50 text-red-700 border-red-100';
@@ -51,11 +57,10 @@ function eachDayOfInterval(interval: { start: Date; end: Date }): Date[] {
   return days;
 }
 
-/** Sorts with all-day (no start) FIRST, then timed ascending HH:mm */
 function timeSort(a?: string, b?: string) {
   if (!a && !b) return 0;
-  if (!a && b)  return -1; // a is all-day → before
-  if (a && !b)  return 1;  // b is all-day → a after
+  if (!a && b)  return -1;
+  if (a && !b)  return 1;
   return a!.localeCompare(b!, undefined, { numeric: true });
 }
 
@@ -72,6 +77,17 @@ export const MonthGrid: React.FC<MonthGridProps> = ({
   onEventClick,
 }) => {
   const [showOverflow, setShowOverflow] = useState<string | null>(null);
+  
+  // Layer toggles (Part F)
+  const [showPlan, setShowPlan] = useState(true);
+  const [showPersonal, setShowPersonal] = useState(true);
+  const [showTimetable, setShowTimetable] = useState(true);
+  
+  // Personal item modal (Part E integration)
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
+  const [modalDate, setModalDate] = useState<string | undefined>();
+  const [modalItem, setModalItem] = useState<any>(null);
 
   const currentDate = new Date(ym.year, ym.month - 1);
   const monthStart  = startOfMonth(currentDate);
@@ -80,17 +96,28 @@ export const MonthGrid: React.FC<MonthGridProps> = ({
   const calEnd      = endOfWeek(monthEnd,   { weekStartsOn: 1 });
   const days        = useMemo(() => eachDayOfInterval({ start: calStart, end: calEnd }), [calStart, calEnd]);
 
+  // Filter events by layer toggles
+  const filteredEvents = useMemo(() => {
+    return events.filter(ev => {
+      const source = ev.meta?.source;
+      if (source === 'plan' && !showPlan) return false;
+      if (source === 'personal' && !showPersonal) return false;
+      if (source === 'timetable' && !showTimetable) return false;
+      return true;
+    });
+  }, [events, showPlan, showPersonal, showTimetable]);
+
   // Group by ISO date
   const eventsByDate = useMemo(() => {
     const map: Record<string, NormalizedEvent[]> = {};
-    for (const ev of events) {
+    for (const ev of filteredEvents) {
       (map[ev.date] ||= []).push(ev);
     }
     for (const k of Object.keys(map)) {
       map[k]!.sort((a, b) => timeSort(a.start, b.start));
     }
     return map;
-  }, [events]);
+  }, [filteredEvents]);
 
   // Keyboard navigation
   useEffect(() => {
@@ -101,6 +128,42 @@ export const MonthGrid: React.FC<MonthGridProps> = ({
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [onPrev, onNext]);
+
+  // Handlers
+  const handleAddPersonalItem = (date: string) => {
+    setModalDate(date);
+    setModalMode('create');
+    setModalItem(null);
+    setModalOpen(true);
+  };
+
+  const handleEventClick = (event: NormalizedEvent) => {
+    if (event.meta?.source === 'personal') {
+      // Open edit modal
+      setModalMode('edit');
+      setModalItem({
+        id: event.meta.personalItemId,
+        title: event.title,
+        type: event.meta.type || 'study',
+        start_at: event.start_at || `${event.date}T00:00:00Z`,
+        end_at: event.end_at,
+        is_all_day: event.allDay,
+        priority: event.meta.priority || 'medium',
+        notes: event.meta.notes,
+        completed: event.meta.completed || false,
+      });
+      setModalOpen(true);
+    } else {
+      // Plan/timetable events - just call the optional handler
+      onEventClick?.(event);
+    }
+  };
+
+  const handleModalSave = () => {
+    setModalOpen(false);
+    // Trigger refetch
+    onEventsChange?.();
+  };
 
   if (gated) {
     return (
@@ -155,6 +218,38 @@ export const MonthGrid: React.FC<MonthGridProps> = ({
         </div>
       </div>
 
+      {/* Layer Toggles (Part F) */}
+      <div className="flex items-center gap-4 mb-4 p-3 bg-white rounded-lg border">
+        <span className="text-sm font-medium text-gray-700">Show:</span>
+        <label className="flex items-center gap-2 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={showPlan}
+            onChange={(e) => setShowPlan(e.target.checked)}
+            className="w-4 h-4 rounded"
+          />
+          <span className="text-sm">Plan</span>
+        </label>
+        <label className="flex items-center gap-2 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={showPersonal}
+            onChange={(e) => setShowPersonal(e.target.checked)}
+            className="w-4 h-4 rounded"
+          />
+          <span className="text-sm">Personal</span>
+        </label>
+        <label className="flex items-center gap-2 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={showTimetable}
+            onChange={(e) => setShowTimetable(e.target.checked)}
+            className="w-4 h-4 rounded"
+          />
+          <span className="text-sm">Timetable</span>
+        </label>
+      </div>
+
       {/* Calendar Grid */}
       <div className="bg-white rounded-2xl shadow border overflow-hidden">
         {/* Weekday headers */}
@@ -175,7 +270,6 @@ export const MonthGrid: React.FC<MonthGridProps> = ({
             const isCurMonth = isSameMonth(day, currentDate);
             const isCurDay = isToday(parseISOUTC(isoDay));
 
-            // show up to 4 items, overflow into a hover card
             const visible = dayEvents.slice(0, 4);
             const overflow = dayEvents.length - visible.length;
 
@@ -189,32 +283,40 @@ export const MonthGrid: React.FC<MonthGridProps> = ({
                 ].join(' ')}
                 style={{ gridColumn: (idx % 7) + 1 }}
               >
-                {/* Date + dots */}
+                {/* Date + Add button */}
                 <div className="flex items-center justify-between mb-1">
                   <span className={`text-sm ${isCurDay ? 'text-blue-700 font-semibold' : isCurMonth ? 'text-gray-900' : 'text-gray-400'}`}>
                     {format(day, 'd')}
                   </span>
-                  <div className="flex gap-1">
+                  <div className="flex items-center gap-1">
+                    {/* Dots */}
                     {dayEvents.some(e => e.kind === 'exam')       && <span className="w-2 h-2 rounded-full bg-red-500"    title="Exam" />}
                     {dayEvents.some(e => e.kind === 'assessment') && <span className="w-2 h-2 rounded-full bg-orange-500" title="Assessment" />}
                     {dayEvents.some(e => e.kind === 'topic')      && <span className="w-2 h-2 rounded-full bg-blue-500"   title="Topic" />}
+                    
+                    {/* + Add button (Part E wiring) */}
+                    <button
+                      onClick={() => handleAddPersonalItem(isoDay)}
+                      className="opacity-0 group-hover:opacity-100 p-0.5 hover:bg-green-100 rounded transition"
+                      title="Add personal item"
+                    >
+                      <Plus className="w-3 h-3 text-green-600" />
+                    </button>
                   </div>
                 </div>
 
-                {/* Events list: all-day items render WITHOUT a time; timed items show HH:mm */}
+                {/* Events list */}
                 <div className="space-y-1">
                   {visible.map((ev) => {
-                    // Trust normalized titles; they already include exam window ranges if any
                     const label = ev.title;
-
                     return (
                       <button
                         key={ev.id}
                         type="button"
-                        onClick={() => onEventClick?.(ev)}
+                        onClick={() => handleEventClick(ev)}
                         className={[
                           'text-[11px] px-2 py-1 rounded border truncate cursor-pointer hover:opacity-75 transition-opacity w-full text-left',
-                          badgeStyle(ev.kind),
+                          badgeStyle(ev.kind, ev.meta?.source),
                         ].join(' ')}
                         title={[ev.start ? `${ev.start} - ` : '', label].join('')}
                       >
@@ -241,13 +343,13 @@ export const MonthGrid: React.FC<MonthGridProps> = ({
                     <div className="text-sm font-medium mb-2">{format(day, 'MMM d')}</div>
                     <div className="space-y-1 max-h-48 overflow-y-auto">
                       {dayEvents.slice(4).map((ev) => {
-                        const label = ev.title; // already normalized
+                        const label = ev.title;
                         return (
                           <button
                             key={ev.id}
                             type="button"
-                            onClick={() => onEventClick?.(ev)}
-                            className={['text-[11px] px-2 py-1 rounded border cursor-pointer hover:opacity-75 transition-opacity w-full text-left', badgeStyle(ev.kind)].join(' ')}
+                            onClick={() => handleEventClick(ev)}
+                            className={['text-[11px] px-2 py-1 rounded border cursor-pointer hover:opacity-75 transition-opacity w-full text-left', badgeStyle(ev.kind, ev.meta?.source)].join(' ')}
                             title={[ev.start ? `${ev.start} - ` : '', label].join('')}
                           >
                             {ev.start ? <span className="font-mono mr-1">{ev.start}</span> : null}
@@ -265,8 +367,18 @@ export const MonthGrid: React.FC<MonthGridProps> = ({
       </div>
 
       <div className="mt-4 text-xs text-gray-500 text-center">
-        Tip: Hover over "+N more" to see all events • Use keyboard arrows to navigate months
+        Tip: Hover over "+N more" to see all events • Use keyboard arrows to navigate months • Click + to add personal items
       </div>
+
+      {/* Personal Item Modal */}
+      <PersonalItemModal
+        isOpen={modalOpen}
+        onClose={() => setModalOpen(false)}
+        onSave={handleModalSave}
+        mode={modalMode}
+        initialDate={modalDate}
+        existingItem={modalItem}
+      />
     </div>
   );
 };
