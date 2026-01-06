@@ -1,4 +1,3 @@
-```typescript
 // src/pages/auth/redirect.tsx
 'use client';
 
