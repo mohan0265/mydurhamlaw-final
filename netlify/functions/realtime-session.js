@@ -14,7 +14,24 @@ exports.handler = async (event) => {
       },
       body: JSON.stringify({
         model: "gpt-4o-realtime-preview-2024-12-17",
-        voice: voice || "alloy",
+        voice: voice || "cedar", // Cedar for natural voice, fallback to marin if not available
+        modalities: ["audio", "text"], // Enable both audio and text for transcription
+        temperature: 0.65,
+        max_response_output_tokens: 320,
+        input_audio_format: "pcm16",
+        output_audio_format: "pcm16",
+        // Enable input audio transcription for live transcript display
+        input_audio_transcription: {
+          model: "whisper-1"
+        },
+        // Semantic VAD for natural turn detection with barge-in support
+        turn_detection: {
+          type: "server_vad", // OpenAI uses server_vad
+          threshold: 0.5,
+          prefix_padding_ms: 300,
+          silence_duration_ms: 500, // Lower for more responsive turn-taking
+          create_response: true
+        }
       }),
     });
 

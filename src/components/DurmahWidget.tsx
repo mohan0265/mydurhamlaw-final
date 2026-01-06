@@ -443,24 +443,25 @@ export default function DurmahWidget() {
   useEffect(() => {
     if (!ready || !isOpen) return;
     if (messages.length > 0) return;
-    // DISABLED: All greeting suppression to always show welcome message
-    // if (contextPacket?.recent?.lastMessages?.length) return;
-    // const timeZone = contextPacket?.academic.timezone || "Europe/London";
-    // const dateKey = getLocalDateKey(timeZone);
-    // const greetKey = user?.id ? `durmahGreeted:${user.id}:${dateKey}` : null;
-    // if (greetKey && sessionStorage.getItem(greetKey)) return;
-    // if (contextPacket?.memory?.greetingSuppressed) return;
-    // const hasRecentActivity = (contextPacket?.recent?.lastMessages?.length ?? 0) > 0;
-    // if (hasRecentActivity) return;
+    
+    // PHASE 3 FIX: Re-enable "greet once per session" guard
+    const greetKey = user?.id ? `durmah_greeted_${user.id}` : null;
+    if (greetKey && sessionStorage.getItem(greetKey)) {
+      // Already greeted this session
+      return;
+    }
 
     // Skip greeting if there are recent messages (ongoing conversation)
-    const greeting = contextPacket
-      ? buildContextGreeting(contextPacket)
-      : preset?.welcomeMessage ||
-        composeGreeting(studentContext, memory, upcomingTasks, todaysEvents);
+    if (contextPacket?.recent?.lastMessages?.length) return;
 
-    // DISABLED: Don't save greeting state (always show it)
-    // if (greetKey) sessionStorage.setItem(greetKey, "1");
+    // Use proactive greeting from StudentContext if available, otherwise fallback
+    const greeting = lastProactiveGreeting || 
+                     (contextPacket ? buildContextGreeting(contextPacket) : null) ||
+                     preset?.welcomeMessage ||
+                     "Hey! I'm Durmah, your Durham Law study companion. What can I help with today?";
+
+    // Mark as greeted for this session
+    if (greetKey) sessionStorage.setItem(greetKey, "1");
 
     setMessages((prev) => [
       ...prev,
@@ -486,12 +487,26 @@ export default function DurmahWidget() {
   }, [authError]);
 
 
-  // 3. Voice Hook - FIXED: Use correct system prompt function signature
+  // 3. Voice Hook - System prompt with FULL student context
   const systemPrompt = useMemo(() => {
-    // buildDurmahSystemPrompt() takes NO parameters - it's a simple identity/ethics prompt
-    // Context is injected separately via the voice hook's onTurn handler
-    return buildDurmahSystemPrompt();
-  }, []);
+    const basePrompt = buildDurmahSystemPrompt();
+    
+    // PHASE 2 FIX: Inject student context if available
+    if (studentContextData) {
+      const contextBlock = buildDurmahContextBlock(studentContextData);
+      return `${basePrompt}
+
+${contextBlock}
+
+REMINDER:
+- Keep responses SHORT and conversational (2-3 sentences max for voice)
+- Do NOT repeat greeting phrases like "Good to see you" or "I'm here to help"
+- Be direct and specific when referencing their assignments/schedule
+- Never say "I can't see your timetable" - use the context above`;
+    }
+    
+    return basePrompt;
+  }, [studentContextData]);
 
   const appendTranscriptTurn = useCallback((role: Msg["role"], text: string) => {
     const normalizedText = normalizeTurnText(text);
