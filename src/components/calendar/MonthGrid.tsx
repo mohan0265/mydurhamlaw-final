@@ -25,6 +25,8 @@ interface MonthGridProps {
   onNext: () => void;
   onBack: () => void;
   gated: boolean;
+  loading?: boolean;
+  onEventsChange?: () => void;
   onEventClick?: (event: NormalizedEvent) => void;
 }
 
@@ -65,6 +67,8 @@ export const MonthGrid: React.FC<MonthGridProps> = ({
   onNext,
   onBack,
   gated,
+  loading,
+  onEventsChange,
   onEventClick,
 }) => {
   const [showOverflow, setShowOverflow] = useState<string | null>(null);
@@ -145,7 +149,10 @@ export const MonthGrid: React.FC<MonthGridProps> = ({
           </button>
         </div>
 
-        <div className="text-sm text-gray-500">Use ← → keys to navigate</div>
+        <div className="flex items-center gap-4">
+          <div className="text-sm text-gray-500">Use ← → keys to navigate</div>
+          {loading && <span className="text-sm text-gray-400">Loading...</span>}
+        </div>
       </div>
 
       {/* Calendar Grid */}
