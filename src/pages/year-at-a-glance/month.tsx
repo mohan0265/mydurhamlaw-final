@@ -1,10 +1,10 @@
 // src/pages/year-at-a-glance/month.tsx
 'use client';
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useMemo, useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import dynamic from 'next/dynamic';
-import { useAuth } from '@/lib/supabase/AuthContext'; // NEW: Get actual student year
+import { useAuth } from '@/lib/supabase/AuthContext';
 import { 
   YEAR_LABEL, 
   YearKey, 
@@ -18,9 +18,9 @@ import {
   getAcademicYearFor
 } from '@/lib/calendar/links';
 import type { YM } from '@/lib/calendar/links';
-import { getEventsForMonth, getAcademicYearFor as getAcademicYear } from '@/lib/calendar/useCalendarData';
-import { getDefaultPlanByStudentYear } from '@/data/durham/llb';
-import { format } from 'date-fns';
+import { getEventsForMonth } from '@/lib/calendar/useCalendarData';
+import type { NormalizedEvent } from '@/lib/calendar/normalize';
+import { format, startOfMonth, endOfMonth } from 'date-fns';
 
 const MonthGrid = dynamic(() => import('@/components/calendar/MonthGrid').then(m => ({ default: m.MonthGrid })), {
   ssr: false,
@@ -29,26 +29,29 @@ const MonthGrid = dynamic(() => import('@/components/calendar/MonthGrid').then(m
 const MonthPage: React.FC = () => {
   const router = useRouter();
   const { y: yParam, ym: ymParam } = router.query;
-  const { userProfile } = useAuth(); // NEW: Get profile from auth
+  const { userProfile } = useAuth();
+
+  // State for merged events
+  const [events, setEvents] = useState<NormalizedEvent[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Parse year from query
   const year: YearKey = useMemo(() => {
     return parseYearKey(typeof yParam === 'string' ? yParam : undefined);
   }, [yParam]);
 
-  // Parse month from query, with vacation period handling
+  // Parse month from query
   const ym: YM = useMemo(() => {
-    // If no specific month requested, use CURRENT month (not October 2025)
     if (!ymParam) {
       const now = new Date();
       const currentYear = now.getFullYear();
-      const currentMonth = now.getMonth() + 1; // getMonth() returns 0-11
+      const currentMonth = now.getMonth() + 1;
       return { year: currentYear, month: currentMonth };
     }
     
-    // Otherwise use academic year defaults
     const academicStartMonth = getAcademicStartMonth(year);
-    const academicYear = getAcademicYear(year);
+    const academicYear = getAcademicYearFor(year);
     const fallback: YM = { 
       year: academicYear, 
       month: academicStartMonth
@@ -56,18 +59,55 @@ const MonthPage: React.FC = () => {
     return parseYMParam(fallback, typeof ymParam === 'string' ? ymParam : undefined);
   }, [ymParam, year]);
 
-  // Get student's actual year from profile (year_of_study)
-  const studentYear: YearKey = useMemo(() => {
-    const yearOfStudy = userProfile?.year_of_study || userProfile?.year_group;
-    return parseYearKey(yearOfStudy);
-  }, [userProfile]);
-  
-  // TEMPORARY FIX: Disable gating so all students can view all years
-  // This will be fixed properly when we fetch profile data correctly
-  const isOwnYear = true; // was: year === studentYear
+  // Fetch events from API (Part D implementation)
+  useEffect(() => {
+    let cancelled = false;
 
-  // Load events for the current month
-  const events = useMemo(() => getEventsForMonth(year, ym), [year, ym]);
+    async function fetchEvents() {
+      setLoading(true);
+      setError(null);
+
+      try {
+        // Compute from/to range for the month
+        const monthStart = startOfMonth(new Date(ym.year, ym.month - 1));
+        const monthEnd = endOfMonth(new Date(ym.year, ym.month - 1));
+        
+        const from = format(monthStart, 'yyyy-MM-dd');
+        const to = format(monthEnd, 'yyyy-MM-dd');
+
+        const res = await fetch(`/api/yaag/events?yearKey=${year}&from=${from}&to=${to}`, {
+          credentials: 'include',
+        });
+
+        if (!res.ok) {
+          throw new Error(`Failed to fetch events: ${res.statusText}`);
+        }
+
+        const data = await res.json();
+        
+        if (!cancelled) {
+          setEvents(data.events || []);
+          setLoading(false);
+        }
+      } catch (err: any) {
+        console.error('[month.tsx] Fetch error:', err);
+        
+        if (!cancelled) {
+          setError(err.message);
+          // Fallback to Plan-only (static)
+          const fallbackEvents = getEventsForMonth(year, ym);
+          setEvents(fallbackEvents);
+          setLoading(false);
+        }
+      }
+    }
+
+    fetchEvents();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [year, ym]);
 
   // Navigation handlers
   const handlePrev = useCallback(() => {
@@ -84,6 +124,19 @@ const MonthPage: React.FC = () => {
     router.push(hrefYear(year));
   }, [router, year]);
 
+  // Callback to refresh events after personal item changes
+  const handleEventsChange = useCallback(() => {
+    // Re-trigger fetch
+    router.replace(router.asPath);
+  }, [router]);
+
+  const studentYear: YearKey = useMemo(() => {
+    const yearOfStudy = userProfile?.year_of_study || userProfile?.year_group;
+    return parseYearKey(yearOfStudy);
+  }, [userProfile]);
+  
+  const isOwnYear = true; // Allow all years for now
+
   const title = `${YEAR_LABEL[year]} • Month View`;
 
   return (
@@ -93,6 +146,12 @@ const MonthPage: React.FC = () => {
         <meta name="description" content={`Monthly calendar view for ${YEAR_LABEL[year]}`} />
       </Head>
 
+      {error && (
+        <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-2 rounded-lg mb-4 text-sm">
+          Personal items temporarily unavailable. Showing Plan only.
+        </div>
+      )}
+
       <MonthGrid
         yearKey={year}
         ym={ym}
@@ -101,6 +160,8 @@ const MonthPage: React.FC = () => {
         onNext={handleNext}
         onBack={handleBack}
         gated={!isOwnYear}
+        loading={loading}
+        onEventsChange={handleEventsChange}
       />
     </>
   );
