@@ -1,5 +1,5 @@
 // src/components/calendar/WeekGrid.tsx
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { format, addDays } from 'date-fns';
 import { ChevronLeft, ChevronRight, ArrowLeft, Clock, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
@@ -254,6 +254,47 @@ export const WeekGrid: React.FC<WeekGridProps> = ({
         </div>
       </div>
 
+      {/* Layer Toggles (Part F + Assignments) */}
+      <div className="flex items-center gap-4 mb-4 p-3 bg-white rounded-lg border">
+        <span className="text-sm font-medium text-gray-700">Show:</span>
+        <label className="flex items-center gap-2 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={showPlan}
+            onChange={(e) => setShowPlan(e.target.checked)}
+            className="w-4 h-4 rounded"
+          />
+          <span className="text-sm">Plan</span>
+        </label>
+        <label className="flex items-center gap-2 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={showPersonal}
+            onChange={(e) => setShowPersonal(e.target.checked)}
+            className="w-4 h-4 rounded"
+          />
+          <span className="text-sm">Personal</span>
+        </label>
+        <label className="flex items-center gap-2 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={showAssignments}
+            onChange={(e) => setShowAssignments(e.target.checked)}
+            className="w-4 h-4 rounded"
+          />
+          <span className="text-sm">Assignments</span>
+        </label>
+        <label className="flex items-center gap-2 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={showTimetable}
+            onChange={(e) => setShowTimetable(e.target.checked)}
+            className="w-4 h-4 rounded"
+          />
+          <span className="text-sm">Timetable</span>
+        </label>
+      </div>
+
       {/* Week Grid */}
       <div className="bg-white rounded-2xl shadow border overflow-hidden">
         {/* Day Headers */}
@@ -294,7 +335,7 @@ export const WeekGrid: React.FC<WeekGridProps> = ({
                         key={event.id}
                         type="button"
                         onClick={() => handleEventClick(event)}
-                        className={`block w-full text-xs px-2 py-1.5 rounded-md border ${getAllDayStyle(event.kind)} cursor-pointer hover:opacity-75 transition-opacity text-left`}
+                        className={`block w-full text-xs px-2 py-1.5 rounded-md border cursor-pointer hover:opacity-75 transition-opacity text-left ${badgeStyle(event.kind, event.meta?.source)}`}
                         title={label}
                       >
                         <div className="font-medium">{displayLabel}</div>
@@ -377,10 +418,10 @@ export const WeekGrid: React.FC<WeekGridProps> = ({
         <div className="mt-6 bg-white rounded-2xl shadow border p-6">
           <h3 className="text-lg font-semibold mb-4">All Events This Week</h3>
           <div className="space-y-3">
-            {events.length === 0 ? (
+            {filteredEvents.length === 0 ? (
               <p className="text-gray-500 text-sm">No events scheduled for this week</p>
             ) : (
-              events.map(event => {
+              filteredEvents.map(event => {
                 // Trust normalized titles; no extra window formatting here
                 const label = event.title;
                 return (
@@ -388,7 +429,7 @@ export const WeekGrid: React.FC<WeekGridProps> = ({
                     key={event.id}
                     type="button"
                     onClick={() => onEventClick?.(event)}
-                    className={`w-full text-left p-3 rounded border cursor-pointer hover:opacity-75 transition-opacity ${getAllDayStyle(event.kind)}`}
+                    className={`w-full text-left p-3 rounded border cursor-pointer hover:opacity-75 transition-opacity ${badgeStyle(event.kind, event.meta?.source)}`}
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
