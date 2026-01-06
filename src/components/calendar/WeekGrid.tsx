@@ -1,5 +1,6 @@
 // src/components/calendar/WeekGrid.tsx
 import React, { useEffect, useState, useMemo } from 'react';
+import { useRouter } from 'next/router';
 import { format, addDays } from 'date-fns';
 import { ChevronLeft, ChevronRight, ArrowLeft, Clock, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
@@ -92,6 +93,7 @@ export const WeekGrid: React.FC<WeekGridProps> = ({
   onEventsChange,
   onEventClick,
 }) => {
+  const router = useRouter();
   const [expanded, setExpanded] = useState(false);
   
   // Personal Item Modal state
@@ -175,6 +177,9 @@ export const WeekGrid: React.FC<WeekGridProps> = ({
         completed: event.meta.completed || false,
       });
       setModalOpen(true);
+    } else if (event.meta?.source === 'assignment' && event.meta.assignmentId) {
+      // Navigate to assignment page
+      router.push(`/assignments?assignmentId=${event.meta.assignmentId}`);
     } else {
       // Plan/timetable - pass to optional handler
       onEventClick?.(event);

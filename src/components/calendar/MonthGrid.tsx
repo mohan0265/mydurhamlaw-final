@@ -1,5 +1,6 @@
 // src/components/calendar/MonthGrid.tsx
 import React, { useEffect, useMemo, useState } from 'react';
+import { useRouter } from 'next/router';
 import {
   format,
   startOfMonth,
@@ -146,7 +147,7 @@ export const MonthGrid: React.FC<MonthGridProps> = ({
 
   const handleEventClick = (event: NormalizedEvent) => {
     if (event.meta?.source === 'personal') {
-      // Open edit modal
+      // Open edit modal for personal items
       setModalMode('edit');
       setModalItem({
         id: event.meta.personalItemId,
@@ -160,6 +161,9 @@ export const MonthGrid: React.FC<MonthGridProps> = ({
         completed: event.meta.completed || false,
       });
       setModalOpen(true);
+    } else if (event.meta?.source === 'assignment' && event.meta.assignmentId) {
+      // Navigate to assignment page
+      router.push(`/assignments?assignmentId=${event.meta.assignmentId}`);
     } else {
       // Plan/timetable events - just call the optional handler
       onEventClick?.(event);
