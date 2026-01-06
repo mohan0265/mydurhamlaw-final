@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/router';
 import { getSupabaseClient } from '@/lib/supabase/client';
 import { safePush, safeReplace } from '@/lib/navigation/safeNavigate';
@@ -19,8 +19,18 @@ export default function AuthCallbackPage() {
   const router = useRouter();
   const [status, setStatus] = useState('Finishing sign in...');
   const [error, setError] = useState<string | null>(null);
+  
+  // CRITICAL FIX: Prevent double execution in React StrictMode
+  const ranOnceRef = useRef(false);
 
   useEffect(() => {
+    // GUARD: Only run once even if React StrictMode double-invokes
+    if (ranOnceRef.current) {
+      console.log('[auth/callback] Already ran, skipping duplicate invocation');
+      return;
+    }
+    ranOnceRef.current = true;
+
     let cancelled = false;
     const didNavigateRef = { current: false };
 
@@ -40,50 +50,85 @@ export default function AuthCallbackPage() {
       const errorDescription = params.get('error_description');
       const authCode = params.get('code');
 
-      // 1. Handle explicit errors from provider
-        if (looksLikeProfileSaveError(errorCode, errorDescription)) {
-          setError('We could not finish setting up your profile yet. Please try again in a moment.');
-          setStatus('Sending you back to the login page...');
-          setTimeout(() => safeReplace(router, '/login?error=profile_setup'), REDIRECT_DELAY + 1000);
-          return;
-        }
+      console.log('[auth/callback] Processing callback, has code:', !!authCode, 'has error:', !!errorCode);
 
-        if (errorCode || errorDescription) {
-          const message = errorDescription || errorCode || 'Unexpected authentication error.';
-          setError(message);
-          setStatus('Redirecting to login...');
-          setTimeout(() => safeReplace(router, '/login?error=oauth'), REDIRECT_DELAY);
-          return;
-        }
+      // 1. Handle explicit errors from provider
+      if (looksLikeProfileSaveError(errorCode, errorDescription)) {
+        setError('We could not finish setting up your profile yet. Please try again in a moment.');
+        setStatus('Sending you back to the login page...');
+        setTimeout(() => safeReplace(router, '/login?error=profile_setup'), REDIRECT_DELAY + 1000);
+        return;
+      }
+
+      if (errorCode || errorDescription) {
+        const message = errorDescription || errorCode || 'Unexpected authentication error.';
+        setError(message);
+        setStatus('Redirecting to login...');
+        setTimeout(() => safeReplace(router, '/login?error=oauth'), REDIRECT_DELAY);
+        return;
+      }
 
       try {
-        // 2. If we have a code, exchange it.
-        if (authCode) {
+        // 2. CRITICAL FIX: Only exchange code if it exists AND is non-empty
+        if (authCode && authCode.trim().length > 0) {
+          console.log('[auth/callback] Exchanging code for session...');
           setStatus('Establishing your session...');
+          
           const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(authCode);
-          if (exchangeError) throw exchangeError;
+          
+          if (exchangeError) {
+            console.error('[auth/callback] Exchange error:', exchangeError);
+            
+            // SPECIAL CASE: If code was already used, session might still be valid
+            if (exchangeError.message?.includes('already been used') || 
+                exchangeError.message?.includes('invalid') ||
+                exchangeError.message?.includes('code verifier')) {
+              console.log('[auth/callback] Code exchange failed, checking if session exists anyway...');
+              // Continue to session check below
+            } else {
+              throw exchangeError;
+            }
+          } else {
+            console.log('[auth/callback] Code exchanged successfully');
+          }
+        } else if (!authCode) {
+          console.log('[auth/callback] No auth code present, checking for existing session...');
+          // No code - might be a direct navigation or session already established
+          // Try to get existing session
+        } else {
+          // authCode is empty string
+          console.warn('[auth/callback] Auth code is empty, cannot exchange');
+          setError('Authentication code is missing. Please try signing in again.');
+          setStatus('Redirecting to login...');
+          setTimeout(() => safeReplace(router, '/login?error=missing_code'), REDIRECT_DELAY);
+          return;
         }
 
-        // 3. Verify session exists
+        // 3. Verify session exists (regardless of exchange result)
         setStatus('Checking your session...');
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
         
-        if (sessionError) throw sessionError;
+        if (sessionError) {
+          console.error('[auth/callback] Session error:', sessionError);
+          throw sessionError;
+        }
         
         if (!session) {
-           // Sometimes the session is there but just needs a moment or a refresh
-           // We can try one more time after a short delay or just fail.
-           // For now, let's assume if exchange worked (or no code), we should have a session.
-           // If no code and no session, maybe they just navigated here manually?
-           if (!authCode) {
-             // Just navigated here?
-             safeReplace(router, '/login');
-             return;
-           }
-           throw new Error('Session was not created after code exchange.');
+          console.warn('[auth/callback] No session found after callback');
+          // Sometimes the session is there but just needs a moment
+          // If we had a code and it failed, that's a real problem
+          if (authCode && authCode.trim().length > 0) {
+            throw new Error('Session was not created after code exchange.');
+          }
+          // No code and no session - probably just navigated here manually
+          console.log('[auth/callback] No code and no session, redirecting to login');
+          safeReplace(router, '/login');
+          return;
         }
 
+        console.log('[auth/callback] Session verified, user:', session.user?.email);
         if (cancelled) return;
+        
         setStatus('Redirecting to complete your setup...');
         if (!didNavigateRef.current) {
           didNavigateRef.current = true;
@@ -104,7 +149,7 @@ export default function AuthCallbackPage() {
     return () => {
       cancelled = true;
     };
-  }, [router]);
+  }, [router]); // Only depend on router, ranOnceRef prevents re-runs
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-purple-50">
