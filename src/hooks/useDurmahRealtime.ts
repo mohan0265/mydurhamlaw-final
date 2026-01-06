@@ -418,6 +418,45 @@ export function useDurmahRealtime({
             ) {
               debugLog(`[SKIP] ${type} (covered by primary paths)`);
             }
+            // Response.done - FALLBACK for assistant transcript
+            else if (type === "response.done") {
+              debugLog("[RESPONSE.DONE] Parsing output for assistant text...");
+              // Extract assistant text from response.output array
+              const response = payload?.response;
+              if (response?.output) {
+                let extractedText = "";
+                for (const item of response.output) {
+                  if (item.type === "message" && item.role === "assistant") {
+                    // Walk content array for text
+                    if (Array.isArray(item.content)) {
+                      for (const content of item.content) {
+                        if (content.type === "text" && content.text) {
+                          extractedText += content.text + " ";
+                        } else if (content.type === "audio" && content.transcript) {
+                          // Audio with transcript
+                          extractedText += content.transcript + " ";
+                        } else if (content.transcript) {
+                          extractedText += content.transcript + " ";
+                        }
+                      }
+                    }
+                  }
+                }
+                extractedText = extractedText.trim();
+                if (extractedText) {
+                  // Flush with extracted text
+                  flushAssistantText(extractedText);
+                  debugLog(`[FINALIZE ASSISTANT] via response.done: "${extractedText.slice(0, 50)}..."`);
+                } else {
+                  // No text extracted, flush buffer anyway
+                  flushAssistantText();
+                  debugLog(`[FINALIZE ASSISTANT] via response.done (no text in output)`);
+                }
+              } else {
+                flushAssistantText();
+                debugLog(`[FINALIZE ASSISTANT] via response.done (no output array)`);
+              }
+            }
             // Audio playback (unrelated to transcription)
             else if (type === "response.audio.delta") {
               const b64 = payload.delta as string;
@@ -450,6 +489,10 @@ export function useDurmahRealtime({
                 payload?.error?.message || "Realtime response error detected";
               console.error("[DurmahVoice] Response error:", msg);
               setError(msg);
+            }
+            // Log unhandled event types
+            else {
+              debugLog(`[UNHANDLED] event type: ${type}`);
             }
           } catch (err) {
             debugLog("Failed to parse realtime payload", chunk, err);
