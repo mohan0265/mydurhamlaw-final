@@ -1,9 +1,11 @@
+```typescript
 // src/pages/auth/redirect.tsx
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/router';
 import { getSupabaseClient } from '@/lib/supabase/client';
+import { isRouteAbortError } from '@/lib/navigation/safeNavigate';
 
 type SignupPayload = {
   yg?: 'foundation' | 'year1' | 'year2' | 'year3';
@@ -59,7 +61,9 @@ export default function AuthRedirect() {
         if (!user) {
           setStatus('error');
           // No session – go to login
-          router.replace('/login');
+          router.replace('/login').catch((err) => {
+            if (!isRouteAbortError(err)) console.error('Nav error:', err);
+          });
           return;
         }
 
@@ -93,10 +97,14 @@ export default function AuthRedirect() {
         try { await supabase.rpc('awy_activate_loved_one_on_login'); } catch {}
 
         setStatus('done');
-        router.replace('/dashboard');
+        router.replace('/dashboard').catch((err) => {
+          if (!isRouteAbortError(err)) console.error('Nav error:', err);
+        });
       } catch (e) {
         setStatus('error');
-        router.replace('/login');
+        router.replace('/login').catch((err) => {
+          if (!isRouteAbortError(err)) console.error('Nav error:', err);
+        });
       }
     })();
   }, [supabase, router, urlSignup, localSignup]);

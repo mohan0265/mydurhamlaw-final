@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/router'
 import { ArrowRight, Brain, Heart } from 'lucide-react'
 import { useAuth } from '@/lib/supabase/AuthContext'
+import { isRouteAbortError } from '@/lib/navigation/safeNavigate'
 
 type FeatureCardProps = {
   icon: React.ReactNode
@@ -53,7 +54,13 @@ export default function DurhamLanding() {
   // Redirect logged-in users straight to their dashboard.
   React.useEffect(() => {
     if (user) {
-      router.replace('/dashboard')
+      router.replace('/dashboard').catch((err) => {
+        // Swallow route cancellation errors that happen if user navigates during redirect
+        if (isRouteAbortError(err)) {
+          return;
+        }
+        console.error('Unexpected navigation error:', err);
+      });
     }
   }, [user, router])
 

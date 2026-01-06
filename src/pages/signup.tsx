@@ -6,6 +6,7 @@ import { useRouter } from 'next/router'
 import Link from 'next/link'
 import { Brain, Users, Trophy } from 'lucide-react'
 import { getSupabaseClient } from '@/lib/supabase/client'
+import { isRouteAbortError } from '@/lib/navigation/safeNavigate'
 import { Logo } from '@/components/ui/Logo'
 import { BrandTitle } from '@/components/ui/BrandTitle'
 import GoogleSignInButton from '@/components/auth/GoogleSignInButton'
@@ -22,7 +23,11 @@ export default function SignUpPage() {
     const supabase = getSupabaseClient()
     if (!supabase) return
     supabase.auth.getSession().then(({ data }) => {
-      if (data.session) router.replace('/dashboard')
+      if (data.session) {
+        router.replace('/dashboard').catch((err) => {
+          if (!isRouteAbortError(err)) console.error('Nav error:', err);
+        });
+      }
     })
   }, [router])
 
