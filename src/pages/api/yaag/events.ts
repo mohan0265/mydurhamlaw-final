@@ -91,7 +91,7 @@ export default async function handler(
           id: `personal-${item.id}`,
           title: item.title,
           date: item.start_at.substring(0, 10), // YYYY-MM-DD
-          all Day: true,
+          allDay: true,
           kind: 'topic' as const, // Reuse existing kind for compatibility
           meta: {
             source: 'personal',
