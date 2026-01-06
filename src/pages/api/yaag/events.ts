@@ -72,6 +72,36 @@ export default async function handler(
       },
     }));
 
+    // 1a. GET PLAN OVERRIDES (student customizations)
+    const { data: planOverrides } = await supabase
+      .from('personal_items')
+      .select('*')
+      .eq('user_id', user.id)
+      .not('original_plan_id', 'is', null)
+      .gte('start_at', `${from}T00:00:00Z`)
+      .lte('start_at', `${to}T23:59:59Z`);
+
+    // Merge overrides into plan events
+    const mergedPlanEvents = planEventsWithMeta.map(planEvent => {
+      const override = (planOverrides || []).find(o => o.original_plan_id === planEvent.id);
+      if (!override) return planEvent;
+
+      return {
+        ...planEvent,
+        title: override.title || planEvent.title,
+        meta: {
+          ...planEvent.meta,
+          source: 'plan_override',
+          personalItemId: override.id,
+          tutor: override.tutor,
+          venue: override.venue,
+          notes: override.notes,
+          is_cancelled: override.is_cancelled,
+          editable: true,
+        },
+      };
+    });
+
     // 2. GET PERSONAL ITEMS (DB, editable)
     const { data: personalItems } = await supabase
       .from('personal_items')
@@ -204,7 +234,7 @@ export default async function handler(
 
     // 5. MERGE ALL EVENTS
     const allEvents = [
-      ...planEventsWithMeta,
+      ...mergedPlanEvents,
       ...personalEvents,
       ...assignmentEvents,
       ...timetableEventsNormalized,
