@@ -140,22 +140,31 @@ export default async function handler(
       .lte('due_date', to)
       .order('due_date', { ascending: true });
 
-    const assignmentEvents: NormalizedEvent[] = (assignments || []).map(assignment => ({
-      id: `assignment-${assignment.id}`,
-      title: assignment.title,
-      date: assignment.due_date, // Already in YYYY-MM-DD format
-      allDay: true, // Assignments are deadlines, not timed events
-      kind: 'deadline' as const, // Use deadline kind for visual distinction
-      meta: {
-        source: 'assignment',
-        assignmentId: assignment.id,
-        editable: true, // Can edit/delete assignments
-        module_id: assignment.module_id,
-        question: assignment.question,
-        status: assignment.status,
-        progress: assignment.progress,
-      },
-    }));
+    const assignmentEvents: NormalizedEvent[] = (assignments || []).map(assignment => {
+      // CRITICAL: Extract YYYY-MM-DD from due_date to match plan event format
+      // due_date is stored as DATE type, but may include time component when queried
+      // We need simple "2026-01-30" not "2026-01-30T04:00:00+00:00"
+      const dateOnly = typeof assignment.due_date === 'string' 
+        ? assignment.due_date.substring(0, 10)  // Extract YYYY-MM-DD
+        : assignment.due_date;
+
+      return {
+        id: `assignment-${assignment.id}`,
+        title: assignment.title,
+        date: dateOnly,  // NOW MATCHES: "2026-01-30" format
+        allDay: true, // Assignments are deadlines, not timed events
+        kind: 'deadline' as const, // Use deadline kind for visual distinction
+        meta: {
+          source: 'assignment',
+          assignmentId: assignment.id,
+          editable: true, // Can edit/delete assignments
+          module_id: assignment.module_id,
+          question: assignment.question,
+          status: assignment.status,
+          progress: assignment.progress,
+        },
+      };
+    });
 
     // 4. GET TIMETABLE EVENTS (optional, read-only for now)
     const { data: timetableEvents } = await supabase
