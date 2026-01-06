@@ -333,6 +333,7 @@ export function useDurmahRealtime({
         console.debug("[DurmahVoice] Data channel open");
         setStatus("listening");
 
+        // Send session configuration
         dc.send(
           JSON.stringify({
             type: "session.update",
@@ -346,14 +347,10 @@ export function useDurmahRealtime({
           })
         );
 
-        dc.send(
-          JSON.stringify({
-            type: "response.create",
-            response: {
-              modalities: ["audio", "text"],
-            },
-          })
-        );
+        // P0-1 FIX: REMOVED unconditional response.create
+        // Server VAD with create_response=true will auto-respond after user speaks
+        // This stops random greetings and duplicate responses
+        debugLog("[SESSION] Datachannel ready, awaiting user speech");
       };
 
       dc.onmessage = (event) => {
