@@ -93,9 +93,19 @@ function WeekRowView({ row, yearKey }: { row: WeekRow; yearKey: YearKey }) {
   const quickAddDate = row.mondayISO 
     ? format(addDays(new Date(row.mondayISO), 4), 'yyyy-MM-dd') 
     : undefined;
+  
+  // Navigate to week view
+  const handleWeekClick = () => {
+    if (row.mondayISO) {
+      router.push(hrefWeek(yearKey, row.mondayISO));
+    }
+  };
 
   return (
-    <div className="rounded-xl border px-3 py-2 space-y-2 hover:bg-gray-50 transition-colors group relative">
+    <div 
+      className="rounded-xl border px-3 py-2 space-y-2 hover:bg-gray-50 transition-colors group relative cursor-pointer"
+      onClick={handleWeekClick}
+    >
       <div className="flex items-center justify-between">
         <div className="text-sm font-medium text-gray-700 flex items-center gap-2">
           {row.id}{row.dateLabel ? ` · ${row.dateLabel}` : ''}
@@ -106,13 +116,14 @@ function WeekRowView({ row, yearKey }: { row: WeekRow; yearKey: YearKey }) {
                href={`/assignments?new=true&date=${quickAddDate}`}
                className="text-gray-300 hover:text-violet-600 opacity-0 group-hover:opacity-100 transition-all p-0.5"
                title="Add assignment due this week"
+               onClick={(e) => e.stopPropagation()}
              >
                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
              </Link>
           )}
         </div>
         {row.deadlines.length > 0 && (
-          <div className="flex flex-wrap gap-2 justify-end">
+          <div className="flex flex-wrap gap-2 justify-end" onClick={(e) => e.stopPropagation()}>
             {row.deadlines.map((d, i) =>
               d.isPersonal ? (
                 <Link 

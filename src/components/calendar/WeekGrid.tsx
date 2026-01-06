@@ -1,11 +1,12 @@
 // src/components/calendar/WeekGrid.tsx
 import React, { useEffect, useState } from 'react';
 import { format, addDays } from 'date-fns';
-import { ChevronLeft, ChevronRight, ArrowLeft, Clock } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ArrowLeft, Clock, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { YEAR_LABEL } from '@/lib/calendar/links';
 import type { YearKey } from '@/lib/calendar/links';
 import type { NormalizedEvent } from '@/lib/calendar/normalize';
+import PersonalItemModal from './PersonalItemModal';
 
 interface WeekGridProps {
   yearKey: YearKey;
@@ -82,6 +83,12 @@ export const WeekGrid: React.FC<WeekGridProps> = ({
   onEventClick,
 }) => {
   const [expanded, setExpanded] = useState(false);
+  
+  // Personal Item Modal state
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
+  const [modalDate, setModalDate] = useState<string | undefined>();
+  const [modalItem, setModalItem] = useState<any>(null);
 
   const weekStart = parseISOUTC(mondayISO);
   const weekEnd = addDays(weekStart, 6);
@@ -116,6 +123,41 @@ export const WeekGrid: React.FC<WeekGridProps> = ({
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [onPrev, onNext]);
+  
+  // Personal item handlers
+  const handleAddPersonalItem = (date: string) => {
+    setModalDate(date);
+    setModalMode('create');
+    setModalItem(null);
+    setModalOpen(true);
+  };
+  
+  const handleEventClick = (event: NormalizedEvent) => {
+    if (event.meta?.source === 'personal' && event.meta.personalItemId) {
+      // Edit personal item
+      setModalMode('edit');
+      setModalItem({
+        id: event.meta.personalItemId,
+        title: event.title,
+        type: event.meta.type || 'study',
+        start_at: event.start_at || `${event.date}T00:00:00Z`,
+        end_at: event.end_at,
+        is_all_day: event.allDay,
+        priority: event.meta.priority || 'medium',
+        notes: event.meta.notes,
+        completed: event.meta.completed || false,
+      });
+      setModalOpen(true);
+    } else {
+      // Plan/timetable - pass to optional handler
+      onEventClick?.(event);
+    }
+  };
+  
+  const handleModalSave = () => {
+    setModalOpen(false);
+    onEventsChange?.();
+  };
 
   if (gated) {
     return (
@@ -194,8 +236,19 @@ export const WeekGrid: React.FC<WeekGridProps> = ({
           </div>
           {weekDays.map((day, index) => (
             <div key={index} className="p-4 text-center border-r last:border-r-0">
-              <div className="font-medium text-gray-900">{WEEKDAYS[index]}</div>
-              <div className="text-sm text-gray-500">{format(day, 'd MMM')}</div>
+              <div className="flex items-center justify-between mb-1">
+                <div>
+                  <div className="font-medium text-gray-900">{WEEKDAYS[index]}</div>
+                  <div className="text-sm text-gray-500">{format(day, 'd MMM')}</div>
+                </div>
+                <button
+                  onClick={() => handleAddPersonalItem(iso(day))}
+                  className="p-1 hover:bg-green-100 rounded transition"
+                  title="Add personal item"
+                >
+                  <Plus className="w-4 h-4 text-green-600" />
+                </button>
+              </div>
 
               {/* All-day events */}
               <div className="mt-2 space-y-1 min-h-[80px]">
@@ -213,7 +266,7 @@ export const WeekGrid: React.FC<WeekGridProps> = ({
                       <button
                         key={event.id}
                         type="button"
-                        onClick={() => onEventClick?.(event)}
+                        onClick={() => handleEventClick(event)}
                         className={`block w-full text-xs px-2 py-1.5 rounded-md border ${getAllDayStyle(event.kind)} cursor-pointer hover:opacity-75 transition-opacity text-left`}
                         title={label}
                       >
@@ -344,11 +397,21 @@ export const WeekGrid: React.FC<WeekGridProps> = ({
       )}
 
       <div className="mt-4 text-xs text-gray-500 text-center">
-        Tip: Hover over events for details • Use keyboard arrows to navigate weeks
+        Tip: Click + in day headers to add personal items • Use keyboard arrows to navigate weeks
       </div>
       <div className="lg:hidden mt-2 text-xs text-gray-500 text-center">
         Scroll horizontally to see all days of the week
       </div>
+      
+      {/* Personal Item Modal */}
+      <PersonalItemModal
+        isOpen={modalOpen}
+        onClose={() => setModalOpen(false)}
+        onSave={handleModalSave}
+        mode={modalMode}
+        initialDate={modalDate}
+        existingItem={modalItem}
+      />
     </div>
   );
 };
