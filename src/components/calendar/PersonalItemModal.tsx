@@ -1,6 +1,7 @@
 // src/components/calendar/PersonalItemModal.tsx
 import React, { useState, useEffect } from 'react';
 import { getSupabaseClient } from '@/lib/supabase/client';
+import { useAuth } from '@/lib/supabase/AuthContext';
 import toast from 'react-hot-toast';
 
 export type PersonalItemType = 'study' | 'task' | 'appointment' | 'reminder';
@@ -58,6 +59,9 @@ export default function PersonalItemModal({
   });
   const [completed, setCompleted] = useState(false);
   const [saving, setSaving] = useState(false);
+  
+  // Get authenticated user
+  const { user } = useAuth();
 
   // Initialize form from existing item OR reset for create mode
   useEffect(() => {
@@ -120,7 +124,13 @@ export default function PersonalItemModal({
         }
       }
 
+      // CRITICAL: Get authenticated user ID for RLS
+      if (!user?.id) {
+        throw new Error('You must be logged in to create personal items');
+      }
+
       const payload = {
+        user_id: user.id, // CRITICAL: Required for RLS policy
         title: formData.title.trim(),
         type: formData.type,
         start_at,
