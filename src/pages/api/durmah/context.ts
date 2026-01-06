@@ -101,7 +101,7 @@ export default async function handler(
     // TODO: Fetch timetable (for now, empty)
     const todaysClasses: any[] = [];
 
-    // Build StudentContext (Phase 1 schema)
+    // Build StudentContext
     const studentContext: StudentContext = {
       student: {
         displayName: profile?.display_name || 'Student',
@@ -121,12 +121,8 @@ export default async function handler(
       },
     };
 
-    // PHASE 2 FIX: Return BOTH shapes for backward compatibility
-    // Some callers expect .context, others expect StudentContext directly
-    return res.status(200).json({
-      ...studentContext, // Spread StudentContext fields at top level
-      context: studentContext, // Also provide as .context for backward compat
-    });
+    // Return simple StudentContext (revert problematic spread)
+    return res.status(200).json(studentContext);
   } catch (error: any) {
     console.error('Error fetching Durmah context:', error);
     return res.status(500).json({ error: error.message || 'Internal server error' });
