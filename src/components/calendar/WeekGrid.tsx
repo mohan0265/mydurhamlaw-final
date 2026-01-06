@@ -14,7 +14,10 @@ interface WeekGridProps {
   onPrev: () => void;
   onNext: () => void;
   onBack: () => void;
+  onMonthView?: () => void;  // NEW: navigate to month view
   gated: boolean;
+  loading?: boolean;
+  onEventsChange?: () => void;
   onEventClick?: (event: NormalizedEvent) => void;
 }
 
@@ -72,7 +75,10 @@ export const WeekGrid: React.FC<WeekGridProps> = ({
   onPrev,
   onNext,
   onBack,
+  onMonthView,
   gated,
+  loading,
+  onEventsChange,
   onEventClick,
 }) => {
   const [expanded, setExpanded] = useState(false);
@@ -145,10 +151,18 @@ export const WeekGrid: React.FC<WeekGridProps> = ({
     <div className="max-w-7xl mx-auto px-4 py-6">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
-        <button onClick={onBack} className="flex items-center gap-2 text-purple-700 hover:underline">
-          <ArrowLeft className="w-4 h-4" />
-          Back to Year
-        </button>
+        <div className="flex items-center gap-4">
+          <button onClick={onBack} className="flex items-center gap-2 text-purple-700 hover:underline">
+            <ArrowLeft className="w-4 h-4" />
+            Back to Year
+          </button>
+          {onMonthView && (
+            <button onClick={onMonthView} className="flex items-center gap-2 text-blue-600 hover:underline">
+              <ArrowLeft className="w-4 h-4" />
+              Back to Month
+            </button>
+          )}
+        </div>
 
         <div className="flex items-center gap-4">
           <button onClick={onPrev} className="p-2 rounded-xl border hover:bg-gray-50" title="Previous week (←)">
@@ -167,6 +181,7 @@ export const WeekGrid: React.FC<WeekGridProps> = ({
             {expanded ? 'Collapse all' : 'Expand all'}
           </Button>
           <div className="text-sm text-gray-500">Use ← → keys to navigate</div>
+          {loading && <span className="text-sm text-gray-400">Loading...</span>}
         </div>
       </div>
 

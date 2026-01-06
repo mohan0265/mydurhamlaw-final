@@ -134,6 +134,14 @@ const WeekPage: React.FC = () => {
     router.replace(router.asPath);
   }, [router]);
 
+  // Navigate to month view
+  const handleMonthView = useCallback(() => {
+    const monthDate = new Date(weekStartISO + 'T00:00:00Z');
+    const yearParam = year;
+    const ymParam = format(monthDate, 'yyyy-MM');
+    router.push(`/year-at-a-glance/month?y=${yearParam}&ym=${ymParam}`);
+  }, [router, year, weekStartISO]);
+
   const title = `${YEAR_LABEL[year]} • Week View`;
 
   return (
@@ -156,6 +164,7 @@ const WeekPage: React.FC = () => {
         onPrev={handlePrev}
         onNext={handleNext}
         onBack={handleBack}
+        onMonthView={handleMonthView}
         gated={!isOwnYear}
         loading={loading}
         onEventsChange={handleEventsChange}
