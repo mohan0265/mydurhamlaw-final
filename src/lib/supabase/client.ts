@@ -23,7 +23,18 @@ export function getSupabaseClient(): SupabaseClient {
 
     if (isBrowser) {
       // Use auth-helpers for browser client - manages both localStorage AND cookies
-      supabase = createPagesBrowserClient();
+      // CRITICAL: Disable auto-detection to prevent 400 errors
+      // Only /auth/callback should exchange codes
+      supabase = createPagesBrowserClient({
+        cookieOptions: { name: 'sb-auth-token' },
+        supabaseUrl: url,
+        supabaseKey: key,
+      });
+      
+      // Disable auto URL detection to avoid double exchange
+      if (supabase && (supabase as any).auth) {
+        (supabase as any).auth.detectSessionInUrl = false;
+      }
     } else {
       // This shouldn't happen (this file is for client-side only)
       // But provide fallback

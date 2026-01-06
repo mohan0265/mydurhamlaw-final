@@ -380,12 +380,14 @@ export function useDurmahRealtime({
                 payload.delta ?? payload.text ?? payload.transcript ?? ""
               );
             }
-            // User finalization: PRIMARY path
+            // User finalization: PRIMARY path (CRITICAL FIX)
             else if (
               type === "input_audio_transcription.final" ||
-              type === "input_audio_transcription.done"
+              type === "input_audio_transcription.done" ||
+              type === "conversation.item.input_audio_transcription.completed" // ← WAS BEING SKIPPED!
             ) {
               flushUserText(payload.transcript ?? payload.text ?? "");
+              debugLog(`[FINALIZE USER] via ${type}`);
             }
             // Assistant deltas: accumulate only
             else if (
@@ -397,20 +399,24 @@ export function useDurmahRealtime({
                 payload.delta ?? payload.text ?? payload.transcript ?? ""
               );
             }
-            // Assistant finalization: PRIMARY path (conversation.item.created)
+            // Assistant finalization: conversation.item.created + response.completed
             else if (type === "conversation.item.created") {
               handleConversationItem(payload);
+              debugLog(`[FINALIZE ASSISTANT] via conversation.item.created`);
             }
-            // DISABLED: Duplicate finalization paths
+            else if (type === "response.completed") {
+              // Flush any pending assistant text
+              flushAssistantText();
+              debugLog(`[FINALIZE ASSISTANT] via response.completed`);
+            }
+            // Still skip these specific duplicates
             else if (
               type === "response.audio_transcript.done" ||
               type === "response.output_text.done" ||
               type === "response.text.done" ||
-              type === "response.completed" ||
-              type === "conversation.item.input_audio_transcription.completed" ||
               type === "conversation.item.output_audio_transcription.completed"
             ) {
-              debugLog(`[SKIP] ${type} (using primary finalization path)`);
+              debugLog(`[SKIP] ${type} (covered by primary paths)`);
             }
             // Audio playback (unrelated to transcription)
             else if (type === "response.audio.delta") {
