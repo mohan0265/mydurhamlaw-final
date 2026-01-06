@@ -1,12 +1,20 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { createPagesServerClient } from '@supabase/auth-helpers-nextjs';
+import { createClient } from '@supabase/supabase-js';
 import { buildDurmahContext } from '@/lib/durmah/contextBuilder';
 import type { StudentContext } from '@/types/durmahContext';
 
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+
 /**
- * HOTFIX: Auth compatibility fix
- * - Use createPagesServerClient for cookie-based auth (reliable)
- * - Still use buildDurmahContext data for real term/week/timetable
+ * DUAL AUTH MODE FIX (ChatGPT recommended)
+ * 
+ * Accepts BOTH:
+ * 1. Cookie-based session (for SSR/browser)
+ * 2. Bearer token in Authorization header (for client-side fetch)
+ * 
+ * Returns 401 only if BOTH fail
  */
 export default async function handler(
   req: NextApiRequest,
@@ -17,12 +25,47 @@ export default async function handler(
   }
 
   try {
-    // HOTFIX: Use cookie-based auth first (more reliable for frontend calls)
-    const supabase = createPagesServerClient({ req, res });
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    
-    if (!user || authError) {
-      console.error('[context] Auth failed:', authError?.message);
+    let user: any = null;
+    let authMethod: 'cookie' | 'bearer' | 'none' = 'none';
+
+    // TRY METHOD 1: Cookie-based auth
+    try {
+      const supabase = createPagesServerClient({ req, res });
+      const { data: { user: cookieUser }, error } = await supabase.auth.getUser();
+      if (cookieUser && !error) {
+        user = cookieUser;
+        authMethod = 'cookie';
+        console.log('[context] ✓ Auth via cookies');
+      }
+    } catch (err) {
+      console.warn('[context] Cookie auth failed:', err);
+    }
+
+    // TRY METHOD 2: Bearer token (if cookies failed)
+    if (!user) {
+      const authHeader = req.headers.authorization;
+      if (authHeader?.startsWith('Bearer ')) {
+        const token = authHeader.substring(7);
+        try {
+          const supabase = createClient(SUPABASE_URL, ANON_KEY, {
+            global: { headers: { Authorization: `Bearer ${token}` } },
+            auth: { persistSession: false },
+          });
+          const { data: { user: bearerUser }, error } = await supabase.auth.getUser(token);
+          if (bearerUser && !error) {
+            user = bearerUser;
+            authMethod = 'bearer';
+            console.log('[context] ✓ Auth via bearer token');
+          }
+        } catch (err) {
+          console.warn('[context] Bearer auth failed:', err);
+        }
+      }
+    }
+
+    // BOTH methods failed
+    if (!user) {
+      console.error('[context] ✗ Auth failed (both cookie and bearer)');
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
@@ -43,7 +86,7 @@ export default async function handler(
             localTimeISO: context.academic.localTimeISO,
           },
           assignments: {
-            upcoming: [],  // TODO: Wire to builder if assignments added
+            upcoming: [],  // TODO: Wire to assignments table
             overdue: [],
             recentlyCreated: [],
             total: 0,
@@ -58,6 +101,7 @@ export default async function handler(
           },
         };
 
+        console.log(`[context] ✓ Returned context: term=${studentContext.student.term}, week=${studentContext.student.weekOfTerm}, classes=${studentContext.schedule.todaysClasses.length}`);
         return res.status(200).json(studentContext);
       }
     } catch (builderError) {
@@ -65,6 +109,10 @@ export default async function handler(
     }
 
     // Fallback: Use basic profile data if builder fails
+    const supabase = createClient(SUPABASE_URL, ANON_KEY, {
+      global: { headers: { Authorization: `Bearer ${user.id}` } },
+    });
+    
     const { data: profile } = await supabase
       .from('profiles')
       .select('display_name, year_group, year_of_study')
@@ -90,10 +138,11 @@ export default async function handler(
       },
     };
 
+    console.log('[context] ✓ Returned fallback context');
     return res.status(200).json(fallbackContext);
 
   } catch (error: any) {
-    console.error('[context] Error:', error);
+    console.error('[context] ✗ Error:', error);
     return res.status(500).json({ error: error.message || 'Internal server error' });
   }
 }
