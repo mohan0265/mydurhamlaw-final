@@ -386,15 +386,21 @@ export function useDurmahRealtime({
               flushUserText(payload.transcript ?? payload.text ?? "");
               debugLog(`[FINALIZE USER] via ${type}`);
             }
-            // Assistant deltas: accumulate only
+            // Assistant deltas: ONLY use response.output_text.delta (P0 FIX)
+            // DO NOT use response.text.delta or response.audio_transcript.delta (causes duplicates)
+            else if (type === "response.output_text.delta") {
+              const delta = payload.delta ?? payload.text ?? "";
+              if (delta) {
+                appendAssistantText(delta);
+                debugLog(`[ASSISTANT DELTA] "${delta.slice(0, 30)}..."`);
+              }
+            }
+            // SKIP these to avoid duplication (use output_text.delta only)
             else if (
-              type === "response.audio_transcript.delta" ||
-              type === "response.output_text.delta" ||
-              type === "response.text.delta"
+              type === "response.text.delta" ||
+              type === "response.audio_transcript.delta"
             ) {
-              appendAssistantText(
-                payload.delta ?? payload.text ?? payload.transcript ?? ""
-              );
+              debugLog(`[SKIP DUPLICATE] ${type} - using output_text.delta only`);
             }
             // Assistant finalization: conversation.item.created + response.completed
             else if (type === "conversation.item.created") {
