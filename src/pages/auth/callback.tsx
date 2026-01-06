@@ -79,12 +79,16 @@ export default function AuthCallbackPage() {
           if (exchangeError) {
             console.error('[auth/callback] Exchange error:', exchangeError);
             
-            // SPECIAL CASE: If code was already used, session might still be valid
-            if (exchangeError.message?.includes('already been used') || 
-                exchangeError.message?.includes('invalid') ||
-                exchangeError.message?.includes('code verifier')) {
-              console.log('[auth/callback] Code exchange failed, checking if session exists anyway...');
-              // Continue to session check below
+            // PKCE FIX: If code exchange fails, check if session exists anyway
+            // This handles cases where exchange fails but session was already created
+            const failsafeCheck = exchangeError.message?.includes('already been used') || 
+                                  exchangeError.message?.includes('invalid') ||
+                                  exchangeError.message?.includes('code verifier') ||
+                                  exchangeError.message?.includes('Auth code');
+            
+            if (failsafeCheck) {
+              console.log('[auth/callback] Code exchange failed, will check if session exists anyway...');
+              // Continue to session check below - don't throw
             } else {
               throw exchangeError;
             }
