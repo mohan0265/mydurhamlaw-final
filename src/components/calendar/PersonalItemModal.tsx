@@ -59,9 +59,10 @@ export default function PersonalItemModal({
   const [completed, setCompleted] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  // Initialize form from existing item
+  // Initialize form from existing item OR reset for create mode
   useEffect(() => {
     if (mode === 'edit' && existingItem) {
+      // EDIT MODE: Load existing item data
       const startDate = new Date(existingItem.start_at);
       const endDate = existingItem.end_at ? new Date(existingItem.end_at) : null;
       
@@ -77,8 +78,21 @@ export default function PersonalItemModal({
         moduleId: existingItem.module_id,
       });
       setCompleted(existingItem.completed);
+    } else if (mode === 'create') {
+      // CREATE MODE: Reset to clean form with date pre-filled
+      setFormData({
+        title: '',
+        type: 'study',
+        date: initialDate || new Date().toISOString().substring(0, 10),
+        isAllDay: true,
+        startTime: '09:00',
+        endTime: '10:00',
+        priority: 'medium',
+        notes: '',
+      });
+      setCompleted(false);
     }
-  }, [mode, existingItem]);
+  }, [mode, existingItem, initialDate, isOpen]); // Added isOpen to trigger on modal open
 
   const handleSave = async () => {
     if (!formData.title.trim()) {
