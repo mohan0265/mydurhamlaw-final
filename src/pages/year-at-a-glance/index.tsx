@@ -8,6 +8,7 @@ import {
   hrefYear,
   hrefMonth,
   hrefWeek,
+  hrefWeekWS,
   parseYearKey,
   persistYearKey,
   getPrevYearKey,
@@ -97,7 +98,7 @@ function WeekRowView({ row, yearKey }: { row: WeekRow; yearKey: YearKey }) {
   // Navigate to week view
   const handleWeekClick = () => {
     if (row.mondayISO) {
-      router.push(hrefWeek(yearKey, row.mondayISO));
+      router.push(hrefWeekWS(yearKey, row.mondayISO));
     }
   };
 
