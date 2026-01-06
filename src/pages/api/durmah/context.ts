@@ -1,20 +1,19 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { createPagesServerClient } from '@supabase/auth-helpers-nextjs';
+<parameter name="CreatePagesServerClient } from '@supabase/auth-helpers-nextjs';
 import { createClient } from '@supabase/supabase-js';
-import { buildDurmahContext } from '@/lib/durmah/contextBuilder';
 import type { StudentContext } from '@/types/durmahContext';
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
 /**
- * DUAL AUTH MODE FIX (ChatGPT recommended)
+ * CHATGPT'S FINAL WIRING FIX
  * 
- * Accepts BOTH:
- * 1. Cookie-based session (for SSR/browser)
- * 2. Bearer token in Authorization header (for client-side fetch)
+ * Now queries SAME sources as UI:
+ * - `assignments` table (exactly like assignments.tsx line 42)
+ * - `timetable_events` table (exactly like contextBuilder.ts line 244)
  * 
- * Returns 401 only if BOTH fail
+ * NO MORE empty arrays or total=0
  */
 export default async function handler(
   req: NextApiRequest,
@@ -27,11 +26,12 @@ export default async function handler(
   try {
     let user: any = null;
     let authMethod: 'cookie' | 'bearer' | 'none' = 'none';
+    let supabaseClient: any = null;
 
     // TRY METHOD 1: Cookie-based auth
     try {
-      const supabase = createPagesServerClient({ req, res });
-      const { data: { user: cookieUser }, error } = await supabase.auth.getUser();
+      supabaseClient = createPagesServerClient({ req, res });
+      const { data: { user: cookieUser }, error } = await supabaseClient.auth.getUser();
       if (cookieUser && !error) {
         user = cookieUser;
         authMethod = 'cookie';
@@ -47,11 +47,11 @@ export default async function handler(
       if (authHeader?.startsWith('Bearer ')) {
         const token = authHeader.substring(7);
         try {
-          const supabase = createClient(SUPABASE_URL, ANON_KEY, {
+          supabaseClient = createClient(SUPABASE_URL, ANON_KEY, {
             global: { headers: { Authorization: `Bearer ${token}` } },
             auth: { persistSession: false },
           });
-          const { data: { user: bearerUser }, error } = await supabase.auth.getUser(token);
+          const { data: { user: bearerUser }, error } = await supabaseClient.auth.getUser(token);
           if (bearerUser && !error) {
             user = bearerUser;
             authMethod = 'bearer';
@@ -64,82 +64,93 @@ export default async function handler(
     }
 
     // BOTH methods failed
-    if (!user) {
+    if (!user || !supabaseClient) {
       console.error('[context] ✗ Auth failed (both cookie and bearer)');
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    // Try to use buildDurmahContext for rich data
-    try {
-      const result = await buildDurmahContext(req);
-      
-      if (result.ok) {
-        const { context } = result;
-        
-        // Build StudentContext from rich context packet
-        const studentContext: StudentContext = {
-          student: {
-            displayName: context.profile.displayName || user.email?.split('@')[0] || 'Student',
-            yearGroup: context.profile.yearOfStudy || context.profile.yearGroup || 'Year 1',
-            term: context.academic.term,
-            weekOfTerm: context.academic.weekOfTerm || 1,
-            localTimeISO: context.academic.localTimeISO,
-          },
-          assignments: {
-            upcoming: [],  // TODO: Wire to assignments table
-            overdue: [],
-            recentlyCreated: [],
-            total: 0,
-          },
-          schedule: {
-            todaysClasses: context.schedule?.today?.map(t => ({
-              title: t.title,
-              start: t.start,
-              end: t.end,
-              location: t.location,
-            })) || [],
-          },
-        };
-
-        console.log(`[context] ✓ Returned context: term=${studentContext.student.term}, week=${studentContext.student.weekOfTerm}, classes=${studentContext.schedule.todaysClasses.length}`);
-        return res.status(200).json(studentContext);
-      }
-    } catch (builderError) {
-      console.warn('[context] Builder failed, using fallback:', builderError);
-    }
-
-    // Fallback: Use basic profile data if builder fails
-    const supabase = createClient(SUPABASE_URL, ANON_KEY, {
-      global: { headers: { Authorization: `Bearer ${user.id}` } },
-    });
-    
-    const { data: profile } = await supabase
+    // FETCH: User profile
+    const { data: profile } = await supabaseClient
       .from('profiles')
       .select('display_name, year_group, year_of_study')
       .eq('id', user.id)
       .maybeSingle();
 
-    const fallbackContext: StudentContext = {
+    // FETCH: Assignments (EXACT same query as assignments.tsx line 42)
+    const { data: assignmentsData } = await supabaseClient
+      .from('assignments')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('due_date', { ascending: true });
+
+    // Categorize assignments
+    const now = new Date();
+    const assignments = assignmentsData || [];
+    
+    const upcoming = assignments.filter(a => 
+      a.due_date && new Date(a.due_date) >= now && a.status !== 'completed'
+    ).slice(0, 5);  // Top 5
+    
+    const overdue = assignments.filter(a =>
+      a.due_date && new Date(a.due_date) < now && a.status !== 'completed'
+    ).slice(0,  5);  // Top 5
+    
+    const recentlyCreated = assignments
+      .filter(a => new Date(a.created_at) > new Date(now.getTime() - 7*24*60*60*1000))
+      .slice(0, 3);  // Last 3
+
+    // FETCH: Today's classes
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
+    
+    const { data: todaysEvents } = await supabaseClient
+      .from('timetable_events')
+      .select('title, start_time, end_time, location, module_code')
+      .eq('user_id', user.id)
+      .gte('start_time', todayStart.toISOString())
+      .lte('start_time', todayEnd.toISOString())
+      .order('start_time', { ascending: true });
+
+    // FETCH: Next 7 days classes (for richer context)
+    const next7DaysEnd = new Date(now.getTime() + 7*24*60*60*1000);
+    
+    const { data: weekEvents } = await supabaseClient
+      .from('timetable_events')
+      .select('title, start_time, end_time, location, module_code')
+      .eq('user_id', user.id)
+      .gte('start_time', now.toISOString())
+      .lte('start_time', next7DaysEnd.toISOString())
+      .order('start_time', { ascending: true })
+      .limit(10);
+
+    // Build response
+    const studentContext: StudentContext = {
       student: {
         displayName: profile?.display_name || user.email?.split('@')[0] || 'Student',
         yearGroup: profile?.year_of_study || profile?.year_group || 'Year 1',
-        term: 'Epiphany',  // Current term as of Jan 2026
-        weekOfTerm: 3,     // Approximate week
-        localTimeISO: new Date().toISOString(),
+        term: 'Epiphany',  // TODO: Compute from academic calendar
+        weekOfTerm: 3,     // TODO: Compute from academic calendar
+        localTimeISO: now.toISOString(),
       },
       assignments: {
-        upcoming: [],
-        overdue: [],
-        recentlyCreated: [],
-        total: 0,
+        upcoming,
+        overdue,
+        recentlyCreated,
+        total: assignments.length,
       },
       schedule: {
-        todaysClasses: [],
+        todaysClasses: (todaysEvents || []).map(e => ({
+          title: e.title,
+          start: e.start_time,
+          end: e.end_time,
+          location: e.location,
+        })),
       },
     };
 
-    console.log('[context] ✓ Returned fallback context');
-    return res.status(200).json(fallbackContext);
+    console.log(`[context] ✓ SUCCESS: term=${studentContext.student.term}, assignments total=${studentContext.assignments.total}, today classes=${studentContext.schedule.todaysClasses.length}`);
+    
+    return res.status(200).json(studentContext);
 
   } catch (error: any) {
     console.error('[context] ✗ Error:', error);
