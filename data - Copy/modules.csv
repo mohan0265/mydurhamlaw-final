@@ -1,0 +1,21 @@
+academic_year,year_of_study,module_code,module_title,compulsory,credits
+2025-26,1,LAW101,Legal Methods & Reasoning,true,20
+2025-26,1,LAW102,Contract Law,true,20
+2025-26,1,LAW103,Tort Law,true,20
+2025-26,1,LAW104,Criminal Law,true,20
+2025-26,1,LAW105,Public Law (Constitutional & Administrative),true,20
+2025-26,1,LAW199,Foundations Portfolio,false,20
+2025-26,2,LAW201,Land Law,true,20
+2025-26,2,LAW202,Equity & Trusts,true,20
+2025-26,2,LAW203,EU Law,false,20
+2025-26,2,LAW204,Commercial Law,false,20
+2025-26,2,LAW205,Company Law,false,20
+2025-26,2,LAW299,Research & Writing Workshop,false,20
+2025-26,3,LAW301,Jurisprudence,true,20
+2025-26,3,LAW302,Evidence,false,20
+2025-26,3,LAW303,International Law,false,20
+2025-26,3,LAW304,Human Rights Law,false,20
+2025-26,3,LAW305,Family Law,false,20
+2025-26,3,LAW306,Intellectual Property Law,false,20
+2025-26,3,LAW399,Dissertation / Project,false,40
+

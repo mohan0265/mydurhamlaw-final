@@ -1,0 +1,23 @@
+academic_year,module_code,assessment_name,assessment_type,weight_percent,window_start,window_end,due_date,due_time,notes
+2025-26,LAW101,Skills Portfolio,coursework,100,,,2026-03-06,17:00,Submit via learning platform
+2025-26,LAW102,Final Exam,exam,100,2026-05-20,2026-06-10,,09:30,Central exams timetable
+2025-26,LAW103,Final Exam,exam,100,2026-05-20,2026-06-10,,14:00,
+2025-26,LAW104,Final Exam,exam,100,2026-05-20,2026-06-10,,09:30,
+2025-26,LAW105,Final Exam,exam,100,2026-05-20,2026-06-10,,14:00,
+2025-26,LAW199,Reflection Essay,coursework,50,,,2025-12-12,17:00,
+2025-26,LAW199,Group Presentation,presentation,50,,,2026-03-14,17:00,
+2025-26,LAW201,Final Exam,exam,100,2026-05-20,2026-06-10,,09:30,
+2025-26,LAW202,Final Exam,exam,100,2026-05-20,2026-06-10,,14:00,
+2025-26,LAW203,Problem Question,coursework,40,,,2026-02-27,17:00,
+2025-26,LAW203,Final Exam,exam,60,2026-05-20,2026-06-10,,09:30,
+2025-26,LAW204,Coursework,coursework,100,,,2026-03-06,17:00,
+2025-26,LAW205,Coursework,coursework,100,,,2026-03-13,17:00,
+2025-26,LAW299,Research Essay,coursework,100,,,2025-12-12,17:00,
+2025-26,LAW301,Final Essay,coursework,100,,,2026-03-13,17:00,
+2025-26,LAW302,Final Exam,exam,100,2026-05-20,2026-06-10,,09:30,
+2025-26,LAW303,Coursework,coursework,100,,,2025-12-12,17:00,
+2025-26,LAW304,Coursework,coursework,100,,,2026-03-13,17:00,
+2025-26,LAW305,Coursework,coursework,100,,,2025-12-12,17:00,
+2025-26,LAW306,Coursework,coursework,100,,,2026-03-06,17:00,
+2025-26,LAW399,Dissertation,coursework,100,,,2026-06-12,12:00,Submit PDF + abstract
+
