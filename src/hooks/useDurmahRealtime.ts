@@ -29,6 +29,14 @@ function extractTextFromContent(content: any): string {
   return "";
 }
 
+// CHATGPT FIX: Normalize text for deduplication (removes spacing before punctuation)
+const normalizeForDedupe = (s: string) =>
+  (s || "")
+    .replace(/\s+([,.!?;:])/g, "$1")  // Remove space before punctuation
+    .replace(/\s+/g, " ")              // Collapse whitespace
+    .trim()
+    .toLowerCase();
+
 interface UseDurmahRealtimeProps {
   systemPrompt: string;
   voice?: string;
@@ -60,10 +68,11 @@ export function useDurmahRealtime({
   const userTranscriptRef = useRef<string>("");
   const hasGreetedRef = useRef(false);
 
-  // DEDUPE GUARDS: Prevent duplicate turn flushes
-  const processedItemIdsRef = useRef<Set<string>>(new Set());
-  const lastFlushedAssistantRef = useRef<{ text: string; ts: number } | null>(null);
-  const lastFlushedUserRef = useRef<{ text: string; ts: number } | null>(null);
+  // CHATGPT FIX: Track last emitted text per speaker for dedupe
+  const lastEmitRef = useRef({
+    user: { text: "", ts: 0 },
+    durmah: { text: "", ts: 0 },
+  });
 
   const debugLog = (...args: unknown[]) => {
     if (REALTIME_DEBUG) {
@@ -73,6 +82,7 @@ export function useDurmahRealtime({
 
   const normalizeChunk = (text?: string) => text?.trim() ?? "";
 
+  // CHATGPT FIX: Fixed mergeIncremental to NOT create spacing before punctuation
   const mergeIncremental = useCallback((current: string, incoming?: string) => {
     const cur = normalizeChunk(current);
     const inc = normalizeChunk(incoming);
@@ -83,7 +93,11 @@ export function useDurmahRealtime({
     if (incLower === curLower) return cur;
     if (incLower.startsWith(curLower)) return inc;
     if (curLower.startsWith(incLower)) return cur;
-    return `${cur} ${inc}`.replace(/\s+/g, " ").trim();
+    
+    // FIXED: Don't just concat with space - check if inc starts with punctuation
+    const needsSpace = !/^[,.!?;:]/.test(inc);
+    const merged = needsSpace ? `${cur} ${inc}` : `${cur}${inc}`;
+    return merged.replace(/\s+/g, " ").trim();
   }, []);
 
   const appendAssistantText = useCallback((delta?: string) => {
@@ -93,35 +107,52 @@ export function useDurmahRealtime({
     );
   }, [mergeIncremental]);
 
+  const appendUserText = useCallback((delta?: string) => {
+    userTranscriptRef.current = mergeIncremental(userTranscriptRef.current, delta);
+  }, [mergeIncremental]);
+
+  // CHATGPT FIX: Unified emit function with dedupe at source
+  const emitTurn = useCallback(
+    (speaker: "user" | "durmah", textRaw: string) => {
+      if (!textRaw) return;
+      
+      const normalized = normalizeForDedupe(textRaw);
+      if (!normalized) return;
+      
+      const now = Date.now();
+      const lastEmit = lastEmitRef.current[speaker];
+      
+      // Dedupe: skip if same speaker + same normalized text within 2500ms
+      if (lastEmit.text === normalized && (now - lastEmit.ts) < 2500) {
+        debugLog(`[DEDUPE] Skipping duplicate ${speaker} turn:`, normalized.slice(0, 50));
+        return;
+      }
+      
+      // Emit the turn with ORIGINAL text (not lowercased)
+      const cleanText = normalizeTranscriptLanguageSync(textRaw);
+      if (cleanText) {
+        onTurn?.({ speaker, text: cleanText });
+        lastEmitRef.current[speaker] = { text: normalized, ts: now };
+        debugLog(`[EMIT] ${speaker}:`, cleanText.slice(0, 50));
+      }
+    },
+    [onTurn, debugLog]
+  );
+
   const flushAssistantText = useCallback(
     (extra?: string) => {
       assistantTranscriptRef.current = mergeIncremental(
         assistantTranscriptRef.current,
         extra
       );
-      const raw = assistantTranscriptRef.current.trim();
-      const text = normalizeTranscriptLanguageSync(raw);
+      const text = assistantTranscriptRef.current.trim();
       if (text) {
-        // DEDUPE: Check if we just flushed identical text within 3 seconds
-        const now = Date.now();
-        const last = lastFlushedAssistantRef.current;
-        if (last && last.text === text && (now - last.ts) < 3000) {
-          debugLog('[DEDUPE] Skipping duplicate assistant flush:', text.slice(0, 50));
-          assistantTranscriptRef.current = "";
-          return;
-        }
-        
-        onTurn?.({ speaker: "durmah", text });
-        lastFlushedAssistantRef.current = { text, ts: now };
+        emitTurn("durmah", text);
       }
       assistantTranscriptRef.current = "";
     },
-    [mergeIncremental, onTurn, debugLog]
+    [mergeIncremental, emitTurn]
   );
-
-  const appendUserText = useCallback((delta?: string) => {
-    userTranscriptRef.current = mergeIncremental(userTranscriptRef.current, delta);
-  }, [mergeIncremental]);
 
   const flushUserText = useCallback(
     (extra?: string) => {
@@ -129,51 +160,33 @@ export function useDurmahRealtime({
         userTranscriptRef.current,
         extra
       );
-      const raw = userTranscriptRef.current.trim();
-      const text = normalizeTranscriptLanguageSync(raw);
+      const text = userTranscriptRef.current.trim();
       if (text) {
-        // DEDUPE: Check if we just flushed identical text within 3 seconds
-        const now = Date.now();
-        const last = lastFlushedUserRef.current;
-        if (last && last.text === text && (now - last.ts) < 3000) {
-          debugLog('[DEDUPE] Skipping duplicate user flush:', text.slice(0, 50));
-          userTranscriptRef.current = "";
-          return;
-        }
-        
-        onTurn?.({ speaker: "user", text });
-        lastFlushedUserRef.current = { text, ts: now };
+        emitTurn("user", text);
       }
       userTranscriptRef.current = "";
     },
-    [mergeIncremental, onTurn, debugLog]
+    [mergeIncremental, emitTurn]
   );
 
+  // CHATGPT FIX: conversation.item.created calls emitTurn directly (no merge!)
   const handleConversationItem = useCallback(
     (payload: any) => {
       const item = payload?.item;
       if (!item) return;
       
-      // DEDUPE: Only process each item.id once
-      if (item.id && processedItemIdsRef.current.has(item.id)) {
-        debugLog('[DEDUPE] Skipping already-processed item:', item.id);
-        return;
-      }
-      
       const text = extractTextFromContent(item.content);
       if (!text) return;
       
-      if (item.id) {
-        processedItemIdsRef.current.add(item.id);
-      }
-      
       if (item.role === "user") {
-        flushUserText(text);
+        userTranscriptRef.current = "";  // Clear buffer to avoid double-append
+        emitTurn("user", text);
       } else if (item.role === "assistant") {
-        flushAssistantText(text);
+        assistantTranscriptRef.current = "";  // Clear buffer to avoid double-append
+        emitTurn("durmah", text);
       }
     },
-    [flushAssistantText, flushUserText, debugLog]
+    [emitTurn]
   );
 
   const requestAnswerSdp = useCallback(
@@ -272,9 +285,10 @@ export function useDurmahRealtime({
       userTranscriptRef.current = "";
       hasGreetedRef.current = false;
       // Reset dedupe state for new session
-      processedItemIdsRef.current.clear();
-      lastFlushedAssistantRef.current = null;
-      lastFlushedUserRef.current = null;
+      lastEmitRef.current = {
+        user: { text: "", ts: 0 },
+        durmah: { text: "", ts: 0 },
+      };
       stopPreview();
       setStatus("connecting");
 
@@ -355,7 +369,26 @@ export function useDurmahRealtime({
             debugLog("event", type);
             if (!type) continue;
 
+            // CHATGPT FIX: Simplified event handling - ONE finalization path per role
+            
+            // User deltas: accumulate only
             if (
+              type === "input_audio_transcription.delta" ||
+              type === "conversation.item.input_audio_transcription.delta"
+            ) {
+              appendUserText(
+                payload.delta ?? payload.text ?? payload.transcript ?? ""
+              );
+            }
+            // User finalization: PRIMARY path
+            else if (
+              type === "input_audio_transcription.final" ||
+              type === "input_audio_transcription.done"
+            ) {
+              flushUserText(payload.transcript ?? payload.text ?? "");
+            }
+            // Assistant deltas: accumulate only
+            else if (
               type === "response.audio_transcript.delta" ||
               type === "response.output_text.delta" ||
               type === "response.text.delta"
@@ -363,39 +396,24 @@ export function useDurmahRealtime({
               appendAssistantText(
                 payload.delta ?? payload.text ?? payload.transcript ?? ""
               );
-            } else if (
+            }
+            // Assistant finalization: PRIMARY path (conversation.item.created)
+            else if (type === "conversation.item.created") {
+              handleConversationItem(payload);
+            }
+            // DISABLED: Duplicate finalization paths
+            else if (
               type === "response.audio_transcript.done" ||
               type === "response.output_text.done" ||
               type === "response.text.done" ||
-              type === "response.completed"
-            ) {
-              // DISABLED: conversation.item.created is now authoritative for finalization
-              // flushAssistantText(payload.transcript ?? payload.text ?? "");
-              debugLog('[SKIP] response.*.done (using conversation.item.created instead)');
-            } else if (
-              type === "input_audio_transcription.delta" ||
-              type === "conversation.item.input_audio_transcription.delta"
-            ) {
-              appendUserText(
-                payload.delta ?? payload.text ?? payload.transcript ?? ""
-              );
-            } else if (
-              type === "input_audio_transcription.final" ||
-              type === "input_audio_transcription.done" ||
-              type === "conversation.item.input_audio_transcription.completed"
-            ) {
-              // DISABLED: conversation.item.created is now authoritative for finalization
-              // flushUserText(payload.transcript ?? payload.text ?? "");
-              debugLog('[SKIP] input_audio_transcription.* (using conversation.item.created instead)');
-            } else if (type === "conversation.item.created") {
-              handleConversationItem(payload);
-            } else if (
+              type === "response.completed" ||
+              type === "conversation.item.input_audio_transcription.completed" ||
               type === "conversation.item.output_audio_transcription.completed"
             ) {
-              // DISABLED: conversation.item.created handles this
-              // flushAssistantText(payload.transcript ?? "");
-              debugLog('[SKIP] conversation.item.output_audio_transcription.completed');
-            } else if (type === "response.audio.delta") {
+              debugLog(`[SKIP] ${type} (using primary finalization path)`);
+            }
+            // Audio playback (unrelated to transcription)
+            else if (type === "response.audio.delta") {
               const b64 = payload.delta as string;
               const bytes = Uint8Array.from(atob(b64), (c) =>
                 c.charCodeAt(0)
@@ -419,7 +437,9 @@ export function useDurmahRealtime({
                   { once: true }
                 );
               }
-            } else if (type === "response.error") {
+            }
+            // Error handling
+            else if (type === "response.error") {
               const msg =
                 payload?.error?.message || "Realtime response error detected";
               console.error("[DurmahVoice] Response error:", msg);
@@ -454,6 +474,7 @@ export function useDurmahRealtime({
     audioRef,
     appendAssistantText,
     appendUserText,
+    flushUserText,
     handleConversationItem,
     requestAnswerSdp,
     stopListening,
@@ -463,12 +484,11 @@ export function useDurmahRealtime({
     debugLog,
   ]);
 
-  // Handle dynamic system prompt updates (e.g. valid context loaded after connection start)
+  // Handle dynamic system prompt updates
   useEffect(() => {
     if (status !== 'listening' && status !== 'speaking') return;
     if (!dcRef.current || dcRef.current.readyState !== 'open') return;
 
-    // We only update the instructions, keeping other settings same
     const payload = {
       type: "session.update",
       session: {
@@ -582,14 +602,14 @@ export function useDurmahRealtime({
     [requestAnswerSdp, stopPreview, systemPrompt]
   );
 
-  // Cleanup on component unmount ONLY - don't stop when other things re-render!
+  // Cleanup on component unmount ONLY
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     return () => {
       stopListening();
       stopPreview();
     };
-  }, []); // Empty array = cleanup runs ONLY on unmount, not on re-renders!
+  }, []);
 
   const voiceActive =
     status === "connecting" || status === "listening" || status === "speaking";
