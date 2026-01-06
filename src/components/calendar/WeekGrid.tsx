@@ -43,12 +43,22 @@ function getEventStyle(kind: NormalizedEvent['kind']): string {
   }
 }
 
-function getAllDayStyle(kind: NormalizedEvent['kind']): string {
+function badgeStyle(kind: NormalizedEvent['kind'], source?: string): string {
+  // Assignments get green styling (from Year View)
+  if (source === 'assignment') {
+    return 'bg-green-50 text-green-800 border-green-200';
+  }
+  
+  // Personal items get emerald styling 
+  if (source === 'personal') {
+    return 'bg-emerald-50 text-emerald-800 border-emerald-200';
+  }
+  
   switch (kind) {
-    case 'topic': return 'bg-blue-100 text-blue-800 border-blue-200';
-    case 'assessment': return 'bg-red-100 text-red-800 border-red-200';
-    case 'exam': return 'bg-red-200 text-red-900 border-red-300 font-medium';
-    default: return 'bg-gray-100 text-gray-800 border-gray-200';
+    case 'topic':      return 'bg-blue-50 text-blue-800 border-blue-100';
+    case 'assessment': return 'bg-red-50 text-red-700 border-red-100';
+    case 'exam':       return 'bg-red-100 text-red-900 border-red-200 font-medium';
+    default:           return 'bg-gray-50 text-gray-800 border-gray-100';
   }
 }
 
@@ -86,6 +96,11 @@ export const WeekGrid: React.FC<WeekGridProps> = ({
   
   // Personal Item Modal state
   const [modalOpen, setModalOpen] = useState(false);
+  // Layer toggles (Part F + Assignments)
+  const [showPlan, setShowPlan] = useState(true);
+  const [showPersonal, setShowPersonal] = useState(true);
+  const [showAssignments, setShowAssignments] = useState(true);
+  const [showTimetable, setShowTimetable] = useState(true);
   const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
   const [modalDate, setModalDate] = useState<string | undefined>();
   const [modalItem, setModalItem] = useState<any>(null);
@@ -94,10 +109,22 @@ export const WeekGrid: React.FC<WeekGridProps> = ({
   const weekEnd = addDays(weekStart, 6);
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
 
+  // Filter events by layer toggles
+  const filteredEvents = useMemo(() => {
+    return events.filter(ev => {
+      const source = ev.meta?.source;
+      if (source === 'plan' && !showPlan) return false;
+      if (source === 'personal' && !showPersonal) return false;
+      if (source === 'assignment' && !showAssignments) return false;
+      if (source === 'timetable' && !showTimetable) return false;
+      return true;
+    });
+  }, [events, showPlan, showPersonal, showAssignments, showTimetable]);
+
   // Group all-day events by date
   const allDayByDate = new Map<string, NormalizedEvent[]>();
   for (const d of weekDays) allDayByDate.set(iso(d), []);
-  for (const e of events) {
+  for (const e of filteredEvents) {
     if (e.allDay && e.date) {
       const bucket = allDayByDate.get(e.date);
       if (bucket) bucket.push(e);
@@ -105,7 +132,7 @@ export const WeekGrid: React.FC<WeekGridProps> = ({
   }
 
   // Timed events by date
-  const timedEventsByDate = events.reduce((acc, event) => {
+  const timedEventsByDate = filteredEvents.reduce((acc, event) => {
     if (event.start && event.end) {
       const dateKey = event.date;
       if (!acc[dateKey]) acc[dateKey] = [];
