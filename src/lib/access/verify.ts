@@ -37,15 +37,9 @@ export async function verifyUserAccess(
 
     const email = user.email.toLowerCase().trim();
 
-    // 2. CHECK DOMAIN
-    if (!isAllowedDomain(email)) {
-      console.log(`[ACCESS DENIED] Domain not allowed: ${email}`);
-      return { allowed: false, reason: 'domain_not_allowed', email };
-    }
-
-    // 3. CHECK ALLOWLIST (using service-role or admin RLS)
-    // Note: This uses the authenticated user's session
-    // RLS will filter based on admin privileges if needed
+    // 2. CHECK ALLOWLIST FIRST (to determine role)
+    // Note: We need to check allowlist BEFORE domain validation
+    // because admins can have any email domain
     const { data: allowlistEntry, error: dbError } = await supabase
       .from('access_allowlist')
       .select('email, status, role, trial_expires_at')
@@ -60,6 +54,13 @@ export async function verifyUserAccess(
     if (!allowlistEntry) {
       console.log(`[ACCESS DENIED] Email not in allowlist: ${email}`);
       return { allowed: false, reason: 'not_in_allowlist', email };
+    }
+
+    // 3. CHECK DOMAIN (only for non-admin users)
+    // Admins can have ANY email domain (e.g., mohan0265@gmail.com)
+    if (allowlistEntry.role !== 'admin' && !isAllowedDomain(email)) {
+      console.log(`[ACCESS DENIED] Domain not allowed for student: ${email}`);
+      return { allowed: false, reason: 'domain_not_allowed', email };
     }
 
     // 4. CHECK STATUS
