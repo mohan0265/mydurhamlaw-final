@@ -19,6 +19,7 @@ import { useDurmahSettings } from "@/hooks/useDurmahSettings";
 import { Settings, X, ArrowRight, AlertTriangle, Check, Volume2, Brain, Zap, RefreshCw, MoreHorizontal, Trash2 } from "lucide-react";
 import Link from 'next/link';
 import toast from "react-hot-toast";
+import { useRouter } from 'next/router';
 import { getSupabaseClient } from "@/lib/supabase/client";
 
 // Voice Provider Selection - checks environment variable
