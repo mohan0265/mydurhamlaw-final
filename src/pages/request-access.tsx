@@ -41,9 +41,9 @@ export default function RequestAccessPage() {
       setSuccess(true);
       setRequesting(false);
 
-      // Redirect to login after 2 seconds
+      // Redirect to onboarding with email prefill
       setTimeout(() => {
-        router.push('/login');
+        router.push(`/onboarding?email=${encodeURIComponent(email)}`);
       }, 2000);
 
     } catch (err: any) {
@@ -155,7 +155,7 @@ export default function RequestAccessPage() {
               <p className="text-gray-600 mb-6">
                 Your 30-day trial has been activated.
                 <br />
-                Redirecting to sign in...
+                Next: Complete your profile to continue...
               </p>
               <div className="animate-pulse">
                 <div className="h-2 w-full bg-gray-200 rounded-full overflow-hidden">

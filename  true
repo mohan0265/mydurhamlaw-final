@@ -1,0 +1,10 @@
+[35msrc/pages/auth/callback.tsx[m[36m:[m[32m165[m[36m:[m        // If user just came from [1;31monboarding[m form, complete their profile
+[35msrc/pages/auth/callback.tsx[m[36m:[m[32m166[m[36m:[m        const isOnboarding = new URLSearchParams(window.location.search).get('[1;31monboarding[m') === 'true';
+[35msrc/pages/auth/callback.tsx[m[36m:[m[32m170[m[36m:[m            const [1;31monboarding[mDataStr = localStorage.getItem('[1;31monboarding[m_data');
+[35msrc/pages/auth/callback.tsx[m[36m:[m[32m171[m[36m:[m            if ([1;31monboarding[mDataStr) {
+[35msrc/pages/auth/callback.tsx[m[36m:[m[32m172[m[36m:[m              const [1;31monboarding[mData = JSON.parse([1;31monboarding[mDataStr);
+[35msrc/pages/auth/callback.tsx[m[36m:[m[32m173[m[36m:[m              const completeRes = await fetch('/api/[1;31monboarding[m/complete', {
+[35msrc/pages/auth/callback.tsx[m[36m:[m[32m177[m[36m:[m                body: JSON.stringify([1;31monboarding[mData)
+[35msrc/pages/auth/callback.tsx[m[36m:[m[32m184[m[36m:[m              localStorage.removeItem('[1;31monboarding[m_data');
+[35msrc/pages/auth/callback.tsx[m[36m:[m[32m203[m[36m:[m            console.log('[auth/callback] Profile incomplete, redirecting to [1;31monboarding[m');
+[35msrc/pages/auth/callback.tsx[m[36m:[m[32m204[m[36m:[m            window.location.href = '/[1;31monboarding[m?required=true';

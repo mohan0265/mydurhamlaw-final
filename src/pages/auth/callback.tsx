@@ -160,11 +160,62 @@ export default function AuthCallbackPage() {
         }
 
         if (cancelled) return;
+
+        // ONBOARDING COMPLETION CHECK
+        // If user just came from onboarding form, complete their profile
+        const isOnboarding = new URLSearchParams(window.location.search).get('onboarding') === 'true';
+        if (isOnboarding) {
+          setStatus('Completing your profile...');
+          try {
+            const onboardingDataStr = localStorage.getItem('onboarding_data');
+            if (onboardingDataStr) {
+              const onboardingData = JSON.parse(onboardingDataStr);
+              const completeRes = await fetch('/api/onboarding/complete', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify(onboardingData)
+              });
+              
+              if (!completeRes.ok) {
+                console.error('[auth/callback] Onboarding completion failed');
+                // Continue anyway - profile might be partially complete
+              }
+              localStorage.removeItem('onboarding_data');
+            }
+          } catch (onboardErr) {
+            console.error('[auth/callback] Onboarding error:', onboardErr);
+          }
+        }
+
+        // PROFILE EXISTENCE CHECK
+        // Verify user has completed profile (display_name + accepted terms)
+        setStatus('Checking your profile...');
+        try {
+          const supabaseCheck = createPagesServerClient({ req: {} as any, res: {} as any });
+          const { data: profile } = await supabaseCheck
+            .from('profiles')
+            .select('display_name, accepted_terms_at')
+            .eq('id', session.user.id)
+            .maybeSingle();
+          
+          if (!profile || !profile.display_name || !profile.accepted_terms_at) {
+            console.log('[auth/callback] Profile incomplete, redirecting to onboarding');
+            window.location.href = '/onboarding?required=true';
+            return;
+          }
+        } catch (profileErr) {
+          console.error('[auth/callback] Profile check failed:', profileErr);
+          // Continue anyway to avoid blocking users
+        }
+
+        if (cancelled) return;
         
-        setStatus('Redirecting to complete your setup...');
+        setStatus('Redirecting to your dashboard...');
         if (!didNavigateRef.current) {
           didNavigateRef.current = true;
-        console.log('[auth/callback] FORCING redirect to /LoginRedirectPage'); window.location.href = '/LoginRedirectPage';
+          console.log('[auth/callback] FORCING redirect to /LoginRedirectPage');
+          window.location.href = '/LoginRedirectPage';
         }
 
       } catch (err: any) {
