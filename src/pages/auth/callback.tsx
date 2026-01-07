@@ -3,11 +3,12 @@
 import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/router';
 import { getSupabaseClient } from '@/lib/supabase/client';
-import { safePush, safeReplace } from '@/lib/navigation/safeNavigate';
+import { safeReplace } from '@/lib/navigation/safeNavigate';
 
 const REDIRECT_DELAY = 3000;
+const FAILSAFE_TIMEOUT = 5000;
 
-function looksLikeProfileSaveError(code?: string | null, description?: string | null) {
+function looksLikeProfileSaveError(code?: string | null, description?: string | null): boolean {
   const codeText = (code || '').toLowerCase();
   const descriptionText = (description || '').toLowerCase();
   if (codeText === 'unexpected_failure') return true;
@@ -20,28 +21,53 @@ export default function AuthCallbackPage() {
   const [status, setStatus] = useState('Finishing sign in...');
   const [error, setError] = useState<string | null>(null);
   
-  // CRITICAL FIX: Prevent double execution in React StrictMode
   const ranOnceRef = useRef(false);
+  const hasRedirectedRef = useRef(false);
+  const failsafeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    // GUARD: Only run once even if React StrictMode double-invokes
     if (ranOnceRef.current) {
-      console.log('[auth/callback] Already ran, skipping duplicate invocation');
+      console.log('[auth/callback] Already ran, checking if redirect needed...');
+      if (!hasRedirectedRef.current) {
+        console.warn('[auth/callback] Duplicate invocation - forcing redirect');
+        window.location.href = '/dashboard';
+      }
       return;
     }
     ranOnceRef.current = true;
 
     let cancelled = false;
-    const didNavigateRef = { current: false };
 
-    async function run() {
+    function performRedirect(path: string, userType: 'admin' | 'student' | 'unknown'): void {
+      if (hasRedirectedRef.current) {
+        console.warn('[auth/callback] Redirect already performed');
+        return;
+      }
+      
+      hasRedirectedRef.current = true;
+      if (failsafeTimerRef.current) {
+        clearTimeout(failsafeTimerRef.current);
+      }
+      
+      console.log(`[auth/callback] 🚀 REDIRECTING to ${path} (${userType})`);
+      setStatus(`Redirecting...`);
+      window.location.href = path;
+    }
+
+    failsafeTimerRef.current = setTimeout(() => {
+      if (!hasRedirectedRef.current && !cancelled) {
+        console.error('[auth/callback] FAILSAFE TRIGGERED - forcing redirect');
+        performRedirect('/dashboard', 'unknown');
+      }
+    }, FAILSAFE_TIMEOUT);
+
+    async function run(): Promise<void> {
       if (typeof window === 'undefined') return;
 
       const supabase = getSupabaseClient();
       if (!supabase) {
-        setError('Authentication service is unavailable.');
-        setStatus('Redirecting to login...');
-        setTimeout(() => safeReplace(router, '/login?error=client_unavailable'), REDIRECT_DELAY);
+        setError('Authentication service unavailable');
+        setTimeout(() => performRedirect('/login?error=client_unavailable', 'unknown'), REDIRECT_DELAY);
         return;
       }
 
@@ -50,66 +76,53 @@ export default function AuthCallbackPage() {
       const errorDescription = params.get('error_description');
       const authCode = params.get('code');
 
-      console.log('[auth/callback] Processing callback, has code:', !!authCode, 'has error:', !!errorCode);
+      console.log('[auth/callback] Processing callback, code:', !!authCode, 'error:', !!errorCode);
 
-      // 1. Handle explicit errors from provider
       if (looksLikeProfileSaveError(errorCode, errorDescription)) {
-        setError('We could not finish setting up your profile yet. Please try again in a moment.');
-        setStatus('Sending you back to the login page...');
-        setTimeout(() => safeReplace(router, '/login?error=profile_setup'), REDIRECT_DELAY + 1000);
+        setError('Could not finish setting up your profile. Please try again.');
+        setTimeout(() => performRedirect('/login?error=profile_setup', 'unknown'), REDIRECT_DELAY + 1000);
         return;
       }
 
       if (errorCode || errorDescription) {
-        const message = errorDescription || errorCode || 'Unexpected authentication error.';
+        const message = errorDescription || errorCode || 'Authentication error';
         setError(message);
-        setStatus('Redirecting to login...');
-        setTimeout(() => safeReplace(router, '/login?error=oauth'), REDIRECT_DELAY);
+        setTimeout(() => performRedirect('/login?error=oauth', 'unknown'), REDIRECT_DELAY);
         return;
       }
 
       try {
-        // 2. CRITICAL FIX: Only exchange code if it exists AND is non-empty
         if (authCode && authCode.trim().length > 0) {
           console.log('[auth/callback] Exchanging code for session...');
-          setStatus('Establishing your session...');
+          setStatus('Establishing session...');
           
           const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(authCode);
           
           if (exchangeError) {
             console.error('[auth/callback] Exchange error:', exchangeError);
             
-            // PKCE FIX: If code exchange fails, check if session exists anyway
-            // This handles cases where exchange fails but session was already created
             const failsafeCheck = exchangeError.message?.includes('already been used') || 
                                   exchangeError.message?.includes('invalid') ||
-                                  exchangeError.message?.includes('code verifier') ||
-                                  exchangeError.message?.includes('Auth code');
+                                  exchangeError.message?.includes('code verifier');
             
             if (failsafeCheck) {
-              console.log('[auth/callback] Code exchange failed, will check if session exists anyway...');
-              // Continue to session check below - don't throw
+              console.log('[auth/callback] Code already used, checking session...');
             } else {
               throw exchangeError;
             }
           } else {
-            console.log('[auth/callback] Code exchanged successfully');
+            console.log('[auth/callback] ✅ Code exchanged');
           }
         } else if (!authCode) {
-          console.log('[auth/callback] No auth code present, checking for existing session...');
-          // No code - might be a direct navigation or session already established
-          // Try to get existing session
+          console.log('[auth/callback] No code, checking existing session...');
         } else {
-          // authCode is empty string
-          console.warn('[auth/callback] Auth code is empty, cannot exchange');
-          setError('Authentication code is missing. Please try signing in again.');
-          setStatus('Redirecting to login...');
-          setTimeout(() => safeReplace(router, '/login?error=missing_code'), REDIRECT_DELAY);
+          console.warn('[auth/callback] Empty code');
+          setError('Authentication code missing');
+          setTimeout(() => performRedirect('/login?error=missing_code', 'unknown'), REDIRECT_DELAY);
           return;
         }
 
-        // 3. Verify session exists (regardless of exchange result)
-        setStatus('Checking your session...');
+        setStatus('Checking session...');
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
         
         if (sessionError) {
@@ -118,23 +131,19 @@ export default function AuthCallbackPage() {
         }
         
         if (!session) {
-          console.warn('[auth/callback] No session found after callback');
-          // Sometimes the session is there but just needs a moment
-          // If we had a code and it failed, that's a real problem
+          console.warn('[auth/callback] No session found');
           if (authCode && authCode.trim().length > 0) {
-            throw new Error('Session was not created after code exchange.');
+            throw new Error('Session not created after code exchange');
           }
-          // No code and no session - probably just navigated here manually
-          console.log('[auth/callback] No code and no session, redirecting to login');
-          safeReplace(router, '/login');
+          performRedirect('/login', 'unknown');
           return;
         }
 
-        console.log('[auth/callback] Session verified, user:', session.user?.email);
+        console.log('[auth/callback] ✅ Session verified:', session.user?.email);
 
-        // ACCESS CONTROL CHECK
-        // Verify user is allowed to access the app
         setStatus('Verifying access...');
+        let userRole: 'admin' | 'student' = 'student';
+        
         try {
           const accessRes = await fetch('/api/access/verify', {
             credentials: 'include'
@@ -142,30 +151,27 @@ export default function AuthCallbackPage() {
           const accessData = await accessRes.json();
           
           if (!accessData.allowed) {
-            console.log('[auth/callback] Access denied:', accessData.reason);
-            // Sign out and redirect to restricted page
+            console.log('[auth/callback] ❌ Access denied:', accessData.reason);
             await supabase.auth.signOut();
-            const params = new URLSearchParams({
+            const restrictedParams = new URLSearchParams({
               reason: accessData.reason || 'not_in_allowlist'
             });
-            if (session.user?.email) params.set('email', session.user.email);
-            window.location.href = `/restricted?${params}`;
+            if (session.user?.email) restrictedParams.set('email', session.user.email);
+            performRedirect(`/restricted?${restrictedParams}`, 'unknown');
             return;
           }
           
-          console.log('[auth/callback] Access granted for', session.user?.email);
+          userRole = accessData.role === 'admin' ? 'admin' : 'student';
+          console.log(`[auth/callback] ✅ Access granted (${userRole}):`, session.user?.email);
         } catch (accessErr) {
           console.error('[auth/callback] Access check failed:', accessErr);
-          // On error, allow through (fail open) but log for manual review
         }
 
         if (cancelled) return;
 
-        // ONBOARDING COMPLETION CHECK
-        // If user just came from onboarding form, complete their profile
-        const isOnboarding = new URLSearchParams(window.location.search).get('onboarding') === 'true';
+        const isOnboarding = params.get('onboarding') === 'true';
         if (isOnboarding) {
-          setStatus('Completing your profile...');
+          setStatus('Completing profile...');
           try {
             const onboardingDataStr = localStorage.getItem('onboarding_data');
             if (onboardingDataStr) {
@@ -177,9 +183,8 @@ export default function AuthCallbackPage() {
                 body: JSON.stringify(onboardingData)
               });
               
-              if (!completeRes.ok) {
-                console.error('[auth/callback] Onboarding completion failed');
-                // Continue anyway - profile might be partially complete
+              if (completeRes.ok) {
+                console.log('[auth/callback] ✅ Onboarding completed');
               }
               localStorage.removeItem('onboarding_data');
             }
@@ -188,54 +193,45 @@ export default function AuthCallbackPage() {
           }
         }
 
-        // PROFILE EXISTENCE CHECK
-        // Verify user has completed profile (display_name + accepted terms)
-        // CRITICAL: Skip for admins - they may have been created before onboarding flow
-        setStatus('Checking your profile...');
+        if (cancelled) return;
+
+        if (userRole === 'admin') {
+          console.log('[auth/callback] Admin - skipping profile check');
+          performRedirect('/LoginRedirectPage', 'admin');
+          return;
+        }
+
+        setStatus('Checking profile...');
         try {
-          // First, check if user is admin by calling access verify
-          const accessCheckRes = await fetch('/api/access/verify', {
-            credentials: 'include'
-          });
-          const accessCheckData = await accessCheckRes.json();
+          const { data: profile, error: profileError } = await supabase
+            .from('profiles')
+            .select('display_name, accepted_terms_at')
+            .eq('id', session.user.id)
+            .maybeSingle();
           
-          if (accessCheckData.role === 'admin') {
-            console.log('[auth/callback] Admin user - skipping profile completeness check');
+          if (profileError) {
+            console.error('[auth/callback] Profile fetch error:', profileError);
+          } else if (!profile || !profile.display_name || !profile.accepted_terms_at) {
+            console.log('[auth/callback] Profile incomplete');
+            performRedirect('/onboarding?required=true', 'student');
+            return;
           } else {
-            // Only check profile completeness for students
-            const supabaseCheck = createPagesServerClient({ req: {} as any, res: {} as any });
-            const { data: profile } = await supabaseCheck
-              .from('profiles')
-              .select('display_name, accepted_terms_at')
-              .eq('id', session.user.id)
-              .maybeSingle();
-            
-            if (!profile || !profile.display_name || !profile.accepted_terms_at) {
-              console.log('[auth/callback] Profile incomplete, redirecting to onboarding');
-              window.location.href = '/onboarding?required=true';
-              return;
-            }
+            console.log('[auth/callback] ✅ Profile complete');
           }
         } catch (profileErr) {
           console.error('[auth/callback] Profile check failed:', profileErr);
-          // Continue anyway to avoid blocking users
         }
 
         if (cancelled) return;
         
-        setStatus('Redirecting to your dashboard...');
-        if (!didNavigateRef.current) {
-          didNavigateRef.current = true;
-          console.log('[auth/callback] FORCING redirect to /LoginRedirectPage');
-          window.location.href = '/LoginRedirectPage';
-        }
+        console.log('[auth/callback] All checks passed');
+        performRedirect('/LoginRedirectPage', userRole);
 
-      } catch (err: any) {
-        console.error('[auth/callback] error:', err);
-        const message = err?.message || 'Unexpected authentication error.';
+      } catch (err: unknown) {
+        console.error('[auth/callback] ❌ Error:', err);
+        const message = err instanceof Error ? err.message : 'Authentication error';
         setError(message);
-        setStatus('Redirecting to login...');
-        setTimeout(() => safeReplace(router, '/login?error=oauth_callback'), REDIRECT_DELAY);
+        setTimeout(() => performRedirect('/login?error=oauth_callback', 'unknown'), REDIRECT_DELAY);
       }
     }
 
@@ -243,8 +239,11 @@ export default function AuthCallbackPage() {
 
     return () => {
       cancelled = true;
+      if (failsafeTimerRef.current) {
+        clearTimeout(failsafeTimerRef.current);
+      }
     };
-  }, [router]); // Only depend on router, ranOnceRef prevents re-runs
+  }, [router]);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-purple-50">
@@ -270,7 +269,12 @@ export default function AuthCallbackPage() {
           <div className="mt-6 rounded-lg border border-red-200 bg-red-50 p-4 text-left text-sm text-red-700">
             <p className="mb-3">{error}</p>
             <button
-              onClick={() => safeReplace(router, '/login')}
+              onClick={() => {
+                if (!hasRedirectedRef.current) {
+                  hasRedirectedRef.current = true;
+                  window.location.href = '/login';
+                }
+              }}
               className="block w-full rounded-md bg-red-600 px-4 py-2 text-white hover:bg-red-700"
             >
               Return to login

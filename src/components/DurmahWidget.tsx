@@ -200,7 +200,21 @@ export default function DurmahWidget() {
   const { preset, updateVoice, availablePresets, voiceId } = useDurmahSettings();
   
   // Construct the unified context object
-  const studentContext: DurmahStudentContext = useMemo(() => {
+  const studentContext: {
+    userId: string;
+    firstName: string;
+    university: string;
+    programme: string;
+    yearGroup: string;
+    academicYear: string;
+    modules: any[];
+    nowPhase: any;
+    currentPhase: string;
+    keyDates?: any;
+    todayLabel?: string;
+    upcomingTasks: any[];
+    todaysEvents: any[];
+  } = useMemo(() => {
     const base = durmahCtx.hydrated ? durmahCtx : (typeof window !== 'undefined' ? window.__mdlStudentContext : null);
     
     // Robust name resolution
@@ -262,7 +276,7 @@ export default function DurmahWidget() {
   const [voiceSessionStartedAt, setVoiceSessionStartedAt] = useState<Date | null>(null);
   const [voiceSessionEndedAt, setVoiceSessionEndedAt] = useState<Date | null>(null);
   const [showHeaderMenu, setShowHeaderMenu] = useState(false);
-  const [memory, setMemory] = useState<DurmahMemorySnapshot | null>(null);
+  const [memory, setMemory] = useState<{ last_topic?: string; last_message?: string; last_seen_at?: string } | null>(null);
   const [previewingVoiceId, setPreviewingVoiceId] = useState<string | null>(null);
   const [contextPacket, setContextPacket] = useState<DurmahContextPacket | null>(null);
   const [contextTimeLabel, setContextTimeLabel] = useState<string | null>(null);
@@ -758,7 +772,7 @@ REMINDER:
             toast.error("Session expired. Please sign in again to save Durmah updates.");
             return;
           }
-          setMemory((prev) => ({ ...prev, last_topic: topic, last_message: lastUser.text }));
+          setMemory((prev: any) => ({ ...prev, last_topic: topic, last_message: lastUser.text }));
         } catch {
           // Non-blocking memory update failure
         }
@@ -1012,7 +1026,7 @@ REMINDER:
           }
           return;
         }
-        setMemory(prev => ({ ...prev, last_topic: inferredTopic, last_message: userText }));
+        setMemory((prev: any) => ({ ...prev, last_topic: inferredTopic, last_message: userText }));
       } catch {}
     })();
 
