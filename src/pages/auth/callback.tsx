@@ -136,7 +136,7 @@ export default function AuthCallbackPage() {
         setStatus('Redirecting to complete your setup...');
         if (!didNavigateRef.current) {
           didNavigateRef.current = true;
-          safeReplace(router, '/LoginRedirectPage');
+        console.log('[auth/callback] FORCING redirect to /LoginRedirectPage'); window.location.href = '/LoginRedirectPage';
         }
 
       } catch (err: any) {
