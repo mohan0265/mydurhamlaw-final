@@ -60,7 +60,7 @@ export type AccessDenialReason =
   | 'account_blocked'
   | 'unknown';
 
-export function getRestricted MessageFor(reason: AccessDenialReason): string {
+export function getRestrictedMessageFor(reason: AccessDenialReason): string {
   switch (reason) {
     case 'domain_not_allowed':
       return 'Only Durham University students can access MyDurhamLaw. Please use your @durham.ac.uk email.';
