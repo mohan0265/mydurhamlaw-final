@@ -232,12 +232,12 @@ export default function GlobalHeader() {
                   <Link href="/request-access" className="px-3 py-2 rounded-md text-sm font-semibold bg-white text-indigo-700 hover:bg-indigo-50 transition">
                     Start Free Trial
                   </Link>
-                  <button 
-                    onClick={() => setShowLoginModal(true)}
-                    className="text-white/90 hover:text-white text-sm font-medium"
+                  <Link 
+                    href="/login"
+                    className="px-3 py-2 rounded-md text-sm font-medium text-white hover:bg-white/10 transition border border-white/30"
                   >
-                    Login
-                  </button>
+                    Member Login
+                  </Link>
                 </>
               )}
             </div>
@@ -301,15 +301,13 @@ export default function GlobalHeader() {
                       >
                         Start Free Trial
                       </Link>
-                      <button
-                        onClick={() => {
-                          setOpenMobile(false);
-                          setShowLoginModal(true);
-                        }}
-                        className="block w-full text-left px-4 py-2 text-sm text-white/90 hover:text-white hover:bg-white/10"
+                      <Link
+                        href="/login"
+                        onClick={() => setOpenMobile(false)}
+                        className="block px-4 py-2 text-sm text-white border border-white/30 rounded mx-3 mt-2 text-center font-medium hover:bg-white/10"
                       >
-                        Login
-                      </button>
+                        Member Login
+                      </Link>
                     </>
                   )}
                 </div>
