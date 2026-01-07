@@ -131,6 +131,34 @@ export default function AuthCallbackPage() {
         }
 
         console.log('[auth/callback] Session verified, user:', session.user?.email);
+
+        // ACCESS CONTROL CHECK
+        // Verify user is allowed to access the app
+        setStatus('Verifying access...');
+        try {
+          const accessRes = await fetch('/api/access/verify', {
+            credentials: 'include'
+          });
+          const accessData = await accessRes.json();
+          
+          if (!accessData.allowed) {
+            console.log('[auth/callback] Access denied:', accessData.reason);
+            // Sign out and redirect to restricted page
+            await supabase.auth.signOut();
+            const params = new URLSearchParams({
+              reason: accessData.reason || 'not_in_allowlist'
+            });
+            if (session.user?.email) params.set('email', session.user.email);
+            window.location.href = `/restricted?${params}`;
+            return;
+          }
+          
+          console.log('[auth/callback] Access granted for', session.user?.email);
+        } catch (accessErr) {
+          console.error('[auth/callback] Access check failed:', accessErr);
+          // On error, allow through (fail open) but log for manual review
+        }
+
         if (cancelled) return;
         
         setStatus('Redirecting to complete your setup...');
