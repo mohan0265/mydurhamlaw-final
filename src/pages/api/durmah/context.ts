@@ -2,18 +2,25 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { createPagesServerClient } from '@supabase/auth-helpers-nextjs';
 import { createClient } from '@supabase/supabase-js';
 import type { StudentContext } from '@/types/durmahContext';
+import { buildYAAGEvents, groupEventsByDate } from '@/lib/calendar/yaagEventsBuilder';
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
 /**
- * CHATGPT'S FINAL WIRING FIX
+ * DURMAH CENTRAL INTELLIGENCE - YAAG Integration
  * 
- * Now queries SAME sources as UI:
- * - `assignments` table (exactly like assignments.tsx line 42)
- * - `timetable_events` table (exactly like contextBuilder.ts line 244)
+ * Now includes YAAG calendar data (Plan + Personal + Timetable + Assignments)
+ * indexed by date so Durmah can answer:
+ * - "What's on Wed 28 Jan?"
+ * - "What classes this week?"
+ * - "Deadlines before Friday?"
  * 
- * NO MORE empty arrays or total=0
+ * Query Params:
+ * - focusDate: YYYY-MM-DD (default: today)
+ * - rangeDays: number (default: 14)
+ * - rangeStart/rangeEnd: YYYY-MM-DD (overrides focusDate+rangeDays)
+ * - pageHint: dashboard|yaag-week|yaag-month|assignments
  */
 export default async function handler(
   req: NextApiRequest,
@@ -69,6 +76,32 @@ export default async function handler(
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
+    // PARSE QUERY PARAMS for date range
+    const { focusDate, rangeDays, rangeStart, rangeEnd, pageHint } = req.query;
+    
+    const now = new Date();
+    let fromDate: string;
+    let toDate: string;
+
+    if (typeof rangeStart === 'string' && typeof rangeEnd === 'string') {
+      fromDate = rangeStart;
+      toDate = rangeEnd;
+    } else {
+      const focus = typeof focusDate === 'string' ? new Date(focusDate) : now;
+      const days = typeof rangeDays === 'string' ? parseInt(rangeDays) : 14;
+      
+      // Default: focus date minus 3 days to focus date plus (days-3) days
+      const startOffset = new Date(focus);
+      startOffset.setDate(startOffset.getDate() - 3);
+      const endOffset = new Date(focus);
+      endOffset.setDate(endOffset.getDate() + (days - 3));
+      
+      fromDate = startOffset.toISOString().substring(0, 10);
+      toDate = endOffset.toISOString().substring(0, 10);
+    }
+
+    console.log(`[context] YAAG range: ${fromDate} to ${toDate}, pageHint=${pageHint || 'dashboard'}`);
+
     // FETCH: User profile
     const { data: profile } = await supabaseClient
       .from('profiles')
@@ -84,22 +117,21 @@ export default async function handler(
       .order('due_date', { ascending: true });
 
     // Categorize assignments
-    const now = new Date();
     const assignments = assignmentsData || [];
     
     const upcoming = assignments.filter(a => 
       a.due_date && new Date(a.due_date) >= now && a.status !== 'completed'
-    ).slice(0, 5);  // Top 5
+    ).slice(0, 5);
     
     const overdue = assignments.filter(a =>
       a.due_date && new Date(a.due_date) < now && a.status !== 'completed'
-    ).slice(0,  5);  // Top 5
+    ).slice(0, 5);
     
     const recentlyCreated = assignments
       .filter(a => new Date(a.created_at) > new Date(now.getTime() - 7*24*60*60*1000))
-      .slice(0, 3);  // Last 3
+      .slice(0, 3);
 
-    // FETCH: Today's classes
+    // FETCH: Today's classes (legacy, keep for backwards compat)
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
     
@@ -109,19 +141,44 @@ export default async function handler(
       .eq('user_id', user.id)
       .gte('start_time', todayStart.toISOString())
       .lte('start_time', todayEnd.toISOString())
-      .order('start_time', { ascending: true });
+      .order('start_time', { ascending: true});
 
-    // FETCH: Next 7 days classes (for richer context)
-    const next7DaysEnd = new Date(now.getTime() + 7*24*60*60*1000);
-    
-    const { data: weekEvents } = await supabaseClient
-      .from('timetable_events')
-      .select('title, start_time, end_time, location, module_code')
-      .eq('user_id', user.id)
-      .gte('start_time', now.toISOString())
-      .lte('start_time', next7DaysEnd.toISOString())
-      .order('start_time', { ascending: true })
-      .limit(10);
+    // FETCH: YAAG EVENTS (CENTRAL INTELLIGENCE!)
+    const yaagEvents = await buildYAAGEvents({
+      req,
+      res,
+      yearKey: profile?.year_of_study || 'year1',
+      fromDate,
+      toDate,
+      userId: user.id,
+    });
+
+    const itemsByDay = groupEventsByDate(yaagEvents);
+
+    // Convert to simplified format for Durmah
+    const simplifiedItemsByDay: Record<string, Array<{
+      type: string;
+      title: string;
+      start?: string;
+      end?: string;
+      allDay: boolean;
+      meta?: any;
+    }>> = {};
+
+    for (const [date, events] of Object.entries(itemsByDay)) {
+      simplifiedItemsByDay[date] = events.map(e => ({
+        type: e.meta?.source || 'unknown',
+        title: e.title,
+        start: e.start,
+        end: e.end,
+        allDay: e.allDay,
+        meta: {
+          moduleCode: e.moduleCode,
+          kind: e.kind,
+          ...e.meta,
+        },
+      }));
+    }
 
     // Build response
     const studentContext: StudentContext = {
@@ -140,15 +197,18 @@ export default async function handler(
       },
       schedule: {
         todaysClasses: (todaysEvents || []).map(e => ({
-          title: e.title,
-          start: e.start_time,
-          end: e.end_time,
-          location: e.location,
+          module_name: e.title,
+          time: `${new Date(e.start_time).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })} - ${e.end_time ? new Date(e.end_time).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : ''}`,
         })),
+      },
+      yaag: {
+        rangeStart: fromDate,
+        rangeEnd: toDate,
+        itemsByDay: simplifiedItemsByDay,
       },
     };
 
-    console.log(`[context] ✓ SUCCESS: term=${studentContext.student.term}, assignments total=${studentContext.assignments.total}, today classes=${studentContext.schedule.todaysClasses.length}`);
+    console.log(`[context] ✓ SUCCESS: yaag events=${yaagEvents.length}, dates covered=${Object.keys(itemsByDay).length}, assignments=${studentContext.assignments.total}`);
     
     return res.status(200).json(studentContext);
 

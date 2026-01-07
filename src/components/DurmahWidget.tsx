@@ -190,6 +190,7 @@ function buildContextGreeting(context: DurmahContextPacket) {
 
 export default function DurmahWidget() {
   const { user } = useAuth() || { user: null };
+  const router = useRouter();
   const signedIn = !!user?.id;
   
   // 1. Source Context
@@ -328,10 +329,54 @@ export default function DurmahWidget() {
     
     setContextLoading(true);
     try {
-      const res = await fetch('/api/durmah/context');
+      // DETECT ROUTE and build query params
+      const currentPath = router.pathname;
+      const query = router.query;
+      const params = new URLSearchParams();
+      
+      // YAAG Week View
+      if (currentPath ===  '/year-at-a-glance/week' && typeof query.ws === 'string') {
+        params.set('focusDate', query.ws);
+        params.set('rangeDays', '7');
+        params.set('pageHint', 'yaag-week');
+      }
+      // YAAG Month View  
+      else if (currentPath === '/year-at-a-glance/month' && typeof query.ym === 'string') {
+        const [year, month] = query.ym.split('-').map(Number);
+        if (year && month) {
+          const monthStart = new Date(year, month - 1, 1);
+          const monthEnd = new Date(year, month, 0);
+          params.set('rangeStart', monthStart.toISOString().substring(0, 10));
+          params.set('rangeEnd', monthEnd.toISOString().substring(0, 10));
+          params.set('pageHint', 'yaag-month');
+        }
+      }
+      // Assignments Page
+      else if (currentPath === '/assignments' && typeof query.assignmentId === 'string') {
+        params.set('pageHint', 'assignments');
+        params.set('rangeDays', '14');
+      }
+      // Default: 14 days from today
+      else {
+        const today = new Date().toISOString().substring(0, 10);
+        params.set('focusDate', today);
+        params.set('rangeDays', '14');
+        params.set('pageHint', 'dashboard');
+      }
+      
+      const url = `/api/durmah/context?${params.toString()}`;
+      console.log('[Durmah] Fetching context with params:', params.toString());
+      
+      const res = await fetch(url);
       if (res.ok) {
         const data: StudentContext = await res.json();
         setStudentContextData(data);
+        
+        console.log('[Durmah] Context loaded:', {
+          yaag: data.yaag ? `${Object.keys(data.yaag.itemsByDay).length} dates` : 'none',
+          assignments: data.assignments.total,
+          range: data.yaag ? `${data.yaag.rangeStart} to ${data.yaag.rangeEnd}` : 'none'
+        });
         
         // Generate proactive greeting ONCE per session
         if (!lastProactiveGreeting) {
@@ -348,7 +393,7 @@ export default function DurmahWidget() {
     } finally {
       setContextLoading(false);
     }
-  }, [signedIn, contextLoading, lastProactiveGreeting]);
+  }, [signedIn, contextLoading, lastProactiveGreeting, router.pathname, router.query]);
 
   // Fetch context when widget opens
   useEffect(() => {

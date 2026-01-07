@@ -88,6 +88,32 @@ Term: ${student.term}, Week ${student.weekOfTerm}
     block += `\nTODAY'S SCHEDULE: No classes\n`;
   }
 
+  // YAAG CALENDAR (CENTRAL INTELLIGENCE!)
+  if (context.yaag && context.yaag.itemsByDay) {
+    const dates = Object.keys(context.yaag.itemsByDay).sort();
+    block += `\n\n📅 CALENDAR DATA (${context.yaag.rangeStart} to ${context.yaag.rangeEnd}):\n`;
+    block += `Available dates: ${dates.length} days\n`;
+    block += `\nHOW TO USE THIS DATA:\n`;
+    block += `- When asked "What's on [DATE]?" → look up itemsByDay["YYYY-MM-DD"]\n`;
+    block += `- When asked "What classes this week?" → iterate through dates\n`;
+    block += `- Event types: plan (lectures), personal (student tasks), assignment (deadlines), timetable (scheduled)\n`;
+    block += `- NEVER guess or hallucinate schedule - ONLY use itemsByDay\n`;
+    
+    // Sample a few days to show format
+    const sampleDates = dates.slice(0, 3);
+    if (sampleDates.length > 0) {
+      block += `\nEXAMPLE DAYS:\n`;
+      sampleDates.forEach(date => {
+        const items = context.yaag!.itemsByDay[date];
+        if (items && items.length > 0) {
+          block += `${date}: ${items.length} event${items.length === 1 ? '' : 's'} (${items.map(i => i.title.substring(0, 20)).join(', ')})\n`;
+        } else {
+          block += `${date}: No events\n`;
+        }
+      });
+    }
+  }
+
   block += `\nTotal assignments: ${assignments.total}`;
 
   return block;

@@ -35,4 +35,16 @@ export interface StudentContext {
       time: string;
     }>;
   };
+  yaag?: {
+    rangeStart: string;
+    rangeEnd: string;
+    itemsByDay: Record<string, Array<{
+      type: string;
+      title: string;
+      start?: string;
+      end?: string;
+      allDay: boolean;
+      meta?: any;
+    }>>;
+  };
 }
