@@ -229,7 +229,7 @@ export default function GlobalHeader() {
               ) : (
                 <>
                   <Link href="/pricing" className="text-white/90 hover:text-white text-sm">Pricing</Link>
-                  <Link href="/pricing" className="px-3 py-2 rounded-md text-sm font-semibold bg-white text-indigo-700 hover:bg-indigo-50 transition">
+                  <Link href="/request-access" className="px-3 py-2 rounded-md text-sm font-semibold bg-white text-indigo-700 hover:bg-indigo-50 transition">
                     Start Free Trial
                   </Link>
                   <button 
@@ -295,7 +295,7 @@ export default function GlobalHeader() {
                         See Pricing
                       </Link>
                       <Link
-                        href="/pricing"
+                        href="/request-access"
                         className="block px-4 py-2 text-sm text-indigo-700 bg-white rounded mx-3 mt-1 text-center font-semibold hover:bg-indigo-50"
                         onClick={() => setOpenMobile(false)}
                       >
@@ -334,7 +334,7 @@ export default function GlobalHeader() {
             <p className="text-gray-500 text-center mb-8">Choose how you want to log in</p>
             
             <div className="space-y-4">
-              <Link href="/login" onClick={() => setShowLoginModal(false)}>
+              <Link href="/request-access" onClick={() => setShowLoginModal(false)}>
                 <div className="group flex items-center p-4 rounded-xl border border-gray-200 hover:border-purple-500 hover:bg-purple-50 transition-all cursor-pointer">
                   <div className="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 group-hover:scale-110 transition-transform">
                     <User size={24} />

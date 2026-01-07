@@ -138,7 +138,7 @@ export default function DurhamLanding() {
                   Get your Legal Eagle mentor, personalised study plans, and a calmer, more organised year.
                 </p>
                 
-                <Link href="/login" className="relative z-10 w-full" aria-label="Student Login">
+                <Link href="/request-access" className="relative z-10 w-full" aria-label="Student Login">
                   <button className="w-full bg-white text-purple-700 font-bold py-3 px-6 rounded-lg hover:bg-purple-50 transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2 text-base group-hover:gap-3">
                     Student Login
                     <ArrowRight className="w-4 h-4" />
@@ -334,7 +334,7 @@ export default function DurhamLanding() {
           <p className="text-lg sm:text-xl text-blue-100 mb-10 max-w-2xl mx-auto font-medium">
             If you want to study like a true Durham Legal Eagle, this is where you start.
           </p>
-          <Link href="/signup">
+          <Link href="/request-access">
             <button className="bg-white text-purple-600 font-bold py-3 px-8 rounded-full text-lg hover:bg-gray-50 transition-all duration-300 transform hover:scale-105 shadow-xl hover:shadow-white/20">
               Get Started Free
             </button>
