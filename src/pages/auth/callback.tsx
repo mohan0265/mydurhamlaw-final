@@ -190,19 +190,31 @@ export default function AuthCallbackPage() {
 
         // PROFILE EXISTENCE CHECK
         // Verify user has completed profile (display_name + accepted terms)
+        // CRITICAL: Skip for admins - they may have been created before onboarding flow
         setStatus('Checking your profile...');
         try {
-          const supabaseCheck = createPagesServerClient({ req: {} as any, res: {} as any });
-          const { data: profile } = await supabaseCheck
-            .from('profiles')
-            .select('display_name, accepted_terms_at')
-            .eq('id', session.user.id)
-            .maybeSingle();
+          // First, check if user is admin by calling access verify
+          const accessCheckRes = await fetch('/api/access/verify', {
+            credentials: 'include'
+          });
+          const accessCheckData = await accessCheckRes.json();
           
-          if (!profile || !profile.display_name || !profile.accepted_terms_at) {
-            console.log('[auth/callback] Profile incomplete, redirecting to onboarding');
-            window.location.href = '/onboarding?required=true';
-            return;
+          if (accessCheckData.role === 'admin') {
+            console.log('[auth/callback] Admin user - skipping profile completeness check');
+          } else {
+            // Only check profile completeness for students
+            const supabaseCheck = createPagesServerClient({ req: {} as any, res: {} as any });
+            const { data: profile } = await supabaseCheck
+              .from('profiles')
+              .select('display_name, accepted_terms_at')
+              .eq('id', session.user.id)
+              .maybeSingle();
+            
+            if (!profile || !profile.display_name || !profile.accepted_terms_at) {
+              console.log('[auth/callback] Profile incomplete, redirecting to onboarding');
+              window.location.href = '/onboarding?required=true';
+              return;
+            }
           }
         } catch (profileErr) {
           console.error('[auth/callback] Profile check failed:', profileErr);
