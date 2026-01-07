@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { normalizeTranscriptLanguageSync } from "@/lib/durmah/normalizeTranscriptLanguage";
+import { DURMAH_TOOLS } from "@/lib/durmah/tools";
 
 // TEMPORARY: Enable debug logging to diagnose assistant transcript issue
 const REALTIME_DEBUG = true; // Force enable for debugging
@@ -99,6 +100,60 @@ export function useDurmahRealtime({
     const merged = needsSpace ? `${cur} ${inc}` : `${cur}${inc}`;
     return merged.replace(/\s+/g, " ").trim();
   }, []);
+
+
+  // Handle function/tool calls from Realtime
+  const handleFunctionCall = async (dc: RTCDataChannel, payload: any) => {
+    const { call_id, name, arguments: argsStr } = payload;
+    let args: any = {};
+    
+    try {
+      args = JSON.parse(argsStr);
+    } catch (e) {
+      console.error("[FUNCTION CALL] Failed to parse args:", e);
+      return;
+    }
+
+    console.log(`[FUNCTION CALL] ${name}`, args);
+    
+    let toolResult: any;
+    try {
+      if (name === "get_yaag_events") {
+        const { startISO, endISO } = args;
+        const res = await fetch(`/api/durmah/tools/yaag-events?startISO=${startISO}&endISO=${endISO}`);
+        toolResult = await res.json();
+      } else if (name === "get_news_headlines") {
+        const params = new URLSearchParams();
+        if (args.limit) params.set("limit", String(args.limit));
+        if (args.topic) params.set("topic", args.topic);
+        const res = await fetch(`/api/durmah/tools/news-headlines?${params}`);
+        toolResult = await res.json();
+      } else if (name === "get_assignment_details") {
+        const res = await fetch(`/api/durmah/tools/assignment-by-id?id=${args.assignmentId}`);
+        toolResult = await res.json();
+      } else {
+        toolResult = { error: "Unknown function: " + name };
+      }
+    } catch (error: any) {
+      console.error(`[FUNCTION CALL] ${name} failed:`,error);
+      toolResult = { error: error.message || "Tool execution failed" };
+    }
+
+    // Send tool result back
+    dc.send(JSON.stringify({
+      type: "conversation.item.create",
+      item: {
+        type: "function_call_output",
+        call_id: call_id,
+        output: JSON.stringify(toolResult)
+      }
+    }));
+
+    // Trigger response generation
+    dc.send(JSON.stringify({
+      type: "response.create"
+    }));
+  };
 
   const appendAssistantText = useCallback((delta?: string) => {
     assistantTranscriptRef.current = mergeIncremental(
@@ -346,7 +401,9 @@ export function useDurmahRealtime({
             type: "session.update",
             session: {
               instructions: systemPrompt,
+              tools: DURMAH_TOOLS,
               input_audio_transcription: {
+              tools: DURMAH_TOOLS,
                 model: TRANSCRIPTION_MODEL,
                 language: "en",
               },
@@ -500,7 +557,14 @@ export function useDurmahRealtime({
               console.error("[DurmahVoice] Response error:", msg);
               setError(msg);
             }
-            // Log unhandled event types
+            // Function call handling
+            else if (type === "response.function_call_arguments.done") {
+              debugLog("[FUNCTION CALL]", payload.name, payload.arguments);
+              handleFunctionCall(dc, payload).catch(err => {
+                console.error("[FUNCTION CALL ERROR]", err);
+              });
+            }
+                        // Log unhandled event types
             else {
               debugLog(`[UNHANDLED] event type: ${type}`);
             }
