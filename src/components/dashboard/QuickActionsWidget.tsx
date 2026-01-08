@@ -31,6 +31,14 @@ export function QuickActionsWidget() {
       }
     },
     {
+      title: 'Import Calendar',
+      description: 'Upload .ics from Blackboard',
+      icon: Calendar,
+      color: 'bg-teal-500',
+      hoverColor: 'hover:bg-teal-600',
+      onClick: () => router.push('/onboarding/calendar')
+    },
+    {
       title: 'Research Hub',
       description: 'Legal references & cases',
       icon: Search,
