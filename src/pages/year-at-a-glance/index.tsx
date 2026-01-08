@@ -138,26 +138,32 @@ export default function YearAtAGlancePage() {
       if (!supabase) return;
 
       try {
-        // Fetch events for academic year
-        const { data: eventsData } = await supabase
+        // Fetch ALL events (no date restriction)
+        const { data: eventsData, error: eventsError } = await supabase
           .from('user_events')
           .select('*')
           .eq('user_id', user.id)
           .is('deleted_at', null)
-          .gte('start_at', academicYearStart.toISOString())
-          .lte('start_at', academicYearEnd.toISOString())
           .order('start_at', { ascending: true });
 
-        // Fetch assessments for academic year
-        const { data: assessmentsData } = await supabase
+        if (eventsError) {
+          console.error('[YAAG] Error fetching events:', eventsError);
+        }
+
+        // Fetch ALL assessments (no date restriction)
+        const { data: assessmentsData, error: assessmentsError } = await supabase
           .from('user_assessments')
           .select('*')
           .eq('user_id', user.id)
           .is('deleted_at', null)
-          .gte('due_at', academicYearStart.toISOString())
-          .lte('due_at', academicYearEnd.toISOString())
           .order('due_at', { ascending: true });
 
+        if (assessmentsError) {
+          console.error('[YAAG] Error fetching assessments:', assessmentsError);
+        }
+
+        console.log('[YAAG] Loaded:', eventsData?.length || 0, 'events,', assessmentsData?.length || 0, 'assessments');
+        
         setEvents(eventsData || []);
         setAssessments(assessmentsData || []);
       } catch (error) {
@@ -168,17 +174,35 @@ export default function YearAtAGlancePage() {
     };
 
     fetchData();
-  }, [user?.id, academicYearStart, academicYearEnd]);
+  }, [user?.id]);
 
-  // Group events and assessments by month
+  // Group events and assessments by month dynamically
   const monthsData = React.useMemo(() => {
-    const months: Map<string, { events: UserEvent[]; assessments: UserAssessment[]; date: Date }> = new Map();
+    if (events.length === 0 && assessments.length === 0) {
+      return [];
+    }
 
-    // Generate 12 months from academic year start
-    for (let i = 0; i < 12; i++) {
-      const month = addMonths(academicYearStart, i);
-      const key = format(month, 'yyyy-MM');
-      months.set(key, { events: [], assessments: [], date: month });
+    // Find min/max dates from actual data
+    const allDates: Date[] = [
+      ...events.map(e => new Date(e.start_at)),
+      ...assessments.map(a => new Date(a.due_at))
+    ];
+
+    if (allDates.length === 0) return [];
+
+    const minDate = new Date(Math.min(...allDates.map(d => d.getTime())));
+    const maxDate = new Date(Math.max(...allDates.map(d => d.getTime())));
+
+    // Generate months from min to max
+    const months: Map<string, { events: UserEvent[]; assessments: UserAssessment[]; date: Date }> = new Map();
+    
+    let currentMonth = startOfMonth(minDate);
+    const endMonth = endOfMonth(maxDate);
+
+    while (currentMonth <= endMonth) {
+      const key = format(currentMonth, 'yyyy-MM');
+      months.set(key, { events: [], assessments: [], date: new Date(currentMonth) });
+      currentMonth = addMonths(currentMonth, 1);
     }
 
     // Distribute events into months
@@ -200,7 +224,7 @@ export default function YearAtAGlancePage() {
     });
 
     return Array.from(months.values());
-  }, [events, assessments, academicYearStart]);
+  }, [events, assessments]);
 
   if (loading) {
     return (
@@ -251,8 +275,7 @@ export default function YearAtAGlancePage() {
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Year at a Glance</h1>
           <p className="text-sm text-gray-600 mt-1">
-            Academic Year {format(academicYearStart, 'yyyy')}-{format(academicYearEnd, 'yyyy')} •{' '}
-            {events.length} events, {assessments.length} assessments
+            {events.length} events, {assessments.length} assessments imported
           </p>
         </div>
 
