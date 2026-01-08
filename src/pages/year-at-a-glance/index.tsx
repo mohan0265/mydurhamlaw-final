@@ -176,28 +176,22 @@ export default function YearAtAGlancePage() {
     fetchData();
   }, [user?.id]);
 
-  // Group events and assessments by month dynamically
+  // Group events and assessments by month within academic year
   const monthsData = React.useMemo(() => {
     if (events.length === 0 && assessments.length === 0) {
       return [];
     }
 
-    // Find min/max dates from actual data
-    const allDates: Date[] = [
-      ...events.map(e => new Date(e.start_at)),
-      ...assessments.map(a => new Date(a.due_at))
-    ];
+    // Academic year range for Year 1 (Sept 2025 - June 2026)
+    // TODO: Make this dynamic based on user's year_of_study from profile
+    const academicYearStart = new Date(2025, 8, 1); // Sept 1, 2025
+    const academicYearEnd = new Date(2026, 5, 30); // June 30, 2026
 
-    if (allDates.length === 0) return [];
-
-    const minDate = new Date(Math.min(...allDates.map(d => d.getTime())));
-    const maxDate = new Date(Math.max(...allDates.map(d => d.getTime())));
-
-    // Generate months from min to max
+    // Generate months within academic year range
     const months: Map<string, { events: UserEvent[]; assessments: UserAssessment[]; date: Date }> = new Map();
     
-    let currentMonth = startOfMonth(minDate);
-    const endMonth = endOfMonth(maxDate);
+    let currentMonth = startOfMonth(academicYearStart);
+    const endMonth = endOfMonth(academicYearEnd);
 
     while (currentMonth <= endMonth) {
       const key = format(currentMonth, 'yyyy-MM');
@@ -205,25 +199,34 @@ export default function YearAtAGlancePage() {
       currentMonth = addMonths(currentMonth, 1);
     }
 
-    // Distribute events into months
+    // Distribute events into months (only those within range)
     events.forEach(event => {
       const eventDate = new Date(event.start_at);
-      const key = format(eventDate, 'yyyy-MM');
-      if (months.has(key)) {
-        months.get(key)!.events.push(event);
+      // Only include if within academic year
+      if (eventDate >= academicYearStart && eventDate <= academicYearEnd) {
+        const key = format(eventDate, 'yyyy-MM');
+        if (months.has(key)) {
+          months.get(key)!.events.push(event);
+        }
       }
     });
 
-    // Distribute assessments into months
+    // Distribute assessments into months (only those within range)
     assessments.forEach(assessment => {
       const dueDate = new Date(assessment.due_at);
-      const key = format(dueDate, 'yyyy-MM');
-      if (months.has(key)) {
-        months.get(key)!.assessments.push(assessment);
+      // Only include if within academic year
+      if (dueDate >= academicYearStart && dueDate <= academicYearEnd) {
+        const key = format(dueDate, 'yyyy-MM');
+        if (months.has(key)) {
+          months.get(key)!.assessments.push(assessment);
+        }
       }
     });
 
-    return Array.from(months.values());
+    // Filter out empty months for cleaner display
+    return Array.from(months.values()).filter(month => 
+      month.events.length > 0 || month.assessments.length > 0
+    );
   }, [events, assessments]);
 
   if (loading) {
@@ -275,8 +278,13 @@ export default function YearAtAGlancePage() {
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Year at a Glance</h1>
           <p className="text-sm text-gray-600 mt-1">
-            {events.length} events, {assessments.length} assessments imported
+            Academic Year 2025-26 • {events.length} events, {assessments.length} assessments
           </p>
+          {monthsData.length > 0 && (
+            <p className="text-xs text-gray-500 mt-1">
+              Showing {monthsData.length} months with activity
+            </p>
+          )}
         </div>
 
         <div className="flex items-center gap-3">
