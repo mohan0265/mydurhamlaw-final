@@ -1,6 +1,6 @@
 // src/pages/api/calendar/day.ts
 import { NextApiRequest, NextApiResponse } from 'next'
-import { DayDetail } from '@/types/calendar'
+import { DayDetail, CalendarEvent } from '@/types/calendar'
 import { format } from 'date-fns'
 import { getApiAuth, getBearerToken } from '@/lib/apiAuth'
 
