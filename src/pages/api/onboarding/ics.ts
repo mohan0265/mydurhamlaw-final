@@ -37,7 +37,7 @@ interface ParsedAssessment {
 function extractModuleCode(text: string): string | null {
   // Extract module codes like LAW1051, X_LAW_DLS_2025, etc.
   const match = text.match(/\b([A-Z_]+\d{3,4}[A-Z]?|[A-Z]+_[A-Z]+_[A-Z0-9]+)\b/);
-  return match ? match[1] : null;
+  return match ? (match[1] ?? null) : null;
 }
 
 function classifyEventType(summary: string, description: string = ''): string {
