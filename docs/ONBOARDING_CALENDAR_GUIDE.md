@@ -53,6 +53,23 @@ If Blackboard doesn't provide an ICS export, you can also export from:
 2. **Durham Timetable System**
    - Check if your department provides ICS export
 
+## Keeping Your Calendar Updated
+
+**You can re-import your calendar anytime!** 
+
+When you paste the same Blackboard link again:
+- ✅ New events are added automatically
+- ✅ Updated events replace old ones (no duplicates)
+- ✅ Deleted events from Blackboard are preserved in MyDurhamLaw
+
+**Recommended:** Re-import every week or whenever Durham updates your timetable or deadlines.
+
+**How to refresh:**
+1. Go back to Dashboard → Import Calendar
+2. Paste the same link you used before
+3. Click "Import Calendar"
+4. Your calendar syncs with latest Blackboard data!
+
 ## Need Help?
 
 If you're having trouble exporting your calendar, contact:

@@ -238,8 +238,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           user_id: user.id,
           import_job_id: importJob.id,
           kind: 'ics',
-          filename: uploadedFile.originalFilename || 'calendar.ics',
-          file_size_bytes: uploadedFile.size,
+          filename: filename,
+          file_size_bytes: fileContent.length,
         })
         .select()
         .single();
@@ -306,9 +306,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           finished_at: new Date().toISOString(),
         })
         .eq('id', importJob.id);
-
-      // Clean up temp file
-      fs.unlinkSync(uploadedFile.filepath);
 
       return res.status(200).json({
         success: true,

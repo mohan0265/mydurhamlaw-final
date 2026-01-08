@@ -123,7 +123,10 @@ export default function CalendarImportPage() {
             Import Your Calendar
           </h1>
           <p className="text-gray-600">
-            Upload your Blackboard calendar (.ics file) to get personalized timetable and deadlines
+            Paste your Blackboard calendar link to sync events and deadlines
+          </p>
+          <p className="text-sm text-purple-600 mt-2">
+            💡 You can re-import anytime to refresh updates from Blackboard
           </p>
         </div>
 
@@ -224,6 +227,11 @@ export default function CalendarImportPage() {
                   <li>Copy the link that appears</li>
                   <li>Paste it in the box above</li>
                 </ol>
+                <div className="mt-3 pt-3 border-t border-blue-200">
+                  <p className="text-xs text-blue-700">
+                    <strong>💫 Pro tip:</strong> Save this link! You can re-import it anytime to refresh your calendar with the latest changes from Durham.
+                  </p>
+                </div>
               </div>
 
               {error && (
