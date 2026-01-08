@@ -139,27 +139,77 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    // Parse multipart form data
-    const form = formidable({
-      maxFileSize: 10 * 1024 * 1024, // 10MB max
-      filter: (part) => {
-        return !!(
-          part.mimetype?.includes('calendar') ||
-          part.mimetype?.includes('text') ||
-          part.originalFilename?.toLowerCase().endsWith('.ics')
-        );
-      },
-    });
+    let fileContent: string;
+    let filename = 'calendar.ics';
 
-    const [fields, files] = await form.parse(req);
-    const uploadedFile = files.file?.[0];
+    // Check if this is a URL fetch request (JSON body)
+    const contentType = req.headers['content-type'] || '';
+    if (contentType.includes('application/json')) {
+      const { url } = req.body;
+      
+      if (!url || typeof url !== 'string') {
+        return res.status(400).json({ error: 'URL is required' });
+      }
 
-    if (!uploadedFile) {
-      return res.status(400).json({ error: 'No ICS file uploaded' });
+      // Security: Only allow Durham Blackboard URLs
+      const allowedDomains = ['blackboard.durham.ac.uk'];
+      let parsedUrl: URL;
+      try {
+        parsedUrl = new URL(url);
+      } catch (e) {
+        return res.status(400).json({ error: 'Invalid URL format' });
+      }
+
+      if (!allowedDomains.includes(parsedUrl.hostname)) {
+        return res.status(403).json({ 
+          error: 'Only Durham Blackboard calendar URLs are allowed',
+          allowed: allowedDomains
+        });
+      }
+
+      // Fetch the ICS file from the URL
+      try {
+        const fetchRes = await fetch(url);
+        if (!fetchRes.ok) {
+          throw new Error(`Failed to fetch: ${fetchRes.status} ${fetchRes.statusText}`);
+        }
+        fileContent = await fetchRes.text();
+        filename = url.split('/').pop() || 'calendar.ics';
+      } catch (fetchError) {
+        console.error('[ICS URL Fetch Error]', fetchError);
+        return res.status(500).json({ 
+          error: 'Failed to fetch calendar from URL',
+          details: fetchError instanceof Error ? fetchError.message : 'Unknown error'
+        });
+      }
+    } else {
+      // File upload mode (existing logic)
+      // Parse multipart form data
+      const form = formidable({
+        maxFileSize: 10 * 1024 * 1024, // 10MB max
+        filter: (part) => {
+          return !!(
+            part.mimetype?.includes('calendar') ||
+            part.mimetype?.includes('text') ||
+            part.originalFilename?.toLowerCase().endsWith('.ics')
+          );
+        },
+      });
+
+      const [fields, files] = await form.parse(req);
+      const uploadedFile = files.file?.[0];
+
+      if (!uploadedFile) {
+        return res.status(400).json({ error: 'No ICS file uploaded' });
+      }
+
+      // Read file content
+      fileContent = fs.readFileSync(uploadedFile.filepath, 'utf-8');
+      filename = uploadedFile.originalFilename || 'calendar.ics';
+      
+      // Clean up temp file
+      fs.unlinkSync(uploadedFile.filepath);
     }
-
-    // Read file content
-    const fileContent = fs.readFileSync(uploadedFile.filepath, 'utf-8');
     
     // Create import job
     const { data: importJob, error: jobError } = await supabaseAdmin

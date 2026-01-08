@@ -7,11 +7,13 @@ import toast from 'react-hot-toast';
 
 export default function CalendarImportPage() {
   const router = useRouter();
+  const [mode, setMode] = useState<'file' | 'url'>('url'); // Default to URL (easier)
   const [uploading, setUploading] = useState(false);
   const [imported, setImported] = useState(false);
   const [eventsCount, setEventsCount] = useState(0);
   const [assessmentsCount, setAssessmentsCount] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [urlInput, setUrlInput] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileUpload = async (file: File) => {
@@ -46,6 +48,43 @@ export default function CalendarImportPage() {
       toast.success(`Imported ${data.imported.events} events and ${data.imported.assessments} assessments!`);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Upload failed';
+      setError(message);
+      toast.error(message);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleUrlSubmit = async () => {
+    if (!urlInput.trim()) {
+      toast.error('Please enter a calendar URL');
+      return;
+    }
+
+    setUploading(true);
+    setError(null);
+
+    try {
+      const res = await fetch('/api/onboarding/ics', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: urlInput }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || 'URL fetch failed');
+      }
+
+      setImported(true);
+      setEventsCount(data.imported.events || 0);
+      setAssessmentsCount(data.imported.assessments || 0);
+      
+      toast.success(`Imported ${data.imported.events} events and ${data.imported.assessments} assessments!`);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'URL fetch failed';
       setError(message);
       toast.error(message);
     } finally {
@@ -92,46 +131,98 @@ export default function CalendarImportPage() {
         <div className="bg-white rounded-2xl shadow-xl p-8">
           {!imported ? (
             <>
-              {/* Upload Area */}
-              <div
-                onDrop={handleFileDrop}
-                onDragOver={(e) => e.preventDefault()}
-                className="border-2 border-dashed border-gray-300 rounded-xl p-12 text-center hover:border-purple-400 transition cursor-pointer"
-                onClick={() => fileInputRef.current?.click()}
-              >
-                <Upload className="mx-auto text-gray-400 mb-4" size={48} />
-                <h3 className="text-lg font-semibold text-gray-700 mb-2">
-                  Drop your .ics file here
-                </h3>
-                <p className="text-sm text-gray-500 mb-4">
-                  or click to browse
-                </p>
+              {/* Mode Toggle Tabs */}
+              <div className="flex gap-2 mb-6 border-b">
                 <button
-                  disabled={uploading}
-                  className="px-6 py-3 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  onClick={() => setMode('url')}
+                  className={`flex-1 py-3 font-semibold transition ${
+                    mode === 'url'
+                      ? 'border-b-2 border-purple-600 text-purple-600'
+                      : 'text-gray-500 hover:text-gray-700'
+                  }`}
                 >
-                  {uploading ? 'Uploading...' : 'Select File'}
+                  📎 Paste Link (Easier)
                 </button>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept=".ics"
-                  onChange={handleFileSelect}
-                  className="hidden"
-                />
+                <button
+                  onClick={() => setMode('file')}
+                  className={`flex-1 py-3 font-semibold transition ${
+                    mode === 'file'
+                      ? 'border-b-2 border-purple-600 text-purple-600'
+                      : 'text-gray-500 hover:text-gray-700'
+                  }`}
+                >
+                  📤 Upload File
+                </button>
               </div>
+
+              {/* URL Paste Mode */}
+              {mode === 'url' && (
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Blackboard Calendar Link
+                    </label>
+                    <input
+                      type="url"
+                      value={urlInput}
+                      onChange={(e) => setUrlInput(e.target.value)}
+                      placeholder="https://blackboard.durham.ac.uk/webapps/calendar/calendarFeed/.../learn.ics"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                      disabled={uploading}
+                    />
+                  </div>
+                  <button
+                    onClick={handleUrlSubmit}
+                    disabled={uploading || !urlInput.trim()}
+                    className="w-full px-6 py-3 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {uploading ? 'Importing...' : 'Import Calendar'}
+                  </button>
+                </div>
+              )}
+
+              {/* File Upload Mode */}
+              {mode === 'file' && (
+                <div
+                  onDrop={handleFileDrop}
+                  onDragOver={(e) => e.preventDefault()}
+                  className="border-2 border-dashed border-gray-300 rounded-xl p-12 text-center hover:border-purple-400 transition cursor-pointer"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <Upload className="mx-auto text-gray-400 mb-4" size={48} />
+                  <h3 className="text-lg font-semibold text-gray-700 mb-2">
+                    Drop your .ics file here
+                  </h3>
+                  <p className="text-sm text-gray-500 mb-4">
+                    or click to browse
+                  </p>
+                  <button
+                    disabled={uploading}
+                    className="px-6 py-3 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {uploading ? 'Uploading...' : 'Select File'}
+                  </button>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".ics"
+                    onChange={handleFileSelect}
+                    className="hidden"
+                  />
+                </div>
+              )}
 
               {/* Instructions */}
               <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
                 <h4 className="text-sm font-semibold text-blue-900 mb-2">
-                  📅 How to export from Blackboard:
+                  📅 How to get your Blackboard calendar link:
                 </h4>
                 <ol className="text-sm text-blue-800 space-y-1 list-decimal list-inside">
                   <li>Go to Blackboard → Calendar (left sidebar)</li>
                   <li>Click "Calendar Settings" (gear icon)</li>
-                  <li>Look for "Export" or "Subscribe to Calendar" option</li>
-                  <li>Download the .ics file to your computer</li>
-                  <li>Upload it here</li>
+                  <li>Click "Share calendar" button</li>
+                  <li>Copy the link that appears</li>
+                  <li>Paste it in the box above</li>
                 </ol>
               </div>
 

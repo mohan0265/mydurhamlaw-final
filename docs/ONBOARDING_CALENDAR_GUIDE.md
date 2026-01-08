@@ -4,23 +4,21 @@
 
 MyDurhamLaw can import your Blackboard calendar to give you personalized timetables and deadline reminders. This is **completely optional** and **secure** - we never ask for your Blackboard password.
 
-## How to Export Your Calendar from Blackboard
+## How to Import Your Calendar from Blackboard
 
-### Step 1: Access Blackboard Calendar
+### Step 1: Get Your Calendar Link
 1. Log into Durham Blackboard at `blackboard.durham.ac.uk`
 2. Click **Calendar** in the left sidebar
+3. Click the **gear icon** (Calendar Settings) in the top right
+4. Click **"Share calendar"** button  
+5. **Copy the link** that appears (it will look like: `https://blackboard.durham.ac.uk/webapps/calendar/calendarFeed/.../learn.ics`)
 
-### Step 2: Export Calendar
-1. Click the **gear icon** (Calendar Settings) in the top right
-2. Look for **"Export Calendar"** or **"Download"** option
-3. Select **"Download as .ics file"**
-4. Save the file to your Downloads folder
-
-### Step 3: Upload to MyDurhamLaw
-1. Go to [MyDurhamLaw Onboarding](/onboarding/calendar)
-2. Drag and drop the .ics file OR click to browse
-3. Wait for import to complete
-4. Your events and deadlines will appear in your YAAG and dashboard!
+### Step 2: Import to MyDurhamLaw
+1. Go to [MyDurhamLaw Calendar Import](/onboarding/calendar)
+2. Choose **"Paste Link"** tab (easier!)
+3. Paste the link you copied
+4. Click **"Import Calendar"**
+5. Wait for import to complete - you'll see how many events were imported!
 
 ## What Gets Imported?
 
