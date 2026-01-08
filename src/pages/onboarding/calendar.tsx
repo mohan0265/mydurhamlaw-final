@@ -4,6 +4,7 @@ import { useState, useRef } from 'react';
 import { useRouter } from 'next/router';
 import { Upload, Calendar, CheckCircle, AlertCircle, X } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { getSupabaseClient } from '@/lib/supabase/client';
 
 export default function CalendarImportPage() {
   const router = useRouter();
@@ -26,12 +27,25 @@ export default function CalendarImportPage() {
     setError(null);
 
     try {
+      // Get Supabase session token
+      const supabase = getSupabaseClient();
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError || !session) {
+        toast.error('Please login to upload calendar');
+        setUploading(false);
+        return;
+      }
+
       const formData = new FormData();
       formData.append('file', file);
 
       const res = await fetch('/api/onboarding/ics', {
         method: 'POST',
         credentials: 'include',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}` // Add auth token
+        },
         body: formData,
       });
 
@@ -65,10 +79,23 @@ export default function CalendarImportPage() {
     setError(null);
 
     try {
+      // Get Supabase session token
+      const supabase = getSupabaseClient();
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError || !session) {
+        toast.error('Please login to import calendar');
+        setUploading(false);
+        return;
+      }
+
       const res = await fetch('/api/onboarding/ics', {
         method: 'POST',
         credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}` // CRITICAL: Add auth token
+        },
         body: JSON.stringify({ url: urlInput }),
       });
 
