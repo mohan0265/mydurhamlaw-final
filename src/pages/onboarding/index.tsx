@@ -6,7 +6,7 @@ export default function OnboardingIndex() {
   const router = useRouter()
 
   useEffect(() => {
-    router.replace('/onboarding/OnboardingPage')
+    router.replace('/onboarding/calendar')
   }, [router])
 
   return (
