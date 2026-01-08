@@ -1,0 +1,77 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//MyDurhamLaw//ICS Test Fixture//EN
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+X-WR-CALNAME:Durham Law Test Calendar
+X-WR-TIMEZONE:Europe/London
+BEGIN:VEVENT
+UID:lecture-tort-intro@mydurhamlaw.test
+DTSTAMP:20260108T000000Z
+DTSTART:20260110T090000Z
+DTEND:20260110T100000Z
+SUMMARY:LAW1051 Lecture - Introduction to Tort Law
+DESCRIPTION:Foundation lecture covering basic principles of tort law and negligence
+LOCATION:Durham University - Elvet Riverside Building Room 1.01
+SEQUENCE:0
+STATUS:CONFIRMED
+TRANSP:OPAQUE
+END:VEVENT
+BEGIN:VEVENT
+UID:lecture-contract@mydurhamlaw.test
+DTSTAMP:20260108T000000Z
+DTSTART:20260113T140000Z
+DTEND:20260113T150000Z
+SUMMARY:LAW1071 Lecture - Contract Formation
+DESCRIPTION:Lecture on offer and acceptance in contract law
+LOCATION:Durham University - Main Campus LT3
+SEQUENCE:0
+STATUS:CONFIRMED
+TRANSP:OPAQUE
+END:VEVENT
+BEGIN:VEVENT
+UID:seminar-negligence@mydurhamlaw.test
+DTSTAMP:20260108T000000Z
+DTSTART:20260112T110000Z
+DTEND:20260112T120000Z
+SUMMARY:LAW1051 Seminar - Negligence and Duty of Care
+DESCRIPTION:Small group seminar discussing Donoghue v Stevenson and related cases
+LOCATION:Durham University - Seminar Room B2.15
+SEQUENCE:0
+STATUS:CONFIRMED
+TRANSP:OPAQUE
+END:VEVENT
+BEGIN:VEVENT
+UID:allday-reading@mydurhamlaw.test
+DTSTAMP:20260108T000000Z
+DTSTART;VALUE=DATE:20260115
+SUMMARY:Reading Week - No Scheduled Classes
+DESCRIPTION:Use this week to catch up on readings and prepare for assessments
+SEQUENCE:0
+STATUS:CONFIRMED
+TRANSP:TRANSPARENT
+END:VEVENT
+BEGIN:VEVENT
+UID:deadline-coursework@mydurhamlaw.test
+DTSTAMP:20260108T000000Z
+DTSTART:20260118T160000Z
+SUMMARY:LAW1051 Coursework Deadline - Tort Essay
+DESCRIPTION:Submit 2000-word essay on negligence via Blackboard by 4pm. Late submissions incur penalties.
+LOCATION:Blackboard Submission Portal
+SEQUENCE:0
+STATUS:CONFIRMED
+TRANSP:OPAQUE
+END:VEVENT
+BEGIN:VEVENT
+UID:assessment-exam@mydurhamlaw.test
+DTSTAMP:20260108T000000Z
+DTSTART:20260125T093000Z
+DTEND:20260125T113000Z
+SUMMARY:LAW1071 Mid-Term Assessment - Contract Law
+DESCRIPTION:Closed book examination covering weeks 1-4 material
+LOCATION:Examination Hall A
+SEQUENCE:0
+STATUS:CONFIRMED
+TRANSP:OPAQUE
+END:VEVENT
+END:VCALENDAR

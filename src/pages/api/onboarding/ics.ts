@@ -85,7 +85,7 @@ function parseICSFile(fileContent: string): { events: ParsedEvent[], assessments
       if (!startDate) continue; // Skip events without start date
       
       const startAt = startDate.toJSDate().toISOString();
-      const endAt = endDate ? endDate.toJSDate().toISOString() : null;
+      const endAt = endDate ? endDate.toJSDate().toISOString() : undefined;
       const allDay = startDate.isDate; // True if date-only (no time)
       
       const moduleCode = extractModuleCode(summary) || extractModuleCode(description);
@@ -143,9 +143,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const form = formidable({
       maxFileSize: 10 * 1024 * 1024, // 10MB max
       filter: (part) => {
-        return part.mimetype?.includes('calendar') || 
-               part.originalFilename?.endsWith('.ics') ||
-               part.mimetype?.includes('text');
+        return !!(
+          part.mimetype?.includes('calendar') ||
+          part.mimetype?.includes('text') ||
+          part.originalFilename?.toLowerCase().endsWith('.ics')
+        );
       },
     });
 
