@@ -2,7 +2,6 @@
 import { NextApiRequest, NextApiResponse } from 'next'
 import { DayDetail } from '@/types/calendar'
 import { format } from 'date-fns'
-import { DURHAM_LLB_2025_26, getDefaultPlanByStudentYear } from '@/data/durham/llb'
 import { getApiAuth, getBearerToken } from '@/lib/apiAuth'
 
 // Force Node.js runtime (Netlify/Next)
@@ -47,11 +46,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   const isDemoMode = process.env.NEXT_PUBLIC_DEMO_CALENDAR === 'true'
-  
-  // Get term dates and assessments from dataset
-  const yearOfStudy = Number(year) || 1
-  const normalizedYearGroup = yearOfStudy === 0 ? 'foundation' : `year${yearOfStudy}` as 'foundation'|'year1'|'year2'|'year3'
-  const plan = getDefaultPlanByStudentYear(normalizedYearGroup)
 
   try {
     console.log(`[CalendarAPI] Request for date=${date}. Checking auth...`)
@@ -73,90 +67,94 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
     const { user, supabase } = auth
 
-    console.log(`[CalendarAPI] User found: ${user?.id || 'none'}`)
+    console.log(`[CalendarAPI] User found: ${user?.id || 'none'}`);
 
-    // ----- Mock real data (typed) -----
-    const d = new Date(date)
-    const dateStr = format(d, 'yyyy-MM-dd')
-    const dayName = format(d, 'EEEE')
-    const isToday = format(new Date(), 'yyyy-MM-dd') === dateStr
+    // Query ONLY real user data from database
+    const dateStr = format(new Date(date), 'yyyy-MM-dd');
+    const dayName = format(new Date(date), 'EEEE');
+    const isToday = format(new Date(), 'yyyy-MM-dd') === dateStr;
 
-    // Find assessments due on this specific date
-    const assessments_due = plan.modules.flatMap((module, moduleIndex) =>
-      module.assessments
-        .map((assessment, assessmentIndex) => {
-          // Handle different assessment types with different due date formats
-          let assessmentDate: string | null = null
-          if ('due' in assessment) {
-            assessmentDate = format(new Date(assessment.due), 'yyyy-MM-dd')
-          } else if ('window' in assessment) {
-            // For exams, use the start of the window
-            assessmentDate = format(new Date(assessment.window.start), 'yyyy-MM-dd')
-          }
-          
-          if (assessmentDate === dateStr) {
-            return {
-              id: `assessment-${moduleIndex}-${assessmentIndex}`,
-              module_id: String(moduleIndex + 1),
-              title: `${module.title} ${assessment.type}`,
-              type: (assessment.type === 'Problem Question' ? 'coursework' :
-                    assessment.type === 'Moot' ? 'oral' :
-                    assessment.type === 'Dissertation' ? 'coursework' :
-                    assessment.type === 'Essay' ? 'essay' :
-                    assessment.type === 'Exam' ? 'exam' :
-                    assessment.type === 'Presentation' ? 'presentation' :
-                    'coursework') as 'essay' | 'exam' | 'coursework' | 'presentation' | 'oral',
-              due_at: `${dateStr}T23:59:59Z`,
-              weight_percentage: assessment.weight || 0,
-              description: assessment.type === 'Essay' ? 'Essay submission' : 
-                           assessment.type === 'Problem Question' ? 'Problem question submission' : 
-                           assessment.type === 'Exam' ? 'Examination' :
-                           `${assessment.type} submission`,
-              status: 'not_started' as const,
-            }
-          }
-          return null
-        })
-        .filter((item): item is NonNullable<typeof item> => item !== null)
-    )
+    // Fetch real assessments due on this date
+    const { data: assessmentsData } = await supabase
+      .from('user_assessments')
+      .select('*')
+      .eq('user_id', user.id)
+      .is('deleted_at', null)
+      .gte('due_at', `${dateStr}T00:00:00Z`)
+      .lte('due_at', `${dateStr}T23:59:59Z`);
 
-    // Fetch timetable events
+    const assessments_due = (assessmentsData || []).map(a => ({
+      id: a.id,
+      module_id: a.module_code || 'unknown',
+      title: a.title,
+      type: (a.assignment_type === 'essay' ? 'essay' :
+             a.assignment_type === 'exam' ? 'exam' :
+             a.assignment_type === 'presentation' ? 'presentation' :
+             'coursework') as 'essay' | 'exam' | 'coursework' | 'presentation' | 'oral',
+      due_at: a.due_at,
+      weight_percentage: a.weight_percentage || 0,
+      description: a.description || '',
+      status: 'not_started' as const,
+    }));
+
+    // Fetch real events for this date
+    const { data: eventsData } = await supabase
+      .from('user_events')
+      .select('*')
+      .eq('user_id', user.id)
+      .is('deleted_at', null)
+      .gte('start_at', `${dateStr}T00:00:00Z`)
+      .lte('start_at', `${dateStr}T23:59:59Z`);
+
+    const events: CalendarEvent[] = (eventsData || []).map(e => ({
+      id: e.id,
+      title: e.title,
+      description: e.description || '',
+      start_at: e.start_at,
+      end_at: e.end_at || e.start_at,
+      location: e.location || '',
+      type: e.event_type || 'other',
+      module_id: e.module_code || 'general',
+      is_university_fixed: e.source === 'ics',
+      is_all_day: e.all_day || false,
+    }));
+
+    // Fetch timetable events (weekly recurring)
     const { data: dbTimetableEvents } = await supabase
       .from('timetable_events')
       .select('*')
-      .eq('user_id', user.id)
+      .eq('user_id', user.id);
 
-    const events: CalendarEvent[] = [];
-    
     if (dbTimetableEvents) {
-        const dayOfWeek = d.getDay();
-        const getTimeString = (iso: string) => {
-             const parts = new Date(iso).toISOString().split('T');
-             return (parts[1] || "00:00:00").substring(0, 5); 
-        };
+      const d = new Date(date);
+      const dayOfWeek = d.getDay();
+      const getTimeString = (iso: string) => {
+        const parts = new Date(iso).toISOString().split('T');
+        return (parts[1] || "00:00:00").substring(0, 5);
+      };
 
-        dbTimetableEvents.forEach((evt) => {
-            const evtDate = new Date(evt.start_time);
-             if (evt.recurrence_pattern === 'weekly') {
-                 if (evtDate.getDay() === dayOfWeek) {
-                     const startHM = getTimeString(evt.start_time);
-                     const endHM = getTimeString(evt.end_time);
-                     
-                     events.push({
-                         id: evt.id,
-                         title: evt.title,
-                         description: evt.location ? `Location: ${evt.location}` : '',
-                         start_at: `${dateStr}T${startHM}:00Z`, 
-                         end_at: `${dateStr}T${endHM}:00Z`,
-                         location: evt.location || '',
-                         type: 'lecture',
-                         module_id: 'timetable',
-                         is_university_fixed: true,
-                         is_all_day: false
-                     });
-                 }
-            }
-        });
+      dbTimetableEvents.forEach((evt) => {
+        const evtDate = new Date(evt.start_time);
+        if (evt.recurrence_pattern === 'weekly') {
+          if (evtDate.getDay() === dayOfWeek) {
+            const startHM = getTimeString(evt.start_time);
+            const endHM = getTimeString(evt.end_time);
+
+            events.push({
+              id: evt.id,
+              title: evt.title,
+              description: evt.location ? `Location: ${evt.location}` : '',
+              start_at: `${dateStr}T${startHM}:00Z`,
+              end_at: `${dateStr}T${endHM}:00Z`,
+              location: evt.location || '',
+              type: 'lecture',
+              module_id: 'timetable',
+              is_university_fixed: true,
+              is_all_day: false
+            });
+          }
+        }
+      });
     }
 
     const detail: DayDetail = {

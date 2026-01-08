@@ -168,18 +168,26 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
 
       // Fetch the ICS file from the URL
+      console.log('[ICS Import] Fetching from URL:', url);
       try {
         const fetchRes = await fetch(url);
+        console.log('[ICS Import] Fetch status:', fetchRes.status, fetchRes.statusText);
+        
         if (!fetchRes.ok) {
           throw new Error(`Failed to fetch: ${fetchRes.status} ${fetchRes.statusText}`);
         }
+        
         fileContent = await fetchRes.text();
+        console.log('[ICS Import] Fetched content length:', fileContent.length);
+        
         filename = url.split('/').pop() || 'calendar.ics';
       } catch (fetchError) {
         console.error('[ICS URL Fetch Error]', fetchError);
+        console.error('[ICS URL Fetch Error Stack]', (fetchError as Error).stack);
         return res.status(500).json({ 
           error: 'Failed to fetch calendar from URL',
-          details: fetchError instanceof Error ? fetchError.message : 'Unknown error'
+          details: fetchError instanceof Error ? fetchError.message : 'Unknown error',
+          url: parsedUrl.hostname // Don't expose full URL for security
         });
       }
     } else {
