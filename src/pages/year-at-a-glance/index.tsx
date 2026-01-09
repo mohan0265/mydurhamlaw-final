@@ -1,24 +1,48 @@
 // src/pages/year-at-a-glance/index.tsx
-// Simplified YAAG - Real Data Only (No Templates)
-import React, { useEffect, useState } from 'react';
-import Link from 'next/link';
+// YAAG 3-Term Layout - Real Data Only
+import React, { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/router';
-import { Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
+import Link from 'next/link';
+import { ChevronLeft, ChevronRight, Calendar, Upload, Plus } from 'lucide-react';
 import { useAuth } from '@/lib/supabase/AuthContext';
 import { getSupabaseClient } from '@/lib/supabase/client';
 import { EmptyState } from '@/components/common/EmptyState';
-import { format, startOfMonth, endOfMonth, addMonths, subMonths } from 'date-fns';
+import TermColumnReal from '@/components/calendar/TermColumnReal';
 
-// Types for real data
+// Academic year bounds (Sept 1 - Aug 31)
+const ACADEMIC_YEARS = [
+  { key: '2024-25', label: '2024-25', startDate: new Date(2024, 8, 1), endDate: new Date(2025, 7, 31) },
+  { key: '2025-26', label: '2025-26', startDate: new Date(2025, 8, 1), endDate: new Date(2026, 7, 31) },
+  { key: '2026-27', label: '2026-27', startDate: new Date(2026, 8, 1), endDate: new Date(2027, 7, 31) },
+];
+
+// Term dates within academic year (approximate Durham dates)
+const TERM_DATES = {
+  'michaelmas': { startMonth: 9, startDay: 20, endMonth: 11, endDay: 15 }, // Oct ~20 - Dec ~15
+  'epiphany': { startMonth: 0, startDay: 10, endMonth: 2, endDay: 15 }, // Jan ~10 - Mar ~15
+  'easter': { startMonth: 3, startDay: 15, endMonth: 5, endDay: 20 }, // Apr ~15 - Jun ~20
+};
+
+function getTermDates(academicYearKey: string, termKey: keyof typeof TERM_DATES) {
+  const yearParts = academicYearKey.split('-');
+  const yearStart = parseInt(yearParts[0] || '2025'); // Default to 2025 if parsing fails
+  const termConfig = TERM_DATES[termKey];
+  
+  // Michaelmas is in the first year, Epiphany/Easter in the second year
+  const year = termKey === 'michaelmas' ? yearStart : yearStart + 1;
+  
+  return {
+    start: new Date(year, termConfig.startMonth, termConfig.startDay),
+    end: new Date(year, termConfig.endMonth, termConfig.endDay),
+  };
+}
+
 type UserEvent = {
   id: string;
   title: string;
   start_at: string;
-  end_at: string | null;
-  event_type: string | null;
   module_code: string | null;
-  all_day: boolean;
-  location: string | null;
+  event_type: string | null;
 };
 
 type UserAssessment = {
@@ -27,92 +51,7 @@ type UserAssessment = {
   due_at: string;
   module_code: string | null;
   assessment_type: string | null;
-  weight_percentage: number | null;
 };
-
-// Month card component
-function MonthCard({ 
-  month, 
-  events, 
-  assessments 
-}: { 
-  month: Date; 
-  events: UserEvent[]; 
-  assessments: UserAssessment[];
-}) {
-  const monthName = format(month, 'MMMM yyyy');
-  const totalItems = events.length + assessments.length;
-
-  if (totalItems === 0) {
-    return (
-      <div className="rounded-xl border bg-white p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-2">{monthName}</h3>
-        <p className="text-sm text-gray-400 italic">No events this month</p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="rounded-xl border bg-white p-6 hover:shadow-md transition-shadow">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-gray-900">{monthName}</h3>
-        <span className="text-sm text-gray-500">{totalItems} items</span>
-      </div>
-
-      <div className="space-y-2">
-        {/* Assessments first (priority) */}
-        {assessments.map(a => (
-          <Link
-            key={a.id}
-            href={`/assignments?open=${a.id}`}
-            className="block p-3 rounded-lg border border-red-100 bg-red-50 hover:bg-red-100 transition-colors group"
-          >
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <div className="text-sm font-semibold text-red-900">{a.title}</div>
-                {a.module_code && (
-                  <div className="text-xs text-red-700 mt-1">{a.module_code}</div>
-                )}
-              </div>
-              <div className="text-xs text-red-600 font-medium ml-2">
-                {format(new Date(a.due_at), 'MMM d')}
-              </div>
-            </div>
-          </Link>
-        ))}
-
-        {/* Events */}
-        {events.slice(0, 5).map(e => (
-          <div
-            key={e.id}
-            className="p-3 rounded-lg border bg-gray-50 hover:bg-gray-100 transition-colors"
-          >
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <div className="text-sm font-medium text-gray-900">{e.title}</div>
-                {e.module_code && (
-                  <div className="text-xs text-gray-600 mt-1">{e.module_code}</div>
-                )}
-                {e.location && (
-                  <div className="text-xs text-gray-500 mt-1">📍 {e.location}</div>
-                )}
-              </div>
-              <div className="text-xs text-gray-600 ml-2">
-                {e.all_day ? format(new Date(e.start_at), 'MMM d') : format(new Date(e.start_at), 'MMM d, h:mm a')}
-              </div>
-            </div>
-          </div>
-        ))}
-
-        {events.length > 5 && (
-          <div className="text-xs text-gray-400 text-center py-2">
-            +{events.length - 5} more events
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
 
 export default function YearAtAGlancePage() {
   const router = useRouter();
@@ -120,13 +59,11 @@ export default function YearAtAGlancePage() {
   const [loading, setLoading] = useState(true);
   const [events, setEvents] = useState<UserEvent[]>([]);
   const [assessments, setAssessments] = useState<UserAssessment[]>([]);
-  const [currentDate, setCurrentDate] = useState(new Date());
+  
+  // Selected academic year (default to current 2025-26)
+  const [selectedYear, setSelectedYear] = useState('2025-26');
 
-  // Academic year calculation (Sept-Aug)
-  const academicYearStart = new Date(currentDate.getFullYear(), 8, 1); // Sept 1
-  const academicYearEnd = new Date(currentDate.getFullYear() + 1, 7, 31); // Aug 31
-
-  // Fetch real data
+  // Fetch real data for selected academic year
   useEffect(() => {
     if (!user?.id) {
       setLoading(false);
@@ -138,31 +75,38 @@ export default function YearAtAGlancePage() {
       if (!supabase) return;
 
       try {
-        // Fetch ALL events (no date restriction)
+        const yearConfig = ACADEMIC_YEARS.find(y => y.key === selectedYear);
+        if (!yearConfig) return;
+
+        // Fetch events within academic year
         const { data: eventsData, error: eventsError } = await supabase
           .from('user_events')
-          .select('*')
+          .select('id, title, start_at, module_code, event_type')
           .eq('user_id', user.id)
           .is('deleted_at', null)
+          .gte('start_at', yearConfig.startDate.toISOString())
+          .lte('start_at', yearConfig.endDate.toISOString())
           .order('start_at', { ascending: true });
 
         if (eventsError) {
           console.error('[YAAG] Error fetching events:', eventsError);
         }
 
-        // Fetch ALL assessments (no date restriction)
+        // Fetch assessments within academic year
         const { data: assessmentsData, error: assessmentsError } = await supabase
           .from('user_assessments')
-          .select('*')
+          .select('id, title, due_at, module_code, assessment_type')
           .eq('user_id', user.id)
           .is('deleted_at', null)
-          .order('due_at', { ascending: true });
+          .gte('due_at', yearConfig.startDate.toISOString())
+          .lte('due_at', yearConfig.endDate.toISOString())
+          .order('due_at', { ascending: true});
 
         if (assessmentsError) {
           console.error('[YAAG] Error fetching assessments:', assessmentsError);
         }
 
-        console.log('[YAAG] Loaded:', eventsData?.length || 0, 'events,', assessmentsData?.length || 0, 'assessments');
+        console.log('[YAAG] Loaded for', selectedYear, ':', eventsData?.length || 0, 'events,', assessmentsData?.length || 0, 'assessments');
         
         setEvents(eventsData || []);
         setAssessments(assessmentsData || []);
@@ -174,60 +118,62 @@ export default function YearAtAGlancePage() {
     };
 
     fetchData();
-  }, [user?.id]);
+  }, [user?.id, selectedYear]);
 
-  // Group events and assessments by month within academic year
-  const monthsData = React.useMemo(() => {
-    if (events.length === 0 && assessments.length === 0) {
-      return [];
-    }
+  // Filter events/assessments by term
+  const termData = useMemo(() => {
+    const michaelmas = getTermDates(selectedYear, 'michaelmas');
+    const epiphany = getTermDates(selectedYear, 'epiphany');
+    const easter = getTermDates(selectedYear, 'easter');
 
-    // Academic year range for Year 1 (Sept 2025 - June 2026)
-    // TODO: Make this dynamic based on user's year_of_study from profile
-    const academicYearStart = new Date(2025, 8, 1); // Sept 1, 2025
-    const academicYearEnd = new Date(2026, 5, 30); // June 30, 2026
+    const filterByTerm = (items: any[], dateField: string, start: Date, end: Date) => {
+      return items.filter(item => {
+        const itemDate = new Date(item[dateField]);
+        return itemDate >= start && itemDate <= end;
+      });
+    };
 
-    // Generate months within academic year range
-    const months: Map<string, { events: UserEvent[]; assessments: UserAssessment[]; date: Date }> = new Map();
-    
-    let currentMonth = startOfMonth(academicYearStart);
-    const endMonth = endOfMonth(academicYearEnd);
+    return {
+      michaelmas: {
+        events: filterByTerm(events, 'start_at', michaelmas.start, michaelmas.end),
+        assessments: filterByTerm(assessments, 'due_at', michaelmas.start, michaelmas.end),
+        ...michaelmas,
+      },
+      epiphany: {
+        events: filterByTerm(events, 'start_at', epiphany.start, epiphany.end),
+        assessments: filterByTerm(assessments, 'due_at', epiphany.start, epiphany.end),
+        ...epiphany,
+      },
+      easter: {
+        events: filterByTerm(events, 'start_at', easter.start, easter.end),
+        assessments: filterByTerm(assessments, 'due_at', easter.start, easter.end),
+        ...easter,
+      },
+    };
+  }, [events, assessments, selectedYear]);
 
-    while (currentMonth <= endMonth) {
-      const key = format(currentMonth, 'yyyy-MM');
-      months.set(key, { events: [], assessments: [], date: new Date(currentMonth) });
-      currentMonth = addMonths(currentMonth, 1);
-    }
+  // Year navigation
+  const currentYearIndex = ACADEMIC_YEARS.findIndex(y => y.key === selectedYear);
+  const canGoPrev = currentYearIndex > 0;
+  const canGoNext = currentYearIndex < ACADEMIC_YEARS.length - 1;
 
-    // Distribute events into months (only those within range)
-    events.forEach(event => {
-      const eventDate = new Date(event.start_at);
-      // Only include if within academic year
-      if (eventDate >= academicYearStart && eventDate <= academicYearEnd) {
-        const key = format(eventDate, 'yyyy-MM');
-        if (months.has(key)) {
-          months.get(key)!.events.push(event);
-        }
+  const handlePrevYear = () => {
+    if (canGoPrev && currentYearIndex > 0) {
+      const prevYear = ACADEMIC_YEARS[currentYearIndex - 1];
+      if (prevYear) {
+        setSelectedYear(prevYear.key);
       }
-    });
+    }
+  };
 
-    // Distribute assessments into months (only those within range)
-    assessments.forEach(assessment => {
-      const dueDate = new Date(assessment.due_at);
-      // Only include if within academic year
-      if (dueDate >= academicYearStart && dueDate <= academicYearEnd) {
-        const key = format(dueDate, 'yyyy-MM');
-        if (months.has(key)) {
-          months.get(key)!.assessments.push(assessment);
-        }
+  const handleNextYear = () => {
+    if (canGoNext && currentYearIndex < ACADEMIC_YEARS.length - 1) {
+      const nextYear = ACADEMIC_YEARS[currentYearIndex + 1];
+      if (nextYear) {
+        setSelectedYear(nextYear.key);
       }
-    });
-
-    // Filter out empty months for cleaner display
-    return Array.from(months.values()).filter(month => 
-      month.events.length > 0 || month.assessments.length > 0
-    );
-  }, [events, assessments]);
+    }
+  };
 
   if (loading) {
     return (
@@ -235,14 +181,14 @@ export default function YearAtAGlancePage() {
         <div className="h-8 w-64 bg-gray-200 rounded animate-pulse mb-8" />
         <div className="grid md:grid-cols-3 gap-6">
           {[0, 1, 2].map(i => (
-            <div key={i} className="rounded-xl border bg-white p-6 h-64 animate-pulse" />
+            <div key={i} className="rounded-2xl border bg-white p-6 h-96 animate-pulse" />
           ))}
         </div>
       </div>
     );
   }
 
-  // Empty state if no data
+  // Empty state for users with no calendar import
   if (!user) {
     return (
       <div className="max-w-4xl mx-auto px-4 py-20">
@@ -257,16 +203,36 @@ export default function YearAtAGlancePage() {
     );
   }
 
-  if (events.length === 0 && assessments.length === 0) {
+  const hasAnyData = events.length > 0 || assessments.length > 0;
+
+  if (!hasAnyData) {
     return (
       <div className="max-w-4xl mx-auto px-4 py-20">
         <EmptyState
           icon={<Calendar size={48} />}
           title="No Calendar Data Yet"
-          description="Import your Blackboard calendar to see your lectures, seminars, and assignment deadlines here."
+          description="Import your Blackboard calendar to see your year at a glance with all modules, lectures, and assignment deadlines."
           actionLabel="Import Calendar"
           actionHref="/onboarding/calendar"
         />
+        
+        {/* Additional CTAs */}
+        <div className="mt-8 flex justify-center gap-4">
+          <Link
+            href="/assignments"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-white border rounded-lg hover:bg-gray-50"
+          >
+            <Plus size={16} />
+            Add Assignment
+          </Link>
+          <Link
+            href="/assignments"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-white border rounded-lg hover:bg-gray-50"
+          >
+            <Upload size={16} />
+            Upload Brief PDF
+          </Link>
+        </div>
       </div>
     );
   }
@@ -274,45 +240,97 @@ export default function YearAtAGlancePage() {
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Year at a Glance</h1>
-          <p className="text-sm text-gray-600 mt-1">
-            Academic Year 2025-26 • {events.length} events, {assessments.length} assessments
-          </p>
-          {monthsData.length > 0 && (
-            <p className="text-xs text-gray-500 mt-1">
-              Showing {monthsData.length} months with activity
+      <div className="mb-8">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Year at a Glance</h1>
+            <p className="text-sm text-gray-600 mt-1">
+              Academic Year {selectedYear} • {events.length} events, {assessments.length} assessments
             </p>
-          )}
+          </div>
+
+          <div className="flex items-center gap-3">
+            <Link
+              href="/year-at-a-glance/month"
+              className="px-4 py-2 rounded-xl bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 text-sm font-medium transition-colors"
+            >
+              Month View
+            </Link>
+            <Link
+              href="/year-at-a-glance/week"
+              className="px-4 py-2 rounded-xl bg-purple-600 text-white hover:bg-purple-700 text-sm font-medium transition-colors"
+            >
+              Week View
+            </Link>
+          </div>
         </div>
 
-        <div className="flex items-center gap-3">
-          <Link
-            href="/year-at-a-glance/month"
-            className="px-4 py-2 rounded-xl bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 text-sm font-medium transition-colors"
+        {/* Year Navigation */}
+        <div className="flex items-center gap-2 mt-4">
+          <button
+            onClick={handlePrevYear}
+            disabled={!canGoPrev}
+            className="p-2 rounded-lg border hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed"
+            title="Previous academic year"
           >
-            Month View
-          </Link>
-          <Link
-            href="/year-at-a-glance/week"
-            className="px-4 py-2 rounded-xl bg-purple-600 text-white hover:bg-purple-700 text-sm font-medium transition-colors"
+            <ChevronLeft size={20} />
+          </button>
+          
+          <div className="flex-1 grid grid-cols-3 gap-2">
+            {ACADEMIC_YEARS.map(year => (
+              <button
+                key={year.key}
+                onClick={() => setSelectedYear(year.key)}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
+                  selectedYear === year.key
+                    ? 'bg-purple-600 text-white'
+                    : 'bg-white border hover:bg-gray-50 text-gray-700'
+                }`}
+              >
+                {year.label}
+              </button>
+            ))}
+          </div>
+
+          <button
+            onClick={handleNextYear}
+            disabled={!canGoNext}
+            className="p-2 rounded-lg border hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed"
+            title="Next academic year"
           >
-            Week View
-          </Link>
+            <ChevronRight size={20} />
+          </button>
         </div>
       </div>
 
-      {/* Month Grid */}
+      {/* 3-Term Layout */}
       <div className="grid md:grid-cols-3 gap-6">
-        {monthsData.map(({ date, events: monthEvents, assessments: monthAssessments }) => (
-          <MonthCard
-            key={format(date, 'yyyy-MM')}
-            month={date}
-            events={monthEvents}
-            assessments={monthAssessments}
-          />
-        ))}
+        <TermColumnReal
+          termKey="michaelmas"
+          title="Michaelmas"
+          startDate={termData.michaelmas.start}
+          endDate={termData.michaelmas.end}
+          events={termData.michaelmas.events}
+          assessments={termData.michaelmas.assessments}
+        />
+        
+        <TermColumnReal
+          termKey="epiphany"
+          title="Epiphany"
+          startDate={termData.epiphany.start}
+          endDate={termData.epiphany.end}
+          events={termData.epiphany.events}
+          assessments={termData.epiphany.assessments}
+        />
+        
+        <TermColumnReal
+          termKey="easter"
+          title="Easter (Revision & Exams)"
+          startDate={termData.easter.start}
+          endDate={termData.easter.end}
+          events={termData.easter.events}
+          assessments={termData.easter.assessments}
+        />
       </div>
 
       {/* Footer Note */}

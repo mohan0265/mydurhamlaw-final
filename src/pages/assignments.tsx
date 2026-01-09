@@ -52,8 +52,26 @@ export default function AssignmentsPage() {
     if (user) fetchAssignments()
   }, [user])
 
-  // 2. Handle Query Param Selection
+  // 2. Handle Query Param Selection  
   useEffect(() => {
+    // Handle YAAG deep-link: openAssessmentId (from user_assessments)
+    if (router.query.openAssessmentId) {
+      // For now, show message to create assignment from assessment
+      toast.success('Opening assessment from calendar - create assignment from this deadline');
+      setShowCreateForm(true);
+      setSelectedAssignment(null);
+      return;
+    }
+
+    // Handle YAAG deep-link: openBriefId (from user_assignment_briefs)  
+    if (router.query.openBriefId) {
+      // For now, show message to link brief
+      toast.success('Opening assignment brief - link to assignment or create new one');
+      setShowCreateForm(true);
+      setSelectedAssignment(null);
+      return;
+    }
+
     // Handle opening specific assignment
     if (router.query.assignmentId && assignments.length > 0) {
       const target = assignments.find(a => a.id === router.query.assignmentId)
