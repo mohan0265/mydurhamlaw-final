@@ -213,12 +213,47 @@ export default function CalendarImportPage() {
                   </p>
                 </div>
 
+                {/* Next Steps Guidance */}
+                <div className="p-5 bg-gradient-to-br from-purple-50 to-blue-50 rounded-lg border border-purple-200 mb-6 text-left">
+                  <h4 className="text-sm font-bold text-purple-900 mb-3 flex items-center gap-2">
+                    <span className="text-lg">📌</span>
+                    Next Steps - Get the Most Out of MyDurhamLaw
+                  </h4>
+                  <ol className="text-sm text-gray-700 space-y-2 list-decimal list-inside">
+                    <li>
+                      <strong>Go to YAAG</strong> (Year at a Glance) to see your entire academic year in 3 terms
+                    </li>
+                    <li>
+                      <strong>Click any assignment deadline</strong> to open the Assignment Widget
+                    </li>
+                    <li>
+                      <strong>Upload your assignment brief PDF</strong> inside the widget for AI-powered guidance
+                    </li>
+                    <li>
+                      <strong>Follow the stages</strong> to research, outline, and draft with Durmah's help
+                    </li>
+                  </ol>
+                  <div className="mt-3 pt-3 border-t border-purple-200">
+                    <p className="text-xs text-purple-700">
+                      <strong>💡 Pro Tip:</strong> The Assignment Widget remembers where you left off, so you can resume anytime!
+                    </p>
+                  </div>
+                </div>
+
                 {/* Continue Button */}
                 <button
                   onClick={handleComplete}
-                  className="w-full px-6 py-3 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700"
+                  className="w-full px-6 py-3 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 mb-3"
                 >
                   Go to Dashboard
+                </button>
+                
+                {/* Direct Link to YAAG */}
+                <button
+                  onClick={() => router.push('/year-at-a-glance')}
+                  className="w-full px-6 py-3 bg-white border-2 border-purple-600 text-purple-600 rounded-lg font-semibold hover:bg-purple-50"
+                >
+                  View Year at a Glance →
                 </button>
               </div>
             </>

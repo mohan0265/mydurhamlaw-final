@@ -1,19 +1,37 @@
 import React, { useMemo } from 'react'
-import { BookOpen, ClipboardList, FileText, Timer } from 'lucide-react'
+import Link from 'next/link'
+import { BookOpen, FileText, Timer } from 'lucide-react'
 import { Card } from '@/components/ui/Card'
 import type {
   ModulePlan,
-  Assessment,
   TermBlock,
 } from '@/data/durham/llb/academic_year_2025_26'
+
+type UserEvent = {
+  id: string
+  title: string
+  start_at: string
+  module_code: string | null
+}
+
+type UserAssessment = {
+  id: string
+  title: string
+  due_at: string
+  module_code: string | null
+  assessment_type: string | null
+}
 
 type Props = {
   termKey: 'michaelmas' | 'epiphany' | 'easter'
   title: string
   term: TermBlock
-  modules: ModulePlan[]          // modules taught this term
-  allModules: ModulePlan[]       // whole-year list (for exams/assessments lookup)
+  modules: ModulePlan[]          // PLAN layer: modules taught this term (structure only)
+  allModules: ModulePlan[]       // PLAN layer: whole-year list (structure only)
   onModuleClick?: (idOrTitle: string) => void
+  // NEW: Real user data
+  userEvents?: UserEvent[]
+  userAssessments?: UserAssessment[]
 }
 
 /** --- tiny date helpers (no date-fns needed) ------------------------------ */
@@ -23,7 +41,7 @@ function addDays(d: Date, n: number) {
   return x
 }
 function asDate(iso: string) {
-  // ISO like "2025-10-06"
+  // ISO like \"2025-10-06\"
   return new Date(iso + (iso.length <= 10 ? 'T00:00:00Z' : ''))
 }
 function formatDMmm(d: Date) {
@@ -38,60 +56,10 @@ function weekWindow(isoMonday: string) {
   const end = addDays(start, 6)
   return { start, end }
 }
-function overlapsWindow(
-  win: { start: string; end: string },
-  isoMonday: string,
-) {
-  const w = weekWindow(isoMonday)
-  const s = asDate(win.start)
-  const e = asDate(win.end)
-  return !(e < w.start || s > w.end)
-}
 
-/** Label like "W3 · 20 Oct" */
+/** Label like \"W3 · 20 Oct\" */
 function weekLabel(isoMonday: string, idx: number) {
   return `W${idx + 1} · ${formatDMmm(asDate(isoMonday))}`
-}
-
-/** Render a single compact assessment pill */
-function AssessPill({
-  a,
-  moduleTitle,
-}: {
-  a: Assessment
-  moduleTitle: string
-}) {
-  const base =
-    'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border'
-  const ofType = (() => {
-    if (a.type === 'Exam') return 'bg-red-50 text-red-700 border-red-200'
-    if (a.type === 'Dissertation')
-      return 'bg-amber-50 text-amber-800 border-amber-200'
-    return 'bg-blue-50 text-blue-700 border-blue-200'
-  })()
-
-  const icon =
-    a.type === 'Exam' ? (
-      <Timer className="w-3 h-3" />
-    ) : a.type === 'Dissertation' ? (
-      <ClipboardList className="w-3 h-3" />
-    ) : (
-      <FileText className="w-3 h-3" />
-    )
-
-  const text =
-    a.type === 'Exam'
-      ? `${moduleTitle} • Exam`
-      : a.type === 'Dissertation'
-      ? `${moduleTitle} • Dissertation`
-      : `${moduleTitle} • ${a.type}`
-
-  return (
-    <span className={`${base} ${ofType}`} title={text}>
-      {icon}
-      {text}
-    </span>
-  )
 }
 
 /** ----------------------------------------------------------------------- */
@@ -102,45 +70,56 @@ export default function SemesterColumn({
   modules,
   allModules,
   onModuleClick,
+  userEvents = [],
+  userAssessments = [],
 }: Props) {
-  // Build a fast lookup of assessments to weeks
+  // Map REAL assessments to weeks (NOT from PLAN - from user data only)
   const weekAssessments = useMemo(() => {
-    // map of mondayISO -> list of { a, moduleTitle }
-    const map: Record<string, Array<{ a: Assessment; moduleTitle: string }>> =
-      {}
+    const map: Record<string, UserAssessment[]> = {}
 
     // initialize all week keys
     term.weeks.forEach((wkISO) => {
       map[wkISO] = []
     })
 
-    const scan = (m: ModulePlan) => {
-      m.assessments.forEach((a) => {
-        if ('window' in a) {
-          // exam window - show in every overlapping week
-          term.weeks.forEach((wkISO) => {
-            if (overlapsWindow(a.window, wkISO)) {
-              ;(map[wkISO] ||= []).push({ a, moduleTitle: m.title })
-            }
-          })
-        } else {
-          // single due date - show in the week containing the due date
-          term.weeks.forEach((wkISO) => {
-            const { start, end } = weekWindow(wkISO)
-            if (betweenInclusive(asDate(a.due), start, end)) {
-              ;(map[wkISO] ||= []).push({ a, moduleTitle: m.title })
-            }
-          })
+    // Filter assessments by this term's date range and assign to weeks
+    userAssessments.forEach((a) => {
+      const dueDate = new Date(a.due_at)
+      
+      term.weeks.forEach((wkISO) => {
+        const { start, end } = weekWindow(wkISO)
+        if (betweenInclusive(dueDate, start, end)) {
+          (map[wkISO] ||= []).push(a)
         }
       })
-    }
+    })
 
-    // For Michaelmas/Epiphany: just scan modules passed in.
-    // For Easter (revision), include *all modules* to capture exams windows.
-    const list = termKey === 'easter' ? allModules : modules
-    list.forEach(scan)
     return map
-  }, [termKey, term.weeks, modules, allModules])
+  }, [term.weeks, userAssessments])
+
+  // Map REAL events to weeks (for showing module presence)
+  const weekEvents = useMemo(() => {
+    const map: Record<string, UserEvent[]> = {}
+
+    // initialize all week keys
+    term.weeks.forEach((wkISO) => {
+      map[wkISO] = []
+    })
+
+    // Filter events by this term's date range and assign to weeks
+    userEvents.forEach((e) => {
+      const eventDate = new Date(e.start_at)
+      
+      term.weeks.forEach((wkISO) => {
+        const { start, end } = weekWindow(wkISO)
+        if (betweenInclusive(eventDate, start, end)) {
+          (map[wkISO] ||= []).push(e)
+        }
+      })
+    })
+
+    return map
+  }, [term.weeks, userEvents])
 
   return (
     <Card className="p-4 md:p-5">
@@ -148,7 +127,7 @@ export default function SemesterColumn({
       <div className="flex items-start justify-between mb-3">
         <div>
           <div className="text-xs text-gray-500 uppercase tracking-wide">
-            Semester
+            Term
           </div>
           <h3 className="text-lg font-semibold">{title}</h3>
           <div className="text-xs text-gray-500">
@@ -158,7 +137,7 @@ export default function SemesterColumn({
         <BookOpen className="w-5 h-5 text-purple-500" />
       </div>
 
-      {/* Modules taught this term */}
+      {/* Modules taught this term (PLAN layer - structure only, NOT personal data) */}
       <div className="mb-3">
         <div className="text-xs font-medium text-gray-600 mb-1">
           Modules (this term)
@@ -186,7 +165,9 @@ export default function SemesterColumn({
       {/* Weeks grid */}
       <div className="grid gap-2">
         {term.weeks.map((wkISO, idx) => {
-          const pills = weekAssessments[wkISO] || []
+          const weekAssigns = weekAssessments[wkISO] || []
+          const weekEvts = weekEvents[wkISO] || []
+          
           return (
             <div
               key={wkISO}
@@ -196,18 +177,54 @@ export default function SemesterColumn({
                 <div className="text-xs font-semibold text-gray-700">
                   {weekLabel(wkISO, idx)}
                 </div>
-                {pills.length > 0 && (
-                  <div className="text-[10px] text-gray-500">
-                    {pills.length} deadline{pills.length > 1 ? 's' : ''}
+                {weekAssigns.length > 0 && (
+                  <div className="text-[10px] text-red-600 font-medium">
+                    {weekAssigns.length} deadline{weekAssigns.length > 1 ? 's' : ''}
                   </div>
                 )}
               </div>
 
-              {pills.length > 0 && (
-                <div className="mt-2 flex flex-wrap gap-1.5">
-                  {pills.map((p, i) => (
-                    <AssessPill key={i} a={p.a} moduleTitle={p.moduleTitle} />
-                  ))}
+              {/* Show REAL events count if any */}
+              {weekEvts.length > 0 && (
+                <div className="text-[10px] text-blue-600 mt-1">
+                  {weekEvts.length} event{weekEvts.length > 1 ? 's' : ''}
+                </div>
+              )}
+
+              {/* Show REAL assessments as clickable items */}
+              {weekAssigns.length > 0 && (
+                <div className="mt-2 flex flex-col gap-1">
+                  {weekAssigns.map((a) => {
+                    const isExam = a.assessment_type === 'exam'
+                    return (
+                      <Link
+                        key={a.id}
+                        href={`/assignments?open=${a.id}`}
+                        className="block p-2 rounded bg-red-50 border border-red-100 hover:bg-red-100 transition group"
+                      >
+                        <div className="flex items-start gap-2">
+                          {isExam ? (
+                            <Timer className="w-3 h-3 text-red-600 flex-shrink-0 mt-0.5" />
+                          ) : (
+                            <FileText className="w-3 h-3 text-red-600 flex-shrink-0 mt-0.5" />
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <div className="text-xs font-medium text-red-900 truncate">
+                              {a.title}
+                            </div>
+                            <div className="flex items-center justify-between mt-0.5">
+                              {a.module_code && (
+                                <div className="text-[10px] text-red-700">{a.module_code}</div>
+                              )}
+                              <div className="text-[10px] text-red-600 ml-auto">
+                                {formatDMmm(new Date(a.due_at))}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </Link>
+                    )
+                  })}
                 </div>
               )}
             </div>

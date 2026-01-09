@@ -13,6 +13,20 @@ import {
 } from '@/data/durham/llb'
 import SemesterColumn from "@/components/calendar/SemesterColumn";
 
+type UserEvent = {
+  id: string
+  title: string
+  start_at: string
+  module_code: string | null
+}
+
+type UserAssessment = {
+  id: string
+  title: string
+  due_at: string
+  module_code: string | null
+  assessment_type: string | null
+}
 
 type YearViewProps = {
   /** 0 = Foundation, 1..3 = Y1..Y3 */
@@ -23,6 +37,9 @@ type YearViewProps = {
   moduleProgress?: any
   onModuleClick?: (idOrTitle: string) => void
   onEventClick?: (idOrTitle: string) => void
+  // NEW: Real user data
+  userEvents?: UserEvent[]
+  userAssessments?: UserAssessment[]
 }
 
 /** Decide which plan to show from the userYearOfStudy */
@@ -44,6 +61,8 @@ function forTerm(mods: ModulePlan[], term: 'Michaelmas' | 'Epiphany') {
 export function YearView({
   userYearOfStudy,
   onModuleClick,
+  userEvents = [],
+  userAssessments = [],
 }: YearViewProps) {
   const plan = resolvePlan(userYearOfStudy)
 
@@ -67,7 +86,7 @@ export function YearView({
             </div>
             <h2 className="text-xl font-semibold">2025/26 Academic Year</h2>
             <div className="mt-1 text-sm text-gray-600">
-              Overview of modules, weeks and key deadlines
+              Modules from curriculum plan • Your imported deadlines shown below
             </div>
           </div>
           <Badge className="bg-purple-100 text-purple-800">
@@ -86,6 +105,8 @@ export function YearView({
           modules={michaMods}
           allModules={mods}
           onModuleClick={onModuleClick}
+          userEvents={userEvents}
+          userAssessments={userAssessments}
         />
 
         <SemesterColumn
@@ -95,6 +116,8 @@ export function YearView({
           modules={epiphMods}
           allModules={mods}
           onModuleClick={onModuleClick}
+          userEvents={userEvents}
+          userAssessments={userAssessments}
         />
 
         <SemesterColumn
@@ -104,6 +127,8 @@ export function YearView({
           modules={[]}          // usually no new teaching here
           allModules={mods}     // but we still show exam windows & due dates
           onModuleClick={onModuleClick}
+          userEvents={userEvents}
+          userAssessments={userAssessments}
         />
       </div>
     </div>
