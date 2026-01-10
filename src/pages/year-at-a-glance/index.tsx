@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
-import { ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar, Plus } from 'lucide-react';
 import { useAuth } from '@/lib/supabase/AuthContext';
 import { getSupabaseClient } from '@/lib/supabase/client';
 import { EmptyState } from '@/components/common/EmptyState';
 import YearView from '@/components/calendar/YearView';
+import UnifiedAddModal from '@/components/calendar/UnifiedAddModal';
 
 type UserEvent = {
   id: string
@@ -28,6 +29,7 @@ export default function YearAtAGlancePage() {
   const [loading, setLoading] = useState(true);
   const [events, setEvents] = useState<UserEvent[]>([]);
   const [assessments, setAssessments] = useState<UserAssessment[]>([]);
+  const [showAddModal, setShowAddModal] = useState(false);
 
   // Default to Year 1 for now (user profile year selection can be added later)
   const userYearOfStudy = 1;
@@ -39,56 +41,58 @@ export default function YearAtAGlancePage() {
       return;
     }
 
-    const fetchData = async () => {
-      const supabase = getSupabaseClient();
-      if (!supabase) return;
-
-      try {
-        // Academic year 2025-26: Sept 1, 2025 - Aug 31, 2026
-        const yearStart = '2025-09-01';
-        const yearEnd = '2026-08-31';
-
-        // Fetch events
-        const { data: eventsData, error: eventsError } = await supabase
-          .from('user_events')
-          .select('id, title, start_at, module_code')
-          .eq('user_id', user.id)
-          .is('deleted_at', null)
-          .gte('start_at', yearStart)
-          .lte('start_at', yearEnd)
-          .order('start_at', { ascending: true });
-
-        if (eventsError) {
-          console.error('[YAAG] Error fetching events:', eventsError);
-        }
-
-        // Fetch assessments
-        const { data: assessmentsData, error: assessmentsError } = await supabase
-          .from('user_assessments')
-          .select('id, title, due_at, module_code, assessment_type')
-          .eq('user_id', user.id)
-          .is('deleted_at', null)
-          .gte('due_at', yearStart)
-          .lte('due_at', yearEnd)
-          .order('due_at', { ascending: true });
-
-        if (assessmentsError) {
-          console.error('[YAAG] Error fetching assessments:', assessmentsError);
-        }
-
-        console.log('[YAAG] Loaded real data:', eventsData?.length || 0, 'events,', assessmentsData?.length || 0, 'assessments');
-
-        setEvents(eventsData || []);
-        setAssessments(assessmentsData || []);
-      } catch (error) {
-        console.error('[YAAG] Error fetching data:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchData();
   }, [user?.id]);
+
+  const fetchData = async () => {
+    if (!user?.id) return;
+    
+    const supabase = getSupabaseClient();
+    if (!supabase) return;
+
+    try {
+      // Academic year 2025-26: Sept 1, 2025 - Aug 31, 2026
+      const yearStart = '2025-09-01';
+      const yearEnd = '2026-08-31';
+
+      // Fetch events
+      const { data: eventsData, error: eventsError } = await supabase
+        .from('user_events')
+        .select('id, title, start_at, module_code')
+        .eq('user_id', user.id)
+        .is('deleted_at', null)
+        .gte('start_at', yearStart)
+        .lte('start_at', yearEnd)
+        .order('start_at', { ascending: true });
+
+      if (eventsError) {
+        console.error('[YAAG] Error fetching events:', eventsError);
+      }
+
+      // Fetch assessments
+      const { data: assessmentsData, error: assessmentsError } = await supabase
+        .from('user_assessments')
+        .select('id, title, due_at, module_code, assessment_type')
+        .eq('user_id', user.id)
+        .is('deleted_at', null)
+        .gte('due_at', yearStart)
+        .lte('due_at', yearEnd)
+        .order('due_at', { ascending: true});
+
+      if (assessmentsError) {
+        console.error('[YAAG] Error fetching assessments:', assessmentsError);
+      }
+
+      console.log('[YAAG] Loaded real data:', eventsData?.length || 0, 'events,', assessmentsData?.length || 0, 'assessments');
+
+      setEvents(eventsData || []);
+      setAssessments(assessmentsData || []);
+    } catch (error) {
+      console.error('[YAAG] Error fetching data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -135,7 +139,7 @@ export default function YearAtAGlancePage() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8">
+    <div className="max-w-7xl mx-auto px-4 py-8 relative">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
@@ -171,9 +175,32 @@ export default function YearAtAGlancePage() {
       {/* Footer Note */}
       <div className="mt-8 text-center">
         <p className="text-xs text-gray-400">
-          💡 Click any assignment deadline to open the Assignment Widget
+          💡 Click any week to view details • Click assignments to open Widget • Use + to add items
         </p>
       </div>
+
+      {/* Floating + Button */}
+      <button
+        onClick={() => setShowAddModal(true)}
+        className="fixed bottom-8 right-8 w-14 h-14 bg-purple-600 text-white rounded-full shadow-lg hover:bg-purple-700 hover:scale-110 transition-all flex items-center justify-center z-40 group"
+        title="Add item (Personal or Assignment)"
+      >
+        <Plus size={28} />
+        <span className="absolute right-full mr-3 px-3 py-1.5 bg-gray-900 text-white text-xs rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition pointer-events-none">
+          Add Personal Item or Assignment
+        </span>
+      </button>
+
+      {/* Unified Add Modal */}
+      <UnifiedAddModal
+        isOpen={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        onSave={() => {
+          // Refresh data after save
+          fetchData();
+          setShowAddModal(false);
+        }}
+      />
     </div>
   );
 }

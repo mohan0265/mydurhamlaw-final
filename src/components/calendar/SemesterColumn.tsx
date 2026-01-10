@@ -169,9 +169,11 @@ export default function SemesterColumn({
           const weekEvts = weekEvents[wkISO] || []
           
           return (
-            <div
+            <Link
               key={wkISO}
-              className="rounded-lg border bg-white p-2 hover:bg-gray-50 transition"
+              href={`/year-at-a-glance/week?week=${wkISO}`}
+              className="rounded-lg border bg-white p-2 hover:bg-gray-50 transition cursor-pointer block"
+              title={`Click to view week details`}
             >
               <div className="flex items-center justify-between">
                 <div className="text-xs font-semibold text-gray-700">
@@ -197,10 +199,14 @@ export default function SemesterColumn({
                   {weekAssigns.map((a) => {
                     const isExam = a.assessment_type === 'exam'
                     return (
-                      <Link
+                      <div
                         key={a.id}
-                        href={`/assignments?open=${a.id}`}
-                        className="block p-2 rounded bg-red-50 border border-red-100 hover:bg-red-100 transition group"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          window.location.href = `/assignments?open=${a.id}`;
+                        }}
+                        className="block p-2 rounded bg-red-50 border border-red-100 hover:bg-red-100 transition group cursor-pointer"
                       >
                         <div className="flex items-start gap-2">
                           {isExam ? (
@@ -222,12 +228,12 @@ export default function SemesterColumn({
                             </div>
                           </div>
                         </div>
-                      </Link>
+                      </div>
                     )
                   })}
                 </div>
               )}
-            </div>
+            </Link>
           )
         })}
       </div>
