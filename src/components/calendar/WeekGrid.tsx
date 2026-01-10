@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/Button';
 import { YEAR_LABEL } from '@/lib/calendar/links';
 import type { YearKey } from '@/lib/calendar/links';
 import type { NormalizedEvent } from '@/lib/calendar/normalize';
-import PersonalItemModal from './PersonalItemModal';
+import UnifiedAddModal from './UnifiedAddModal';
 import { PlanEventModal } from './PlanEventModal';
 
 interface WeekGridProps {
@@ -481,14 +481,12 @@ export const WeekGrid: React.FC<WeekGridProps> = ({
         Scroll horizontally to see all days of the week
       </div>
       
-      {/* Personal Item Modal */}
-      <PersonalItemModal
+      {/* Unified Add Modal */}
+      <UnifiedAddModal
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}
         onSave={handleModalSave}
-        mode={modalMode}
         initialDate={modalDate}
-        existingItem={modalItem}
       />
     </div>
   );

@@ -25,7 +25,7 @@ const WeekGrid = dynamic(() => import('@/components/calendar/WeekGrid').then(m =
 
 const WeekPage: React.FC = () => {
   const router = useRouter();
-  const { y: yParam, ws: wsParam } = router.query;
+  const { y: yParam, ws: wsParam, week: weekParam } = router.query;
   const { userProfile } = useAuth();
 
   // State for merged events
@@ -38,12 +38,16 @@ const WeekPage: React.FC = () => {
     return parseYearKey(typeof yParam === 'string' ? yParam : undefined);
   }, [yParam]);
 
-  // Parse week start from query
+  // Parse week start from query (check both 'week' and 'ws' params)
   const weekStartISO: string = useMemo(() => {
     const plan = getDefaultPlanByStudentYear(year);
     const firstTeachingWeek = plan.termDates.michaelmas.weeks[0] || '2025-10-06';
     
-    if (!wsParam) {
+    // Priority: 'week' param (from YAAG) > 'ws' param > current week
+    const paramValue = typeof weekParam === 'string' ? weekParam : 
+                       typeof wsParam === 'string' ? wsParam : null;
+    
+    if (!paramValue) {
       const now = new Date();
       const today = format(now, 'yyyy-MM-dd');
       const currentDate = new Date(today + 'T00:00:00.000Z');
@@ -54,8 +58,8 @@ const WeekPage: React.FC = () => {
       return mondayDate.toISOString().split('T')[0]!;
     }
     
-    return parseWeekStartParam(firstTeachingWeek, typeof wsParam === 'string' ? wsParam : undefined);
-  }, [wsParam, year]);
+    return parseWeekStartParam(firstTeachingWeek, paramValue);
+  }, [wsParam, weekParam, year]);
 
   // Fetch events from API (Part D implementation)
   useEffect(() => {
