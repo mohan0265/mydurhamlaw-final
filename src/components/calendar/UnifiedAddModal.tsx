@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
 import { getSupabaseClient } from '@/lib/supabase/client';
 import { useAuth } from '@/lib/supabase/AuthContext';
-import { Upload, X } from 'lucide-react';
+ import { Upload, X, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export type ItemCategory = 'personal' | 'assignment';
@@ -30,6 +30,7 @@ export default function UnifiedAddModal({
   const { user } = useAuth();
   const [category, setCategory] = useState<ItemCategory>(initialCategory);
   const [saving, setSaving] = useState(false);
+  const [parsing, setParsing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Personal Item fields
@@ -192,15 +193,159 @@ export default function UnifiedAddModal({
     }
   };
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const validTypes = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
-      if (!validTypes.includes(file.type)) {
-        toast.error('Please upload a PDF or Word document');
-        return;
+  const parsePDFText = async (file: File): Promise<string> => {
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+      // @ts-ignore - pdfjs-dist types are complex, ignore for now
+      const pdfjsLib = await import('pdfjs-dist/legacy/build/pdf');
+      
+      // Set worker - using CDN worker
+      // @ts-ignore
+      pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js`;
+      
+      // @ts-ignore
+      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+      let fullText = '';
+      
+      // @ts-ignore
+      for (let i = 1; i <= pdf.numPages; i++) {
+        // @ts-ignore
+        const page = await pdf.getPage(i);
+        // @ts-ignore
+        const textContent = await page.getTextContent();
+        // @ts-ignore
+        const pageText = textContent.items.map((item: any) => item.str).join(' ');
+        fullText += pageText + '\n';
       }
-      setAssignmentData(prev => ({ ...prev, briefFile: file }));
+      
+      return fullText;
+    } catch (error) {
+      console.error('PDF parsing error:', error);
+      throw new Error('Failed to parse PDF');
+    }
+  };
+
+  const extractAssignmentInfo = (text: string) => {
+    const extracted: any = {};
+    
+    // Extract title (first line with LAW or capitalized module name)
+    const titleMatch = text.match(/([A-Z\s]+(?:LAW|CONTRACT|TORT|CRIMINAL|CONSTITUTIONAL|EUROPEAN UNION)[A-Z\s]*)/i);
+    if (titleMatch && titleMatch[1]) {
+      const rawTitle = titleMatch[1].trim();
+      // Clean up title
+      extracted.title = rawTitle.replace(/\s+/g, ' ').substring(0, 100);
+      const splitResult = rawTitle.split(/\s+(ASSESSMENT|FORMATIVE|SUMMATIVE)/i);
+      if (splitResult[0]) {
+        extracted.moduleName = splitResult[0].trim();
+      }
+    }
+    
+    // Extract due date
+    const datePatterns = [
+      /Deadline[:\s]+(\d{1,2}\s+(?:January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{4})/i,
+      /Due[:\s]+(\d{1,2}\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+\d{4})/i,
+      /Submit by[:\s]+(\d{1,2}\/\d{1,2}\/\d{4})/i,
+    ];
+    
+    for (const pattern of datePatterns) {
+      const match = text.match(pattern);
+      if (match && match[1]) {
+        try {
+          const dateStr = match[1];
+          const date = new Date(dateStr);
+          if (!isNaN(date.getTime())) {
+            extracted.dueDate = date.toISOString().substring(0, 10);
+            break;
+          }
+        } catch (e) {
+          // Continue to next pattern
+        }
+      }
+    }
+    
+    // Extract word limit
+    const wordLimitMatch = text.match(/(\d{1,5})\s+words?/i);
+    if (wordLimitMatch && wordLimitMatch[1]) {
+      extracted.wordLimit = wordLimitMatch[1];
+    }
+    
+    // Extract module code (e.g., LAW1011)
+    const moduleCodeMatch = text.match(/([A-Z]{3,4}\d{3,4})/i);
+    if (moduleCodeMatch && moduleCodeMatch[1]) {
+      extracted.moduleCode = moduleCodeMatch[1].toUpperCase();
+    }
+    
+    // Determine type
+    if (text.match(/essay/i)) {
+      extracted.type = 'essay';
+    } else if (text.match(/problem\s+question/i)) {
+      extracted.type = 'problem';
+    } else if (text.match(/presentation/i)) {
+      extracted.type = 'presentation';
+    } else if (text.match(/moot/i)) {
+      extracted.type = 'moot';
+    }
+
+    // Extract question/brief (try to find "Question" section)
+    const questionMatch = text.match(/Question[:\s]+([\s\S]{50,1000})/i);
+    if (questionMatch && questionMatch[1]) {
+      extracted.brief = questionMatch[1].trim().substring(0, 500);
+    }
+    
+    return extracted;
+  };
+
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    const validTypes = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+    if (!validTypes.includes(file.type)) {
+      toast.error('Please upload a PDF or Word document');
+      return;
+    }
+    
+    // Set file first
+    setAssignmentData(prev => ({ ...prev, briefFile: file }));
+    toast.success(`File uploaded: ${file.name}`);
+    
+    // Parse PDF if it's a PDF file
+    if (file.type === 'application/pdf') {
+      setParsing(true);
+      try {
+        const text = await parsePDFText(file);
+        const extracted = extractAssignmentInfo(text);
+        
+        // Auto-fill form fields
+        setAssignmentData(prev => ({
+          ...prev,
+          title: extracted.title || prev.title,
+          moduleCode: extracted.moduleCode || prev.moduleCode,
+          moduleName: extracted.moduleName || prev.moduleName,
+          type: extracted.type || prev.type,
+          dueDate: extracted.dueDate || prev.dueDate,
+          wordLimit: extracted.wordLimit || prev.wordLimit,
+          brief: extracted.brief || prev.brief,
+          briefFile: file,
+        }));
+        
+        const fieldsExtracted = [];
+        if (extracted.title) fieldsExtracted.push('title');
+        if (extracted.dueDate) fieldsExtracted.push('due date');
+        if (extracted.wordLimit) fieldsExtracted.push('word limit');
+        if (extracted.moduleCode) fieldsExtracted.push('module code');
+        
+        if (fieldsExtracted.length > 0) {
+          toast.success(`Auto-filled: ${fieldsExtracted.join(', ')}`);
+        } else {
+          toast('Could not auto-extract fields. Please fill manually.');
+        }
+      } catch (error: any) {
+        console.error('PDF parsing error:', error);
+        toast.error('Could not parse PDF. Please fill fields manually.');
+      } finally {
+        setParsing(false);
+      }
     }
   };
 
@@ -355,10 +500,20 @@ export default function UnifiedAddModal({
                 </p>
                 <button
                   onClick={() => fileInputRef.current?.click()}
-                  className="w-full px-4 py-2 bg-white border-2 border-purple-600 text-purple-600 rounded-lg hover:bg-purple-50 flex items-center justify-center gap-2"
+                  disabled={parsing}
+                  className="w-full px-4 py-2 bg-white border-2 border-purple-600 text-purple-600 rounded-lg hover:bg-purple-50 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <Upload size={16} />
-                  {assignmentData.briefFile ? assignmentData.briefFile.name : 'Choose PDF or Word Doc'}
+                  {parsing ? (
+                    <>
+                      <Loader2 size={16} className="animate-spin" />
+                      Parsing PDF...
+                    </>
+                  ) : (
+                    <>
+                      <Upload size={16} />
+                      {assignmentData.briefFile ? assignmentData.briefFile.name : 'Choose PDF or Word Doc'}
+                    </>
+                  )}
                 </button>
                 <input
                   ref={fileInputRef}
