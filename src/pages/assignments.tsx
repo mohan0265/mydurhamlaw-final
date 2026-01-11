@@ -88,6 +88,13 @@ export default function AssignmentsPage() {
     }
   }, [router.query, assignments])
 
+  // Scroll to top when assignment changes or page loads
+  useEffect(() => {
+    if (selectedAssignment || showCreateForm) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, [selectedAssignment?.id, showCreateForm]);
+
   // Handlers
   const handleCreateSave = () => {
     setShowCreateForm(false)
