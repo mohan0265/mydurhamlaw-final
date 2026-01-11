@@ -80,6 +80,7 @@ export default function AssignmentsPage() {
       toast.success('Opening assessment from calendar - create assignment from this deadline');
       setShowCreateForm(true);
       setSelectedAssignment(null);
+      setShowWorkflow(false);
       return;
     }
 
@@ -89,6 +90,7 @@ export default function AssignmentsPage() {
       toast.success('Opening assignment brief - link to assignment or create new one');
       setShowCreateForm(true);
       setSelectedAssignment(null);
+      setShowWorkflow(false);
       return;
     }
 
@@ -98,13 +100,26 @@ export default function AssignmentsPage() {
       if (target) {
         setSelectedAssignment(target)
         setShowCreateForm(false)
+        
+        // Check if we should show workflow view
+        if (router.query.view === 'workflow') {
+          setShowWorkflow(true);
+        } else {
+          setShowWorkflow(false);
+        }
       }
+    } else {
+      // No assignment ID = show select screen
+      setSelectedAssignment(null);
+      setShowWorkflow(false);
+      setShowCreateForm(false);
     }
     
     // Handle new assignment with date param
     if (router.query.new === 'true') {
       setShowCreateForm(true)
       setSelectedAssignment(null)
+      setShowWorkflow(false);
     }
   }, [router.query, assignments])
 
@@ -122,7 +137,7 @@ export default function AssignmentsPage() {
   const handleCreateSave = () => {
     setShowCreateForm(false)
     fetchAssignments()
-    // State update handles UI refresh, no router navigation needed
+    router.push('/assignments', undefined, { shallow: true });
   }
 
   const handleUpdate = () => {
@@ -137,7 +152,7 @@ export default function AssignmentsPage() {
     try {
       await supabase.from('assignments').delete().eq('id', selectedAssignment.id);
       toast.success("Assignment deleted");
-      setSelectedAssignment(null);
+      router.push('/assignments', undefined, { shallow: true });
       fetchAssignments();
     } catch {
        toast.error("Failed to delete");
@@ -145,8 +160,13 @@ export default function AssignmentsPage() {
   }
 
   const handlePlanWithAI = () => {
-     if (!selectedAssignment) return;
-     setShowWorkflow(true);
+    if (!selectedAssignment) return;
+    // URL-based navigation: add view=workflow param
+    router.push(
+      `/assignments?assignmentId=${selectedAssignment.id}&view=workflow`,
+      undefined,
+      { shallow: true }
+    );
   }
 
   if (loading) {
@@ -179,13 +199,15 @@ export default function AssignmentsPage() {
                  assignments={assignments}
                  selectedId={selectedAssignment?.id || null}
                  onSelect={(a) => {
-                    setSelectedAssignment(a);
-                    setShowCreateForm(false);
-                    setChatInitialPrompt(undefined);
+                   // URL-based navigation: use router.push instead of setState
+                   router.push(
+                     `/assignments?assignmentId=${a.id}`,
+                     undefined,
+                     { shallow: true }
+                   );
                  }}
                  onNew={() => {
-                    setSelectedAssignment(null);
-                    setShowCreateForm(true);
+                   router.push('/assignments?new=true', undefined, { shallow: true });
                  }}
                />
             </div>

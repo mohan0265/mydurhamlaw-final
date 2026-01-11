@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/router';
 import { X, CheckCircle, Circle } from 'lucide-react';
 import ModeSelector from './ModeSelector';
 import AssignmentUploader from './AssignmentUploader';
@@ -24,6 +25,7 @@ export default function AssignmentWorkflow({
   assignmentData, 
   onClose 
 }: AssignmentWorkflowProps) {
+  const router = useRouter();
   // Defensive null checks - prevent crashes if data is incomplete
   const safeAssignmentData = {
     title: assignmentData?.title || 'Untitled Assignment',
@@ -49,6 +51,16 @@ export default function AssignmentWorkflow({
     { num: 5, name: 'Formatting', completed: false },
     { num: 6, name: 'Review', completed: false },
   ];
+
+  // Read stage from URL on mount
+  useEffect(() => {
+    if (router.query.stage && !isNaN(Number(router.query.stage))) {
+      const urlStage = Number(router.query.stage);
+      if (urlStage >= 1 && urlStage <= 6) {
+        setCurrentStage(urlStage);
+      }
+    }
+  }, [router.query.stage]);
 
   useEffect(() => {
     if (assignmentId) {
@@ -153,6 +165,12 @@ export default function AssignmentWorkflow({
 
     if (stage < 6) {
       setCurrentStage(nextStage);
+      // Update URL with new stage
+      router.push(
+        `/assignments?assignmentId=${assignmentId}&view=workflow&stage=${nextStage}`,
+        undefined,
+        { shallow: true }
+      );
       toast.success(`Stage ${stage} complete! Moving to Stage ${nextStage}`);
     } else {
       // Stage 6 complete - mark assignment as completed
@@ -207,6 +225,12 @@ export default function AssignmentWorkflow({
                         if (stage.num < currentStage) {
                           // Allow going back to previous stages
                           setCurrentStage(stage.num);
+                          // Update URL
+                          router.push(
+                            `/assignments?assignmentId=${assignmentId}&view=workflow&stage=${stage.num}`,
+                            undefined,
+                            { shallow: true }
+                          );
                           toast.success(`Returned to Stage ${stage.num}: ${stage.name}`);
                         }
                       }}
