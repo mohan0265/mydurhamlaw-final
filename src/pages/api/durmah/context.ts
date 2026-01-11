@@ -116,20 +116,53 @@ export default async function handler(
       .eq('user_id', user.id)
       .order('due_date', { ascending: true });
 
-    // Categorize assignments
+    // Categorize assignments with RICH METADATA for Durmah intelligence
     const assignments = assignmentsData || [];
     
-    const upcoming = assignments.filter(a => 
-      a.due_date && new Date(a.due_date) >= now && a.status !== 'completed'
-    ).slice(0, 5);
+    const now = new Date();
     
-    const overdue = assignments.filter(a =>
-      a.due_date && new Date(a.due_date) < now && a.status !== 'completed'
-    ).slice(0, 5);
+    // Helper: calculate days left
+    const calcDaysLeft = (dueDate: string) => {
+      const due = new Date(dueDate);
+      const diffMs = due.getTime() - now.getTime();
+      return Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+    };
+    
+    // Enrich assignments with computed fields
+    const enrichAssignment = (a: any) => ({
+      id: a.id,
+      title: a.title,
+      module_name: a.module_name,
+      module_code: a.module_code,
+      due_date: a.due_date,
+      daysLeft: a.due_date ? calcDaysLeft(a.due_date) : null,
+      status: a.status || 'not_started',
+      current_stage: a.current_stage || 0,
+      estimated_effort_hours: a.estimated_effort_hours,
+      nextAction: (a.current_stage || 0) === 0 ? 'start' : 'continue',
+      question_text: a.question_text,
+      assignment_type: a.assignment_type,
+    });
+    
+    const upcoming = assignments
+      .filter(a => 
+        a.due_date && new Date(a.due_date) >= now && a.status !== 'completed'
+      )
+      .map(enrichAssignment)
+      .slice(0, 10); // Increased from 5 to 10 for better context
+    
+    const overdue = assignments
+      .filter(a =>
+        a.due_date && new Date(a.due_date) < now && a.status !== 'completed'
+      )
+      .map(enrichAssignment)
+      .slice(0, 5);
     
     const recentlyCreated = assignments
       .filter(a => new Date(a.created_at) > new Date(now.getTime() - 7*24*60*60*1000))
+      .map(enrichAssignment)
       .slice(0, 3);
+
 
     // FETCH: Today's classes (legacy, keep for backwards compat)
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());

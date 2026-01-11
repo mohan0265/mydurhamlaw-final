@@ -188,6 +188,15 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
   }
 }
 
+// Helper function to calculate days left
+function getDaysLeft(trialEndsAt: string | null): number | null {
+  if (!trialEndsAt) return null;
+  const now = new Date();
+  const end = new Date(trialEndsAt);
+  const diffMs = end.getTime() - now.getTime();
+  return Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+}
+
 export default function AdminDashboard({ authorized, rows, users, connections, error }: Props) {
   if (!authorized) return null
 
@@ -360,13 +369,13 @@ export default function AdminDashboard({ authorized, rows, users, connections, e
               }}
               className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700"
             >
-              📧 Invite Student (needs DB migration)
+              📧 Invite Student
             </button>
             <button 
               onClick={() => setShowCreateStudent(true)}
               className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-semibold hover:bg-green-700"
             >
-              + Create with Password (works now)
+              + Create with Password
             </button>
             <button 
               onClick={() => setShowCreateLovedOne(true)}
@@ -396,30 +405,46 @@ export default function AdminDashboard({ authorized, rows, users, connections, e
                 <th className="text-left px-3 py-2">Year</th>
                 <th className="text-left px-3 py-2">Subscription</th>
                 <th className="text-left px-3 py-2">Trial Ends</th>
+                <th className="text-left px-3 py-2">Days Left</th>
                 <th className="text-left px-3 py-2">Actions</th>
               </tr>
             </thead>
             <tbody>
-              {filteredRows.map((r) => (
-                <tr key={r.id} className="border-t border-slate-100">
-                  <td className="px-3 py-2">
-                    {r.email || '-'}
-                    {r.is_test_account && <span className="ml-2 text-xs bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded">TEST</span>}
-                  </td>
-                  <td className="px-3 py-2">{r.display_name || '-'}</td>
-                  <td className="px-3 py-2">{r.user_role || '-'}</td>
-                  <td className="px-3 py-2">{r.year_group || '-'}</td>
-                  <td className="px-3 py-2">{r.subscription_status || 'trial'}</td>
-                  <td className="px-3 py-2">{r.trial_ends_at ? new Date(r.trial_ends_at).toLocaleDateString() : '-'}</td>
-                  <td className="px-3 py-2 space-x-2">
-                    <button onClick={() => extendTrial(r.user_id || r.id, 7)} className="text-blue-600 hover:underline text-xs">+7d</button>
-                    <button onClick={() => setTrialDate(r.user_id || r.id)} className="text-green-600 hover:underline text-xs">Edit</button>
-                    {r.is_test_account && (
-                      <button onClick={() => deleteAccount(r.user_id || r.id)} className="text-red-600 hover:underline text-xs">Del</button>
-                    )}
-                  </td>
-                </tr>
-              ))}
+              {filteredRows.map((r) => {
+                const daysLeft = getDaysLeft(r.trial_ends_at);
+                return (
+                  <tr key={r.id} className="border-t border-slate-100">
+                    <td className="px-3 py-2">
+                      {r.email || '-'}
+                      {r.is_test_account && <span className="ml-2 text-xs bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded">TEST</span>}
+                    </td>
+                    <td className="px-3 py-2">{r.display_name || '-'}</td>
+                    <td className="px-3 py-2">{r.user_role || '-'}</td>
+                    <td className="px-3 py-2">{r.year_group || '-'}</td>
+                    <td className="px-3 py-2">{r.subscription_status || 'trial'}</td>
+                    <td className="px-3 py-2">{r.trial_ends_at ? new Date(r.trial_ends_at).toLocaleDateString() : '-'}</td>
+                    <td className="px-3 py-2">
+                      {daysLeft !== null ? (
+                        <span className={`px-2 py-0.5 rounded text-xs font-semibold ${
+                          daysLeft > 7 ? 'bg-green-100 text-green-800' :
+                          daysLeft >= 3 ? 'bg-yellow-100 text-yellow-800' :
+                          daysLeft > 0 ? 'bg-red-100 text-red-800' :
+                          'bg-gray-100 text-gray-800'
+                        }`}>
+                          {daysLeft > 0 ? `${daysLeft}d` : 'Expired'}
+                        </span>
+                      ) : '-'}
+                    </td>
+                    <td className="px-3 py-2 space-x-2">
+                      <button onClick={() => extendTrial(r.user_id || r.id, 7)} className="text-blue-600 hover:underline text-xs">+7d</button>
+                      <button onClick={() => setTrialDate(r.user_id || r.id)} className="text-green-600 hover:underline text-xs">Edit</button>
+                      {r.is_test_account && (
+                        <button onClick={() => deleteAccount(r.user_id || r.id)} className="text-red-600 hover:underline text-xs">Del</button>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

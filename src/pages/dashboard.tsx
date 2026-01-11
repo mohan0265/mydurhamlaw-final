@@ -13,7 +13,7 @@ import { SubscriptionStatus } from '@/components/billing/SubscriptionStatus';
 import GreetingWidget from '@/components/dashboard/GreetingWidget';
 import { WelcomeWidget } from '@/components/dashboard/WelcomeWidget';
 import { ProgressWidget } from '@/components/dashboard/ProgressWidget';
-import UpcomingDeadlinesWidget from '@/components/dashboard/UpcomingDeadlinesWidget';
+import UpcomingDeadlines from '@/components/dashboard/UpcomingDeadlines'; // NEW Central Intelligence
 import UpcomingAssignmentsWidget from '@/components/dashboard/UpcomingAssignmentsWidget';
 import TodaysTasksWidget from '@/components/dashboard/TodaysTasksWidget';
 import { StudyFocusWidget } from '@/components/dashboard/StudyFocusWidget';
@@ -140,11 +140,8 @@ export default function Dashboard() {
               <div className="h-full">
                 <DurhamPortalCard />
               </div>
-              <div>
-                <UpcomingAssignmentsWidget userId={user.id} />
-              </div>
-              <div className="opacity-70 grayscale hover:grayscale-0 transition-all">
-                <UpcomingDeadlinesWidget />
+              <div className="lg:col-span-2">
+                <UpcomingDeadlines />
               </div>
               <div>
                 <TodaysTasksWidget />
