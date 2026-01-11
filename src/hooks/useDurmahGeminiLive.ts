@@ -243,18 +243,18 @@ export function useDurmahGeminiLive({
 
       ws.onopen = () => {
         console.info("[DurmahGemini] WS open");
-        // Send Handshake
+        // Send Handshake with correct snake_case field names per Gemini Live API spec
         const setupMsg = {
             auth: token ?? null, 
             setup: {
                 model: LIVE_MODEL_ID,
-                generationConfig: {
-                    responseModalities: ["AUDIO", "TEXT"],
-                    speechConfig: {
-                         voiceConfig: { prebuiltVoiceConfig: { voiceName: "Puck" } }
+                generation_config: {
+                    response_modalities: ["AUDIO", "TEXT"],
+                    speech_config: {
+                         voice_config: { prebuilt_voice_config: { voice_name: "Puck" } }
                     }
                 },
-                systemInstruction: {
+                system_instruction: {
                     parts: [{ text: systemPrompt }]
                 }
             }
@@ -361,10 +361,10 @@ export function useDurmahGeminiLive({
         const base64 = arrayBufferToBase64(pcm16.buffer);
         
         const payload = JSON.stringify({
-          realtimeInput: {
-            mediaChunks: [
+          realtime_input: {
+            media_chunks: [
               {
-                mimeType: "audio/pcm",
+                mime_type: "audio/pcm",
                 data: base64
               }
             ]
