@@ -8,10 +8,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(405).json({ error: 'method_not_allowed' })
   }
 
+  // Clear the admin session cookie
   const secure = process.env.NODE_ENV === 'production'
   res.setHeader(
     'Set-Cookie',
     `${COOKIE_NAME}=deleted; Path=/; HttpOnly; SameSite=Lax; Max-Age=0;${secure ? ' Secure;' : ''}`
   )
-  return res.status(200).json({ ok: true })
+  
+  // Redirect to homepage
+  return res.redirect(302, '/')
 }
