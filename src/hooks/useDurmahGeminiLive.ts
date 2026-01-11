@@ -7,7 +7,7 @@ const DEFAULT_PROXY_URL =
 const PROXY_URL = RAW_PROXY_URL || DEFAULT_PROXY_URL;
 
 const RAW_LIVE_MODEL = process.env.NEXT_PUBLIC_GEMINI_LIVE_MODEL?.trim();
-const DEFAULT_LIVE_MODEL = "gemini-2.0-flash";
+const DEFAULT_LIVE_MODEL = "gemini-2.5-flash-native-audio";
 
 function sanitizeModelId(raw?: string) {
   const value = (raw || "").trim();
