@@ -19,7 +19,8 @@ function sanitizeModelId(raw?: string) {
     .replace(/^projects\/[^/]+\/locations\/[^/]+\/publishers\/[^/]+\/models\//, "");
 }
 
-const LIVE_MODEL_ID = sanitizeModelId(RAW_LIVE_MODEL) || DEFAULT_LIVE_MODEL;
+// Force correct model to bypass stale Netlify Env Var (gemini-2.0 is still set there)
+const LIVE_MODEL_ID = "gemini-2.5-flash-native-audio";
 
 type VoiceTurn = { speaker: "user" | "durmah"; text: string };
 
