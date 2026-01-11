@@ -6,7 +6,6 @@ import { getSupabaseClient } from '@/lib/supabase/client'
 import { AuthContext } from '@/lib/supabase/AuthContext'
 import ModernSidebar from '@/components/layout/ModernSidebar'
 import BackToHomeButton from '@/components/ui/BackToHomeButton'
-import { useScrollToTop } from '@/hooks/useScrollToTop'
 import AssignmentList from '@/components/study/AssignmentList'
 import AssignmentDetail from '@/components/study/AssignmentDetail'
 import AssignmentCreateForm from '@/components/study/AssignmentCreateForm'
@@ -16,7 +15,6 @@ import { Assignment } from '@/types/assignments'
 import toast from 'react-hot-toast'
 
 export default function AssignmentsPage() {
-  useScrollToTop()
   const router = useRouter()
   const { user, getDashboardRoute } = useContext(AuthContext)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
@@ -32,6 +30,28 @@ export default function AssignmentsPage() {
   
   // Chat State
   const [chatInitialPrompt, setChatInitialPrompt] = useState<string | undefined>()
+
+  // AGGRESSIVE SCROLL FIX: Always scroll to top on mount and navigation
+  useEffect(() => {
+    // Immediate scroll on mount
+    window.scrollTo(0, 0);
+    
+    // Prevent browser scroll restoration
+    if ('scrollRestoration' in window.history) {
+      window.history.scrollRestoration = 'manual';
+    }
+    
+    // Listen to router events for scroll reset
+    const handleRouteChange = () => {
+      window.scrollTo(0, 0);
+    };
+    
+    router.events?.on('routeChangeComplete', handleRouteChange);
+    
+    return () => {
+      router.events?.off('routeChangeComplete', handleRouteChange);
+    };
+  }, []);
 
   // 1. Fetch Assignments
   const fetchAssignments = async () => {
