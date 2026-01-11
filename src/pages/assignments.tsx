@@ -88,12 +88,15 @@ export default function AssignmentsPage() {
     }
   }, [router.query, assignments])
 
-  // Scroll to top when assignment changes or page loads
+  // Scroll to top when navigating to assignment (more aggressive approach)
   useEffect(() => {
-    if (selectedAssignment || showCreateForm) {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-  }, [selectedAssignment?.id, showCreateForm]);
+    // Use setTimeout to ensure DOM is fully rendered
+    const timer = setTimeout(() => {
+      window.scrollTo(0, 0);
+    }, 100);
+    
+    return () => clearTimeout(timer);
+  }, [router.query.assignmentId, router.query.new, router.query.openAssessmentId, router.query.openBriefId]);
 
   // Handlers
   const handleCreateSave = () => {
