@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
-import { X, CheckCircle, Circle } from 'lucide-react';
+import { X, CheckCircle, Circle, ArrowLeft, Home, Save } from 'lucide-react';
 import ModeSelector from './ModeSelector';
 import AssignmentUploader from './AssignmentUploader';
 import Stage1Understanding from './stages/Stage1Understanding';
@@ -208,10 +208,42 @@ export default function AssignmentWorkflow({
         {/* Header */}
         <div className="p-6 border-b bg-gradient-to-r from-violet-600 to-indigo-600 text-white rounded-t-2xl">
           <div className="flex items-center justify-between mb-4">
-            <h1 className="text-2xl font-bold">Assignment Assistant</h1>
-            <button onClick={onClose} className="p-2 hover:bg-white/20 rounded-full transition">
-              <X size={24} />
-            </button>
+            <div className="flex items-center gap-3">
+              <h1 className="text-2xl font-bold">Assignment Assistant</h1>
+            </div>
+            
+            <div className="flex items-center gap-2">
+              {/* Save & Exit Button */}
+              <button
+                onClick={onClose}
+                className="px-4 py-2 bg-white/20 hover:bg-white/30 rounded-lg transition flex items-center gap-2"
+                title="Save progress and return to assignment"
+              >
+                <Save size={18} />
+                <span className="text-sm font-medium">Save & Exit</span>
+              </button>
+              
+              {/* Back to Dashboard */}
+              <button
+                onClick={() => {
+                  router.push('/dashboard');
+                }}
+                className="px-4 py-2 bg-white/20 hover:bg-white/30 rounded-lg transition flex items-center gap-2"
+                title="Exit to dashboard"
+              >
+                <Home size={18} />
+                <span className="text-sm font-medium">Dashboard</span>
+              </button>
+              
+              {/* Close X Button */}
+              <button 
+                onClick={onClose} 
+                className="p-2 hover:bg-white/20 rounded-full transition"
+                title="Close and return"
+              >
+                <X size={24} />
+              </button>
+            </div>
           </div>
 
           {/* Progress Stepper */}

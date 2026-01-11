@@ -238,28 +238,32 @@ export default function AssignmentsPage() {
                )}
             </div>
 
-            {/* Right Col: Durmah Chat (4 cols) */}
+            {/* Right Col: Chat or Workflow Overlay (4 cols) */}
             <div className="lg:col-span-4 h-full">
-               <DurmahChat 
-                 key={selectedAssignment?.id || 'general'} // Re-mount on assignment change for fresh context
-                 contextType={selectedAssignment ? 'assignment' : 'general'}
-                 contextTitle={selectedAssignment?.title || 'General Study Help'}
-                 contextId={selectedAssignment?.id}
-                 initialPrompt={chatInitialPrompt}
-                 className="h-full"
-               />
+              {selectedAssignment && !showWorkflow && (
+                <DurmahChat
+                  assignmentId={selectedAssignment.id}
+                  assignmentTitle={selectedAssignment.title}
+                  initialPrompt={chatInitialPrompt}
+                />
+              )}
             </div>
-
           </div>
         </div>
       </div>
 
-      {/* Assignment Workflow Modal */}
+      {/* Workflow Modal Overlay */}
       {showWorkflow && selectedAssignment && (
         <AssignmentWorkflow
           assignmentId={selectedAssignment.id}
           assignmentData={selectedAssignment}
           onClose={() => {
+            // Navigate back to assignment view (remove view param)
+            router.push(
+              `/assignments?assignmentId=${selectedAssignment.id}`,
+              undefined,
+              { shallow: true }
+            );
             setShowWorkflow(false);
             fetchAssignments(); // Refresh in case brief was uploaded
           }}
