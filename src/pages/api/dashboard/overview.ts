@@ -1,6 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
-import { getSupabaseClient } from '../../../lib/supabaseServer'
-import { verifyUserSession } from '../../../lib/auth'
+import { createPagesServerClient } from '@supabase/auth-helpers-nextjs'
 
 /**
  * Dashboard Overview API
@@ -37,13 +36,13 @@ export default async function handler(
   }
 
   try {
-    // Verify user session
-    const user = await verifyUserSession(req)
-    if (!user) {
+    // Verify user session using Supabase auth helper
+    const supabase = createPagesServerClient({ req, res })
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    
+    if (authError || !user) {
       return res.status(401).json({ upcomingAssignments: [], error: 'Unauthorized' })
     }
-
-    const supabase = getSupabaseClient()
 
     // Fetch upcoming assignments (not submitted/completed)
     const { data: assignments, error } = await supabase

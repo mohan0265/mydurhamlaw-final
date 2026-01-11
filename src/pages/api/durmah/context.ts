@@ -119,8 +119,6 @@ export default async function handler(
     // Categorize assignments with RICH METADATA for Durmah intelligence
     const assignments = assignmentsData || [];
     
-    const now = new Date();
-    
     // Helper: calculate days left
     const calcDaysLeft = (dueDate: string) => {
       const due = new Date(dueDate);
@@ -162,6 +160,7 @@ export default async function handler(
       .filter(a => new Date(a.created_at) > new Date(now.getTime() - 7*24*60*60*1000))
       .map(enrichAssignment)
       .slice(0, 3);
+
 
 
     // FETCH: Today's classes (legacy, keep for backwards compat)
