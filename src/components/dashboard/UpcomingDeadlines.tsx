@@ -47,8 +47,8 @@ export default function UpcomingDeadlines() {
   }
 
   function handleClickAssignment(id: string) {
-    // Navigate to assignments page and select this assignment
-    router.push(`/assignments?selected=${id}`);
+    // Navigate DIRECTLY to assignment workflow (not just list view)
+    router.push(`/assignments?assignmentId=${id}&view=workflow`);
   }
 
   function getDaysLeftBadge(daysLeft: number) {
