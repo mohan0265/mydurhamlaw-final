@@ -67,6 +67,13 @@ function normalizeModelResource(rawModel?: string): string {
   const fallbackId = extractModelId(MODEL_ID);
   const candidateId = extractModelId(rawModel);
   const resolved = candidateId || fallbackId;
+
+  // Check if using AI Studio (API Key) -> simple "models/..." format
+  if (process.env.GEMINI_API_KEY) {
+     return `models/${resolved}`; 
+  }
+
+  // Vertex AI format
   let normalized = `projects/${PROJECT_ID}/locations/${LOCATION}/publishers/google/models/${resolved}`;
   if (!MODEL_RE.test(normalized)) {
     normalized = `projects/${PROJECT_ID}/locations/${LOCATION}/publishers/google/models/${fallbackId}`;
@@ -233,33 +240,35 @@ wss.on("connection", (ws: WebSocket, req) => {
           console.log("No auth token. Using Anon mode.");
         }
 
-        // --- Connect Upstream ---
-        try {
-          const client = await auth.getClient();
+          // --- Connect Upstream ---
+          const apiKey = process.env.GEMINI_API_KEY;
+          let url = "";
+          let headers: Record<string, string> = { "Content-Type": "application/json" };
 
-          // google-auth-library returns either:
-          // - a string access token, OR
-          // - an object with { token: string | null }
-          const accessTokenResp: any = await (client as any).getAccessToken();
-          const accessToken: string | null =
-            typeof accessTokenResp === "string" ? accessTokenResp : accessTokenResp?.token ?? null;
+          if (apiKey) {
+            // Use AI Studio (Generative Language API) - Bypasses Vertex IAM issues
+            const host = "generativelanguage.googleapis.com";
+            // Note: API Key goes in query param
+            url = `wss://${host}/ws/google.ai.generativelanguage.v1alpha.GenerativeService/BidiGenerateContent?key=${apiKey}`;
+            console.log(`Using AI Studio API with Key. URL=${url.split("?")[0]}...`);
+          } else {
+             // Fallback to Vertex AI (IAM / ADC)
+             const client = await auth.getClient();
+             const accessTokenResp: any = await (client as any).getAccessToken();
+             const accessToken: string | null =
+               typeof accessTokenResp === "string" ? accessTokenResp : accessTokenResp?.token ?? null;
 
-          if (!accessToken) {
-            throw new Error("Could not obtain Google access token for Vertex AI.");
+             if (!accessToken) {
+               throw new Error("Could not obtain Google access token for Vertex AI.");
+             }
+             const host = `${LOCATION}-aiplatform.googleapis.com`;
+             url = `wss://${host}${UPSTREAM_PATH}`;
+             headers["Authorization"] = `Bearer ${accessToken}`;
+             console.log(`Using Vertex AI API (IAM). Location=${LOCATION}`);
           }
 
-          // Construct Vertex WebSocket URL
-          // Endpoint: wss://{location}-aiplatform.googleapis.com/ws/google.cloud.aiplatform.v1beta1.LlmBidiService/BidiGenerateContent
-          const host = `${LOCATION}-aiplatform.googleapis.com`;
-          const url = `wss://${host}${UPSTREAM_PATH}`;
-
-          console.log(`Upstream location=${LOCATION} url=${url}`);
-
           upstream = new WebSocket(url, {
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-              "Content-Type": "application/json",
-            },
+            headers,
           });
 
           upstream.on("open", () => {
