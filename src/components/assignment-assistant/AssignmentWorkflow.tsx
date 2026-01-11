@@ -17,7 +17,7 @@ import toast from 'react-hot-toast';
 interface AssignmentWorkflowProps {
   assignmentId: string;
   assignmentData: any;
-  onClose: () => void;
+  onClose: () => void; // @ts-ignore - Next.js false positive for client components
 }
 
 export default function AssignmentWorkflow({ 

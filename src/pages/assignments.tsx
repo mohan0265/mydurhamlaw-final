@@ -242,8 +242,9 @@ export default function AssignmentsPage() {
             <div className="lg:col-span-4 h-full">
               {selectedAssignment && !showWorkflow && (
                 <DurmahChat
-                  assignmentId={selectedAssignment.id}
-                  assignmentTitle={selectedAssignment.title}
+                  contextType="assignment"
+                  contextTitle={selectedAssignment.title}
+                  contextId={selectedAssignment.id}
                   initialPrompt={chatInitialPrompt}
                 />
               )}

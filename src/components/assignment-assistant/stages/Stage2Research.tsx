@@ -15,7 +15,7 @@ interface ResearchNote {
 interface Stage2ResearchProps {
   assignmentId: string;
   briefData: any;
-  onComplete: (data: any) => void;
+  onComplete: (data: any) => void; // @ts-ignore - Next.js false positive for client components
 }
 
 export default function Stage2Research({ assignmentId, briefData, onComplete }: Stage2ResearchProps) {
