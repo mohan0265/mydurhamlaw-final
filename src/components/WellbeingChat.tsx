@@ -18,7 +18,8 @@ import { getSupabaseClient } from '@/lib/supabase/client'
 const supabase = getSupabaseClient()
 // Durmah config removed - using fallback speech detection
 import { AssistanceLevel } from './wellbeing/AssistanceLevelPopover'
-import { speakWithElevenLabs, stop as stopTTS, isSpeaking } from '@/lib/tts/elevenLabsClient'
+// ElevenLabs TTS removed - voice now handled by Durmah widget
+const stopTTS = () => {}; // No-op stub
 import toast from 'react-hot-toast'
 import { Volume2, Square, Save } from 'lucide-react'
 
@@ -346,17 +347,7 @@ export const WellbeingChat: React.FC<WellbeingChatProps> = ({
         setMessages(prev => prev.map(m => m.id === assistantMessage.id ? { ...m, content: fullText } : m));
       }
 
-      if (fullText) {
-        try {
-          setIsTTSSpeaking(true);
-          await speakWithElevenLabs(fullText, { voiceId: userProfile?.voice_id });
-        } catch (e) {
-          toast.error("Couldn't play voice reply.");
-          console.error(e);
-        } finally {
-          setIsTTSSpeaking(false);
-        }
-      }
+      // Voice playback removed - TTS now handled by Durmah widget
 
     } catch (error: any) {
       console.error('💥 Chat error:', error)
