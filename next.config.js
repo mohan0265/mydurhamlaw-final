@@ -33,6 +33,10 @@ const nextConfig = {
     NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
     NEXT_PUBLIC_APP_VERSION: String(Date.now()),
+    // Durmah voice configuration
+    NEXT_PUBLIC_DURMAH_VOICE_PROVIDER: process.env.NEXT_PUBLIC_DURMAH_VOICE_PROVIDER,
+    NEXT_PUBLIC_GEMINI_LIVE_MODEL: process.env.NEXT_PUBLIC_GEMINI_LIVE_MODEL,
+    NEXT_PUBLIC_DURMAH_GEMINI_PROXY_WS_URL: process.env.NEXT_PUBLIC_DURMAH_GEMINI_PROXY_WS_URL,
   },
   // 🔧 Unify react-query across the app (fixes "No QueryClient set" at build)
   // 🧹 Durmah/AWY cleanup aliases - redirect imports to stubs
