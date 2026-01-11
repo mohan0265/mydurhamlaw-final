@@ -251,9 +251,9 @@ export function useDurmahGeminiLive({
                 model: LIVE_MODEL_ID,
                 generation_config: {
                     response_modalities: ["AUDIO", "TEXT"],
-                    speech_config: {
-                         voice_config: { prebuilt_voice_config: { voice_name: "Puck" } }
-                    }
+                    // speech_config: {
+                    //      voice_config: { prebuilt_voice_config: { voice_name: "Puck" } }
+                    // }
                 },
                 system_instruction: {
                     parts: [{ text: systemPrompt }]
