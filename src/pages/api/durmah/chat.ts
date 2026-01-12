@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { buildDurmahContext } from '@/lib/durmah/contextBuilder';
 import { enhanceDurmahContext } from '@/lib/durmah/contextBuilderEnhanced';
+import { DEFAULT_TZ, formatNowPacket, getDaysLeft } from '@/lib/durmah/timezone';
 
 async function callOpenAI(messages: { role: 'system' | 'user' | 'assistant'; content: string }[]) {
   const resp = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -107,6 +108,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Cast to any since enhanceDurmahContext adds extra properties
     const ctx = context as any;
     if (ctx.assignments || ctx.profile) {
+      // TIMEZONE TRUTH: Build NOW packet server-side
+      const timeZone = DEFAULT_TZ;
+      const nowPacket = formatNowPacket(new Date(), timeZone);
+      const todayKey = nowPacket.dayKey;
+      
+      console.log(`[durmah/chat] NOW: ${nowPacket.nowText}`);
+      
       // Map enhanced context assignments to system prompt format
       // enhanceDurmahContext uses: active, overdue, recentlyCompleted
       // buildDurmahContextBlock expects: upcoming, overdue, recentlyCreated
@@ -114,14 +122,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const overdueAssignments = ctx.assignments?.overdue || [];
       const recentlyCompleted = ctx.assignments?.recentlyCompleted || [];
       
-      // Transform active assignments to upcoming format with daysLeft
-      const now = new Date();
+      // Transform active assignments to upcoming format with TIMEZONE-AWARE daysLeft
       const upcomingFormatted = activeAssignments
         .filter((a: any) => a.dueDate)
         .map((a: any) => ({
           title: a.title,
           module: a.module,
-          daysLeft: Math.max(0, Math.floor((new Date(a.dueDate).getTime() - now.getTime()) / (1000 * 60 * 60 * 24))),
+          daysLeft: getDaysLeft(todayKey, a.dueDate, timeZone),
         }));
       
       const studentContext = {
@@ -130,7 +137,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           yearGroup: ctx.profile?.yearGroup || 'Unknown',
           term: ctx.academic?.term || 'Unknown',
           weekOfTerm: ctx.academic?.weekOfTerm || 0,
-          localTimeISO: new Date().toISOString(),
+          localTimeISO: nowPacket.isoUTC,
+          timezone: timeZone,
+        },
+        // TIMEZONE TRUTH: Include academic.now for system prompt
+        academic: {
+          timezone: timeZone,
+          now: nowPacket,
         },
         assignments: {
           upcoming: upcomingFormatted,

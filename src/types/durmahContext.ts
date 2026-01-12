@@ -1,3 +1,5 @@
+import type { NowPacket } from '@/lib/durmah/timezone';
+
 export interface StudentContext {
   student: {
     displayName: string;
@@ -5,27 +7,43 @@ export interface StudentContext {
     term: string;
     weekOfTerm: number;
     localTimeISO: string;
+    timezone?: string;
+  };
+  // TIMEZONE TRUTH: academic.now is the SINGLE SOURCE for date/time
+  academic?: {
+    timezone: string;
+    now: NowPacket;
   };
   assignments: {
     upcoming: Array<{
-      id: string;
+      id?: string;
       title: string;
-      module: string;
-      dueISO: string;
-      daysLeft: number;
+      module?: string;
+      module_name?: string;
+      module_code?: string;
+      dueISO?: string;
+      due_date?: string;
+      daysLeft: number | null;
+      status?: string;
+      current_stage?: number;
+      nextAction?: string;
     }>;
     overdue: Array<{
-      id: string;
+      id?: string;
       title: string;
-      module: string;
-      dueISO: string;
-      daysOver: number;
+      module?: string;
+      module_name?: string;
+      dueISO?: string;
+      due_date?: string;
+      daysOver?: number;
+      daysLeft?: number | null;
     }>;
     recentlyCreated: Array<{
-      id: string;
+      id?: string;
       title: string;
-      module: string;
-      createdISO: string;
+      module?: string;
+      module_name?: string;
+      createdISO?: string;
     }>;
     total: number;
   };
@@ -48,3 +66,4 @@ export interface StudentContext {
     }>>;
   };
 }
+

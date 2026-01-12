@@ -22,8 +22,21 @@ import toast from "react-hot-toast";
 import { useRouter } from 'next/router';
 import { getSupabaseClient } from "@/lib/supabase/client";
 
-// Voice Provider Selection - checks environment variable
-const VOICE_PROVIDER = (process.env.NEXT_PUBLIC_DURMAH_VOICE_PROVIDER || 'openai').toLowerCase();
+// Voice Provider Selection - checks localStorage override first, then environment variable
+// This allows runtime switching without redeployment (e.g., if Gemini fails)
+function getVoiceProvider(): 'openai' | 'gemini' {
+  if (typeof window !== 'undefined') {
+    const override = localStorage.getItem('durmah_voice_override');
+    if (override === 'openai' || override === 'gemini') {
+      console.log('[DurmahWidget] Using voice provider override:', override);
+      return override;
+    }
+  }
+  const envProvider = (process.env.NEXT_PUBLIC_DURMAH_VOICE_PROVIDER || 'openai').toLowerCase();
+  return envProvider === 'gemini' ? 'gemini' : 'openai';
+}
+
+const VOICE_PROVIDER = getVoiceProvider();
 const useVoiceHook = VOICE_PROVIDER === 'gemini' ? useDurmahGeminiLive : useDurmahRealtime;
 console.log('[DurmahWidget] Using voice provider:', VOICE_PROVIDER);
 
@@ -711,6 +724,21 @@ REMINDER:
       setVoiceSessionEndedAt(null);
       setVoiceSessionStartedAt(new Date());
       setVoiceSessionId(createVoiceSessionId());
+      
+      // TIMEZONE TRUTH: Refresh context before voice to get fresh NOW packet
+      try {
+        const res = await fetchAuthed("/api/durmah/context");
+        if (res.ok) {
+          const data = await res.json();
+          if (data) {
+            setStudentContextData(data);
+            console.log("[DurmahVoice] NOW from server context:", data.academic?.now?.nowText || "missing");
+          }
+        }
+      } catch (err) {
+        console.warn("[DurmahVoice] Could not refresh context:", err);
+      }
+      
       try {
         await startListening();
       } catch (err) {

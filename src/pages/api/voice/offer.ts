@@ -1,4 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
+import { DEFAULT_TZ, formatNowPacket } from "@/lib/durmah/timezone";
 
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const REALTIME_MODEL =
@@ -71,21 +72,21 @@ export default async function handler(
 
     console.log("[VoiceAPI] Creating OpenAI Realtime session...");
 
-    // Add current date/time for real-time awareness
-    const currentDateTime = new Date().toLocaleString('en-GB', { 
-      timeZone: 'Europe/London',
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+    // TIMEZONE TRUTH: Use shared helper for consistent date/time
+    const nowPacket = formatNowPacket(new Date(), DEFAULT_TZ);
+    console.log(`[VoiceAPI] NOW: ${nowPacket.nowText}`);
     
     const enhancedInstructions = `${ENGLISH_SYSTEM_INSTRUCTION}
 
-CURRENT DATE & TIME: ${currentDateTime} (UK time)
-When user asks for today's date or current time, tell them exactly: "${currentDateTime}"
+=== TIMEZONE TRUTH (CRITICAL) ===
+NOW: ${nowPacket.nowText}
+TODAY_KEY: ${nowPacket.dayKey}
+TIMEZONE: ${DEFAULT_TZ}
+
+STRICT DATE/TIME RULES:
+- When asked date/time/day, answer ONLY from NOW above
+- NEVER infer time from your own clock
+- Say exactly: "${nowPacket.nowText}"
 
 TRANSCRIPTION RULES:
 - ONLY transcribe English speech

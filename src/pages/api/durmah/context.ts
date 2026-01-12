@@ -3,6 +3,7 @@ import { createPagesServerClient } from '@supabase/auth-helpers-nextjs';
 import { createClient } from '@supabase/supabase-js';
 import type { StudentContext } from '@/types/durmahContext';
 import { buildYAAGEvents, groupEventsByDate } from '@/lib/calendar/yaagEventsBuilder';
+import { DEFAULT_TZ, formatNowPacket, getDaysLeft, dateToDayKey, type NowPacket } from '@/lib/durmah/timezone';
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
@@ -79,7 +80,14 @@ export default async function handler(
     // PARSE QUERY PARAMS for date range
     const { focusDate, rangeDays, rangeStart, rangeEnd, pageHint } = req.query;
     
+    // TIMEZONE TRUTH: Single source of NOW (Europe/London)
+    const timeZone = DEFAULT_TZ;
     const now = new Date();
+    const nowPacket: NowPacket = formatNowPacket(now, timeZone);
+    const todayKey = nowPacket.dayKey;
+    
+    console.log(`[context] NOW: ${nowPacket.nowText} (timezone: ${timeZone})`);
+    
     let fromDate: string;
     let toDate: string;
 
@@ -90,14 +98,17 @@ export default async function handler(
       const focus = typeof focusDate === 'string' ? new Date(focusDate) : now;
       const days = typeof rangeDays === 'string' ? parseInt(rangeDays) : 14;
       
+      // Use timezone-aware date keys
+      const focusDayKey = dateToDayKey(focus, timeZone);
+      
       // Default: focus date minus 3 days to focus date plus (days-3) days
       const startOffset = new Date(focus);
       startOffset.setDate(startOffset.getDate() - 3);
       const endOffset = new Date(focus);
       endOffset.setDate(endOffset.getDate() + (days - 3));
       
-      fromDate = startOffset.toISOString().substring(0, 10);
-      toDate = endOffset.toISOString().substring(0, 10);
+      fromDate = dateToDayKey(startOffset, timeZone);
+      toDate = dateToDayKey(endOffset, timeZone);
     }
 
     console.log(`[context] YAAG range: ${fromDate} to ${toDate}, pageHint=${pageHint || 'dashboard'}`);
@@ -119,11 +130,9 @@ export default async function handler(
     // Categorize assignments with RICH METADATA for Durmah intelligence
     const assignments = assignmentsData || [];
     
-    // Helper: calculate days left
+    // Helper: calculate days left using TIMEZONE-AWARE computation
     const calcDaysLeft = (dueDate: string) => {
-      const due = new Date(dueDate);
-      const diffMs = due.getTime() - now.getTime();
-      return Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+      return getDaysLeft(todayKey, dueDate, timeZone);
     };
     
     // Enrich assignments with computed fields
@@ -212,14 +221,20 @@ export default async function handler(
       }));
     }
 
-    // Build response
+    // Build response with TIMEZONE TRUTH embedded
     const studentContext: StudentContext = {
       student: {
         displayName: profile?.display_name || user.email?.split('@')[0] || 'Student',
         yearGroup: profile?.year_of_study || profile?.year_group || 'Year 1',
         term: 'Epiphany',  // TODO: Compute from academic calendar
         weekOfTerm: 3,     // TODO: Compute from academic calendar
-        localTimeISO: now.toISOString(),
+        localTimeISO: nowPacket.isoUTC,
+        timezone: timeZone,
+      },
+      // TIMEZONE TRUTH: academic.now is the SINGLE SOURCE for date/time
+      academic: {
+        timezone: timeZone,
+        now: nowPacket,
       },
       assignments: {
         upcoming,
@@ -230,7 +245,7 @@ export default async function handler(
       schedule: {
         todaysClasses: (todaysEvents || []).map(e => ({
           module_name: e.title,
-          time: `${new Date(e.start_time).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })} - ${e.end_time ? new Date(e.end_time).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : ''}`,
+          time: `${new Date(e.start_time).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone })} - ${e.end_time ? new Date(e.end_time).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone }) : ''}`,
         })),
       },
       yaag: {

@@ -60,15 +60,35 @@ VOICE MODE (CRITICAL - PATIENCE & NATURAL CONVERSATION):
 /**
  * Builds a compact CONTEXT BLOCK with current student situation
  * This gets injected as part of the conversation context
+ * CRITICAL: Uses academic.now for TIMEZONE TRUTH - never compute dates locally
  */
 export function buildDurmahContextBlock(context: StudentContext): string {
-  const { student, assignments, schedule } = context;
+  const { student, assignments, schedule, academic } = context;
   
-  let block = `CURRENT CONTEXT (${new Date(student.localTimeISO).toLocaleDateString('en-GB')}):
-Student: ${student.displayName}, ${student.yearGroup}
+  // TIMEZONE TRUTH: Use academic.now if available, else fallback
+  const nowText = academic?.now?.nowText || new Date(student.localTimeISO).toLocaleString('en-GB', { timeZone: 'Europe/London' });
+  const todayKey = academic?.now?.dayKey || student.localTimeISO.substring(0, 10);
+  const timezone = academic?.timezone || 'Europe/London';
+  
+  let block = `=== TIMEZONE TRUTH (CRITICAL) ===
+NOW: ${nowText}
+TODAY_KEY: ${todayKey}
+TIMEZONE: ${timezone}
+
+STRICT RULES:
+- When asked date/time/day, answer ONLY from NOW/TODAY_KEY above
+- NEVER infer time from your own clock or device timezone
+- If NOW is missing or stale, say: "I don't have the current time in context."
+- Do NOT say "I'm connected to everything" - instead cite what you actually have
+=====================================
+
+STUDENT PROFILE:
+Name: ${student.displayName}
+Year: ${student.yearGroup}
 Term: ${student.term}, Week ${student.weekOfTerm}
 
 `;
+
 
   // Upcoming deadlines
   if (assignments.upcoming.length > 0) {
@@ -153,10 +173,10 @@ export function generateProactiveGreeting(context: StudentContext): string | nul
   }
 
   // Priority 2: Urgent deadlines (< 3 days)
-  const urgent = assignments.upcoming.filter((a) => a.daysLeft <= 3);
+  const urgent = assignments.upcoming.filter((a) => a.daysLeft !== null && a.daysLeft <= 3);
   if (urgent.length > 0) {
     const first = urgent[0];
-    if (first) {
+    if (first && first.daysLeft !== null) {
       return `Hey! Quick heads-up - your "${first.title}" assignment is due in ${first.daysLeft} day${first.daysLeft === 1 ? '' : 's'}. Need any help with it?`;
     }
   }
