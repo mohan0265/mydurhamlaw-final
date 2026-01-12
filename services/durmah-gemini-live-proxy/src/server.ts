@@ -38,7 +38,13 @@ const auth = new GoogleAuth({
   scopes: ["https://www.googleapis.com/auth/cloud-platform"],
 });
 
-const UPSTREAM_PATH = "/ws/google.cloud.aiplatform.v1beta1.LlmBidiService/BidiGenerateContent";
+// Websocket paths for different APIs
+const VERTEX_UPSTREAM_PATH = "/ws/google.cloud.aiplatform.v1beta1.LlmBidiService/BidiGenerateContent";
+const GEMINI_UPSTREAM_PATH = "/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent";
+
+// Determine mode at startup
+const USE_AI_STUDIO = Boolean(process.env.GEMINI_API_KEY);
+console.log(`[proxy] mode=${USE_AI_STUDIO ? 'AI_STUDIO' : 'VERTEX'} model=${MODEL_ID}`);
 
 const MODEL_RE =
   /^projects\/[^/]+\/locations\/[^/]+\/publishers\/[^/]+\/models\/[^/]+$/;
@@ -89,7 +95,8 @@ const server = http.createServer((req, res) => {
       project: PROJECT_ID,
       location: LOCATION,
       model: normalizeModelResource(MODEL_ID),
-      upstream_path: UPSTREAM_PATH,
+      mode: USE_AI_STUDIO ? "AI_STUDIO" : "VERTEX",
+      upstream_path: USE_AI_STUDIO ? GEMINI_UPSTREAM_PATH : VERTEX_UPSTREAM_PATH,
       time: new Date().toISOString(),
     };
     res.writeHead(200, { "Content-Type": "application/json" });
@@ -249,7 +256,7 @@ wss.on("connection", (ws: WebSocket, req) => {
             // Use AI Studio (Generative Language API) - Bypasses Vertex IAM issues
             const host = "generativelanguage.googleapis.com";
             // Note: API Key goes in query param
-            url = `wss://${host}/ws/google.ai.generativelanguage.v1alpha.GenerativeService/BidiGenerateContent?key=${apiKey}`;
+            url = `wss://${host}${GEMINI_UPSTREAM_PATH}?key=${apiKey}`;
             console.log(`Using AI Studio API with Key. URL=${url.split("?")[0]}...`);
           } else {
              // Fallback to Vertex AI (IAM / ADC)
@@ -262,7 +269,7 @@ wss.on("connection", (ws: WebSocket, req) => {
                throw new Error("Could not obtain Google access token for Vertex AI.");
              }
              const host = `${LOCATION}-aiplatform.googleapis.com`;
-             url = `wss://${host}${UPSTREAM_PATH}`;
+             url = `wss://${host}${VERTEX_UPSTREAM_PATH}`;
              headers["Authorization"] = `Bearer ${accessToken}`;
              console.log(`Using Vertex AI API (IAM). Location=${LOCATION}`);
           }
