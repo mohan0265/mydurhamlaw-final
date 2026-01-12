@@ -1,26 +1,18 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { waitForAccessToken } from "@/lib/auth/waitForAccessToken";
 
-const RAW_PROXY_URL = process.env.NEXT_PUBLIC_DURMAH_GEMINI_PROXY_WS_URL?.trim();
-const DEFAULT_PROXY_URL =
-  "wss://durmah-gemini-live-proxy-us-482960166397.us-central1.run.app";
-const PROXY_URL = RAW_PROXY_URL || DEFAULT_PROXY_URL;
-
-const RAW_LIVE_MODEL = process.env.NEXT_PUBLIC_GEMINI_LIVE_MODEL?.trim();
-const DEFAULT_LIVE_MODEL = "gemini-2.5-flash-native-audio";
-
-function sanitizeModelId(raw?: string) {
-  const value = (raw || "").trim();
-  if (!value) return "";
-  const modelMatch = value.match(/models\/([^/]+)$/);
-  if (modelMatch?.[1]) return modelMatch[1];
-  return value
-    .replace(/^models\//, "")
-    .replace(/^projects\/[^/]+\/locations\/[^/]+\/publishers\/[^/]+\/models\//, "");
+// Get proxy URL from env and ensure it ends with /ws
+const RAW_PROXY_URL = (process.env.NEXT_PUBLIC_DURMAH_GEMINI_PROXY_WS_URL || "").trim();
+const DEFAULT_PROXY_URL = "wss://durmah-gemini-live-proxy-us-482960166397.us-central1.run.app/ws";
+function ensureWsPath(url: string): string {
+  if (!url) return DEFAULT_PROXY_URL;
+  if (url.endsWith("/ws")) return url;
+  return url.replace(/\/$/, "") + "/ws";
 }
+const PROXY_URL = ensureWsPath(RAW_PROXY_URL) || DEFAULT_PROXY_URL;
 
-// Use env var if set, otherwise use default
-const LIVE_MODEL_ID = sanitizeModelId(RAW_LIVE_MODEL) || DEFAULT_LIVE_MODEL;
+// Model ID from env var (proxy will normalize format)
+const MODEL_ID = (process.env.NEXT_PUBLIC_GEMINI_LIVE_MODEL || "gemini-2.5-flash-native-audio-preview-09-2025").trim();
 
 type VoiceTurn = { speaker: "user" | "durmah"; text: string };
 
@@ -248,7 +240,7 @@ export function useDurmahGeminiLive({
         const setupMsg = {
             auth: token ?? null, 
             setup: {
-                model: LIVE_MODEL_ID,
+                model: MODEL_ID,
                 generation_config: {
                     response_modalities: ["AUDIO", "TEXT"],
                     speech_config: {

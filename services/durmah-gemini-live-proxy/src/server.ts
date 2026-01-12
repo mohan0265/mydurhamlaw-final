@@ -26,7 +26,7 @@ const LOCATION =
   process.env.GOOGLE_CLOUD_LOCATION ||
   process.env.LOCATION ||
   "us-central1";
-const MODEL_ID = process.env.GEMINI_LIVE_MODEL || "gemini-2.5-flash-native-audio";
+const MODEL_ID = process.env.GEMINI_LIVE_MODEL || "gemini-2.5-flash-native-audio-preview-09-2025";
 
 const SUPABASE_URL = mustEnv("SUPABASE_URL");
 // Use SERVICE ROLE key to verify JWTs properly or admin tasks if needed.

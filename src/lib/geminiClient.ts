@@ -1,9 +1,11 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
-const apiKey = process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+// SECURITY: API key must only be used server-side, never expose in browser
+// This file should only be imported in API routes or server components
+const apiKey = process.env.GEMINI_API_KEY;
 
 if (!apiKey) {
-  throw new Error('Missing GEMINI_API_KEY env variable');
+  throw new Error('Missing GEMINI_API_KEY env variable (server-side only)');
 }
 
 const genAI = new GoogleGenerativeAI(apiKey);
