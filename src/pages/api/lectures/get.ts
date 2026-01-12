@@ -30,7 +30,7 @@ export default async function handler(
       .select(`
         *,
         lecture_transcripts (transcript_text, word_count),
-        lecture_notes (summary, key_points, discussion_topics, exam_prompts, glossary)
+        lecture_notes (summary, key_points, discussion_topics, exam_prompts, glossary, engagement_hooks)
       `)
       .eq('id', id)
       .eq('user_id', user.id)

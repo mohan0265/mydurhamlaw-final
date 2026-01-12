@@ -58,8 +58,9 @@ async function generateNotes(transcript: string, lectureTitle: string, moduleNam
   discussion_topics: string[];
   exam_prompts: string[];
   glossary: Array<{ term: string; definition: string }>;
+  engagement_hooks: string[];
 }> {
-  const prompt = `You are an expert law lecturer assistant. Analyze this lecture transcript and generate comprehensive study notes.
+  const prompt = `You are an expert law lecturer assistant AND engaging mentor. Analyze this lecture transcript and generate study notes that SPARK INTEREST and make learning exciting!
 
 LECTURE: ${lectureTitle}
 MODULE: ${moduleName || 'Law'}
@@ -69,14 +70,16 @@ ${transcript.substring(0, 15000)} ${transcript.length > 15000 ? '... [truncated]
 
 Generate the following in JSON format:
 {
-  "summary": "2-3 paragraphs summarizing the main themes and arguments of the lecture",
-  "key_points": ["8-12 bullet point key takeaways from the lecture"],
-  "discussion_topics": ["5 thought-provoking discussion questions arising from the lecture"],
-  "exam_prompts": ["5 potential exam question prompts based on the content"],
-  "glossary": [{"term": "Legal Term", "definition": "Brief 1-line explanation"}, ...]
+  "summary": "2-3 paragraphs summarizing the main themes and arguments. Make it accessible and interesting!",
+  "key_points": ["8-12 bullet point key takeaways - phrase them in memorable, student-friendly language"],
+  "discussion_topics": ["5 thought-provoking questions that CHALLENGE assumptions and spark debate. Use the Socratic method - 'What if...?' style questions"],
+  "exam_prompts": ["5 potential exam question prompts - frame as 'Professors LOVE asking...' to motivate study"],
+  "glossary": [{"term": "Legal Term", "definition": "Brief 1-line explanation using analogies where helpful"}],
+  "engagement_hooks": ["5-8 FASCINATING facts, real case connections, or 'mind-blowing' insights that make this lecture INTERESTING. Examples: 'This exact scenario happened in the famous X case...', 'Fun fact: This doctrine was invented because...', 'If you think about it like [everyday analogy]...', 'This is the law that stopped [interesting real event]...'. Make students WANT to learn more!"]
 }
 
-Focus on legal concepts, case law mentioned, and doctrinal principles. Be specific and educational.`;
+CRITICAL: Make notes that a tired, bored student would actually want to read. Use relatable language, real-world connections, and spark curiosity. This student has Durmah available 24/7 to discuss - give them reasons to engage!`;
+
 
   const response = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
@@ -115,6 +118,7 @@ Focus on legal concepts, case law mentioned, and doctrinal principles. Be specif
       discussion_topics: [],
       exam_prompts: [],
       glossary: [],
+      engagement_hooks: [],
     };
   }
 }
@@ -247,6 +251,7 @@ export default async function handler(
         discussion_topics: notes.discussion_topics,
         exam_prompts: notes.exam_prompts,
         glossary: notes.glossary,
+        engagement_hooks: notes.engagement_hooks || [],
       });
 
     if (notesError) {

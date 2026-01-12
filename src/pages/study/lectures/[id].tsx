@@ -16,7 +16,8 @@ import {
   HelpCircle,
   GraduationCap,
   BookOpen,
-  Loader2
+  Loader2,
+  Sparkles
 } from 'lucide-react';
 
 interface LectureDetail {
@@ -35,6 +36,7 @@ interface LectureDetail {
     discussion_topics?: string[];
     exam_prompts?: string[];
     glossary?: Array<{ term: string; definition: string }>;
+    engagement_hooks?: string[];
   };
 }
 
@@ -44,7 +46,7 @@ export default function LectureDetailPage() {
   const [lecture, setLecture] = useState<LectureDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [showTranscript, setShowTranscript] = useState(false);
-  const [activeTab, setActiveTab] = useState<'summary' | 'keypoints' | 'discussion' | 'exam' | 'glossary'>('summary');
+  const [activeTab, setActiveTab] = useState<'summary' | 'keypoints' | 'hooks' | 'discussion' | 'exam' | 'glossary'>('summary');
 
   useEffect(() => {
     if (!id) return;
@@ -156,6 +158,7 @@ export default function LectureDetailPage() {
             {[
               { key: 'summary', label: 'Summary', icon: BookOpen },
               { key: 'keypoints', label: 'Key Points', icon: Lightbulb },
+              { key: 'hooks', label: '✨ Why It Matters', icon: Sparkles },
               { key: 'discussion', label: 'Discussion', icon: MessageSquare },
               { key: 'exam', label: 'Exam Prep', icon: GraduationCap },
               { key: 'glossary', label: 'Glossary', icon: HelpCircle },
@@ -193,6 +196,26 @@ export default function LectureDetailPage() {
                   </li>
                 ))}
               </ul>
+            )}
+
+            {activeTab === 'hooks' && notes.engagement_hooks && notes.engagement_hooks.length > 0 && (
+              <div className="space-y-4">
+                <div className="mb-4 p-3 bg-gradient-to-r from-purple-100 to-pink-100 rounded-lg">
+                  <p className="text-sm text-purple-800 font-medium">
+                    🎯 These insights make this lecture come alive! Click the Durmah widget to discuss any of them.
+                  </p>
+                </div>
+                {notes.engagement_hooks.map((hook, i) => (
+                  <div key={i} className="p-4 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-lg border border-purple-100">
+                    <div className="flex items-start gap-3">
+                      <span className="flex-shrink-0 w-8 h-8 bg-purple-200 text-purple-700 rounded-full flex items-center justify-center text-lg">
+                        💡
+                      </span>
+                      <p className="text-gray-800">{hook}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
             )}
 
             {activeTab === 'discussion' && notes.discussion_topics && (
