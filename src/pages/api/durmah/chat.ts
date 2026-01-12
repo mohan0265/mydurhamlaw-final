@@ -95,8 +95,65 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       role: m.role,
       content: m.content,
     }));
+    
+    // KNOWLEDGE FIX: Use full system prompt with student context
+    // Import at top: buildDurmahSystemPrompt, buildDurmahContextBlock
+    const { buildDurmahSystemPrompt, buildDurmahContextBlock } = await import('@/lib/durmah/systemPrompt');
+    
+    // Build context block if we have student data
+    let fullSystemPrompt = buildDurmahSystemPrompt();
+    
+    // Context has assignments and schedule data from enhanceDurmahContext
+    // Cast to any since enhanceDurmahContext adds extra properties
+    const ctx = context as any;
+    if (ctx.assignments || ctx.profile) {
+      // Map enhanced context assignments to system prompt format
+      // enhanceDurmahContext uses: active, overdue, recentlyCompleted
+      // buildDurmahContextBlock expects: upcoming, overdue, recentlyCreated
+      const activeAssignments = ctx.assignments?.active || [];
+      const overdueAssignments = ctx.assignments?.overdue || [];
+      const recentlyCompleted = ctx.assignments?.recentlyCompleted || [];
+      
+      // Transform active assignments to upcoming format with daysLeft
+      const now = new Date();
+      const upcomingFormatted = activeAssignments
+        .filter((a: any) => a.dueDate)
+        .map((a: any) => ({
+          title: a.title,
+          module: a.module,
+          daysLeft: Math.max(0, Math.floor((new Date(a.dueDate).getTime() - now.getTime()) / (1000 * 60 * 60 * 24))),
+        }));
+      
+      const studentContext = {
+        student: {
+          displayName: ctx.profile?.displayName || 'Student',
+          yearGroup: ctx.profile?.yearGroup || 'Unknown',
+          term: ctx.academic?.term || 'Unknown',
+          weekOfTerm: ctx.academic?.weekOfTerm || 0,
+          localTimeISO: new Date().toISOString(),
+        },
+        assignments: {
+          upcoming: upcomingFormatted,
+          overdue: overdueAssignments,
+          recentlyCreated: recentlyCompleted.map((a: any) => ({ title: a.title, module: a.module })),
+          total: ctx.assignments?.total || 0,
+        },
+        schedule: {
+          todaysClasses: ctx.schedule?.todaysClasses || [],
+        },
+        yaag: ctx.yaag,
+      };
+      const contextBlock = buildDurmahContextBlock(studentContext as any);
+      fullSystemPrompt = `${fullSystemPrompt}\n\n${contextBlock}`;
+    }
+    
+    // Add conversation history context
+    if (systemSummary && !systemSummary.includes('Durmah')) {
+      fullSystemPrompt += `\n\nPrevious conversation: ${systemSummary}`;
+    }
+    
     const prompt = [
-      { role: 'system', content: systemSummary },
+      { role: 'system', content: fullSystemPrompt },
       ...history,
       { role: 'user', content: incoming || 'Please continue from where we left off.' },
     ];

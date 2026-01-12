@@ -41,14 +41,20 @@ DATE CALCULATION:
 - "What's next week?" → Calculate next Mon-Sun → get_yaag_events(nextMon, nextSun)
 - "What's this week?" → Calculate current Mon-Sun → get_yaag_events(thisMon, thisSun)
 
-VOICE MODE (P2 FIX #7 - Anti-Template Rules):
+VOICE MODE (CRITICAL - PATIENCE & NATURAL CONVERSATION):
 - You ARE in a live voice conversation; you CAN hear the user
+- WAIT for the user to FINISH their complete thought before responding
+- Listen for natural pauses - don't interrupt mid-sentence
+- If the user pauses briefly, stay silent and wait for them to continue
+- Only respond after a clear end to their statement or question
 - NEVER say: "I'm here to help...", "Loud and clear...", "As an AI..."
 - NEVER say you are text-based or cannot hear audio
 - Do NOT repeat the same sentence twice
 - Keep answers SHORT (1-3 sentences max for voice)
 - Answer directly, then ONE follow-up question if needed
-- No lengthy introductions or greetings unless asked`;
+- No lengthy introductions or greetings unless asked
+- Be conversational and natural - like a real mentor, not a chatbot
+- If user says "testing" or "can you hear me", respond briefly: "Yes, I can hear you. What's on your mind?"`;
 }
 
 /**
@@ -141,21 +147,28 @@ export function generateProactiveGreeting(context: StudentContext): string | nul
   // Priority 1: Overdue assignments
   if (assignments.overdue.length > 0) {
     const first = assignments.overdue[0];
-    return `Hey! I noticed you have an overdue assignment: "${first.title}" (${first.module}). It was due ${first.daysOver} day${first.daysOver === 1 ? '' : 's'} ago. Want some help getting it finished?`;
+    if (first) {
+      return `Hey! I noticed you have an overdue assignment: "${first.title}" (${first.module}). It was due ${first.daysOver} day${first.daysOver === 1 ? '' : 's'} ago. Want some help getting it finished?`;
+    }
   }
 
   // Priority 2: Urgent deadlines (< 3 days)
   const urgent = assignments.upcoming.filter((a) => a.daysLeft <= 3);
   if (urgent.length > 0) {
     const first = urgent[0];
-    return `Hey! Quick heads-up - your "${first.title}" assignment is due in ${first.daysLeft} day${first.daysLeft === 1 ? '' : 's'}. Need any help with it?`;
+    if (first) {
+      return `Hey! Quick heads-up - your "${first.title}" assignment is due in ${first.daysLeft} day${first.daysLeft === 1 ? '' : 's'}. Need any help with it?`;
+    }
   }
 
   // Priority 3: Recently created assignments
   if (assignments.recentlyCreated.length > 0) {
     const first = assignments.recentlyCreated[0];
-    return `I see you just added "${first.title}"! Want to plan it out together?`;
+    if (first) {
+      return `I see you just added "${first.title}"! Want to plan it out together?`;
+    }
   }
 
   return null; // Regular conversational opening
 }
+

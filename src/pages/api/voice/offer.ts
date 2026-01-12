@@ -78,6 +78,14 @@ export default async function handler(
         model: TRANSCRIPTION_MODEL,
         language: "en",
       },
+      // PATIENCE FIX: Make Durmah wait for user to finish speaking
+      turn_detection: {
+        type: "server_vad",
+        threshold: 0.6,           // Higher = less sensitive to speech (0.0-1.0)
+        prefix_padding_ms: 400,   // Audio to include before speech detected
+        silence_duration_ms: 1200, // Wait 1.2s of silence before responding (default ~500ms)
+        create_response: true,    // Auto-respond after detecting silence
+      },
     };
     if (requestedVoice && typeof requestedVoice === "string") {
       sessionPayload.voice = requestedVoice;
