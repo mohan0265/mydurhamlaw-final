@@ -247,7 +247,8 @@ wss.on("connection", (ws: WebSocket, req) => {
           console.log("No auth token. Using Anon mode.");
         }
 
-          // --- Connect Upstream ---
+        // --- Connect Upstream ---
+        try {
           const apiKey = process.env.GEMINI_API_KEY;
           let url = "";
           let headers: Record<string, string> = { "Content-Type": "application/json" };
