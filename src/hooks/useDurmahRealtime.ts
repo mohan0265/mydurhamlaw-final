@@ -395,24 +395,16 @@ export function useDurmahRealtime({
         console.debug("[DurmahVoice] Data channel open");
         setStatus("listening");
 
-        // Add current date/time to instructions for real-time awareness
-        const currentDateTime = new Date().toLocaleString('en-GB', { 
-          timeZone: 'Europe/London',
-          weekday: 'long',
-          year: 'numeric',
-          month: 'long',
-          day: 'numeric',
-          hour: '2-digit',
-          minute: '2-digit'
-        });
-        const enhancedInstructions = `${systemPrompt}\n\nCURRENT DATE & TIME: ${currentDateTime} (UK time)\nIMPORTANT: If user asks for today's date or time, tell them: "${currentDateTime}"`;
+        // NOTE: systemPrompt already contains TIMEZONE TRUTH block from server context
+        // No need to add date/time here - it would duplicate and confuse the model
+        const instructions = systemPrompt;
 
-        // Send session configuration (FIXED: removed duplicate tools key)
+        // Send session configuration
         dc.send(
           JSON.stringify({
             type: "session.update",
             session: {
-              instructions: enhancedInstructions,
+              instructions,
               tools: DURMAH_TOOLS,
               input_audio_transcription: {
                 model: TRANSCRIPTION_MODEL,

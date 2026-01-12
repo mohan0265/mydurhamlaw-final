@@ -68,26 +68,13 @@ export function buildDurmahContextBlock(context: StudentContext): string {
   // TIMEZONE TRUTH: Use academic.now if available, else fallback
   const nowText = academic?.now?.nowText || new Date(student.localTimeISO).toLocaleString('en-GB', { timeZone: 'Europe/London' });
   const todayKey = academic?.now?.dayKey || student.localTimeISO.substring(0, 10);
-  const timezone = academic?.timezone || 'Europe/London';
   
-  let block = `=== TIMEZONE TRUTH (CRITICAL) ===
-NOW: ${nowText}
-TODAY_KEY: ${todayKey}
-TIMEZONE: ${timezone}
-
-STRICT RULES:
-- When asked date/time/day, answer ONLY from NOW/TODAY_KEY above
-- NEVER infer time from your own clock or device timezone
-- If NOW is missing or stale, say: "I don't have the current time in context."
-- Do NOT say "I'm connected to everything" - instead cite what you actually have
-=====================================
-
-STUDENT PROFILE:
-Name: ${student.displayName}
-Year: ${student.yearGroup}
-Term: ${student.term}, Week ${student.weekOfTerm}
+  // Keep context block COMPACT for voice mode
+  let block = `NOW: ${nowText}
+STUDENT: ${student.displayName}, ${student.yearGroup}, ${student.term} Week ${student.weekOfTerm}
 
 `;
+
 
 
   // Upcoming deadlines

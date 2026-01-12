@@ -76,23 +76,14 @@ export default async function handler(
     const nowPacket = formatNowPacket(new Date(), DEFAULT_TZ);
     console.log(`[VoiceAPI] NOW: ${nowPacket.nowText}`);
     
+    // Keep voice session instructions SIMPLE - detailed context comes from session.update
     const enhancedInstructions = `${ENGLISH_SYSTEM_INSTRUCTION}
 
-=== TIMEZONE TRUTH (CRITICAL) ===
-NOW: ${nowPacket.nowText}
-TODAY_KEY: ${nowPacket.dayKey}
-TIMEZONE: ${DEFAULT_TZ}
+CURRENT TIME: ${nowPacket.nowText} (UK timezone)
+If asked the date/time, say: "${nowPacket.nowText}"
 
-STRICT DATE/TIME RULES:
-- When asked date/time/day, answer ONLY from NOW above
-- NEVER infer time from your own clock
-- Say exactly: "${nowPacket.nowText}"
-
-TRANSCRIPTION RULES:
-- ONLY transcribe English speech
-- If you hear unclear audio, ask user to repeat
-- NEVER output non-English text like Finnish, Turkish, Malay etc
-- If transcription seems wrong, respond with "I didn't quite catch that, could you repeat?"`;
+Keep responses SHORT (2-3 sentences for voice).
+ONLY transcribe English. Ask to repeat if unclear.`;
 
     const sessionPayload: Record<string, unknown> = {
       model: REALTIME_MODEL,
