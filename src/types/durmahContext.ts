@@ -65,5 +65,16 @@ export interface StudentContext {
       meta?: any;
     }>>;
   };
+  // LECTURES: Recent lecture recordings (metadata only)
+  lectures?: {
+    recent: Array<{
+      id: string;
+      title: string;
+      module_code?: string;
+      module_name?: string;
+      lecturer_name?: string;
+      lecture_date?: string;
+    }>;
+  };
 }
 

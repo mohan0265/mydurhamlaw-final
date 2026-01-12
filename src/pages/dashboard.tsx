@@ -19,6 +19,8 @@ import TodaysTasksWidget from '@/components/dashboard/TodaysTasksWidget';
 import { StudyFocusWidget } from '@/components/dashboard/StudyFocusWidget';
 import { QuickActionsWidget } from '@/components/dashboard/QuickActionsWidget';
 import MemoryJournalWidget from '@/components/dashboard/MemoryJournalWidget';
+import dynamic from 'next/dynamic';
+const MyLecturesWidget = dynamic(() => import('@/components/dashboard/MyLecturesWidget'), { ssr: false });
 import WellbeingTipWidget from '@/components/dashboard/WellbeingTipWidget';
 import { DurhamPortalCard } from '@/components/dashboard/DurhamPortalCard';
 
@@ -158,11 +160,14 @@ export default function Dashboard() {
                 <QuickActionsWidget />
               </div>
 
-               {/* Row 4 */}
-               <div className="lg:col-span-1">
+               {/* Row 4 - My Lectures + Memory Journal */}
+               <div>
+                 <MyLecturesWidget />
+               </div>
+               <div>
                  <MemoryJournalWidget />
                </div>
-               <div className="lg:col-span-2">
+               <div>
                  <WellbeingTipWidget />
                </div>
             </div>

@@ -221,6 +221,16 @@ export default async function handler(
       }));
     }
 
+    // FETCH: RECENT LECTURES (metadata only - no transcript blobs per ChatGPT advice)
+    const { data: recentLectures } = await supabaseClient
+      .from('lectures')
+      .select('id, title, module_code, module_name, lecturer_name, lecture_date, status')
+      .eq('user_id', user.id)
+      .eq('status', 'ready')
+      .order('lecture_date', { ascending: false, nullsFirst: false })
+      .limit(5);
+
+
     // Build response with TIMEZONE TRUTH embedded
     const studentContext: StudentContext = {
       student: {
@@ -253,9 +263,20 @@ export default async function handler(
         rangeEnd: toDate,
         itemsByDay: simplifiedItemsByDay,
       },
+      // LECTURES: Recent lecture recordings (metadata only, no transcript)
+      lectures: {
+        recent: (recentLectures || []).map(l => ({
+          id: l.id,
+          title: l.title,
+          module_code: l.module_code,
+          module_name: l.module_name,
+          lecturer_name: l.lecturer_name,
+          lecture_date: l.lecture_date,
+        })),
+      },
     };
 
-    console.log(`[context] ✓ SUCCESS: yaag events=${yaagEvents.length}, dates covered=${Object.keys(itemsByDay).length}, assignments=${studentContext.assignments.total}`);
+    console.log(`[context] ✓ SUCCESS: yaag=${yaagEvents.length}, assignments=${studentContext.assignments.total}, lectures=${recentLectures?.length || 0}`);
     
     return res.status(200).json(studentContext);
 

@@ -123,6 +123,7 @@ export default function GlobalHeader() {
       items: [
         { label: 'Year at a Glance', href: '/year-at-a-glance' },
         { label: 'Assignments', href: '/assignments' },
+        { label: 'My Lectures', href: '/study/lectures' },
         { label: 'Research Hub', href: '/research-hub' },
       ],
     }),

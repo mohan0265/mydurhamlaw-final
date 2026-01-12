@@ -139,6 +139,15 @@ STUDENT: ${student.displayName}, ${student.yearGroup}, ${student.term} Week ${st
     }
   }
 
+  // LECTURES: Recent lecture recordings (metadata only - no transcript in context)
+  if (context.lectures?.recent && context.lectures.recent.length > 0) {
+    block += `\n\n🎓 RECENT LECTURES:\n`;
+    context.lectures.recent.slice(0, 5).forEach(l => {
+      block += `- "${l.title}" (${l.module_code || l.module_name || 'Lecture'})${l.lecture_date ? ` - ${l.lecture_date}` : ''}\n`;
+    });
+    block += `(Student can ask about specific lectures - notes available in /study/lectures)\n`;
+  }
+
   block += `\nTotal assignments: ${assignments.total}`;
 
   return block;
