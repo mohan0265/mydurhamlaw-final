@@ -122,4 +122,20 @@ export type DurmahContextPacket = {
     assignmentId?: string;
     relevantData?: any;
   };
+  
+  // NEW: Lectures with summaries for Durmah to discuss
+  lectures?: {
+    recent: Array<{
+      id: string;
+      title: string;
+      module_code?: string;
+      module_name?: string;
+      lecturer_name?: string;
+      lecture_date?: string;
+      summary?: string;
+      key_points?: string[];
+      engagement_hooks?: string[];
+    }>;
+    total: number;
+  };
 };

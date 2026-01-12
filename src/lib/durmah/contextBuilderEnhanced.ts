@@ -82,6 +82,56 @@ export async function fetchAssignmentsContext(
   };
 }
 
+/**
+ * Fetch recent lectures with notes for Durmah to discuss
+ */
+export async function fetchLecturesContext(
+  supabase: SupabaseClient,
+  userId: string
+): Promise<{
+  recent: Array<{
+    id: string;
+    title: string;
+    module_code?: string;
+    module_name?: string;
+    lecturer_name?: string;
+    lecture_date?: string;
+    summary?: string;
+    key_points?: string[];
+    engagement_hooks?: string[];
+  }>;
+  total: number;
+}> {
+  // Fetch recent ready lectures with notes (summary + key points)
+  const { data: lectures } = await supabase
+    .from('lectures')
+    .select(`
+      id, title, module_code, module_name, lecturer_name, lecture_date,
+      lecture_notes (summary, key_points, engagement_hooks)
+    `)
+    .eq('user_id', userId)
+    .eq('status', 'ready')
+    .order('lecture_date', { ascending: false, nullsFirst: false })
+    .limit(5);
+
+  const recentLectures = (lectures || []).map(l => ({
+    id: l.id,
+    title: l.title,
+    module_code: l.module_code,
+    module_name: l.module_name,
+    lecturer_name: l.lecturer_name,
+    lecture_date: l.lecture_date,
+    summary: (l.lecture_notes as any)?.summary || undefined,
+    key_points: (l.lecture_notes as any)?.key_points || undefined,
+    engagement_hooks: (l.lecture_notes as any)?.engagement_hooks || undefined,
+  }));
+
+  return {
+    recent: recentLectures,
+    total: lectures?.length || 0,
+  };
+}
+
 export async function fetchAWYContext(
   supabase: SupabaseClient,
   userId: string
@@ -138,7 +188,7 @@ export async function fetchAWYContext(
 }
 
 /**
- * Enhance base context packet with assignments and AWY data
+ * Enhance base context packet with assignments, AWY data, and lectures
  */
 export async function enhanceDurmahContext(
   supabase: SupabaseClient,
@@ -146,14 +196,16 @@ export async function enhanceDurmahContext(
   baseContext: DurmahContextPacket
 ): Promise<DurmahContextPacket> {
   // Fetch enhanced context in parallel
-  const [assignments, awy] = await Promise.all([
+  const [assignments, awy, lectures] = await Promise.all([
     fetchAssignmentsContext(supabase, userId),
     fetchAWYContext(supabase, userId),
+    fetchLecturesContext(supabase, userId),
   ]);
 
   return {
     ...baseContext,
     assignments,
     awy,
+    lectures, // NEW: Include lectures with summaries for Durmah to discuss
   };
 }

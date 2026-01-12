@@ -159,13 +159,34 @@ STUDENT: ${student.displayName}, ${student.yearGroup}, ${student.term} Week ${st
     }
   }
 
-  // LECTURES: Recent lecture recordings (metadata only - no transcript in context)
+  // LECTURES: Recent lectures WITH content for Durmah to discuss
   if (context.lectures?.recent && context.lectures.recent.length > 0) {
-    block += `\n\n🎓 RECENT LECTURES:\n`;
-    context.lectures.recent.slice(0, 5).forEach(l => {
-      block += `- "${l.title}" (${l.module_code || l.module_name || 'Lecture'})${l.lecture_date ? ` - ${l.lecture_date}` : ''}\n`;
+    block += `\n\n🎓 MY LECTURES (Durmah can discuss these!):\n`;
+    context.lectures.recent.slice(0, 3).forEach((l: any) => {
+      block += `\n📚 "${l.title}" (${l.module_code || l.module_name || 'Lecture'})${l.lecture_date ? ` - ${l.lecture_date}` : ''}\n`;
+      
+      // Include summary if available
+      if (l.summary) {
+        block += `Summary: ${l.summary.substring(0, 300)}${l.summary.length > 300 ? '...' : ''}\n`;
+      }
+      
+      // Include key points if available
+      if (l.key_points && l.key_points.length > 0) {
+        block += `Key Points:\n`;
+        l.key_points.slice(0, 5).forEach((point: string) => {
+          block += `  • ${point}\n`;
+        });
+      }
+      
+      // Include engagement hooks if available
+      if (l.engagement_hooks && l.engagement_hooks.length > 0) {
+        block += `Discussion Hooks:\n`;
+        l.engagement_hooks.slice(0, 3).forEach((hook: string) => {
+          block += `  💡 ${hook}\n`;
+        });
+      }
     });
-    block += `(Student can ask about specific lectures - notes available in /study/lectures)\n`;
+    block += `\nYou can discuss ANY of these lectures with the student. Use the engagement hooks to spark interesting discussions!`;
   }
 
   block += `\nTotal assignments: ${assignments.total}`;

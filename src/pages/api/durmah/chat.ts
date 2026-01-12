@@ -155,6 +155,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           todaysClasses: ctx.schedule?.todaysClasses || [],
         },
         yaag: ctx.yaag,
+        // NEW: Include lectures so Durmah can discuss them
+        lectures: {
+          recent: (ctx.lectures?.recent || []).map((l: any) => ({
+            id: l.id,
+            title: l.title,
+            module_code: l.module_code,
+            module_name: l.module_name,
+            lecture_date: l.lecture_date,
+            // Include summary and key points so Durmah can discuss
+            summary: l.summary,
+            key_points: l.key_points,
+            engagement_hooks: l.engagement_hooks,
+          })),
+        },
       };
       const contextBlock = buildDurmahContextBlock(studentContext as any);
       fullSystemPrompt = `${fullSystemPrompt}\n\n${contextBlock}`;
