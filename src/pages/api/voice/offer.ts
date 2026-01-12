@@ -71,9 +71,31 @@ export default async function handler(
 
     console.log("[VoiceAPI] Creating OpenAI Realtime session...");
 
+    // Add current date/time for real-time awareness
+    const currentDateTime = new Date().toLocaleString('en-GB', { 
+      timeZone: 'Europe/London',
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+    
+    const enhancedInstructions = `${ENGLISH_SYSTEM_INSTRUCTION}
+
+CURRENT DATE & TIME: ${currentDateTime} (UK time)
+When user asks for today's date or current time, tell them exactly: "${currentDateTime}"
+
+TRANSCRIPTION RULES:
+- ONLY transcribe English speech
+- If you hear unclear audio, ask user to repeat
+- NEVER output non-English text like Finnish, Turkish, Malay etc
+- If transcription seems wrong, respond with "I didn't quite catch that, could you repeat?"`;
+
     const sessionPayload: Record<string, unknown> = {
       model: REALTIME_MODEL,
-      instructions: ENGLISH_SYSTEM_INSTRUCTION,
+      instructions: enhancedInstructions,
       input_audio_transcription: {
         model: TRANSCRIPTION_MODEL,
         language: "en",

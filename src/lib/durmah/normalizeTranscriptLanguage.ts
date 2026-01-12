@@ -1,9 +1,23 @@
 const ASCII_LETTERS = /[A-Za-z]/g;
+// Markers for common hallucinated languages (Malay, Finnish, Turkish, etc)
 const MALAY_MARKERS = /\b(saya|anda|akan|dengan|yang|tidak|boleh|kerana|jadi|berapa|terima kasih)\b/i;
+const FINNISH_MARKERS = /\b(vaikka|usein|tällainen|minä|sinä|hän|meidän|teidän|miksi|koska|olen|olet)\b/i;
+const TURKISH_MARKERS = /\b(gönül|sevmek|mecburiyetindeyiz|değil|için|ile|var|yok|ben|sen|biz)\b/i;
+const NON_ASCII_HEAVY = /[äöüßåøæñçğışüéèêëàâî]/gi;
 
 function isLikelyNonEnglish(text: string): boolean {
   if (!text) return false;
+  
+  // Check for known non-English language markers
   if (MALAY_MARKERS.test(text)) return true;
+  if (FINNISH_MARKERS.test(text)) return true;
+  if (TURKISH_MARKERS.test(text)) return true;
+  
+  // Check for excessive non-ASCII special characters
+  const nonAsciiCount = (text.match(NON_ASCII_HEAVY) || []).length;
+  if (nonAsciiCount > text.length * 0.15) return true;
+  
+  // Check ASCII letter ratio
   const letters = text.match(ASCII_LETTERS)?.length || 0;
   return letters / Math.max(text.length, 1) < 0.4;
 }

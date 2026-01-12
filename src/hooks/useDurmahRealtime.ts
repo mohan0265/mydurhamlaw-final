@@ -395,15 +395,26 @@ export function useDurmahRealtime({
         console.debug("[DurmahVoice] Data channel open");
         setStatus("listening");
 
-        // Send session configuration
+        // Add current date/time to instructions for real-time awareness
+        const currentDateTime = new Date().toLocaleString('en-GB', { 
+          timeZone: 'Europe/London',
+          weekday: 'long',
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+        const enhancedInstructions = `${systemPrompt}\n\nCURRENT DATE & TIME: ${currentDateTime} (UK time)\nIMPORTANT: If user asks for today's date or time, tell them: "${currentDateTime}"`;
+
+        // Send session configuration (FIXED: removed duplicate tools key)
         dc.send(
           JSON.stringify({
             type: "session.update",
             session: {
-              instructions: systemPrompt,
+              instructions: enhancedInstructions,
               tools: DURMAH_TOOLS,
               input_audio_transcription: {
-              tools: DURMAH_TOOLS,
                 model: TRANSCRIPTION_MODEL,
                 language: "en",
               },
