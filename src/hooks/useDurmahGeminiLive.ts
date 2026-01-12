@@ -19,8 +19,8 @@ function sanitizeModelId(raw?: string) {
     .replace(/^projects\/[^/]+\/locations\/[^/]+\/publishers\/[^/]+\/models\//, "");
 }
 
-// Force correct model to bypass stale Netlify Env Var (gemini-2.0 is still set there)
-const LIVE_MODEL_ID = "gemini-2.5-flash-native-audio";
+// Use env var if set, otherwise use default
+const LIVE_MODEL_ID = sanitizeModelId(RAW_LIVE_MODEL) || DEFAULT_LIVE_MODEL;
 
 type VoiceTurn = { speaker: "user" | "durmah"; text: string };
 
@@ -251,9 +251,9 @@ export function useDurmahGeminiLive({
                 model: LIVE_MODEL_ID,
                 generation_config: {
                     response_modalities: ["AUDIO", "TEXT"],
-                    // speech_config: {
-                    //      voice_config: { prebuilt_voice_config: { voice_name: "Puck" } }
-                    // }
+                    speech_config: {
+                         voice_config: { prebuilt_voice_config: { voice_name: "Puck" } }
+                    }
                 },
                 system_instruction: {
                     parts: [{ text: systemPrompt }]
