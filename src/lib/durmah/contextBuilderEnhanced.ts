@@ -80,6 +80,8 @@ export async function fetchAssignmentsContext(
     overdue: overdueAssignments,
     total: assignmentData?.length || 0,
   };
+}
+
 /**
  * Fetch recent lectures METADATA only for global Durmah context
  * Content (summary, key_points, engagement_hooks) fetched on-demand via tool
