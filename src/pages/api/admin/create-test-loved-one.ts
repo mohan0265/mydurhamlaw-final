@@ -1,4 +1,4 @@
-// API Route: Create Test Loved One Account
+// API Route: Create Test Loved One Account (or link existing account)
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { parse } from 'cookie';
 import { createHmac, randomBytes } from 'crypto';
@@ -53,51 +53,72 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const actualDisplayName = displayName || inputIdentifier;
 
   try {
-    // 1. Create auth user for loved one
-    const { data: authData, error: authError } = await adminClient.auth.admin.createUser({
-      email,
-      password: password || 'TestPass123!',
-      email_confirm: true,
-      user_metadata: {
-        display_name: actualDisplayName,
-        is_test_account: true,
-        original_identifier: inputIdentifier,
-      },
-    });
+    // 1. Check if user with this email already exists
+    const { data: { users: existingUsers } } = await adminClient.auth.admin.listUsers();
+    const existingUser = existingUsers?.find(u => u.email === email);
+    
+    let lovedUserId: string;
+    let isNewUser = false;
+    
+    if (existingUser) {
+      // User already exists - just use their ID
+      lovedUserId = existingUser.id;
+      console.log(`[create-loved-one] Using existing user ${email} (${lovedUserId})`);
+      
+      // Update profile to add loved_one role if not set
+      await adminClient
+        .from('profiles')
+        .upsert({
+          id: lovedUserId,
+          display_name: actualDisplayName,
+          user_role: 'loved_one', // This user is now also a loved one
+        }, { onConflict: 'id', ignoreDuplicates: false });
+    } else {
+      // Create new auth user for loved one
+      const { data: authData, error: authError } = await adminClient.auth.admin.createUser({
+        email,
+        password: password || 'TestPass123!',
+        email_confirm: true,
+        user_metadata: {
+          display_name: actualDisplayName,
+          is_test_account: true,
+          original_identifier: inputIdentifier,
+        },
+      });
 
-    if (authError || !authData.user) {
-      return res.status(400).json({ error: authError?.message || 'Failed to create auth user' });
+      if (authError || !authData.user) {
+        return res.status(400).json({ error: authError?.message || 'Failed to create auth user' });
+      }
+
+      lovedUserId = authData.user.id;
+      isNewUser = true;
+
+      // Create loved one profile
+      const { error: profileError } = await adminClient
+        .from('profiles')
+        .insert({
+          id: lovedUserId,
+          display_name: actualDisplayName,
+          user_role: 'loved_one',
+          is_test_account: true,
+        });
+
+      if (profileError) {
+        await adminClient.auth.admin.deleteUser(lovedUserId);
+        return res.status(400).json({ error: profileError.message });
+      }
     }
 
-    const lovedUserId = authData.user.id;
-
-    // 2. Create loved one profile (use 'id' column, not 'user_id')
-    const { data: profileData, error: profileError } = await adminClient
-      .from('profiles')
-      .insert({
-        id: lovedUserId,  // profiles table uses 'id' not 'user_id'
-        display_name: actualDisplayName,
-        user_role: 'loved_one',
-        is_test_account: true,
-      })
-      .select()
-      .single();
-
-    if (profileError) {
-      await adminClient.auth.admin.deleteUser(lovedUserId);
-      return res.status(400).json({ error: profileError.message });
-    }
-
-    // 3. Create AWY connection (include both email and loved_email for compatibility)
+    // 2. Create AWY connection (allows same loved one to connect to multiple students)
     const { data: connectionData, error: connectionError } = await adminClient
       .from('awy_connections')
       .insert({
         student_user_id: studentUserId,
-        student_id: studentUserId, // Compatibility column
+        student_id: studentUserId,
         loved_user_id: lovedUserId,
-        loved_one_id: lovedUserId, // Compatibility column
-        email: email,              // Required column
-        loved_email: email,        // Compatibility column
+        loved_one_id: lovedUserId,
+        email: email,
+        loved_email: email,
         relationship,
         nickname: nickname || actualDisplayName,
         status: 'granted',
@@ -108,22 +129,30 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .single();
 
     if (connectionError) {
-      // Rollback
-      await adminClient.from('profiles').delete().eq('id', lovedUserId);
-      await adminClient.auth.admin.deleteUser(lovedUserId);
+      // Rollback if new user was created
+      if (isNewUser) {
+        await adminClient.from('profiles').delete().eq('id', lovedUserId);
+        await adminClient.auth.admin.deleteUser(lovedUserId);
+      }
       return res.status(400).json({ error: connectionError.message });
     }
 
     const response: CreateTestLovedOneResponse = {
       userId: lovedUserId,
-      profileId: profileData.id,
+      profileId: lovedUserId,
       connectionId: connectionData.id,
       status: 'granted',
-      email, // Include the generated/actual email so admin knows how to login
+      email,
     };
 
-    return res.status(200).json(response);
+    return res.status(200).json({
+      ...response,
+      message: isNewUser 
+        ? `Created new loved one account: ${email}`
+        : `Linked existing user ${email} as loved one`
+    });
   } catch (error: any) {
     return res.status(500).json({ error: error.message || 'Internal server error' });
   }
 }
+

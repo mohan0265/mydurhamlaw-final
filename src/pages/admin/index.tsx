@@ -314,13 +314,24 @@ export default function AdminDashboard({ authorized, rows, users, connections, e
 
   // Open date picker modal for a user
   const openTrialDateEditor = (user: AdminRow) => {
-    const currentDate = user.trial_ends_at 
-      ? new Date(user.trial_ends_at).toISOString().split('T')[0]
-      : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]; // Default: 30 days from now
+    // Get current date string - use fallback for array index (TypeScript strict mode)
+    const getDateStr = (dt: Date): string => {
+      const parts = dt.toISOString().split('T');
+      return parts[0] || new Date().toISOString().slice(0, 10);
+    };
+    
+    const currentDate: string = user.trial_ends_at 
+      ? getDateStr(new Date(user.trial_ends_at))
+      : getDateStr(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)); // Default: 30 days from now
+    
+    // user.id is required in AdminRow
+    const userId: string = user.id;
+    const userName: string = user.display_name ?? user.email ?? 'User';
+    
     setEditingTrialUser({
-      id: user.user_id || user.id,
-      name: user.display_name || user.email || 'User',
-      currentDate
+      id: userId,
+      name: userName,
+      currentDate: currentDate
     });
     setNewTrialDate(currentDate);
   }
@@ -824,7 +835,7 @@ export default function AdminDashboard({ authorized, rows, users, connections, e
                     onClick={() => {
                       const date = new Date();
                       date.setDate(date.getDate() + days);
-                      setNewTrialDate(date.toISOString().split('T')[0]);
+                      setNewTrialDate(date.toISOString().slice(0, 10));
                     }}
                     className="px-3 py-1 text-xs bg-slate-100 hover:bg-slate-200 rounded transition"
                   >
