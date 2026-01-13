@@ -29,20 +29,29 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
       const { data: profile } = await supabase
         .from('profiles')
-        .select('created_at, trial_started_at, trial_ever_used')
+        .select('created_at, trial_started_at, trial_ends_at, trial_ever_used')
         .eq('id', user.id)
         .maybeSingle();
 
-      // Use trial_started_at if present; else use profile.created_at; else user.created_at
-      const trialStart =
-        (profile?.trial_started_at && new Date(profile.trial_started_at)) ||
-        (profile?.created_at && new Date(profile.created_at)) ||
-        (user.created_at && new Date(user.created_at)) ||
-        null;
+      // Use trial_ends_at from database if set (admin can customize trial length)
+      // Otherwise, calculate from trial_started_at + 14 days
+      let trialEndsAt: Date | null = null;
+      
+      if (profile?.trial_ends_at) {
+        // Admin has set a specific trial end date
+        trialEndsAt = new Date(profile.trial_ends_at);
+      } else {
+        // Calculate from trial start (legacy behavior)
+        const trialStart =
+          (profile?.trial_started_at && new Date(profile.trial_started_at)) ||
+          (profile?.created_at && new Date(profile.created_at)) ||
+          (user.created_at && new Date(user.created_at)) ||
+          null;
+        trialEndsAt = trialStart
+          ? new Date(trialStart.getTime() + 14 * 24 * 60 * 60 * 1000)
+          : null;
+      }
 
-      const trialEndsAt = trialStart
-        ? new Date(trialStart.getTime() + 14 * 24 * 60 * 60 * 1000)
-        : null;
       const inTrial = trialEndsAt ? new Date() < trialEndsAt : false;
       return {
         tier: 'free',
