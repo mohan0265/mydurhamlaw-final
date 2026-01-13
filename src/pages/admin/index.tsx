@@ -206,6 +206,9 @@ export default function AdminDashboard({ authorized, rows, users, connections, e
   const [filter, setFilter] = useState<'all' | 'test' | 'real'>('all')
   const [inviteResult, setInviteResult] = useState<any>(null)
   const [selectedStudent, setSelectedStudent] = useState<AdminRow | null>(null)
+  // Date picker modal state
+  const [editingTrialUser, setEditingTrialUser] = useState<{id: string, name: string, currentDate: string} | null>(null)
+  const [newTrialDate, setNewTrialDate] = useState('')
 
   const onInviteStudent = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -309,20 +312,34 @@ export default function AdminDashboard({ authorized, rows, users, connections, e
     }
   }
 
-  const setTrialDate = async (userId: string) => {
-    const dateStr = prompt("Enter new trial end date (YYYY-MM-DD):")
-    if (!dateStr) return
+  // Open date picker modal for a user
+  const openTrialDateEditor = (user: AdminRow) => {
+    const currentDate = user.trial_ends_at 
+      ? new Date(user.trial_ends_at).toISOString().split('T')[0]
+      : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]; // Default: 30 days from now
+    setEditingTrialUser({
+      id: user.user_id || user.id,
+      name: user.display_name || user.email || 'User',
+      currentDate
+    });
+    setNewTrialDate(currentDate);
+  }
+
+  // Submit the new trial date
+  const submitTrialDate = async () => {
+    if (!editingTrialUser || !newTrialDate) return;
     
     const res = await fetch("/api/admin/set-trial-date", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId, trialEndsAt: dateStr })
+      body: JSON.stringify({ userId: editingTrialUser.id, trialEndsAt: newTrialDate })
     })
     if (!res.ok) {
       const err = await res.json()
       alert(`Failed: ${err.error}`)
     } else {
       alert("Trial date updated")
+      setEditingTrialUser(null);
       window.location.reload()
     }
   }
@@ -522,8 +539,8 @@ export default function AdminDashboard({ authorized, rows, users, connections, e
                     </td>
                     <td className="px-3 py-2">
                       <div className="flex flex-wrap gap-1">
-                        <button onClick={() => extendTrial(r.user_id || r.id, 7)} className="text-blue-600 hover:underline text-xs">+7d</button>
-                        <button onClick={() => setTrialDate(r.user_id || r.id)} className="text-green-600 hover:underline text-xs">Edit</button>
+                        <button onClick={(e) => { e.stopPropagation(); extendTrial(r.user_id || r.id, 7); }} className="text-blue-600 hover:underline text-xs">+7d</button>
+                        <button onClick={(e) => { e.stopPropagation(); openTrialDateEditor(r); }} className="text-green-600 hover:underline text-xs">Edit</button>
                         {r.email && (
                           <button onClick={() => resetPassword(r.user_id || r.id, r.email!)} className="text-purple-600 hover:underline text-xs">🔑Reset</button>
                         )}
@@ -762,6 +779,75 @@ export default function AdminDashboard({ authorized, rows, users, connections, e
                 <button type="button" onClick={() => setShowCreateLovedOne(false)} className="px-4 py-2 bg-slate-200 rounded">Cancel</button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Trial Date Modal */}
+      {editingTrialUser && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-6 w-full max-w-sm">
+            <h3 className="text-lg font-bold mb-4">
+              Set Trial End Date
+              <span className="text-sm font-normal text-slate-500 block mt-1">
+                for {editingTrialUser.name}
+              </span>
+            </h3>
+            
+            <div className="space-y-4">
+              {/* Current date info */}
+              <div className="text-sm text-slate-600">
+                Current: <span className="font-mono">{editingTrialUser.currentDate}</span>
+              </div>
+              
+              {/* Date picker input */}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  New Trial End Date
+                </label>
+                <input
+                  type="date"
+                  value={newTrialDate}
+                  onChange={(e) => setNewTrialDate(e.target.value)}
+                  min={new Date().toISOString().split('T')[0]}
+                  className="w-full border border-slate-300 rounded-lg px-4 py-3 text-lg font-mono focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+
+              {/* Quick select buttons */}
+              <div className="flex flex-wrap gap-2">
+                <span className="text-xs text-slate-500 w-full">Quick select:</span>
+                {[7, 14, 30, 60, 90].map(days => (
+                  <button
+                    key={days}
+                    type="button"
+                    onClick={() => {
+                      const date = new Date();
+                      date.setDate(date.getDate() + days);
+                      setNewTrialDate(date.toISOString().split('T')[0]);
+                    }}
+                    className="px-3 py-1 text-xs bg-slate-100 hover:bg-slate-200 rounded transition"
+                  >
+                    +{days}d
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex gap-2 mt-6">
+              <button 
+                onClick={submitTrialDate}
+                className="flex-1 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition"
+              >
+                Save Date
+              </button>
+              <button 
+                onClick={() => setEditingTrialUser(null)}
+                className="px-4 py-2 bg-slate-200 rounded-lg hover:bg-slate-300 transition"
+              >
+                Cancel
+              </button>
+            </div>
           </div>
         </div>
       )}

@@ -50,7 +50,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         trial_ever_used: true,
         trial_started_at: new Date().toISOString(), // Ensure trial_started_at is set
       })
-      .eq('user_id', userId);
+      .eq('id', userId);  // profiles table uses 'id' not 'user_id'
 
     if (updateError) {
       return res.status(400).json({ error: updateError.message });
