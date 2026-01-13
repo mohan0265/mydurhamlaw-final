@@ -6,7 +6,6 @@ import { useRouter } from 'next/router';
 import { useAuth } from '@/lib/supabase/AuthContext';
 
 // Billing / trial
-import { TrialBanner } from '@/components/billing/TrialBanner';
 import { SubscriptionStatus } from '@/components/billing/SubscriptionStatus';
 import { BookOpen, FileText, Calendar, Target, User } from 'lucide-react';
 
@@ -76,20 +75,12 @@ export default function Dashboard() {
         {/* Signed-in: show trial + subscription status then widgets */}
         {user && (
           <>
-            {/* Trial + Subscription row */}
-            <div className="mb-8 grid grid-cols-1 lg:grid-cols-3 gap-4">
-              <div className="lg:col-span-2">
-                <TrialBanner
-                  userId={user.id}
-                  onUpgrade={() => router.push('/pricing')}
-                />
-              </div>
-              <div className="lg:col-span-1">
-                <SubscriptionStatus
-                  userId={user.id}
-                  onUpgrade={() => router.push('/pricing')}
-                />
-              </div>
+            {/* Subscription status - single consolidated view */}
+            <div className="mb-8">
+              <SubscriptionStatus
+                userId={user.id}
+                onUpgrade={() => router.push('/pricing')}
+              />
             </div>
 
             {/* Quick links row - Student workflow priority: Lectures > Assignments > YAAG > Exam Prep > Profile */}

@@ -76,7 +76,7 @@ function normalizeEvents(
       id: `ass-${ass.id}`,
       date: dateStr,
       title: ass.title,
-      dueTime,
+      start: dueTime,  // Use start for display in cards
       kind: 'assessment',
       allDay: false,
       meta: {
@@ -84,6 +84,8 @@ function normalizeEvents(
         module_code: ass.module_code,
         assignmentId: ass.id,
         assessment_type: ass.assessment_type,
+        dueTime,  // Store due time in meta
+        submissionUrl: 'https://blackboard.durham.ac.uk', // Default fallback for deep link
       }
     });
   }
@@ -186,9 +188,10 @@ export default function YAAGCalendarPage() {
   };
   
   const handleEventClick = (event: NormalizedEvent) => {
-    // Handle assignment clicks - navigate to assignment page
+    // Handle assignment clicks - navigate to assignment page with openAssessmentId
+    // This triggers the "Create Assignment from Deadline" flow in AssignmentsPage
     if (event.meta?.source === 'assignment' && event.meta.assignmentId) {
-      router.push(`/assignments?assignmentId=${event.meta.assignmentId}`);
+      router.push(`/assignments?openAssessmentId=${event.meta.assignmentId}`);
     }
     // Add other event type handling as needed
   };
@@ -262,6 +265,27 @@ export default function YAAGCalendarPage() {
             </div>
           </div>
           
+          {/* Empty state / Sync prompt */}
+          {!loading && events.length === 0 && (
+             <div className="mb-6 p-4 bg-gradient-to-r from-purple-100 to-indigo-100 rounded-xl border border-purple-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+               <div>
+                  <h3 className="font-bold text-purple-900 flex items-center gap-2">
+                    <Calendar className="w-4 h-4" />
+                    Your calendar looks empty
+                  </h3>
+                  <p className="text-sm text-purple-700 mt-1">
+                    Connect your MyTimetable and Blackboard calendars to see all your lectures and deadlines here.
+                  </p>
+               </div>
+               <button 
+                  onClick={() => router.push('/onboarding/sync-wizard')}
+                  className="px-4 py-2 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700 whitespace-nowrap shadow-sm transition-colors"
+               >
+                  Sync Calendars
+               </button>
+             </div>
+          )}
+
           {/* Calendar views */}
           {view === 'month' ? (
             <MonthViewDurham

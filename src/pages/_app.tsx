@@ -15,8 +15,6 @@ import { DurmahProvider, DurmahContextSetup } from '@/lib/durmah/context';
 import { loadMDLStudentContext } from '@/lib/supabase/supabaseBridge';
 import { Toaster } from 'react-hot-toast';
 import LayoutShell from '@/layout/LayoutShell';
-import { getSupabaseClient } from '@/lib/supabase/client';
-import { TrialBanner } from '@/components/billing/TrialBanner';
 import Router from 'next/router';
 import { isRouteAbortError } from '@/lib/navigation/safeNavigate';
 import { SupportWidget } from '@/components/support/SupportWidget';
@@ -46,23 +44,6 @@ const AppDurmahBootstrap: React.FC<{ children: React.ReactNode }> = ({
   return <>{children}</>;
 };
 
-// Trial banner wrapper (resolves user id)
-const GlobalTrialBanner: React.FC = () => {
-  const router = useRouter();
-  const [uid, setUid] = useState<string | null>(null);
-
-  useEffect(() => {
-    const supabase = getSupabaseClient();
-    if (!supabase) return;
-    supabase.auth
-      .getUser()
-      .then(({ data }) => setUid(data?.user?.id ?? null))
-      .catch(() => setUid(null));
-  }, []);
-
-  if (!uid) return null;
-  return <TrialBanner userId={uid} onUpgrade={() => router.push('/pricing')} />;
-};
 
 export default function App({ Component, pageProps }: AppProps) {
   const router = useRouter();
@@ -162,8 +143,6 @@ export default function App({ Component, pageProps }: AppProps) {
             <DurmahProvider>
               <DurmahContextSetup />
               <AppDurmahBootstrap>
-                {/* Global trial banner (auto-hides when not needed) */}
-                <GlobalTrialBanner />
 
                 <LayoutShell>
                   <Component {...pageProps} />
