@@ -250,9 +250,35 @@ export async function buildDurmahContext(req: any): Promise<
     .order('start_time', { ascending: true })
     .limit(10);
 
+  // Also fetch user_events from ICS import (normalized to same format)
+  const { data: userEvents } = await supabase
+    .from('user_events')
+    .select('title, start_at, end_at, location, module_code, source')
+    .eq('user_id', user.id)
+    .gte('start_at', now.toISOString())
+    .lte('start_at', twoWeeksFromNow.toISOString())
+    .order('start_at', { ascending: true })
+    .limit(10);
+
+  // Normalize user_events to same format as timetable_events
+  const normalizedUserEvents = (userEvents || []).map((e: any) => ({
+    title: e.title,
+    start_time: e.start_at,
+    end_time: e.end_at,
+    location: e.location,
+    module_code: e.module_code,
+    source: e.source || 'ics',
+  }));
+
+  // Merge and sort all events by start time
+  const allEvents = [...(timetableEvents || []), ...normalizedUserEvents]
+    .sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime())
+    .slice(0, 15); // Keep top 15 events
+
   // Data confidence: determine timetable source and profile completeness
-  const timetableDataSource = timetableEvents && timetableEvents.length > 0
-    ? (timetableEvents.every((e: any) => e.source?.startsWith('dev-')) ? 'dev-seed' : 'user')
+  const hasIcsEvents = normalizedUserEvents.length > 0;
+  const timetableDataSource = allEvents.length > 0
+    ? (hasIcsEvents ? 'user' : (allEvents.every((e: any) => e.source?.startsWith('dev-')) ? 'dev-seed' : 'user'))
     : 'none';
 
   const profileCompleteness = {
@@ -264,15 +290,17 @@ export async function buildDurmahContext(req: any): Promise<
   };
 
   const timetableMeta = {
-    hasEvents: (timetableEvents?.length || 0) > 0,
+    hasEvents: allEvents.length > 0,
     dataSource: timetableDataSource as 'dev-seed' | 'user' | 'none',
     isVerified: timetableDataSource === 'user',
     verificationUrl: '/profile-timetable',
+    icsImported: hasIcsEvents,
+
   };
 
 
   // Build schedule summary with Durham timezone formatting
-  const schedule = timetableEvents ? (() => {
+  const schedule = allEvents.length > 0 ? (() => {
     const timezone = academic.timezone || DEFAULT_TIMEZONE;
     
     // Helper to format time in Durham timezone
@@ -297,15 +325,15 @@ export async function buildDurmahContext(req: any): Promise<
       }).format(date);
     };
 
-    const nextClass = timetableEvents[0] ? {
-      title: timetableEvents[0].title,
-      start: timetableEvents[0].start_time,
-      end: timetableEvents[0].end_time,
-      location: timetableEvents[0].location || undefined,
-      label: `${timetableEvents[0].title} • ${formatDayTime(timetableEvents[0].start_time)}${timetableEvents[0].location ? ` • ${timetableEvents[0].location}` : ''}`,
+    const nextClass = allEvents[0] ? {
+      title: allEvents[0].title,
+      start: allEvents[0].start_time,
+      end: allEvents[0].end_time,
+      location: allEvents[0].location || undefined,
+      label: `${allEvents[0].title} • ${formatDayTime(allEvents[0].start_time)}${allEvents[0].location ? ` • ${allEvents[0].location}` : ''}`,
     } : null;
 
-    const today = timetableEvents.filter(e => {
+    const today = allEvents.filter(e => {
       const eventDate = new Date(e.start_time);
       const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
       const todayEnd = new Date(todayStart.getTime() + 24 * 60 * 60 * 1000);
@@ -318,7 +346,7 @@ export async function buildDurmahContext(req: any): Promise<
       label: `${e.title} • ${formatTime(e.start_time)}${e.location ? ` • ${e.location}` : ''}`,
     }));
 
-    const weekPreview = timetableEvents.slice(0, 6).map(e => ({
+    const weekPreview = allEvents.slice(0, 6).map(e => ({
       title: e.title,
       start: e.start_time,
       end: e.end_time,

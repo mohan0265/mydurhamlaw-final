@@ -44,3 +44,6 @@ supabase/.branches/
 
 Uploads/
 
+# --- Personal test data ---
+data/*.ics
+

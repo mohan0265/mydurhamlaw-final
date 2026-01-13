@@ -146,15 +146,16 @@ export default function CalendarImportPage() {
                   📥 How to download your Blackboard calendar file:
                 </h4>
                 <ol className="text-sm text-blue-800 space-y-1 list-decimal list-inside">
-                  <li>Go to Blackboard → Calendar (left sidebar)</li>
-                  <li>Click "Calendar Settings" (gear icon)</li>
-                  <li>Click "Share calendar" button</li>
-                  <li>Click the calendar link to download the .ics file</li>
-                  <li>Upload the downloaded file above</li>
+                  <li>Login to <strong>DU Hub</strong> (duo.dur.ac.uk) → click <strong>Blackboard</strong></li>
+                  <li>Click <strong>Calendar</strong> in the left sidebar</li>
+                  <li>Click the <strong>gear icon</strong> (⚙️) in the top right</li>
+                  <li>Click <strong>"Get External Link"</strong> or <strong>"Share Calendar"</strong></li>
+                  <li>Right-click the webcal link → <strong>"Save Link As..."</strong> → save as <strong>.ics</strong></li>
+                  <li>Upload the saved file above</li>
                 </ol>
                 <div className="mt-3 pt-3 border-t border-blue-200">
                   <p className="text-xs text-blue-700">
-                    <strong>💫 Pro tip:</strong> Download and re-upload anytime to refresh your calendar with the latest changes from Blackboard.
+                    <strong>💫 Pro tip:</strong> Download and re-upload anytime to refresh your calendar with the latest deadlines from Blackboard.
                   </p>
                 </div>
               </div>
