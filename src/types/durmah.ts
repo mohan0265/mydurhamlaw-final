@@ -123,7 +123,7 @@ export type DurmahContextPacket = {
     relevantData?: any;
   };
   
-  // NEW: Lectures with summaries for Durmah to discuss
+  // Lectures metadata only for global context (content fetched on-demand via tool)
   lectures?: {
     recent: Array<{
       id: string;
@@ -132,9 +132,7 @@ export type DurmahContextPacket = {
       module_name?: string;
       lecturer_name?: string;
       lecture_date?: string;
-      summary?: string;
-      key_points?: string[];
-      engagement_hooks?: string[];
+      status: string;
     }>;
     total: number;
   };

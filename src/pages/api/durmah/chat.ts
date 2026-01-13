@@ -155,7 +155,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           todaysClasses: ctx.schedule?.todaysClasses || [],
         },
         yaag: ctx.yaag,
-        // NEW: Include lectures so Durmah can discuss them
+        // Lectures metadata only - content fetched on-demand via tool
         lectures: {
           recent: (ctx.lectures?.recent || []).map((l: any) => ({
             id: l.id,
@@ -163,10 +163,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             module_code: l.module_code,
             module_name: l.module_name,
             lecture_date: l.lecture_date,
-            // Include summary and key points so Durmah can discuss
-            summary: l.summary,
-            key_points: l.key_points,
-            engagement_hooks: l.engagement_hooks,
+            status: l.status,
           })),
         },
       };

@@ -80,10 +80,9 @@ export async function fetchAssignmentsContext(
     overdue: overdueAssignments,
     total: assignmentData?.length || 0,
   };
-}
-
 /**
- * Fetch recent lectures with notes for Durmah to discuss
+ * Fetch recent lectures METADATA only for global Durmah context
+ * Content (summary, key_points, engagement_hooks) fetched on-demand via tool
  */
 export async function fetchLecturesContext(
   supabase: SupabaseClient,
@@ -96,19 +95,14 @@ export async function fetchLecturesContext(
     module_name?: string;
     lecturer_name?: string;
     lecture_date?: string;
-    summary?: string;
-    key_points?: string[];
-    engagement_hooks?: string[];
+    status: string;
   }>;
   total: number;
 }> {
-  // Fetch recent ready lectures with notes (summary + key points)
+  // Fetch recent lectures - METADATA ONLY (no notes join)
   const { data: lectures } = await supabase
     .from('lectures')
-    .select(`
-      id, title, module_code, module_name, lecturer_name, lecture_date,
-      lecture_notes (summary, key_points, engagement_hooks)
-    `)
+    .select('id, title, module_code, module_name, lecturer_name, lecture_date, status')
     .eq('user_id', userId)
     .eq('status', 'ready')
     .order('lecture_date', { ascending: false, nullsFirst: false })
@@ -121,9 +115,8 @@ export async function fetchLecturesContext(
     module_name: l.module_name,
     lecturer_name: l.lecturer_name,
     lecture_date: l.lecture_date,
-    summary: (l.lecture_notes as any)?.summary || undefined,
-    key_points: (l.lecture_notes as any)?.key_points || undefined,
-    engagement_hooks: (l.lecture_notes as any)?.engagement_hooks || undefined,
+    status: l.status,
+    // NO summary, key_points, engagement_hooks here - fetch on demand
   }));
 
   return {

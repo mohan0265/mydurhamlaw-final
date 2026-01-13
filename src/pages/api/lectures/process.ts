@@ -131,7 +131,7 @@ export default async function handler(
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { lectureId } = req.body;
+  const { lectureId, force } = req.body;
   if (!lectureId) {
     return res.status(400).json({ error: 'lectureId is required' });
   }
@@ -157,10 +157,19 @@ export default async function handler(
       return res.status(404).json({ error: 'Lecture not found' });
     }
 
-    // Check if already processed
-    if (lecture.status === 'ready') {
+    // IDEMPOTENCY: Skip if already processed (unless force=true)
+    if (lecture.status === 'ready' && !force) {
       return res.status(200).json({ message: 'Already processed', lecture });
     }
+
+    // Clear any previous error and mark processing start
+    await supabase
+      .from('lectures')
+      .update({ 
+        error_message: null,
+        last_processed_at: new Date().toISOString(),
+      })
+      .eq('id', lectureId);
 
     // Use service role for storage access
     const serviceSupabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY!);
@@ -275,6 +284,21 @@ export default async function handler(
 
   } catch (error: any) {
     console.error('[lectures/process] Error:', error);
+    
+    // Save error to database for visibility
+    try {
+      const supabase = createPagesServerClient({ req, res });
+      await supabase
+        .from('lectures')
+        .update({ 
+          status: 'error',
+          error_message: error.message || 'Unknown processing error',
+        })
+        .eq('id', req.body.lectureId);
+    } catch (dbError) {
+      console.error('[lectures/process] Failed to save error to DB:', dbError);
+    }
+    
     return res.status(500).json({ error: error.message || 'Internal server error' });
   }
 }

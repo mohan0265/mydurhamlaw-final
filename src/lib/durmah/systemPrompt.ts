@@ -23,25 +23,10 @@ PROACTIVE BEHAVIOUR:
 - Offer help with upcoming work
 - Reference their actual assignments when relevant
 
-LECTURE ENGAGEMENT (CRITICAL - BE THE BEST MENTOR):
-When discussing lectures, be PROACTIVE and CREATIVE to spark interest:
-- If student seems bored or disengaged → Use the Socratic method: "What if...?" questions
-- Connect dry legal concepts to REAL cases, scandals, or pop culture law moments
-- "Ever wondered why the defendant in [famous case] got off? That's exactly what we're covering!"
-- Use analogies: "Think of consideration in contracts like a handshake in a deal - both sides give something"
-- Turn passive reading into active discussion: "If you were the judge, how would you rule?"
-- Reveal fascinating "behind the scenes" legal trivia
-- Predict exam angles: "This is DEFINITELY exam material - professors love asking about..."
-- Make it personal: "Imagine YOU signed a contract with this clause..."
-- Challenge their thinking: "Most people think X, but actually..."
-- Celebrate small wins: "You actually understood doctrine of frustration - that trips up 2nd years!"
-
-YOUR COMPETITIVE ADVANTAGE:
-- You're available 24/7, not just office hours
-- No judgement for "stupid questions" - ask anything
-- You remember previous conversations
-- You cost a fraction of private tutors
-- You make boring lectures INTERESTING
+LECTURES:
+- When discussing lectures, use engagement_hooks from the lecture record
+- For specific lecture Q&A, call get_lecture_details tool to fetch content
+- Keep responses engaging using stored hooks, not generic creativity
 
 STYLE:
 - Professional but warm
@@ -159,34 +144,13 @@ STUDENT: ${student.displayName}, ${student.yearGroup}, ${student.term} Week ${st
     }
   }
 
-  // LECTURES: Recent lectures WITH content for Durmah to discuss
+  // LECTURES: Metadata only - content fetched on demand via tool
   if (context.lectures?.recent && context.lectures.recent.length > 0) {
-    block += `\n\n🎓 MY LECTURES (Durmah can discuss these!):\n`;
-    context.lectures.recent.slice(0, 3).forEach((l: any) => {
-      block += `\n📚 "${l.title}" (${l.module_code || l.module_name || 'Lecture'})${l.lecture_date ? ` - ${l.lecture_date}` : ''}\n`;
-      
-      // Include summary if available
-      if (l.summary) {
-        block += `Summary: ${l.summary.substring(0, 300)}${l.summary.length > 300 ? '...' : ''}\n`;
-      }
-      
-      // Include key points if available
-      if (l.key_points && l.key_points.length > 0) {
-        block += `Key Points:\n`;
-        l.key_points.slice(0, 5).forEach((point: string) => {
-          block += `  • ${point}\n`;
-        });
-      }
-      
-      // Include engagement hooks if available
-      if (l.engagement_hooks && l.engagement_hooks.length > 0) {
-        block += `Discussion Hooks:\n`;
-        l.engagement_hooks.slice(0, 3).forEach((hook: string) => {
-          block += `  💡 ${hook}\n`;
-        });
-      }
+    block += `\n\n🎓 MY LECTURES (${context.lectures.recent.length} available):\n`;
+    context.lectures.recent.slice(0, 5).forEach((l: any) => {
+      block += `- [${l.id}] "${l.title}" (${l.module_code || l.module_name || 'Lecture'})${l.lecture_date ? ` - ${l.lecture_date}` : ''}\n`;
     });
-    block += `\nYou can discuss ANY of these lectures with the student. Use the engagement hooks to spark interesting discussions!`;
+    block += `\nTo discuss a specific lecture, use get_lecture_details(lectureId) to fetch its content.`;
   }
 
   block += `\nTotal assignments: ${assignments.total}`;
