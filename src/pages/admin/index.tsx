@@ -205,6 +205,7 @@ export default function AdminDashboard({ authorized, rows, users, connections, e
   const [showCreateLovedOne, setShowCreateLovedOne] = useState(false)
   const [filter, setFilter] = useState<'all' | 'test' | 'real'>('all')
   const [inviteResult, setInviteResult] = useState<any>(null)
+  const [selectedStudent, setSelectedStudent] = useState<AdminRow | null>(null)
 
   const onInviteStudent = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -354,6 +355,22 @@ export default function AdminDashboard({ authorized, rows, users, connections, e
     }
   }
 
+  // Remove AWY connection
+  const removeConnection = async (connectionId: string) => {
+    const res = await fetch("/api/admin/remove-awy-connection", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ connectionId })
+    })
+    if (!res.ok) {
+      const err = await res.json()
+      alert(`Failed: ${err.error}`)
+    } else {
+      alert("Connection removed")
+      window.location.reload()
+    }
+  }
+
   const students = rows.filter(r => r.user_role === 'student')
   const filteredRows = 
     filter === 'all' 
@@ -422,11 +439,27 @@ export default function AdminDashboard({ authorized, rows, users, connections, e
         </div>
 
         {/* Profiles Table */}
-        <h2 className="text-lg font-semibold text-slate-800 mb-2">Profiles ({filteredRows.length})</h2>
+        <div className="flex items-center justify-between mb-2">
+          <h2 className="text-lg font-semibold text-slate-800">
+            Profiles ({filteredRows.length})
+            <span className="text-sm font-normal text-slate-500 ml-2">
+              [Test: {rows.filter(r => r.is_test_account).length} | Real: {rows.filter(r => !r.is_test_account).length}]
+            </span>
+          </h2>
+          {selectedStudent && (
+            <button 
+              onClick={() => setSelectedStudent(null)}
+              className="text-sm text-blue-600 hover:underline"
+            >
+              ✕ Clear Selection
+            </button>
+          )}
+        </div>
         <div className="overflow-auto border border-slate-100 rounded-xl mb-8">
           <table className="min-w-full text-sm">
             <thead className="bg-slate-100">
               <tr>
+                <th className="text-left px-2 py-2 w-10">#</th>
                 <th className="text-left px-3 py-2">Email</th>
                 <th className="text-left px-3 py-2">Name</th>
                 <th className="text-left px-3 py-2">Role</th>
@@ -438,10 +471,20 @@ export default function AdminDashboard({ authorized, rows, users, connections, e
               </tr>
             </thead>
             <tbody>
-              {filteredRows.map((r) => {
+              {filteredRows.map((r, index) => {
                 const daysLeft = getDaysLeft(r.trial_ends_at);
+                const isSelected = selectedStudent?.id === r.id;
                 return (
-                  <tr key={r.id} className="border-t border-slate-100">
+                  <tr 
+                    key={r.id} 
+                    onClick={() => setSelectedStudent(isSelected ? null : r)}
+                    className={`border-t border-slate-100 cursor-pointer transition-colors ${
+                      isSelected 
+                        ? 'bg-blue-50 border-l-4 border-l-blue-500' 
+                        : 'hover:bg-slate-50'
+                    }`}
+                  >
+                    <td className="px-2 py-2 text-center text-slate-400 font-mono">{index + 1}</td>
                     <td className="px-3 py-2">
                       <div className="flex flex-col gap-1">
                         <div className="flex items-center gap-2">
@@ -497,28 +540,92 @@ export default function AdminDashboard({ authorized, rows, users, connections, e
         </div>
 
         {/* AWY Connections */}
-        <h2 className="text-lg font-semibold text-slate-800 mb-2">AWY Connections ({connections.length})</h2>
+        <div className="flex items-center justify-between mb-2">
+          <h2 className="text-lg font-semibold text-slate-800">
+            {selectedStudent 
+              ? `AWY Connections for ${selectedStudent.display_name || selectedStudent.email}` 
+              : 'AWY Connections (All)'}
+            <span className="text-sm font-normal text-slate-500 ml-2">
+              ({selectedStudent 
+                ? connections.filter(c => c.studentEmail === selectedStudent.email).length 
+                : connections.length})
+            </span>
+          </h2>
+          {selectedStudent && (
+            <button
+              onClick={() => {
+                // Pre-select this student in the Create Loved One modal
+                setShowCreateLovedOne(true)
+              }}
+              className="px-3 py-1 bg-green-600 text-white rounded text-sm font-semibold hover:bg-green-700"
+            >
+              + Add Loved One for {selectedStudent.display_name || 'Student'}
+            </button>
+          )}
+        </div>
         <div className="overflow-auto border border-slate-100 rounded-xl">
           <table className="min-w-full text-sm">
             <thead className="bg-slate-100">
               <tr>
+                <th className="text-left px-2 py-2 w-10">#</th>
                 <th className="text-left px-3 py-2">Student</th>
                 <th className="text-left px-3 py-2">Loved One</th>
                 <th className="text-left px-3 py-2">Relationship</th>
                 <th className="text-left px-3 py-2">Status</th>
                 <th className="text-left px-3 py-2">Created</th>
+                <th className="text-left px-3 py-2">Actions</th>
               </tr>
             </thead>
             <tbody>
-              {connections.map((c) => (
-                <tr key={c.id} className="border-t border-slate-100">
-                  <td className="px-3 py-2">{c.studentEmail}</td>
-                  <td className="px-3 py-2">{c.lovedEmail}</td>
-                  <td className="px-3 py-2">{c.relationship}</td>
-                  <td className="px-3 py-2">{c.status}</td>
-                  <td className="px-3 py-2">{new Date(c.createdAt).toLocaleDateString()}</td>
-                </tr>
-              ))}
+              {(() => {
+                const filteredConns = selectedStudent 
+                  ? connections.filter(c => c.studentEmail === selectedStudent.email)
+                  : connections;
+                
+                if (filteredConns.length === 0) {
+                  return (
+                    <tr>
+                      <td colSpan={7} className="px-3 py-8 text-center text-slate-400">
+                        {selectedStudent 
+                          ? `No loved ones connected for ${selectedStudent.display_name || selectedStudent.email}`
+                          : 'No AWY connections yet'}
+                      </td>
+                    </tr>
+                  );
+                }
+                
+                return filteredConns.map((c, index) => (
+                  <tr key={c.id} className="border-t border-slate-100">
+                    <td className="px-2 py-2 text-center text-slate-400 font-mono">{index + 1}</td>
+                    <td className="px-3 py-2">{c.studentEmail}</td>
+                    <td className="px-3 py-2">{c.lovedEmail}</td>
+                    <td className="px-3 py-2">{c.relationship}</td>
+                    <td className="px-3 py-2">
+                      <span className={`px-2 py-0.5 rounded text-xs font-semibold ${
+                        c.status === 'active' ? 'bg-green-100 text-green-800' :
+                        c.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                        'bg-gray-100 text-gray-800'
+                      }`}>
+                        {c.status}
+                      </span>
+                    </td>
+                    <td className="px-3 py-2">{new Date(c.createdAt).toLocaleDateString()}</td>
+                    <td className="px-3 py-2">
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (confirm(`Remove ${c.lovedEmail} as loved one for ${c.studentEmail}?`)) {
+                            removeConnection(c.id);
+                          }
+                        }}
+                        className="text-red-600 hover:underline text-xs"
+                      >
+                        Remove
+                      </button>
+                    </td>
+                  </tr>
+                ));
+              })()}
             </tbody>
           </table>
         </div>
@@ -627,12 +734,15 @@ export default function AdminDashboard({ authorized, rows, users, connections, e
       {showCreateLovedOne && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl p-6 w-full max-w-md">
-            <h3 className="text-lg font-bold mb-4">Create Test Loved One</h3>
+            <h3 className="text-lg font-bold mb-4">
+              Create Test Loved One 
+              {selectedStudent && <span className="text-sm font-normal text-slate-500 ml-2">for {selectedStudent.display_name || selectedStudent.email}</span>}
+            </h3>
             <form onSubmit={onCreateLovedOne} className="space-y-3">
               <input name="email" placeholder="Email or Test ID (e.g. TestMom)" className="w-full border rounded px-3 py-2" required />
               <input name="displayName" placeholder="Display Name" className="w-full border rounded px-3 py-2" required />
               <p className="text-xs text-gray-500 -mt-2">Non-email IDs get auto-generated login emails</p>
-              <select name="studentUserId" className="w-full border rounded px-3 py-2" required>
+              <select name="studentUserId" className="w-full border rounded px-3 py-2" required defaultValue={selectedStudent?.id || ''}>
                 <option value="">Link to Student</option>
                 {students.map(s => (
                   <option key={s.id} value={s.id}>{s.email} ({s.display_name})</option>
