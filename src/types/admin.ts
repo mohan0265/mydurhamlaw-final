@@ -55,4 +55,5 @@ export type CreateTestLovedOneResponse = {
   profileId: string;
   connectionId: string;
   status: string;
+  email: string;  // The login email (may be auto-generated for non-email IDs)
 };

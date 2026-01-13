@@ -1,7 +1,7 @@
 // API Route: Create Test Loved One Account
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { parse } from 'cookie';
-import { createHmac } from 'crypto';
+import { createHmac, randomBytes } from 'crypto';
 import { getSupabaseAdmin } from '@/lib/server/supabaseAdmin';
 import type { CreateTestLovedOneRequest, CreateTestLovedOneResponse } from '@/types/admin';
 
@@ -12,6 +12,17 @@ function expectedToken() {
   const adminPass = process.env.ADMIN_PASSWORD;
   if (!adminUser || !adminPass) return null;
   return createHmac('sha256', adminPass).update(adminUser).digest('hex');
+}
+
+// Generate a valid fake email for non-email test IDs
+function generateTestEmail(identifier: string): string {
+  const slug = identifier
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '')
+    .substring(0, 30);
+  const random = randomBytes(4).toString('hex');
+  return `${slug}_${random}@test.mydurhamlaw.local`;
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -30,11 +41,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(500).json({ error: 'Server misconfigured' });
   }
 
-  const { email, displayName, studentUserId, relationship, nickname, password }: CreateTestLovedOneRequest = req.body;
+  const { email: inputIdentifier, displayName, studentUserId, relationship, nickname, password }: CreateTestLovedOneRequest = req.body;
 
-  if (!email || !displayName || !studentUserId || !relationship) {
+  if (!inputIdentifier || !displayName || !studentUserId || !relationship) {
     return res.status(400).json({ error: 'Missing required fields' });
   }
+
+  // Support non-email identifiers by auto-generating fake email
+  const isRealEmail = inputIdentifier.includes('@');
+  const email = isRealEmail ? inputIdentifier : generateTestEmail(inputIdentifier);
+  const actualDisplayName = displayName || inputIdentifier;
 
   try {
     // 1. Create auth user for loved one
@@ -43,7 +59,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       password: password || 'TestPass123!',
       email_confirm: true,
       user_metadata: {
-        display_name: displayName,
+        display_name: actualDisplayName,
+        is_test_account: true,
+        original_identifier: inputIdentifier,
       },
     });
 
@@ -53,13 +71,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const lovedUserId = authData.user.id;
 
-    // 2. Create loved one profile (email is in auth.users, not profiles!)
+    // 2. Create loved one profile (use 'id' column, not 'user_id')
     const { data: profileData, error: profileError } = await adminClient
       .from('profiles')
       .insert({
-        user_id: lovedUserId,
-        display_name: displayName,
-        // REMOVED: email (not a column in profiles table!)
+        id: lovedUserId,  // profiles table uses 'id' not 'user_id'
+        display_name: actualDisplayName,
         user_role: 'loved_one',
         is_test_account: true,
       })
@@ -71,23 +88,28 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(400).json({ error: profileError.message });
     }
 
-    // 3. Create AWY connection
+    // 3. Create AWY connection (include both email and loved_email for compatibility)
     const { data: connectionData, error: connectionError } = await adminClient
       .from('awy_connections')
       .insert({
         student_user_id: studentUserId,
+        student_id: studentUserId, // Compatibility column
         loved_user_id: lovedUserId,
-        loved_email: email,
+        loved_one_id: lovedUserId, // Compatibility column
+        email: email,              // Required column
+        loved_email: email,        // Compatibility column
         relationship,
-        nickname: nickname || displayName,
+        nickname: nickname || actualDisplayName,
         status: 'granted',
+        invited_at: new Date().toISOString(),
+        accepted_at: new Date().toISOString(),
       })
       .select()
       .single();
 
     if (connectionError) {
       // Rollback
-      await adminClient.from('profiles').delete().eq('user_id', lovedUserId);
+      await adminClient.from('profiles').delete().eq('id', lovedUserId);
       await adminClient.auth.admin.deleteUser(lovedUserId);
       return res.status(400).json({ error: connectionError.message });
     }
@@ -97,6 +119,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       profileId: profileData.id,
       connectionId: connectionData.id,
       status: 'granted',
+      email, // Include the generated/actual email so admin knows how to login
     };
 
     return res.status(200).json(response);

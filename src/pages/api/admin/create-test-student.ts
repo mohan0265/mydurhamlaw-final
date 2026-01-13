@@ -1,7 +1,7 @@
 // API Route: Create Test Student Account
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { parse } from 'cookie';
-import { createHmac } from 'crypto';
+import { createHmac, randomBytes } from 'crypto';
 import { getSupabaseAdmin } from '@/lib/server/supabaseAdmin';
 import type { CreateTestStudentRequest, CreateTestStudentResponse } from '@/types/admin';
 
@@ -12,6 +12,17 @@ function expectedToken() {
   const adminPass = process.env.ADMIN_PASSWORD;
   if (!adminUser || !adminPass) return null;
   return createHmac('sha256', adminPass).update(adminUser).digest('hex');
+}
+
+// Generate a valid fake email for non-email test IDs
+function generateTestEmail(identifier: string): string {
+  const slug = identifier
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '')
+    .substring(0, 30);
+  const random = randomBytes(4).toString('hex');
+  return `${slug}_${random}@test.mydurhamlaw.local`;
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -31,20 +42,27 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(500).json({ error: 'Server misconfigured' });
   }
 
-  const { email, displayName, yearGroup, password }: CreateTestStudentRequest = req.body;
+  const { email: inputIdentifier, displayName, yearGroup, password }: CreateTestStudentRequest = req.body;
 
-  if (!email || !displayName || !yearGroup) {
+  if (!inputIdentifier || !displayName || !yearGroup) {
     return res.status(400).json({ error: 'Missing required fields' });
   }
+
+  // Support non-email identifiers by auto-generating fake email
+  const isRealEmail = inputIdentifier.includes('@');
+  const email = isRealEmail ? inputIdentifier : generateTestEmail(inputIdentifier);
+  const actualDisplayName = displayName || inputIdentifier;
 
   try {
     // 1. Create auth user
     const { data: authData, error: authError } = await adminClient.auth.admin.createUser({
       email,
-      password: password ||'TestPass123!',
+      password: password || 'TestPass123!',
       email_confirm: true,
       user_metadata: {
-        display_name: displayName,
+        display_name: actualDisplayName,
+        is_test_account: true,
+        original_identifier: inputIdentifier,
       },
     });
 
@@ -54,9 +72,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const userId = authData.user.id;
 
-    // 2. Calculate trial end (14 days from now)
+    // 2. Calculate trial end (30 days from now)
     const now = new Date();
-    const trialEnds = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
+    const trialEnds = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
 
 
     // 4. Create profile with trial
@@ -64,7 +82,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .from('profiles')
       .upsert({
         id: userId, // profiles table uses 'id' not 'user_id'
-        display_name: displayName,
+        display_name: actualDisplayName,
         user_role: 'student',
         year_group: yearGroup,
         year_of_study: yearGroup,

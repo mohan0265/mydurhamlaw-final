@@ -248,7 +248,7 @@ export default function AdminDashboard({ authorized, rows, users, connections, e
       alert(`Failed: ${err.error}`)
     } else {
       const data = await res.json()
-      alert(`Student created! Password: ${password || 'TestPass123!'}\nTrial ends: ${data.trialEndsAt}`)
+      alert(`Student created!\n\nLogin Email: ${data.email}\nPassword: ${password || 'TestPass123!'}\nTrial ends: ${new Date(data.trialEndsAt).toLocaleDateString()}\n\nShare these credentials with the test user.`)
       window.location.reload()
     }
   }
@@ -272,7 +272,8 @@ export default function AdminDashboard({ authorized, rows, users, connections, e
       const err = await res.json()
       alert(`Failed: ${err.error}`)
     } else {
-      alert(`Loved one created and linked!`)
+      const data = await res.json()
+      alert(`Loved one created and linked!\n\nLogin Email: ${data.email}\nPassword: TestPass123!\n\nShare these credentials with the loved one.`)
       window.location.reload()
     }
   }
@@ -550,8 +551,9 @@ export default function AdminDashboard({ authorized, rows, users, connections, e
           <div className="bg-white rounded-xl p-6 w-full max-w-md">
             <h3 className="text-lg font-bold mb-4">Create Test Student (Password)</h3>
             <form onSubmit={onCreateStudent} className="space-y-3">
-              <input name="email" placeholder="Email" className="w-full border rounded px-3 py-2" required />
+              <input name="email" placeholder="Email or Test ID (e.g. TestUser1)" className="w-full border rounded px-3 py-2" required />
               <input name="displayName" placeholder="Display Name" className="w-full border rounded px-3 py-2" required />
+              <p className="text-xs text-gray-500 -mt-2">Non-email IDs get auto-generated login emails</p>
               <select name="yearGroup" className="w-full border rounded px-3 py-2" required>
                 <option value="">Select Year</option>
                 <option value="foundation">Foundation</option>
@@ -581,8 +583,9 @@ export default function AdminDashboard({ authorized, rows, users, connections, e
           <div className="bg-white rounded-xl p-6 w-full max-w-md">
             <h3 className="text-lg font-bold mb-4">Create Test Loved One</h3>
             <form onSubmit={onCreateLovedOne} className="space-y-3">
-              <input name="email" placeholder="Email" className="w-full border rounded px-3 py-2" required />
+              <input name="email" placeholder="Email or Test ID (e.g. TestMom)" className="w-full border rounded px-3 py-2" required />
               <input name="displayName" placeholder="Display Name" className="w-full border rounded px-3 py-2" required />
+              <p className="text-xs text-gray-500 -mt-2">Non-email IDs get auto-generated login emails</p>
               <select name="studentUserId" className="w-full border rounded px-3 py-2" required>
                 <option value="">Link to Student</option>
                 {students.map(s => (
