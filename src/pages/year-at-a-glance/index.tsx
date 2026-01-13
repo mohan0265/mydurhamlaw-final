@@ -151,16 +151,10 @@ export default function YearAtAGlancePage() {
 
         <div className="flex items-center gap-3">
           <Link
-            href="/year-at-a-glance/month"
-            className="px-4 py-2 rounded-xl bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 text-sm font-medium transition-colors"
+            href="/year-at-a-glance/calendar"
+            className="px-4 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-purple-700 text-white hover:from-purple-700 hover:to-purple-800 text-sm font-medium transition-all shadow-md hover:shadow-lg"
           >
-            Month View
-          </Link>
-          <Link
-            href="/year-at-a-glance/week"
-            className="px-4 py-2 rounded-xl bg-purple-600 text-white hover:bg-purple-700 text-sm font-medium transition-colors"
-          >
-            Week View
+            📅 Open Calendar View
           </Link>
         </div>
       </div>
