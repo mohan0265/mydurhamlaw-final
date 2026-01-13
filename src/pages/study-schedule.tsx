@@ -50,7 +50,8 @@ export default function StudySchedulePage() {
   const [calendarView, setCalendarView] = useState<'week' | 'month' | 'year'>('week')
   const [userModules, setUserModules] = useState<AcademicModule[]>([])
   
-  // Current week state
+  // Current date state for calendar navigation
+  const [currentDate, setCurrentDate] = useState(new Date())
   const [currentWeek, setCurrentWeek] = useState(new Date())
   
   // Dynamic timetable data based on user's academic modules
@@ -91,12 +92,25 @@ export default function StudySchedulePage() {
     return events
   }
 
-  // Sample calendar events
+  // Dynamic calendar events based on current date
+  const getUpcomingDates = () => {
+    const today = new Date();
+    const d1 = new Date(today); d1.setDate(today.getDate() + 3);
+    const d2 = new Date(today); d2.setDate(today.getDate() + 7);
+    const d3 = new Date(today); d3.setDate(today.getDate() + 14);
+    return {
+      essay: d1.toISOString().split('T')[0],
+      study: d2.toISOString().split('T')[0],
+      exam: d3.toISOString().split('T')[0],
+    };
+  };
+  const upcomingDates = getUpcomingDates();
+  
   const [calendarEvents] = useState<CalendarEvent[]>([
     {
       id: '1',
       title: 'Contract Law Essay Due',
-      date: '2024-07-26',
+      date: upcomingDates.essay,
       startTime: '23:59',
       endTime: '23:59',
       type: 'assignment',
@@ -106,7 +120,7 @@ export default function StudySchedulePage() {
     {
       id: '2',
       title: 'Study Session - Tort Cases',
-      date: '2024-07-25',
+      date: upcomingDates.study,
       startTime: '15:00',
       endTime: '17:00',
       type: 'study',
@@ -116,7 +130,7 @@ export default function StudySchedulePage() {
     {
       id: '3',
       title: 'Midterm Exam - Constitutional Law',
-      date: '2024-07-30',
+      date: upcomingDates.exam,
       startTime: '09:00',
       endTime: '12:00',
       type: 'exam',
@@ -440,11 +454,19 @@ export default function StudySchedulePage() {
                 <CardTitle className="flex items-center justify-between">
                   <span>Calendar - {calendarView.charAt(0).toUpperCase() + calendarView.slice(1)} View</span>
                   <div className="flex items-center gap-2">
-                    <button className="p-2 hover:bg-gray-100 rounded-lg">
+                    <button
+                      onClick={() => setCurrentDate(new Date(currentDate.setMonth(currentDate.getMonth() - 1)))}
+                      className="p-2 hover:bg-gray-100 rounded-lg"
+                    >
                       <ChevronLeft className="w-4 h-4" />
                     </button>
-                    <span className="text-sm font-medium px-3">July 2024</span>
-                    <button className="p-2 hover:bg-gray-100 rounded-lg">
+                    <span className="text-sm font-medium px-3">
+                      {currentDate.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })}
+                    </span>
+                    <button
+                      onClick={() => setCurrentDate(new Date(currentDate.setMonth(currentDate.getMonth() + 1)))}
+                      className="p-2 hover:bg-gray-100 rounded-lg"
+                    >
                       <ChevronRight className="w-4 h-4" />
                     </button>
                     <button className="flex items-center gap-2 px-3 py-1 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors ml-4">
@@ -514,11 +536,12 @@ export default function StudySchedulePage() {
                     </div>
                     <div className="grid grid-cols-7 gap-1 sm:gap-2">
                       {Array.from({ length: 35 }, (_, i) => {
-                        const date = new Date(2024, 6, 1) // July 2024
-                        date.setDate(date.getDate() + i - 6) // Adjust for month start
+                        const monthStart = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1)
+                        const date = new Date(monthStart)
+                        date.setDate(date.getDate() + i - monthStart.getDay()) // Adjust for month start day
                         const dateStr = date.toISOString().split('T')[0]
                         const dayEvents = calendarEvents.filter(event => event.date === dateStr)
-                        const isCurrentMonth = date.getMonth() === 6
+                        const isCurrentMonth = date.getMonth() === currentDate.getMonth()
                         
                         return (
                           <div key={i} className={`border border-gray-200 rounded p-1 min-h-[40px] sm:min-h-[60px] ${
@@ -548,7 +571,7 @@ export default function StudySchedulePage() {
                       return (
                         <div key={monthIndex} className="border border-gray-200 rounded-lg p-2 sm:p-3">
                           <div className="text-center font-medium text-gray-800 mb-2 text-sm">
-                            {monthNames[monthIndex]} 2024
+                            {monthNames[monthIndex]} {currentDate.getFullYear()}
                           </div>
                           <div className="grid grid-cols-7 gap-0.5 sm:gap-1 text-xs">
                             {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map(day => (
