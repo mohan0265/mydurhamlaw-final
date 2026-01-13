@@ -8,6 +8,7 @@ import { useAuth } from '@/lib/supabase/AuthContext';
 // Billing / trial
 import { TrialBanner } from '@/components/billing/TrialBanner';
 import { SubscriptionStatus } from '@/components/billing/SubscriptionStatus';
+import { BookOpen, FileText, Calendar, Target, User } from 'lucide-react';
 
 // Existing widgets
 import GreetingWidget from '@/components/dashboard/GreetingWidget';
@@ -91,41 +92,41 @@ export default function Dashboard() {
               </div>
             </div>
 
-            {/* Quick links row - Student workflow priority: Lectures → Assignments → YAAG → Exam Prep → Profile */}
+            {/* Quick links row - Student workflow priority: Lectures > Assignments > YAAG > Exam Prep > Profile */}
             <div className="mb-8 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
               <Link
                 href="/study/lectures"
                 className="rounded-xl border bg-purple-50 p-4 text-sm font-bold text-purple-800 hover:bg-purple-100 border-purple-100 transition-colors flex items-center gap-2"
                 title="My lecture recordings and notes"
               >
-                📚 My Lectures
+                <BookOpen className="w-4 h-4" /> My Lectures
               </Link>
               <Link
                 href="/assignments"
                 className="rounded-xl border bg-orange-50 p-4 text-sm font-bold text-orange-800 hover:bg-orange-100 border-orange-100 transition-colors flex items-center gap-2"
                 title="View and manage your assignments"
               >
-                📝 Assignments
+                <FileText className="w-4 h-4" /> Assignments
               </Link>
               <Link
                 href="/year-at-a-glance"
                 className="rounded-xl border bg-blue-50 p-4 text-sm font-medium text-blue-800 hover:bg-blue-100 border-blue-100 transition-colors flex items-center gap-2"
               >
-                📅 Year-at-a-Glance
+                <Calendar className="w-4 h-4" /> Year-at-a-Glance
               </Link>
               <Link
                 href="/study-schedule"
                 className="rounded-xl border bg-green-50 p-4 text-sm font-medium text-green-800 hover:bg-green-100 border-green-100 transition-colors flex items-center gap-2"
                 title="Exam preparation and study schedule"
               >
-                🎯 Exam Prep
+                <Target className="w-4 h-4" /> Exam Prep
               </Link>
               <Link
                 href="/profile-timetable"
                 className="rounded-xl border bg-gray-50 p-4 text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors flex items-center gap-2"
                 title="Setup your profile and timetable"
               >
-                👤 Profile
+                <User className="w-4 h-4" /> Profile
               </Link>
             </div>
 
