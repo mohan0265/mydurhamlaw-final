@@ -113,7 +113,27 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   } catch (error: any) {
     console.error('Invite error:', error);
-    return res.status(500).json({ error: error.message || 'Failed to create invitation' });
+    
+    // Check for common issues
+    const errorMessage = error.message || 'Failed to create invitation';
+    
+    // Handle missing table
+    if (errorMessage.includes('relation') && errorMessage.includes('does not exist')) {
+      return res.status(500).json({ 
+        error: 'Database not configured. Please run the student_invitations migration.',
+        details: 'Table student_invitations does not exist'
+      });
+    }
+    
+    // Handle constraint violations
+    if (error.code === '23514') {
+      return res.status(400).json({ 
+        error: 'Invalid year group. Must be: foundation, year1, year2, or year3',
+        details: errorMessage
+      });
+    }
+    
+    return res.status(500).json({ error: errorMessage });
   }
 }
 

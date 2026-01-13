@@ -326,6 +326,33 @@ export default function AdminDashboard({ authorized, rows, users, connections, e
     }
   }
 
+  // Copy email to clipboard
+  const copyEmail = async (email: string) => {
+    try {
+      await navigator.clipboard.writeText(email)
+      alert(`Copied to clipboard:\n${email}`)
+    } catch {
+      // Fallback for older browsers
+      prompt("Copy this email:", email)
+    }
+  }
+
+  // Reset password for a user
+  const resetPassword = async (userId: string, email: string) => {
+    if (!confirm(`Send password reset email to ${email}?`)) return
+    
+    const res = await fetch("/api/admin/reset-password", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId, email })
+    })
+    if (!res.ok) {
+      const err = await res.json()
+      alert(`Failed: ${err.error}`)
+    } else {
+      alert(`Password reset email sent to ${email}`)
+    }
+  }
 
   const students = rows.filter(r => r.user_role === 'student')
   const filteredRows = 
@@ -416,8 +443,22 @@ export default function AdminDashboard({ authorized, rows, users, connections, e
                 return (
                   <tr key={r.id} className="border-t border-slate-100">
                     <td className="px-3 py-2">
-                      {r.email || '-'}
-                      {r.is_test_account && <span className="ml-2 text-xs bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded">TEST</span>}
+                      <div className="flex flex-col gap-1">
+                        <div className="flex items-center gap-2">
+                          <span className={r.is_test_account ? 'font-mono text-xs bg-yellow-50 px-2 py-1 rounded border border-yellow-200' : ''}>
+                            {r.email || '-'}
+                          </span>
+                          {r.is_test_account && <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded font-semibold">TEST</span>}
+                        </div>
+                        {r.is_test_account && r.email && (
+                          <button 
+                            onClick={() => copyEmail(r.email!)}
+                            className="text-xs text-blue-600 hover:underline flex items-center gap-1 w-fit"
+                          >
+                            📋 Copy Login Email
+                          </button>
+                        )}
+                      </div>
                     </td>
                     <td className="px-3 py-2">{r.display_name || '-'}</td>
                     <td className="px-3 py-2">{r.user_role || '-'}</td>
@@ -436,12 +477,17 @@ export default function AdminDashboard({ authorized, rows, users, connections, e
                         </span>
                       ) : '-'}
                     </td>
-                    <td className="px-3 py-2 space-x-2">
-                      <button onClick={() => extendTrial(r.user_id || r.id, 7)} className="text-blue-600 hover:underline text-xs">+7d</button>
-                      <button onClick={() => setTrialDate(r.user_id || r.id)} className="text-green-600 hover:underline text-xs">Edit</button>
-                      {r.is_test_account && (
-                        <button onClick={() => deleteAccount(r.user_id || r.id)} className="text-red-600 hover:underline text-xs">Del</button>
-                      )}
+                    <td className="px-3 py-2">
+                      <div className="flex flex-wrap gap-1">
+                        <button onClick={() => extendTrial(r.user_id || r.id, 7)} className="text-blue-600 hover:underline text-xs">+7d</button>
+                        <button onClick={() => setTrialDate(r.user_id || r.id)} className="text-green-600 hover:underline text-xs">Edit</button>
+                        {r.email && (
+                          <button onClick={() => resetPassword(r.user_id || r.id, r.email!)} className="text-purple-600 hover:underline text-xs">🔑Reset</button>
+                        )}
+                        {r.is_test_account && (
+                          <button onClick={() => deleteAccount(r.user_id || r.id)} className="text-red-600 hover:underline text-xs">Del</button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 );
