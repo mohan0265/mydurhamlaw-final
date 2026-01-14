@@ -152,6 +152,23 @@ const MonthPage: React.FC = () => {
         </div>
       )}
 
+      {/* Onboarding hint when no events */}
+      {!loading && events.length === 0 && !error && (
+        <div className="max-w-5xl mx-auto px-4 mb-4">
+          <div className="bg-purple-50 border border-purple-100 rounded-xl px-4 py-3 flex items-center justify-between gap-4">
+            <p className="text-sm text-purple-700">
+              📅 <span className="font-medium">No events yet!</span> Import your calendar to see lectures and deadlines.
+            </p>
+            <a 
+              href="/onboarding/calendar"
+              className="text-sm font-medium text-purple-600 hover:text-purple-800 whitespace-nowrap"
+            >
+              Import →
+            </a>
+          </div>
+        </div>
+      )}
+
       <MonthGrid
         yearKey={year}
         ym={ym}

@@ -123,33 +123,90 @@ export default function YearAtAGlancePage() {
 
   // Check if user has imported data
   const hasData = events.length > 0 || assessments.length > 0;
+  
+  // Check if onboarding banner should be shown (stored in localStorage)
+  const [showOnboardingBanner, setShowOnboardingBanner] = useState(true);
+  
+  useEffect(() => {
+    const dismissed = localStorage.getItem('yaag_onboarding_dismissed');
+    if (dismissed) {
+      // Re-show banner after 3 days
+      const dismissedAt = parseInt(dismissed, 10);
+      const threeDays = 3 * 24 * 60 * 60 * 1000;
+      if (Date.now() - dismissedAt < threeDays) {
+        setShowOnboardingBanner(false);
+      }
+    }
+  }, []);
 
-  if (!hasData) {
-    return (
-      <div className="max-w-4xl mx-auto px-4 py-20">
-        <EmptyState
-          icon={<Calendar size={48} />}
-          title="No Calendar Data Yet"
-          description="Import your Blackboard calendar to see your year at a glance with all modules, lectures, and assignment deadlines."
-          actionLabel="Import Calendar"
-          actionHref="/onboarding/calendar"
-        />
-      </div>
-    );
-  }
+  const dismissOnboardingBanner = () => {
+    localStorage.setItem('yaag_onboarding_dismissed', Date.now().toString());
+    setShowOnboardingBanner(false);
+  };
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8 relative">
+      {/* Onboarding Banner - shown when no data and not dismissed */}
+      {!hasData && showOnboardingBanner && (
+        <div className="mb-6 bg-gradient-to-r from-purple-50 to-indigo-50 border border-purple-200 rounded-2xl p-5 relative">
+          <button
+            onClick={dismissOnboardingBanner}
+            className="absolute top-3 right-3 text-gray-400 hover:text-gray-600 p-1"
+            title="Dismiss"
+          >
+            ×
+          </button>
+          <div className="flex flex-col md:flex-row md:items-center gap-4">
+            <div className="flex-shrink-0">
+              <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
+                <Calendar className="w-6 h-6 text-purple-600" />
+              </div>
+            </div>
+            <div className="flex-grow">
+              <h3 className="font-bold text-gray-900 text-lg">📅 Make YAAG Your Study Powerhouse!</h3>
+              <p className="text-sm text-gray-600 mt-1">
+                Import your Blackboard calendar to see all your lectures, seminars and deadlines at a glance. 
+                Don't have it yet? No worries - explore the structure first!
+              </p>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-2 flex-shrink-0">
+              <Link
+                href="/onboarding/calendar"
+                className="px-5 py-2.5 bg-purple-600 text-white rounded-xl font-semibold text-sm hover:bg-purple-700 transition-colors text-center"
+              >
+                Import Calendar
+              </Link>
+              <button
+                onClick={dismissOnboardingBanner}
+                className="px-5 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-xl font-medium text-sm hover:bg-gray-50 transition-colors"
+              >
+                Set Up Later
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Year at a Glance</h1>
           <p className="text-sm text-gray-600 mt-1">
-            Academic Year 2025-26 • {events.length} events, {assessments.length} assessments imported
+            {hasData 
+              ? `Academic Year 2025-26 • ${events.length} events, ${assessments.length} assessments imported`
+              : 'Academic Year 2025-26 • Explore your academic year structure'}
           </p>
         </div>
 
         <div className="flex items-center gap-3">
+          {!hasData && (
+            <Link
+              href="/onboarding/calendar"
+              className="px-4 py-2 rounded-xl border border-purple-200 text-purple-600 bg-white hover:bg-purple-50 text-sm font-medium transition-all"
+            >
+              ➕ Import Calendar
+            </Link>
+          )}
           <Link
             href="/year-at-a-glance/calendar"
             className="px-4 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-purple-700 text-white hover:from-purple-700 hover:to-purple-800 text-sm font-medium transition-all shadow-md hover:shadow-lg"
@@ -159,12 +216,22 @@ export default function YearAtAGlancePage() {
         </div>
       </div>
 
-      {/* Eagle-Eye 3-Term Layout */}
+      {/* Eagle-Eye 3-Term Layout - Always shown, even if empty */}
       <YearView
         userYearOfStudy={userYearOfStudy}
         userEvents={events}
         userAssessments={assessments}
       />
+
+      {/* Empty state hint (shown inside the view when no data) */}
+      {!hasData && (
+        <div className="mt-6 text-center bg-white/80 backdrop-blur-sm rounded-xl py-4 px-6 border border-gray-100 max-w-md mx-auto">
+          <p className="text-sm text-gray-500">
+            💡 <span className="font-medium">Tip:</span> Click on any week to see details. 
+            Once you import your calendar, events will appear in their respective weeks.
+          </p>
+        </div>
+      )}
 
       {/* Footer Note */}
       <div className="mt-8 text-center">
