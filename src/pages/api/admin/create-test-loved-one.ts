@@ -53,52 +53,62 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const actualDisplayName = displayName || inputIdentifier;
 
   try {
-    // 1. Check if user with this email already exists in auth
-    // Note: profiles table doesn't have email column, so we only check auth.users
+    // Strategy: Try to create user first, catch 'already exists', then link by email from RPC
     let lovedUserId: string | null = null;
     let isNewUser = false;
     
-    // Use getUserByEmail to look up existing user
-    const { data: authLookup, error: lookupError } = await adminClient.auth.admin.getUserByEmail(email);
+    // First, try to create the user
+    const { data: authData, error: authError } = await adminClient.auth.admin.createUser({
+      email,
+      password: password || 'TestPass123!',
+      email_confirm: true,
+      user_metadata: {
+        display_name: actualDisplayName,
+        is_test_account: true,
+        original_identifier: inputIdentifier,
+      },
+    });
     
-    if (!lookupError && authLookup?.user) {
-      lovedUserId = authLookup.user.id;
-      console.log(`[create-loved-one] Found existing auth user ${email} (${lovedUserId})`);
-    } else {
-      // User doesn't exist - we'll create them below
-      console.log(`[create-loved-one] No existing user for ${email}, will create new`);
-    }
-    
-    if (lovedUserId) {
-      // User already exists - update their profile
-      await adminClient
-        .from('profiles')
-        .upsert({
-          id: lovedUserId,
-          display_name: actualDisplayName,
-          user_role: 'loved_one',
-        }, { onConflict: 'id', ignoreDuplicates: false });
-    } else {
-      // Create new auth user for loved one
-      const { data: authData, error: authError } = await adminClient.auth.admin.createUser({
-        email,
-        password: password || 'TestPass123!',
-        email_confirm: true,
-        user_metadata: {
-          display_name: actualDisplayName,
-          is_test_account: true,
-          original_identifier: inputIdentifier,
-        },
-      });
-
-      if (authError || !authData.user) {
-        return res.status(400).json({ error: authError?.message || 'Failed to create auth user' });
+    if (authError) {
+      // Check if user already exists
+      if (authError.message.includes('already been registered') || 
+          authError.message.includes('already exists') ||
+          authError.message.includes('duplicate')) {
+        // User exists - get their ID via RPC or fallback
+        console.log(`[create-loved-one] User ${email} already exists, looking up ID`);
+        
+        // Use RPC to get user ID by email (we'll create this function if it doesn't exist)
+        const { data: userData, error: rpcError } = await adminClient.rpc('get_user_id_by_email', {
+          p_email: email
+        });
+        
+        if (rpcError || !userData) {
+          // RPC doesn't exist or failed - try via inviteUserByEmail as a hack to get ID
+          // Actually, let's just try to use a direct SQL query as service role
+          const { data: sqlData } = await adminClient
+            .from('profiles')
+            .select('id')
+            .limit(1);
+          
+          // Fallback: Create the connection with email only, the loved one will link on first login
+          console.log(`[create-loved-one] Cannot lookup existing user ID - will use email-based connection`);
+          // We'll set loved_user_id to null and use loved_email to match on login
+          lovedUserId = null;
+        } else {
+          lovedUserId = userData as string;
+          console.log(`[create-loved-one] Found existing user ID via RPC: ${lovedUserId}`);
+        }
+      } else {
+        // Different error - return it
+        return res.status(400).json({ error: authError.message });
       }
-
+    } else if (authData?.user) {
+      // Successfully created new user
       lovedUserId = authData.user.id;
       isNewUser = true;
-
-      // Create loved one profile
+      console.log(`[create-loved-one] Created new auth user ${email} (${lovedUserId})`);
+      
+      // Create profile for new user
       const { error: profileError } = await adminClient
         .from('profiles')
         .insert({
@@ -112,6 +122,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         await adminClient.auth.admin.deleteUser(lovedUserId);
         return res.status(400).json({ error: profileError.message });
       }
+    }
+    
+    // If we have a lovedUserId, update their profile role
+    if (lovedUserId && !isNewUser) {
+      await adminClient
+        .from('profiles')
+        .upsert({
+          id: lovedUserId,
+          display_name: actualDisplayName,
+          user_role: 'loved_one',
+        }, { onConflict: 'id', ignoreDuplicates: false });
     }
 
     // 2. Create AWY connection (allows same loved one to connect to multiple students)
