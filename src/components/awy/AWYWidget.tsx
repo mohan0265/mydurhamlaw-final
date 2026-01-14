@@ -508,6 +508,8 @@ export default function AWYWidget() {
   }
 
   // 1. Closed Launcher (Pill Style)
+  const hasOnlineLovedOnes = connections.some(c => c.isAvailable)
+  
   if (!isOpen) {
     return (
       <div className="fixed bottom-6 right-6 z-[55] flex flex-col items-end group">
@@ -515,28 +517,43 @@ export default function AWYWidget() {
         <div className="absolute right-full mr-4 top-1/2 -translate-y-1/2 w-max opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none translate-x-2 group-hover:translate-x-0">
           <div className="bg-gray-900/90 backdrop-blur-sm text-white text-xs py-2.5 px-4 rounded-xl shadow-xl border border-white/10">
             <div className="font-bold mb-0.5 text-pink-200">Always With You</div>
-            <div className="text-gray-300">See when your loved ones are online.</div>
+            <div className="text-gray-300">
+              {hasOnlineLovedOnes 
+                ? '💚 Your loved one is online!' 
+                : 'See when your loved ones are online.'}
+            </div>
           </div>
           {/* Arrow */}
           <div className="absolute top-1/2 -translate-y-1/2 -right-1.5 w-3 h-3 bg-gray-900/90 rotate-45 border-t border-r border-white/10"></div>
         </div>
 
+        {/* Pulsing glow ring when loved ones are online */}
+        {hasOnlineLovedOnes && (
+          <div className="absolute inset-0 rounded-full bg-green-400/30 animate-ping pointer-events-none" style={{ animationDuration: '2s' }}></div>
+        )}
+
         <button
           onClick={() => setIsOpen(true)}
-          className="flex items-center gap-3 pl-2 pr-5 py-2 rounded-full shadow-xl backdrop-blur-md transition-all duration-300 hover:-translate-y-1 hover:ring-2 hover:ring-pink-400/50 bg-gradient-to-r from-pink-500 to-rose-500 text-white"
+          className={`flex items-center gap-3 pl-2 pr-5 py-2 rounded-full shadow-xl backdrop-blur-md transition-all duration-300 hover:-translate-y-1 ${
+            hasOnlineLovedOnes 
+              ? 'bg-gradient-to-r from-green-500 to-emerald-500 ring-4 ring-green-300/50 animate-pulse' 
+              : 'bg-gradient-to-r from-pink-500 to-rose-500 hover:ring-2 hover:ring-pink-400/50'
+          } text-white`}
         >
           {/* Icon Circle */}
           <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center backdrop-blur-sm shadow-inner relative">
              <Heart className="w-5 h-5 fill-white text-white" />
              {/* Online Indicator Badge if anyone is online */}
-             {connections.some(c => c.isAvailable) && (
-                <span className="absolute top-0 right-0 w-3 h-3 bg-green-400 border-2 border-pink-500 rounded-full animate-pulse"></span>
+             {hasOnlineLovedOnes && (
+                <span className="absolute top-0 right-0 w-3 h-3 bg-green-400 border-2 border-current rounded-full animate-pulse"></span>
              )}
           </div>
           
           <div className="flex flex-col items-start">
              <span className="font-bold text-sm leading-tight">Always With You</span>
-             <span className="text-[10px] text-pink-100 font-medium">Connect with Loved Ones</span>
+             <span className="text-[10px] text-current/80 font-medium">
+               {hasOnlineLovedOnes ? 'Someone is online!' : 'Connect with Loved Ones'}
+             </span>
           </div>
         </button>
       </div>
@@ -565,25 +582,38 @@ export default function AWYWidget() {
         </div>
 
         <div className="p-5">
-          {/* My Status Toggle */}
-          <div className="flex items-center justify-between bg-pink-50/50 p-4 rounded-2xl mb-5 border border-pink-100">
-            <div className="flex flex-col">
-              <span className="text-sm font-semibold text-gray-800">I&apos;m Available</span>
-              <span className="text-xs text-gray-500">Let them know you&apos;re free</span>
-            </div>
-            <button
-              onClick={toggleAvailability}
-              className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-pink-500 focus:ring-offset-2 ${
-                isMyAvailabilityOn ? 'bg-pink-500' : 'bg-gray-200'
-              }`}
-            >
-              <span
-                className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-sm transition-transform ${
-                  isMyAvailabilityOn ? 'translate-x-6' : 'translate-x-1'
+          {/* My Status Toggle - ONLY for students */}
+          {userRole === 'student' ? (
+            <div className="flex items-center justify-between bg-pink-50/50 p-4 rounded-2xl mb-5 border border-pink-100">
+              <div className="flex flex-col">
+                <span className="text-sm font-semibold text-gray-800">I&apos;m Available</span>
+                <span className="text-xs text-gray-500">Let them know you&apos;re free</span>
+              </div>
+              <button
+                onClick={toggleAvailability}
+                className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-pink-500 focus:ring-offset-2 ${
+                  isMyAvailabilityOn ? 'bg-pink-500' : 'bg-gray-200'
                 }`}
-              />
-            </button>
-          </div>
+              >
+                <span
+                  className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-sm transition-transform ${
+                    isMyAvailabilityOn ? 'translate-x-6' : 'translate-x-1'
+                  }`}
+                />
+              </button>
+            </div>
+          ) : (
+            /* For loved ones - show connected status (no toggle needed) */
+            <div className="flex items-center gap-3 bg-green-50 p-4 rounded-2xl mb-5 border border-green-100">
+              <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                <Heart className="w-5 h-5 text-green-600 fill-green-600" />
+              </div>
+              <div>
+                <span className="text-sm font-semibold text-green-800">You&apos;re Connected</span>
+                <p className="text-xs text-green-600">Your student can see you&apos;re online</p>
+              </div>
+            </div>
+          )}
 
           {presenceError && (
             <div className="mb-4 text-xs text-orange-700 bg-orange-50 border border-orange-100 rounded-2xl px-3 py-2">
@@ -591,12 +621,15 @@ export default function AWYWidget() {
             </div>
           )}
 
-          <button
-            onClick={() => setShowAddModal(true)}
-            className="w-full mb-4 inline-flex items-center justify-center gap-2 px-4 py-3 rounded-2xl border border-pink-200 text-pink-600 bg-white hover:bg-pink-50 transition-all text-sm font-semibold"
-          >
-            <Plus className="w-4 h-4" /> Add Loved One
-          </button>
+          {/* Add Loved One button - only for students */}
+          {userRole === 'student' && (
+            <button
+              onClick={() => setShowAddModal(true)}
+              className="w-full mb-4 inline-flex items-center justify-center gap-2 px-4 py-3 rounded-2xl border border-pink-200 text-pink-600 bg-white hover:bg-pink-50 transition-all text-sm font-semibold"
+            >
+              <Plus className="w-4 h-4" /> Add Loved One
+            </button>
+          )}
 
           {/* Connections List */}
           <div className="space-y-3">

@@ -199,26 +199,22 @@ export default function LovedOneDashboard() {
 
       <main className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
         
-        {/* Availability Toggle */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mb-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div>
-            <h2 className="text-xl font-bold text-gray-900">Your Availability</h2>
-            <p className="text-sm text-gray-500 mt-1">
-              When on, your student sees a green dot and knows you're around.
-            </p>
+        {/* Status Indicator - Loved ones are always visible when logged in */}
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mb-8">
+          <div className="flex items-center gap-4">
+            <div className="relative">
+              <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                <Heart className="w-6 h-6 text-green-600 fill-green-600" />
+              </div>
+              <span className="absolute bottom-0 right-0 w-4 h-4 bg-green-500 border-2 border-white rounded-full animate-pulse"></span>
+            </div>
+            <div>
+              <h2 className="text-lg font-bold text-gray-900">You're Connected</h2>
+              <p className="text-sm text-green-600 font-medium">
+                Your student can see you're online
+              </p>
+            </div>
           </div>
-          <button
-            onClick={toggleAvailability}
-            className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-pink-500 focus:ring-offset-2 ${
-              isMyAvailabilityOn ? 'bg-green-500' : 'bg-gray-200'
-            }`}
-          >
-            <span
-              className={`inline-block h-6 w-6 transform rounded-full bg-white transition-transform ${
-                isMyAvailabilityOn ? 'translate-x-7' : 'translate-x-1'
-              }`}
-            />
-          </button>
         </div>
 
         {/* Connected Students */}

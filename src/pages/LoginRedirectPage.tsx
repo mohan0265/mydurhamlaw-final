@@ -107,6 +107,8 @@ export default function LoginRedirectPage() {
         if (userRole === 'loved_one' && user.email) {
           try {
             const normalizedEmail = user.email.toLowerCase();
+            
+            // Update AWY connection with loved one's user ID
             await supabase
               .from('awy_connections')
               .update({
@@ -117,6 +119,15 @@ export default function LoginRedirectPage() {
                 updated_at: new Date().toISOString(),
               })
               .eq('loved_email', normalizedEmail);
+            
+            // CRITICAL: Send heartbeat immediately to mark loved one as "online"
+            // Loved ones are always available when logged in
+            try {
+              await supabase.rpc('awy_heartbeat', { p_is_available: true });
+              console.log('💓 Loved one heartbeat sent - now visible to student');
+            } catch (hbErr: any) {
+              console.warn('Heartbeat failed:', hbErr?.message || hbErr);
+            }
           } catch (linkErr: any) {
             console.warn('Failed to link loved one connection:', linkErr?.message || linkErr);
           }
