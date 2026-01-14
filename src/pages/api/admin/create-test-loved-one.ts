@@ -146,10 +146,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const { data: newConn, error: newConnError } = await adminClient
         .from('awy_connections')
         .upsert({
+          owner_user_id: studentUserId,  // Required: student owns this connection
           student_user_id: studentUserId,
           student_id: studentUserId,
           loved_user_id: lovedUserId,
           loved_one_id: lovedUserId,
+          user_id: lovedUserId,          // Add user_id if column exists
           email: email,
           loved_email: email,
           relationship,
