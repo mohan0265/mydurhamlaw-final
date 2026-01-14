@@ -68,9 +68,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Attempt to link to an existing user by email
     let lovedUserId: string | null = existing?.loved_user_id || existing?.loved_one_id || null
     try {
-      const { data } = await supabase.auth.admin.listUsers()
-      const found = data?.users?.find(u => u.email?.toLowerCase() === normalizedEmail)
-      if (found?.id) lovedUserId = found.id
+      // Use ADMIN client to search users (student client doesn't have permission)
+      const { data: userId } = await supabaseAdmin.rpc('get_user_id_by_email', { p_email: normalizedEmail });
+      if (userId) lovedUserId = userId as unknown as string;
     } catch (lookupError: any) {
       console.warn('[awy/add-loved-one] user lookup skipped:', lookupError?.message || lookupError)
     }
