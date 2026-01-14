@@ -82,16 +82,21 @@ export default function LoginRedirectPage() {
         if (user.user_metadata?.role === 'loved_one') {
           userRole = 'loved_one';
           console.log('🔍 User role from metadata: loved_one');
-        } else {
+        } else if (user.email) {
+          // Check if email exists in awy_connections as a loved one
+          // This works even if loved_one_id is not yet set (first-time login)
           const { data: connectionData } = await supabase
             .from('awy_connections')
-            .select('loved_one_id, relationship, display_name')
-            .eq('loved_email', user.email?.toLowerCase())
+            .select('id, loved_one_id, relationship, status')
+            .eq('loved_email', user.email.toLowerCase())
+            .in('status', ['active', 'accepted', 'granted', 'pending', 'invited'])
+            .limit(1)
             .maybeSingle();
 
-          if (connectionData && connectionData.loved_one_id === user.id) {
+          if (connectionData) {
+            // Email matches a loved one connection - this is a loved one!
             userRole = 'loved_one';
-            console.log('🔍 User role from awy_connections: loved_one');
+            console.log('🔍 User role from awy_connections (email match): loved_one');
           }
         }
 
