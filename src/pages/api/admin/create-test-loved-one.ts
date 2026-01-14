@@ -53,25 +53,30 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const actualDisplayName = displayName || inputIdentifier;
 
   try {
-    // 1. Check if user with this email already exists
-    const { data: { users: existingUsers } } = await adminClient.auth.admin.listUsers();
-    const existingUser = existingUsers?.find(u => u.email === email);
-    
-    let lovedUserId: string;
+    // 1. Check if user with this email already exists in auth
+    // Note: profiles table doesn't have email column, so we only check auth.users
+    let lovedUserId: string | null = null;
     let isNewUser = false;
     
-    if (existingUser) {
-      // User already exists - just use their ID
-      lovedUserId = existingUser.id;
-      console.log(`[create-loved-one] Using existing user ${email} (${lovedUserId})`);
-      
-      // Update profile to add loved_one role if not set
+    // Use getUserByEmail to look up existing user
+    const { data: authLookup, error: lookupError } = await adminClient.auth.admin.getUserByEmail(email);
+    
+    if (!lookupError && authLookup?.user) {
+      lovedUserId = authLookup.user.id;
+      console.log(`[create-loved-one] Found existing auth user ${email} (${lovedUserId})`);
+    } else {
+      // User doesn't exist - we'll create them below
+      console.log(`[create-loved-one] No existing user for ${email}, will create new`);
+    }
+    
+    if (lovedUserId) {
+      // User already exists - update their profile
       await adminClient
         .from('profiles')
         .upsert({
           id: lovedUserId,
           display_name: actualDisplayName,
-          user_role: 'loved_one', // This user is now also a loved one
+          user_role: 'loved_one',
         }, { onConflict: 'id', ignoreDuplicates: false });
     } else {
       // Create new auth user for loved one
