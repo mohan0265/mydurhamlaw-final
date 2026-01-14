@@ -136,11 +136,15 @@ export default function AWYWidget() {
     }
 
     const loadLovedOneView = async () => {
-      // 1. Get connections
+      // Get user's email for fallback matching
+      const userEmail = user?.email?.toLowerCase() || ''
+      
+      // 1. Get connections - match by loved_one_id, loved_user_id, OR loved_email
+      // This ensures newly-authorized loved ones can see their students even before their ID is linked
       const { data, error } = await contextSupabase
         .from('awy_connections')
-        .select('student_id,status')
-        .or(`loved_one_id.eq.${userId},loved_user_id.eq.${userId}`)
+        .select('student_id,status,loved_one_id,loved_email')
+        .or(`loved_one_id.eq.${userId},loved_user_id.eq.${userId}${userEmail ? `,loved_email.ilike.${userEmail}` : ''}`)
         .in('status', ['active','accepted','granted'])
       if (error) throw error
 
@@ -186,7 +190,40 @@ export default function AWYWidget() {
     }
 
     try {
-      const role = deriveUserRole()
+      // First check metadata
+      let role = deriveUserRole()
+      
+      // If metadata says student, double-check by querying profile and connections
+      if (role === 'student' && userId && user?.email) {
+        try {
+          // Check profile's user_role
+          const { data: profile } = await contextSupabase
+            .from('profiles')
+            .select('user_role')
+            .eq('id', userId)
+            .maybeSingle()
+          
+          if (profile?.user_role === 'loved_one') {
+            role = 'loved_one'
+          } else {
+            // Also check if this email is in awy_connections as a loved one
+            const { data: conn } = await contextSupabase
+              .from('awy_connections')
+              .select('id')
+              .ilike('loved_email', user.email)
+              .in('status', ['active', 'accepted', 'granted'])
+              .limit(1)
+              .maybeSingle()
+            
+            if (conn) {
+              role = 'loved_one'
+            }
+          }
+        } catch (roleCheckErr) {
+          console.warn('[AWY] Role check fallback skipped:', roleCheckErr)
+        }
+      }
+      
       setUserRole(role)
 
       const { data: myPresence, error: presenceError } = await contextSupabase
