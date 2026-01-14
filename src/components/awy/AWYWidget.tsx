@@ -89,31 +89,36 @@ export default function AWYWidget() {
 
       const activeStatuses = ['active', 'accepted', 'granted']
 
-      const activeIds = (data || [])
-        .filter((conn: any) => activeStatuses.includes((conn.status || '').toLowerCase()))
+      // Get IDs of loved ones who have registered (for presence lookup)
+      const registeredLovedIds = (data || [])
+        .filter((conn: any) => activeStatuses.includes((conn.status || '').toLowerCase()) && conn.loved_one_id)
         .map((conn: any) => conn.loved_one_id)
-        .filter((id: string | null): id is string => Boolean(id))
 
-      const presenceMap = await buildPresenceMap(activeIds)
+      const presenceMap = await buildPresenceMap(registeredLovedIds)
 
+      // Show ALL active connections, even if loved_one_id is null (they haven't registered yet)
       const activeList: Connection[] = (data || [])
         .filter((conn: any) => activeStatuses.includes((conn.status || '').toLowerCase()))
         .map((conn: any) => {
           const lovedId = conn.loved_one_id
-          if (!lovedId) return null
-          const presence = presenceMap.get(lovedId)
+          const presence = lovedId ? presenceMap.get(lovedId) : null
           const status = (conn.status || '').toLowerCase()
+          
+          // If loved_one_id is null, they haven't registered - show as "Awaiting signup"
+          const isRegistered = Boolean(lovedId)
+          
           return {
-            id: lovedId,
+            id: lovedId || conn.id,  // Use connection id as fallback for non-registered
             displayName: conn.nickname || conn.relationship || conn.relationship_label || 'Loved One',
-            isAvailable: Boolean(presence?.is_available),
-            status: presence?.status || (status === 'accepted' || status === 'active' ? 'online' : 'offline'),
-            role: 'loved_one',
+            isAvailable: isRegistered ? Boolean(presence?.is_available) : false,
+            status: isRegistered 
+              ? (presence?.status || (status === 'accepted' || status === 'active' || status === 'granted' ? 'offline' : 'offline'))
+              : 'Awaiting signup',
+            role: 'loved_one' as const,
             email: conn.loved_email || conn.email,
             lastSeenAt: presence?.last_seen_at || presence?.last_seen || null
           }
         })
-        .filter(Boolean) as Connection[]
 
       const pendingList: Connection[] = (data || [])
         .filter((conn: any) => !activeStatuses.includes((conn.status || '').toLowerCase()))
@@ -122,7 +127,7 @@ export default function AWYWidget() {
           displayName: conn.nickname || conn.relationship || conn.relationship_label || 'Loved One',
           isAvailable: false,
           status: conn.status,
-          role: 'loved_one',
+          role: 'loved_one' as const,
           email: conn.loved_email || conn.email
         }))
 

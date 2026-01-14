@@ -29,6 +29,8 @@ type AdminUser = {
 
 type AWYConn = {
   id: string
+  studentId?: string
+  lovedOneId?: string
   studentEmail: string
   lovedEmail: string
   relationship: string
@@ -144,30 +146,40 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
       }
     })
 
-    // Fetch AWY connections (use id not user_id)
-    const { data: conns } = await adminClient
+    // Fetch AWY connections - use direct columns instead of FK joins
+    const { data: conns, error: connsError } = await adminClient
       .from('awy_connections')
       .select(`
         id,
+        student_id,
+        student_user_id,
+        loved_one_id,
+        loved_user_id,
         loved_email,
+        email,
         relationship,
+        nickname,
         status,
-        created_at,
-        student:profiles!awy_connections_student_user_id_fkey(id),
-        loved:profiles!awy_connections_loved_user_id_fkey(id)
+        created_at
       `)
       .order('created_at', { ascending: false })
       .limit(100)
 
-    if (conns) {
+    if (conns && !connsError) {
       connections = conns.map((c: any) => {
-        const studentEmail = users.find(u => u.id === c.student?.id)?.email || '-'
-        const lovedEmail = c.loved_email || users.find(u => u.id === c.loved?.id)?.email || '-'
+        // Use student_id or student_user_id
+        const studentId = c.student_id || c.student_user_id
+        const lovedId = c.loved_one_id || c.loved_user_id
+        
+        const studentEmail = users.find(u => u.id === studentId)?.email || '-'
+        const lovedEmail = c.loved_email || c.email || users.find(u => u.id === lovedId)?.email || '-'
         return {
           id: c.id,
+          studentId: studentId,
+          lovedOneId: lovedId,
           studentEmail,
           lovedEmail,
-          relationship: c.relationship || '-',
+          relationship: c.nickname || c.relationship || '-',
           status: c.status || '-',
           createdAt: c.created_at || '-'
         }
@@ -607,7 +619,7 @@ export default function AdminDashboard({ authorized, rows, users, connections, e
             <tbody>
               {(() => {
                 const filteredConns = selectedStudent 
-                  ? connections.filter(c => c.studentEmail === selectedStudent.email)
+                  ? connections.filter(c => c.studentId === selectedStudent.id || c.studentEmail === selectedStudent.email)
                   : connections;
                 
                 if (filteredConns.length === 0) {
@@ -630,8 +642,9 @@ export default function AdminDashboard({ authorized, rows, users, connections, e
                     <td className="px-3 py-2">{c.relationship}</td>
                     <td className="px-3 py-2">
                       <span className={`px-2 py-0.5 rounded text-xs font-semibold ${
-                        c.status === 'active' ? 'bg-green-100 text-green-800' :
-                        c.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                        c.status === 'active' || c.status === 'granted' || c.status === 'accepted' ? 'bg-green-100 text-green-800' :
+                        c.status === 'pending' || c.status === 'invited' ? 'bg-yellow-100 text-yellow-800' :
+                        c.status === 'revoked' ? 'bg-red-100 text-red-800' :
                         'bg-gray-100 text-gray-800'
                       }`}>
                         {c.status}
