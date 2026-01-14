@@ -6,7 +6,8 @@ export function SupportWidget() {
   const [open, setOpen] = useState(false)
 
   return (
-    <div className="fixed right-6 bottom-36 z-[55] flex flex-col items-end">
+    {/* Z-index order: SupportWidget (40) < Durmah closed (50) < AWY closed (55) < Durmah open (45) << AWY open (65) */}
+    <div className="fixed right-6 bottom-36 z-[40] flex flex-col items-end">
       {!open && (
         <button
           onClick={() => setOpen(true)}
