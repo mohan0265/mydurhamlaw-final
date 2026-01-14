@@ -143,6 +143,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
     } else {
       console.log(`[create-loved-one] Creating new connection...`);
+      const inviteToken = randomBytes(16).toString('hex');  // Generate unique invite token
       const { data: newConn, error: newConnError } = await adminClient
         .from('awy_connections')
         .upsert({
@@ -157,6 +158,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           relationship,
           nickname: nickname || actualDisplayName,
           status: 'granted',
+          invite_token: inviteToken,     // Required: unique invite token
           invited_at: new Date().toISOString(),
           accepted_at: new Date().toISOString(),
         }, { onConflict: 'student_id, loved_email' }) // Use the constraint we added
