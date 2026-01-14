@@ -1,9 +1,10 @@
 // src/pages/dashboard.tsx
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useAuth } from '@/lib/supabase/AuthContext';
+import { getSupabaseClient } from '@/lib/supabase/client';
 
 // Billing / trial
 import { SubscriptionStatus } from '@/components/billing/SubscriptionStatus';
@@ -24,7 +25,90 @@ import { DurhamPortalCard } from '@/components/dashboard/DurhamPortalCard';
 
 export default function Dashboard() {
   const router = useRouter();
-  const { user } = useAuth() || { user: null };
+  const { user, loading } = useAuth() || { user: null, loading: true };
+  const [roleChecked, setRoleChecked] = useState(false);
+  const [isLovedOne, setIsLovedOne] = useState(false);
+
+  // Role-based access control: redirect loved ones to their proper dashboard
+  useEffect(() => {
+    const checkRoleAndRedirect = async () => {
+      if (loading || !user) {
+        setRoleChecked(true);
+        return;
+      }
+
+      const supabase = getSupabaseClient();
+      if (!supabase) {
+        setRoleChecked(true);
+        return;
+      }
+
+      try {
+        // Check profile's user_role
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('user_role')
+          .eq('id', user.id)
+          .maybeSingle();
+
+        if (profile?.user_role === 'loved_one') {
+          console.log('[Dashboard] Loved one detected, redirecting...');
+          setIsLovedOne(true);
+          router.replace('/loved-one-dashboard');
+          return;
+        }
+
+        // Also check if this email is a loved one in awy_connections
+        if (user.email) {
+          const { data: conn } = await supabase
+            .from('awy_connections')
+            .select('id')
+            .ilike('loved_email', user.email)
+            .in('status', ['active', 'accepted', 'granted'])
+            .limit(1)
+            .maybeSingle();
+
+          if (conn) {
+            console.log('[Dashboard] Loved one (by email) detected, updating profile and redirecting...');
+            
+            // Update profile role to loved_one for future logins
+            try {
+              await supabase
+                .from('profiles')
+                .update({ user_role: 'loved_one', updated_at: new Date().toISOString() })
+                .eq('id', user.id);
+            } catch (updateErr) {
+              console.warn('[Dashboard] Profile role update failed:', updateErr);
+            }
+            
+            setIsLovedOne(true);
+            router.replace('/loved-one-dashboard');
+            return;
+          }
+        }
+
+        // User is a student - allow access
+        setRoleChecked(true);
+      } catch (err) {
+        console.warn('[Dashboard] Role check error:', err);
+        setRoleChecked(true);
+      }
+    };
+
+    checkRoleAndRedirect();
+  }, [user, loading, router]);
+
+  // Show loading while checking role
+  if (!roleChecked || isLovedOne) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-purple-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-purple-600 mx-auto mb-4"></div>
+          <p className="text-gray-500">Loading your dashboard...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>
