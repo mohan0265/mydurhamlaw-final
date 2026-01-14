@@ -117,24 +117,53 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
     }
 
-    // 2. Create AWY connection (allows same loved one to connect to multiple students)
-    const { data: connectionData, error: connectionError } = await adminClient
+    // 2. Create or Update AWY connection (Idempotent)
+    // First check if connection exists
+    const { data: existingConnection } = await adminClient
       .from('awy_connections')
-      .insert({
-        student_user_id: studentUserId,
-        student_id: studentUserId,
-        loved_user_id: lovedUserId,
-        loved_one_id: lovedUserId,
-        email: email,
-        loved_email: email,
-        relationship,
-        nickname: nickname || actualDisplayName,
-        status: 'granted',
-        invited_at: new Date().toISOString(),
-        accepted_at: new Date().toISOString(),
-      })
       .select()
-      .single();
+      .eq('student_id', studentUserId)
+      .eq('loved_email', email)
+      .maybeSingle();
+
+    let connectionData;
+    let connectionError;
+
+    if (existingConnection) {
+      console.log(`[create-loved-one] Connection already exists: ${existingConnection.id}`);
+      connectionData = existingConnection;
+      
+      // Ensure status is active/granted
+      if (existingConnection.status !== 'granted' && existingConnection.status !== 'active') {
+        await adminClient
+          .from('awy_connections')
+          .update({ status: 'granted' })
+          .eq('id', existingConnection.id);
+        connectionData.status = 'granted';
+      }
+    } else {
+      console.log(`[create-loved-one] Creating new connection...`);
+      const { data: newConn, error: newConnError } = await adminClient
+        .from('awy_connections')
+        .upsert({
+          student_user_id: studentUserId,
+          student_id: studentUserId,
+          loved_user_id: lovedUserId,
+          loved_one_id: lovedUserId,
+          email: email,
+          loved_email: email,
+          relationship,
+          nickname: nickname || actualDisplayName,
+          status: 'granted',
+          invited_at: new Date().toISOString(),
+          accepted_at: new Date().toISOString(),
+        }, { onConflict: 'student_id, loved_email' }) // Use the constraint we added
+        .select()
+        .single();
+        
+      connectionData = newConn;
+      connectionError = newConnError;
+    }
 
     if (connectionError) {
       // Rollback if new user was created
