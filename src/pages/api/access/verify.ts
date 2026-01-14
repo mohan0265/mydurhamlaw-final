@@ -63,7 +63,25 @@ export default async function handler(
     }
 
     if (!allowlistEntry) {
-      console.log(`[ACCESS DENIED] Email not in allowlist: ${email}`);
+      // Check if user is a loved one in awy_connections with valid status
+      const { data: awyConnection } = await supabaseAdmin
+        .from('awy_connections')
+        .select('status, loved_email')
+        .eq('loved_email', email)
+        .in('status', ['active', 'accepted', 'granted'])
+        .maybeSingle();
+
+      if (awyConnection) {
+        console.log(`[ACCESS GRANTED] Loved One verified: ${email}`);
+        return res.status(200).json({ 
+          allowed: true, 
+          email,
+          role: 'loved_one' as const,
+          trialExpiresAt: null, // Loved ones don't have trials
+        });
+      }
+
+      console.log(`[ACCESS DENIED] Email not in allowlist or valid loved one connection: ${email}`);
       return res.status(200).json({ 
         allowed: false, 
         reason: 'not_in_allowlist' as AccessDenialReason,

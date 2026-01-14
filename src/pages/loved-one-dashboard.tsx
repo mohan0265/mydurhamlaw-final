@@ -106,9 +106,24 @@ export default function LovedOneDashboard() {
       if (user) fetchData(user.id)
     }, 15000)
 
+    // Initial heartbeat on mount
+    const sendHeartbeat = async () => {
+      const { error } = await supabase.rpc('awy_heartbeat', { p_is_available: true }); // Default to available on login
+      if (error) console.warn('Heartbeat failed:', error.message);
+      setIsMyAvailabilityOn(true); // Sync local state
+    };
+    if (user) sendHeartbeat();
+
+    // Periodic heartbeat (every 30s)
+    const heartbeatInterval = setInterval(async () => {
+      if (!user) return;
+      await supabase.rpc('awy_heartbeat', { p_is_available: true }); // Keep alive
+    }, 30000);
+
     return () => {
       if (channelRef.current) supabase.removeChannel(channelRef.current)
       clearInterval(interval)
+      clearInterval(heartbeatInterval)
     }
   }, [supabase, user])
 
