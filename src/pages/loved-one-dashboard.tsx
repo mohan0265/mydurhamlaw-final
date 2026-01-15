@@ -131,10 +131,10 @@ export default function LovedOneDashboard() {
     };
     if (user) sendHeartbeat();
 
-    // Periodic heartbeat (every 30s)
+    // Periodic heartbeat (every 30s) - pass null to preserve current availability
     const heartbeatInterval = setInterval(async () => {
       if (!user) return;
-      await supabase.rpc('awy_heartbeat', { p_is_available: true }); // Keep alive
+      await supabase.rpc('awy_heartbeat', { p_is_available: null }); // Keep alive, preserve availability
     }, 30000);
 
     return () => {
