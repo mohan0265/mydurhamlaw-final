@@ -7,6 +7,7 @@ import { AuthContext } from '@/lib/supabase/AuthContext';
 import { Button } from '@/components/ui/Button';
 import { ArrowLeft, Plus, RefreshCw, FileAudio } from 'lucide-react';
 import dynamic from 'next/dynamic';
+import { useStudentOnly } from '@/hooks/useStudentOnly';
 
 const LectureUploadModal = dynamic(() => import('@/components/lectures/LectureUploadModal'), { ssr: false });
 const LectureCard = dynamic(() => import('@/components/lectures/LectureCard'), { ssr: false });
@@ -25,6 +26,10 @@ interface Lecture {
 export default function LecturesPage() {
   const router = useRouter();
   const { getDashboardRoute } = useContext(AuthContext);
+  
+  // Protect from loved ones
+  const { isChecking: isRoleChecking, isLovedOne } = useStudentOnly();
+  
   const [lectures, setLectures] = useState<Lecture[]>([]);
   const [loading, setLoading] = useState(true);
   const [showUploadModal, setShowUploadModal] = useState(false);
@@ -67,6 +72,15 @@ export default function LecturesPage() {
     l.status === 'transcribing' || l.status === 'summarizing' || l.status === 'uploaded'
   );
   const errorLectures = lectures.filter(l => l.status === 'error');
+
+  // Show loading while checking role or if loved one (redirecting)
+  if (isRoleChecking || isLovedOne) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <RefreshCw className="w-6 h-6 text-gray-400 animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-4xl mx-auto py-8 px-4">

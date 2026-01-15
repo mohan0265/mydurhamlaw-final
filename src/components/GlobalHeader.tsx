@@ -117,7 +117,69 @@ export default function GlobalHeader() {
   const [openMobile, setOpenMobile] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
 
-  const studyMenu: Menu = useMemo(
+  // Role detection state
+  const [displayName, setDisplayName] = useState<string>('Student');
+  const [isLovedOne, setIsLovedOne] = useState(false);
+
+  // Fetch display name and role from profiles table
+  useEffect(() => {
+    if (!user) {
+      setDisplayName('Student');
+      setIsLovedOne(false);
+      return;
+    }
+
+    const fetchUserInfo = async () => {
+      try {
+        const {getSupabaseClient} = await import('@/lib/supabase/client');
+        const supabase = getSupabaseClient();
+        if (!supabase) {
+          setDisplayName(user.email?.split('@')[0] || 'Student');
+          return;
+        }
+
+        const {data, error} = await supabase
+          .from('profiles')
+          .select('display_name, user_role')
+          .eq('id', user.id)
+          .single();
+
+        if (data?.display_name) {
+          setDisplayName(data.display_name);
+        } else {
+          setDisplayName(user.email?.split('@')[0] || 'Student');
+        }
+
+        // Check if user is a loved one
+        if (data?.user_role === 'loved_one') {
+          setIsLovedOne(true);
+        } else {
+          // Also check awy_connections as backup
+          if (user.email) {
+            const { data: connData } = await supabase
+              .from('awy_connections')
+              .select('id')
+              .ilike('loved_email', user.email)
+              .in('status', ['active', 'accepted', 'granted'])
+              .limit(1)
+              .maybeSingle();
+            
+            if (connData) {
+              setIsLovedOne(true);
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Failed to fetch user info:', err);
+        setDisplayName(user.email?.split('@')[0] || 'Student');
+      }
+    };
+
+    fetchUserInfo();
+  }, [user]);
+
+  // --- STUDENT MENUS ---
+  const studentStudyMenu: Menu = useMemo(
     () => ({
       label: 'Study',
       items: [
@@ -130,7 +192,7 @@ export default function GlobalHeader() {
     []
   );
 
-  const communityMenu: Menu = useMemo(
+  const studentCommunityMenu: Menu = useMemo(
     () => ({
       label: 'Community',
       items: [
@@ -142,7 +204,7 @@ export default function GlobalHeader() {
     []
   );
 
-  const infoMenu: Menu = useMemo(
+  const studentInfoMenu: Menu = useMemo(
     () => ({
       label: 'Info',
       items: [
@@ -154,43 +216,37 @@ export default function GlobalHeader() {
     []
   );
 
-  // Fetch actual display_name from profiles table
-  const [displayName, setDisplayName] = useState<string>('Student');
+  // --- LOVED ONE MENUS (Restricted) ---
+  const lovedOneExploreMenu: Menu = useMemo(
+    () => ({
+      label: 'Explore',
+      items: [
+        { label: 'Academic Calendar', href: '/year-at-a-glance' },
+        { label: 'Community Hub', href: '/community' },
+      ],
+    }),
+    []
+  );
 
-  useEffect(() => {
-    if (!user) {
-      setDisplayName('Student');
-      return;
-    }
+  const lovedOneInfoMenu: Menu = useMemo(
+    () => ({
+      label: 'Info',
+      items: [
+        { label: 'About MyDurhamLaw', href: '/about' },
+        { label: 'Contact', href: '/contact' },
+      ],
+    }),
+    []
+  );
 
-    const fetchDisplayName = async () => {
-      try {
-        const {getSupabaseClient} = await import('@/lib/supabase/client');
-        const supabase = getSupabaseClient();
-        if (!supabase) {
-          setDisplayName(user.email?.split('@')[0] || 'Student');
-          return;
-        }
-
-        const {data, error} = await supabase
-          .from('profiles')
-          .select('display_name')
-          .eq('id', user.id)
-          .single();
-
-        if (data?.display_name) {
-          setDisplayName(data.display_name);
-        } else {
-          setDisplayName(user.email?.split('@')[0] || 'Student');
-        }
-      } catch (err) {
-        console.error('Failed to fetch display name:', err);
-        setDisplayName(user.email?.split('@')[0] || 'Student');
-      }
-    };
-
-    fetchDisplayName();
-  }, [user]);
+  // Choose menus based on role
+  const studyMenu = isLovedOne ? lovedOneExploreMenu : studentStudyMenu;
+  const communityMenu = isLovedOne ? null : studentCommunityMenu; // Loved ones don't need separate community menu
+  const infoMenu = isLovedOne ? lovedOneInfoMenu : studentInfoMenu;
+  
+  // Dashboard link
+  const dashboardHref = isLovedOne ? '/loved-one-dashboard' : '/dashboard';
+  const dashboardLabel = isLovedOne ? 'My Dashboard' : 'Dashboard';
 
   return (
     <>
@@ -206,9 +262,9 @@ export default function GlobalHeader() {
 
             {/* Desktop nav */}
             <div className="hidden md:flex items-center gap-1">
-              <ActiveLink href="/dashboard" className="font-semibold">Dashboard</ActiveLink>
+              <ActiveLink href={dashboardHref} className="font-semibold">{dashboardLabel}</ActiveLink>
               <HoverMenu label={studyMenu.label} items={studyMenu.items} />
-              <HoverMenu label={communityMenu.label} items={communityMenu.items} />
+              {communityMenu && <HoverMenu label={communityMenu.label} items={communityMenu.items} />}
               <HoverMenu label={infoMenu.label} items={infoMenu.items} />
             </div>
 
@@ -218,13 +274,16 @@ export default function GlobalHeader() {
               {user ? (
                 <>
                   <span className="text-white/90 text-sm">Hi, {displayName}</span>
-                  <Link
-                    href="/billing"
-                    className="px-3 py-2 rounded-md text-sm font-semibold bg-white text-indigo-700 hover:bg-indigo-50 transition"
-                    title="Manage subscription & invoices"
-                  >
-                    Manage Billing
-                  </Link>
+                  {/* Hide billing for loved ones */}
+                  {!isLovedOne && (
+                    <Link
+                      href="/billing"
+                      className="px-3 py-2 rounded-md text-sm font-semibold bg-white text-indigo-700 hover:bg-indigo-50 transition"
+                      title="Manage subscription & invoices"
+                    >
+                      Manage Billing
+                    </Link>
+                  )}
                   <LogoutButton className="px-3 py-2 rounded-md border hover:bg-white/10 text-white text-sm" />
                 </>
               ) : (

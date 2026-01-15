@@ -257,8 +257,18 @@ export const getServerSideProps: GetServerSideProps = async () => {
     };
   }
 
-  // Get user profile
-  const { data: profile } = await supabase.from('profiles').select('display_name').eq('id', user.id).single();
+  // Get user profile and check role
+  const { data: profile } = await supabase.from('profiles').select('display_name, user_role').eq('id', user.id).single();
+
+  // Redirect loved ones - they don't have billing
+  if ((profile as any)?.user_role === 'loved_one') {
+    return {
+      redirect: {
+        destination: '/loved-one-dashboard',
+        permanent: false,
+      },
+    };
+  }
 
   return {
     props: {

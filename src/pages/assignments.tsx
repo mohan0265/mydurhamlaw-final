@@ -13,10 +13,15 @@ import DurmahChat from '@/components/durmah/DurmahChat'
 import AssignmentWorkflow from '@/components/assignment-assistant/AssignmentWorkflow'
 import { Assignment } from '@/types/assignments'
 import toast from 'react-hot-toast'
+import { useStudentOnly } from '@/hooks/useStudentOnly'
 
 export default function AssignmentsPage() {
   const router = useRouter()
   const { user, getDashboardRoute } = useContext(AuthContext)
+  
+  // Protect from loved ones
+  const { isChecking: isRoleChecking, isLovedOne } = useStudentOnly();
+  
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [loading, setLoading] = useState(true)
 
@@ -169,7 +174,7 @@ export default function AssignmentsPage() {
     );
   }
 
-  if (loading) {
+  if (loading || isRoleChecking || isLovedOne) {
      return <div className="min-h-screen bg-gray-50 flex items-center justify-center">Loading...</div>
   }
 
