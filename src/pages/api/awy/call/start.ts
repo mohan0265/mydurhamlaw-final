@@ -33,25 +33,48 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    // Verify connection exists between student and loved one
-    const { data: connection, error: connError } = await adminClient
+    // Verify connection exists - support BIDIRECTIONAL calling
+    // Check if user is student calling loved one
+    let { data: connection } = await adminClient
       .from('awy_connections')
-      .select('id, status')
+      .select('id, status, student_id, loved_one_id')
       .eq('student_id', user.id)
       .eq('loved_one_id', lovedOneId)
       .in('status', ['granted', 'active', 'accepted'])
       .maybeSingle();
 
-    if (connError || !connection) {
-      return res.status(403).json({ error: 'No valid connection with this loved one' });
+    let caller: 'student' | 'loved_one' = 'student';
+    let studentId = user.id;
+    let lovedOneIdFinal = lovedOneId;
+
+    // If not found, check if user is loved one calling student
+    if (!connection) {
+      const { data: reverseConnection } = await adminClient
+        .from('awy_connections')
+        .select('id, status, student_id, loved_one_id')
+        .eq('loved_one_id', user.id)
+        .eq('student_id', lovedOneId)
+        .in('status', ['granted', 'active', 'accepted'])
+        .maybeSingle();
+      
+      if (reverseConnection) {
+        connection = reverseConnection;
+        caller = 'loved_one';
+        studentId = lovedOneId; // The target is the student
+        lovedOneIdFinal = user.id; // User is the loved one
+      }
     }
 
-    // Check for existing ringing call
+    if (!connection) {
+      return res.status(403).json({ error: 'No valid connection with this person' });
+    }
+
+    // Check for existing ringing call (check both directions)
     const { data: existingCall } = await adminClient
       .from('awy_calls')
       .select('id')
-      .eq('student_id', user.id)
-      .eq('loved_one_id', lovedOneId)
+      .eq('student_id', studentId)
+      .eq('loved_one_id', lovedOneIdFinal)
       .eq('status', 'ringing')
       .maybeSingle();
 
@@ -70,8 +93,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const { data: call, error: insertError } = await adminClient
         .from('awy_calls')
         .insert({
-          student_id: user.id,
-          loved_one_id: lovedOneId,
+          student_id: studentId,
+          loved_one_id: lovedOneIdFinal,
           room_url: mockRoomUrl,
           room_name: roomName,
           status: 'ringing'
@@ -122,8 +145,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const { data: call, error: insertError } = await adminClient
       .from('awy_calls')
       .insert({
-        student_id: user.id,
-        loved_one_id: lovedOneId,
+        student_id: studentId,
+        loved_one_id: lovedOneIdFinal,
         room_url: roomUrl,
         room_name: roomName,
         status: 'ringing'

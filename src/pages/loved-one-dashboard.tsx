@@ -40,7 +40,9 @@ export default function LovedOneDashboard() {
   // Incoming call state
   const [incomingCall, setIncomingCall] = useState<IncomingCall | null>(null)
   const [activeCall, setActiveCall] = useState<{ callId: string; roomUrl: string; callerName: string } | null>(null)
+  const [callingStudentId, setCallingStudentId] = useState<string | null>(null) // For outgoing calls
   const incomingChannelRef = useRef<any>(null)
+  const callChannelRef = useRef<any>(null)
 
   const fetchUser = async () => {
     const { data: { user } } = await supabase.auth.getUser()
@@ -258,6 +260,74 @@ export default function LovedOneDashboard() {
     }
   }, [user?.id, students, supabase])
   
+  // Loved one initiating call to student
+  const startCall = async (studentId: string, studentName: string) => {
+    if (!user || callingStudentId) return
+    
+    setCallingStudentId(studentId)
+    
+    try {
+      const res = await fetch('/api/awy/call/start', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ lovedOneId: studentId }) // We're the loved one, calling the student
+      })
+      
+      const data = await res.json()
+      
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to start call')
+      }
+      
+      const { callId, roomUrl } = data
+      
+      // Subscribe to call status updates
+      const channel = supabase
+        .channel(`call-${callId}`)
+        .on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'awy_calls',
+            filter: `id=eq.${callId}`
+          },
+          (payload: any) => {
+            const status = payload.new.status
+            if (status === 'accepted') {
+              setActiveCall({ callId, roomUrl, callerName: studentName })
+              setCallingStudentId(null)
+              toast.success(`${studentName} accepted your call!`)
+            } else if (status === 'declined') {
+              toast.error(`${studentName} declined the call`)
+              setCallingStudentId(null)
+            } else if (status === 'ended' || status === 'missed') {
+              setCallingStudentId(null)
+              setActiveCall(null)
+            }
+          }
+        )
+        .subscribe()
+      
+      callChannelRef.current = channel
+      toast.success(`Calling ${studentName}...`)
+      
+      // Auto-timeout after 30s
+      setTimeout(() => {
+        if (callingStudentId === studentId) {
+          handleEndCall()
+          toast.error('Call timed out - no answer')
+        }
+      }, 30000)
+      
+    } catch (err: any) {
+      console.error('[LovedOne] Start call error:', err)
+      toast.error(err.message || 'Failed to start call')
+      setCallingStudentId(null)
+    }
+  }
+  
   const handleAcceptCall = () => {
     if (!incomingCall) return
     setActiveCall({
@@ -284,7 +354,13 @@ export default function LovedOneDashboard() {
     } catch (err) {
       console.error('End call error:', err)
     }
+    // Cleanup
+    if (callChannelRef.current) {
+      supabase.removeChannel(callChannelRef.current)
+      callChannelRef.current = null
+    }
     setActiveCall(null)
+    setCallingStudentId(null)
   }
 
   if (loading) {
@@ -380,10 +456,27 @@ export default function LovedOneDashboard() {
                 </div>
 
                 {student.isAvailable ? (
-                  <div className="inline-flex items-center px-4 py-2 border border-green-200 rounded-full text-sm font-medium text-green-700 bg-green-50">
-                    <Video className="w-4 h-4 mr-2" />
-                    Ready to Call
-                  </div>
+                  <button
+                    onClick={() => startCall(student.studentId, student.displayName)}
+                    disabled={callingStudentId === student.studentId}
+                    className={`inline-flex items-center px-4 py-2 border rounded-full text-sm font-medium transition-all ${
+                      callingStudentId === student.studentId
+                        ? 'border-yellow-300 text-yellow-700 bg-yellow-50 animate-pulse'
+                        : 'border-green-200 text-green-700 bg-green-50 hover:bg-green-100 hover:border-green-300 cursor-pointer'
+                    }`}
+                  >
+                    {callingStudentId === student.studentId ? (
+                      <>
+                        <Phone className="w-4 h-4 mr-2 animate-bounce" />
+                        Calling...
+                      </>
+                    ) : (
+                      <>
+                        <Video className="w-4 h-4 mr-2" />
+                        Call Now
+                      </>
+                    )}
+                  </button>
                 ) : (
                   <button
                     disabled
