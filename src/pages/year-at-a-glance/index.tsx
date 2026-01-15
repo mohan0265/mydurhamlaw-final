@@ -30,6 +30,7 @@ export default function YearAtAGlancePage() {
   const [events, setEvents] = useState<UserEvent[]>([]);
   const [assessments, setAssessments] = useState<UserAssessment[]>([]);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showOnboardingBanner, setShowOnboardingBanner] = useState(true);
 
   // Default to Year 1 for now (user profile year selection can be added later)
   const userYearOfStudy = 1;
@@ -43,6 +44,24 @@ export default function YearAtAGlancePage() {
 
     fetchData();
   }, [user?.id]);
+
+  // Check if onboarding banner was dismissed (localStorage)
+  useEffect(() => {
+    const dismissed = localStorage.getItem('yaag_onboarding_dismissed');
+    if (dismissed) {
+      // Re-show banner after 3 days
+      const dismissedAt = parseInt(dismissed, 10);
+      const threeDays = 3 * 24 * 60 * 60 * 1000;
+      if (Date.now() - dismissedAt < threeDays) {
+        setShowOnboardingBanner(false);
+      }
+    }
+  }, []);
+
+  const dismissOnboardingBanner = () => {
+    localStorage.setItem('yaag_onboarding_dismissed', Date.now().toString());
+    setShowOnboardingBanner(false);
+  };
 
   const fetchData = async () => {
     if (!user?.id) return;
@@ -123,26 +142,6 @@ export default function YearAtAGlancePage() {
 
   // Check if user has imported data
   const hasData = events.length > 0 || assessments.length > 0;
-  
-  // Check if onboarding banner should be shown (stored in localStorage)
-  const [showOnboardingBanner, setShowOnboardingBanner] = useState(true);
-  
-  useEffect(() => {
-    const dismissed = localStorage.getItem('yaag_onboarding_dismissed');
-    if (dismissed) {
-      // Re-show banner after 3 days
-      const dismissedAt = parseInt(dismissed, 10);
-      const threeDays = 3 * 24 * 60 * 60 * 1000;
-      if (Date.now() - dismissedAt < threeDays) {
-        setShowOnboardingBanner(false);
-      }
-    }
-  }, []);
-
-  const dismissOnboardingBanner = () => {
-    localStorage.setItem('yaag_onboarding_dismissed', Date.now().toString());
-    setShowOnboardingBanner(false);
-  };
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8 relative">
