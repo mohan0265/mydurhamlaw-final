@@ -1,11 +1,15 @@
 'use client'
 
 import React, { useState, useEffect, useRef, useCallback } from 'react'
-import { Heart, Video, X, Loader2, Lock, ArrowRight, User, Plus, Send, Trash, Check, Copy } from 'lucide-react'
+import { Heart, Video, X, Loader2, Lock, ArrowRight, User, Plus, Send, Trash, Check, Copy, Phone, PhoneOff } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Link from 'next/link'
 import { AuthContext } from '@/lib/supabase/AuthContext'
 import { fetchAuthed } from '@/lib/fetchAuthed'
+import dynamic from 'next/dynamic'
+
+// Lazy load call modals
+const DailyCallModal = dynamic(() => import('./DailyCallModal'), { ssr: false })
 
 interface Connection {
   id: string // loved_one_id or student_id
@@ -36,6 +40,12 @@ export default function AWYWidget() {
   const [inviteSuccessLink, setInviteSuccessLink] = useState<string | null>(null)
   const [inviteSuccessMessage, setInviteSuccessMessage] = useState<string | null>(null)
   const [inviteCopied, setInviteCopied] = useState(false)
+  
+  // Daily.co Call State
+  const [activeCall, setActiveCall] = useState<{ callId: string; roomUrl: string; callerName: string } | null>(null)
+  const [isCallingId, setIsCallingId] = useState<string | null>(null) // ID of connection being called
+  const [callStatus, setCallStatus] = useState<'idle' | 'calling' | 'connected' | 'declined'>('idle')
+  const callChannelRef = useRef<any>(null)
   
   // Use global auth context instead of creating new client
   const { user, supabase: contextSupabase, loading: authLoading } = React.useContext(AuthContext)
@@ -377,19 +387,107 @@ export default function AWYWidget() {
     }
   }
 
-  const getJitsiUrl = (otherId: string) => {
-    if (!userId) return '#'
-    // Consistent room name: MyDurhamLaw-{studentId}-{lovedOneId}
+  // === DAILY.CO VIDEO CALL ===
+  const startCall = async (lovedOneId: string, lovedOneName: string) => {
+    if (!userId || isCallingId) return
     
-    const studentId = userRole === 'student' ? userId : otherId
-    const lovedOneId = userRole === 'student' ? otherId : userId
+    setIsCallingId(lovedOneId)
+    setCallStatus('calling')
     
-    return `https://meet.jit.si/MyDurhamLaw-${studentId}-${lovedOneId}`
+    try {
+      const res = await fetch('/api/awy/call/start', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ lovedOneId })
+      })
+      
+      const data = await res.json()
+      
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to start call')
+      }
+      
+      const { callId, roomUrl } = data
+      
+      // Subscribe to call status updates
+      if (contextSupabase) {
+        const channel = contextSupabase
+          .channel(`call-${callId}`)
+          .on(
+            'postgres_changes',
+            {
+              event: 'UPDATE',
+              schema: 'public',
+              table: 'awy_calls',
+              filter: `id=eq.${callId}`
+            },
+            (payload: any) => {
+              const status = payload.new.status
+              if (status === 'accepted') {
+                setCallStatus('connected')
+                setActiveCall({ callId, roomUrl, callerName: lovedOneName })
+                toast.success(`${lovedOneName} accepted your call!`)
+              } else if (status === 'declined') {
+                setCallStatus('declined')
+                toast.error(`${lovedOneName} declined the call`)
+                setTimeout(() => {
+                  setCallStatus('idle')
+                  setIsCallingId(null)
+                }, 2000)
+              } else if (status === 'ended' || status === 'missed') {
+                setCallStatus('idle')
+                setIsCallingId(null)
+                setActiveCall(null)
+              }
+            }
+          )
+          .subscribe()
+        
+        callChannelRef.current = channel
+      }
+      
+      toast.success(`Calling ${lovedOneName}...`)
+      
+      // Auto-timeout after 30s if no response
+      setTimeout(() => {
+        if (callStatus === 'calling') {
+          endCall(callId)
+          toast.error('Call timed out - no answer')
+        }
+      }, 30000)
+      
+    } catch (err: any) {
+      console.error('[AWY] Start call error:', err)
+      toast.error(err.message || 'Failed to start call')
+      setCallStatus('idle')
+      setIsCallingId(null)
+    }
   }
-
-  const openCall = (otherId: string) => {
-    const url = getJitsiUrl(otherId)
-    window.open(url, '_blank', 'noopener,noreferrer')
+  
+  const endCall = async (callId?: string) => {
+    const id = callId || activeCall?.callId
+    if (!id) return
+    
+    try {
+      await fetch('/api/awy/call/end', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ callId: id })
+      })
+    } catch (err) {
+      console.error('[AWY] End call error:', err)
+    }
+    
+    // Cleanup
+    if (callChannelRef.current && contextSupabase) {
+      contextSupabase.removeChannel(callChannelRef.current)
+      callChannelRef.current = null
+    }
+    setActiveCall(null)
+    setCallStatus('idle')
+    setIsCallingId(null)
   }
 
   const handleInvite = async () => {
@@ -704,12 +802,12 @@ export default function AWYWidget() {
                     <div className="flex gap-2">
                        {conn.status !== 'revoked' && (
                          <button
-                           onClick={() => openCall(conn.id)}
-                           disabled={!conn.isAvailable}
-                           className={`p-2 rounded-full transition-all shadow-sm ${conn.isAvailable ? 'bg-pink-100 text-pink-600 hover:bg-pink-500 hover:text-white' : 'bg-gray-100 text-gray-400 cursor-not-allowed'}`}
-                           title={conn.isAvailable ? "Start Video Call" : "Available when online"}
+                           onClick={() => startCall(conn.id, conn.displayName)}
+                           disabled={!conn.isAvailable || isCallingId === conn.id}
+                           className={`p-2 rounded-full transition-all shadow-sm ${conn.isAvailable && !isCallingId ? 'bg-pink-100 text-pink-600 hover:bg-pink-500 hover:text-white' : 'bg-gray-100 text-gray-400 cursor-not-allowed'} ${isCallingId === conn.id ? 'animate-pulse bg-green-100 text-green-600' : ''}`}
+                           title={isCallingId === conn.id ? 'Calling...' : conn.isAvailable ? "Start Video Call" : "Available when online"}
                          >
-                           <Video className="w-4 h-4" />
+                           {isCallingId === conn.id ? <Phone className="w-4 h-4 animate-bounce" /> : <Video className="w-4 h-4" />}
                          </button>
                        )}
                        {/* Activity Log */}
@@ -914,6 +1012,16 @@ export default function AWYWidget() {
           </div>
         </div>
       </div>
+    )}
+    
+    {/* Active Video Call Modal */}
+    {activeCall && (
+      <DailyCallModal
+        roomUrl={activeCall.roomUrl}
+        callId={activeCall.callId}
+        callerName={activeCall.callerName}
+        onHangup={() => endCall()}
+      />
     )}
     </>
   )

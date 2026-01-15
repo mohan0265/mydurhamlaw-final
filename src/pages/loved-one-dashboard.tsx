@@ -2,17 +2,29 @@
 
 import React, { useState, useEffect, useRef } from 'react'
 import Head from 'next/head'
-import { Heart, Video, LogOut, User, RefreshCw } from 'lucide-react'
+import { Heart, Video, LogOut, User, RefreshCw, Phone, PhoneOff } from 'lucide-react'
 import { getSupabaseClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
 import { UKTimeDisplay } from '@/components/ui/UKTimeDisplay'
+import dynamic from 'next/dynamic'
+
+// Lazy load call modals
+const DailyCallModal = dynamic(() => import('@/components/awy/DailyCallModal'), { ssr: false })
+const IncomingCallModal = dynamic(() => import('@/components/awy/IncomingCallModal'), { ssr: false })
 
 interface Student {
   studentId: string
   displayName: string
   isAvailable: boolean
   status: string
+}
+
+interface IncomingCall {
+  callId: string
+  roomUrl: string
+  callerName: string
+  studentId: string
 }
 
 export default function LovedOneDashboard() {
@@ -24,6 +36,11 @@ export default function LovedOneDashboard() {
   const router = useRouter()
   const supabase = getSupabaseClient()
   const channelRef = useRef<any>(null)
+  
+  // Incoming call state
+  const [incomingCall, setIncomingCall] = useState<IncomingCall | null>(null)
+  const [activeCall, setActiveCall] = useState<{ callId: string; roomUrl: string; callerName: string } | null>(null)
+  const incomingChannelRef = useRef<any>(null)
 
   const fetchUser = async () => {
     const { data: { user } } = await supabase.auth.getUser()
@@ -157,10 +174,117 @@ export default function LovedOneDashboard() {
     router.push('/loved-one-login')
   }
 
-  const getJitsiUrl = (studentId: string) => {
-    if (!user) return '#'
-    // Format: https://meet.jit.si/MyDurhamLaw-{studentId}-{lovedOneId}
-    return `https://meet.jit.si/MyDurhamLaw-${studentId}-${user.id}`
+  // === INCOMING CALL HANDLING ===
+  useEffect(() => {
+    if (!user?.id) return
+    
+    // Subscribe to incoming calls
+    const channel = supabase
+      .channel('incoming-calls')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'awy_calls',
+          filter: `loved_one_id=eq.${user.id}`
+        },
+        async (payload: any) => {
+          if (payload.new.status === 'ringing') {
+            // Get caller name from students list
+            const caller = students.find(s => s.studentId === payload.new.student_id)
+            setIncomingCall({
+              callId: payload.new.id,
+              roomUrl: payload.new.room_url,
+              callerName: caller?.displayName || 'Your Student',
+              studentId: payload.new.student_id
+            })
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'awy_calls',
+          filter: `loved_one_id=eq.${user.id}`
+        },
+        (payload: any) => {
+          // Handle call ended by caller
+          if (['ended', 'missed'].includes(payload.new.status)) {
+            if (incomingCall?.callId === payload.new.id) {
+              setIncomingCall(null)
+              toast.error('Call ended')
+            }
+            if (activeCall?.callId === payload.new.id) {
+              setActiveCall(null)
+              toast.success('Call ended')
+            }
+          }
+        }
+      )
+      .subscribe()
+    
+    incomingChannelRef.current = channel
+    
+    // Also check for any existing ringing calls on load
+    const checkExistingCalls = async () => {
+      const { data: calls } = await supabase
+        .from('awy_calls')
+        .select('*')
+        .eq('loved_one_id', user.id)
+        .eq('status', 'ringing')
+        .order('created_at', { ascending: false })
+        .limit(1)
+      
+      if (calls && calls.length > 0) {
+        const call = calls[0]
+        const caller = students.find(s => s.studentId === call.student_id)
+        setIncomingCall({
+          callId: call.id,
+          roomUrl: call.room_url,
+          callerName: caller?.displayName || 'Your Student',
+          studentId: call.student_id
+        })
+      }
+    }
+    checkExistingCalls()
+    
+    return () => {
+      if (incomingChannelRef.current) {
+        supabase.removeChannel(incomingChannelRef.current)
+      }
+    }
+  }, [user?.id, students, supabase])
+  
+  const handleAcceptCall = () => {
+    if (!incomingCall) return
+    setActiveCall({
+      callId: incomingCall.callId,
+      roomUrl: incomingCall.roomUrl,
+      callerName: incomingCall.callerName
+    })
+    setIncomingCall(null)
+  }
+  
+  const handleDeclineCall = () => {
+    setIncomingCall(null)
+  }
+  
+  const handleEndCall = async () => {
+    if (!activeCall) return
+    try {
+      await fetch('/api/awy/call/end', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ callId: activeCall.callId })
+      })
+    } catch (err) {
+      console.error('End call error:', err)
+    }
+    setActiveCall(null)
   }
 
   if (loading) {
@@ -256,15 +380,10 @@ export default function LovedOneDashboard() {
                 </div>
 
                 {student.isAvailable ? (
-                  <a
-                    href={getJitsiUrl(student.studentId)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center px-4 py-2 border border-transparent rounded-full shadow-sm text-sm font-medium text-white bg-pink-600 hover:bg-pink-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pink-500"
-                  >
+                  <div className="inline-flex items-center px-4 py-2 border border-green-200 rounded-full text-sm font-medium text-green-700 bg-green-50">
                     <Video className="w-4 h-4 mr-2" />
-                    Video Call
-                  </a>
+                    Ready to Call
+                  </div>
                 ) : (
                   <button
                     disabled
@@ -286,6 +405,26 @@ export default function LovedOneDashboard() {
           </p>
         </div>
       </main>
+      
+      {/* Incoming Call Modal */}
+      {incomingCall && (
+        <IncomingCallModal
+          callId={incomingCall.callId}
+          callerName={incomingCall.callerName}
+          onAccept={handleAcceptCall}
+          onDecline={handleDeclineCall}
+        />
+      )}
+      
+      {/* Active Call Modal */}
+      {activeCall && (
+        <DailyCallModal
+          roomUrl={activeCall.roomUrl}
+          callId={activeCall.callId}
+          callerName={activeCall.callerName}
+          onHangup={handleEndCall}
+        />
+      )}
     </div>
   )
 }

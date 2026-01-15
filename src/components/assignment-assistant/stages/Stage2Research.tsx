@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-async-client-component */
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -12,10 +13,12 @@ interface ResearchNote {
   notes: string;
 }
 
+// Props interface - functions are valid in 'use client' components
 interface Stage2ResearchProps {
   assignmentId: string;
   briefData: any;
-  onComplete: (data: any) => void; // @ts-ignore - Next.js false positive for client components
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
+  onComplete: (data: any) => void;
 }
 
 export default function Stage2Research({ assignmentId, briefData, onComplete }: Stage2ResearchProps) {
