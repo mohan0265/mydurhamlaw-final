@@ -10,6 +10,7 @@ import dynamic from 'next/dynamic'
 
 // Lazy load call modals
 const DailyCallModal = dynamic(() => import('./DailyCallModal'), { ssr: false })
+const IncomingCallModal = dynamic(() => import('./IncomingCallModal'), { ssr: false })
 
 interface Connection {
   id: string // loved_one_id or student_id
@@ -45,7 +46,9 @@ export default function AWYWidget() {
   const [activeCall, setActiveCall] = useState<{ callId: string; roomUrl: string; callerName: string } | null>(null)
   const [isCallingId, setIsCallingId] = useState<string | null>(null) // ID of connection being called
   const [callStatus, setCallStatus] = useState<'idle' | 'calling' | 'connected' | 'declined'>('idle')
+  const [incomingCall, setIncomingCall] = useState<{ callId: string; roomUrl: string; callerName: string } | null>(null)
   const callChannelRef = useRef<any>(null)
+  const incomingChannelRef = useRef<any>(null)
   
   // Use global auth context instead of creating new client
   const { user, supabase: contextSupabase, loading: authLoading } = React.useContext(AuthContext)
@@ -360,6 +363,64 @@ export default function AWYWidget() {
     }
   }, [contextSupabase, userId, fetchData, sendHeartbeat])
 
+  // Listen for incoming calls (students receiving calls from loved ones)
+  useEffect(() => {
+    if (!contextSupabase || !userId || userRole !== 'student') return
+    
+    const channel = contextSupabase
+      .channel('student-incoming-calls')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'awy_calls',
+          filter: `student_id=eq.${userId}`
+        },
+        (payload: any) => {
+          // Only show if we're not the caller and call is ringing
+          if (payload.new.status === 'ringing' && payload.new.caller_id !== userId) {
+            const caller = connections.find(c => c.id === payload.new.loved_one_id)
+            setIncomingCall({
+              callId: payload.new.id,
+              roomUrl: payload.new.room_url,
+              callerName: caller?.displayName || 'Your Loved One'
+            })
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'awy_calls',
+          filter: `student_id=eq.${userId}`
+        },
+        (payload: any) => {
+          if (['ended', 'missed', 'declined'].includes(payload.new.status)) {
+            if (incomingCall?.callId === payload.new.id) {
+              setIncomingCall(null)
+            }
+            if (activeCall?.callId === payload.new.id) {
+              setActiveCall(null)
+              toast.success('Call ended')
+            }
+          }
+        }
+      )
+      .subscribe()
+    
+    incomingChannelRef.current = channel
+    
+    return () => {
+      if (incomingChannelRef.current) {
+        contextSupabase.removeChannel(incomingChannelRef.current)
+        incomingChannelRef.current = null
+      }
+    }
+  }, [contextSupabase, userId, userRole, connections, incomingCall, activeCall])
+
   const toggleAvailability = async () => {
     if (!contextSupabase || !userId) {
       toast.error('Sign in to update your availability')
@@ -488,6 +549,53 @@ export default function AWYWidget() {
     setActiveCall(null)
     setCallStatus('idle')
     setIsCallingId(null)
+  }
+
+  // Handle accepting incoming call (for students)
+  const handleAcceptCall = async () => {
+    if (!incomingCall) return
+    
+    try {
+      const res = await fetch('/api/awy/call/respond', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ callId: incomingCall.callId, action: 'accept' })
+      })
+      
+      if (res.ok) {
+        setActiveCall({
+          callId: incomingCall.callId,
+          roomUrl: incomingCall.roomUrl,
+          callerName: incomingCall.callerName
+        })
+        setIncomingCall(null)
+        toast.success('Call connected!')
+      } else {
+        toast.error('Failed to accept call')
+      }
+    } catch (err) {
+      console.error('[AWY] Accept call error:', err)
+      toast.error('Failed to accept call')
+    }
+  }
+
+  const handleDeclineCall = async () => {
+    if (!incomingCall) return
+    
+    try {
+      await fetch('/api/awy/call/respond', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ callId: incomingCall.callId, action: 'decline' })
+      })
+    } catch (err) {
+      console.error('[AWY] Decline call error:', err)
+    }
+    
+    setIncomingCall(null)
+    toast.success('Call declined')
   }
 
   const handleInvite = async () => {
@@ -1012,6 +1120,16 @@ export default function AWYWidget() {
           </div>
         </div>
       </div>
+    )}
+    
+    {/* Incoming Call Modal (for students receiving calls) */}
+    {incomingCall && (
+      <IncomingCallModal
+        callId={incomingCall.callId}
+        callerName={incomingCall.callerName}
+        onAccept={handleAcceptCall}
+        onDecline={handleDeclineCall}
+      />
     )}
     
     {/* Active Video Call Modal */}

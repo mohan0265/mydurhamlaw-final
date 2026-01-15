@@ -180,7 +180,7 @@ export default function LovedOneDashboard() {
   useEffect(() => {
     if (!user?.id) return
     
-    // Subscribe to incoming calls
+    // Subscribe to incoming calls (where we are the receiver, not the caller)
     const channel = supabase
       .channel('incoming-calls')
       .on(
@@ -192,7 +192,8 @@ export default function LovedOneDashboard() {
           filter: `loved_one_id=eq.${user.id}`
         },
         async (payload: any) => {
-          if (payload.new.status === 'ringing') {
+          // CRITICAL: Only show incoming call if WE are not the caller
+          if (payload.new.status === 'ringing' && payload.new.caller_id !== user.id) {
             // Get caller name from students list
             const caller = students.find(s => s.studentId === payload.new.student_id)
             setIncomingCall({
@@ -236,6 +237,7 @@ export default function LovedOneDashboard() {
         .from('awy_calls')
         .select('*')
         .eq('loved_one_id', user.id)
+        .neq('caller_id', user.id) // Exclude our own outgoing calls
         .eq('status', 'ringing')
         .order('created_at', { ascending: false })
         .limit(1)

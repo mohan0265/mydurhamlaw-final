@@ -95,6 +95,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         .insert({
           student_id: studentId,
           loved_one_id: lovedOneIdFinal,
+          caller_id: user.id,
           room_url: mockRoomUrl,
           room_name: roomName,
           status: 'ringing'
@@ -147,6 +148,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .insert({
         student_id: studentId,
         loved_one_id: lovedOneIdFinal,
+        caller_id: user.id,
         room_url: roomUrl,
         room_name: roomName,
         status: 'ringing'
