@@ -400,6 +400,7 @@ export default function AdminDashboard({ authorized, rows, users, connections, e
     const res = await fetch("/api/admin/remove-awy-connection", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      credentials: 'include',
       body: JSON.stringify({ connectionId })
     })
     if (!res.ok) {
