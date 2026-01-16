@@ -390,6 +390,7 @@ export default function AWYWidget() {
     const previous = isMyAvailabilityOn
     const newState = !previous
     setIsMyAvailabilityOn(newState)
+    setAvailabilityLockUntil(Date.now() + 15000) // Lock immediately to prevent race conditions
 
     try {
       const { error } = await contextSupabase.rpc('awy_heartbeat', {
@@ -397,7 +398,6 @@ export default function AWYWidget() {
       })
       if (error) throw error
       sendHeartbeat(newState)
-      setAvailabilityLockUntil(Date.now() + 15000) // keep UI stable for 15s
       setTimeout(() => setAvailabilityLockUntil(null), 15000)
       fetchData()
       toast.success(newState ? "You are now visible" : "You are hidden")
@@ -639,37 +639,29 @@ export default function AWYWidget() {
 
         <div className="p-5">
           {/* My Status Toggle - ONLY for students */}
-          {userRole === 'student' ? (
-            <div className="flex items-center justify-between bg-pink-50/50 p-4 rounded-2xl mb-5 border border-pink-100">
-              <div className="flex flex-col">
-                <span className="text-sm font-semibold text-gray-800">I&apos;m Available</span>
-                <span className="text-xs text-gray-500">Let them know you&apos;re free</span>
-              </div>
-              <button
-                onClick={toggleAvailability}
-                className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-pink-500 focus:ring-offset-2 ${
-                  isMyAvailabilityOn ? 'bg-pink-500' : 'bg-gray-200'
+          {/* My Status Toggle - For Students AND Loved Ones */}
+          <div className="flex items-center justify-between bg-pink-50/50 p-4 rounded-2xl mb-5 border border-pink-100">
+            <div className="flex flex-col">
+              <span className="text-sm font-semibold text-gray-800">
+                {isMyAvailabilityOn ? "I'm Available" : "I'm Hidden"}
+              </span>
+              <span className="text-xs text-gray-500">
+                {isMyAvailabilityOn ? "Let them know you're free" : "You are invisible to others"}
+              </span>
+            </div>
+            <button
+              onClick={toggleAvailability}
+              className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-pink-500 focus:ring-offset-2 ${
+                isMyAvailabilityOn ? 'bg-pink-500' : 'bg-gray-200'
+              }`}
+            >
+              <span
+                className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-sm transition-transform ${
+                  isMyAvailabilityOn ? 'translate-x-6' : 'translate-x-1'
                 }`}
-              >
-                <span
-                  className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-sm transition-transform ${
-                    isMyAvailabilityOn ? 'translate-x-6' : 'translate-x-1'
-                  }`}
-                />
-              </button>
-            </div>
-          ) : (
-            /* For loved ones - show connected status (no toggle needed) */
-            <div className="flex items-center gap-3 bg-green-50 p-4 rounded-2xl mb-5 border border-green-100">
-              <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-                <Heart className="w-5 h-5 text-green-600 fill-green-600" />
-              </div>
-              <div>
-                <span className="text-sm font-semibold text-green-800">You&apos;re Connected</span>
-                <p className="text-xs text-green-600">Your student can see you&apos;re online</p>
-              </div>
-            </div>
-          )}
+              />
+            </button>
+          </div>
 
           {presenceError && (
             <div className="mb-4 text-xs text-orange-700 bg-orange-50 border border-orange-100 rounded-2xl px-3 py-2">
