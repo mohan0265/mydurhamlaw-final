@@ -707,7 +707,7 @@ export default function AWYWidget() {
                 </button>
              </div>
              
-             <div className="grid grid-cols-3 gap-2">
+             <div className="grid grid-cols-2 gap-2">
                 <button
                    onClick={() => updateStatus('available', availabilityNote, null)}
                    className={`flex flex-col items-center justify-center p-2 rounded-xl border transition-all ${
@@ -730,18 +730,6 @@ export default function AWYWidget() {
                 >
                    <div className={`w-3 h-3 rounded-full mb-1 ${availabilityStatus === 'busy' ? 'bg-orange-500' : 'bg-gray-300'}`} />
                    <span className="text-[10px] font-bold">Busy</span>
-                </button>
-
-                <button
-                   onClick={() => updateStatus('dnd', availabilityNote, null)}
-                   className={`flex flex-col items-center justify-center p-2 rounded-xl border transition-all ${
-                      availabilityStatus === 'dnd' 
-                        ? 'bg-red-100 border-red-200 text-red-700 shadow-sm' 
-                        : 'bg-white border-transparent hover:bg-gray-100 text-gray-500'
-                   }`}
-                >
-                   <div className={`w-3 h-3 rounded-full mb-1 ${availabilityStatus === 'dnd' ? 'bg-red-500' : 'bg-gray-300'}`} />
-                   <span className="text-[10px] font-bold">DND</span>
                 </button>
              </div>
 

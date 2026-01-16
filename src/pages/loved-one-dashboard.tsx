@@ -245,7 +245,7 @@ export default function LovedOneDashboard() {
               </button>
            </div>
            
-           <div className="grid grid-cols-3 gap-4">
+           <div className="grid grid-cols-2 gap-4">
               <button
                  onClick={() => updateStatus('available', availabilityNote, null)}
                  className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all ${
@@ -268,18 +268,6 @@ export default function LovedOneDashboard() {
               >
                  <div className={`w-4 h-4 rounded-full mb-2 ${availabilityStatus === 'busy' ? 'bg-orange-500' : 'bg-gray-300'}`} />
                  <span className="font-bold">Busy</span>
-              </button>
-
-              <button
-                 onClick={() => updateStatus('dnd', availabilityNote, null)}
-                 className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all ${
-                    availabilityStatus === 'dnd' 
-                      ? 'bg-red-50 border-red-500 text-red-700' 
-                      : 'bg-white border-gray-100 hover:border-gray-200 text-gray-500'
-                 }`}
-              >
-                 <div className={`w-4 h-4 rounded-full mb-2 ${availabilityStatus === 'dnd' ? 'bg-red-500' : 'bg-gray-300'}`} />
-                 <span className="font-bold">Do Not Disturb</span>
               </button>
            </div>
         </div>
