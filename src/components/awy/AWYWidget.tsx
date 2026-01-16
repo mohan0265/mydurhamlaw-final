@@ -78,6 +78,11 @@ export default function AWYWidget() {
       return
     }
 
+    // Don't fetch if we recently toggled availability (prevents UI flicker)
+    if (availabilityLockUntil && now < availabilityLockUntil) {
+      return
+    }
+
     if (!contextSupabase || !userId) {
       if (!authLoading) {
         setConnections([])
@@ -468,6 +473,8 @@ export default function AWYWidget() {
     setInviteEmail(conn.email || '')
     setInviteRelationship(conn.displayName || 'Loved one')
     setEditingEmail(conn.email || null)
+    setInviteWhatsApp(conn.whatsapp_e164 || '')
+    setInviteMeet(conn.google_meet_url || '')
     setShowAddModal(true)
   }
 
@@ -960,6 +967,12 @@ export default function AWYWidget() {
         isOpen={Boolean(selectedConnection)}
         onClose={() => setSelectedConnection(null)}
         connection={selectedConnection}
+        onEdit={() => {
+          if (selectedConnection) {
+            handleResend(selectedConnection)
+            setSelectedConnection(null)
+          }
+        }}
       />
     )}
     </>

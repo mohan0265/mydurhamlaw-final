@@ -15,10 +15,11 @@ interface Connection {
 interface ConnectModalProps {
   isOpen: boolean
   onClose: () => void
+  onEdit?: () => void
   connection: Connection
 }
 
-export default function ConnectModal({ isOpen, onClose, connection }: ConnectModalProps) {
+export default function ConnectModal({ isOpen, onClose, onEdit, connection }: ConnectModalProps) {
   const [copied, setCopied] = React.useState<string | null>(null)
 
   const copyToClipboard = (text: string, label: string) => {
@@ -30,6 +31,7 @@ export default function ConnectModal({ isOpen, onClose, connection }: ConnectMod
 
   const getWhatsAppLink = (number: string) => {
     const clean = number.replace(/\D/g, '')
+    // Use wa.me which works for both desktop and web
     return `https://wa.me/${clean}`
   }
 
@@ -94,8 +96,8 @@ export default function ConnectModal({ isOpen, onClose, connection }: ConnectMod
   }
 
   // 4. Phone
-  if (connection.phone_e164 || connection.whatsapp_e164) {
-    const number = connection.phone_e164 || connection.whatsapp_e164
+  if (connection.phone_e164) {
+    const number = connection.phone_e164
     options.push({
       id: 'phone',
       label: 'Call Number',
@@ -117,12 +119,22 @@ export default function ConnectModal({ isOpen, onClose, connection }: ConnectMod
     <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200">
         <div className="bg-gradient-to-r from-pink-500 to-rose-500 p-6 text-white text-center relative">
-          <button 
-            onClick={onClose}
-            className="absolute top-4 right-4 p-2 bg-white/20 rounded-full hover:bg-white/30 transition-colors"
-          >
-            <X size={16} />
-          </button>
+          <div className="absolute top-4 right-4 flex items-center gap-2">
+            {onEdit && (
+              <button 
+                onClick={onEdit}
+                className="p-2 bg-white/20 rounded-full hover:bg-white/30 transition-colors text-white text-xs font-semibold px-3"
+              >
+                Edit
+              </button>
+            )}
+            <button 
+              onClick={onClose}
+              className="p-2 bg-white/20 rounded-full hover:bg-white/30 transition-colors"
+            >
+              <X size={16} />
+            </button>
+          </div>
           
           <div className="mx-auto w-16 h-16 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center mb-3 text-2xl font-bold">
             {connection.displayName.charAt(0).toUpperCase()}

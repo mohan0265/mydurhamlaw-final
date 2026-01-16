@@ -106,19 +106,14 @@ export default function LovedOneDashboard() {
       if (user) fetchData(user.id)
     }, 15000)
 
-    // Initial heartbeat on mount
-    const sendHeartbeat = async () => {
-      const { error } = await supabase.rpc('awy_heartbeat', { p_is_available: true }); // Default to available on login
-      if (error) console.warn('Heartbeat failed:', error.message);
-      setIsMyAvailabilityOn(true); // Sync local state
-    };
-    if (user) sendHeartbeat();
 
     // Periodic heartbeat (every 30s) - pass null to preserve current availability
     const heartbeatInterval = setInterval(async () => {
       if (!user) return;
-      await supabase.rpc('awy_heartbeat', { p_is_available: null }); // Keep alive, preserve availability
+      await supabase.rpc('awy_heartbeat', { p_is_available: null }); // Keep alive
     }, 30000);
+  
+
 
     return () => {
       if (channelRef.current) supabase.removeChannel(channelRef.current)
@@ -126,6 +121,22 @@ export default function LovedOneDashboard() {
       clearInterval(heartbeatInterval)
     }
   }, [supabase, user])
+
+  const toggleAvailability = async () => {
+    if (!user) return
+    const newState = !isMyAvailabilityOn
+    setIsMyAvailabilityOn(newState)
+    
+    try {
+      const { error } = await supabase.rpc('awy_heartbeat', { p_is_available: newState })
+      if (error) throw error
+      toast.success(newState ? "You are now visible" : "You are hidden")
+    } catch (err) {
+      console.error('Failed to toggle availability:', err)
+      setIsMyAvailabilityOn(!newState) // Revert on error
+      toast.error('Failed to update status')
+    }
+  }
 
   const handleLogout = async () => {
     await supabase.auth.signOut()
@@ -168,21 +179,40 @@ export default function LovedOneDashboard() {
 
       <main className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
         
-        {/* Status Indicator - Loved ones are always visible when logged in */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mb-8">
+        {/* Status Indicator & Visibility Toggle */}
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mb-8 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div className="relative">
-              <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-                <Heart className="w-6 h-6 text-green-600 fill-green-600" />
+              <div className={`w-12 h-12 rounded-full flex items-center justify-center transition-colors ${isMyAvailabilityOn ? 'bg-green-100' : 'bg-gray-100'}`}>
+                <Heart className={`w-6 h-6 transition-colors ${isMyAvailabilityOn ? 'text-green-600 fill-green-600' : 'text-gray-400'}`} />
               </div>
-              <span className="absolute bottom-0 right-0 w-4 h-4 bg-green-500 border-2 border-white rounded-full animate-pulse"></span>
+              {isMyAvailabilityOn && (
+                <span className="absolute bottom-0 right-0 w-4 h-4 bg-green-500 border-2 border-white rounded-full animate-pulse"></span>
+              )}
             </div>
             <div>
-              <h2 className="text-lg font-bold text-gray-900">You're Connected</h2>
-              <p className="text-sm text-green-600 font-medium">
-                Your student can see you're online
+              <h2 className="text-lg font-bold text-gray-900">
+                {isMyAvailabilityOn ? "You're Available" : "You're Hidden"}
+              </h2>
+              <p className="text-sm text-gray-500 font-medium">
+                {isMyAvailabilityOn 
+                  ? "Your student can see you're online" 
+                  : "You are invisible to your student"}
               </p>
             </div>
+          </div>
+
+          <div className="flex flex-col items-end gap-2">
+             <div className="flex items-center gap-3">
+               <span className="text-sm font-medium text-gray-700">
+                 {isMyAvailabilityOn ? 'On' : 'Off'}
+               </span>
+               <Switch 
+                 checked={isMyAvailabilityOn}
+                 onCheckedChange={toggleAvailability}
+                 className={isMyAvailabilityOn ? "bg-green-500" : "bg-gray-300"}
+               />
+             </div>
           </div>
         </div>
 
