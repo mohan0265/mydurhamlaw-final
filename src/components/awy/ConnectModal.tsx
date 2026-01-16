@@ -23,7 +23,123 @@ interface ConnectModalProps {
 export default function ConnectModal({ isOpen, onClose, onEdit, connection }: ConnectModalProps) {
   const [copied, setCopied] = React.useState<string | null>(null)
   
-  // ... existing code ...
+  const copyToClipboard = (text: string, label: string) => {
+    navigator.clipboard.writeText(text)
+    setCopied(label)
+    toast.success('Copied to clipboard!')
+    setTimeout(() => setCopied(null), 2000)
+  }
+
+  const getWhatsAppLink = (number: string) => {
+    const clean = number.replace(/\D/g, '')
+    // Use wa.me which works for both desktop and web
+    return `https://wa.me/${clean}`
+  }
+
+  const getFaceTimeLink = (contact: string, video: boolean = true) => {
+    return video ? `facetime://${contact}` : `facetime-audio://${contact}`
+  }
+
+  // Determine order based on availability and preference
+  const options = []
+
+  // 1. WhatsApp
+  if (connection.whatsapp_e164) {
+    options.push({
+      id: 'whatsapp',
+      label: 'WhatsApp Chat',
+      icon: MessageCircle,
+      color: 'bg-[#25D366] hover:bg-[#128C7E]',
+      action: () => window.open(getWhatsAppLink(connection.whatsapp_e164!), '_blank'),
+      secondary: {
+        icon: Copy,
+        action: () => copyToClipboard(connection.whatsapp_e164!, 'whatsapp')
+      }
+    })
+  } else if (onEdit) {
+    options.push({
+      id: 'whatsapp-add',
+      label: 'Add WhatsApp',
+      icon: MessageCircle,
+      color: 'bg-gray-50 text-gray-400 border border-gray-200 border-dashed hover:bg-gray-100 hover:text-gray-600',
+      textColor: 'text-gray-400',
+      action: onEdit,
+      note: 'Click to add number'
+    })
+  }
+
+  // 2. FaceTime
+  if (connection.facetime_contact) {
+    options.push({
+      id: 'facetime',
+      label: 'FaceTime Video',
+      icon: Video,
+      color: 'bg-black hover:bg-gray-800',
+      action: () => window.location.href = getFaceTimeLink(connection.facetime_contact!),
+      note: 'Apple devices only',
+      secondary: {
+        icon: Copy,
+        action: () => copyToClipboard(connection.facetime_contact!, 'facetime')
+      }
+    })
+  } else if (onEdit) {
+    options.push({
+      id: 'facetime-add',
+      label: 'Add FaceTime',
+      icon: Video,
+      color: 'bg-gray-50 text-gray-400 border border-gray-200 border-dashed hover:bg-gray-100 hover:text-gray-600',
+      textColor: 'text-gray-400',
+      action: onEdit,
+      note: 'Click to add contact'
+    })
+  }
+
+  // 3. Google Meet
+  if (connection.google_meet_url) {
+    options.push({
+      id: 'meet',
+      label: 'Google Meet',
+      icon: Video,
+      color: 'bg-[#1a73e8] hover:bg-[#1557b0]',
+      action: () => window.open(connection.google_meet_url!, '_blank'),
+      secondary: {
+        icon: Copy,
+        action: () => copyToClipboard(connection.google_meet_url!, 'meet')
+      }
+    })
+  } else {
+    // Always offer a "Create New Meet" option if no specific URL
+    options.push({
+      id: 'meet-new',
+      label: 'Start Google Meet',
+      icon: Video,
+      color: 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50',
+      textColor: 'text-gray-700',
+      action: () => window.open('https://meet.google.com/new', '_blank'),
+      note: 'Opens new meeting room',
+      secondary: {
+        icon: Copy,
+        action: () => copyToClipboard('https://meet.google.com/new', 'meet-new')
+      }
+    })
+  }
+
+  // 4. Phone
+  if (connection.phone_e164) {
+    const number = connection.phone_e164
+    options.push({
+      id: 'phone',
+      label: 'Call Number',
+      icon: Phone,
+      color: 'bg-gray-100 text-gray-900 hover:bg-gray-200',
+      textColor: 'text-gray-900',
+      action: () => window.location.href = `tel:${number}`,
+      secondary: {
+        icon: Copy,
+        action: () => copyToClipboard(number!, 'phone')
+      }
+    })
+  }
 
   return (
     <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
