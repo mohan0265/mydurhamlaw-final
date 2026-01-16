@@ -10,7 +10,7 @@ interface StatusUpdateModalProps {
 }
 
 export function StatusUpdateModal({ currentStatus, currentNote, onUpdate, onClose }: StatusUpdateModalProps) {
-  const [selectedStatus, setSelectedStatus] = useState<'available' | 'busy' | 'dnd'>(currentStatus === 'dnd' ? 'dnd' : currentStatus === 'busy' ? 'busy' : 'available')
+  const [selectedStatus, setSelectedStatus] = useState<'available' | 'busy' | 'dnd'>(currentStatus === 'busy' ? 'busy' : 'available')
   const [note, setNote] = useState(currentNote || '')
   const [expiry, setExpiry] = useState<number | null>(null)
   const [loading, setLoading] = useState(false)
@@ -30,8 +30,7 @@ export function StatusUpdateModal({ currentStatus, currentNote, onUpdate, onClos
 
   const statusOptions = [
     { id: 'available', label: 'Available', color: 'bg-green-100 text-green-700 ring-green-500', icon: '👋' },
-    { id: 'busy', label: 'Busy', color: 'bg-orange-100 text-orange-700 ring-orange-500', icon: '⚡' },
-    { id: 'dnd', label: 'Do Not Disturb', color: 'bg-red-100 text-red-700 ring-red-500', icon: '⛔' }
+    { id: 'busy', label: 'Busy', color: 'bg-orange-100 text-orange-700 ring-orange-500', icon: '⚡' }
   ] as const
 
   const expiryOptions = [
@@ -56,7 +55,7 @@ export function StatusUpdateModal({ currentStatus, currentNote, onUpdate, onClos
         <div className="p-5 space-y-6">
           
           {/* Status Selection */}
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 gap-3">
             {statusOptions.map((opt) => (
               <button
                 key={opt.id}

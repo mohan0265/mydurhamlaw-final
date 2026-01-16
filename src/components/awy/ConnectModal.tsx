@@ -23,10 +23,10 @@ interface ConnectModalProps {
 export default function ConnectModal({ isOpen, onClose, onEdit, connection }: ConnectModalProps) {
   const [copied, setCopied] = React.useState<string | null>(null)
   
-  const copyToClipboard = (text: string, label: string) => {
+  const copyToClipboard = (text: string, label: string, message: string) => {
     navigator.clipboard.writeText(text)
     setCopied(label)
-    toast.success('Copied to clipboard!')
+    toast.success(message)
     setTimeout(() => setCopied(null), 2000)
   }
 
@@ -53,7 +53,7 @@ export default function ConnectModal({ isOpen, onClose, onEdit, connection }: Co
       action: () => window.open(getWhatsAppLink(connection.whatsapp_e164!), '_blank'),
       secondary: {
         icon: Copy,
-        action: () => copyToClipboard(connection.whatsapp_e164!, 'whatsapp')
+        action: () => copyToClipboard(connection.whatsapp_e164!, 'whatsapp', 'Copied WhatsApp number')
       }
     })
   } else if (onEdit) {
@@ -79,7 +79,7 @@ export default function ConnectModal({ isOpen, onClose, onEdit, connection }: Co
       note: 'Apple devices only',
       secondary: {
         icon: Copy,
-        action: () => copyToClipboard(connection.facetime_contact!, 'facetime')
+        action: () => copyToClipboard(connection.facetime_contact!, 'facetime', 'Copied FaceTime contact')
       }
     })
   } else if (onEdit) {
@@ -104,7 +104,7 @@ export default function ConnectModal({ isOpen, onClose, onEdit, connection }: Co
       action: () => window.open(connection.google_meet_url!, '_blank'),
       secondary: {
         icon: Copy,
-        action: () => copyToClipboard(connection.google_meet_url!, 'meet')
+        action: () => copyToClipboard(connection.google_meet_url!, 'meet', 'Copied Meet link')
       }
     })
   } else {
@@ -119,7 +119,7 @@ export default function ConnectModal({ isOpen, onClose, onEdit, connection }: Co
       note: 'Opens new meeting room',
       secondary: {
         icon: Copy,
-        action: () => copyToClipboard('https://meet.google.com/new', 'meet-new')
+        action: () => copyToClipboard('https://meet.google.com/new', 'meet-new', 'Copied Meet link')
       }
     })
   }
@@ -136,7 +136,7 @@ export default function ConnectModal({ isOpen, onClose, onEdit, connection }: Co
       action: () => window.location.href = `tel:${number}`,
       secondary: {
         icon: Copy,
-        action: () => copyToClipboard(number!, 'phone')
+        action: () => copyToClipboard(number!, 'phone', 'Copied phone number')
       }
     })
   }
