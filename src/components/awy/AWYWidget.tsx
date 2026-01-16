@@ -724,10 +724,23 @@ export default function AWYWidget() {
                     <div className="flex gap-2">
                        {conn.status !== 'revoked' && (
                          <button
-                           onClick={() => setSelectedConnection(conn)}
+                           onClick={() => {
+                             if (!conn.isAvailable) {
+                               toast.error(`${conn.displayName} is currently not available. Please try later when they are online.`, {
+                                 icon: '😴',
+                                 duration: 4000
+                               })
+                               return
+                             }
+                             setSelectedConnection(conn)
+                           }}
                            disabled={false}
-                           className="p-2 rounded-full transition-all shadow-sm bg-pink-100 text-pink-600 hover:bg-pink-500 hover:text-white"
-                           title="Connect"
+                           className={`p-2 rounded-full transition-all shadow-sm ${
+                             conn.isAvailable 
+                               ? 'bg-pink-100 text-pink-600 hover:bg-pink-500 hover:text-white' 
+                               : 'bg-gray-100 text-gray-400 cursor-not-allowed hover:bg-gray-200'
+                           }`}
+                           title={conn.isAvailable ? "Connect" : "Not available"}
                          >
                            <Video className="w-4 h-4" />
                          </button>
