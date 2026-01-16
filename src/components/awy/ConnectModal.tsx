@@ -1,5 +1,5 @@
 import React from 'react'
-import { X, Phone, Video, Copy, Check, MessageCircle, ExternalLink } from 'lucide-react'
+import { Video, Phone, Copy, Check, X, MessageCircle } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 interface Connection {
@@ -55,6 +55,16 @@ export default function ConnectModal({ isOpen, onClose, onEdit, connection }: Co
         action: () => copyToClipboard(connection.whatsapp_e164!, 'whatsapp')
       }
     })
+  } else if (onEdit) {
+    options.push({
+      id: 'whatsapp-add',
+      label: 'Add WhatsApp',
+      icon: MessageCircle,
+      color: 'bg-gray-50 text-gray-400 border border-gray-200 border-dashed hover:bg-gray-100 hover:text-gray-600',
+      textColor: 'text-gray-400',
+      action: onEdit,
+      note: 'Click to add number'
+    })
   }
 
   // 2. FaceTime
@@ -66,6 +76,16 @@ export default function ConnectModal({ isOpen, onClose, onEdit, connection }: Co
       color: 'bg-black hover:bg-gray-800',
       action: () => window.location.href = getFaceTimeLink(connection.facetime_contact!),
       note: 'Apple devices only'
+    })
+  } else if (onEdit) {
+     options.push({
+      id: 'facetime-add',
+      label: 'Add FaceTime',
+      icon: Video,
+      color: 'bg-gray-50 text-gray-400 border border-gray-200 border-dashed hover:bg-gray-100 hover:text-gray-600',
+      textColor: 'text-gray-400',
+      action: onEdit,
+      note: 'Click to add contact'
     })
   }
 

@@ -39,7 +39,7 @@ export default function AWYWidget() {
   const [inviteRelationship, setInviteRelationship] = useState('Parent')
   const [inviteSending, setInviteSending] = useState(false)
   const [pendingInvites, setPendingInvites] = useState<Connection[]>([])
-  const [availabilityLockUntil, setAvailabilityLockUntil] = useState<number | null>(null)
+  const availabilityLockUntilRef = useRef<number | null>(null)
   const [editingEmail, setEditingEmail] = useState<string | null>(null)
   
 
@@ -79,7 +79,7 @@ export default function AWYWidget() {
     }
 
     // Don't fetch if we recently toggled availability (prevents UI flicker)
-    if (availabilityLockUntil && now < availabilityLockUntil) {
+    if (availabilityLockUntilRef.current && now < availabilityLockUntilRef.current) {
       return
     }
 
@@ -91,6 +91,8 @@ export default function AWYWidget() {
       return
     }
 
+
+    // Helper to build presence map
     const buildPresenceMap = async (ids: string[]) => {
       if (!ids.length) return new Map<string, any>()
       const { data, error } = await contextSupabase
@@ -108,9 +110,9 @@ export default function AWYWidget() {
         .eq('student_id', userId)
         .in('status', ['active','accepted','pending','invited','granted','revoked'])
       if (error) throw error
-
+      
       const activeStatuses = ['active', 'accepted', 'granted']
-
+      
       // Get IDs of loved ones who have registered (for presence lookup)
       const registeredLovedIds = (data || [])
         .filter((conn: any) => activeStatuses.includes((conn.status || '').toLowerCase()) && conn.loved_one_id)
@@ -118,19 +120,17 @@ export default function AWYWidget() {
 
       const presenceMap = await buildPresenceMap(registeredLovedIds)
 
-      // Show ALL active connections, even if loved_one_id is null (they haven't registered yet)
+      // Show ALL active connections
       const activeList: Connection[] = (data || [])
         .filter((conn: any) => activeStatuses.includes((conn.status || '').toLowerCase()))
         .map((conn: any) => {
           const lovedId = conn.loved_one_id
           const presence = lovedId ? presenceMap.get(lovedId) : null
           const status = (conn.status || '').toLowerCase()
-          
-          // If loved_one_id is null, they haven't registered - show as "Awaiting signup"
           const isRegistered = Boolean(lovedId)
           
           return {
-            id: lovedId || conn.id,  // Use connection id as fallback for non-registered
+            id: lovedId || conn.id,
             displayName: conn.nickname || conn.relationship || conn.relationship_label || 'Loved One',
             isAvailable: isRegistered ? Boolean(presence?.is_available) : false,
             status: isRegistered 
@@ -270,7 +270,7 @@ export default function AWYWidget() {
         }
       }
 
-      if (!availabilityLockUntil || Date.now() > availabilityLockUntil) {
+      if (!availabilityLockUntilRef.current || Date.now() > availabilityLockUntilRef.current) {
         setIsMyAvailabilityOn(Boolean(myPresence?.is_available))
       }
       setPresenceError(null)
@@ -319,6 +319,12 @@ export default function AWYWidget() {
     }
   }, [contextSupabase, presencePausedUntil, userId])
 
+
+  const isMyAvailabilityOnRef = useRef(isMyAvailabilityOn)
+  useEffect(() => {
+    isMyAvailabilityOnRef.current = isMyAvailabilityOn
+  }, [isMyAvailabilityOn])
+
   useEffect(() => {
     if (!authLoading) {
       fetchData()
@@ -364,7 +370,8 @@ export default function AWYWidget() {
 
     const interval = setInterval(() => {
       fetchData()
-      sendHeartbeat(null)
+      // Send explicit status to prevent DB from resetting to false/null
+      sendHeartbeat(isMyAvailabilityOnRef.current)
     }, 30000)
 
     return () => {
@@ -390,7 +397,7 @@ export default function AWYWidget() {
     const previous = isMyAvailabilityOn
     const newState = !previous
     setIsMyAvailabilityOn(newState)
-    setAvailabilityLockUntil(Date.now() + 15000) // Lock immediately to prevent race conditions
+    availabilityLockUntilRef.current = Date.now() + 15000 // Lock immediately
 
     try {
       const { error } = await contextSupabase.rpc('awy_heartbeat', {
@@ -398,12 +405,14 @@ export default function AWYWidget() {
       })
       if (error) throw error
       sendHeartbeat(newState)
-      setTimeout(() => setAvailabilityLockUntil(null), 15000)
+      availabilityLockUntilRef.current = Date.now() + 15000 
       fetchData()
       toast.success(newState ? "You are now visible" : "You are hidden")
     } catch (err) {
       console.error('AWY availability update failed:', err)
       toast.error('Failed to update status')
+      setIsMyAvailabilityOn(previous)
+      availabilityLockUntilRef.current = null
     }
   }
 
