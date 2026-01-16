@@ -70,6 +70,11 @@ export default function LovedOneDashboard() {
     }
   }
 
+  const isMyAvailabilityOnRef = useRef(isMyAvailabilityOn)
+  useEffect(() => {
+    isMyAvailabilityOnRef.current = isMyAvailabilityOn
+  }, [isMyAvailabilityOn])
+
   useEffect(() => {
     fetchUser()
 
@@ -107,10 +112,10 @@ export default function LovedOneDashboard() {
     }, 15000)
 
 
-    // Periodic heartbeat (every 30s) - pass null to preserve current availability
+    // Periodic heartbeat (every 30s) - send explicit state to prevent reset
     const heartbeatInterval = setInterval(async () => {
       if (!user) return;
-      await supabase.rpc('awy_heartbeat', { p_is_available: null }); // Keep alive
+      await supabase.rpc('awy_heartbeat', { p_is_available: isMyAvailabilityOnRef.current });
     }, 30000);
   
 
@@ -203,15 +208,22 @@ export default function LovedOneDashboard() {
           </div>
 
           <div className="flex flex-col items-end gap-2">
-             <div className="flex items-center gap-3">
-               <span className="text-sm font-medium text-gray-700">
-                 {isMyAvailabilityOn ? 'On' : 'Off'}
-               </span>
-               <Switch 
-                 checked={isMyAvailabilityOn}
-                 onCheckedChange={toggleAvailability}
-                 className={isMyAvailabilityOn ? "bg-green-500" : "bg-gray-300"}
-               />
+            <div className="flex items-center gap-3">
+              <span className="text-sm font-medium text-gray-700">
+                {isMyAvailabilityOn ? 'On' : 'Off'}
+              </span>
+              <button
+                 onClick={toggleAvailability}
+                 className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-pink-500 focus:ring-offset-2 ${
+                   isMyAvailabilityOn ? 'bg-green-500' : 'bg-gray-200'
+                 }`}
+               >
+                 <span
+                   className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-sm transition-transform ${
+                     isMyAvailabilityOn ? 'translate-x-6' : 'translate-x-1'
+                   }`}
+                 />
+               </button>
              </div>
           </div>
         </div>
