@@ -10,6 +10,7 @@ import dynamic from 'next/dynamic'
 
 // Lazy load connect modal
 const ConnectModal = dynamic(() => import('./ConnectModal'), { ssr: false })
+import { StatusUpdateModal } from './StatusUpdateModal'
 
 interface Connection {
   id: string // loved_one_id or student_id

@@ -26,6 +26,45 @@ export default function LovedOneDashboard() {
   const supabase = getSupabaseClient()
   const channelRef = useRef<any>(null)
   
+  // Status State
+  const [availabilityStatus, setAvailabilityStatus] = useState<'available' | 'busy' | 'dnd'>('busy')
+  const [availabilityNote, setAvailabilityNote] = useState<string | null>(null)
+  const [showStatusModal, setShowStatusModal] = useState(false)
+
+  // Update Status Logic (Mirroring Widget)
+  const updateStatus = async (status: 'available' | 'busy' | 'dnd', note: string | null, expiryMinutes: number | null) => {
+    if (!user) return
+
+    const expiresAt = expiryMinutes ? new Date(Date.now() + expiryMinutes * 60000).toISOString() : null
+    
+    setAvailabilityStatus(status)
+    setAvailabilityNote(note)
+    setIsMyAvailabilityOn(status === 'available')
+    
+    try {
+      const { error } = await supabase.rpc('awy_update_presence', {
+        p_is_available: status === 'available',
+        p_status: status,
+        p_note: note,
+        p_expires_at: expiresAt,
+        p_note_expires_at: expiresAt
+      })
+
+      if (error) {
+         if (error.message?.includes('function') && error.message?.includes('not found')) {
+            await supabase.rpc('awy_heartbeat', { p_is_available: status === 'available' })
+         } else {
+            throw error
+         }
+      }
+      toast.success('Status updated')
+      fetchData(user.id)
+    } catch (err) {
+      console.error('Failed to update status:', err)
+      toast.error('Failed to update status')
+    }
+  }
+
   const fetchUser = async () => {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
