@@ -685,29 +685,61 @@ export default function AWYWidget() {
         </div>
 
         <div className="p-5">
-          {/* My Status Toggle - ONLY for students */}
-          {/* My Status Toggle - For Students AND Loved Ones */}
-          <div className="flex items-center justify-between bg-pink-50/50 p-4 rounded-2xl mb-5 border border-pink-100">
-            <div className="flex flex-col">
-              <span className="text-sm font-semibold text-gray-800">
-                {isMyAvailabilityOn ? "I'm Available" : "Share my presence"}
-              </span>
-              <span className="text-xs text-gray-500">
-                {isMyAvailabilityOn ? "Let them know you're free" : "Let them know you're online"}
-              </span>
-            </div>
-            <button
-              onClick={toggleAvailability}
-              className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-pink-500 focus:ring-offset-2 ${
-                isMyAvailabilityOn ? 'bg-pink-500' : 'bg-gray-200'
-              }`}
-            >
-              <span
-                className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-sm transition-transform ${
-                  isMyAvailabilityOn ? 'translate-x-6' : 'translate-x-1'
-                }`}
-              />
-            </button>
+          {/* My Status Picker - 3-State Control */}
+          <div className="bg-pink-50/50 p-4 rounded-2xl mb-5 border border-pink-100">
+             <div className="flex items-center justify-between mb-3">
+               <span className="text-sm font-semibold text-gray-800">My Status</span>
+               <button
+                  onClick={() => setShowStatusModal(true)}
+                  className="text-xs text-pink-600 font-bold hover:underline"
+                >
+                  Edit Note
+                </button>
+             </div>
+             
+             <div className="grid grid-cols-3 gap-2">
+                <button
+                   onClick={() => updateStatus('available', availabilityNote, null)}
+                   className={`flex flex-col items-center justify-center p-2 rounded-xl border transition-all ${
+                      availabilityStatus === 'available' 
+                        ? 'bg-green-100 border-green-200 text-green-700 shadow-sm' 
+                        : 'bg-white border-transparent hover:bg-gray-100 text-gray-500'
+                   }`}
+                >
+                   <div className={`w-3 h-3 rounded-full mb-1 ${availabilityStatus === 'available' ? 'bg-green-500 animate-pulse' : 'bg-gray-300'}`} />
+                   <span className="text-[10px] font-bold">Available</span>
+                </button>
+
+                <button
+                   onClick={() => updateStatus('busy', availabilityNote, null)}
+                   className={`flex flex-col items-center justify-center p-2 rounded-xl border transition-all ${
+                      availabilityStatus === 'busy' 
+                        ? 'bg-orange-100 border-orange-200 text-orange-700 shadow-sm' 
+                        : 'bg-white border-transparent hover:bg-gray-100 text-gray-500'
+                   }`}
+                >
+                   <div className={`w-3 h-3 rounded-full mb-1 ${availabilityStatus === 'busy' ? 'bg-orange-500' : 'bg-gray-300'}`} />
+                   <span className="text-[10px] font-bold">Busy</span>
+                </button>
+
+                <button
+                   onClick={() => updateStatus('dnd', availabilityNote, null)}
+                   className={`flex flex-col items-center justify-center p-2 rounded-xl border transition-all ${
+                      availabilityStatus === 'dnd' 
+                        ? 'bg-red-100 border-red-200 text-red-700 shadow-sm' 
+                        : 'bg-white border-transparent hover:bg-gray-100 text-gray-500'
+                   }`}
+                >
+                   <div className={`w-3 h-3 rounded-full mb-1 ${availabilityStatus === 'dnd' ? 'bg-red-500' : 'bg-gray-300'}`} />
+                   <span className="text-[10px] font-bold">DND</span>
+                </button>
+             </div>
+
+             {availabilityNote && (
+               <div className="mt-3 text-xs text-gray-500 bg-white/50 px-2 py-1.5 rounded-lg border border-pink-100/50 flex items-center gap-2">
+                 <span className="font-bold opacity-50">Note:</span> {availabilityNote}
+               </div>
+             )}
           </div>
 
           {presenceError && (

@@ -226,40 +226,60 @@ export default function LovedOneDashboard() {
         
         {/* Status Indicator & Visibility Toggle */}
 
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mb-8 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="relative">
-              <div className={`w-12 h-12 rounded-full flex items-center justify-center transition-colors ${
-                  availabilityStatus === 'available' ? 'bg-green-100 text-green-600' :
-                  availabilityStatus === 'busy' ? 'bg-orange-100 text-orange-600' :
-                  availabilityStatus === 'dnd' ? 'bg-red-100 text-red-600' : 'bg-gray-100 text-gray-400'
-              }`}>
-                <Heart className="w-6 h-6 fill-current" />
-              </div>
-              {availabilityStatus === 'available' && (
-                <span className="absolute bottom-0 right-0 w-4 h-4 bg-green-500 border-2 border-white rounded-full animate-pulse"></span>
-              )}
-            </div>
-            <div>
-               <h2 className="text-lg font-bold text-gray-900">
-                  {availabilityStatus === 'available' ? "You're Available" : 
-                   availabilityStatus === 'busy' ? 'Busy' : 
-                   availabilityStatus === 'dnd' ? 'Do Not Disturb' : 'Share my presence'}
-               </h2>
-               <p className="text-sm text-gray-500 font-medium max-w-[200px] truncate">
-                 {availabilityNote || (availabilityStatus === 'available' ? "Your student can see you're online" : "Let them know you're online/available")}
-               </p>
-            </div>
-          </div>
-
-          <div className="flex flex-col items-end gap-2">
+        {/* Status Section - 3-State Control for Loved Ones */}
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mb-8">
+           <div className="flex items-center justify-between mb-4">
+             <div>
+                <h2 className="text-lg font-bold text-gray-900">Your Availability</h2>
+                 <p className="text-sm text-gray-500">
+                   {availabilityNote ? `Note: ${availabilityNote}` : "Select your status to let your student know you're around."}
+                 </p>
+             </div>
              <button
                 onClick={() => setShowStatusModal(true)}
                 className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm font-bold transition-colors"
               >
-                Set Status
+                Detailed Options
               </button>
-          </div>
+           </div>
+           
+           <div className="grid grid-cols-3 gap-4">
+              <button
+                 onClick={() => updateStatus('available', availabilityNote, null)}
+                 className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all ${
+                    availabilityStatus === 'available' 
+                      ? 'bg-green-50 border-green-500 text-green-700' 
+                      : 'bg-white border-gray-100 hover:border-gray-200 text-gray-500'
+                 }`}
+              >
+                 <div className={`w-4 h-4 rounded-full mb-2 ${availabilityStatus === 'available' ? 'bg-green-500' : 'bg-gray-300'}`} />
+                 <span className="font-bold">Available</span>
+              </button>
+
+              <button
+                 onClick={() => updateStatus('busy', availabilityNote, null)}
+                 className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all ${
+                    availabilityStatus === 'busy' 
+                      ? 'bg-orange-50 border-orange-500 text-orange-700' 
+                      : 'bg-white border-gray-100 hover:border-gray-200 text-gray-500'
+                 }`}
+              >
+                 <div className={`w-4 h-4 rounded-full mb-2 ${availabilityStatus === 'busy' ? 'bg-orange-500' : 'bg-gray-300'}`} />
+                 <span className="font-bold">Busy</span>
+              </button>
+
+              <button
+                 onClick={() => updateStatus('dnd', availabilityNote, null)}
+                 className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all ${
+                    availabilityStatus === 'dnd' 
+                      ? 'bg-red-50 border-red-500 text-red-700' 
+                      : 'bg-white border-gray-100 hover:border-gray-200 text-gray-500'
+                 }`}
+              >
+                 <div className={`w-4 h-4 rounded-full mb-2 ${availabilityStatus === 'dnd' ? 'bg-red-500' : 'bg-gray-300'}`} />
+                 <span className="font-bold">Do Not Disturb</span>
+              </button>
+           </div>
         </div>
 
         {/* Status Modal Render */}
