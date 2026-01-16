@@ -244,10 +244,10 @@ export default function LovedOneDashboard() {
                <h2 className="text-lg font-bold text-gray-900">
                   {availabilityStatus === 'available' ? "You're Available" : 
                    availabilityStatus === 'busy' ? 'Busy' : 
-                   availabilityStatus === 'dnd' ? 'Do Not Disturb' : 'Hidden'}
+                   availabilityStatus === 'dnd' ? 'Do Not Disturb' : 'Share my presence'}
                </h2>
                <p className="text-sm text-gray-500 font-medium max-w-[200px] truncate">
-                 {availabilityNote || (availabilityStatus === 'available' ? "Your student can see you're online" : "You are invisible to your student")}
+                 {availabilityNote || (availabilityStatus === 'available' ? "Your student can see you're online" : "Let them know you're online/available")}
                </p>
             </div>
           </div>

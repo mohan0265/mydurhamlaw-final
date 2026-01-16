@@ -75,10 +75,14 @@ export default function ConnectModal({ isOpen, onClose, onEdit, connection }: Co
       icon: Video,
       color: 'bg-black hover:bg-gray-800',
       action: () => window.location.href = getFaceTimeLink(connection.facetime_contact!),
-      note: 'Apple devices only'
+      note: 'Apple devices only',
+      secondary: {
+        icon: Copy,
+        action: () => copyToClipboard(connection.facetime_contact!, 'facetime')
+      }
     })
   } else if (onEdit) {
-     options.push({
+    options.push({
       id: 'facetime-add',
       label: 'Add FaceTime',
       icon: Video,

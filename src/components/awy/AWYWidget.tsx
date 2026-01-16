@@ -674,7 +674,7 @@ export default function AWYWidget() {
              <h3 className="font-bold text-lg flex items-center gap-2">
                Always With You
              </h3>
-             <p className="text-xs text-pink-100 font-medium">Emotional Connection</p>
+             <p className="text-xs text-pink-100 font-medium">Family Presence</p>
            </div>
            <button 
              onClick={() => setIsOpen(false)}
@@ -690,10 +690,10 @@ export default function AWYWidget() {
           <div className="flex items-center justify-between bg-pink-50/50 p-4 rounded-2xl mb-5 border border-pink-100">
             <div className="flex flex-col">
               <span className="text-sm font-semibold text-gray-800">
-                {isMyAvailabilityOn ? "I'm Available" : "I'm Hidden"}
+                {isMyAvailabilityOn ? "I'm Available" : "Share my presence"}
               </span>
               <span className="text-xs text-gray-500">
-                {isMyAvailabilityOn ? "Let them know you're free" : "You are invisible to others"}
+                {isMyAvailabilityOn ? "Let them know you're free" : "Let them know you're online"}
               </span>
             </div>
             <button
@@ -762,23 +762,14 @@ export default function AWYWidget() {
                     <div className="flex gap-2">
                        {conn.status !== 'revoked' && (
                          <button
-                           onClick={() => {
-                             if (!conn.isAvailable) {
-                               toast.error(`${conn.displayName} is currently not available. Please try later when they are online.`, {
-                                 icon: '😴',
-                                 duration: 4000
-                               })
-                               return
-                             }
-                             setSelectedConnection(conn)
-                           }}
+                           onClick={() => setSelectedConnection(conn)}
                            disabled={false}
                            className={`p-2 rounded-full transition-all shadow-sm ${
                              conn.isAvailable 
                                ? 'bg-pink-100 text-pink-600 hover:bg-pink-500 hover:text-white' 
-                               : 'bg-gray-100 text-gray-400 cursor-not-allowed hover:bg-gray-200'
+                               : 'bg-gray-100 text-gray-400 hover:bg-gray-200'
                            }`}
-                           title={conn.isAvailable ? "Connect" : "Not available"}
+                           title={conn.isAvailable ? "Connect" : "Message / Connect"}
                          >
                            <Video className="w-4 h-4" />
                          </button>
