@@ -7,6 +7,7 @@ import { getSupabaseClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
 import { UKTimeDisplay } from '@/components/ui/UKTimeDisplay'
+import { StatusUpdateModal } from '@/components/awy/StatusUpdateModal'
 
 interface Student {
   studentId: string
@@ -185,48 +186,52 @@ export default function LovedOneDashboard() {
       <main className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
         
         {/* Status Indicator & Visibility Toggle */}
+
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mb-8 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div className="relative">
-              <div className={`w-12 h-12 rounded-full flex items-center justify-center transition-colors ${isMyAvailabilityOn ? 'bg-green-100' : 'bg-gray-100'}`}>
-                <Heart className={`w-6 h-6 transition-colors ${isMyAvailabilityOn ? 'text-green-600 fill-green-600' : 'text-gray-400'}`} />
+              <div className={`w-12 h-12 rounded-full flex items-center justify-center transition-colors ${
+                  availabilityStatus === 'available' ? 'bg-green-100 text-green-600' :
+                  availabilityStatus === 'busy' ? 'bg-orange-100 text-orange-600' :
+                  availabilityStatus === 'dnd' ? 'bg-red-100 text-red-600' : 'bg-gray-100 text-gray-400'
+              }`}>
+                <Heart className="w-6 h-6 fill-current" />
               </div>
-              {isMyAvailabilityOn && (
+              {availabilityStatus === 'available' && (
                 <span className="absolute bottom-0 right-0 w-4 h-4 bg-green-500 border-2 border-white rounded-full animate-pulse"></span>
               )}
             </div>
             <div>
-              <h2 className="text-lg font-bold text-gray-900">
-                {isMyAvailabilityOn ? "You're Available" : "You're Hidden"}
-              </h2>
-              <p className="text-sm text-gray-500 font-medium">
-                {isMyAvailabilityOn 
-                  ? "Your student can see you're online" 
-                  : "You are invisible to your student"}
-              </p>
+               <h2 className="text-lg font-bold text-gray-900">
+                  {availabilityStatus === 'available' ? "You're Available" : 
+                   availabilityStatus === 'busy' ? 'Busy' : 
+                   availabilityStatus === 'dnd' ? 'Do Not Disturb' : 'Hidden'}
+               </h2>
+               <p className="text-sm text-gray-500 font-medium max-w-[200px] truncate">
+                 {availabilityNote || (availabilityStatus === 'available' ? "Your student can see you're online" : "You are invisible to your student")}
+               </p>
             </div>
           </div>
 
           <div className="flex flex-col items-end gap-2">
-            <div className="flex items-center gap-3">
-              <span className="text-sm font-medium text-gray-700">
-                {isMyAvailabilityOn ? 'On' : 'Off'}
-              </span>
-              <button
-                 onClick={toggleAvailability}
-                 className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-pink-500 focus:ring-offset-2 ${
-                   isMyAvailabilityOn ? 'bg-green-500' : 'bg-gray-200'
-                 }`}
-               >
-                 <span
-                   className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-sm transition-transform ${
-                     isMyAvailabilityOn ? 'translate-x-6' : 'translate-x-1'
-                   }`}
-                 />
-               </button>
-             </div>
+             <button
+                onClick={() => setShowStatusModal(true)}
+                className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm font-bold transition-colors"
+              >
+                Set Status
+              </button>
           </div>
         </div>
+
+        {/* Status Modal Render */}
+        {showStatusModal && (
+           <StatusUpdateModal 
+             currentStatus={availabilityStatus} 
+             currentNote={availabilityNote}
+             onUpdate={updateStatus}
+             onClose={() => setShowStatusModal(false)}
+           />
+        )}
 
         {/* Connected Students */}
         <div className="flex items-center justify-between mb-4">

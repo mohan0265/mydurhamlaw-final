@@ -453,6 +453,55 @@ export default function AWYWidget() {
   // ... Update connection list render ...
 
 
+  const handleInvite = async () => {
+    if (!inviteEmail.trim()) {
+      toast.error('Email is required')
+      return
+    }
+    setInviteSending(true)
+    setInviteSuccessLink(null)
+    setInviteSuccessMessage(null)
+    setInviteCopied(false)
+
+    try {
+      const res = await fetchAuthed('/api/awy/add-loved-one', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: inviteEmail.trim(),
+          relationship: inviteRelationship || 'Loved one',
+          nickname: inviteRelationship || null,
+          whatsapp_e164: inviteWhatsApp || null,
+          google_meet_url: inviteMeet || null
+        })
+      })
+      const json = await res.json()
+      if (!res.ok || json.error) {
+        throw new Error(json.error || 'Failed to send invite')
+      }
+
+      setInviteSuccessMessage(editingEmail ? `Updated details for ${inviteEmail}.` : `Access authorized for ${inviteEmail}.`)
+      setInviteSuccessLink(`${window.location.origin}/loved-one-login`) // Use login page link
+      toast.success(editingEmail ? 'Details updated' : 'Access granted!')
+      
+      fetchData()
+    } catch (err: any) {
+      toast.error(err?.message || 'Failed to send invite')
+    } finally {
+      setInviteSending(false)
+    }
+  }
+
+  const closeAndReset = () => {
+    setShowAddModal(false)
+    setInviteEmail('')
+    setInviteRelationship('Parent')
+    setEditingEmail(null)
+    setInviteSuccessLink(null)
+    setInviteSuccessMessage(null)
+    setInviteCopied(false)
+  }
+
   const copyToClipboard = async () => {
     if (inviteSuccessLink) {
       try {
