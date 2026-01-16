@@ -8,9 +8,8 @@ import { AuthContext } from '@/lib/supabase/AuthContext'
 import { fetchAuthed } from '@/lib/fetchAuthed'
 import dynamic from 'next/dynamic'
 
-// Lazy load call modals
-const DailyCallModal = dynamic(() => import('./DailyCallModal'), { ssr: false })
-const IncomingCallModal = dynamic(() => import('./IncomingCallModal'), { ssr: false })
+// Lazy load connect modal
+const ConnectModal = dynamic(() => import('./ConnectModal'), { ssr: false })
 
 interface Connection {
   id: string // loved_one_id or student_id
@@ -20,6 +19,11 @@ interface Connection {
   role?: 'student' | 'loved_one'
   email?: string
   lastSeenAt?: string | null
+  // Contact info
+  whatsapp_e164?: string
+  phone_e164?: string
+  facetime_contact?: string
+  google_meet_url?: string
 }
 
 export default function AWYWidget() {
@@ -38,17 +42,17 @@ export default function AWYWidget() {
   const [availabilityLockUntil, setAvailabilityLockUntil] = useState<number | null>(null)
   const [editingEmail, setEditingEmail] = useState<string | null>(null)
   
+
   const [inviteSuccessLink, setInviteSuccessLink] = useState<string | null>(null)
   const [inviteSuccessMessage, setInviteSuccessMessage] = useState<string | null>(null)
   const [inviteCopied, setInviteCopied] = useState(false)
   
-  // Daily.co Call State
-  const [activeCall, setActiveCall] = useState<{ callId: string; roomUrl: string; callerName: string } | null>(null)
-  const [isCallingId, setIsCallingId] = useState<string | null>(null) // ID of connection being called
-  const [callStatus, setCallStatus] = useState<'idle' | 'calling' | 'connected' | 'declined'>('idle')
-  const [incomingCall, setIncomingCall] = useState<{ callId: string; roomUrl: string; callerName: string } | null>(null)
-  const callChannelRef = useRef<any>(null)
-  const incomingChannelRef = useRef<any>(null)
+  // Contact Method State
+  const [inviteWhatsApp, setInviteWhatsApp] = useState('')
+  const [inviteMeet, setInviteMeet] = useState('')
+  
+  // Connect Launcher State
+  const [selectedConnection, setSelectedConnection] = useState<Connection | null>(null)
   
   // Use global auth context instead of creating new client
   const { user, supabase: contextSupabase, loading: authLoading } = React.useContext(AuthContext)
@@ -95,7 +99,7 @@ export default function AWYWidget() {
     const loadStudentView = async () => {
       const { data, error } = await contextSupabase
         .from('awy_connections')
-        .select('id,student_id,loved_one_id,nickname,relationship,relationship_label,status,loved_email,email,invite_token,invited_at,accepted_at')
+        .select('id,student_id,loved_one_id,nickname,relationship,relationship_label,status,loved_email,email,invite_token,invited_at,accepted_at,phone_e164,whatsapp_e164,facetime_contact,google_meet_url')
         .eq('student_id', userId)
         .in('status', ['active','accepted','pending','invited','granted','revoked'])
       if (error) throw error
@@ -129,7 +133,11 @@ export default function AWYWidget() {
               : 'Awaiting signup',
             role: 'loved_one' as const,
             email: conn.loved_email || conn.email,
-            lastSeenAt: presence?.last_seen_at || presence?.last_seen || null
+            lastSeenAt: presence?.last_seen_at || presence?.last_seen || null,
+            whatsapp_e164: conn.whatsapp_e164,
+            phone_e164: conn.phone_e164,
+            facetime_contact: conn.facetime_contact,
+            google_meet_url: conn.google_meet_url
           }
         })
 
@@ -364,8 +372,11 @@ export default function AWYWidget() {
   }, [contextSupabase, userId, fetchData, sendHeartbeat])
 
   // Listen for incoming calls (students receiving calls from loved ones)
+  // Note: We listen on student_id because students use AWYWidget, loved ones use their dashboard
   useEffect(() => {
-    if (!contextSupabase || !userId || userRole !== 'student') return
+    if (!contextSupabase || !userId) return
+    
+    console.log('[AWY] Setting up incoming call listener for userId:', userId)
     
     const channel = contextSupabase
       .channel('student-incoming-calls')
@@ -378,9 +389,11 @@ export default function AWYWidget() {
           filter: `student_id=eq.${userId}`
         },
         (payload: any) => {
+          console.log('[AWY] Received call INSERT:', payload.new)
           // Only show if we're not the caller and call is ringing
           if (payload.new.status === 'ringing' && payload.new.caller_id !== userId) {
             const caller = connections.find(c => c.id === payload.new.loved_one_id)
+            console.log('[AWY] Showing incoming call from:', caller?.displayName || 'Loved One')
             setIncomingCall({
               callId: payload.new.id,
               roomUrl: payload.new.room_url,
@@ -398,6 +411,7 @@ export default function AWYWidget() {
           filter: `student_id=eq.${userId}`
         },
         (payload: any) => {
+          console.log('[AWY] Received call UPDATE:', payload.new.status)
           if (['ended', 'missed', 'declined'].includes(payload.new.status)) {
             if (incomingCall?.callId === payload.new.id) {
               setIncomingCall(null)
@@ -409,7 +423,9 @@ export default function AWYWidget() {
           }
         }
       )
-      .subscribe()
+      .subscribe((status) => {
+        console.log('[AWY] Incoming call subscription status:', status)
+      })
     
     incomingChannelRef.current = channel
     
@@ -419,7 +435,7 @@ export default function AWYWidget() {
         incomingChannelRef.current = null
       }
     }
-  }, [contextSupabase, userId, userRole, connections, incomingCall, activeCall])
+  }, [contextSupabase, userId, connections, incomingCall, activeCall])
 
   const toggleAvailability = async () => {
     if (!contextSupabase || !userId) {
@@ -615,7 +631,9 @@ export default function AWYWidget() {
         body: JSON.stringify({
           email: inviteEmail.trim(),
           relationship: inviteRelationship || 'Loved one',
-          nickname: inviteRelationship || null
+          nickname: inviteRelationship || null,
+          whatsapp_e164: inviteWhatsApp || null,
+          google_meet_url: inviteMeet || null
         })
       })
       const json = await res.json()
@@ -910,12 +928,12 @@ export default function AWYWidget() {
                     <div className="flex gap-2">
                        {conn.status !== 'revoked' && (
                          <button
-                           onClick={() => startCall(conn.id, conn.displayName)}
-                           disabled={!conn.isAvailable || isCallingId === conn.id}
-                           className={`p-2 rounded-full transition-all shadow-sm ${conn.isAvailable && !isCallingId ? 'bg-pink-100 text-pink-600 hover:bg-pink-500 hover:text-white' : 'bg-gray-100 text-gray-400 cursor-not-allowed'} ${isCallingId === conn.id ? 'animate-pulse bg-green-100 text-green-600' : ''}`}
-                           title={isCallingId === conn.id ? 'Calling...' : conn.isAvailable ? "Start Video Call" : "Available when online"}
+                           onClick={() => setSelectedConnection(conn)}
+                           disabled={false}
+                           className="p-2 rounded-full transition-all shadow-sm bg-pink-100 text-pink-600 hover:bg-pink-500 hover:text-white"
+                           title="Connect"
                          >
-                           {isCallingId === conn.id ? <Phone className="w-4 h-4 animate-bounce" /> : <Video className="w-4 h-4" />}
+                           <Video className="w-4 h-4" />
                          </button>
                        )}
                        {/* Activity Log */}
@@ -1040,27 +1058,52 @@ export default function AWYWidget() {
              </div>
           ) : (
              <>
-               <div className="space-y-3">
-                 <div>
-                   <label className="text-xs font-semibold text-slate-600">Email</label>
-                   <input
-                     type="email"
-                     value={inviteEmail}
-                     onChange={(e) => setInviteEmail(e.target.value)}
-                     className="w-full mt-1 rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-500/40"
-                     placeholder="parent@example.com"
-                   />
+                 <div className="space-y-3 max-h-[60vh] overflow-y-auto px-1">
+                   <div>
+                     <label className="text-xs font-semibold text-slate-600">Email (Required)</label>
+                     <input
+                       type="email"
+                       value={inviteEmail}
+                       onChange={(e) => setInviteEmail(e.target.value)}
+                       className="w-full mt-1 rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-500/40"
+                       placeholder="parent@example.com"
+                     />
+                   </div>
+                   <div>
+                     <label className="text-xs font-semibold text-slate-600">Relationship (e.g. Mum)</label>
+                     <input
+                       value={inviteRelationship}
+                       onChange={(e) => setInviteRelationship(e.target.value)}
+                       className="w-full mt-1 rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-500/40"
+                       placeholder="Mum"
+                     />
+                   </div>
+                   
+                   <div className="pt-2 border-t border-slate-100">
+                     <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Contact Methods</p>
+                     
+                     <div className="mb-2">
+                       <label className="text-xs font-semibold text-slate-600">WhatsApp Number</label>
+                       <input
+                         value={inviteWhatsApp}
+                         onChange={(e) => setInviteWhatsApp(e.target.value)}
+                         placeholder="+6591234567"
+                         className="w-full mt-1 rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-500/40"
+                       />
+                       <p className="text-[10px] text-slate-400 mt-1">Include country code (e.g. +44)</p>
+                     </div>
+
+                     <div className="mb-2">
+                       <label className="text-xs font-semibold text-slate-600">Google Meet URL</label>
+                       <input
+                         value={inviteMeet}
+                         onChange={(e) => setInviteMeet(e.target.value)}
+                         placeholder="meet.google.com/..."
+                         className="w-full mt-1 rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-500/40"
+                       />
+                     </div>
+                   </div>
                  </div>
-                 <div>
-                   <label className="text-xs font-semibold text-slate-600">Relationship</label>
-                   <input
-                     value={inviteRelationship}
-                     onChange={(e) => setInviteRelationship(e.target.value)}
-                     className="w-full mt-1 rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-500/40"
-                     placeholder="Mum, Dad, Guardian"
-                   />
-                 </div>
-               </div>
                <div className="flex justify-end gap-2">
                  <button
                    onClick={closeAndReset}
@@ -1122,23 +1165,13 @@ export default function AWYWidget() {
       </div>
     )}
     
-    {/* Incoming Call Modal (for students receiving calls) */}
-    {incomingCall && (
-      <IncomingCallModal
-        callId={incomingCall.callId}
-        callerName={incomingCall.callerName}
-        onAccept={handleAcceptCall}
-        onDecline={handleDeclineCall}
-      />
-    )}
-    
-    {/* Active Video Call Modal */}
-    {activeCall && (
-      <DailyCallModal
-        roomUrl={activeCall.roomUrl}
-        callId={activeCall.callId}
-        callerName={activeCall.callerName}
-        onHangup={() => endCall()}
+    {/* Active Video Call Modal - DEPRECATED / REMOVED */}
+    {/* Connect Launcher Modal */}
+    {selectedConnection && (
+      <ConnectModal
+        isOpen={Boolean(selectedConnection)}
+        onClose={() => setSelectedConnection(null)}
+        connection={selectedConnection}
       />
     )}
     </>

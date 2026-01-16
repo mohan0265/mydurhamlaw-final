@@ -29,7 +29,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return
   }
 
-  const { email, relationship, nickname } = req.body || {}
+  const { email, relationship, nickname, whatsapp_e164, google_meet_url } = req.body || {}
   const normalizedEmail = String(email || '').trim().toLowerCase()
   const relationshipLabel = String(relationship || '').trim()
   const nicknameLabel = String(nickname || '').trim()
@@ -62,7 +62,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     if (existing && ['active', 'accepted'].includes((existing.status || '').toLowerCase())) {
-      return res.status(200).json({ ok: true, invited: false, alreadyConnected: true })
+      // Allow updating metadata even if connected
+      await supabase.from('awy_connections').update({
+        relationship: relationshipLabel,
+        nickname: nicknameLabel || relationshipLabel,
+        whatsapp_e164: whatsapp_e164 || null,
+        google_meet_url: google_meet_url || null,
+        updated_at: new Date().toISOString()
+      }).eq('id', existing.id)
+      
+      return res.status(200).json({ ok: true, invited: false, alreadyConnected: true, message: 'Details updated' })
     }
 
     // Attempt to link to an existing user by email
@@ -103,7 +112,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           revoked_at: null,
           revoked_by: null,
           accepted_at: lovedUserId ? nowIso : null,
-          updated_at: nowIso
+          updated_at: nowIso,
+          // New contact fields
+          whatsapp_e164: whatsapp_e164 || null,
+          google_meet_url: google_meet_url || null
         },
         { onConflict: 'student_id,loved_email' }
       )
