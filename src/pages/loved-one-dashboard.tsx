@@ -51,7 +51,9 @@ export default function LovedOneDashboard() {
       })
 
       if (error) {
-         if (error.message?.includes('function') && error.message?.includes('not found')) {
+         const code = (error as any)?.code
+         const msg = (error.message || '').toLowerCase()
+         if (code === 'PGRST202' || msg.includes('function') && (msg.includes('not found') || msg.includes('could not find'))) {
             await supabase.rpc('awy_heartbeat', { p_is_available: status === 'available' })
          } else {
             throw error

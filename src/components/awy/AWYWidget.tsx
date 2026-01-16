@@ -258,7 +258,14 @@ export default function AWYWidget() {
         .select('is_available')
         .eq('user_id', userId)
         .maybeSingle()
-      if (presenceError && presenceError.code !== 'PGRST116') throw presenceError
+      if (presenceError && presenceError.code !== 'PGRST116') {
+        const pCode = presenceError.code
+        const pMsg = (presenceError.message || '').toLowerCase()
+        // Ignore "column does not exist" (42703) if migration not run yet
+        if (pCode !== '42703' && !pMsg.includes('does not exist')) {
+           throw presenceError
+        }
+      }
 
       // If no presence row yet, create one so toggles persist
       if (!myPresence) {
@@ -426,7 +433,10 @@ export default function AWYWidget() {
 
       if (error) {
          // Fallback for when migration isn't applied yet: try old heartbeat if error seems like "function not found"
-         if (error.message?.includes('function') && error.message?.includes('not found')) {
+         // PGRST202 = Could not find the function...
+         const code = (error as any)?.code
+         const msg = (error.message || '').toLowerCase()
+         if (code === 'PGRST202' || msg.includes('function') && (msg.includes('not found') || msg.includes('could not find'))) {
             await contextSupabase.rpc('awy_heartbeat', { p_is_available: status === 'available' })
          } else {
             throw error
