@@ -1201,6 +1201,61 @@ Date: ${studentContextData.academic?.now?.nowText || studentContextData.student.
       } catch {}
     })();
 
+    // ----------------------------
+    // ONBOARDING SEARCH INTEGRATION
+    // Detect help/system queries and enrich with guide content
+    // ----------------------------
+    let enrichedMessage = userText;
+    const helpKeywords = [
+      'how do i', 'how to', 'where do i', 'where can i',
+      'sync', 'timetable', 'blackboard', 'panopto', 
+      'assignment', 'upload', 'import', 'download',
+      'find', 'access', 'connect', 'enrol'
+    ];
+    const lowerMessage = userText.toLowerCase();
+    const isHelpQuery = helpKeywords.some(keyword => lowerMessage.includes(keyword));
+
+    if (isHelpQuery) {
+      try {
+        const searchRes = await fetchAuthed('/api/durmah/onboarding-search', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ query: userText, limit: 3 })
+        });
+
+        if (searchRes.ok) {
+          const { results } = await searchRes.json();
+          
+          if (results && results.length > 0) {
+            // Format guides as context for Durmah
+            const guidesContext = results.map((guide: any, i: number) => `
+Guide ${i + 1}: ${guide.title}
+Summary: ${guide.summary}
+Content (excerpt): ${guide.content_markdown.substring(0, 800)}
+Link: /onboarding?guide=${guide.slug}
+`).join('\n---\n');
+
+            // Prepend system instruction to use guides
+            enrichedMessage = `[SYSTEM CONTEXT: You have access to ${results.length} relevant help guide(s) from the MyDurhamLaw onboarding knowledge base. Use these to answer the user's question with exact step-by-step instructions. Include a link to the full guide.
+
+${guidesContext}
+
+INSTRUCTIONS: 
+1. Answer using the step-by-step instructions from the guide(s) above
+2. Format your response clearly with numbered steps or bullet points
+3. Include at end: "📚 Full guide: /onboarding?guide={slug}"
+4. Cite source: "From: [guide title]"
+5. Do NOT invent additional steps not in the guides]
+
+User question: ${userText}`;
+          }
+        }
+      } catch (error) {
+        console.error('[DurmahWidget] Onboarding search failed:', error);
+        // Fall through to regular chat
+      }
+    }
+
     try {
       const authError = "Please sign in again to chat with Durmah.";
       const { token } = await waitForAccessToken();
@@ -1212,7 +1267,7 @@ Date: ${studentContextData.academic?.now?.nowText || studentContextData.student.
       const response = await fetchAuthed("/api/durmah/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: userText, source: "dashboard" }),
+        body: JSON.stringify({ message: enrichedMessage, source: "dashboard" }),
       });
 
       if (response.status === 401 || response.status === 403) {
