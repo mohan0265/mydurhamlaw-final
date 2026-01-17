@@ -113,14 +113,14 @@ export default function App({ Component, pageProps }: AppProps) {
 
     Router.push = (...args: Parameters<typeof Router.push>) => {
       return originalPush.apply(Router, args).catch((err) => {
-        if (isRouteAbortError(err)) return;
+        if (isRouteAbortError(err)) return false;
         throw err;
       });
     };
 
     Router.replace = (...args: Parameters<typeof Router.replace>) => {
       return originalReplace.apply(Router, args).catch((err) => {
-        if (isRouteAbortError(err)) return;
+        if (isRouteAbortError(err)) return false;
         throw err;
       });
     };
