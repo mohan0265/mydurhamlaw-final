@@ -49,44 +49,76 @@ export const SmartNewsAgent: React.FC<SmartNewsAgentProps> = ({
     setError(null)
 
     try {
-      console.log('🧠 SmartNewsAgent analyzing:', article.title)
+      console.log('Routing to Durmah for analysis:', article.title)
       
-      // Call our AI analysis endpoint
-      const response = await fetch('/api/news/analyze', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          title: article.title,
-          summary: article.summary,
-          content: article.content || article.summary,
-          source: article.source,
-          url: article.url
-        }),
-      })
-
-      if (!response.ok) {
-        throw new Error(`Analysis failed: ${response.status}`)
+      // Log interest event
+      try {
+        await fetch('/api/durmah/interest', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            event_type: 'news_ai_analysis_clicked',
+            source: 'legal_news',
+            title: article.title,
+            url: article.url,
+            snippet: article.summary?.substring(0, 300),
+            tags: [] // Could extract from article.source or category
+          })
+        });
+      } catch (logError) {
+        console.warn('Failed to log interest event:', logError);
+        // Non-blocking - continue even if logging fails
       }
 
-      const result = await response.json()
-      
-      const smartAnalysis: SmartAnalysis = {
-        claudeSummary: result.summary || 'Unable to generate summary',
-        relevantModules: result.modules || [],
-        discussionPrompts: result.discussionPrompts || [],
-        alertTags: result.alertTags || [],
-        studyRelevance: result.relevance || 'medium',
-        essayAngles: result.essayAngles || []
-      }
+      // Open Durmah widget
+      window.dispatchEvent(new CustomEvent('durmah:open'));
 
-      setAnalysis(smartAnalysis)
-      onAnalysisComplete?.(smartAnalysis)
+      // Send article context to Durmah for analysis
+      const analysisPrompt = `Analyze this legal news article for my Durham Law studies:
+
+**Title**: ${article.title}
+**Source**: ${article.source}
+**URL**: ${article.url}
+**Summary**: ${article.summary || article.content?.substring(0, 500)}
+
+Please provide:
+1. **5-bullet summary** of the key facts
+2. **Legal issues/doctrines** involved
+3. **How to use this in an essay** (relevance to modules)
+4. **2 counterarguments** to consider
+5. **What to verify** from primary sources (cases, statutes)
+
+IMPORTANT: Analyze only the content provided above. Do not invent additional headlines or "Read more" links.`;
+
+      window.dispatchEvent(new CustomEvent('durmah:message', {
+        detail: {
+          text: analysisPrompt,
+          mode: 'study'
+        }
+      }));
+
+      // Mark as analyzed (prevents re-triggering)
+      setAnalysis({
+        claudeSummary: 'Analysis sent to Durmah',
+        relevantModules: [],
+        discussionPrompts: [],
+        alertTags: [],
+        studyRelevance: 'medium',
+        essayAngles: []
+      });
+
+      onAnalysisComplete?.({
+        claudeSummary: 'Analysis sent to Durmah',
+        relevantModules: [],
+        discussionPrompts: [],
+        alertTags: [],
+        studyRelevance: 'medium',
+        essayAngles: []
+      });
 
     } catch (error: any) {
-      console.error('❌ SmartNewsAgent analysis error:', error)
-      setError(error.message || 'Analysis failed')
+      console.error('Failed to route to Durmah:', error)
+      setError(error.message || 'Failed to open Durmah')
     } finally {
       setIsAnalyzing(false)
     }

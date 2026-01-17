@@ -819,6 +819,47 @@ Date: ${studentContextData.academic?.now?.nowText || studentContextData.student.
     };
   }, [stopListening]);
 
+  // ----------------------------
+  // EVENT BRIDGE: Listen for custom events from other components
+  // (e.g., SmartNewsAgent triggering Durmah with article context)
+  // ----------------------------
+  useEffect(() => {
+    function handleDurmahOpen() {
+      setIsOpen(true);
+    }
+
+    function handleDurmahMessage(event: Event) {
+      const customEvent = event as CustomEvent;
+      const { text, mode: requestedMode } = customEvent.detail || {};
+      
+      if (!text) return;
+
+      // Set mode if specified
+      if (requestedMode && (requestedMode === 'chat' || requestedMode === 'study')) {
+        setMode(requestedMode);
+      }
+
+      // Set input
+      setInput(text);
+
+      // Auto-send after brief delay to ensure state updates and widget is open
+      setTimeout(() => {
+        if (text && signedIn && !isStreaming) {
+          send();
+        }
+      }, 200);
+    }
+
+    window.addEventListener('durmah:open', handleDurmahOpen);
+    window.addEventListener('durmah:message', handleDurmahMessage);
+
+    return () => {
+      window.removeEventListener('durmah:open', handleDurmahOpen);
+      window.removeEventListener('durmah:message', handleDurmahMessage);
+    };
+  }, [signedIn, isStreaming]);
+
+
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (
