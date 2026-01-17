@@ -20,14 +20,25 @@ async function fetchLegalNews() {
 
     const data = await response.json();
     
-    // Transform RSS items to cache format
-    const items = (data.rss?.items || []).map((item: any) => ({
-      title: item.tittle || item.title || 'Untitled',
-      source: item.category || item.source || 'Legal News',
-      url: item.link || '',
-      published_at: item.pubDate || new Date().toISOString(),
-      tags: [item.category, item.source].filter(Boolean),
-    }));
+    // Transform RSS items to cache format with normalized dates
+    const items = (data.articles || data.rss?.items || []).map((item: any) => {
+      // Normalize published_at to ISO string
+      let normalizedDate: string;
+      try {
+        const pubDate = item.pubDate || item.publishedAt || item.published_at;
+        normalizedDate = pubDate ? new Date(pubDate).toISOString() : new Date().toISOString();
+      } catch (err) {
+        normalizedDate = new Date().toISOString();
+      }
+
+      return {
+        title: item.tittle || item.title || 'Untitled',
+        source: item.category || item.source || item.sourceType || 'Legal News',
+        url: item.link || item.url || '',
+        published_at: normalizedDate,
+        tags: [item.category, item.source, ...(item.topicTags || [])].filter(Boolean),
+      };
+    });
 
     return items;
   } catch (error) {

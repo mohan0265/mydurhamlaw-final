@@ -51,10 +51,39 @@ export default async function handler(
       }).catch((err) => console.error('[news/latest] Background refresh failed:', err));
     }
 
-    // 3. Filter by module if requested
-    const { module } = req.query;
+    // 3. Get items
     let items: LegalNewsCacheItem[] = cache.items || [];
+    
+    // 4. Check if we need relevance ranking
+    const { query, debug } = req.query;
+    
+    if (query && typeof query === 'string') {
+      // Apply relevance scoring
+      const { rankNewsRelevance } = await import('@/lib/durmah/relevance/relevance');
+      const ranked = rankNewsRelevance(items, query, debug === '1');
 
+      return res.status(200).json({
+        fetched_at: cache.fetched_at,
+        is_stale: isStale,
+        query,
+        ranked: ranked.map((item) => ({
+          title: item.title,
+          source: item.source,
+          url: item.url,
+          published_at: item.published_at,
+          score: item.score,
+          why: item.why,
+          ...(debug === '1' && {
+            matchedTerms: item.matchedTerms,
+            recencyBoost: item.recencyBoost
+          })
+        })),
+        total_matched: ranked.length
+      });
+    }
+
+    // 5. No query - filter by module if requested
+    const { module } = req.query;
     if (module && typeof module === 'string') {
       const keywords = module.toLowerCase().split(/[\s,]+/);
       items = items.filter((item) => {
@@ -63,7 +92,7 @@ export default async function handler(
       });
     }
 
-    // 4. Return top 10 most recent
+    // 6. Return top 10 most recent
     const recentItems = items
       .sort((a, b) => new Date(b.published_at).getTime() - new Date(a.published_at).getTime())
       .slice(0, 10);
