@@ -1,4 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
+import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs';
 import { buildDurmahContext } from '@/lib/durmah/contextBuilder';
 import { enhanceDurmahContext } from '@/lib/durmah/contextBuilderEnhanced';
 import { DEFAULT_TZ, formatNowPacket, getDaysLeft } from '@/lib/durmah/timezone';
@@ -29,15 +30,27 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(405).json({ ok: false, error: 'method_not_allowed' });
   }
 
-  const result = await buildDurmahContext(req);
-  if (!result.ok) {
-    return res.status(result.status === 'unauthorized' ? 401 : 500).json({ ok: false });
+  // FIXED: Use standard Supabase auth helper (same as other endpoints)
+  // This properly handles cookies unlike the custom getApiAuth function
+  const supabase = createServerSupabaseClient({ req, res });
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  
+  if (authError || !user) {
+    console.error('[durmah/chat] Auth error:', authError?.message || 'No user');
+    return res.status(401).json({ ok: false, error: 'unauthorized' });
   }
 
-  const { supabase, userId, context: baseContext } = result;
+  // Now call buildDurmahContext - it will use the same req/res and get the user
+  const result = await buildDurmahContext(req);
   
-  // NEW: Enhance context with assignments and AWY data
-  const context = await enhanceDurmahContext(supabase, userId, baseContext);
+  // Since we already authenticated above, this should always succeed
+  // But keep the check for safety
+  if (!result.ok) {
+    console.error('[durmah/chat] buildDurmahContext failed after successful auth');
+    return res.status(500).json({ ok: false, error: 'context_build_failed' });
+  }
+
+  const { userId, context: baseContext } = result;
   const { message, source } = (req.body || {}) as { message?: string; source?: string };
   const incoming = (message || '').trim();
   const nowIso = new Date().toISOString();
