@@ -603,8 +603,8 @@ CURRENT MODE: STUDY (Tutor)
         // Minimal Context for Chat Mode (Prevent Hijacking)
         contextBlock = `
 MINIMAL CONTEXT (Chat Mode):
-User: ${studentContextData.firstName}
-Date: ${studentContextData.todayLabel}
+User: ${studentContextData.student.displayName}
+Date: ${studentContextData.academic?.now?.nowText || studentContextData.student.localTimeISO}
 (Full academic data hidden to prevent distraction)
 `;
       } else {
@@ -1483,8 +1483,9 @@ Date: ${studentContextData.todayLabel}
               </button>
               <button
                 onClick={saveVoiceTranscript}
-                className="text-xs font-medium px-3 py-1.5 rounded-lg bg-violet-600 text-white hover:bg-violet-700 shadow-md transition-all hover:shadow-lg"
+                className="text-xs font-bold px-4 py-2 rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 shadow-md transition-all hover:shadow-lg hover:scale-105 flex items-center gap-1.5"
               >
+                <Check size={14} className="stroke-[3]" />
                 Save to Chat
               </button>
             </div>
