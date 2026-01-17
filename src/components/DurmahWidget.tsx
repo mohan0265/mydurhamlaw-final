@@ -16,7 +16,7 @@ import type { StudentContext } from "@/types/durmahContext";
 import type { DurmahContextPacket } from "@/types/durmah";
 import { formatTodayForDisplay } from "@/lib/durmah/phase";
 import { useDurmahSettings } from "@/hooks/useDurmahSettings";
-import { Settings, X, ArrowRight, AlertTriangle, Check, Volume2, Brain, Zap, RefreshCw, MoreHorizontal, Trash2 } from "lucide-react";
+import { Settings, X, ArrowRight, AlertTriangle, Check, Volume2, Brain, Zap, RefreshCw, MoreHorizontal, Trash2, Smile } from "lucide-react";
 import Link from 'next/link';
 import toast from "react-hot-toast";
 import { useRouter } from 'next/router';
@@ -1706,6 +1706,7 @@ User question: ${userText}`;
                                 {p.icon === 'owl' && <Brain size={20} />} 
                                 {p.icon === 'feather' && <Volume2 size={20} />} 
                                 {p.icon === 'spark' && <Zap size={20} />}
+                                {p.icon === 'smile' && <Smile size={20} />}
                              </div>
                           </div>
                           

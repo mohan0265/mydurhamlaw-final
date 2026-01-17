@@ -244,7 +244,7 @@ export function useDurmahGeminiLive({
                 generation_config: {
                     response_modalities: ["AUDIO", "TEXT"],
                     speech_config: {
-                         voice_config: { prebuilt_voice_config: { voice_name: "Puck" } }
+                         voice_config: { prebuilt_voice_config: { voice_name: voice || "Puck" } }
                     }
                 },
                 system_instruction: {
