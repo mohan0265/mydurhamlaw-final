@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { X, Upload, FileAudio, Loader2, HelpCircle, ExternalLink } from 'lucide-react';
+import { X, Upload, FileAudio, Loader2, HelpCircle, ExternalLink, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
+import { parsePanoptoTitle } from '@/lib/panopto-parser';
 
 interface LectureUploadModalProps {
   isOpen: boolean;
@@ -35,6 +36,7 @@ export default function LectureUploadModal({ isOpen, onClose, onSuccess }: Lectu
   const [panoptoUrl, setPanoptoUrl] = useState('');
   const [transcript, setTranscript] = useState('');
   const [showHelp, setShowHelp] = useState(false);
+  const [isFetchingMetadata, setIsFetchingMetadata] = useState(false);  // NEW
 
   if (!isOpen) return null;
 
@@ -178,13 +180,67 @@ export default function LectureUploadModal({ isOpen, onClose, onSuccess }: Lectu
       onSuccess();
       onClose();
 
-    } catch (err: any) {
-      setError(err.message || 'Import failed');
     } finally {
       setUploading(false);
       setUploadProgress(0);
     }
   };
+
+  // --- SMART FILL LOGIC START ---
+
+  const applySmartMetadata = (text: string) => {
+    const meta = parsePanoptoTitle(text);
+    let filled = false;
+    
+    if (meta.moduleCode) { setModuleCode(meta.moduleCode); filled = true; }
+    if (meta.moduleName) { setModuleName(meta.moduleName); filled = true; }
+    if (meta.lectureDate) { setLectureDate(meta.lectureDate); filled = true; }
+    
+    // Only update title if we found a "cleaner" one, otherwise keep user input
+    // But if input WAS the raw header, we definitely want the clean one.
+    if (meta.title && meta.title !== text) { 
+        setTitle(meta.title); 
+        filled = true;
+    }
+
+    return filled;
+  };
+
+  const handlePanoptoUrlChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const url = e.target.value;
+    setPanoptoUrl(url);
+
+    // If valid URL, try to fetch metadata
+    if (url.length > 10 && url.startsWith('http')) {
+        setIsFetchingMetadata(true);
+        try {
+            const res = await fetch(`/api/utils/fetch-metadata?url=${encodeURIComponent(url)}`);
+            const data = await res.json();
+            
+            if (data.success && data.title) {
+                // Try to parse the title
+                const usedSmart = applySmartMetadata(data.title);
+                if (!usedSmart) {
+                    // Fallback: just use page title as lecture title if parser didn't trigger
+                    if (!title) setTitle(data.title);
+                }
+            }
+        } catch (err) {
+            console.warn('Metadata fetch failed', err);
+        } finally {
+            setIsFetchingMetadata(false);
+        }
+    }
+  };
+
+  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setTitle(val);
+    // instant smart parse on paste
+    applySmartMetadata(val);
+  };
+
+  // --- SMART FILL LOGIC END ---
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
@@ -374,7 +430,7 @@ export default function LectureUploadModal({ isOpen, onClose, onSuccess }: Lectu
               <input
                 type="text"
                 value={title}
-                onChange={(e) => setTitle(e.target.value)}
+                onChange={handleTitleChange}
                 placeholder="e.g., Contract Law - Week 3: Consideration"
                 className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                 required
@@ -437,10 +493,15 @@ export default function LectureUploadModal({ isOpen, onClose, onSuccess }: Lectu
                 <input
                   type="url"
                   value={panoptoUrl}
-                  onChange={(e) => setPanoptoUrl(e.target.value)}
+                  onChange={handlePanoptoUrlChange}
                   placeholder="https://durham.cloud.panopto.eu/Panopto/Pages/Viewer.aspx?id=..."
                   className="w-full px-3 py-2 pr-10 border rounded-lg focus:ring-2 focus:ring-purple-500"
                 />
+                {isFetchingMetadata && (
+                   <span className="absolute right-8 top-1/2 -translate-y-1/2">
+                     <Loader2 className="w-4 h-4 text-purple-600 animate-spin" />
+                   </span>
+                )}
                 {panoptoUrl && (
                   <a
                     href={panoptoUrl}
