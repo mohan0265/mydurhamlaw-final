@@ -12,8 +12,7 @@ CREATE TABLE IF NOT EXISTS public.durmah_sessions (
   last_active_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   mode TEXT NOT NULL CHECK (mode IN ('voice', 'text')),
   title TEXT,
-  last_summary_id UUID,
-  CONSTRAINT fk_last_summary FOREIGN KEY (last_summary_id) REFERENCES public.durmah_summaries(id) ON DELETE SET NULL
+  last_summary_id UUID -- FK constraint added later after durmah_summaries exists
 );
 
 -- Indexes for performance
@@ -54,8 +53,14 @@ CREATE TABLE IF NOT EXISTS public.durmah_summaries (
 CREATE INDEX IF NOT EXISTS idx_durmah_summaries_session_id ON public.durmah_summaries(session_id);
 CREATE INDEX IF NOT EXISTS idx_durmah_summaries_user_id ON public.durmah_summaries(user_id);
 
--- Fix circular dependency by adding FK constraint AFTER durmah_summaries exists
--- (Already defined above in CREATE TABLE, but adding as separate ALTER if needed)
+-- =====================================================
+-- Fix circular dependency: Add FK constraint now that durmah_summaries exists
+-- =====================================================
+ALTER TABLE public.durmah_sessions
+ADD CONSTRAINT fk_last_summary 
+FOREIGN KEY (last_summary_id) 
+REFERENCES public.durmah_summaries(id) 
+ON DELETE SET NULL;
 
 -- =====================================================
 -- TABLE 4: legal_news_cache
