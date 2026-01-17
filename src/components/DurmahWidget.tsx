@@ -360,19 +360,94 @@ export default function DurmahWidget() {
           setMode(requestedMode);
         }
 
-        // 3. Auto-inject message if provided
-        if (autoMessage && typeof autoMessage === 'string') {
-          // Wait a brief moment for widget to open, then send message
+        // 3. Auto-send message if provided
+        if (autoMessage && typeof autoMessage === 'string' && signedIn) {
           setTimeout(() => {
-            handleTextChat(autoMessage);
-          }, 500);
+            // Programmatically trigger send
+            const userText = autoMessage.trim();
+            if (!userText || isStreaming || voiceSessionActive) return;
+            
+            const now = Date.now();
+            const userMsg: Msg = { role: "you", text: userText, ts: now };
+            const assistantId = now + 1;
+
+            const history = [...messages, userMsg];
+            setMessages([...history, { role: "durmah", text: "", ts: assistantId }]);
+            setInput("");
+            setIsStreaming(true);
+
+            // Inline chat send logic
+            (async () => {
+              try {
+                const body = {
+                  message: userText,
+                  history: history.map((m) => ({
+                    role: m.role === "you" ? "user" : "assistant",
+                    content: m.text,
+                  })),
+                  mode: requestedMode || mode,
+                };
+
+                const response = await fetch("/api/durmah/chat", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify(body),
+                });
+
+                if (!response.ok) {
+                  throw new Error(`HTTP ${response.status}`);
+                }
+
+                if (!response.body) {
+                  throw new Error("No response body");
+                }
+
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let accumulated = "";
+
+                while (true) {
+                  const { done, value } = await reader.read();
+                  if (done) break;
+
+                  const chunk = decoder.decode(value, { stream: true });
+                  accumulated += chunk;
+
+                  setMessages((prev) => {
+                    const copy = [...prev];
+                    const lastIdx = copy.length - 1;
+                    if (copy[lastIdx]?.role === "durmah") {
+                      copy[lastIdx] = { ...copy[lastIdx], text: accumulated };
+                    }
+                    return copy;
+                  });
+                }
+
+                setIsStreaming(false);
+              } catch (err: any) {
+                console.error("[Durmah] Auto-send error:", err);
+                setMessages((prev) => {
+                  const copy = [...prev];
+                  const lastIdx = copy.length - 1;
+                  if (copy[lastIdx]?.role === "durmah") {
+                    copy[lastIdx] = {
+                      ...copy[lastIdx],
+                      text: "Sorry, I encountered an error analyzing this article. Please try again.",
+                    };
+                  }
+                  return copy;
+                });
+                setIsStreaming(false);
+              }
+            })();
+          }, 1000);
         }
       }
     };
 
     window.addEventListener('message', handleMessage);
     return () => window.removeEventListener('message', handleMessage);
-  }, []);
+  }, [messages, mode, signedIn, isStreaming, voiceSessionActive]);
 
   useEffect(() => {
     if (!contextPacket) return;
