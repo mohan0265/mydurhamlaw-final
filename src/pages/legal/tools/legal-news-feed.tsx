@@ -950,18 +950,6 @@ Tell me:
                     </Button>
                   </div>
 
-                  {/* Ask Durmah Link */}
-                  <div className="mt-4 pt-3 border-t border-gray-100">
-                    <button
-                      onClick={() => {
-                        const topic = encodeURIComponent(article.title.substring(0, 100))
-                        router.push(`/dashboard?topic=${topic}`)
-                      }}
-                      className="text-purple-600 hover:text-purple-800 text-sm font-medium transition-colors min-h-[44px] py-2 w-full text-left"
-                    >
-                      💬 Ask Durmah about this article
-                    </button>
-                  </div>
 
                 </CardContent>
               </Card>
