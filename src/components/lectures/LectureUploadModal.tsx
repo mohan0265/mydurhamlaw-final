@@ -135,6 +135,17 @@ export default function LectureUploadModal({ isOpen, onClose, onSuccess }: Lectu
     } finally {
       setUploading(false);
       setUploadProgress(0);
+
+      if (onUploadComplete) {
+        onUploadComplete();
+      }
+      
+      // FIRE AND FORGET: Mark onboarding task as complete
+      fetch('/api/onboarding/complete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ task_key: 'add_first_lecture' }),
+      }).catch(err => console.warn('[Onboarding] Failed to mark lecture complete', err));
     }
   };
 

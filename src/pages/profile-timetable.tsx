@@ -141,6 +141,14 @@ export default function ProfileTimetablePage() {
       if (error) throw error;
 
       toast.success('Timetable saved successfully!');
+
+      // FIRE AND FORGET: Onboarding
+      fetch('/api/onboarding/complete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ task_key: 'connect_timetable' }),
+      }).catch(err => console.warn('[Onboarding] Timetable mark failed', err));
+
       router.push('/dashboard');
       setTimeout(() => {
         toast('Your Year-at-a-Glance will update shortly.', { icon: '📅', duration: 4000 });

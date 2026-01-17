@@ -21,8 +21,18 @@ import {
 
 // Status controls live under community-network in this repo
 import StatusControls from '../../components/community-network/StatusControls';
+import { useEffect } from 'react';
 
 export default function CommunityHubPage() {
+  // Onboarding Hook
+  useEffect(() => {
+    fetch('/api/onboarding/complete', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ task_key: 'visit_community' }),
+    }).catch(err => console.warn('[Onboarding] Failed to mark complete', err));
+  }, []);
+
   return (
     <>
       <Head>

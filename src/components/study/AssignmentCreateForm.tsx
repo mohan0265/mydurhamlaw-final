@@ -78,6 +78,14 @@ export default function AssignmentCreateForm({ onCancel, onSave, initialDate }: 
       }
 
       toast.success("Assignment created!");
+      
+      // FIRE AND FORGET: Mark onboarding task as complete
+      fetch('/api/onboarding/complete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ task_key: 'add_first_assignment' }),
+      }).catch(err => console.warn('[Onboarding] Failed to mark assignment complete', err));
+
       onSave();
     } catch (err) {
       console.error(err);

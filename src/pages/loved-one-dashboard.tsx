@@ -117,6 +117,15 @@ export default function LovedOneDashboard() {
     isMyAvailabilityOnRef.current = isMyAvailabilityOn
   }, [isMyAvailabilityOn])
 
+  // Onboarding Hook
+  useEffect(() => {
+    fetch('/api/onboarding/complete', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ task_key: 'visit_awy' }),
+    }).catch(err => console.warn('[Onboarding] Failed to mark complete', err));
+  }, []);
+
   useEffect(() => {
     fetchUser()
 
