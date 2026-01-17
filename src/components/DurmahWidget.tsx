@@ -1243,7 +1243,7 @@ ${guidesContext}
 INSTRUCTIONS: 
 1. Answer using the step-by-step instructions from the guide(s) above
 2. Format your response clearly with numbered steps or bullet points
-3. Include at end: "📚 Full guide: /onboarding?guide={slug}"
+3. Include at end: "Full guide: /onboarding?guide={slug}"
 4. Cite source: "From: [guide title]"
 5. Do NOT invent additional steps not in the guides]
 
