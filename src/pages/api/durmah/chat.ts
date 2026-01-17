@@ -40,17 +40,46 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(401).json({ ok: false, error: 'unauthorized' });
   }
 
-  // Now call buildDurmahContext - it will use the same req/res and get the user
-  const result = await buildDurmahContext(req);
-  
-  // Since we already authenticated above, this should always succeed
-  // But keep the check for safety
-  if (!result.ok) {
-    console.error('[durmah/chat] buildDurmahContext failed after successful auth');
-    return res.status(500).json({ ok: false, error: 'context_build_failed' });
-  }
+  const userId = user.id;
 
-  const { userId, context: baseContext } = result;
+  // Build minimal base context directly instead of calling buildDurmahContext
+  // Get or create thread
+  const { data: thread } = await supabase
+    .from('durmah_threads')
+    .select('id, onboarding_state, last_summary, last_message_at')
+    .eq('user_id', userId)
+    .maybeSingle();
+
+  const threadId = thread?.id || (await supabase
+    .from('durmah_threads')
+    .upsert({
+      user_id: userId,
+      onboarding_state: 'new',
+      last_seen_at: new Date().toISOString(),
+      last_message_at: new Date().toISOString(),
+    }, { onConflict: 'user_id' })
+    .select('id')
+    .single()).data?.id;
+
+  // Get recent messages
+  const { data: messages } = await supabase
+    .from('durmah_messages')
+    .select('role, content, source, created_at')
+    .eq('user_id', userId)
+    .eq('thread_id', threadId)
+    .order('created_at', { ascending: true })
+    .limit(12);
+
+  const baseContext = {
+    userId,
+    threadId,
+    onboardingState: thread?.onboarding_state || 'active',
+    lastSummary: thread?.last_summary,
+    recentMessages: messages || [],
+  };
+  
+  // NEW: Enhance context with assignments and AWY data
+  const context = await enhanceDurmahContext(supabase, userId, baseContext as any);
   const { message, source } = (req.body || {}) as { message?: string; source?: string };
   const incoming = (message || '').trim();
   const nowIso = new Date().toISOString();
