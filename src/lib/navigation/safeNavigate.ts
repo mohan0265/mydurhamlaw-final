@@ -1,9 +1,16 @@
 import { NextRouter } from 'next/router';
 
 export function isRouteAbortError(err: unknown): boolean {
-  const msg = (err as any)?.message || '';
+  const error = err as any;
+  if (!error) return false;
+  
+  // Standard AbortController signal
+  if (error.name === 'AbortError') return true;
+  
+  // Next.js specific
+  const msg = error.message || '';
   return (
-    (err as any)?.cancelled === true ||
+    error.cancelled === true ||
     msg.includes('Abort fetching component for route') ||
     msg.includes('Load cancelled')
   );

@@ -131,6 +131,29 @@ export default function App({ Component, pageProps }: AppProps) {
     };
   }, []);
 
+  // Nuclear option: Patch console.error to silence stubbornly logged internal Next.js errors
+  useEffect(() => {
+    const originalError = console.error;
+    console.error = (...args) => {
+      if (args.some(arg => 
+        typeof arg === 'string' && (
+          arg.includes('Abort fetching component for route') || 
+          arg.includes('cancelled')
+        ) ||
+        (arg instanceof Error && (
+          arg.message.includes('Abort fetching component for route') ||
+          arg.name === 'AbortError'
+        ))
+      )) {
+        return; // Swallow it
+      }
+      originalError.apply(console, args);
+    };
+    return () => {
+      console.error = originalError;
+    };
+  }, []);
+
   return (
     <>
       <Head>
