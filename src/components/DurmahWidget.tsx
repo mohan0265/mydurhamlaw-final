@@ -391,6 +391,7 @@ export default function DurmahWidget() {
                 const response = await fetch("/api/durmah/chat", {
                   method: "POST",
                   headers: { "Content-Type": "application/json" },
+                  credentials: 'include',
                   body: JSON.stringify(body),
                 });
 
@@ -504,6 +505,7 @@ export default function DurmahWidget() {
             const response = await fetch("/api/durmah/chat", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
+              credentials: 'include',
               body: JSON.stringify(body),
             });
 
