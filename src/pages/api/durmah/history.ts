@@ -74,18 +74,33 @@ export default async function handler(
       .limit(messageLimit);
 
     if (messagesError) {
-      console.error('[history] messages fetch error:', messagesError);
-      return res.status(500).json({ error: 'Failed to fetch messages' });
+      console.error('[durmah/history] Messages query error:', messagesError);
     }
 
     // Reverse to chronological order
     const lastMessages = (messages || []).reverse();
 
+    // 6. Fetch recent interest events (last 5 for context)
+    const { data: interests } = await supabase
+      .from('durmah_interest_events')
+      .select('title, url, tags, created_at')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(5);
+
+    console.log('[durmah/history] Loaded:', {
+      session_id: sessionData?.id,
+      summary: !!lastSummary,
+      messages: lastMessages?.length || 0,
+      interests: interests?.length || 0
+    });
+
     const response: DurmahHistoryResponse = {
       latest_session: sessionData,
       last_summary: lastSummary,
       last_messages: lastMessages,
-      context_loaded: lastMessages.length > 0 || lastSummary !== null,
+      recent_interests: interests || [],
+      context_loaded: lastMessages.length > 0 || lastSummary !== null || (interests && interests.length > 0),
     };
 
     return res.status(200).json(response);

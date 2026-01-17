@@ -341,6 +341,39 @@ export default function DurmahWidget() {
     }
   }, [signedIn]);
 
+  // Listen for OPEN_DURMAH postMessage from other components (e.g., news feed)
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      // Security: Only process messages from same origin
+      if (event.origin !== window.location.origin) return;
+
+      if (event.data?.type === 'OPEN_DURMAH') {
+        const { mode: requestedMode, autoMessage } = event.data.payload || {};
+
+        console.log('[Durmah] Received OPEN_DURMAH request:', { requestedMode, hasMessage: !!autoMessage });
+
+        // 1. Open widget
+        setIsOpen(true);
+
+        // 2. Switch mode if requested
+        if (requestedMode && (requestedMode === 'chat' || requestedMode === 'study')) {
+          setMode(requestedMode);
+        }
+
+        // 3. Auto-inject message if provided
+        if (autoMessage && typeof autoMessage === 'string') {
+          // Wait a brief moment for widget to open, then send message
+          setTimeout(() => {
+            handleTextChat(autoMessage);
+          }, 500);
+        }
+      }
+    };
+
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, []);
+
   useEffect(() => {
     if (!contextPacket) return;
     const timeZone = contextPacket.academic.timezone || "Europe/London";

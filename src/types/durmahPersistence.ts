@@ -6,8 +6,30 @@ export interface DurmahSession {
   created_at: string;
   last_active_at: string;
   mode: 'voice' | 'text';
+  tags: string[] | null;
   title: string | null;
   last_summary_id: string | null;
+}
+
+// Interest Events (for tracking student engagement with content)
+export interface DurmahInterestEvent {
+  id: string;
+  user_id: string;
+  event_type: string;
+  source: string;
+  title: string | null;
+  url: string | null;
+  snippet: string | null;
+  tags: string[] | null;
+  created_at: string;
+}
+
+export interface NewsAnalysisRequest {
+  title: string;
+  source: string;
+  url: string;
+  snippet?: string;
+  tags?: string[];
 }
 
 export interface DurmahMessage {

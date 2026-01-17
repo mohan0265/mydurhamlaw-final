@@ -301,6 +301,66 @@ export default function LegalNewsFeedPage() {
     }
   }, [user])
 
+  // Handle "Get AI Analysis" button click - opens Durmah with article context
+  const handleAIAnalysisClick = useCallback(async (article: RSSNewsItem) => {
+    try {
+      // 1. Log interest event to Supabase
+      const interestPayload = {
+        event_type: 'news_ai_analysis_clicked',
+        source: 'legal_news',
+        title: article.title,
+        url: article.url,
+        snippet: article.summary || article.content?.substring(0, 300),
+        tags: article.topicTags || [article.sourceType]
+      };
+
+      console.log('[News] Logging interest event:', interestPayload);
+
+      await fetch('/api/durmah/interest', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(interestPayload)
+      }).catch(err => {
+        // Silent fail for analytics - don't block main flow
+        console.warn('[News] Failed to log interest event:', err);
+      });
+
+      // 2. Build analysis message for Durmah
+      const analysisMessage = `Please analyze this news item for my Durham Law studies.
+
+**Title**: ${article.title}
+**Source**: ${article.source || article.sourceType}
+**URL**: ${article.url}
+${article.summary ? `**Summary**: ${article.summary}` : ''}
+
+Tell me:
+1. A 5-bullet summary in plain English
+2. Key legal concepts involved
+3. How this could be used in an essay (with 2-3 angles)
+4. A "cite safely" reminder
+
+**Important**: Analyze only the information provided above. Do not invent additional facts or details beyond what I've shared.`;
+
+      // 3. Open Durmah widget and inject message
+      console.log('[News] Opening Durmah with analysis request');
+      
+      window.postMessage({
+        type: 'OPEN_DURMAH',
+        payload: {
+          mode: 'study',
+          autoMessage: analysisMessage
+        }
+      }, '*');
+
+      // 4. Visual feedback - clear selectedArticle to avoid confusion
+      setSelectedArticle(null);
+
+    } catch (err) {
+      console.error('[News] Error in handleAIAnalysisClick:', err);
+    }
+  }, [])
+
   // Enhanced play article with voice manager integration and toggle behavior
   const playArticle = useCallback(async (article: RSSNewsItem) => {
     // Check if this article is currently playing - if so, stop it (toggle behavior)
@@ -857,7 +917,7 @@ export default function LegalNewsFeedPage() {
                   {/* Actions */}
                   <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 pt-4 border-t border-gray-100">
                     <Button
-                      onClick={() => setSelectedArticle(article)}
+                      onClick={() => handleAIAnalysisClick(article)}
                       className="flex items-center justify-center gap-2 min-h-[44px] text-sm sm:text-base"
                     >
                       <BookOpen className="w-4 h-4" />
