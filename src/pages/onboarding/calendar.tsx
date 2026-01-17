@@ -67,8 +67,6 @@ export default function CalendarImportPage() {
     }
   };
 
-
-
   const handleFileDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     const file = e.dataTransfer.files[0];
@@ -90,8 +88,150 @@ export default function CalendarImportPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50 flex items-center justify-center p-4">
-      {/* ... keeping logic ... */}
-                    </ol>
+      <div className="w-full max-w-2xl">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-purple-600 rounded-full mb-4">
+            <Calendar className="text-white" size={32} />
+          </div>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            Import Your Calendar
+          </h1>
+          <p className="text-gray-600">
+            Upload your Blackboard calendar file to sync events and deadlines
+          </p>
+          <p className="text-sm text-purple-600 mt-2">
+            💡 You can re-upload anytime to refresh updates from Blackboard
+          </p>
+        </div>
+
+        {/* Main Card */}
+        <div className="bg-white rounded-2xl shadow-xl p-8">
+          {!imported ? (
+            <>
+              {/* File Upload Only */}
+              <div
+                onDrop={handleFileDrop}
+                onDragOver={(e) => e.preventDefault()}
+                className="border-2 border-dashed border-gray-300 rounded-xl p-12 text-center hover:border-purple-400 transition cursor-pointer"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <Upload className="mx-auto text-gray-400 mb-4" size={48} />
+                <h3 className="text-lg font-semibold text gray-700 mb-2">
+                  Drop your .ics file here
+                </h3>
+                <p className="text-sm text-gray-500 mb-4">
+                  or click to browse
+                </p>
+                <button
+                  disabled={uploading}
+                  className="px-6 py-3 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {uploading ? 'Uploading...' : 'Select File'}
+                </button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".ics"
+                  onChange={handleFileSelect}
+                  className="hidden"
+                />
+              </div>
+
+              {/* Instructions */}
+              <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                <h4 className="text-sm font-semibold text-blue-900 mb-2">
+                  📥 How to download your Blackboard calendar file:
+                </h4>
+                <ol className="text-sm text-blue-800 space-y-1 list-decimal list-inside">
+                  <li>Login to <strong>DU Hub</strong> (duo.dur.ac.uk) → click <strong>Blackboard</strong></li>
+                  <li>Click <strong>Calendar</strong> in the left sidebar</li>
+                  <li>Click the <strong>gear icon</strong> (⚙️) in the top right</li>
+                  <li>Click <strong>"Get External Link"</strong> or <strong>"Share Calendar"</strong></li>
+                  <li>Right-click the webcal link → <strong>"Save Link As..."</strong> → save as <strong>.ics</strong></li>
+                  <li>Upload the saved file above</li>
+                </ol>
+                <div className="mt-3 pt-3 border-t border-blue-200">
+                  <p className="text-xs text-blue-700">
+                    <strong>💫 Pro tip:</strong> Download and re-upload anytime to refresh your calendar with the latest deadlines from Blackboard.
+                  </p>
+                </div>
+              </div>
+
+              {error && (
+                <div className="mt-4 p-4 bg-red-50 rounded-lg border border-red-200 flex items-start gap-2">
+                  <AlertCircle className="text-red-600 flex-shrink-0" size={20} />
+                  <div>
+                    <h4 className="text-sm font-semibold text-red-900">Upload Error</h4>
+                    <p className="text-sm text-red-700">{error}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Skip Option */}
+              <div className="mt-6 text-center">
+                <button
+                  onClick={handleSkip}
+                  className="text-gray-500 hover:text-gray-700 text-sm font-medium"
+                >
+                  Skip for now →
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              {/* Success State */}
+              <div className="text-center">
+                <div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-4">
+                  <CheckCircle className="text-green-600" size={32} />
+                </div>
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">
+                  Calendar Imported Successfully!
+                </h3>
+                <p className="text-gray-600 mb-6">
+                  Your timetable and deadlines are now available in your dashboard
+                </p>
+
+                {/* Stats */}
+                <div className="grid grid-cols-2 gap-4 mb-8">
+                  <div className="p-4 bg-purple-50 rounded-lg">
+                    <div className="text-3xl font-bold text-purple-600">{eventsCount}</div>
+                    <div className="text-sm text-gray-600">Calendar Events</div>
+                  </div>
+                  <div className="p-4 bg-blue-50 rounded-lg">
+                    <div className="text-3xl font-bold text-blue-600">{assessmentsCount}</div>
+                    <div className="text-sm text-gray-600">Assessment Deadlines</div>
+                  </div>
+                </div>
+
+                {/* Warning Banner */}
+                <div className="p-4 bg-yellow-50 rounded-lg border border-yellow-200 mb-6 text-left">
+                  <p className="text-sm text-yellow-800">
+                    ⚠️ <strong>Important:</strong> Always verify deadlines and events against official Durham systems. 
+                    This import is for your convenience only.
+                  </p>
+                </div>
+
+                {/* Next Steps Guidance */}
+                <div className="p-5 bg-gradient-to-br from-purple-50 to-blue-50 rounded-lg border border-purple-200 mb-6 text-left">
+                  <h4 className="text-sm font-bold text-purple-900 mb-3 flex items-center gap-2">
+                    <span className="text-lg">📌</span>
+                    Next Steps - Get the Most Out of MyDurhamLaw
+                  </h4>
+                  <ol className="text-sm text-gray-700 space-y-2 list-decimal list-inside">
+                    <li>
+                      <strong>Go to YAAG</strong> (Year at a Glance) to see your entire academic year in 3 terms
+                    </li>
+                    <li>
+                      <strong>Click any assignment deadline</strong> to open the Assignment Widget
+                    </li>
+                    <li>
+                      <strong>Upload your assignment brief PDF</strong> inside the widget for AI-powered guidance
+                    </li>
+                    <li>
+                      <strong>Follow the stages</strong> to research, outline, and draft with Durmah's help
+                    </li>
+                  </ol>
                   <div className="mt-3 pt-3 border-t border-purple-200">
                     <p className="text-xs text-purple-700">
                       <strong>💡 Pro Tip:</strong> The Assignment Widget remembers where you left off, so you can resume anytime!
@@ -99,22 +239,13 @@ export default function CalendarImportPage() {
                   </div>
                 </div>
 
-                {/* Continue/Back buttons */}
+                {/* Continue Button */}
                 <button
                   onClick={handleComplete}
                   className="w-full px-6 py-3 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 mb-3"
                 >
                   Back to Setup Checklist
                 </button>
-                
-                {/* Direct Link to YAAG */}
-                <button
-                  onClick={() => router.push('/year-at-a-glance')}
-                  className="w-full px-6 py-3 bg-white border-2 border-purple-600 text-purple-600 rounded-lg font-semibold hover:bg-purple-50"
-                >
-                  View Year at a Glance →
-                </button>
-              </div>
                 
                 {/* Direct Link to YAAG */}
                 <button

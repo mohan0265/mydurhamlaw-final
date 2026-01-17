@@ -278,7 +278,7 @@ export default function DurmahWidget() {
   const [isOpen, setIsOpen] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [ready, setReady] = useState(false);
-  const [mode, setMode] = useState<'chat' | 'study'>('chat'); // NEW: Chat vs Study Mode
+  const [mode, setMode] = useState<'chat' | 'study' | 'NEWS_STRICT'>('chat'); // NEW: Chat vs Study Mode
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
@@ -348,7 +348,7 @@ export default function DurmahWidget() {
       if (event.origin !== window.location.origin) return;
 
       if (event.data?.type === 'OPEN_DURMAH') {
-        const { mode: requestedMode, autoMessage } = event.data.payload || {};
+        const { mode: requestedMode, autoMessage, article } = event.data.payload || {};
 
         console.log('[Durmah] Received OPEN_DURMAH request:', { requestedMode, hasMessage: !!autoMessage });
 
@@ -356,7 +356,7 @@ export default function DurmahWidget() {
         setIsOpen(true);
 
         // 2. Switch mode if requested
-        if (requestedMode && (requestedMode === 'chat' || requestedMode === 'study')) {
+        if (requestedMode && (requestedMode === 'chat' || requestedMode === 'study' || requestedMode === 'NEWS_STRICT')) {
           setMode(requestedMode);
         }
 
@@ -386,6 +386,7 @@ export default function DurmahWidget() {
                     content: m.text,
                   })),
                   mode: requestedMode || mode,
+                  article,
                 };
 
                 const response = await fetch("/api/durmah/chat", {

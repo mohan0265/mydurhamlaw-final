@@ -80,7 +80,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   
   // NEW: Enhance context with assignments and AWY data
   const context = await enhanceDurmahContext(supabase, userId, baseContext as any);
-  const { message, source } = (req.body || {}) as { message?: string; source?: string };
+  const { message, source, mode, article } = (req.body || {}) as { message?: string; source?: string; mode?: string; article?: any };
   const incoming = (message || '').trim();
   const nowIso = new Date().toISOString();
 
@@ -134,6 +134,121 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   // Continuation path
   try {
+    // ------------------------------------------------------------------
+    // NEW: Strict News Analysis Mode
+    // ------------------------------------------------------------------
+    const { mode, article } = (req.body || {}) as { mode?: string, article?: any };
+
+    if (mode === 'NEWS_STRICT' && article) {
+      console.log('[durmah/chat] Entering NEWS_STRICT mode for:', article.title);
+
+      const strictPrompt = `
+STRICT GROUNDING RULES:
+1) Allowed facts are ONLY the exact text provided below in Title, Source, URL, and Summary.
+2) Do NOT add any new factual statements about:
+   - operations, capacity, prisoner types, sentences, rehab programs, security level
+   - community impact, policy changes, overcrowding, inmate rights, etc
+   unless those details are explicitly present in the provided summary.
+3) Summary section must be paraphrases of the provided summary/title only.
+4) "Legal concepts" and "essay angles" must be conditional + generic:
+   - use phrases like "may raise issues around...", "could be used to discuss..."
+   - avoid statements that assert real-world conditions (e.g., "overcrowding is an issue")
+5) If input is thin, say so explicitly: "Based on the limited info provided..."
+6) Output must follow the requested numbered structure (1-4).
+7) "Cite safely" reminder must reference only the given source + url.
+
+PROVIDED INFORMATION:
+Title: ${article.title}
+Source: ${article.source}
+URL: ${article.url}
+Summary: ${article.summary || "No summary provided."}
+`;
+
+      const prompt = [
+        { role: 'system', content: strictPrompt },
+        { role: 'user', content: incoming || "Please analyze this news item." }
+      ];
+
+      // Call Model
+      let reply = await callOpenAI(prompt as any);
+
+      // ------------------------------------------------------------------
+      // SERVER-SIDE DRIFT GUARD (Hard Enforcement)
+      // ------------------------------------------------------------------
+      const allowedText = (article.title + " " + article.source + " " + article.url + " " + (article.summary || "")).toLowerCase();
+      const lowerReply = reply.toLowerCase();
+
+      const highRiskKeywords = ["rehabilitation", "overcrowding", "inmates", "sentences", "capacity", "security", "rights", "offenders", "punishment", "community impact", "economic", "conditions"];
+      const driftPhrases = ["reflects the broader", "accommodates", "managed by"]; // "managed by" is risky if source is Gov but doesn't say who manages precise facility
+
+      let driftDetected = false;
+
+      // Check keywords
+      for (const kw of highRiskKeywords) {
+        if (lowerReply.includes(kw) && !allowedText.includes(kw)) {
+          console.warn(`[durmah/chat] DRIFT DETECTED: Keyword '${kw}' found in reply but not in source.`);
+          driftDetected = true;
+          break;
+        }
+      }
+
+      // Check phrases if not already caught
+      if (!driftDetected) {
+        for (const phrase of driftPhrases) {
+          if (lowerReply.includes(phrase) && !allowedText.includes(phrase)) {
+            console.warn(`[durmah/chat] DRIFT DETECTED: Phrase '${phrase}' found in reply but not in source.`);
+            driftDetected = true;
+            break;
+          }
+        }
+      }
+
+      // Fallback if drift detected
+      if (driftDetected) {
+        console.warn('[durmah/chat] Applying FALLBACK response due to drift.');
+        reply = `Based only on the limited information you provided:
+
+1. **Summary**: ${article.title} (${article.source}). The provided text mentions: ${article.summary ? article.summary.substring(0, 100) + "..." : "No specific details available."}
+
+2. **Key Legal Concepts**:
+   - Depending on the context, this topic may relate to *Public Law* (powers of the state).
+   - It might also involve *Administrative Law* (procedural fairness).
+   - (Note: Specific legal concepts cannot be determined from the limited text provided).
+
+3. **Essay Angles**:
+   - You could potentially discuss how such events illustrate statutory duties.
+   - You might explore the role of the stated source (${article.source}) in the legal system.
+   - *With limited info, avoid making specific claims.*
+
+4. **Cite Safely**:
+   - Source: ${article.source}
+   - URL: ${article.url}
+   - Reminder: Do not add facts (like overcrowding or rehabilitation) unless they are in your source text.`;
+      } else {
+        // Add transparency header if valid
+        reply = `Based only on the limited information you provided...\n\n${reply}`;
+      }
+
+      // Save to history (optional, but good for UX continuity)
+      await supabase.from('durmah_messages').insert([
+        { thread_id: context.threadId, user_id: userId, role: 'user', content: incoming, source: source || 'news_analysis' },
+        { thread_id: context.threadId, user_id: userId, role: 'assistant', content: reply, source: source || 'news_analysis' }
+      ]);
+      
+      // Update summary for continuity
+      await supabase.from('durmah_threads').update({
+        last_message_at: nowIso,
+        last_seen_at: nowIso,
+        last_summary: `Analyzed news: ${article.title}`
+      }).eq('id', context.threadId);
+
+      return res.status(200).json({ ok: true, reply, onboardingState: context.onboardingState });
+    }
+    
+    // ------------------------------------------------------------------
+    // END Strict News Logic -> Fallthrough to Standard Chat
+    // ------------------------------------------------------------------
+
     const history = recentMessages.slice(-10).map((m) => ({
       role: m.role,
       content: m.content,

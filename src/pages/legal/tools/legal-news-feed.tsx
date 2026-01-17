@@ -348,8 +348,14 @@ Tell me:
       window.postMessage({
         type: 'OPEN_DURMAH',
         payload: {
-          mode: 'study',
-          autoMessage: analysisMessage
+          mode: 'NEWS_STRICT',
+          autoMessage: analysisMessage,
+          article: {
+            title: article.title,
+            source: article.source || article.sourceType,
+            url: article.url,
+            summary: article.summary
+          }
         }
       }, '*');
 
