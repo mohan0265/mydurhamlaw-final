@@ -22,6 +22,7 @@ import dynamic from 'next/dynamic';
 const MyLecturesWidget = dynamic(() => import('@/components/dashboard/MyLecturesWidget'), { ssr: false });
 import WellbeingTipWidget from '@/components/dashboard/WellbeingTipWidget';
 import { DurhamPortalCard } from '@/components/dashboard/DurhamPortalCard';
+import OnboardingProgressWidget from '@/components/onboarding/OnboardingProgressWidget';
 
 export default function Dashboard() {
   const router = useRouter();
@@ -205,7 +206,14 @@ export default function Dashboard() {
               </Link>
             </div>
 
+
+
             {/* Responsive widgets grid */}
+            {/* NEW: Onboarding Progress at the very top (full width on mobile, top-left on desktop) */}
+            <div className="mb-4">
+              <OnboardingProgressWidget />
+            </div>
+
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4">
               {/* Row 1 - Welcome */}
               <div>
