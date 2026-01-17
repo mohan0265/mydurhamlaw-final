@@ -278,6 +278,7 @@ export default function DurmahWidget() {
   const [isOpen, setIsOpen] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [ready, setReady] = useState(false);
+  const [mode, setMode] = useState<'chat' | 'study'>('chat'); // NEW: Chat vs Study Mode
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
@@ -562,24 +563,58 @@ export default function DurmahWidget() {
 
   // 3. Voice Hook - System prompt with FULL student context
   const systemPrompt = useMemo(() => {
+    // 1. Core Identity & Ethics (Base)
     const basePrompt = buildDurmahSystemPrompt();
     
-    // PHASE 2 FIX: Inject student context if available
+    // 2. LISTEN FIRST Protocol (Critical Override)
+    const listenFirstProtocol = `
+CRITICAL VOICE INSTRUCTIONS:
+1. LISTEN FIRST: Start every response by briefly acknowledging what the user said (e.g., "Got it," "I see," "Right,").
+2. NO LECTURING IN CHAT MODE: If the user is just chatting or giving updates, DO NOT pivot to law topics.
+3. HANDLING INTERRUPTIONS: If the user says "Stop", "No", or "Not that", stop immediately and ask for clarification.
+4. CONFIRMATION: If you are unsure what the user said, ask a clarifying question instead of guessing.
+`;
+
+    // 3. Mode-Specific Instructions
+    let modeInstructions = "";
+    if (mode === 'chat') {
+      modeInstructions = `
+CURRENT MODE: CHAT (Conversational)
+- You are a friendly listener first.
+- Context is provided only for reference; do NOT use it to lecture.
+- Discuss the user's life, updates, or feelings if they bring them up.
+- ONLY discuss law if explicitly asked.
+- Keep responses short (1-2 sentences).
+`;
+    } else {
+      modeInstructions = `
+CURRENT MODE: STUDY (Tutor)
+- You are an active legal mentor.
+- detailed academic context is provided below.
+- Proactively guide the user through their schedule, assignments, and law concepts.
+- Use the Stepwise Teaching method.
+`;
+    }
+
+    // 4. Context Logic
+    let contextBlock = "";
     if (studentContextData) {
-      const contextBlock = buildDurmahContextBlock(studentContextData);
-      return `${basePrompt}
-
-${contextBlock}
-
-REMINDER:
-- Keep responses SHORT and conversational (2-3 sentences max for voice)
-- Do NOT repeat greeting phrases like "Good to see you" or "I'm here to help"
-- Be direct and specific when referencing their assignments/schedule
-- Never say "I can't see your timetable" - use the context above`;
+      if (mode === 'chat') {
+        // Minimal Context for Chat Mode (Prevent Hijacking)
+        contextBlock = `
+MINIMAL CONTEXT (Chat Mode):
+User: ${studentContextData.firstName}
+Date: ${studentContextData.todayLabel}
+(Full academic data hidden to prevent distraction)
+`;
+      } else {
+        // Full Context for Study Mode
+        contextBlock = buildDurmahContextBlock(studentContextData);
+      }
     }
     
-    return basePrompt;
-  }, [studentContextData]);
+    return `${listenFirstProtocol}\n\n${modeInstructions}\n\n${basePrompt}\n\n${contextBlock}`;
+  }, [studentContextData, mode]);
 
   const appendTranscriptTurn = useCallback((role: Msg["role"], text: string) => {
     const normalizedText = normalizeTurnText(text);
@@ -1189,6 +1224,22 @@ REMINDER:
             </div>
           )}
 
+          {/* Mode Switcher */}
+          <div className="mt-2 flex bg-black/20 rounded-lg p-0.5 self-start backdrop-blur-sm border border-white/10">
+            <button 
+              onClick={(e) => { e.stopPropagation(); setMode('chat'); }}
+              className={`px-3 py-1 text-[10px] font-bold rounded-md transition-all ${mode === 'chat' ? 'bg-white text-violet-700 shadow-sm' : 'text-violet-100 hover:bg-white/10'}`}
+            >
+              Chat
+            </button>
+            <button 
+              onClick={(e) => { e.stopPropagation(); setMode('study'); }}
+              className={`px-3 py-1 text-[10px] font-bold rounded-md transition-all ${mode === 'study' ? 'bg-white text-violet-700 shadow-sm' : 'text-violet-100 hover:bg-white/10'}`}
+            >
+              Study
+            </button>
+          </div>
+
           {showVoiceStatus && (
             <span className={`text-[10px] font-medium ${voiceStatusClass}`}>
               {voiceStatusLabel}
@@ -1479,7 +1530,12 @@ REMINDER:
           {chips.map((c) => (
             <button
               key={c}
-              onClick={() => setInput(c)}
+              onClick={() => {
+                setInput(c);
+                if (c.includes('Review') || c.includes('plan') || c.includes('quiz')) {
+                    setMode('study');
+                }
+              }}
               className="whitespace-nowrap text-xs font-medium px-4 py-2 rounded-full bg-violet-50 text-violet-700 border border-violet-100 hover:bg-violet-100 hover:border-violet-200 transition-all"
             >
               {c}
