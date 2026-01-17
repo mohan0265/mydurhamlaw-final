@@ -449,6 +449,124 @@ export default function DurmahWidget() {
     return () => window.removeEventListener('message', handleMessage);
   }, [messages, mode, signedIn, isStreaming, voiceSessionActive]);
 
+  // NEW Phase 3: Listen for CustomEvent-based cross-component communication (e.g., from SmartNewsAgent)
+  useEffect(() => {
+    const handleDurmahOpen = () => {
+      console.log('[Durmah] Received durmah:open event');
+      setIsOpen(true);
+    };
+
+    const handleDurmahMessage = (event: Event) => {
+      const customEvent = event as CustomEvent<{ text: string; mode?: 'chat' | 'study' }>;
+      const { text, mode: requestedMode } = customEvent.detail || {};
+
+      console.log('[Durmah] Received durmah:message event:', { text: text?.substring(0, 100), mode: requestedMode });
+
+      if (!text || !signedIn) {
+        console.warn('[Durmah] Ignoring durmah:message - missing text or user not signed in');
+        return;
+      }
+
+      // 1. Set mode if requested
+      if (requestedMode && (requestedMode === 'chat' || requestedMode === 'study')) {
+        setMode(requestedMode);
+      }
+
+      // 2. Send message programmatically
+      setTimeout(() => {
+        if (isStreaming || voiceSessionActive) {
+          console.warn('[Durmah] Ignoring durmah:message - already streaming or in voice session');
+          return;
+        }
+
+        const userText = text.trim();
+        const now = Date.now();
+        const userMsg: Msg = { role: "you", text: userText, ts: now };
+        const assistantId = now + 1;
+
+        const history = [...messages, userMsg];
+        setMessages([...history, { role: "durmah", text: "", ts: assistantId }]);
+        setInput("");
+        setIsStreaming(true);
+
+        // Inline chat send logic
+        (async () => {
+          try {
+            const body = {
+              message: userText,
+              history: history.map((m) => ({
+                role: m.role === "you" ? "user" : "assistant",
+                content: m.text,
+              })),
+              mode: requestedMode || mode,
+            };
+
+            const response = await fetch("/api/durmah/chat", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(body),
+            });
+
+            if (!response.ok) {
+              throw new Error(`HTTP ${response.status}`);
+            }
+
+            if (!response.body) {
+              throw new Error("No response body");
+            }
+
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let accumulated = "";
+
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) break;
+
+              const chunk = decoder.decode(value, { stream: true });
+              accumulated += chunk;
+
+              setMessages((prev) => {
+                const copy = [...prev];
+                const lastIdx = copy.length - 1;
+                if (copy[lastIdx]?.role === "durmah") {
+                  copy[lastIdx] = { ...copy[lastIdx], text: accumulated };
+                }
+                return copy;
+              });
+            }
+
+            setIsStreaming(false);
+          } catch (err: any) {
+            console.error("[Durmah] CustomEvent message send error:", err);
+            setMessages((prev) => {
+              const copy = [...prev];
+              const lastIdx = copy.length - 1;
+              if (copy[lastIdx]?.role === "durmah") {
+                copy[lastIdx] = {
+                  ...copy[lastIdx],
+                  text: "Sorry, I encountered an error analyzing this article. Please try again.",
+                };
+              }
+              return copy;
+            });
+            setIsStreaming(false);
+          }
+        })();
+      }, 500); // Short delay to ensure widget is fully open
+    };
+
+    // Add listeners
+    window.addEventListener('durmah:open', handleDurmahOpen);
+    window.addEventListener('durmah:message', handleDurmahMessage as EventListener);
+
+    // Cleanup
+    return () => {
+      window.removeEventListener('durmah:open', handleDurmahOpen);
+      window.removeEventListener('durmah:message', handleDurmahMessage as EventListener);
+    };
+  }, [messages, mode, signedIn, isStreaming, voiceSessionActive]);
+
   useEffect(() => {
     if (!contextPacket) return;
     const timeZone = contextPacket.academic.timezone || "Europe/London";
