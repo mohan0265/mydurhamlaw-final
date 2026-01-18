@@ -81,7 +81,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   // NEW: Enhance context with assignments and AWY data
   const context = await enhanceDurmahContext(supabase, userId, baseContext as any);
   const { message, source, mode, article } = (req.body || {}) as { message?: string; source?: string; mode?: string; article?: any };
-  const incoming = (message || '').trim();
+  let incoming = (message || '').trim();
   const nowIso = new Date().toISOString();
 
   const recentMessages = context.recentMessages || [];
