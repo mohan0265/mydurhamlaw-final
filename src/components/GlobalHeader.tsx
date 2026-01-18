@@ -278,9 +278,9 @@ export default function GlobalHeader() {
               </Link>
             </div>
 
-            {/* Right (desktop) */}
+{/* Right (desktop) */}
             <div className="hidden md:flex items-center gap-3">
-              <PresenceBadge />
+              {/* PresenceBadge removed as per user request */}
               {user ? (
                 <>
                   <span className="text-white/90 text-sm">Hi, {displayName}</span>
