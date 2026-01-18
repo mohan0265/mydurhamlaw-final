@@ -57,16 +57,16 @@ export const PricingPlans: React.FC<PricingPlansProps> = ({
         <div className="bg-white rounded-2xl p-8 border border-gray-200 flex flex-col">
           <div className="mb-6">
             <h3 className="text-xl font-bold text-gray-900 mb-2">Free</h3>
-            <p className="text-gray-500 text-sm h-10">To explore the platform and try Durmah.</p>
+            <p className="text-gray-500 text-sm h-10">Experience the full power of Durmah and AI tools (trial limits apply).</p>
           </div>
           <div className="text-4xl font-extrabold text-gray-900 mb-6">£0</div>
           
           <ul className="space-y-4 mb-8 flex-1">
-            <Feature included text="YAAG (View-only)" />
+            <Feature included text="YAAG (Interactive)" />
             <Feature included text="Dashboard & News Feed" />
-            <Feature included text="Durmah Text: 10 msgs/day" />
-            <Feature included={false} text="No Voice Mode" />
-            <Feature included={false} text="Deep Assignment Help" />
+            <Feature included text="Durmah Text: Daily limits" />
+            <Feature included text="Durmah Voice: Trial limits" />
+            <Feature included text="Assignment Help: Intro mode" />
           </ul>
 
           <button
@@ -100,9 +100,9 @@ export const PricingPlans: React.FC<PricingPlansProps> = ({
             <Feature included text="Interactive YAAG (Full)" />
             <Feature included text="Assignment Tracker + Deadlines" />
             <Feature included text="Durmah Text: 250 msgs/mo" />
+            <Feature included text="Durmah Voice: 120 mins/mo" />
             <Feature included text="Assignment Assist: 20 actions" />
             <Feature included text="Exam Prep: 30 sets/mo" />
-            <Feature included={false} text="No Live Voice" />
           </ul>
 
           <button

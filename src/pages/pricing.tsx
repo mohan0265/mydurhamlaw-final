@@ -57,24 +57,25 @@ export default function PricingPage() {
     }
   ];
 
-  const testimonials = [
+  const upcomingReviews = [
     {
-      name: 'Sarah Johnson',
-      year: 'Year 2 LLB',
-      quote: 'MyDurhamLaw has transformed how I study. The AI assistant helps me understand complex legal concepts, and AWY keeps me connected with my family.',
-      rating: 5
+      title: 'Early Feedback',
+      icon: MessageSquare,
+      text: '"This app looks like a very useful AI assisted tool, which we couldn\'t even imagine during undergraduate days. Students nowadays are so much more privileged with these kind of tools available."',
+      author: 'Ex-UK Law Graduate',
+      cta: 'Read More'
     },
     {
-      name: 'Michael Chen',
-      year: 'Year 3 LLB',
-      quote: 'The academic integrity features give me confidence that I\'m learning properly. It\'s like having a personal tutor available 24/7.',
-      rating: 5
+      title: 'Your Voice Matters',
+      icon: Users,
+      text: 'Have you tried MyDurhamLaw? We want to hear from you. Help us shape the future of legal education @ Durham.',
+      cta: 'Submit Review'
     },
     {
-      name: 'Emma Williams',
-      year: 'Year 1 LLB',
-      quote: 'Starting law school was overwhelming, but MyDurhamLaw made the transition so much easier. The study planning features are incredible.',
-      rating: 5
+      title: 'Integrity Promise',
+      icon: Shield,
+      text: 'We believe in authentic growth. We will never post fake reviews or paid testimonials. Your trust is our priority.',
+      cta: 'Our Ethics'
     }
   ];
 
@@ -158,39 +159,40 @@ export default function PricingPage() {
           </div>
         </div>
 
-        {/* Testimonials */}
+        {/* Upcoming Reviews & Integrity */}
         <div className="py-16">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-12">
               <h2 className="text-3xl font-bold text-gray-900 mb-4">
-                Loved by Durham Law Students
+                Community & Trust
               </h2>
               <p className="text-xl text-gray-600">
-                See what your fellow students are saying about MyDurhamLaw
+                A platform built on honesty. No fake reviews, just real student experiences coming soon.
               </p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              {testimonials.map((testimonial, index) => (
-                <Card key={index} className="p-6">
-                  <div className="flex items-center mb-4">
-                    {[...Array(testimonial.rating)].map((_, i) => (
-                      <Star key={i} className="w-4 h-4 text-yellow-400 fill-current" />
-                    ))}
-                  </div>
-                  <blockquote className="text-gray-700 mb-4">
-                    "{testimonial.quote}"
-                  </blockquote>
-                  <div>
-                    <div className="font-semibold text-gray-900">
-                      {testimonial.name}
+              {upcomingReviews.map((item, index) => {
+                const Icon = item.icon;
+                return (
+                  <Card key={index} className="p-8 border-2 border-dashed border-gray-200 bg-gray-50/50 hover:border-blue-200 hover:bg-blue-50/30 transition-all cursor-default">
+                    <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mb-6 mx-auto text-blue-600">
+                      <Icon className="w-6 h-6" />
                     </div>
-                    <div className="text-sm text-gray-600">
-                      {testimonial.year}
+                    <h3 className="text-lg font-bold text-gray-900 mb-3 text-center">
+                      {item.title}
+                    </h3>
+                    <p className="text-gray-600 text-center mb-6 leading-relaxed text-sm">
+                      {item.text}
+                    </p>
+                    <div className="text-center">
+                      <span className="text-blue-600 font-semibold text-sm hover:underline cursor-pointer">
+                        {item.cta} &rarr;
+                      </span>
                     </div>
-                  </div>
-                </Card>
-              ))}
+                  </Card>
+                );
+              })}
             </div>
           </div>
         </div>
