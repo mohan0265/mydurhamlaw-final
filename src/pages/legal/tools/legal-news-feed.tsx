@@ -22,7 +22,8 @@ import { SmartNewsAgent } from '@/components/news/SmartNewsAgent'
 import { useAuth } from '@/lib/supabase/AuthContext'
 import { CollapsibleText } from '@/components/ui/CollapsibleText'
 import { getSupabaseClient } from '@/lib/supabase/client'
-import { NewsAnalysisModal } from '@/components/news/NewsAnalysisModal' // Imported
+import { NewsAnalysisModal } from '@/components/news/NewsAnalysisModal'
+import { PremiumLockModal } from '@/components/ui/PremiumLockModal'
 // Durmah config removed - using default audio settings
 // import { useVoiceManager } from '@/lib/context/VoiceManagerContext' // Removed - using DurmahContext
 
@@ -374,12 +375,17 @@ Tell me:
   // Modal state
   const [isAnalysisModalOpen, setIsAnalysisModalOpen] = useState(false);
   const [analysisArticle, setAnalysisArticle] = useState<RSSNewsItem | null>(null);
+  const [showPremiumLock, setShowPremiumLock] = useState(false);
 
-  // Handle "Get AI Analysis" button click - opens dedicated modal
+  // Handle "Get AI Analysis" button click - opens dedicated modal or lock screen
   const handleAIAnalysisClick = useCallback((article: RSSNewsItem) => {
+    if (!user) {
+      setShowPremiumLock(true);
+      return;
+    }
     setAnalysisArticle(article);
     setIsAnalysisModalOpen(true);
-  }, []);
+  }, [user]);
 
   // Enhanced play article with voice manager integration and toggle behavior
   const playArticle = useCallback(async (article: RSSNewsItem) => {
@@ -1090,6 +1096,13 @@ Tell me:
           }}
         />
       )}
+
+      <PremiumLockModal
+        isOpen={showPremiumLock}
+        onClose={() => setShowPremiumLock(false)}
+        featureName="AI Legal Deep Dive"
+        description="Get instant breakdown of legal concepts, module relevance, and essay angles for any news article. Sign up to unlock the full power of Durmah AI."
+      />
     </div>
   )
 }
