@@ -647,7 +647,11 @@ Tell me:
       'Human Rights': 'bg-emerald-100 text-emerald-800',
       'Legal': 'bg-slate-100 text-slate-800',
       'Breaking': 'bg-red-200 text-red-900',
-      'Important': 'bg-amber-200 text-amber-900'
+      'Important': 'bg-amber-200 text-amber-900',
+      'Public Law': 'bg-indigo-100 text-indigo-800',
+      'EU Law': 'bg-blue-100 text-blue-800',
+      'Tort': 'bg-orange-100 text-orange-800',
+      'Contract': 'bg-emerald-100 text-emerald-800'
     }
     return legalColors[tag] || 'bg-gray-100 text-gray-800'
   }
