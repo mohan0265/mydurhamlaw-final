@@ -45,6 +45,24 @@ interface UseDurmahRealtimeProps {
   audioRef: React.RefObject<HTMLAudioElement>;
 }
 
+// P6B: Normalize common mishears of "Durmah"
+function normalizeDurmahTranscriptions(text: string): string {
+  if (!text) return "";
+  const mapping: Record<string, RegExp> = {
+    "Durmah": /\b(denmark|dharma|darma|durma|derma|doormah|duma)\b/gi,
+  };
+  
+  let normalized = text;
+  Object.entries(mapping).forEach(([replacement, regex]) => {
+    normalized = normalized.replace(regex, replacement);
+  });
+  
+  // Specific phrases
+  normalized = normalized.replace(/hi denmark/gi, "Hi Durmah");
+  
+  return normalized;
+}
+
 export function useDurmahRealtime({
   systemPrompt,
   voice = "charon",
@@ -184,7 +202,8 @@ export function useDurmahRealtime({
       }
       
       // Emit the turn with ORIGINAL text (not lowercased)
-      const cleanText = normalizeTranscriptLanguageSync(textRaw);
+      // P6B: Normalize mishears before emitting
+      const cleanText = normalizeDurmahTranscriptions(normalizeTranscriptLanguageSync(textRaw));
       if (cleanText) {
         onTurn?.({ speaker, text: cleanText });
         lastEmitRef.current[speaker] = { text: normalized, ts: now };
