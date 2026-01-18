@@ -7,6 +7,7 @@ import { useAuth } from '@/lib/supabase/AuthContext';
 import { getSupabaseClient } from '@/lib/supabase/client';
 
 // Icons
+// Use Lucide icons instead of emojis
 import { BookOpen, FileText, Calendar, Target, Shield, CheckCircle, HelpCircle, MessageSquare, Heart, Video } from 'lucide-react';
 
 // Components
@@ -54,12 +55,12 @@ export default function Dashboard() {
         <div className="rounded-2xl border border-gray-200 bg-white p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 shadow-sm">
            <div className="flex flex-col">
               <span className="text-sm sm:text-base font-semibold text-gray-900">Good afternoon, {user.user_metadata?.first_name || 'Student'}</span>
-              <span className="text-xs sm:text-sm text-gray-500">Foundation Year • Durham Law</span>
+              <span className="text-xs sm:text-sm text-gray-500">Foundation Year | Durham Law</span>
            </div>
            
            <div className="flex flex-wrap items-center gap-2 sm:gap-3">
               <span className="inline-flex items-center rounded-full px-3 py-1 text-xs font-medium bg-gray-100 text-gray-600 border border-gray-200">
-                 Trial • 14 days left
+                 Trial | 14 days left
               </span>
               <span className="inline-flex items-center rounded-full px-3 py-1 text-xs font-medium bg-orange-50 text-orange-700 border border-orange-100">
                  Next due: 2d
