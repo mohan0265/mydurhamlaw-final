@@ -27,7 +27,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 }
 
 function maskEmail(email: string) {
-    const [local, domain] = email.split('@');
+    const parts = email.split('@');
+    if (parts.length < 2) return email;
+    
+    const local = parts[0];
+    const domain = parts[1];
+    
     if (local.length <= 2) return `${local}***@${domain}`;
     return `${local.substring(0, 2)}***@${domain}`;
 }

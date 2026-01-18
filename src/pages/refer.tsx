@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Head from 'next/head';
 import { useAuth } from '@/lib/supabase/AuthContext';
-import { GlobalHeader } from '@/components/GlobalHeader';
+import GlobalHeader from '@/components/GlobalHeader';
 import EnhancedFooter from '@/components/homepage/EnhancedFooter';
 import { Plus, Trash2, Mail, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 import { toast } from 'react-hot-toast';

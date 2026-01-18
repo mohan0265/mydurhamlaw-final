@@ -130,10 +130,10 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
            {/* Focus - Wide */}
            <div className="lg:col-span-2 space-y-4">
-              {/* Today's Focus Widget equivalent */}
+              {/* Today&apos;s Focus Widget equivalent */}
               <div className="bg-gradient-to-br from-indigo-600 to-purple-700 rounded-2xl p-5 text-white shadow-md flex items-center justify-between relative overflow-hidden h-[130px]">
                   <div className="relative z-10">
-                      <div className="text-indigo-200 text-xs font-bold uppercase tracking-wider mb-1">Today's Focus</div>
+                      <div className="text-indigo-200 text-xs font-bold uppercase tracking-wider mb-1">Today&apos;s Focus</div>
                       <div className="text-xl font-bold leading-tight mb-2">{focusItem?.title || "Clear Schedule"}</div>
                       <div className="text-sm opacity-80 mb-0">{focusItem?.title ? "Keep momentum going." : "Check your YAAG to plan ahead."}</div>
                   </div>
@@ -146,7 +146,7 @@ export default function Dashboard() {
               {/* Tasks */}
               <div className="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm h-[300px] flex flex-col">
                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-base font-semibold text-gray-900">Today's Tasks</h3>
+                    <h3 className="text-base font-semibold text-gray-900">Today&apos;s Tasks</h3>
                     <Link href="/my/tasks" className="text-sm font-medium text-gray-500 hover:text-purple-600 transition">View all</Link>
                  </div>
                  <TodaysTasksWidget />
@@ -170,7 +170,7 @@ export default function Dashboard() {
                   <div className="flex-1 flex items-center justify-center">
                     {/* Placeholder illustration or tip */}
                     <div className="text-center p-3 bg-blue-50 rounded-lg max-w-[200px]">
-                       <p className="text-xs text-blue-800 font-medium italic">"Rest is not a reward. It's necessary fuel."</p>
+                       <p className="text-xs text-blue-800 font-medium italic">&quot;Rest is not a reward. It&apos;s necessary fuel.&quot;</p>
                     </div>
                   </div>
                   <Link href="/wellbeing" className="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition">
