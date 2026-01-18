@@ -44,25 +44,28 @@ export default function ProfilePage() {
       setUser(session.user)
 
       // Load Profile
-      const { data: profileData } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', session.user.id)
-        .single()
+      try {
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', session.user.id)
+          .single()
 
-      if (profileData) {
-        setProfile({
-          display_name: profileData.display_name || '',
-          year_group: profileData.year_group || '',
-          degree_type: profileData.degree_type || 'LLB',
-          modules: profileData.modules || [],
-          modulesInput: (profileData.modules || []).join(', ')
-        })
+        if (profileData) {
+          setProfile({
+            display_name: profileData.display_name || '',
+            year_group: profileData.year_group || profileData.year_of_study || '',
+            degree_type: profileData.degree_type || 'LLB',
+            modules: profileData.modules || [],
+            modulesInput: (profileData.modules || []).join(', ')
+          })
+        }
+      } catch (err) {
+        console.error('Profile load error:', err)
       }
 
       // Load Connections
       loadConnections(session.user.id)
-
       setLoading(false)
     }
 
@@ -95,11 +98,13 @@ export default function ProfilePage() {
         .map(m => m.trim())
         .filter(Boolean)
 
+      // Write to both year_group (legacy) and year_of_study (canonical)
       const { error } = await supabase
         .from('profiles')
         .update({
           display_name: profile.display_name,
           year_group: profile.year_group,
+          year_of_study: profile.year_group, // Sync both columns
           degree_type: profile.degree_type,
           modules: modulesArray,
           updated_at: new Date().toISOString()
@@ -235,7 +240,7 @@ export default function ProfilePage() {
                          className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none bg-white"
                       >
                          <option value="LLB">LLB Law</option>
-                         <option value="LLB_MASTER">Master of Law</option>
+                         <option value="MLaw">MLaw</option>
                       </select>
                    </div>
                 </div>
@@ -275,7 +280,7 @@ export default function ProfilePage() {
              </CardHeader>
              <CardContent className="p-6">
                 <p className="text-sm text-gray-600 mb-6">
-                   People listed here can see your online status via the "Always With You" widget. You can revoke access at any time.
+                   People listed here can see your online status via the &quot;Always With You&quot; widget. You can revoke access at any time.
                 </p>
 
                 {/* Invite Form */}
@@ -343,6 +348,7 @@ export default function ProfilePage() {
                 </div>
              </CardContent>
           </Card>
+        </div>
       </main>
     </div>
   )
