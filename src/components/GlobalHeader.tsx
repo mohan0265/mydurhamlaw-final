@@ -269,13 +269,14 @@ export default function GlobalHeader() {
               <HoverMenu label={infoMenu.label} items={infoMenu.items} />
               
               {/* NEW: Prominent Live Legal News Link */}
-              <Link
-                href="/legal/tools/legal-news-feed"
-                className="px-3 py-2 rounded-md text-sm font-bold text-pink-200 hover:text-white transition-all flex items-center gap-1.5 animate-pulse hover:animate-none group"
-              >
-                  <span className="w-2 h-2 rounded-full bg-red-500 box-shadow-glow"></span>
-                  Live News!
-              </Link>
+              {/* Live Legal News Menu */}
+              <HoverMenu 
+                label="Live News" 
+                items={[
+                  { label: "🔴 Live Feed", href: "/legal/tools/legal-news-feed" },
+                  { label: "📂 My Archive", href: "/legal/tools/my-news-archive" }
+                ]} 
+              />
             </div>
 
 {/* Right (desktop) */}

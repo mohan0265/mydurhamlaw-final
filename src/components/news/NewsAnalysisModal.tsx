@@ -9,19 +9,33 @@ interface NewsAnalysisModalProps {
   onClose: () => void;
   article: {
     title: string;
-    url: string;
-    source: string;
+    url?: string;
+    source?: string;
     summary?: string;
   };
+  initialAnalysis?: any; // If provided, shows result immediately
+  readOnly?: boolean; // If true, hides save button or shows 'Archived' status
+  originalText?: string;
 }
 
-export const NewsAnalysisModal: React.FC<NewsAnalysisModalProps> = ({ isOpen, onClose, article }) => {
+export const NewsAnalysisModal: React.FC<NewsAnalysisModalProps> = ({ 
+  isOpen, 
+  onClose, 
+  article, 
+  initialAnalysis, 
+  readOnly = false,
+  originalText 
+}) => {
   const { user } = useAuth();
-  const [step, setStep] = useState<'input' | 'processing' | 'result'>('input');
-  const [fullText, setFullText] = useState('');
-  const [analysis, setAnalysis] = useState<any>(null);
+  const [step, setStep] = useState<'input' | 'processing' | 'result'>(initialAnalysis ? 'result' : 'input');
+  const [fullText, setFullText] = useState(originalText || '');
+  const [analysis, setAnalysis] = useState<any>(initialAnalysis || null);
   const [isSaving, setIsSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+
+  // Reset state when opening/closing or changing article, if not in readOnly mode
+  // logic handled by mounting/unmounting usually, but if kept mounted:
+  // (Simplified for now)
 
   if (!isOpen) return null;
 
@@ -52,9 +66,9 @@ export const NewsAnalysisModal: React.FC<NewsAnalysisModalProps> = ({ isOpen, on
   };
 
   const handleSave = async () => {
-    if (!user || !analysis) return;
+    if (!user || !analysis || readOnly) return;
     setIsSaving(true);
-
+    
     try {
       const supabase = getSupabaseClient();
       if (!supabase) return;
@@ -74,7 +88,6 @@ export const NewsAnalysisModal: React.FC<NewsAnalysisModalProps> = ({ isOpen, on
       setSaved(true);
       setTimeout(() => {
         onClose();
-        // Ideally trigger a toast here
       }, 1500);
     } catch (err) {
       console.error(err);
@@ -116,9 +129,11 @@ export const NewsAnalysisModal: React.FC<NewsAnalysisModalProps> = ({ isOpen, on
                     <p className="text-sm text-blue-700 mt-1">
                       Since this is a live news summary, please click the "Original Article" link to copy the full text, then paste it below for deep analysis.
                     </p>
-                    <a href={article.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline text-sm mt-2 inline-block font-medium hover:text-blue-800">
-                      Open original article at {article.source} ↗
-                    </a>
+                    {article.url && (
+                        <a href={article.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline text-sm mt-2 inline-block font-medium hover:text-blue-800">
+                        Open original article at {article.source} ↗
+                        </a>
+                    )}
                   </div>
                </div>
 
@@ -127,18 +142,21 @@ export const NewsAnalysisModal: React.FC<NewsAnalysisModalProps> = ({ isOpen, on
                  placeholder="Paste the full article text here..."
                  value={fullText}
                  onChange={(e) => setFullText(e.target.value)}
+                 disabled={readOnly}
                />
 
-               <div className="flex justify-end">
-                 <Button 
-                   onClick={handleAnalyze} 
-                   disabled={!fullText.trim()}
-                   className="bg-purple-600 hover:bg-purple-700 text-white px-8 py-3 rounded-xl flex items-center gap-2 font-semibold shadow-lg shadow-purple-200"
-                 >
-                   <Brain className="w-5 h-5" />
-                   Analyze Text
-                 </Button>
-               </div>
+               {!readOnly && (
+                   <div className="flex justify-end">
+                     <Button 
+                       onClick={handleAnalyze} 
+                       disabled={!fullText.trim()}
+                       className="bg-purple-600 hover:bg-purple-700 text-white px-8 py-3 rounded-xl flex items-center gap-2 font-semibold shadow-lg shadow-purple-200"
+                     >
+                       <Brain className="w-5 h-5" />
+                       Analyze Text
+                     </Button>
+                   </div>
+               )}
             </div>
           )}
 
@@ -206,15 +224,23 @@ export const NewsAnalysisModal: React.FC<NewsAnalysisModalProps> = ({ isOpen, on
 
               {/* Actions */}
               <div className="flex items-center justify-end gap-3 pt-6 border-t">
-                <Button variant="ghost" onClick={() => setStep('input')}>Back to Edit</Button>
-                <Button 
-                  onClick={handleSave} 
-                  disabled={isSaving || saved}
-                  className={`px-6 py-2 rounded-xl flex items-center gap-2 font-semibold shadow-md transition-all ${saved ? 'bg-green-600 hover:bg-green-700 text-white' : 'bg-indigo-600 hover:bg-indigo-700 text-white'}`}
-                >
-                  {saved ? <CheckCircle className="w-4 h-4" /> : <Save className="w-4 h-4" />}
-                  {saved ? 'Saved to Library' : 'Save Analysis'}
-                </Button>
+                {!readOnly && <Button variant="ghost" onClick={() => setStep('input')}>Back to Edit</Button>}
+                
+                {readOnly ? (
+                    <div className="flex items-center gap-2 text-green-600 font-medium px-4 py-2 bg-green-50 rounded-xl border border-green-200">
+                        <CheckCircle className="w-5 h-5" />
+                        Archived in Library
+                    </div>
+                ) : (
+                    <Button 
+                    onClick={handleSave} 
+                    disabled={isSaving || saved}
+                    className={`px-6 py-2 rounded-xl flex items-center gap-2 font-semibold shadow-md transition-all ${saved ? 'bg-green-600 hover:bg-green-700 text-white' : 'bg-indigo-600 hover:bg-indigo-700 text-white'}`}
+                    >
+                    {saved ? <CheckCircle className="w-4 h-4" /> : <Save className="w-4 h-4" />}
+                    {saved ? 'Saved to Library' : 'Save Analysis'}
+                    </Button>
+                )}
               </div>
 
             </div>

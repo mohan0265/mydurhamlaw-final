@@ -22,7 +22,6 @@ import { SmartNewsAgent } from '@/components/news/SmartNewsAgent'
 import { useAuth } from '@/lib/supabase/AuthContext'
 import { CollapsibleText } from '@/components/ui/CollapsibleText'
 import { getSupabaseClient } from '@/lib/supabase/client'
-import { DeepDiveModal } from '@/components/news/DeepDiveModal'
 import { NewsAnalysisModal } from '@/components/news/NewsAnalysisModal' // Imported
 // Durmah config removed - using default audio settings
 // import { useVoiceManager } from '@/lib/context/VoiceManagerContext' // Removed - using DurmahContext
@@ -652,15 +651,24 @@ Tell me:
         
         {/* Top Navigation */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-0 sm:justify-between mb-4 sm:mb-8">
-          <Button
-            onClick={() => router.push('/dashboard')}
-            variant="outline"
-            className="flex items-center gap-2 text-gray-600 hover:text-gray-800 hover:bg-slate-100 rounded-lg px-3 sm:px-4 py-2 text-sm sm:text-base min-h-[44px] transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            <span className="hidden sm:inline">← Dashboard</span>
-            <span className="sm:hidden">← Back</span>
-          </Button>
+          <div className="flex gap-2">
+            <Button
+                onClick={() => router.push('/dashboard')}
+                variant="outline"
+                className="flex items-center gap-2 text-gray-600 hover:text-gray-800 hover:bg-slate-100 rounded-lg px-3 sm:px-4 py-2 text-sm sm:text-base min-h-[44px] transition-colors"
+                >
+                <ArrowLeft className="w-4 h-4" />
+                <span className="hidden sm:inline">Dashboard</span>
+            </Button>
+            <Button
+                onClick={() => router.push('/legal/tools/my-news-archive')}
+                className="flex items-center gap-2 bg-white text-purple-600 border border-purple-200 hover:bg-purple-50 rounded-lg px-3 sm:px-4 py-2 text-sm sm:text-base min-h-[44px] transition-colors shadow-sm"
+            >
+                <BookOpen className="w-4 h-4" />
+                <span className="hidden sm:inline">My Archive</span>
+                <span className="sm:hidden">Archive</span>
+            </Button>
+          </div>
           
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 w-full sm:w-auto">
             {/* Source Filter Dropdown */}
@@ -1068,13 +1076,7 @@ Tell me:
         )}
 
       </div>
-      {deepDiveArticle && (
-        <DeepDiveModal 
-            isOpen={!!deepDiveArticle}
-            onClose={() => setDeepDiveArticle(null)}
-            onSubmit={handleDeepDiveSubmit}
-        />
-      )}
+      {/* Deep Dive Modal removed - merged into NewsAnalysisModal */}
       
       {analysisArticle && (
         <NewsAnalysisModal 
