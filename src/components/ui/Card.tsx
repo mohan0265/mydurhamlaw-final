@@ -2,16 +2,14 @@
 
 import { ReactNode } from 'react'
 
-interface CardProps {
+interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
   children: ReactNode
   className?: string
   hover?: boolean
   gradient?: boolean
-  style?: React.CSSProperties
-  onClick?: () => void;
 }
 
-export function Card({ children, className = '', hover = false, gradient = false, style, onClick }: CardProps) {
+export function Card({ children, className = '', hover = false, gradient = false, style, onClick, ...props }: CardProps) {
   return (
     <div 
       className={`
@@ -22,6 +20,7 @@ export function Card({ children, className = '', hover = false, gradient = false
       `}
       style={style}
       onClick={onClick}
+      {...props}
     >
       {children}
     </div>

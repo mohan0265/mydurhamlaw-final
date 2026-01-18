@@ -224,7 +224,76 @@ export default function AuthCallbackPage() {
 
         if (cancelled) return;
         
-        console.log('[auth/callback] All checks passed');
+        if (cancelled) return;
+
+        // ---------------------------------------------------------
+        // ADDED: Process Signup Metadata (Name, Year, Terms)
+        // ---------------------------------------------------------
+        const signupDataParam = params.get('signup_data');
+        let signupMeta: any = null;
+
+        if (signupDataParam) {
+           try {
+              signupMeta = JSON.parse(decodeURIComponent(signupDataParam));
+              console.log('[auth/callback] Found signup_data param:', signupMeta);
+           } catch (e) {
+              console.warn('[auth/callback] Failed to parse signup_data param', e);
+           }
+        }
+
+        // Fallback to local/session storage if param missing
+        if (!signupMeta && typeof window !== 'undefined') {
+            try {
+               const local = sessionStorage.getItem('durham_signup_metadata') || localStorage.getItem('durham_signup_metadata');
+               if (local) {
+                  signupMeta = JSON.parse(local);
+                  console.log('[auth/callback] Found local signup metadata:', signupMeta);
+               }
+            } catch (e) {
+               console.warn('[auth/callback] Failed to parse local signup metadata', e);
+            }
+        }
+
+        // Apply metadata if valid and profile incomplete
+        if (signupMeta && (signupMeta.dn || signupMeta.display_name)) {
+            setStatus('Setting up your profile...');
+            try {
+               const displayName = signupMeta.dn || signupMeta.display_name;
+               const yearGroup = signupMeta.yg || signupMeta.year_group;
+               const acceptedTerms = signupMeta.at || signupMeta.agreed_to_terms;
+
+               const updates: any = {
+                  updated_at: new Date().toISOString(),
+               };
+               if (displayName) updates.display_name = displayName;
+               if (yearGroup) {
+                  updates.year_group = yearGroup;
+                  updates.year_of_study = yearGroup; // Sync canonical
+                  updates.user_role = 'student'; // Default role
+               }
+               if (acceptedTerms) updates.accepted_terms_at = new Date().toISOString();
+
+               console.log('[auth/callback] Updating profile with signup data:', updates);
+
+               const { error: updateErr } = await supabase
+                 .from('profiles')
+                 .update(updates)
+                 .eq('id', session.user.id);
+               
+               if (updateErr) {
+                 console.error('[auth/callback] Profile update failed:', updateErr);
+               } else {
+                 console.log('[auth/callback] ✅ Profile initialized from signup data');
+                 // Clear storage to prevent re-use
+                 localStorage.removeItem('durham_signup_metadata');
+                 sessionStorage.removeItem('durham_signup_metadata');
+               }
+            } catch (err) {
+               console.error('[auth/callback] Profile setup error:', err);
+            }
+        }
+        // ---------------------------------------------------------
+
         performRedirect('/LoginRedirectPage', userRole);
 
       } catch (err: unknown) {
