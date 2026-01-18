@@ -1,88 +1,95 @@
-// src/pages/wellbeing.tsx
-'use client'
+'use client';
 
-import { useContext } from 'react'
-import { useRouter } from 'next/router'
-import { AuthContext } from '@/lib/supabase/AuthContext'
-import { Button } from '@/components/ui/Button'
-import { ArrowLeft, Heart, Brain, Mic, BookOpen } from 'lucide-react'
+import Head from 'next/head';
+import { withAuthProtection } from '@/lib/withAuthProtection';
+import { Heart, Moon, Battery, Shield } from 'lucide-react';
+import MoodQuickCheck from '@/components/wellbeing/MoodQuickCheck';
+import WellbeingTrends from '@/components/wellbeing/WellbeingTrends';
+import WellbeingChat from '@/components/WellbeingChat';
 
-export default function WellbeingPage() {
-  const router = useRouter()
-  const { getDashboardRoute } = useContext(AuthContext)
-  
+function WellbeingPage() {
   return (
-    <div className="max-w-4xl mx-auto py-8 sm:py-16 px-3 sm:px-4">
-      <Button
-        onClick={() => router.push(getDashboardRoute?.() || '/dashboard')}
-        variant="ghost"
-        className="mb-4 text-sm flex items-center gap-1 text-gray-700 hover:text-purple-700 min-h-[44px]"
-      >
-        <ArrowLeft className="w-4 h-4" />
-        Back to Dashboard
-      </Button>
-      
-      <div className="text-center mb-8">
-        <h1 className="text-xl sm:text-2xl font-bold mb-4 flex items-center justify-center gap-2">
-          <Heart className="w-6 h-6 text-pink-500" />
-          Wellbeing & AI Tools
-        </h1>
-        <p className="text-sm sm:text-base text-gray-700 max-w-2xl mx-auto">
-          Access AI-powered tools for mental health support, voice chat, and academic assistance.
-        </p>
-      </div>
+    <>
+      <Head>
+        <title>Wellbeing - MyDurhamLaw</title>
+      </Head>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <div className="bg-white p-6 rounded-lg shadow-sm border">
-          <div className="flex items-center gap-3 mb-4">
-            <Brain className="w-8 h-8 text-purple-500" />
-            <h2 className="text-lg font-semibold">AI Chat Assistant</h2>
+      <main className="min-h-screen bg-gray-50 pb-20">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+          {/* Header */}
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Wellbeing</h1>
+            <p className="mt-2 text-lg text-gray-600 max-w-3xl">
+              Small resets that protect focus, sleep, and confidence — especially during heavy weeks.
+            </p>
+            <div className="mt-4 flex items-center gap-2 text-xs text-gray-500 bg-blue-50 border border-blue-100 px-3 py-2 rounded-lg inline-flex">
+              <Shield className="h-3.5 w-3.5 text-blue-600" />
+              <span>
+                Confidential. Durmah is an AI support tool, not a clinical service.
+              </span>
+            </div>
+            <div className="mt-1 text-xs text-gray-400">
+               If you feel unsafe or need urgent help, contact your local emergency services or your university support line.
+            </div>
           </div>
-          <p className="text-gray-600 mb-4">
-            Chat with our AI assistant for academic support, study guidance, and general questions.
-          </p>
-          <Button 
-            onClick={() => router.push('/chat')}
-            className="w-full"
-          >
-            Start Chat
-          </Button>
-        </div>
 
-        <div className="bg-white p-6 rounded-lg shadow-sm border">
-          <div className="flex items-center gap-3 mb-4">
-            <Mic className="w-8 h-8 text-blue-500" />
-            <h2 className="text-lg font-semibold">Voice Assistant</h2>
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            {/* Left Column: Tools */}
+            <div className="lg:col-span-5 space-y-6">
+              <section className="space-y-4">
+                <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                  <Battery className="h-5 w-5 text-green-600" />
+                  Daily Check-in
+                </h2>
+                <MoodQuickCheck />
+              </section>
+
+              <section className="space-y-4">
+                <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                  <Moon className="h-5 w-5 text-indigo-600" />
+                  Your Trends
+                </h2>
+                <WellbeingTrends />
+              </section>
+
+              {/* Resources (Static for now) */}
+              <section className="pt-4 border-t border-gray-200">
+                <h2 className="text-sm font-semibold text-gray-900 mb-3">Quick Resets</h2>
+                <div className="grid grid-cols-2 gap-3">
+                   <a href="#" className="p-3 rounded-lg bg-white border border-gray-200 hover:border-purple-200 transition text-sm text-gray-700 font-medium text-center">
+                     Study Fatigue
+                   </a>
+                   <a href="#" className="p-3 rounded-lg bg-white border border-gray-200 hover:border-purple-200 transition text-sm text-gray-700 font-medium text-center">
+                     Sleep Reset
+                   </a>
+                   <a href="#" className="p-3 rounded-lg bg-white border border-gray-200 hover:border-purple-200 transition text-sm text-gray-700 font-medium text-center">
+                     Exam Stress
+                   </a>
+                   <a href="#" className="p-3 rounded-lg bg-white border border-gray-200 hover:border-purple-200 transition text-sm text-gray-700 font-medium text-center">
+                     Confidence
+                   </a>
+                </div>
+              </section>
+            </div>
+
+            {/* Right Column: Chat */}
+            <div className="lg:col-span-7">
+              <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden h-[600px] flex flex-col">
+                <div className="p-4 border-b border-gray-100 bg-gray-50 flex items-center gap-2">
+                  <Heart className="h-5 w-5 text-pink-500" />
+                  <span className="font-semibold text-gray-900">Wellbeing Coach</span>
+                </div>
+                <div className="flex-1 relative">
+                  {/* Allow chat without pledge on wellbeing page */}
+                  <WellbeingChat allowWithoutPledge={true} />
+                </div>
+              </div>
+            </div>
           </div>
-          <p className="text-gray-600 mb-4">
-            Use voice commands and have spoken conversations with our AI assistant.
-          </p>
-          <Button 
-            onClick={() => router.push('/voice-debug')}
-            variant="outline"
-            className="w-full"
-          >
-            Voice Chat
-          </Button>
         </div>
-        
-        <div className="bg-white p-6 rounded-lg shadow-sm border">
-          <div className="flex items-center gap-3 mb-4">
-            <BookOpen className="w-8 h-8 text-amber-500" />
-            <h2 className="text-lg font-semibold">Transcript Library</h2>
-          </div>
-          <p className="text-gray-600 mb-4">
-            Review and manage transcripts from your Durmah voice sessions.
-          </p>
-          <Button 
-            onClick={() => router.push('/my/voice-transcripts')}
-            variant="outline"
-            className="w-full"
-          >
-            View Library
-          </Button>
-        </div>
-      </div>
-    </div>
-  )
+      </main>
+    </>
+  );
 }
+
+export default withAuthProtection(WellbeingPage);

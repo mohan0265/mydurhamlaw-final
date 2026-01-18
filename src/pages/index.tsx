@@ -2,7 +2,7 @@ import React from 'react'
 import Head from 'next/head'
 import Link from 'next/link'
 import { useRouter } from 'next/router'
-import { Brain, Heart, Calendar, Shield, CheckCircle } from 'lucide-react'
+import { Brain, Heart, Calendar, Shield, CheckCircle, Target } from 'lucide-react'
 import { useAuth } from '@/lib/supabase/AuthContext'
 import { isRouteAbortError } from '@/lib/navigation/safeNavigate'
 
@@ -40,7 +40,7 @@ export default function DurhamLanding() {
             Durham Law support, <span className="text-purple-300">24/7.</span>
           </h1>
           <p className="text-lg sm:text-xl md:text-2xl font-medium text-blue-50 mb-8 max-w-2xl mx-auto leading-relaxed">
-            Stay on top of modules, deadlines, and exams — with a study partner built for Durham.
+            Turn lectures into clarity. Turn deadlines into plans.
           </p>
           
           <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md px-4 py-2 rounded-full border border-white/20 mb-10">
@@ -80,7 +80,7 @@ export default function DurhamLanding() {
       {/* 3 MOBILE BENEFIT BULLETS */}
       <section className="py-16 bg-white">
         <div className="max-w-6xl mx-auto px-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             
             {/* Bullet 1 */}
             <div className="p-6 rounded-2xl bg-white border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
@@ -112,6 +112,17 @@ export default function DurhamLanding() {
               <h3 className="text-lg font-bold text-gray-900 mb-2">Optional parent support (opt-in)</h3>
               <p className="text-gray-600 text-sm">
                 Let loved ones stay firmly in your corner without being invasive.
+              </p>
+            </div>
+
+            {/* Bullet 4 - NEW */}
+            <div className="p-6 rounded-2xl bg-white border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+              <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center mb-4 text-green-600">
+                <Target className="w-6 h-6" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-900 mb-2">Lecturer Emphasis Signals</h3>
+              <p className="text-gray-600 text-sm">
+                Spot the concepts your lecturer stressed most — with transcript evidence.
               </p>
             </div>
 

@@ -62,11 +62,13 @@ export const PricingPlans: React.FC<PricingPlansProps> = ({
           <div className="text-4xl font-extrabold text-gray-900 mb-6">£0</div>
           
           <ul className="space-y-4 mb-8 flex-1">
-            <Feature included text="YAAG (Interactive)" />
-            <Feature included text="Dashboard & News Feed" />
-            <Feature included text="Durmah Text: Daily limits" />
             <Feature included text="Durmah Voice: Trial limits" />
+            <Feature included text="Durmah Text: Daily limits" />
+            <Feature included text="Lecture Tools: 1 Upload/mo" />
             <Feature included text="Assignment Help: Intro mode" />
+            <Feature included text="Exam Prep: Intro mode" />
+            <Feature included text="YAAG (Interactive - Term 1)" />
+            <Feature included text="Community & Wellbeing Access" />
           </ul>
 
           <button
@@ -96,13 +98,13 @@ export const PricingPlans: React.FC<PricingPlansProps> = ({
           </div>
           
           <ul className="space-y-4 mb-8 flex-1">
-            <Feature included text="Everything in Free" />
-            <Feature included text="Interactive YAAG (Full)" />
-            <Feature included text="Assignment Tracker + Deadlines" />
-            <Feature included text="Durmah Text: 250 msgs/mo" />
             <Feature included text="Durmah Voice: 120 mins/mo" />
+            <Feature included text="Durmah Text: 250 msgs/mo" />
+            <Feature included text="Lecture Tools: 5 Uploads/mo" />
             <Feature included text="Assignment Assist: 20 actions" />
             <Feature included text="Exam Prep: 30 sets/mo" />
+            <Feature included text="YAAG (Full Academic Year)" />
+            <Feature included text="Community & Wellbeing Access" />
           </ul>
 
           <button
@@ -129,11 +131,12 @@ export const PricingPlans: React.FC<PricingPlansProps> = ({
           </div>
           
           <ul className="space-y-4 mb-8 flex-1">
-            <Feature included text="Everything in Core" />
             <Feature included text="Durmah Voice: 300 mins/mo" />
+            <Feature included text="Durmah Text: Unlimited" />
+            <Feature included text="Lecture Tools: Unlimited" />
             <Feature included text="Assignment Assist: 60 actions" />
             <Feature included text="Exam Prep: 120 sets/mo" />
-            <Feature included text="Lecture Tools: 25 summaries" />
+            <Feature included text="YAAG (Full + Analytics)" />
             <Feature included text="Priority Study Sprint Mode" />
           </ul>
 

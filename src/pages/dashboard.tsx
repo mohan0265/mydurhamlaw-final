@@ -76,42 +76,42 @@ export default function Dashboard() {
            {/* My Lectures */}
            <CoreActionCard 
               title="My Lectures"
-              subtitle="Turns transcripts into notes."
+              subtitle="Turn transcripts into structured notes, key points, and lecturer emphasis."
               icon={<BookOpen className="h-5 w-5 text-purple-600" />}
-              stat="Next: 2:00 PM"
+              stat="Last processed: Today"
               cta="Open"
               link="/study/lectures"
-              secondaryLink={{ label: "Upload", href: "/study/lectures?action=upload" }}
+              secondaryLink={{ label: "Upload transcript", href: "/study/lectures?action=upload" }}
            />
            {/* Assignments */}
            <CoreActionCard 
               title="Assignments"
-              subtitle="Plan & track deadlines."
+              subtitle="Break briefs into steps, track deadlines, and keep momentum."
               icon={<FileText className="h-5 w-5 text-orange-600" />}
-              stat="Due: 3d"
+              stat="Next due: 3d"
               cta="View"
               link="/assignments"
-              secondaryLink={{ label: "Active", href: "/assignments?view=active" }}
+              secondaryLink={{ label: "Active now", href: "/assignments?view=active" }}
            />
            {/* YAAG */}
            <CoreActionCard 
               title="Year at a Glance"
-              subtitle="Term & workload map."
+              subtitle="See the full year in 3 terms — workload, deadlines, and peaks."
               icon={<Calendar className="h-5 w-5 text-blue-600" />}
-              stat="Wk 14"
+              stat="This week: 14"
               cta="Open"
               link="/year-at-a-glance"
-              secondaryLink={{ label: "This Week", href: "/year-at-a-glance?view=week" }}
+              secondaryLink={{ label: "Week view", href: "/year-at-a-glance?view=week" }}
            />
            {/* Exam Prep */}
            <CoreActionCard 
               title="Exam Prep"
-              subtitle="Integrity-safe practice."
+              subtitle="Integrity-safe practice prompts built from what you learned."
               icon={<Target className="h-5 w-5 text-green-600" />}
-              stat="Focus: Tort"
+              stat="Signals: 12"
               cta="Start"
               link="/exam-prep"
-              secondaryLink={{ label: "Hub", href: "/exam-prep" }}
+              secondaryLink={{ label: "Revision list", href: "/exam-prep" }}
            />
         </div>
 
@@ -144,18 +144,38 @@ export default function Dashboard() {
               </div>
 
               {/* Tasks */}
-              <div className="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm h-[300px]">
+              <div className="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm h-[300px] flex flex-col">
+                 <div className="flex items-center justify-between mb-2">
+                    <h3 className="text-base font-semibold text-gray-900">Today's Tasks</h3>
+                    <Link href="/my/tasks" className="text-sm font-medium text-gray-500 hover:text-purple-600 transition">View all</Link>
+                 </div>
                  <TodaysTasksWidget />
               </div>
            </div>
 
            {/* Right Col */}
            <div className="space-y-4">
-              <div className="bg-white rounded-2xl border border-gray-200 p-0 shadow-sm overflow-hidden min-h-[200px]">
+              <div className="bg-white rounded-2xl border border-gray-200 p-0 shadow-sm overflow-hidden min-h-[200px] flex flex-col">
+                  <div className="p-4 border-b border-gray-100 flex items-center justify-between">
+                     <h3 className="text-base font-semibold text-gray-900">Memory Journal</h3>
+                     <Link href="/my/journal" className="text-sm font-medium text-gray-500 hover:text-purple-600 transition">View journal</Link>
+                  </div>
                   <MemoryJournalWidget />
               </div>
-              <div className="bg-white rounded-2xl border border-gray-200 p-0 shadow-sm overflow-hidden">
-                  <WellbeingTipWidget />
+              <div className="bg-white rounded-2xl border border-gray-200 p-4 shadow-sm overflow-hidden flex flex-col justify-between h-[200px]">
+                  <div>
+                    <h3 className="text-base font-semibold text-gray-900 mb-1">Wellbeing</h3>
+                    <p className="text-sm text-gray-600 leading-snug">Small resets that protect focus, sleep, and confidence.</p>
+                  </div>
+                  <div className="flex-1 flex items-center justify-center">
+                    {/* Placeholder illustration or tip */}
+                    <div className="text-center p-3 bg-blue-50 rounded-lg max-w-[200px]">
+                       <p className="text-xs text-blue-800 font-medium italic">"Rest is not a reward. It's necessary fuel."</p>
+                    </div>
+                  </div>
+                  <Link href="/wellbeing" className="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition">
+                     Open Wellbeing
+                  </Link>
               </div>
            </div>
         </div>

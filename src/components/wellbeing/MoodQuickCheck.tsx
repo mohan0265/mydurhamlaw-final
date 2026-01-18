@@ -103,14 +103,13 @@ export default function MoodQuickCheck({ onMoodSubmit, showConsent = true }: Pro
     try {
       setIsSubmitting(true);
 
-      const response = await resilientFetch('/netlify/functions/mood', {
+      const response = await fetch('/api/wellbeing/entries', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'x-user-id': 'current-user', // TODO: Get from auth context
         },
         body: JSON.stringify(moodEntry),
-        endpoint: 'mood',
       });
 
       const result = await response.json();

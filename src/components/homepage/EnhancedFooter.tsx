@@ -162,7 +162,7 @@ export const EnhancedFooter: React.FC = () => {
             <Link href="/legal-assignment-assistance" className="bg-gray-800 hover:bg-gray-700 px-3 py-1 rounded-full transition-colors duration-200">
               Legal Assignment Assistance
             </Link>
-            <Link href="/law-student-wellbeing" className="bg-gray-800 hover:bg-gray-700 px-3 py-1 rounded-full transition-colors duration-200">
+            <Link href="/wellbeing" className="bg-gray-800 hover:bg-gray-700 px-3 py-1 rounded-full transition-colors duration-200">
               Law Student Wellbeing
             </Link>
             <Link href="/legal-research-tools" className="bg-gray-800 hover:bg-gray-700 px-3 py-1 rounded-full transition-colors duration-200">

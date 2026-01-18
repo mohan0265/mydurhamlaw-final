@@ -38,6 +38,42 @@ export default function WellbeingTrends({ userId, period = 14 }: Props) {
     }
   }, [isEnabled, period, userId]);
 
+  useEffect(() => {
+    const fetchSummaryStats = async () => {
+      try {
+        const res = await fetch('/api/wellbeing/summary');
+        if (res.ok) {
+          const data = await res.json();
+          // Simple averaging logic for display
+          if (data.history && data.history.length > 0) {
+            const history = data.history;
+            const avgMood = history.reduce((acc: number, curr: any) => acc + curr.mood, 0) / history.length;
+            const avgStress = history.reduce((acc: number, curr: any) => acc + curr.stress, 0) / history.length;
+            
+            setStats(prevStats => ({
+              ...(prevStats || {} as MoodStats), // Preserve existing stats if any
+              avgMood: Number(avgMood.toFixed(1)),
+              avgStress: Number(avgStress.toFixed(1)),
+              entriesCount: data.count
+            }));
+            
+            // Map last 7 entries for sparklines if needed (simplified here)
+            // For now just using averages as per UI
+          }
+        }
+      } catch (e) {
+        console.error(e);
+      } finally {
+        // This isLoading is for the main trend data, not this summary fetch
+        // If a separate loading state is needed for summary, it should be added.
+      }
+    };
+    
+    if (isEnabled) {
+      fetchSummaryStats();
+    }
+  }, [isEnabled]);
+
   const fetchMoodTrends = async () => {
     try {
       setIsLoading(true);

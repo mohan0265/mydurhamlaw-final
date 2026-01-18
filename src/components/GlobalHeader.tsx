@@ -218,8 +218,9 @@ export default function GlobalHeader() {
       items: [
         { label: 'About', href: '/about' },
         { label: 'Pricing', href: '/pricing' },
-        { label: 'Contact', href: '/contact' },
-        { label: 'My Profile', href: '/profile' }, // User Profile & Loved Ones
+        { label: 'Exam Prep', href: '/exam-prep' },
+  { label: 'Wellbeing', href: '/wellbeing' },
+  { label: 'My Progress', href: '/progress' }, // User Profile & Loved Ones
       ],
     }),
     []

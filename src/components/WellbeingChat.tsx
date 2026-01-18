@@ -64,6 +64,7 @@ interface WellbeingChatProps {
   assistanceLevel: AssistanceLevel
   pledgedAt: string | null
   onClose?: () => void
+  allowWithoutPledge?: boolean
 }
 
 export const WellbeingChat: React.FC<WellbeingChatProps> = ({
@@ -80,6 +81,7 @@ export const WellbeingChat: React.FC<WellbeingChatProps> = ({
   assistanceLevel,
   pledgedAt,
   onClose,
+  allowWithoutPledge = false,
 }) => {
   const { user, userProfile } = useAuth()
   const mdl = useDurmah()
@@ -283,7 +285,6 @@ export const WellbeingChat: React.FC<WellbeingChatProps> = ({
     }
   }, [isTTSSpeaking])
 
-  // Enhanced message sending with validation
   const handleSendMessage = useCallback(async (messageText: string) => {
     const trimmedMessage = messageText.trim()
     
@@ -298,7 +299,8 @@ export const WellbeingChat: React.FC<WellbeingChatProps> = ({
       return
     }
 
-    if (!pledgedAt) {
+    // Bypass pledge check if allowed (e.g. on wellbeing page)
+    if (!pledgedAt && !allowWithoutPledge) {
       onPledgeRequired()
       return
     }
@@ -376,7 +378,7 @@ export const WellbeingChat: React.FC<WellbeingChatProps> = ({
     } finally {
       setIsLoading(false)
     }
-  }, [messages, user, userProfile, isListening, handleVoiceStop, assistanceLevel, pledgedAt])
+  }, [messages, user, userProfile, isListening, handleVoiceStop, assistanceLevel, pledgedAt, allowWithoutPledge])
 
   // Handle suggestion clicks
   const handleSuggestionClick = useCallback((suggestion: string) => {
@@ -491,10 +493,10 @@ export const WellbeingChat: React.FC<WellbeingChatProps> = ({
           onSubmit={() => input.trim() && handleSendMessage(input)}
           onVoiceToggle={handleVoiceToggle}
           onInterruptVoice={handleInterruptVoice}
-          disabled={isLoading || !pledgedAt}
+          disabled={isLoading || (!pledgedAt && !allowWithoutPledge)}
           isListening={isListening}
           isVoicePlaying={isTTSSpeaking}
-          placeholder={!pledgedAt ? "Please acknowledge the integrity pledge first." : `Hi ${mdl.firstName}, how can I help?`}
+          placeholder={(!pledgedAt && !allowWithoutPledge) ? "Please acknowledge the integrity pledge first." : `Hi ${mdl.firstName}, how can I help?`}
         />
         <div className="text-center mt-2">
             <Link href="/legal/academic-integrity" legacyBehavior>

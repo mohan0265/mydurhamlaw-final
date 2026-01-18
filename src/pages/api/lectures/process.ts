@@ -76,10 +76,9 @@ async function generateNotes(transcript: string, lectureTitle: string, moduleNam
 Your job is to extract "Lecturer Emphasis & Exam Signals" from a lecture transcript.
 
 CRITICAL ACADEMIC INTEGRITY RULES:
-- Do NOT predict exam questions or claim to know what will be on the exam.
-- Do NOT write “this will come out” or “this is guaranteed”.
-- You may ONLY identify: lecturer emphasis, high-yield concepts, and assessment-relevant signals based on explicit wording and emphasis in the transcript.
-- You must support each signal with short evidence quotes from the transcript.
+- No exam prediction language.
+- Only identify lecturer emphasis cues based on transcript evidence.
+- Evidence quotes: max 25 words, verbatim.
 
 TASK:
 From the provided lecture transcript (and optional metadata), produce a JSON object that contains an array called "exam_signals".
@@ -97,6 +96,9 @@ OUTPUT REQUIREMENTS:
 - Output MUST be valid JSON ONLY. No markdown, no commentary.
 - Evidence quotes must be short (max ~25 words each) and verbatim from the transcript.
 - If you cannot find any meaningful signals, output an empty array.
+
+OUTPUT JSON KEYS (MUST MATCH):
+summary, key_points, discussion_topics, exam_prompts, glossary, engagement_hooks, exam_signals[]
 
 JSON SCHEMA (MUST MATCH EXACTLY):
 {
