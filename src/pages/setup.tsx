@@ -202,10 +202,10 @@ export default function ProfileTimetablePage() {
         <title>Setup Profile & Timetable - MyDurhamLaw</title>
       </Head>
 
-      <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8 pb-40">
         <div className="max-w-3xl mx-auto">
           {/* Header */}
-          <div className="mb-8 text-center">
+          <div className="mb-8 text-center relative">
             <h1 className="text-3xl font-bold text-gray-900">Let's get you set up</h1>
             <p className="mt-2 text-gray-600">Step {step} of 2</p>
             {/* Progress Bar */}
@@ -214,6 +214,9 @@ export default function ProfileTimetablePage() {
                 className="h-full bg-violet-600 transition-all duration-500 ease-out"
                 style={{ width: step === 1 ? '50%' : '100%' }}
               />
+            </div>
+            <div className="mt-4 text-xs text-center">
+               <a href="/logout" className="text-gray-400 hover:text-gray-600 underline">Switch Account / Logout</a>
             </div>
           </div>
 
@@ -234,8 +237,8 @@ export default function ProfileTimetablePage() {
                     <input
                       type="text"
                       className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-violet-500 focus:ring-violet-500 sm:text-sm p-3 border"
-                      value={profile.preferred_name}
-                      onChange={e => setProfile({...profile, preferred_name: e.target.value})}
+                      value={profile.display_name}
+                      onChange={e => setProfile({...profile, display_name: e.target.value})}
                       placeholder="e.g. Priya"
                     />
                     <p className="mt-1 text-xs text-gray-500">How would you like MyDurhamLaw and Durmah to address you?</p>
