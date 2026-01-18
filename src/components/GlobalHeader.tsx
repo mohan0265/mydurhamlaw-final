@@ -48,6 +48,7 @@ function ActiveLink({
 function HoverMenu({
   label,
   items,
+  trigger
 }: {
   label?: string;
   items: MenuItem[];
