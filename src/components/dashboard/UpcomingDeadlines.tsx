@@ -15,7 +15,7 @@ type Assignment = {
   nextAction: 'start' | 'continue';
 };
 
-export default function UpcomingDeadlines() {
+export default function UpcomingDeadlines({ embedded }: { embedded?: boolean }) {
   const router = useRouter();
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [loading, setLoading] = useState(true);
@@ -103,8 +103,8 @@ export default function UpcomingDeadlines() {
 
   if (loading) {
     return (
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-        <h2 className="text-lg font-semibold text-slate-900 mb-4">Upcoming Deadlines</h2>
+      <div className={embedded ? "" : "bg-white rounded-xl shadow-sm border border-slate-200 p-6"}>
+        {!embedded && <h2 className="text-lg font-semibold text-slate-900 mb-4">Upcoming Deadlines</h2>}
         <div className="flex justify-center items-center py-8">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
         </div>
@@ -114,8 +114,8 @@ export default function UpcomingDeadlines() {
 
   if (error) {
     return (
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-        <h2 className="text-lg font-semibold text-slate-900 mb-4">Upcoming Deadlines</h2>
+      <div className={embedded ? "" : "bg-white rounded-xl shadow-sm border border-slate-200 p-6"}>
+        {!embedded && <h2 className="text-lg font-semibold text-slate-900 mb-4">Upcoming Deadlines</h2>}
         <div className="text-center py-8 text-slate-500">
           <p>Failed to load deadlines</p>
           <button 
@@ -131,8 +131,8 @@ export default function UpcomingDeadlines() {
 
   if (assignments.length === 0) {
     return (
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-        <h2 className="text-lg font-semibold text-slate-900 mb-4">Upcoming Deadlines</h2>
+      <div className={embedded ? "" : "bg-white rounded-xl shadow-sm border border-slate-200 p-6"}>
+        {!embedded && <h2 className="text-lg font-semibold text-slate-900 mb-4">Upcoming Deadlines</h2>}
         <div className="text-center py-8">
           <svg className="mx-auto h-12 w-12 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -151,16 +151,18 @@ export default function UpcomingDeadlines() {
   }
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-semibold text-slate-900">Upcoming Deadlines</h2>
-        <button
-          onClick={() => router.push('/assignments')}
-          className="text-sm text-blue-600 hover:underline"
-        >
-          View all
-        </button>
-      </div>
+    <div className={embedded ? "" : "bg-white rounded-xl shadow-sm border border-slate-200 p-6"}>
+      {!embedded && (
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold text-slate-900">Upcoming Deadlines</h2>
+          <button
+            onClick={() => router.push('/assignments')}
+            className="text-sm text-blue-600 hover:underline"
+          >
+            View all
+          </button>
+        </div>
+      )}
 
       <div className="space-y-3">
         {assignments.slice(0, 5).map((assignment) => (

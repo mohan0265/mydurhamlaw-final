@@ -7,38 +7,24 @@ import { useAuth } from '@/lib/supabase/AuthContext';
 import { getSupabaseClient } from '@/lib/supabase/client';
 
 // Icons
-import { BookOpen, FileText, Calendar, Target, Shield, CheckCircle } from 'lucide-react';
+import { BookOpen, FileText, Calendar, Target, Shield, CheckCircle, HelpCircle, MessageSquare, Heart, Video } from 'lucide-react';
 
 // Components
-import { SubscriptionStatus } from '@/components/billing/SubscriptionStatus';
 import UpcomingDeadlines from '@/components/dashboard/UpcomingDeadlines';
 import TodaysTasksWidget from '@/components/dashboard/TodaysTasksWidget';
 import MemoryJournalWidget from '@/components/dashboard/MemoryJournalWidget';
 import WellbeingTipWidget from '@/components/dashboard/WellbeingTipWidget';
-import OnboardingProgressWidget from '@/components/onboarding/OnboardingProgressWidget';
 
 export default function Dashboard() {
   const router = useRouter();
   const { user, loading } = useAuth() || { user: null, loading: true };
-  const [isLovedOne, setIsLovedOne] = useState(false);
-  const [checking, setChecking] = useState(true);
-
-  // Focus Item Data (Computed Real-ish)
-  // In a full implementation, this would fetch from API based on logic (Next deadline or Lecture)
-  // For now we use the "Next Up" logic from Assignments if available, or a default fallback.
   const [focusItem, setFocusItem] = useState<{title: string, type: string, link: string} | null>(null);
+  const [supportExpanded, setSupportExpanded] = useState(false);
 
   useEffect(() => {
-    if (!loading) {
-      if (!user) {
-        setChecking(false);
-        return;
-      }
-      checkRole();
-      // Fetch a simple focus item signal
-      // We can just rely on UpcomingDeadlines to be the main focus, 
-      // but let's see if we can quickly get the nearest deadline to show in "Today's Focus"
-      fetch('/api/dashboard/overview').then(res => {
+    if (!loading && user) {
+       // Fetch focus signals if needed (minimized for now as per spec)
+       fetch('/api/dashboard/overview').then(res => {
         if(res.ok) return res.json();
       }).then(data => {
         if(data?.upcomingAssignments?.length > 0) {
@@ -53,29 +39,8 @@ export default function Dashboard() {
     }
   }, [user, loading]);
 
-  const checkRole = async () => {
-    const supabase = getSupabaseClient();
-    if (!user || !supabase) return;
-    
-    // Check if loved one
-    const { data: profile } = await supabase.from('profiles').select('user_role').eq('id', user.id).maybeSingle();
-    if (profile?.user_role === 'loved_one') {
-       setIsLovedOne(true);
-       router.replace('/loved-one-dashboard');
-       return;
-    }
-    setChecking(false);
-  };
-
-  if (loading || checking || isLovedOne) {
-    return <div className="min-h-screen flex items-center justify-center bg-gray-50 text-indigo-600 font-medium">Loading Dashboard...</div>;
-  }
-
-  if (!user) {
-    // Unlikely to reach here due to protected route logic usually, but handled:
-    router.replace('/login'); 
-    return null; 
-  }
+  if (loading) return <div className="min-h-screen flex items-center justify-center bg-gray-50 text-indigo-600 font-medium">Loading...</div>;
+  if (!user) { router.replace('/login'); return null; }
 
   return (
     <>
@@ -83,188 +48,184 @@ export default function Dashboard() {
         <title>Dashboard - MyDurhamLaw</title>
       </Head>
 
-      <main className="mx-auto max-w-7xl px-4 sm:px-6 py-8">
-        {/* Welcome & Sub Status */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-            <p className="text-gray-600">Your study command centre</p>
-          </div>
-          <div className="w-full md:w-auto">
-             <SubscriptionStatus userId={user.id} onUpgrade={() => router.push('/pricing')} />
-          </div>
+      <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+        
+        {/* 1) STATUS BAR STRIP (Compact, Premium) */}
+        <div className="rounded-2xl border border-gray-200 bg-white p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 shadow-sm">
+           <div className="flex flex-col">
+              <span className="text-sm sm:text-base font-semibold text-gray-900">Good afternoon, {user.user_metadata?.first_name || 'Student'}</span>
+              <span className="text-xs sm:text-sm text-gray-500">Foundation Year • Durham Law</span>
+           </div>
+           
+           <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+              <span className="inline-flex items-center rounded-full px-3 py-1 text-xs font-medium bg-gray-100 text-gray-600 border border-gray-200">
+                 Trial • 14 days left
+              </span>
+              <span className="inline-flex items-center rounded-full px-3 py-1 text-xs font-medium bg-orange-50 text-orange-700 border border-orange-100">
+                 Next due: 2d
+              </span>
+              <button onClick={() => router.push('/onboarding')} className="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold bg-gray-900 text-white hover:bg-gray-800 transition">
+                 Complete Setup
+              </button>
+           </div>
         </div>
 
-        {/* Onboarding (if pending) */}
-        <div className="mb-8">
-           <OnboardingProgressWidget />
+        {/* 2) CORE ACTIONS GRID (Hero Row) */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+           {/* My Lectures */}
+           <CoreActionCard 
+              title="My Lectures"
+              subtitle="Turns transcripts into notes."
+              icon={<BookOpen className="h-5 w-5 text-purple-600" />}
+              stat="Next: 2:00 PM"
+              cta="Open"
+              link="/study/lectures"
+              secondaryLink={{ label: "Upload", href: "/study/lectures?action=upload" }}
+           />
+           {/* Assignments */}
+           <CoreActionCard 
+              title="Assignments"
+              subtitle="Plan & track deadlines."
+              icon={<FileText className="h-5 w-5 text-orange-600" />}
+              stat="Due: 3d"
+              cta="View"
+              link="/assignments"
+              secondaryLink={{ label: "Active", href: "/assignments?view=active" }}
+           />
+           {/* YAAG */}
+           <CoreActionCard 
+              title="Year at a Glance"
+              subtitle="Term & workload map."
+              icon={<Calendar className="h-5 w-5 text-blue-600" />}
+              stat="Wk 14"
+              cta="Open"
+              link="/year-at-a-glance"
+              secondaryLink={{ label: "This Week", href: "/year-at-a-glance?view=week" }}
+           />
+           {/* Exam Prep */}
+           <CoreActionCard 
+              title="Exam Prep"
+              subtitle="Integrity-safe practice."
+              icon={<Target className="h-5 w-5 text-green-600" />}
+              stat="Focus: Tort"
+              cta="Start"
+              link="/exam-prep"
+              secondaryLink={{ label: "Hub", href: "/exam-prep" }}
+           />
         </div>
 
-        {/* 1. CORE ACTIONS ROW (The "Grid of Power") */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-          <ValueCard 
-            title="My Lectures"
-            subtitle="Turn lectures into understanding — fast."
-            body="Summaries, key points, glossary, and lecturer emphasis insights from your transcripts."
-            ctaPrimary={{ label: "Open Lectures", href: "/study/lectures" }}
-            ctaSecondary={{ label: "Upload Transcript", href: "/study/lectures?action=upload" }}
-            stat="Next lecture: Today 2:00 PM"
-            icon={<BookOpen className="w-6 h-6 text-purple-600" />}
-            tooltip="Upload transcripts to unlock “Lecturer Emphasis” and targeted practice prompts."
-            color="bg-purple-50/50 border-purple-100 hover:border-purple-300"
-          />
-          <ValueCard 
-            title="Assignments"
-            subtitle="Always know what’s due — and what to do next."
-            body="Track deadlines, start early with structured planning, and keep progress visible."
-            ctaPrimary={{ label: "View Assignments", href: "/assignments" }}
-            ctaSecondary={{ label: "Start Next Task", href: "/assignments?view=active" }}
-            stat="Next due: Contract Law · 3 days left"
-            icon={<FileText className="w-6 h-6 text-orange-600" />}
-            tooltip="Built to guide planning and improvement — not generate submissions."
-            color="bg-orange-50/50 border-orange-100 hover:border-orange-300"
-          />
-          <ValueCard 
-            title="Year-at-a-Glance"
-            subtitle="Your whole year in one view."
-            body="See term workload, key deadlines, and jump into month → week → day planning."
-            ctaPrimary={{ label: "Open YAAG", href: "/year-at-a-glance" }}
-            ctaSecondary={{ label: "Jump to This Week", href: "/year-at-a-glance?view=week" }}
-            stat="Current term: Epiphany"
-            icon={<Calendar className="w-6 h-6 text-blue-600" />}
-            tooltip="YAAG is the backbone: everything links back to lectures, assignments, and exam prep."
-            color="bg-blue-50/50 border-blue-100 hover:border-blue-300"
-          />
-          <ValueCard 
-            title="Exam Prep"
-            subtitle="Practise like a top student."
-            body="Lecture-linked prompts, marking-style guidance, and revision checklists — integrity-safe."
-            ctaPrimary={{ label: "Start Practice", href: "/exam-prep" }}
-            ctaSecondary={{ label: "Open Exam Hub", href: "/exam-prep" }}
-            stat="Revision focus: Tort Law"
-            icon={<Target className="w-6 h-6 text-green-600" />}
-            tooltip="Practice prompts build mastery. We don’t predict exam papers."
-            color="bg-green-50/50 border-green-100 hover:border-green-300"
-          />
-        </div>
-
-        {/* 2. REAL DATA GRID */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-12">
-          
-          {/* Left Col: Tasks */}
-          <div className="lg:col-span-1 h-[450px]">
-            <TodaysTasksWidget />
-          </div>
-
-          {/* Middle Col: Deadlines (Visual Anchor) */}
-          <div className="lg:col-span-1 h-[450px]">
-             <UpcomingDeadlines />
-          </div>
-
-          {/* Right Col: Focus + Journal stacked */}
-          <div className="lg:col-span-1 flex flex-col gap-6 h-[450px]">
-             {/* Today's Focus Card */}
-             <div className="bg-gradient-to-br from-indigo-600 to-purple-700 rounded-xl p-6 text-white shadow-lg flex-1 flex flex-col justify-center relative overflow-hidden group hover:scale-[1.02] transition-transform cursor-pointer" onClick={() => router.push(focusItem ? focusItem.link : '/year-at-a-glance')}>
-                <div className="absolute top-0 right-0 p-4 opacity-10">
-                   <Target className="w-24 h-24 text-white" />
-                </div>
-                <div className="relative z-10">
-                   <h3 className="text-indigo-200 font-bold text-xs uppercase tracking-wider mb-2">Today&apos;s Focus</h3>
-                   {focusItem ? (
-                     <>
-                       <div className="text-xl font-bold leading-tight mb-1">{focusItem.title}</div>
-                       <div className="text-sm opacity-80 mb-4">{focusItem.type}</div>
-                       <button className="bg-white/20 hover:bg-white/30 text-white text-xs font-bold py-2 px-4 rounded-lg transition-colors inline-flex items-center gap-2">
-                          Open Now <CheckCircle className="w-3 h-3" />
-                       </button>
-                     </>
-                   ) : (
-                     <>
-                        <div className="text-lg font-bold leading-tight mb-2">Clear Schedule?</div>
-                        <p className="text-sm opacity-80 mb-4">Check your year plan to stay ahead.</p>
-                        <button className="bg-white/20 hover:bg-white/30 text-white text-xs font-bold py-2 px-4 rounded-lg transition-colors">
-                          Open YAAG
-                        </button>
-                     </>
-                   )}
-                </div>
-             </div>
-
-             {/* Journal Card (Compact version) */}
-             <div className="flex-1">
-                <MemoryJournalWidget />
-             </div>
-          </div>
-        </div>
-
-        {/* 3. TERTIARY ROW (Wellbeing only if space, or move into core flow) */}
-        {/* We'll keep Wellbeing simple below the main grid */}
-        <div className="mb-12">
-           <WellbeingTipWidget />
-        </div>
-
-        {/* 4. INTEGRITY PANEL (Footer - Premium Strip) */}
-        <div className="mt-8 border-t border-gray-100 pt-8 pb-4">
-            <div className="max-w-3xl mx-auto text-center">
-                 <h4 className="text-sm font-bold text-gray-900 mb-1 flex items-center justify-center gap-2">
-                    <Shield className="w-4 h-4 text-gray-600" /> Built for academic integrity
-                 </h4>
-                 <p className="text-sm text-gray-500 mb-2">
-                    We help you understand, plan, and practise — we don’t generate work to submit as your own.
-                 </p>
-                 <Link href="/ethics" className="text-xs font-bold text-purple-600 hover:text-purple-700 hover:underline">
-                    Read Guidelines
-                 </Link>
+        {/* 3) UPCOMING DEADLINES (Feature Section) */}
+        <div className="rounded-2xl border border-gray-200 bg-white p-4 sm:p-5 shadow-sm">
+            <div className="flex items-center justify-between gap-3 mb-2">
+               <h3 className="text-base font-semibold text-gray-900">Upcoming Deadlines</h3>
+               <Link href="/assignments" className="text-sm font-medium text-gray-500 hover:text-purple-600 transition">View all</Link>
             </div>
+            {/* Using the component but wrapped in our style - ideally component should be unstyled or flexible */}
+            {/* For now, we inject it here. To perfectly match spec, we might need to refactor UpcomingDeadlines later. */}
+            <UpcomingDeadlines embedded={true} /> 
+        </div>
+
+        {/* 4) SECONDARY GRID (Below Fold) */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+           {/* Focus - Wide */}
+           <div className="lg:col-span-2 space-y-4">
+              {/* Today's Focus Widget equivalent */}
+              <div className="bg-gradient-to-br from-indigo-600 to-purple-700 rounded-2xl p-5 text-white shadow-md flex items-center justify-between relative overflow-hidden h-[130px]">
+                  <div className="relative z-10">
+                      <div className="text-indigo-200 text-xs font-bold uppercase tracking-wider mb-1">Today's Focus</div>
+                      <div className="text-xl font-bold leading-tight mb-2">{focusItem?.title || "Clear Schedule"}</div>
+                      <div className="text-sm opacity-80 mb-0">{focusItem?.title ? "Keep momentum going." : "Check your YAAG to plan ahead."}</div>
+                  </div>
+                  <button onClick={() => router.push(focusItem?.link || '/year-at-a-glance')} className="relative z-10 inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold bg-white/20 text-white hover:bg-white/30 transition border border-white/10">
+                      {focusItem ? "Continue" : "Plan"}
+                  </button>
+                  <Target className="absolute right-[-10px] bottom-[-20px] w-32 h-32 text-indigo-500/30" />
+              </div>
+
+              {/* Tasks */}
+              <div className="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm h-[300px]">
+                 <TodaysTasksWidget />
+              </div>
+           </div>
+
+           {/* Right Col */}
+           <div className="space-y-4">
+              <div className="bg-white rounded-2xl border border-gray-200 p-0 shadow-sm overflow-hidden min-h-[200px]">
+                  <MemoryJournalWidget />
+              </div>
+              <div className="bg-white rounded-2xl border border-gray-200 p-0 shadow-sm overflow-hidden">
+                  <WellbeingTipWidget />
+              </div>
+           </div>
+        </div>
+
+        {/* INTEGRITY / FOOTER */}
+        <div className="mt-8 pt-8 border-t border-gray-200 text-center pb-24">
+             <div className="inline-flex items-center gap-2 bg-gray-50 px-4 py-2 rounded-full border border-gray-100">
+               <Shield className="w-4 h-4 text-gray-400" />
+               <span className="text-xs text-gray-500">Built for academic integrity</span>
+             </div>
         </div>
 
       </main>
+
+      {/* 5) COLLAPSED SUPPORT WIDGET (Floating) */}
+      <div className="fixed bottom-5 right-5 z-50 flex flex-col gap-3 items-end">
+         {supportExpanded && (
+            <div className="rounded-2xl border border-gray-200 bg-white shadow-xl p-3 w-48 animate-in slide-in-from-bottom-2 fade-in duration-200 mb-2">
+               <button className="w-full text-left px-3 py-2 rounded-lg hover:bg-gray-50 text-sm font-medium text-gray-700 flex items-center gap-2">
+                  <Video className="w-4 h-4 text-purple-600" /> Durmah
+               </button>
+               <button className="w-full text-left px-3 py-2 rounded-lg hover:bg-gray-50 text-sm font-medium text-gray-700 flex items-center gap-2">
+                  <Heart className="w-4 h-4 text-pink-500" /> Always With You
+               </button>
+               <button className="w-full text-left px-3 py-2 rounded-lg hover:bg-gray-50 text-sm font-medium text-gray-700 flex items-center gap-2">
+                  <HelpCircle className="w-4 h-4 text-blue-500" /> Help Centre
+               </button>
+            </div>
+         )}
+         <button 
+           onClick={() => setSupportExpanded(!supportExpanded)}
+           className="rounded-2xl px-5 py-3 bg-white text-purple-900 font-bold shadow-lg border border-gray-100 hover:shadow-xl transition-all flex items-center gap-2"
+         >
+            {supportExpanded ? 'Close' : 'Support'}
+         </button>
+      </div>
     </>
   );
 }
 
-function ValueCard({ title, subtitle, body, ctaPrimary, ctaSecondary, stat, icon, href, color, tooltip }: any) {
+function CoreActionCard({ title, subtitle, icon, stat, cta, link, secondaryLink }: any) {
   return (
-    <div className={`block rounded-xl border transition-all hover:shadow-lg ${color} group flex flex-col h-full bg-white relative overflow-hidden`}>
-      {/* Header */}
-      <div className="p-5 pb-3">
-         <div className="flex items-start justify-between mb-3">
-            <div className="p-2.5 bg-white rounded-xl shadow-sm border border-gray-100 group-hover:scale-110 transition-transform text-gray-700">
-               {icon}
-            </div>
-            {tooltip && (
-               <div className="text-gray-300 hover:text-gray-500 cursor-help" title={tooltip}>
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-               </div>
-            )}
-         </div>
-         <h3 className="font-bold text-gray-900 text-lg leading-tight mb-1">{title}</h3>
-         <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">{subtitle}</p>
-         <p className="text-sm text-gray-600 leading-relaxed min-h-[3rem]">{body}</p>
-      </div>
-      
-      {/* Spacer */}
-      <div className="flex-1" />
+    <div className="relative rounded-2xl border border-gray-200 bg-white p-4 sm:p-5 h-[150px] shadow-sm hover:shadow-md transition-all flex flex-col justify-between group">
+       {/* Top: Icon + Stat */}
+       <div className="flex items-start justify-between gap-3">
+          <div className="h-10 w-10 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center text-gray-600 group-hover:scale-105 transition-transform">
+             {icon}
+          </div>
+          <span className="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold bg-gray-100 text-gray-600 border border-gray-200">
+             {stat}
+          </span>
+       </div>
 
-      {/* Stats Script */}
-      <div className="px-5 py-2 border-t border-gray-50 bg-gray-50/50">
-         <div className="flex items-center gap-2 text-xs font-medium text-gray-600">
-            <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-            {stat}
-         </div>
-      </div>
+       {/* Middle: Title/Sub */}
+       <div>
+          <h3 className="text-base font-semibold text-gray-900 leading-tight">{title}</h3>
+          <p className="mt-0.5 text-sm text-gray-500 leading-snug line-clamp-1">{subtitle}</p>
+       </div>
 
-      {/* Actions */}
-      <div className="p-4 pt-3 flex items-center gap-3">
-          <Link href={ctaPrimary.href} className="flex-1 bg-gray-900 hover:bg-gray-800 text-white text-xs font-bold py-2.5 rounded-lg text-center transition-colors shadow-sm">
-             {ctaPrimary.label}
+       {/* Bottom: Actions */}
+       <div className="flex items-center justify-between gap-3 mt-1">
+          {secondaryLink ? (
+             <Link href={secondaryLink.href} className="text-sm font-medium text-gray-400 hover:text-purple-600 transition truncate">
+                {secondaryLink.label}
+             </Link>
+          ) : <div />}
+          
+          <Link href={link} className="inline-flex items-center justify-center rounded-xl px-3.5 py-1.5 text-sm font-semibold bg-gray-900 text-white hover:bg-gray-800 transition min-w-[70px]">
+             {cta}
           </Link>
-          {ctaSecondary && (
-            <Link href={ctaSecondary.href} className="flex-1 bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 text-xs font-bold py-2.5 rounded-lg text-center transition-colors">
-               {ctaSecondary.label}
-            </Link>
-          )}
-      </div>
+       </div>
     </div>
-  );
+  )
 }
