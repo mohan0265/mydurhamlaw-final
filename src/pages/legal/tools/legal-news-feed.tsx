@@ -12,7 +12,8 @@ import {
   Newspaper, 
   RefreshCw, 
   Volume2, 
-  VolumeX 
+  VolumeX,
+  Brain
 } from 'lucide-react'
 
 import { Button } from '@/components/ui/Button'
