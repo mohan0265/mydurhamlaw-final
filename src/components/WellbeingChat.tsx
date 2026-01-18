@@ -71,7 +71,7 @@ export const WellbeingChat: React.FC<WellbeingChatProps> = ({
   title = "Chat with Durmah",
   description = "Your wellbeing companion is here to listen and support you.",
   suggestions = [
-    "I&apos;ve been feeling overwhelmed with my studies.",
+    "I've been feeling overwhelmed with my studies.",
     "Help me create a better study-life balance.", 
     "I need some motivation to keep going.",
     "Can you help me reflect on my week?",

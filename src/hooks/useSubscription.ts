@@ -1,9 +1,12 @@
 
 import { useState, useEffect } from 'react';
 import type { SubscriptionInfo } from '@/types/billing';
+import { isProAccess, type AccessGrant } from '@/lib/billing/isProAccess';
 
 export const useSubscription = (userId?: string) => {
   const [subscription, setSubscription] = useState<SubscriptionInfo | null>(null);
+  const [grants, setGrants] = useState<AccessGrant[]>([]);
+  const [isPro, setIsPro] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -26,6 +29,19 @@ export const useSubscription = (userId?: string) => {
       }
       
       setSubscription(data.subscription);
+
+      // Fetch temporary grants
+      try {
+        const grantsRes = await fetch('/api/access/grants');
+        const grantsJson = await grantsRes.json();
+        const grantsList: AccessGrant[] = grantsJson?.grants || [];
+        setGrants(grantsList);
+        
+        const computed = isProAccess(data.subscription, grantsList);
+        setIsPro(computed);
+      } catch (e) {
+        console.error('Failed to fetch grants', e);
+      }
     } catch (err: any) {
       setError(err.message);
       console.error('Error fetching subscription:', err);
@@ -107,9 +123,12 @@ export const useSubscription = (userId?: string) => {
     if (!subscription) return false;
     
     // Check if subscription is active or in trial
-    if (!['active', 'trial'].includes(subscription.status)) {
+    if (!['active', 'trial'].includes(subscription.status) && !isPro) {
       return false;
     }
+
+    // If Pro via Stripe OR grants → allow all Pro-tier features
+    if (isPro) return true;
     
     // Check if feature is in the plan
     return subscription.features.includes(featureName);
@@ -157,6 +176,8 @@ export const useSubscription = (userId?: string) => {
     canUseAWY,
     getAWYConnectionLimit,
     getAIChatLimit,
-    refetch: fetchSubscription
+    refetch: fetchSubscription,
+    isPro,
+    grants
   };
 };

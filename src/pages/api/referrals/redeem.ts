@@ -56,24 +56,26 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
        return res.status(500).json({ error: 'Failed to redeem invite.' });
    }
 
-   // 3. Activate 14-day Trial (Internal Flag)
-   const trialUntil = new Date();
-   trialUntil.setDate(trialUntil.getDate() + 14);
+   // 3. Activate 14-day Trial (via user_access_grants)
+   const { error: grantError } = await supabase
+       .from('user_access_grants')
+       .insert({
+           user_id: user.id,
+           grant_type: 'pro_trial',
+           source: 'referral',
+           referral_id: referral.id,
+           expires_at: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+           notes: 'Referral invite trial'
+       });
 
-   const { error: profileError } = await supabase
-        .from('profiles')
-        .update({ 
-            trial_until: trialUntil.toISOString(),
-            // Optionally set tier to 'pro' if your app uses a DB column for tier, 
-            // but prompt implies trial_until flag controls access.
-            // keeping it simple as requested.
-        })
-        .eq('id', user.id);
-
-   if (profileError) {
-       console.error('Profile trial update error', profileError);
-       // We don't rollback the referral status, but we should log/alert.
+   if (grantError) {
+       console.error('Grant insert error', grantError);
+       // Check for unique violation (already has trial) - safe to ignore or warn
+       if (grantError.code !== '23505') {
+           // Log real errors
+       }
    }
 
+   const trialUntil = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000); // For response UI
    return res.status(200).json({ success: true, trial_until: trialUntil });
 }

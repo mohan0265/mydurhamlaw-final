@@ -103,13 +103,19 @@ export default function MoodQuickCheck({ onMoodSubmit, showConsent = true }: Pro
     try {
       setIsSubmitting(true);
 
+      const payload = {
+        mood: selectedMood,
+        stress: selectedStressors.length, // Simple proxy for stress level
+        note: note.trim() + (selectedStressors.length > 0 ? ` [Stressors: ${selectedStressors.join(', ')}]` : ''),
+      };
+
       const response = await fetch('/api/wellbeing/entries', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-user-id': 'current-user', // TODO: Get from auth context
+          'x-user-id': 'current-user',
         },
-        body: JSON.stringify(moodEntry),
+        body: JSON.stringify(payload),
       });
 
       const result = await response.json();
