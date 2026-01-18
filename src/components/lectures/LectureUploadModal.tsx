@@ -136,8 +136,8 @@ export default function LectureUploadModal({ isOpen, onClose, onSuccess }: Lectu
       setUploading(false);
       setUploadProgress(0);
 
-      if (onUploadComplete) {
-        onUploadComplete();
+      if (onSuccess) {
+        onSuccess();
       }
       
       // FIRE AND FORGET: Mark onboarding task as complete
