@@ -676,8 +676,8 @@ export default function AWYWidget() {
   // 2. Open Widget (Logged In)
   return (
     <>
-    <div className="fixed bottom-24 right-6 z-[65] flex flex-col items-end space-y-4 group">
-      <div className="bg-white rounded-3xl shadow-2xl border border-pink-100 w-80 animate-in slide-in-from-bottom-5 fade-in duration-300 overflow-hidden">
+    <div className="fixed bottom-0 left-0 right-0 sm:left-auto sm:right-6 sm:bottom-24 z-[65] flex flex-col items-end space-y-4 group">
+      <div className="bg-white rounded-t-3xl sm:rounded-3xl shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.2)] sm:shadow-2xl border-t sm:border border-pink-100 w-full sm:w-80 animate-in slide-in-from-bottom-full sm:slide-in-from-bottom-5 fade-in duration-300 overflow-hidden max-h-[85vh]">
         {/* Header */}
         <div className="bg-gradient-to-r from-pink-500 to-rose-500 px-5 py-4 flex items-center justify-between text-white">
            <div>

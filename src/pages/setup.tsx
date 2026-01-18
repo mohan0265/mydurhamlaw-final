@@ -51,7 +51,8 @@ export default function ProfileTimetablePage() {
         .from('profiles')
         .update({
           display_name: profile.display_name,
-          year_of_study: profile.year_of_study, // Already in canonical format
+          year_of_study: profile.year_of_study, // Canonical
+          year_group: profile.year_of_study,    // Legacy fallback
           degree_type: profile.degree_type,
           modules: modulesArray,
           last_profile_updated_at: new Date().toISOString()

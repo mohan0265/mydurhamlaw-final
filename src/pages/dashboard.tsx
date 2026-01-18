@@ -63,7 +63,7 @@ export default function Dashboard() {
         if (!profile?.year_of_study || profile.year_of_study === 'foundation' && !profile.display_name) {
              // Note: checking display_name too just in case, but year is the main flag
              // Actually, let's just check year_of_study as that's consistent with our valid profile definition
-             if (!profile?.year_of_study) {
+             if (!profile?.year_of_study && !profile?.year_group) {
                 console.log('[Dashboard] Incomplete profile (no year), redirecting to setup...');
                 router.replace('/setup');
                 return;

@@ -5,7 +5,6 @@ import Head from 'next/head'
 import { useRouter } from 'next/router'
 import { User, BookOpen, GraduationCap, Heart, Mail, Plus, Trash2, Save, Loader2 } from 'lucide-react'
 import { getSupabaseClient } from '@/lib/supabase/client'
-import ModernSidebar from '@/components/layout/ModernSidebar'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import toast from 'react-hot-toast'
 import { fetchAuthed } from '@/lib/fetchAuthed'
@@ -179,10 +178,9 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
-      <ModernSidebar />
+    <div className="min-h-screen bg-gray-50">
       
-      <main className="flex-1 lg:ml-72 p-4 sm:p-8">
+      <main className="max-w-5xl mx-auto p-4 sm:p-8 pt-6">
         <Head>
           <title>My Profile - MyDurhamLaw</title>
         </Head>
@@ -345,7 +343,6 @@ export default function ProfilePage() {
                 </div>
              </CardContent>
           </Card>
-        </div>
       </main>
     </div>
   )

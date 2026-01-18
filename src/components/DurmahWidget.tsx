@@ -1516,7 +1516,7 @@ User question: ${userText}`;
 
   // 3. Open Chat Widget (Logged In)
   return (
-    <div className="fixed bottom-24 right-6 z-[45] flex w-full max-w-md flex-col overflow-visible rounded-3xl border border-violet-100 bg-white shadow-2xl sm:w-[400px] max-h-[80vh] h-[600px] animate-in slide-in-from-bottom-10 fade-in duration-300">
+    <div className="fixed bottom-0 left-0 right-0 sm:left-auto sm:right-6 sm:bottom-24 z-[45] flex flex-col w-full sm:w-[400px] sm:max-w-md h-[450px] sm:h-[600px] max-h-[85vh] sm:max-h-[80vh] overflow-visible rounded-t-3xl sm:rounded-3xl border-t sm:border border-violet-100 bg-white shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.2)] sm:shadow-2xl animate-in slide-in-from-bottom-full sm:slide-in-from-bottom-10 fade-in duration-300">
       {/* Premium Header Ribbon */}
       <header className="relative flex-none flex items-center justify-between bg-gradient-to-r from-violet-600 via-indigo-600 to-violet-700 px-5 py-4 text-white shadow-md z-30">
         <div className="flex flex-col">
