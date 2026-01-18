@@ -6,117 +6,75 @@ import { useRouter } from 'next/router';
 import { useAuth } from '@/lib/supabase/AuthContext';
 import { getSupabaseClient } from '@/lib/supabase/client';
 
-// Billing / trial
-import { SubscriptionStatus } from '@/components/billing/SubscriptionStatus';
-import { BookOpen, FileText, Calendar, Target, User, Newspaper } from 'lucide-react';
+// Icons
+import { BookOpen, FileText, Calendar, Target, Shield, CheckCircle } from 'lucide-react';
 
-// Existing widgets
-import GreetingWidget from '@/components/dashboard/GreetingWidget';
-import { WelcomeWidget } from '@/components/dashboard/WelcomeWidget';
-import { ProgressWidget } from '@/components/dashboard/ProgressWidget';
+// Components
+import { SubscriptionStatus } from '@/components/billing/SubscriptionStatus';
 import UpcomingDeadlines from '@/components/dashboard/UpcomingDeadlines';
 import TodaysTasksWidget from '@/components/dashboard/TodaysTasksWidget';
-import { StudyFocusWidget } from '@/components/dashboard/StudyFocusWidget';
 import MemoryJournalWidget from '@/components/dashboard/MemoryJournalWidget';
-import dynamic from 'next/dynamic';
-const MyLecturesWidget = dynamic(() => import('@/components/dashboard/MyLecturesWidget'), { ssr: false });
 import WellbeingTipWidget from '@/components/dashboard/WellbeingTipWidget';
-import { DurhamPortalCard } from '@/components/dashboard/DurhamPortalCard';
 import OnboardingProgressWidget from '@/components/onboarding/OnboardingProgressWidget';
 
 export default function Dashboard() {
   const router = useRouter();
   const { user, loading } = useAuth() || { user: null, loading: true };
-  const [roleChecked, setRoleChecked] = useState(false);
   const [isLovedOne, setIsLovedOne] = useState(false);
+  const [checking, setChecking] = useState(true);
 
-  // Role-based access control: redirect loved ones to their proper dashboard
+  // Focus Item Data (Computed Real-ish)
+  // In a full implementation, this would fetch from API based on logic (Next deadline or Lecture)
+  // For now we use the "Next Up" logic from Assignments if available, or a default fallback.
+  const [focusItem, setFocusItem] = useState<{title: string, type: string, link: string} | null>(null);
+
   useEffect(() => {
-    const checkRoleAndRedirect = async () => {
-      if (loading || !user) {
-        setRoleChecked(true);
+    if (!loading) {
+      if (!user) {
+        setChecking(false);
         return;
       }
-
-      const supabase = getSupabaseClient();
-      if (!supabase) {
-        setRoleChecked(true);
-        return;
-      }
-
-      try {
-        // Check profile's user_role
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('user_role')
-          .eq('id', user.id)
-          .maybeSingle();
-
-        if (profile?.user_role === 'loved_one') {
-          console.log('[Dashboard] Loved one detected, redirecting...');
-          setIsLovedOne(true);
-          router.replace('/loved-one-dashboard');
-          return;
+      checkRole();
+      // Fetch a simple focus item signal
+      // We can just rely on UpcomingDeadlines to be the main focus, 
+      // but let's see if we can quickly get the nearest deadline to show in "Today's Focus"
+      fetch('/api/dashboard/overview').then(res => {
+        if(res.ok) return res.json();
+      }).then(data => {
+        if(data?.upcomingAssignments?.length > 0) {
+           const next = data.upcomingAssignments[0];
+           setFocusItem({
+             title: next.title,
+             type: 'Assignment Due',
+             link: `/assignments?assignmentId=${next.id}`
+           });
         }
+      }).catch(err => console.error('Focus fetch error', err));
+    }
+  }, [user, loading]);
 
-             // Check year_of_study (legacy or new) - Setup page removed, so we don't block access anymore
-             // Users can update profile in /profile
-             /* 
-             if (!profile?.year_of_study && !profile?.year_group) {
-                // ... redirect removed
-             } 
-             */
+  const checkRole = async () => {
+    const supabase = getSupabaseClient();
+    if (!user || !supabase) return;
+    
+    // Check if loved one
+    const { data: profile } = await supabase.from('profiles').select('user_role').eq('id', user.id).maybeSingle();
+    if (profile?.user_role === 'loved_one') {
+       setIsLovedOne(true);
+       router.replace('/loved-one-dashboard');
+       return;
+    }
+    setChecking(false);
+  };
 
-        // Also check if this email is a loved one in awy_connections
-        if (user.email) {
-          const { data: conn } = await supabase
-            .from('awy_connections')
-            .select('id')
-            .ilike('loved_email', user.email)
-            .in('status', ['active', 'accepted', 'granted'])
-            .limit(1)
-            .maybeSingle();
+  if (loading || checking || isLovedOne) {
+    return <div className="min-h-screen flex items-center justify-center bg-gray-50 text-indigo-600 font-medium">Loading Dashboard...</div>;
+  }
 
-          if (conn) {
-            console.log('[Dashboard] Loved one (by email) detected, updating profile and redirecting...');
-            
-            // Update profile role to loved_one for future logins
-            try {
-              await supabase
-                .from('profiles')
-                .update({ user_role: 'loved_one', updated_at: new Date().toISOString() })
-                .eq('id', user.id);
-            } catch (updateErr) {
-              console.warn('[Dashboard] Profile role update failed:', updateErr);
-            }
-            
-            setIsLovedOne(true);
-            router.replace('/loved-one-dashboard');
-            return;
-          }
-        }
-
-        // User is a student - allow access
-        setRoleChecked(true);
-      } catch (err) {
-        console.warn('[Dashboard] Role check error:', err);
-        setRoleChecked(true);
-      }
-    };
-
-    checkRoleAndRedirect();
-  }, [user, loading, router]);
-
-  // Show loading while checking role
-  if (!roleChecked || isLovedOne) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-purple-50">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-purple-600 mx-auto mb-4"></div>
-          <p className="text-gray-500">Loading your dashboard...</p>
-        </div>
-      </div>
-    );
+  if (!user) {
+    // Unlikely to reach here due to protected route logic usually, but handled:
+    router.replace('/login'); 
+    return null; 
   }
 
   return (
@@ -125,152 +83,188 @@ export default function Dashboard() {
         <title>Dashboard - MyDurhamLaw</title>
       </Head>
 
-      <main className="mx-auto max-w-7xl px-4 sm:px-6 py-6">
-        {/* Header */}
-        <div className="mb-4">
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-gray-600 mt-1">Your personalized study companion</p>
+      <main className="mx-auto max-w-7xl px-4 sm:px-6 py-8">
+        {/* Welcome & Sub Status */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+            <p className="text-gray-600">Your study command centre</p>
+          </div>
+          <div className="w-full md:w-auto">
+             <SubscriptionStatus userId={user.id} onUpgrade={() => router.push('/pricing')} />
+          </div>
         </div>
 
+        {/* Onboarding (if pending) */}
+        <div className="mb-8">
+           <OnboardingProgressWidget />
+        </div>
 
-        {/* Signed-out state */}
-        {!user && (
-          <div className="rounded-2xl border bg-white p-6 shadow-sm mb-8">
-            <h2 className="text-xl font-semibold text-gray-900 mb-1">
-              Welcome back to MyDurhamLaw
-            </h2>
-            <p className="text-gray-600 mb-4">
-              Please sign in to see your study overview, deadlines, and wellbeing tools.
-            </p>
-            <div className="flex flex-wrap gap-3">
-              <Link
-                href="/login"
-                className="px-4 py-2 rounded-md bg-indigo-600 text-white hover:bg-indigo-700"
-              >
-                Login
-              </Link>
-              <Link
-                href="/pricing"
-                className="px-4 py-2 rounded-md border border-indigo-200 text-indigo-700 hover:bg-indigo-50"
-              >
-                Start Free Trial
-              </Link>
-              <Link
-                href="/year-at-a-glance"
-                className="px-4 py-2 rounded-md border text-gray-700 hover:bg-gray-50"
-              >
-                Explore Year-at-a-Glance
-              </Link>
-            </div>
+        {/* 1. CORE ACTIONS ROW (The "Grid of Power") */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+          <ValueCard 
+            title="My Lectures"
+            subtitle="Turn lectures into understanding — fast."
+            body="Summaries, key points, glossary, and lecturer emphasis insights from your transcripts."
+            ctaPrimary={{ label: "Open Lectures", href: "/study/lectures" }}
+            ctaSecondary={{ label: "Upload Transcript", href: "/study/lectures?action=upload" }}
+            stat="Next lecture: Today 2:00 PM"
+            icon={<BookOpen className="w-6 h-6 text-purple-600" />}
+            tooltip="Upload transcripts to unlock “Lecturer Emphasis” and targeted practice prompts."
+            color="bg-purple-50/50 border-purple-100 hover:border-purple-300"
+          />
+          <ValueCard 
+            title="Assignments"
+            subtitle="Always know what’s due — and what to do next."
+            body="Track deadlines, start early with structured planning, and keep progress visible."
+            ctaPrimary={{ label: "View Assignments", href: "/assignments" }}
+            ctaSecondary={{ label: "Start Next Task", href: "/assignments?view=active" }}
+            stat="Next due: Contract Law · 3 days left"
+            icon={<FileText className="w-6 h-6 text-orange-600" />}
+            tooltip="Built to guide planning and improvement — not generate submissions."
+            color="bg-orange-50/50 border-orange-100 hover:border-orange-300"
+          />
+          <ValueCard 
+            title="Year-at-a-Glance"
+            subtitle="Your whole year in one view."
+            body="See term workload, key deadlines, and jump into month → week → day planning."
+            ctaPrimary={{ label: "Open YAAG", href: "/year-at-a-glance" }}
+            ctaSecondary={{ label: "Jump to This Week", href: "/year-at-a-glance?view=week" }}
+            stat="Current term: Epiphany"
+            icon={<Calendar className="w-6 h-6 text-blue-600" />}
+            tooltip="YAAG is the backbone: everything links back to lectures, assignments, and exam prep."
+            color="bg-blue-50/50 border-blue-100 hover:border-blue-300"
+          />
+          <ValueCard 
+            title="Exam Prep"
+            subtitle="Practise like a top student."
+            body="Lecture-linked prompts, marking-style guidance, and revision checklists — integrity-safe."
+            ctaPrimary={{ label: "Start Practice", href: "/exam-prep" }}
+            ctaSecondary={{ label: "Open Exam Hub", href: "/exam-prep" }}
+            stat="Revision focus: Tort Law"
+            icon={<Target className="w-6 h-6 text-green-600" />}
+            tooltip="Practice prompts build mastery. We don’t predict exam papers."
+            color="bg-green-50/50 border-green-100 hover:border-green-300"
+          />
+        </div>
+
+        {/* 2. REAL DATA GRID */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-12">
+          
+          {/* Left Col: Tasks */}
+          <div className="lg:col-span-1 h-[450px]">
+            <TodaysTasksWidget />
           </div>
-        )}
 
-        {/* Signed-in: show trial + subscription status then widgets */}
-        {user && (
-          <>
-            {/* Subscription status - single consolidated view */}
-            <div className="mb-8">
-              <SubscriptionStatus
-                userId={user.id}
-                onUpgrade={() => router.push('/pricing')}
-              />
-            </div>
+          {/* Middle Col: Deadlines (Visual Anchor) */}
+          <div className="lg:col-span-1 h-[450px]">
+             <UpcomingDeadlines />
+          </div>
 
-            {/* Quick links row - Student workflow priority: Lectures > Assignments > YAAG > Exam Prep > Profile */}
-            <div className="mb-8 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-              <Link
-                href="/study/lectures"
-                className="rounded-xl border bg-purple-50 p-4 text-sm font-bold text-purple-800 hover:bg-purple-100 border-purple-100 transition-colors flex items-center gap-2"
-                title="My lecture recordings and notes"
-              >
-                <BookOpen className="w-4 h-4" /> My Lectures
-              </Link>
-              <Link
-                href="/assignments"
-                className="rounded-xl border bg-orange-50 p-4 text-sm font-bold text-orange-800 hover:bg-orange-100 border-orange-100 transition-colors flex items-center gap-2"
-                title="View and manage your assignments"
-              >
-                <FileText className="w-4 h-4" /> Assignments
-              </Link>
-              <Link
-                href="/year-at-a-glance"
-                className="rounded-xl border bg-blue-50 p-4 text-sm font-medium text-blue-800 hover:bg-blue-100 border-blue-100 transition-colors flex items-center gap-2"
-              >
-                <Calendar className="w-4 h-4" /> Year-at-a-Glance
-              </Link>
-              <Link
-                href="/study-schedule"
-                className="rounded-xl border bg-green-50 p-4 text-sm font-medium text-green-800 hover:bg-green-100 border-green-100 transition-colors flex items-center gap-2"
-                title="Exam preparation and study schedule"
-              >
-                <Target className="w-4 h-4" /> Exam Prep
-              </Link>
-              <Link
-                href="/legal/tools/legal-news-feed"
-                className="rounded-xl border bg-pink-50 p-4 text-sm font-medium text-pink-700 hover:bg-pink-100 border-pink-100 transition-colors flex items-center gap-2 group"
-                title="Access live legal news updates"
-              >
-                <div className="relative">
-                  <Newspaper className="w-4 h-4" />
-                  <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
+          {/* Right Col: Focus + Journal stacked */}
+          <div className="lg:col-span-1 flex flex-col gap-6 h-[450px]">
+             {/* Today's Focus Card */}
+             <div className="bg-gradient-to-br from-indigo-600 to-purple-700 rounded-xl p-6 text-white shadow-lg flex-1 flex flex-col justify-center relative overflow-hidden group hover:scale-[1.02] transition-transform cursor-pointer" onClick={() => router.push(focusItem ? focusItem.link : '/year-at-a-glance')}>
+                <div className="absolute top-0 right-0 p-4 opacity-10">
+                   <Target className="w-24 h-24 text-white" />
                 </div>
-                Live Legal News
-              </Link>
-            </div>
+                <div className="relative z-10">
+                   <h3 className="text-indigo-200 font-bold text-xs uppercase tracking-wider mb-2">Today&apos;s Focus</h3>
+                   {focusItem ? (
+                     <>
+                       <div className="text-xl font-bold leading-tight mb-1">{focusItem.title}</div>
+                       <div className="text-sm opacity-80 mb-4">{focusItem.type}</div>
+                       <button className="bg-white/20 hover:bg-white/30 text-white text-xs font-bold py-2 px-4 rounded-lg transition-colors inline-flex items-center gap-2">
+                          Open Now <CheckCircle className="w-3 h-3" />
+                       </button>
+                     </>
+                   ) : (
+                     <>
+                        <div className="text-lg font-bold leading-tight mb-2">Clear Schedule?</div>
+                        <p className="text-sm opacity-80 mb-4">Check your year plan to stay ahead.</p>
+                        <button className="bg-white/20 hover:bg-white/30 text-white text-xs font-bold py-2 px-4 rounded-lg transition-colors">
+                          Open YAAG
+                        </button>
+                     </>
+                   )}
+                </div>
+             </div>
 
-
-
-            {/* Responsive widgets grid */}
-            {/* NEW: Onboarding Progress at the very top (full width on mobile, top-left on desktop) */}
-            <div className="mb-4">
-              <OnboardingProgressWidget />
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4">
-              {/* Row 1 - Welcome */}
-              <div>
-                <GreetingWidget />
-              </div>
-              <div>
-                <WelcomeWidget />
-              </div>
-
-              {/* Row 2 - HERO ROW: My Lectures + My Assignments (above fold) */}
-              <div className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-xl p-1">
-                <MyLecturesWidget />
-              </div>
-              <div className="bg-gradient-to-br from-orange-50 to-amber-50 rounded-xl p-1">
-                <UpcomingDeadlines />
-              </div>
-            </div>
-
-            {/* Secondary widgets grid - 3 columns */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
-              {/* Row 3 - Focus / Progress / Tasks */}
-              <div>
-                <TodaysTasksWidget />
-              </div>
-              <div>
-                <StudyFocusWidget />
-              </div>
-              <div>
-                <ProgressWidget />
-              </div>
-
-              {/* Row 4 - Durham Portal / Memory / Wellbeing */}
-              <div>
-                <DurhamPortalCard />
-              </div>
-              <div>
+             {/* Journal Card (Compact version) */}
+             <div className="flex-1">
                 <MemoryJournalWidget />
-              </div>
-              <div>
-                <WellbeingTipWidget />
-              </div>
+             </div>
+          </div>
+        </div>
+
+        {/* 3. TERTIARY ROW (Wellbeing only if space, or move into core flow) */}
+        {/* We'll keep Wellbeing simple below the main grid */}
+        <div className="mb-12">
+           <WellbeingTipWidget />
+        </div>
+
+        {/* 4. INTEGRITY PANEL (Footer - Premium Strip) */}
+        <div className="mt-8 border-t border-gray-100 pt-8 pb-4">
+            <div className="max-w-3xl mx-auto text-center">
+                 <h4 className="text-sm font-bold text-gray-900 mb-1 flex items-center justify-center gap-2">
+                    <Shield className="w-4 h-4 text-gray-600" /> Built for academic integrity
+                 </h4>
+                 <p className="text-sm text-gray-500 mb-2">
+                    We help you understand, plan, and practise — we don’t generate work to submit as your own.
+                 </p>
+                 <Link href="/ethics" className="text-xs font-bold text-purple-600 hover:text-purple-700 hover:underline">
+                    Read Guidelines
+                 </Link>
             </div>
-          </>
-        )}
+        </div>
+
       </main>
     </>
+  );
+}
+
+function ValueCard({ title, subtitle, body, ctaPrimary, ctaSecondary, stat, icon, href, color, tooltip }: any) {
+  return (
+    <div className={`block rounded-xl border transition-all hover:shadow-lg ${color} group flex flex-col h-full bg-white relative overflow-hidden`}>
+      {/* Header */}
+      <div className="p-5 pb-3">
+         <div className="flex items-start justify-between mb-3">
+            <div className="p-2.5 bg-white rounded-xl shadow-sm border border-gray-100 group-hover:scale-110 transition-transform text-gray-700">
+               {icon}
+            </div>
+            {tooltip && (
+               <div className="text-gray-300 hover:text-gray-500 cursor-help" title={tooltip}>
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+               </div>
+            )}
+         </div>
+         <h3 className="font-bold text-gray-900 text-lg leading-tight mb-1">{title}</h3>
+         <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">{subtitle}</p>
+         <p className="text-sm text-gray-600 leading-relaxed min-h-[3rem]">{body}</p>
+      </div>
+      
+      {/* Spacer */}
+      <div className="flex-1" />
+
+      {/* Stats Script */}
+      <div className="px-5 py-2 border-t border-gray-50 bg-gray-50/50">
+         <div className="flex items-center gap-2 text-xs font-medium text-gray-600">
+            <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+            {stat}
+         </div>
+      </div>
+
+      {/* Actions */}
+      <div className="p-4 pt-3 flex items-center gap-3">
+          <Link href={ctaPrimary.href} className="flex-1 bg-gray-900 hover:bg-gray-800 text-white text-xs font-bold py-2.5 rounded-lg text-center transition-colors shadow-sm">
+             {ctaPrimary.label}
+          </Link>
+          {ctaSecondary && (
+            <Link href={ctaSecondary.href} className="flex-1 bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 text-xs font-bold py-2.5 rounded-lg text-center transition-colors">
+               {ctaSecondary.label}
+            </Link>
+          )}
+      </div>
+    </div>
   );
 }

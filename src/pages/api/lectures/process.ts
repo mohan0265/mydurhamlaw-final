@@ -59,26 +59,78 @@ async function generateNotes(transcript: string, lectureTitle: string, moduleNam
   exam_prompts: string[];
   glossary: Array<{ term: string; definition: string }>;
   engagement_hooks: string[];
+  exam_signals: Array<{
+    topic_title: string;
+    signal_strength: number; // 1-5
+    confidence_label: string;
+    evidence_quotes: string[];
+    why_it_matters: string;
+    what_to_master: string[];
+    common_traps: string[];
+    practice_prompts: Array<{ type: string; prompt: string }>;
+    tags: string[];
+    source_spans?: Array<{ start_char: number; end_char: number }>;
+  }>;
 }> {
-  const prompt = `You are an expert law lecturer assistant AND engaging mentor. Analyze this lecture transcript and generate study notes that SPARK INTEREST and make learning exciting!
+  const prompt = `You are Durmah, an academic study companion for Durham Law students.
+Your job is to extract "Lecturer Emphasis & Exam Signals" from a lecture transcript.
 
-LECTURE: ${lectureTitle}
-MODULE: ${moduleName || 'Law'}
+CRITICAL ACADEMIC INTEGRITY RULES:
+- Do NOT predict exam questions or claim to know what will be on the exam.
+- Do NOT write “this will come out” or “this is guaranteed”.
+- You may ONLY identify: lecturer emphasis, high-yield concepts, and assessment-relevant signals based on explicit wording and emphasis in the transcript.
+- You must support each signal with short evidence quotes from the transcript.
+
+TASK:
+From the provided lecture transcript (and optional metadata), produce a JSON object that contains an array called "exam_signals".
+Each item should represent a concept the lecturer emphasized as important, assessment-relevant, commonly misunderstood, or frequently revisited.
+Also generate standard lecture notes (summary, key_points, discussion_topics, exam_prompts, glossary, engagement_hooks) as per usual requirements, consolidated in the same JSON.
+
+HOW TO SCORE SIGNAL STRENGTH (1–5):
+5 = explicit exam/assessment mention OR repeated strong emphasis plus warnings about traps/mistakes
+4 = strong emphasis and repeated / sustained explanation
+3 = moderate emphasis OR one strong mention
+2 = light emphasis
+1 = weak inference only (use sparingly; prefer omitting)
+
+OUTPUT REQUIREMENTS:
+- Output MUST be valid JSON ONLY. No markdown, no commentary.
+- Evidence quotes must be short (max ~25 words each) and verbatim from the transcript.
+- If you cannot find any meaningful signals, output an empty array.
+
+JSON SCHEMA (MUST MATCH EXACTLY):
+{
+  "summary": "string",
+  "key_points": ["string"],
+  "discussion_topics": ["string"],
+  "exam_prompts": ["string"],
+  "glossary": [{"term": "string", "definition": "string"}],
+  "engagement_hooks": ["string"],
+  "exam_signals": [
+    {
+      "topic_title": "string",
+      "signal_strength": 1,
+      "confidence_label": "Low|Medium|High",
+      "evidence_quotes": ["string", "string"],
+      "why_it_matters": "string",
+      "what_to_master": ["string", "string", "string"],
+      "common_traps": ["string"],
+      "practice_prompts": [
+        { "type": "Explain|Apply|Distinguish|Critique", "prompt": "string" }
+      ],
+      "tags": ["definition|elements|distinction|case-law|policy|problem-question|essay|warning"],
+      "source_spans": [
+        { "start_char": 0, "end_char": 0 }
+      ]
+    }
+  ]
+}
 
 TRANSCRIPT:
 ${transcript.substring(0, 15000)} ${transcript.length > 15000 ? '... [truncated]' : ''}
 
-Generate the following in JSON format:
-{
-  "summary": "2-3 paragraphs summarizing the main themes and arguments. Make it accessible and interesting!",
-  "key_points": ["8-12 bullet point key takeaways - phrase them in memorable, student-friendly language"],
-  "discussion_topics": ["5 thought-provoking questions that CHALLENGE assumptions and spark debate. Use the Socratic method - 'What if...?' style questions"],
-  "exam_prompts": ["5 potential exam question prompts - frame as 'Professors LOVE asking...' to motivate study"],
-  "glossary": [{"term": "Legal Term", "definition": "Brief 1-line explanation using analogies where helpful"}],
-  "engagement_hooks": ["5-8 FASCINATING facts, real case connections, or 'mind-blowing' insights that make this lecture INTERESTING. Examples: 'This exact scenario happened in the famous X case...', 'Fun fact: This doctrine was invented because...', 'If you think about it like [everyday analogy]...', 'This is the law that stopped [interesting real event]...'. Make students WANT to learn more!"]
-}
-
-CRITICAL: Make notes that a tired, bored student would actually want to read. Use relatable language, real-world connections, and spark curiosity. This student has Durmah available 24/7 to discuss - give them reasons to engage!`;
+LECTURE: ${lectureTitle}
+MODULE: ${moduleName || 'Law'}`;
 
 
   const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -117,11 +169,13 @@ CRITICAL: Make notes that a tired, bored student would actually want to read. Us
       key_points: [],
       discussion_topics: [],
       exam_prompts: [],
-      glossary: [],
-      engagement_hooks: [],
-    };
-  }
-}
+      exam_prompts: [],
+       glossary: [],
+       engagement_hooks: [],
+       exam_signals: [],
+     };
+   }
+ }
 
 export default async function handler(
   req: NextApiRequest,
@@ -260,7 +314,9 @@ export default async function handler(
         discussion_topics: notes.discussion_topics,
         exam_prompts: notes.exam_prompts,
         glossary: notes.glossary,
+        glossary: notes.glossary,
         engagement_hooks: notes.engagement_hooks || [],
+        exam_signals: notes.exam_signals || [],
       });
 
     if (notesError) {
