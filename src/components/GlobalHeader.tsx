@@ -49,8 +49,9 @@ function HoverMenu({
   label,
   items,
 }: {
-  label: string;
+  label?: string;
   items: MenuItem[];
+  trigger?: React.ReactNode;
 }) {
   const [open, setOpen] = useState(false);
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -76,13 +77,19 @@ function HoverMenu({
       onMouseEnter={openNow}
       onMouseLeave={closeSoon}
     >
-      <button
-        className="px-3 py-2 rounded-md text-sm font-medium text-white/90 hover:text-white"
-        onClick={() => setOpen((v) => !v)}
-        aria-expanded={open}
-      >
-        {label}
-      </button>
+      {trigger ? (
+        <div onClick={() => setOpen(v => !v)} className="cursor-pointer">
+          {trigger}
+        </div>
+      ) : (
+        <button
+          className="px-3 py-2 rounded-md text-sm font-medium text-white/90 hover:text-white"
+          onClick={() => setOpen((v) => !v)}
+          aria-expanded={open}
+        >
+          {label}
+        </button>
+      )}
 
       {open && (
         <div
@@ -270,12 +277,18 @@ export default function GlobalHeader() {
               
               {/* NEW: Prominent Live Legal News Link */}
               {/* Live Legal News Menu */}
+              {/* Live Legal News Menu */}
               <HoverMenu 
-                label="Live News" 
                 items={[
                   { label: "🔴 Live Feed", href: "/legal/tools/legal-news-feed" },
                   { label: "📂 My Archive", href: "/legal/tools/my-news-archive" }
-                ]} 
+                ]}
+                trigger={
+                  <div className="px-3 py-2 rounded-md text-sm font-bold text-pink-200 hover:text-white transition-all flex items-center gap-1.5 animate-pulse hover:animate-none group">
+                    <span className="w-2 h-2 rounded-full bg-red-500 box-shadow-glow"></span>
+                    Live News!
+                  </div>
+                }
               />
             </div>
 
