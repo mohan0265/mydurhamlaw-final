@@ -107,7 +107,7 @@ export default async function handler(
         description: 'Import your ICS calendar or sync with Durham timetable',
         done: timetable_done,
         cta: 'Connect',
-        href: '/profile-timetable',
+        href: '/setup',
         helpDocCategory: 'timetable',
       },
       {

@@ -59,6 +59,17 @@ export default function Dashboard() {
           return;
         }
 
+        // Check if student has completed setup (Year of Study is mandatory)
+        if (!profile?.year_of_study || profile.year_of_study === 'foundation' && !profile.display_name) {
+             // Note: checking display_name too just in case, but year is the main flag
+             // Actually, let's just check year_of_study as that's consistent with our valid profile definition
+             if (!profile?.year_of_study) {
+                console.log('[Dashboard] Incomplete profile (no year), redirecting to setup...');
+                router.replace('/setup');
+                return;
+             }
+        }
+
         // Also check if this email is a loved one in awy_connections
         if (user.email) {
           const { data: conn } = await supabase

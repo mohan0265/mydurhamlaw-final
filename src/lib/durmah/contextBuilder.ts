@@ -293,7 +293,7 @@ export async function buildDurmahContext(req: any): Promise<
     hasEvents: allEvents.length > 0,
     dataSource: timetableDataSource as 'dev-seed' | 'user' | 'none',
     isVerified: timetableDataSource === 'user',
-    verificationUrl: '/profile-timetable',
+    verificationUrl: '/setup',
     icsImported: hasIcsEvents,
 
   };

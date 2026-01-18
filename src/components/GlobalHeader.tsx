@@ -219,7 +219,7 @@ export default function GlobalHeader() {
         { label: 'About', href: '/about' },
         { label: 'Pricing', href: '/pricing' },
         { label: 'Contact', href: '/contact' },
-        { label: 'My Profile', href: '/profile-timetable' }, // Moved Profile here
+        { label: 'My Profile', href: '/profile' }, // User Profile & Loved Ones
       ],
     }),
     []

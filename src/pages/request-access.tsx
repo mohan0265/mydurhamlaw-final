@@ -43,7 +43,7 @@ export default function RequestAccessPage() {
 
       // Redirect to onboarding with email prefill
       setTimeout(() => {
-        router.push(`/onboarding?email=${encodeURIComponent(email)}`);
+        router.push(`/setup?email=${encodeURIComponent(email)}`);
       }, 2000);
 
     } catch (err: any) {
