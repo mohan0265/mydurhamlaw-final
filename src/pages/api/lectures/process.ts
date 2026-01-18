@@ -132,8 +132,9 @@ TRANSCRIPT:
 ${transcript.substring(0, 15000)} ${transcript.length > 15000 ? '... [truncated]' : ''}
 
 LECTURE: ${lectureTitle}
-MODULE: ${moduleName || 'Law'}`;
+MODULE: ${moduleName || 'Law'}
 
+Extract the lecturer's name if explicitly introduced or mentioned (e.g., "I'm Professor Smith"). If not found, return null.`;
 
   const response = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
@@ -145,7 +146,7 @@ MODULE: ${moduleName || 'Law'}`;
       model: 'gpt-4o',
       messages: [
         { role: 'system', content: 'You are a law education expert. Always respond with valid JSON only, no markdown.' },
-        { role: 'user', content: prompt },
+        { role: 'user', content: prompt + `\n\nOUTPUT JSON SCHEMA EXTENSION:\nInclude "lecturer_name_detected": "string" or null.` },
       ],
       temperature: 0.7,
       max_tokens: 4000,
@@ -320,6 +321,40 @@ export default async function handler(
         engagement_hooks: notes.engagement_hooks || [],
         exam_signals: notes.exam_signals || [],
       });
+
+    // --- LECTURER INSIGHTS PIPELINE ---
+    const detectedName = (notes as any).lecturer_name_detected;
+    if (detectedName && typeof detectedName === 'string' && detectedName.length > 2) {
+      // 1. Upsert Lecturer
+      const { data: lecturerData, error: lecturerError } = await supabase
+        .from('lecturers')
+        .upsert({ name_normalized: detectedName.trim().toLowerCase(), name: detectedName.trim() }, { onConflict: 'name_normalized' })
+        .select()
+        .single();
+      
+      if (lecturerData && !lecturerError) {
+        // 2. Update/Init Insights
+        // We do a simplified upsert here. Real aggregation would be a separate background job or more complex logic.
+        // For now, facilitate the existence of the row.
+        const { error: insightError } = await supabase
+          .from('lecturer_insights')
+          .upsert({ 
+             lecturer_id: lecturerData.id,
+             // Simple increment is hard in one atomic upsert without valid SQL function or transaction, 
+             // so we just ensure it exists. The aggregation logic is separate.
+             updated_at: new Date().toISOString()
+          }, { onConflict: 'lecturer_id', ignoreDuplicates: true }); 
+          
+          if(insightError) console.error('Insight init error', insightError);
+
+          // Optional: Link lecture to lecturer (if column exists, or we use name matching)
+          // For now, we update the lecture's lecturer_name text field if it was empty
+          if (!lecture.lecturer_name) {
+             await supabase.from('lectures').update({ lecturer_name: detectedName }).eq('id', lectureId);
+          }
+      }
+    }
+    // ----------------------------------
 
     if (notesError) {
       console.error('[lectures/process] Notes save error:', notesError);

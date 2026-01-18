@@ -128,7 +128,6 @@ export default function ReferPage() {
     return (
         <div className="min-h-screen bg-gray-50">
             <Head><title>Refer a Friend | MyDurhamLaw</title></Head>
-            <GlobalHeader />
             
             <main className="max-w-4xl mx-auto py-12 px-4 sm:px-6">
                 <div className="mb-10 text-center">
