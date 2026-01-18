@@ -220,6 +220,7 @@ export default function GlobalHeader() {
         { label: 'Pricing', href: '/pricing' },
         { label: 'Exam Prep', href: '/exam-prep' },
   { label: 'Wellbeing', href: '/wellbeing' },
+  { label: 'Refer a Friend', href: '/refer' },
   { label: 'My Progress', href: '/progress' }, // User Profile & Loved Ones
       ],
     }),
