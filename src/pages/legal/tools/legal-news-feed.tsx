@@ -23,6 +23,7 @@ import { useAuth } from '@/lib/supabase/AuthContext'
 import { CollapsibleText } from '@/components/ui/CollapsibleText'
 import { getSupabaseClient } from '@/lib/supabase/client'
 import { DeepDiveModal } from '@/components/news/DeepDiveModal'
+import { NewsAnalysisModal } from '@/components/news/NewsAnalysisModal' // Imported
 // Durmah config removed - using default audio settings
 // import { useVoiceManager } from '@/lib/context/VoiceManagerContext' // Removed - using DurmahContext
 
@@ -371,71 +372,15 @@ Tell me:
     }
   }, [user])
 
-  // Handle "Get AI Analysis" button click - opens Durmah with article context
-  const handleAIAnalysisClick = useCallback(async (article: RSSNewsItem) => {
-    try {
-      // 1. Log interest event to Supabase
-      const interestPayload = {
-        event_type: 'news_ai_analysis_clicked',
-        source: 'legal_news',
-        title: article.title,
-        url: article.url,
-        snippet: article.summary || article.content?.substring(0, 300),
-        tags: article.topicTags || [article.sourceType]
-      };
+  // Modal state
+  const [isAnalysisModalOpen, setIsAnalysisModalOpen] = useState(false);
+  const [analysisArticle, setAnalysisArticle] = useState<RSSNewsItem | null>(null);
 
-      console.log('[News] Logging interest event:', interestPayload);
-
-      await fetch('/api/durmah/interest', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(interestPayload)
-      }).catch(err => {
-        // Silent fail for analytics - don't block main flow
-        console.warn('[News] Failed to log interest event:', err);
-      });
-
-      // 2. Build analysis message for Durmah
-      const analysisMessage = `Please analyze this news item for my Durham Law studies.
-
-**Title**: ${article.title}
-**Source**: ${article.source || article.sourceType}
-**URL**: ${article.url}
-${article.summary ? `**Summary**: ${article.summary}` : ''}
-
-Tell me:
-1. A 5-bullet summary in plain English
-2. Key legal concepts involved
-3. How this could be used in an essay (with 2-3 angles)
-4. A "cite safely" reminder
-
-**Important**: Analyze only the information provided above. Do not invent additional facts or details beyond what I've shared.`;
-
-      // 3. Open Durmah widget and inject message
-      console.log('[News] Opening Durmah with analysis request');
-      
-      window.postMessage({
-        type: 'OPEN_DURMAH',
-        payload: {
-          mode: 'NEWS_STRICT',
-          autoMessage: analysisMessage,
-          article: {
-            title: article.title,
-            source: article.source || article.sourceType,
-            url: article.url,
-            summary: article.summary
-          }
-        }
-      }, '*');
-
-      // 4. Visual feedback - clear selectedArticle to avoid confusion
-      setSelectedArticle(null);
-
-    } catch (err) {
-      console.error('[News] Error in handleAIAnalysisClick:', err);
-    }
-  }, [])
+  // Handle "Get AI Analysis" button click - opens dedicated modal
+  const handleAIAnalysisClick = useCallback((article: RSSNewsItem) => {
+    setAnalysisArticle(article);
+    setIsAnalysisModalOpen(true);
+  }, []);
 
   // Enhanced play article with voice manager integration and toggle behavior
   const playArticle = useCallback(async (article: RSSNewsItem) => {
@@ -967,15 +912,7 @@ Tell me:
                       )}
                     </div>
                     
-                    {/* NEW: Deep Dive Button */}
-                    <Button
-                        onClick={() => setDeepDiveArticle(article)}
-                        className="flex items-center justify-center gap-2 min-h-[44px] text-sm sm:text-base bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200"
-                    >
-                        <Brain className="w-4 h-4" />
-                        <span className="hidden sm:inline">Deep Dive</span>
-                        <span className="sm:hidden">Deep Dive</span>
-                    </Button>
+                    {/* Deep Dive Button removed - integrated into Analyze & Save */}
                   </div>
 
                   {/* Topic Tags */}
@@ -1008,11 +945,11 @@ Tell me:
                   <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 pt-4 border-t border-gray-100">
                     <Button
                       onClick={() => handleAIAnalysisClick(article)}
-                      className="flex items-center justify-center gap-2 min-h-[44px] text-sm sm:text-base"
+                      className="flex items-center justify-center gap-2 min-h-[44px] text-sm sm:text-base flex-1"
                     >
-                      <BookOpen className="w-4 h-4" />
-                      <span className="hidden sm:inline">Get AI Analysis</span>
-                      <span className="sm:hidden">AI Analysis</span>
+                      <Brain className="w-4 h-4" />
+                      <span className="hidden sm:inline">Analyze & Deep Dive</span>
+                      <span className="sm:hidden">Analyze</span>
                     </Button>
                     
                     <Button
@@ -1135,8 +1072,20 @@ Tell me:
         <DeepDiveModal 
             isOpen={!!deepDiveArticle}
             onClose={() => setDeepDiveArticle(null)}
-            article={deepDiveArticle}
             onSubmit={handleDeepDiveSubmit}
+        />
+      )}
+      
+      {analysisArticle && (
+        <NewsAnalysisModal 
+          isOpen={isAnalysisModalOpen}
+          onClose={() => setIsAnalysisModalOpen(false)}
+          article={{
+            title: analysisArticle.title,
+            url: analysisArticle.url,
+            source: analysisArticle.source || analysisArticle.sourceType,
+            summary: analysisArticle.summary
+          }}
         />
       )}
     </div>
