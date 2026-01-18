@@ -71,10 +71,8 @@ export const SmartNewsAgent: React.FC<SmartNewsAgentProps> = ({
       }
 
       // Open Durmah widget
-      window.dispatchEvent(new CustomEvent('durmah:open'));
-
-      // Send article context to Durmah for analysis
-      const analysisPrompt = `Analyze this legal news article for my Durham Law studies:
+      // Open Durmah widget with Strict News Mode
+      const analysisPrompt = `Please analyze this legal news article for my Durham Law studies.
 
 **Title**: ${article.title}
 **Source**: ${article.source}
@@ -82,20 +80,26 @@ export const SmartNewsAgent: React.FC<SmartNewsAgentProps> = ({
 **Summary**: ${article.summary || article.content?.substring(0, 500)}
 
 Please provide:
-1. **5-bullet summary** of the key facts
-2. **Legal issues/doctrines** involved
-3. **How to use this in an essay** (relevance to modules)
-4. **2 counterarguments** to consider
-5. **What to verify** from primary sources (cases, statutes)
+1. Summary of the key facts (only what is stated)
+2. Legal concepts involved (generic/conditional)
+3. Essay angles (how to use this)
+4. "Cite safely" reminder
 
-IMPORTANT: Analyze only the content provided above. Do not invent additional headlines or "Read more" links.`;
+**Important**: Analyze only the content provided above. Do not invent additional facts.`;
 
-      window.dispatchEvent(new CustomEvent('durmah:message', {
-        detail: {
-          text: analysisPrompt,
-          mode: 'study'
+      window.postMessage({
+        type: 'OPEN_DURMAH',
+        payload: {
+          mode: 'NEWS_STRICT',
+          autoMessage: analysisPrompt,
+          article: {
+            title: article.title,
+            source: article.source,
+            url: article.url,
+            summary: article.summary
+          }
         }
-      }));
+      }, '*');
 
       // Mark as analyzed (prevents re-triggering)
       setAnalysis({

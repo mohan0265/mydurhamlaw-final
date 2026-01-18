@@ -400,30 +400,21 @@ export default function DurmahWidget() {
                   throw new Error(`HTTP ${response.status}`);
                 }
 
-                if (!response.body) {
-                  throw new Error("No response body");
+                // FIX PART A: Parsed JSON response instead of raw stream to avoid leaking {ok:true}
+                const data = await response.json();
+                
+                if (!data.ok || !data.reply) {
+                   throw new Error(data.error || "No reply from Durmah");
                 }
 
-                const reader = response.body.getReader();
-                const decoder = new TextDecoder();
-                let accumulated = "";
-
-                while (true) {
-                  const { done, value } = await reader.read();
-                  if (done) break;
-
-                  const chunk = decoder.decode(value, { stream: true });
-                  accumulated += chunk;
-
-                  setMessages((prev) => {
-                    const copy = [...prev];
-                    const lastIdx = copy.length - 1;
-                    if (copy[lastIdx]?.role === "durmah") {
-                      copy[lastIdx] = { ...copy[lastIdx], text: accumulated };
-                    }
-                    return copy;
-                  });
-                }
+                setMessages((prev) => {
+                  const copy = [...prev];
+                  const lastIdx = copy.length - 1;
+                  if (copy[lastIdx]?.role === "durmah") {
+                    copy[lastIdx] = { ...copy[lastIdx], text: data.reply };
+                  }
+                  return copy;
+                });
 
                 setIsStreaming(false);
               } catch (err: any) {

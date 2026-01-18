@@ -21,6 +21,7 @@ import { SmartNewsAgent } from '@/components/news/SmartNewsAgent'
 import { useAuth } from '@/lib/supabase/AuthContext'
 import { CollapsibleText } from '@/components/ui/CollapsibleText'
 import { getSupabaseClient } from '@/lib/supabase/client'
+import { DeepDiveModal } from '@/components/news/DeepDiveModal'
 // Durmah config removed - using default audio settings
 // import { useVoiceManager } from '@/lib/context/VoiceManagerContext' // Removed - using DurmahContext
 
@@ -102,6 +103,74 @@ export default function LegalNewsFeedPage() {
   
   // Source filtering state
   const [sourceFilter, setSourceFilter] = useState<SourceFilter>('all')
+
+  // NEW: Deep Dive State
+  const [deepDiveArticle, setDeepDiveArticle] = useState<RSSNewsItem | null>(null);
+
+  // Handle Deep Dive Submit
+  const handleDeepDiveSubmit = useCallback(async (notes: string) => {
+    if (!deepDiveArticle) return;
+
+    try {
+        const article = deepDiveArticle;
+        
+        // 1. Log Interest
+        const interestPayload = {
+            event_type: 'news_deep_dive_submitted',
+            source: 'legal_news',
+            title: article.title,
+            url: article.url,
+            snippet: notes.substring(0, 100) + '...', // Log snippet of user intent
+            tags: article.topicTags || ['deep_dive']
+        };
+        
+        await fetch('/api/durmah/interest', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify(interestPayload)
+        }).catch(console.warn);
+
+        // 2. Build Message
+        const analysisMessage = `Please analyze these notes/excerpts for my Durham Law studies.
+
+**Title**: ${article.title}
+**Source**: ${article.source || article.sourceType}
+**URL**: ${article.url}
+${article.summary ? `**Original Summary**: ${article.summary}` : ''}
+
+**MY NOTES / EXCERPTS**:
+"${notes}"
+
+Tell me:
+1. Summary of these specific points
+2. Module relevance
+3. Discussion questions based on this text
+4. "Cite safely" reminder
+
+**Important**: Analyze primarily the notes provided above, using the article metadata for context only.`;
+
+        // 3. Open Durmah
+        window.postMessage({
+            type: 'OPEN_DURMAH',
+            payload: {
+                mode: 'NEWS_STRICT',
+                autoMessage: analysisMessage,
+                article: {
+                    title: article.title,
+                    source: article.source || article.sourceType,
+                    url: article.url,
+                    summary: article.summary,
+                    studentNotes: notes 
+                }
+            }
+        }, '*');
+
+        setDeepDiveArticle(null);
+    } catch (err) {
+        console.error('Deep dive error:', err);
+    }
+  }, [deepDiveArticle]);
 
   // Add animations and scrollbar CSS
   useEffect(() => {
@@ -892,6 +961,16 @@ Tell me:
                         </div>
                       )}
                     </div>
+                    
+                    {/* NEW: Deep Dive Button */}
+                    <Button
+                        onClick={() => setDeepDiveArticle(article)}
+                        className="flex items-center justify-center gap-2 min-h-[44px] text-sm sm:text-base bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200"
+                    >
+                        <Brain className="w-4 h-4" />
+                        <span className="hidden sm:inline">Deep Dive</span>
+                        <span className="sm:hidden">Deep Dive</span>
+                    </Button>
                   </div>
 
                   {/* Topic Tags */}
@@ -1047,6 +1126,14 @@ Tell me:
         )}
 
       </div>
+      {deepDiveArticle && (
+        <DeepDiveModal 
+            isOpen={!!deepDiveArticle}
+            onClose={() => setDeepDiveArticle(null)}
+            article={deepDiveArticle}
+            onSubmit={handleDeepDiveSubmit}
+        />
+      )}
     </div>
   )
 }

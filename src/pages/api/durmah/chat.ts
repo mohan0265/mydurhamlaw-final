@@ -135,6 +135,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   // Continuation path
   try {
     // ------------------------------------------------------------------
+    // PART C: Denmark Fix (server-side normalization)
+    // ------------------------------------------------------------------
+    if (/^(hi|hello|hey|yo|ok|thanks)\s+denmark\b/i.test(incoming) || /^denmark([,.!? ]|$)/i.test(incoming)) {
+       console.log('[durmah/chat] Normalizing "Denmark" -> "Durmah" in greeting/address');
+       incoming = incoming.replace(/\bdenmark\b/i, "Durmah");
+    }
+
+    // ------------------------------------------------------------------
     // NEW: Strict News Analysis Mode
     // ------------------------------------------------------------------
     const { mode, article } = (req.body || {}) as { mode?: string, article?: any };
@@ -153,8 +161,9 @@ STRICT GROUNDING RULES:
 4) "Legal concepts" and "essay angles" must be conditional + generic:
    - use phrases like "may raise issues around...", "could be used to discuss..."
    - avoid statements that assert real-world conditions (e.g., "overcrowding is an issue")
+   - NEVER invent facts (e.g., "managed by Serco", "accommodates sex offenders") if not in source.
 5) If input is thin, say so explicitly: "Based on the limited info provided..."
-6) Output must follow the requested numbered structure (1-4).
+6) Output must follow the requested numbered structure (1-4). include Section 4: "Cite safely".
 7) "Cite safely" reminder must reference only the given source + url.
 
 PROVIDED INFORMATION:
@@ -162,6 +171,7 @@ Title: ${article.title}
 Source: ${article.source}
 URL: ${article.url}
 Summary: ${article.summary || "No summary provided."}
+${article.studentNotes ? `\nUSER NOTES / EXCERPTS:\n"${article.studentNotes}"\n(Treat these notes as part of the provided text to analyze)` : ''}
 `;
 
       const prompt = [
