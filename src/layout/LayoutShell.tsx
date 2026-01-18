@@ -51,7 +51,7 @@ export default function LayoutShell({ children }: Props) {
       <GlobalFooter />
       
       {/* Global Floating Widgets - Show on all pages except auth pages and setup */}
-      {!isAuthPage && router.pathname !== '/setup' && (
+      {!isAuthPage && !router.pathname.startsWith('/setup') && (
         <>
           <DurmahWidget />
           <AWYWidget />

@@ -150,7 +150,8 @@ export default function ProfileTimetablePage() {
         body: JSON.stringify({ task_key: 'connect_timetable' }),
       }).catch(err => console.warn('[Onboarding] Timetable mark failed', err));
 
-      router.push('/dashboard');
+      // Hard navigation to force re-fetch of profile
+      window.location.href = '/dashboard';
       setTimeout(() => {
         toast('Your Year-at-a-Glance will update shortly.', { icon: '📅', duration: 4000 });
       }, 500);
@@ -379,7 +380,7 @@ export default function ProfileTimetablePage() {
                   <div className="pt-6 border-t border-gray-100 flex justify-between items-center">
                     <button
                       type="button"
-                      onClick={() => router.push('/dashboard')}
+                      onClick={() => window.location.href = '/dashboard'}
                       className="text-gray-500 hover:text-gray-700 font-medium"
                     >
                       Skip for now

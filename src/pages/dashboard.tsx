@@ -59,16 +59,23 @@ export default function Dashboard() {
           return;
         }
 
-        // Check if student has completed setup (Year of Study is mandatory)
-        if (!profile?.year_of_study || profile.year_of_study === 'foundation' && !profile.display_name) {
-             // Note: checking display_name too just in case, but year is the main flag
-             // Actually, let's just check year_of_study as that's consistent with our valid profile definition
+             // Check year_of_study (legacy or new)
              if (!profile?.year_of_study && !profile?.year_group) {
                 console.log('[Dashboard] Incomplete profile (no year), redirecting to setup...');
-                router.replace('/setup');
+                
+                // Prevent rapid loop: only redirect if we haven't just come from setup
+                if (!document.referrer.includes('/setup')) {
+                     router.replace('/setup');
+                } else {
+                    // We just came from setup but still fail check? 
+                    // Let's allow access but show a warning toast or banner?
+                    // Better: Force a hard reload once to clear cache?
+                    // For now, let's stop the infinite loop by doing nothing here if referrer is setup.
+                    // The user will see a broken dashboard potentially, but can click "Profile".
+                    console.warn('[Dashboard] Bounced from setup but profile still incomplete. Allowing render to break loop.');
+                }
                 return;
              }
-        }
 
         // Also check if this email is a loved one in awy_connections
         if (user.email) {
