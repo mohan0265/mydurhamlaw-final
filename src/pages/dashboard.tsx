@@ -8,7 +8,7 @@ import { getSupabaseClient } from '@/lib/supabase/client';
 
 // Billing / trial
 import { SubscriptionStatus } from '@/components/billing/SubscriptionStatus';
-import { BookOpen, FileText, Calendar, Target, User } from 'lucide-react';
+import { BookOpen, FileText, Calendar, Target, User, Newspaper } from 'lucide-react';
 
 // Existing widgets
 import GreetingWidget from '@/components/dashboard/GreetingWidget';
@@ -198,11 +198,15 @@ export default function Dashboard() {
                 <Target className="w-4 h-4" /> Exam Prep
               </Link>
               <Link
-                href="/profile-timetable"
-                className="rounded-xl border bg-gray-50 p-4 text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors flex items-center gap-2"
-                title="Setup your profile and timetable"
+                href="/legal/tools/legal-news-feed"
+                className="rounded-xl border bg-pink-50 p-4 text-sm font-medium text-pink-700 hover:bg-pink-100 border-pink-100 transition-colors flex items-center gap-2 group"
+                title="Access live legal news updates"
               >
-                <User className="w-4 h-4" /> Profile
+                <div className="relative">
+                  <Newspaper className="w-4 h-4" />
+                  <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
+                </div>
+                Live Legal News
               </Link>
             </div>
 

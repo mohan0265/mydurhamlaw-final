@@ -198,7 +198,7 @@ export default function GlobalHeader() {
       items: [
         { label: 'Student Lounge', href: '/lounge' },
         { label: 'Community Hub', href: '/community' },
-        { label: 'Legal News', href: '/legal/tools/legal-news-feed' },
+        // Live News moved to top level
       ],
     }),
     []
@@ -211,6 +211,7 @@ export default function GlobalHeader() {
         { label: 'About', href: '/about' },
         { label: 'Pricing', href: '/pricing' },
         { label: 'Contact', href: '/contact' },
+        { label: 'My Profile', href: '/profile-timetable' }, // Moved Profile here
       ],
     }),
     []
@@ -266,6 +267,15 @@ export default function GlobalHeader() {
               <HoverMenu label={studyMenu.label} items={studyMenu.items} />
               {communityMenu && <HoverMenu label={communityMenu.label} items={communityMenu.items} />}
               <HoverMenu label={infoMenu.label} items={infoMenu.items} />
+              
+              {/* NEW: Prominent Live Legal News Link */}
+              <Link
+                href="/legal/tools/legal-news-feed"
+                className="px-3 py-2 rounded-md text-sm font-bold text-pink-200 hover:text-white transition-all flex items-center gap-1.5 animate-pulse hover:animate-none group"
+              >
+                  <span className="w-2 h-2 rounded-full bg-red-500 box-shadow-glow"></span>
+                  Live News!
+              </Link>
             </div>
 
             {/* Right (desktop) */}
