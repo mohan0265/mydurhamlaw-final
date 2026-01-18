@@ -115,7 +115,21 @@ export async function streamGPT4oResponse(
 
   const streamChunks = (async function* () {
     while (true) {
-      const { done, value } = await reader.read();
+      // Create a race between the reader and a timeout
+      const readPromise = reader.read();
+      const timeoutPromise = new Promise<any>((resolve) => 
+        setTimeout(() => resolve({ timeout: true }), 15000)
+      );
+
+      const result = await Promise.race([readPromise, timeoutPromise]);
+
+      if (result.timeout) {
+        console.warn('Stream timed out waiting for next chunk');
+        break; // Exit loop, treating as done
+      }
+
+      const { done, value } = result;
+      
       if (done) {
         break;
       }
@@ -123,10 +137,14 @@ export async function streamGPT4oResponse(
       const lines = chunk.split('\n\n');
       for (const line of lines) {
         if (line.startsWith('data: ')) {
-          const json = JSON.parse(line.slice(6));
-          const content = json.choices[0]?.delta?.content;
-          if (content) {
-            yield content;
+          try {
+            const json = JSON.parse(line.slice(6));
+            const content = json.choices[0]?.delta?.content;
+            if (content) {
+              yield content;
+            }
+          } catch (e) {
+            // Ignore parse errors on partial chunks
           }
         }
       }
