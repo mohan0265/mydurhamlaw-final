@@ -6,21 +6,11 @@ import { Button } from '@/components/ui/Button';
 import { 
   ArrowLeft, FileAudio, Calendar, User, Book, ChevronDown, ChevronUp,
   MessageSquare, Lightbulb, HelpCircle, GraduationCap, BookOpen, Loader2, Sparkles,
-  ShieldAlert, AlertTriangle, PlusCircle, CheckCircle
+  ShieldAlert, AlertTriangle, PlusCircle, CheckCircle, ExternalLink
 } from 'lucide-react';
-import toast from 'react-hot-toast';
-
-interface ExamSignal {
-  topic_title: string;
-  signal_strength: number;
-  confidence_label: string;
-  evidence_quotes: string[];
-  why_it_matters: string;
-  what_to_master: string[];
-  common_traps: string[];
-  practice_prompts: Array<{ type: string; prompt: string }>;
-  tags: string[];
-}
+// ... imports
+import { getSupabaseClient } from '@/lib/supabase/client';
+// ... existing imports
 
 interface LectureDetail {
   id: string;
@@ -29,6 +19,7 @@ interface LectureDetail {
   module_name?: string;
   lecturer_name?: string;
   lecture_date?: string;
+  panopto_url?: string; // Added field
   status: string;
   transcript?: string;
   word_count?: number;
@@ -51,6 +42,10 @@ export default function LectureDetailPage() {
   const [showTranscript, setShowTranscript] = useState(false);
   const [activeTab, setActiveTab] = useState<'summary' | 'keypoints' | 'hooks' | 'discussion' | 'exam' | 'glossary'>('summary');
   
+  // URL Editing State
+  const [isEditingUrl, setIsEditingUrl] = useState(false);
+  const [editedUrl, setEditedUrl] = useState('');
+
   // New State for Filters and UI
   const [signalFilter, setSignalFilter] = useState<'All' | 'High' | 'Medium' | 'Low'>('All');
   const [expandedSignal, setExpandedSignal] = useState<string | null>(null);
@@ -63,6 +58,7 @@ export default function LectureDetailPage() {
         if (res.ok) {
           const data = await res.json();
           setLecture(data.lecture);
+          setEditedUrl(data.lecture.panopto_url || '');
         }
       } catch (error) {
         console.error('Failed to fetch lecture:', error);
@@ -73,6 +69,28 @@ export default function LectureDetailPage() {
     fetchLecture();
   }, [id]);
 
+  const handleUpdateUrl = async () => {
+      if (!lecture) return;
+      const supabase = getSupabaseClient();
+      const toastId = toast.loading('Updating source link...');
+      
+      try {
+          const { error } = await supabase
+              .from('lectures')
+              .update({ panopto_url: editedUrl })
+              .eq('id', lecture.id);
+          
+          if (error) throw error;
+          
+          setLecture({ ...lecture, panopto_url: editedUrl });
+          setIsEditingUrl(false);
+          toast.success('Source link updated', { id: toastId });
+      } catch (err) {
+          console.error(err);
+          toast.error('Failed to update link', { id: toastId });
+      }
+  };
+
   const formatDate = (dateStr?: string) => {
     if (!dateStr) return '';
     return new Date(dateStr).toLocaleDateString('en-GB', {
@@ -80,7 +98,9 @@ export default function LectureDetailPage() {
     });
   };
 
+  // ... handleAddToRevision ...
   const handleAddToRevision = async (signal: ExamSignal) => {
+    // ... existing implementation
     const toastId = toast.loading('Adding to revision...');
     try {
         const res = await fetch('/api/study/revision', {
@@ -123,7 +143,7 @@ export default function LectureDetailPage() {
       </Button>
 
       {/* Header */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
+      <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6 shadow-sm">
         <div className="flex items-start gap-4">
           <div className="w-14 h-14 bg-purple-100 rounded-xl flex items-center justify-center flex-shrink-0">
             <FileAudio className="w-7 h-7 text-purple-600" />
@@ -135,6 +155,47 @@ export default function LectureDetailPage() {
                {lecture.lecturer_name && <span className="flex items-center gap-1"><User className="w-4 h-4" />{lecture.lecturer_name}</span>}
                {lecture.lecture_date && <span className="flex items-center gap-1"><Calendar className="w-4 h-4" />{formatDate(lecture.lecture_date)}</span>}
             </div>
+
+            {/* SOURCE LINK ROW */}
+            <div className="mt-4 pt-4 border-t border-gray-100 flex items-center gap-2">
+                <span className="text-xs font-bold text-gray-500 uppercase tracking-wide">Source Link:</span>
+                
+                {isEditingUrl ? (
+                    <div className="flex items-center gap-2 flex-1">
+                        <input 
+                            type="text" 
+                            value={editedUrl} 
+                            onChange={(e) => setEditedUrl(e.target.value)}
+                            className="flex-1 text-sm border-gray-300 rounded-md focus:ring-purple-500 focus:border-purple-500"
+                            placeholder="https://durham.cloud.panopto.eu/..."
+                        />
+                        <Button size="sm" onClick={handleUpdateUrl} className="bg-purple-600 text-white hover:bg-purple-700">Save</Button>
+                        <Button size="sm" variant="ghost" onClick={() => setIsEditingUrl(false)}>Cancel</Button>
+                    </div>
+                ) : (
+                    <div className="flex items-center gap-3">
+                        {lecture.panopto_url ? (
+                            <a href={lecture.panopto_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-sm font-medium text-purple-600 hover:text-purple-800 hover:underline category-link">
+                                <ExternalLink className="w-3.5 h-3.5" />
+                                {lecture.panopto_url.includes('panopto') ? 'Watch on Panopto' : 'Open Source Link'}
+                            </a>
+                        ) : (
+                            <span className="text-sm text-gray-400 italic">No source link provided</span>
+                        )}
+                        
+                        <button 
+                            onClick={() => { setIsEditingUrl(true); setEditedUrl(lecture.panopto_url || ''); }}
+                            className="text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-md hover:bg-gray-100"
+                            title="Edit URL"
+                        >
+                            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                            </svg>
+                        </button>
+                    </div>
+                )}
+            </div>
+
           </div>
         </div>
       </div>
