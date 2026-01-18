@@ -96,7 +96,7 @@ export default function Dashboard() {
            {/* YAAG */}
            <CoreActionCard 
               title="Year at a Glance"
-              subtitle="See the full year in 3 terms — workload, deadlines, and peaks."
+              subtitle="See the full year in 3 terms - workload, deadlines, and peaks."
               icon={<Calendar className="h-5 w-5 text-blue-600" />}
               stat="This week: 14"
               cta="Open"
