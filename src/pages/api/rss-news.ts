@@ -64,7 +64,21 @@ const RSS_FEEDS: RSSFeedConfig[] = [
     url: 'https://www.scottishlegal.com/feed',
     sourceType: 'uk-legal',
     category: 'Legal News',
-    enabled: false // Fallback source
+    enabled: true // Enabled for comparative law context
+  },
+  {
+    name: 'The Guardian Law',
+    url: 'https://www.theguardian.com/law/rss',
+    sourceType: 'uk-legal',
+    category: 'Legal Analysis',
+    enabled: true
+  },
+  {
+    name: 'Judiciary UK',
+    url: 'https://www.judiciary.uk/feed/',
+    sourceType: 'government',
+    category: 'Court Judgments',
+    enabled: true
   }
 ]
 
@@ -314,16 +328,17 @@ function extractAdvancedTopicTags(title: string, content: string, sourceType: st
 
   // General legal tags
   const legalMappings = {
-    'Court': ['court', 'judge', 'ruling', 'verdict', 'trial', 'appeal', 'tribunal', 'hearing'],
-    'Policy': ['policy', 'regulation', 'legislation', 'reform', 'government', 'parliament'],
-    'Criminal': ['criminal', 'crime', 'prosecution', 'sentence', 'police', 'arrest', 'conviction'],
-    'Civil': ['civil', 'contract', 'tort', 'negligence', 'damages', 'compensation'],
-    'Human Rights': ['human rights', 'discrimination', 'equality', 'freedom', 'liberty', 'echr'],
-    'Property': ['property', 'housing', 'landlord', 'tenant', 'conveyancing', 'planning'],
-    'Employment': ['employment', 'workplace', 'dismissal', 'redundancy', 'discrimination'],
+    'Court': ['court', 'judge', 'ruling', 'verdict', 'trial', 'appeal', 'tribunal', 'hearing', 'judgment'],
+    'Public Law': ['judicial review', 'constitution', 'parliament', 'sovereignty', 'human rights act', 'prerogative', 'administrative law'],
+    'EU Law': ['eu law', 'european union', 'brexit', 'ecj', 'cjue', 'single market'],
+    'Tort': ['tort', 'negligence', 'duty of care', 'nuisance', 'defamation', 'vicarious liability'],
+    'Contract': ['contract', 'breach', 'offer', 'acceptance', 'consideration', 'terms'],
+    'Criminal': ['criminal', 'crime', 'prosecution', 'sentence', 'police', 'arrest', 'conviction', 'mens rea', 'actus reus'],
+    'Property': ['property', 'housing', 'landlord', 'tenant', 'conveyancing', 'planning', 'land law', 'lease'],
+    'Employment': ['employment', 'workplace', 'dismissal', 'redundancy', 'discrimination', 'tribunal'],
     'Family': ['family', 'divorce', 'child', 'custody', 'marriage', 'adoption', 'domestic'],
-    'Commercial': ['business', 'commercial', 'company', 'corporate', 'insolvency', 'merger'],
-    'Technology': ['technology', 'digital', 'cyber', 'data protection', 'gdpr', 'ai']
+    'Commercial': ['business', 'commercial', 'company', 'corporate', 'insolvency', 'merger', 'antitrust'],
+    'Technology': ['technology', 'digital', 'cyber', 'data protection', 'gdpr', 'ai', 'crypto']
   }
 
   Object.entries(legalMappings).forEach(([tag, keywords]) => {
