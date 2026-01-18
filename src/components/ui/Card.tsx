@@ -8,9 +8,10 @@ interface CardProps {
   hover?: boolean
   gradient?: boolean
   style?: React.CSSProperties
+  onClick?: () => void;
 }
 
-export function Card({ children, className = '', hover = false, gradient = false, style }: CardProps) {
+export function Card({ children, className = '', hover = false, gradient = false, style, onClick }: CardProps) {
   return (
     <div 
       className={`
@@ -20,6 +21,7 @@ export function Card({ children, className = '', hover = false, gradient = false
         ${className}
       `}
       style={style}
+      onClick={onClick}
     >
       {children}
     </div>
