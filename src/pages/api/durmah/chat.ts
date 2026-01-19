@@ -1,6 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs';
-import { buildDurmahContext } from '@/lib/durmah/contextBuilder';
 import { enhanceDurmahContext } from '@/lib/durmah/contextBuilderEnhanced';
 import { DEFAULT_TZ, formatNowPacket, getDaysLeft } from '@/lib/durmah/timezone';
 
@@ -30,139 +29,85 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(405).json({ ok: false, error: 'method_not_allowed' });
   }
 
-  // FIXED: Use standard Supabase auth helper (same as other endpoints)
-  // This properly handles cookies unlike the custom getApiAuth function
-  const supabase = createServerSupabaseClient({ req, res });
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
-  
-  if (authError || !user) {
-    console.error('[durmah/chat] Auth error:', authError?.message || 'No user');
-    return res.status(401).json({ ok: false, error: 'unauthorized' });
-  }
-
-  const userId = user.id;
-
-  // Build minimal base context directly instead of calling buildDurmahContext
-  // Get or create thread
-  const { data: thread } = await supabase
-    .from('durmah_threads')
-    .select('id, onboarding_state, last_summary, last_message_at')
-    .eq('user_id', userId)
-    .maybeSingle();
-
-  const threadId = thread?.id || (await supabase
-    .from('durmah_threads')
-    .upsert({
-      user_id: userId,
-      onboarding_state: 'new',
-      last_seen_at: new Date().toISOString(),
-      last_message_at: new Date().toISOString(),
-    }, { onConflict: 'user_id' })
-    .select('id')
-    .single()).data?.id;
-
-  // Get recent messages
-  const { data: messages } = await supabase
-    .from('durmah_messages')
-    .select('role, content, source, created_at')
-    .eq('user_id', userId)
-    .eq('thread_id', threadId)
-    .order('created_at', { ascending: true })
-    .limit(12);
-
-  const baseContext = {
-    userId,
-    threadId,
-    onboardingState: thread?.onboarding_state || 'active',
-    lastSummary: thread?.last_summary,
-    recentMessages: messages || [],
-  };
-  
-  // NEW: Enhance context with assignments and AWY data
-  const context = await enhanceDurmahContext(supabase, userId, baseContext as any);
-    const { message, source, mode, article, sessionId } = (req.body || {}) as { message?: string; source?: string; mode?: string; article?: any, sessionId?: string };
-    let incoming = (message || '').trim();
-    const nowIso = new Date().toISOString();
+  try {
+    // Auth
+    const supabase = createServerSupabaseClient({ req, res });
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
     
-    // Ensure session ID if expected, though we can Default to a new one if missing?
-    // We'll let database default handle it if missing (gen_random_uuid), or use provided.
-    // Ideally we use the one providing by client for continuity.
-    const activeSessionId = sessionId; // If undefined, DB default applies? No, DB default is robust but if we want to group user session we need it.
-    // If client provides it, use it. If not, we can't really group "This session" effectively across backend calls unless we generate there.
-    // Check insert spread.
-
-    // ... (logic)
-
-    // Save to history (optional, but good for UX continuity)
-      const { data: inserted } = await supabase.from('durmah_messages').insert([
-        { 
-          thread_id: context.threadId, 
-          user_id: userId, 
-          role: 'user', 
-          content: incoming, 
-          source: source || 'news_analysis',
-          session_id: activeSessionId,
-          saved_at: null 
-        },
-        { 
-          thread_id: context.threadId, 
-          user_id: userId, 
-          role: 'assistant', 
-          content: reply, 
-          source: source || 'news_analysis',
-          session_id: activeSessionId,
-          saved_at: null 
-        }
-      ]).select('id, role');
-
-      const userMsgId = inserted?.find(m => m.role === 'user')?.id;
-      const assistantMsgId = inserted?.find(m => m.role === 'assistant')?.id;
-      
-      // Update summary for continuity
-      await supabase.from('durmah_threads').update({
-        last_message_at: nowIso,
-        last_seen_at: nowIso,
-        last_summary: `Analyzed news: ${article.title}`
-      }).eq('id', context.threadId);
-
-      return res.status(200).json({ ok: true, reply, onboardingState: context.onboardingState, userMsgId, assistantMsgId });
+    if (authError || !user) {
+      console.error('[durmah/chat] Auth error:', authError?.message || 'No user');
+      return res.status(401).json({ ok: false, error: 'unauthorized' });
     }
-    
-    // ------------------------------------------------------------------
-    // END Strict News Logic -> Fallthrough to Standard Chat
-    // ------------------------------------------------------------------
 
-    const history = recentMessages.slice(-10).map((m) => ({
+    const userId = user.id;
+
+    // Get or create thread
+    const { data: thread } = await supabase
+      .from('durmah_threads')
+      .select('id, onboarding_state, last_summary, last_message_at')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    const threadId = thread?.id || (await supabase
+      .from('durmah_threads')
+      .upsert({
+        user_id: userId,
+        onboarding_state: 'new',
+        last_seen_at: new Date().toISOString(),
+        last_message_at: new Date().toISOString(),
+      }, { onConflict: 'user_id' })
+      .select('id')
+      .single()).data?.id;
+
+    // Get recent messages
+    const { data: recentMessages } = await supabase
+      .from('durmah_messages')
+      .select('role, content, source, created_at')
+      .eq('user_id', userId)
+      .eq('thread_id', threadId)
+      .order('created_at', { ascending: true })
+      .limit(12);
+
+    const baseContext = {
+      userId,
+      threadId,
+      onboardingState: thread?.onboarding_state || 'active',
+      lastSummary: thread?.last_summary,
+      recentMessages: recentMessages || [],
+    };
+    
+    // Enhance context with assignments and AWY data
+    const context = await enhanceDurmahContext(supabase, userId, baseContext as any);
+    
+    // Parse request body
+    const { message, source, sessionId } = (req.body || {}) as { 
+      message?: string; 
+      source?: string; 
+      sessionId?: string;
+    };
+    const incoming = (message || '').trim();
+    const nowIso = new Date().toISOString();
+
+    // Build conversation history
+    const history = (recentMessages || []).slice(-10).map((m: any) => ({
       role: m.role,
       content: m.content,
     }));
     
-    // KNOWLEDGE FIX: Use full system prompt with student context
-    // Import at top: buildDurmahSystemPrompt, buildDurmahContextBlock
+    // Build system prompt
     const { buildDurmahSystemPrompt, buildDurmahContextBlock } = await import('@/lib/durmah/systemPrompt');
-    
-    // Build context block if we have student data
     let fullSystemPrompt = buildDurmahSystemPrompt();
     
-    // Context has assignments and schedule data from enhanceDurmahContext
-    // Cast to any since enhanceDurmahContext adds extra properties
     const ctx = context as any;
     if (ctx.assignments || ctx.profile) {
-      // TIMEZONE TRUTH: Build NOW packet server-side
       const timeZone = DEFAULT_TZ;
       const nowPacket = formatNowPacket(new Date(), timeZone);
       const todayKey = nowPacket.dayKey;
       
-      console.log(`[durmah/chat] NOW: ${nowPacket.nowText}`);
-      
-      // Map enhanced context assignments to system prompt format
-      // enhanceDurmahContext uses: active, overdue, recentlyCompleted
-      // buildDurmahContextBlock expects: upcoming, overdue, recentlyCreated
       const activeAssignments = ctx.assignments?.active || [];
       const overdueAssignments = ctx.assignments?.overdue || [];
       const recentlyCompleted = ctx.assignments?.recentlyCompleted || [];
       
-      // Transform active assignments to upcoming format with TIMEZONE-AWARE daysLeft
       const upcomingFormatted = activeAssignments
         .filter((a: any) => a.dueDate)
         .map((a: any) => ({
@@ -180,7 +125,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           localTimeISO: nowPacket.isoUTC,
           timezone: timeZone,
         },
-        // TIMEZONE TRUTH: Include academic.now for system prompt
         academic: {
           timezone: timeZone,
           now: nowPacket,
@@ -195,7 +139,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           todaysClasses: ctx.schedule?.todaysClasses || [],
         },
         yaag: ctx.yaag,
-        // Lectures metadata only - content fetched on-demand via tool
         lectures: {
           recent: (ctx.lectures?.recent || []).map((l: any) => ({
             id: l.id,
@@ -212,6 +155,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
     
     // Add conversation history context
+    const systemSummary = thread?.last_summary;
     if (systemSummary && !systemSummary.includes('Durmah')) {
       fullSystemPrompt += `\n\nPrevious conversation: ${systemSummary}`;
     }
@@ -224,7 +168,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const reply = await callOpenAI(prompt as any);
 
-    const { data: insertedStandard } = await supabase.from('durmah_messages').insert([
+    // Save messages with session ID
+    const { data: insertedMessages } = await supabase.from('durmah_messages').insert([
       {
         thread_id: context.threadId,
         user_id: userId,
@@ -245,12 +190,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       },
     ]).select('id, role');
 
-    const userMsgId = insertedStandard?.find(m => m.role === 'user')?.id;
-    const assistantMsgId = insertedStandard?.find(m => m.role === 'assistant')?.id;
+    const userMsgId = insertedMessages?.find(m => m.role === 'user')?.id;
+    const assistantMsgId = insertedMessages?.find(m => m.role === 'assistant')?.id;
 
-    // Update summary with trimmed reply (lightweight rolling summary)
-    const nextSummary =
-      reply.length > 300 ? reply.slice(0, 280) + '…' : reply;
+    // Update summary
+    const nextSummary = reply.length > 300 ? reply.slice(0, 280) + '…' : reply;
 
     await supabase
       .from('durmah_threads')

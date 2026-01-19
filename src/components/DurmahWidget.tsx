@@ -1675,19 +1675,7 @@ User question: ${userText}`;
         )}
 
 
-          {showVoiceStatus && (
-            <span className={`text-[10px] font-medium ${voiceStatusClass}`}>
-              {voiceStatusLabel}
-            </span>
-          )}
-        </div>
-
-        {/* Hidden audio output for Durmah's voice */}
-        <audio
-          ref={audioRef}
-          style={{ display: 'none' }}
-        />
-
+        {/* Right side header controls */}
         <div className="flex items-center gap-2">
           <div className="relative" ref={headerMenuRef}>
             <button
