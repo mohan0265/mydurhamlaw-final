@@ -410,6 +410,12 @@ export default function LectureDetailPage() {
         </div>
       )}
       
+
+// ... existing imports ...
+import LectureChatWidget from '@/components/study/LectureChatWidget';
+
+// ... existing code ...
+
       {/* Transcript Logic (kept same) */}
       {lecture.transcript && (
         <div className="bg-white rounded-xl border border-gray-200 mt-6">
@@ -419,6 +425,13 @@ export default function LectureDetailPage() {
            {showTranscript && <div className="p-4 border-t h-96 overflow-y-auto whitespace-pre-wrap text-sm">{lecture.transcript}</div>}
         </div>
       )}
+
+      {/* EMBEDDED CHAT WIDGET */}
+      <div className="mt-8">
+          <LectureChatWidget lectureId={lecture.id} title={lecture.title} />
+      </div>
+
     </div>
   );
 }
+
