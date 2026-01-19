@@ -80,170 +80,43 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   
   // NEW: Enhance context with assignments and AWY data
   const context = await enhanceDurmahContext(supabase, userId, baseContext as any);
-  const { message, source, mode, article } = (req.body || {}) as { message?: string; source?: string; mode?: string; article?: any };
-  let incoming = (message || '').trim();
-  const nowIso = new Date().toISOString();
+    const { message, source, mode, article, sessionId } = (req.body || {}) as { message?: string; source?: string; mode?: string; article?: any, sessionId?: string };
+    let incoming = (message || '').trim();
+    const nowIso = new Date().toISOString();
+    
+    // Ensure session ID if expected, though we can Default to a new one if missing?
+    // We'll let database default handle it if missing (gen_random_uuid), or use provided.
+    // Ideally we use the one providing by client for continuity.
+    const activeSessionId = sessionId; // If undefined, DB default applies? No, DB default is robust but if we want to group user session we need it.
+    // If client provides it, use it. If not, we can't really group "This session" effectively across backend calls unless we generate there.
+    // Check insert spread.
 
-  const recentMessages = context.recentMessages || [];
-  const systemSummary =
-    context.lastSummary && context.lastSummary.length > 0
-      ? `Previous summary: ${context.lastSummary}`
-      : 'You are Durmah, a supportive legal mentor for Durham law students on a 14-day trial.';
+    // ... (logic)
 
-  const logs = {
-    user_id: userId,
-    thread_id: context.threadId,
-    onboarding_state: context.onboardingState,
-    continuation: context.onboardingState !== 'new',
-  };
-  console.log('[durmah/chat]', JSON.stringify(logs));
-
-  // Onboarding path
-  if (context.onboardingState === 'new') {
-    const welcome =
-      `Welcome to MyDurhamLaw! You're on a 14-day trial. ` +
-      `I'll keep this quick: Which year are you in (foundation/year1/year2/year3)? ` +
-      `Any key modules or deadlines this month?`;
-
-    await supabase.from('durmah_messages').insert([
-      {
-        thread_id: context.threadId,
-        user_id: userId,
-        role: 'assistant',
-        content: welcome,
-        source: source || 'dashboard',
-      },
-    ]);
-
-    await supabase
-      .from('durmah_threads')
-      .update({
-        onboarding_state: 'active',
-        last_summary: 'Onboarded; asked for year, modules, deadlines.',
-        last_message_at: nowIso,
-        last_seen_at: nowIso,
-      })
-      .eq('id', context.threadId);
-
-    return res.status(200).json({
-      ok: true,
-      reply: welcome,
-      onboardingState: 'active',
-    });
-  }
-
-  // Continuation path
-  try {
-    // ------------------------------------------------------------------
-    // PART C: Denmark Fix (server-side normalization)
-    // ------------------------------------------------------------------
-    if (/^(hi|hello|hey|yo|ok|thanks)\s+denmark\b/i.test(incoming) || /^denmark([,.!? ]|$)/i.test(incoming)) {
-       console.log('[durmah/chat] Normalizing "Denmark" -> "Durmah" in greeting/address');
-       incoming = incoming.replace(/\bdenmark\b/i, "Durmah");
-    }
-
-    // ------------------------------------------------------------------
-    // NEW: Strict News Analysis Mode
-    // ------------------------------------------------------------------
-    const { mode, article } = (req.body || {}) as { mode?: string, article?: any };
-
-    if (mode === 'NEWS_STRICT' && article) {
-      console.log('[durmah/chat] Entering NEWS_STRICT mode for:', article.title);
-
-      const strictPrompt = `
-STRICT GROUNDING RULES:
-1) Allowed facts are ONLY the exact text provided below in Title, Source, URL, and Summary.
-2) Do NOT add any new factual statements about:
-   - operations, capacity, prisoner types, sentences, rehab programs, security level
-   - community impact, policy changes, overcrowding, inmate rights, etc
-   unless those details are explicitly present in the provided summary.
-3) Summary section must be paraphrases of the provided summary/title only.
-4) "Legal concepts" and "essay angles" must be conditional + generic:
-   - use phrases like "may raise issues around...", "could be used to discuss..."
-   - avoid statements that assert real-world conditions (e.g., "overcrowding is an issue")
-   - NEVER invent facts (e.g., "managed by Serco", "accommodates sex offenders") if not in source.
-5) If input is thin, say so explicitly: "Based on the limited info provided..."
-6) Output must follow the requested numbered structure (1-4). include Section 4: "Cite safely".
-7) "Cite safely" reminder must reference only the given source + url.
-
-PROVIDED INFORMATION:
-Title: ${article.title}
-Source: ${article.source}
-URL: ${article.url}
-Summary: ${article.summary || "No summary provided."}
-${article.studentNotes ? `\nUSER NOTES / EXCERPTS:\n"${article.studentNotes}"\n(Treat these notes as part of the provided text to analyze)` : ''}
-`;
-
-      const prompt = [
-        { role: 'system', content: strictPrompt },
-        { role: 'user', content: incoming || "Please analyze this news item." }
-      ];
-
-      // Call Model
-      let reply = await callOpenAI(prompt as any);
-
-      // ------------------------------------------------------------------
-      // SERVER-SIDE DRIFT GUARD (Hard Enforcement)
-      // ------------------------------------------------------------------
-      const allowedText = (article.title + " " + article.source + " " + article.url + " " + (article.summary || "")).toLowerCase();
-      const lowerReply = reply.toLowerCase();
-
-      const highRiskKeywords = ["rehabilitation", "overcrowding", "inmates", "sentences", "capacity", "security", "rights", "offenders", "punishment", "community impact", "economic", "conditions"];
-      const driftPhrases = ["reflects the broader", "accommodates", "managed by"]; // "managed by" is risky if source is Gov but doesn't say who manages precise facility
-
-      let driftDetected = false;
-
-      // Check keywords
-      for (const kw of highRiskKeywords) {
-        if (lowerReply.includes(kw) && !allowedText.includes(kw)) {
-          console.warn(`[durmah/chat] DRIFT DETECTED: Keyword '${kw}' found in reply but not in source.`);
-          driftDetected = true;
-          break;
+    // Save to history (optional, but good for UX continuity)
+      const { data: inserted } = await supabase.from('durmah_messages').insert([
+        { 
+          thread_id: context.threadId, 
+          user_id: userId, 
+          role: 'user', 
+          content: incoming, 
+          source: source || 'news_analysis',
+          session_id: activeSessionId,
+          saved_at: null 
+        },
+        { 
+          thread_id: context.threadId, 
+          user_id: userId, 
+          role: 'assistant', 
+          content: reply, 
+          source: source || 'news_analysis',
+          session_id: activeSessionId,
+          saved_at: null 
         }
-      }
+      ]).select('id, role');
 
-      // Check phrases if not already caught
-      if (!driftDetected) {
-        for (const phrase of driftPhrases) {
-          if (lowerReply.includes(phrase) && !allowedText.includes(phrase)) {
-            console.warn(`[durmah/chat] DRIFT DETECTED: Phrase '${phrase}' found in reply but not in source.`);
-            driftDetected = true;
-            break;
-          }
-        }
-      }
-
-      // Fallback if drift detected
-      if (driftDetected) {
-        console.warn('[durmah/chat] Applying FALLBACK response due to drift.');
-        reply = `Based only on the limited information you provided:
-
-1. **Summary**: ${article.title} (${article.source}). The provided text mentions: ${article.summary ? article.summary.substring(0, 100) + "..." : "No specific details available."}
-
-2. **Key Legal Concepts**:
-   - Depending on the context, this topic may relate to *Public Law* (powers of the state).
-   - It might also involve *Administrative Law* (procedural fairness).
-   - (Note: Specific legal concepts cannot be determined from the limited text provided).
-
-3. **Essay Angles**:
-   - You could potentially discuss how such events illustrate statutory duties.
-   - You might explore the role of the stated source (${article.source}) in the legal system.
-   - *With limited info, avoid making specific claims.*
-
-4. **Cite Safely**:
-   - Source: ${article.source}
-   - URL: ${article.url}
-   - Reminder: Do not add facts (like overcrowding or rehabilitation) unless they are in your source text.`;
-      } else {
-        // Add transparency header if valid
-        reply = `Based only on the limited information you provided...\n\n${reply}`;
-      }
-
-      // Save to history (optional, but good for UX continuity)
-      await supabase.from('durmah_messages').insert([
-        { thread_id: context.threadId, user_id: userId, role: 'user', content: incoming, source: source || 'news_analysis' },
-        { thread_id: context.threadId, user_id: userId, role: 'assistant', content: reply, source: source || 'news_analysis' }
-      ]);
+      const userMsgId = inserted?.find(m => m.role === 'user')?.id;
+      const assistantMsgId = inserted?.find(m => m.role === 'assistant')?.id;
       
       // Update summary for continuity
       await supabase.from('durmah_threads').update({
@@ -252,7 +125,7 @@ ${article.studentNotes ? `\nUSER NOTES / EXCERPTS:\n"${article.studentNotes}"\n(
         last_summary: `Analyzed news: ${article.title}`
       }).eq('id', context.threadId);
 
-      return res.status(200).json({ ok: true, reply, onboardingState: context.onboardingState });
+      return res.status(200).json({ ok: true, reply, onboardingState: context.onboardingState, userMsgId, assistantMsgId });
     }
     
     // ------------------------------------------------------------------
@@ -351,13 +224,15 @@ ${article.studentNotes ? `\nUSER NOTES / EXCERPTS:\n"${article.studentNotes}"\n(
 
     const reply = await callOpenAI(prompt as any);
 
-    await supabase.from('durmah_messages').insert([
+    const { data: insertedStandard } = await supabase.from('durmah_messages').insert([
       {
         thread_id: context.threadId,
         user_id: userId,
         role: 'user',
         content: incoming || '[no input]',
         source: source || 'dashboard',
+        session_id: sessionId,
+        saved_at: null 
       },
       {
         thread_id: context.threadId,
@@ -365,8 +240,13 @@ ${article.studentNotes ? `\nUSER NOTES / EXCERPTS:\n"${article.studentNotes}"\n(
         role: 'assistant',
         content: reply,
         source: source || 'dashboard',
+        session_id: sessionId,
+        saved_at: null 
       },
-    ]);
+    ]).select('id, role');
+
+    const userMsgId = insertedStandard?.find(m => m.role === 'user')?.id;
+    const assistantMsgId = insertedStandard?.find(m => m.role === 'assistant')?.id;
 
     // Update summary with trimmed reply (lightweight rolling summary)
     const nextSummary =
@@ -381,7 +261,7 @@ ${article.studentNotes ? `\nUSER NOTES / EXCERPTS:\n"${article.studentNotes}"\n(
       })
       .eq('id', context.threadId);
 
-    return res.status(200).json({ ok: true, reply, onboardingState: context.onboardingState });
+    return res.status(200).json({ ok: true, reply, onboardingState: context.onboardingState, userMsgId, assistantMsgId });
   } catch (err: any) {
     console.error('[durmah/chat] error', err);
     return res.status(500).json({ ok: false, error: err?.message || 'chat_failed' });

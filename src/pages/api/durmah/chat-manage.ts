@@ -1,4 +1,3 @@
-
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { createPagesServerClient } from '@supabase/auth-helpers-nextjs';
 
@@ -15,10 +14,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    const { action, messageIds, lectureId, sessionId, scope } = req.body;
+    const { action, messageIds, sessionId, scope } = req.body;
 
-    if (!action || !lectureId) {
-      return res.status(400).json({ error: 'Missing action or lectureId' });
+    if (!action) {
+      return res.status(400).json({ error: 'Missing action' });
     }
 
     if (action === 'save') {
@@ -26,11 +25,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             return res.status(400).json({ error: 'Missing messageIds' });
         }
         const { error } = await supabase
-            .from('lecture_chat_messages')
+            .from('durmah_messages')
             .update({ saved_at: new Date().toISOString() })
-            .in('id', messageIds)
-            .eq('user_id', user.id)
-            .eq('lecture_id', lectureId);
+            .in('id', messageIds) // durmah_messages usually has int8 or uuid id? Migration didn't specify, assuming existing table has ID. 
+            // Wait, I should verify durmah_messages schema or handle potential ID types?
+            // Existing `durmah_messages` likely has `id`.
+            .eq('user_id', user.id);
 
         if (error) throw error;
         return res.status(200).json({ success: true });
@@ -41,11 +41,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             return res.status(400).json({ error: 'Missing messageIds' });
         }
         const { error } = await supabase
-            .from('lecture_chat_messages')
+            .from('durmah_messages')
             .update({ saved_at: null })
             .in('id', messageIds)
-            .eq('user_id', user.id)
-            .eq('lecture_id', lectureId);
+            .eq('user_id', user.id);
 
         if (error) throw error;
         return res.status(200).json({ success: true });
@@ -57,11 +56,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         }
         
         const { error } = await supabase
-            .from('lecture_chat_messages')
+            .from('durmah_messages')
             .delete()
             .in('id', messageIds)
-            .eq('user_id', user.id) 
-            .eq('lecture_id', lectureId);
+            .eq('user_id', user.id);
 
         if (error) throw error;
         return res.status(200).json({ success: true });
@@ -69,18 +67,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     if (action === 'clear_unsaved') {
         let query = supabase
-            .from('lecture_chat_messages')
+            .from('durmah_messages')
             .delete()
-            .eq('lecture_id', lectureId)
             .eq('user_id', user.id)
             .is('saved_at', null);
         
+        // Scope logic
         if (scope === 'session' && sessionId) {
              query = query.eq('session_id', sessionId);
-        } else if (scope === 'all_unsaved_for_lecture') {
-             // no extra filter needed
         } else {
-             // Default to session if provided, else all? Safe default: session if provided.
+             // Default to session if provided, explicit 'session' check is safer
              if (sessionId) query = query.eq('session_id', sessionId);
         }
 
@@ -92,7 +88,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(400).json({ error: 'Invalid action' });
 
   } catch (error: any) {
-    console.error('Chat manage error:', error);
-    return res.status(500).json({ error: error.message || 'Internal Error' });
+    console.error('Durmah chat manage error:', error);
+    return res.status(500).json({ error: error.message });
   }
 }

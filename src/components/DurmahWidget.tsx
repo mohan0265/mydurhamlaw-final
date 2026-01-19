@@ -16,7 +16,7 @@ import type { StudentContext } from "@/types/durmahContext";
 import type { DurmahContextPacket } from "@/types/durmah";
 import { formatTodayForDisplay } from "@/lib/durmah/phase";
 import { useDurmahSettings } from "@/hooks/useDurmahSettings";
-import { Settings, X, ArrowRight, AlertTriangle, Check, Volume2, Brain, Zap, RefreshCw, MoreHorizontal, Trash2, Smile } from "lucide-react";
+import { Settings, X, ArrowRight, AlertTriangle, Check, Volume2, Brain, Zap, RefreshCw, MoreHorizontal, Trash2, Smile, CheckSquare, Square, Save, Bookmark, Filter } from "lucide-react";
 import Link from 'next/link';
 import toast from "react-hot-toast";
 import { useRouter } from 'next/router';
@@ -40,7 +40,14 @@ const VOICE_PROVIDER = getVoiceProvider();
 const useVoiceHook = VOICE_PROVIDER === 'gemini' ? useDurmahGeminiLive : useDurmahRealtime;
 console.log('[DurmahWidget] Using voice provider:', VOICE_PROVIDER);
 
-type Msg = { role: "durmah" | "you"; text: string; ts: number };
+type Msg = { 
+  id?: string;
+  role: "durmah" | "you"; 
+  text: string; 
+  ts: number;
+  saved_at?: string | null;
+  session_id?: string;
+};
 
 function inferTopic(text: string) {
   return text.split(/\s+/).slice(0, 4).join(" ");
@@ -299,6 +306,72 @@ export default function DurmahWidget() {
   const [studentContextData, setStudentContextData] = useState<StudentContext | null>(null);
   const [contextLoading, setContextLoading] = useState(false);
   const [lastProactiveGreeting, setLastProactiveGreeting] = useState<string | null>(null);
+
+  // Select-to-Save State
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [viewMode, setViewMode] = useState<'session' | 'saved'>('session');
+
+  // Session ID
+  const sessionIdRef = useRef<string>('');
+  useEffect(() => {
+    if (!sessionIdRef.current && typeof crypto !== 'undefined') {
+       try { sessionIdRef.current = crypto.randomUUID(); } catch(e) { sessionIdRef.current = Date.now().toString(); }
+    }
+  }, []);
+
+  const toggleSelection = (id?: string) => {
+      if (!id) return;
+      const next = new Set(selectedIds);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      setSelectedIds(next);
+  };
+
+  const handleManageAction = async (action: 'save' | 'unsave' | 'delete_selected' | 'clear_unsaved') => {
+      if ((action === 'delete_selected' || action === 'save' || action === 'unsave') && selectedIds.size === 0) return;
+
+      const body: any = { action };
+      if (action === 'clear_unsaved') {
+          if (!window.confirm('Clear all unsaved messages from this session?')) return;
+          body.scope = 'session';
+          body.sessionId = sessionIdRef.current;
+      } else {
+          body.messageIds = Array.from(selectedIds);
+      }
+
+      const toastId = toast.loading('Processing...');
+      try {
+          const res = await fetch('/api/durmah/chat-manage', {
+              method: 'POST',
+              headers: {'Content-Type': 'application/json'},
+              body: JSON.stringify(body)
+          });
+          
+          if (res.ok) {
+              if (action === 'save') {
+                  setMessages(prev => prev.map(m => (m.id && selectedIds.has(m.id)) ? { ...m, saved_at: new Date().toISOString() } : m));
+                  toast.success('Saved selected', { id: toastId });
+              } else if (action === 'unsave') {
+                  setMessages(prev => prev.map(m => (m.id && selectedIds.has(m.id)) ? { ...m, saved_at: null } : m));
+                  toast.success('Unsaved selected', { id: toastId });
+              } else if (action === 'delete_selected') {
+                  setMessages(prev => prev.filter(m => !m.id || !selectedIds.has(m.id)));
+                  toast.success('Deleted', { id: toastId });
+              } else if (action === 'clear_unsaved') {
+                  setMessages(prev => prev.filter(m => m.saved_at)); 
+                  toast.success('Cleared unsaved', { id: toastId });
+              }
+              setSelectedIds(new Set());
+              setIsSelectionMode(false);
+          } else {
+              toast.error('Failed', { id: toastId });
+          }
+      } catch (e) {
+          toast.error('Error', { id: toastId });
+      }
+  };
+
 
   const streamControllerRef = useRef<AbortController | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -1412,7 +1485,7 @@ User question: ${userText}`;
       const response = await fetchAuthed("/api/durmah/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: enrichedMessage, source: "dashboard" }),
+        body: JSON.stringify({ message: enrichedMessage, source: "dashboard", sessionId: sessionIdRef.current }),
       });
 
       if (response.status === 401 || response.status === 403) {
@@ -1422,10 +1495,15 @@ User question: ${userText}`;
       if (!response.ok) throw new Error(await response.text());
       const data = await response.json();
       const replyText = data?.reply || "I'm here if you want to continue.";
+      const { userMsgId, assistantMsgId } = data; // from API
 
       setMessages((current) =>
         mergeDedupedTranscript([
-          ...current.map((m) => (m.ts === assistantId ? { ...m, text: replyText } : m)),
+          ...current.map((m) => {
+              if (m.ts === now) return { ...m, id: userMsgId, session_id: sessionIdRef.current };
+              if (m.ts === assistantId) return { ...m, text: replyText, id: assistantMsgId, session_id: sessionIdRef.current };
+              return m;
+          }),
         ])
       );
     } catch (err: any) {
@@ -1518,35 +1596,84 @@ User question: ${userText}`;
   return (
     <div className="fixed bottom-0 left-0 right-0 sm:left-auto sm:right-6 sm:bottom-24 z-[45] flex flex-col w-full sm:w-[400px] sm:max-w-md h-[450px] sm:h-[600px] max-h-[85vh] sm:max-h-[80vh] overflow-visible rounded-t-3xl sm:rounded-3xl border-t sm:border border-violet-100 bg-white shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.2)] sm:shadow-2xl animate-in slide-in-from-bottom-full sm:slide-in-from-bottom-10 fade-in duration-300">
       {/* Premium Header Ribbon */}
-      <header className="relative flex-none flex items-center justify-between bg-gradient-to-r from-violet-600 via-indigo-600 to-violet-700 px-5 py-4 text-white shadow-md z-30">
-        <div className="flex flex-col">
-          <div className="font-bold text-lg flex items-center gap-2">
-            Durmah
-            <span className="bg-white/20 backdrop-blur-sm rounded-full text-[10px] px-2 py-0.5 font-medium tracking-wide">BETA</span>
-          </div>
-          <span className="text-xs text-violet-100 font-medium">Your Legal Mentor</span>
-          
-          {contextChipText && (
-            <div className="mt-1 inline-flex self-start items-center rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[11px] font-medium text-white/70 backdrop-blur-sm">
-              {contextChipText}
-            </div>
-          )}
+      {/* Premium Header Ribbon */}
+      <header className={`relative flex-none flex items-center justify-between px-5 py-4 text-white shadow-md z-30 transition-colors duration-300 ${isSelectionMode ? 'bg-[#374151]' : 'bg-gradient-to-r from-violet-600 via-indigo-600 to-violet-700'}`}>
+        
+        {isSelectionMode ? (
+             <div className="flex items-center gap-2 w-full">
+                 <button onClick={() => { setIsSelectionMode(false); setSelectedIds(new Set()); }} className="hover:bg-white/10 p-1 rounded">
+                    <X className="w-5 h-5 text-white" />
+                 </button>
+                 <span className="font-bold text-sm flex-1">{selectedIds.size} selected</span>
+                 
+                 {/* Save Selected */}
+                 <button onClick={() => handleManageAction('save')} 
+                        className="flex items-center gap-1 bg-green-500 hover:bg-green-600 px-3 py-1.5 rounded text-xs font-bold transition-colors shadow-sm"
+                        title="Keep only the messages you'll want to revisit.">
+                    <Save className="w-3 h-3" /> Save
+                 </button>
+                 
+                 {/* Clear Unsaved (Contextual) */}
+                 <button onClick={() => handleManageAction('clear_unsaved')} 
+                        className="flex items-center gap-1 bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded text-xs font-bold transition-colors border border-white/10"
+                        title="Remove temporary messages from this session.">
+                    <Trash2 className="w-3 h-3" /> Clear
+                 </button>
+             </div>
+        ) : (
+            <>
+                <div className="flex flex-col">
+                  <div className="font-bold text-lg flex items-center gap-2">
+                    Durmah
+                    <span className="bg-white/20 backdrop-blur-sm rounded-full text-[10px] px-2 py-0.5 font-medium tracking-wide">BETA</span>
+                  </div>
+                  <span className="text-xs text-violet-100 font-medium">Your Legal Mentor</span>
+                  
+                  {contextChipText && (
+                    <div className="mt-1 inline-flex self-start items-center rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[11px] font-medium text-white/70 backdrop-blur-sm">
+                      {contextChipText}
+                    </div>
+                  )}
 
-          {/* Mode Switcher */}
-          <div className="mt-2 flex bg-black/20 rounded-lg p-0.5 self-start backdrop-blur-sm border border-white/10">
-            <button 
-              onClick={(e) => { e.stopPropagation(); setMode('chat'); }}
-              className={`px-3 py-1 text-[10px] font-bold rounded-md transition-all ${mode === 'chat' ? 'bg-white text-violet-700 shadow-sm' : 'text-violet-100 hover:bg-white/10'}`}
-            >
-              Chat
-            </button>
-            <button 
-              onClick={(e) => { e.stopPropagation(); setMode('study'); }}
-              className={`px-3 py-1 text-[10px] font-bold rounded-md transition-all ${mode === 'study' ? 'bg-white text-violet-700 shadow-sm' : 'text-violet-100 hover:bg-white/10'}`}
-            >
-              Study
-            </button>
-          </div>
+                  {/* View/Mode Controls */}
+                  <div className="mt-2 flex gap-2">
+                      {/* View Toggle */}
+                      <div className="flex bg-black/20 rounded-lg p-0.5 self-start backdrop-blur-sm border border-white/10">
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); setViewMode('session'); }}
+                          className={`px-3 py-1 text-[10px] font-bold rounded-md transition-all ${viewMode === 'session' ? 'bg-white text-violet-700 shadow-sm' : 'text-violet-100 hover:bg-white/10'}`}
+                        >
+                          This Session
+                        </button>
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); setViewMode('saved'); }}
+                          className={`px-3 py-1 text-[10px] font-bold rounded-md transition-all ${viewMode === 'saved' ? 'bg-white text-violet-700 shadow-sm' : 'text-violet-100 hover:bg-white/10'}`}
+                        >
+                          Saved
+                        </button>
+                      </div>
+
+                      {/* Select Button */}
+                      {messages.length > 0 && (
+                        <button 
+                            onClick={(e) => { e.stopPropagation(); setIsSelectionMode(true); }}
+                            className="bg-black/20 hover:bg-white/20 p-1.5 rounded-lg text-xs flex items-center gap-1 transition-colors border border-white/10 backdrop-blur-sm text-violet-100"
+                            title="Manage messages"
+                        >
+                            <CheckSquare className="w-4 h-4" />
+                        </button>
+                      )}
+                  </div>
+
+                  {showVoiceStatus && (
+                    <span className={`text-[10px] font-medium ${voiceStatusClass}`}>
+                      {voiceStatusLabel}
+                    </span>
+                  )}
+                </div>
+            </>
+        )}
+
 
           {showVoiceStatus && (
             <span className={`text-[10px] font-medium ${voiceStatusClass}`}>
@@ -1817,19 +1944,72 @@ User question: ${userText}`;
            </div>
         )}
         
-        {messages.map((m) => (
-          <div key={m.ts} className={`flex ${m.role === "you" ? "justify-end" : "justify-start"}`}>
-            <div
-              className={`px-4 py-3 rounded-2xl max-w-[85%] text-sm shadow-sm leading-relaxed ${
-                m.role === "you"
-                  ? "bg-gradient-to-br from-violet-600 to-indigo-600 text-white rounded-tr-sm"
-                  : "bg-white text-gray-800 border border-gray-100 rounded-tl-sm"
-              }`}
-            >
-              {m.text}
-            </div>
-          </div>
-        ))}
+        {/* Filtered Messages Logic */}
+        {(() => {
+            const filteredMessages = viewMode === 'saved' ? messages.filter(m => m.saved_at) : messages;
+            
+            if (filteredMessages.length === 0 && viewMode === 'saved') {
+                return (
+                    <div className="flex flex-col items-center justify-center py-8 text-gray-400 gap-2">
+                        <Bookmark className="w-8 h-8 opacity-20" />
+                        <p className="text-xs">No saved messages yet.</p>
+                    </div>
+                );
+            }
+
+            return filteredMessages.map((m) => (
+              <div key={m.ts} className={`flex ${m.role === "you" ? "justify-end" : "justify-start"} group relative mb-2`}>
+                
+                {/* Selection Checkbox (Left for both, or dynamic?) Let's put it on the far left/right depending on role if we want, or just always left. */}
+                {isSelectionMode && m.id && (
+                    <div className={`flex items-center ${m.role === "you" ? "mr-2 order-last" : "ml-2 order-first"}`}>
+                        <button onClick={() => toggleSelection(m.id)} className="p-1 hover:bg-gray-100 rounded">
+                            {selectedIds.has(m.id) ? 
+                                <CheckSquare className="w-5 h-5 text-violet-600" /> : 
+                                <Square className="w-5 h-5 text-gray-300" />
+                            }
+                        </button>
+                    </div>
+                )}
+
+                <div
+                  className={`relative px-4 py-3 rounded-2xl max-w-[85%] text-sm shadow-sm leading-relaxed transition-all ${
+                    m.role === "you"
+                      ? "bg-gradient-to-br from-violet-600 to-indigo-600 text-white rounded-tr-sm"
+                      : "bg-white text-gray-800 border border-gray-100 rounded-tl-sm hover:shadow-md"
+                  } ${isSelectionMode && m.id && selectedIds.has(m.id) ? 'ring-2 ring-violet-400 ring-offset-2' : ''}`}
+                >
+                  {m.text}
+                  
+                  {/* Metadata Footer */}
+                  <div className={`mt-1 flex items-center justify-end gap-1.5 text-[10px] ${m.role === 'you' ? 'text-white/70' : 'text-gray-400'}`}>
+                      {m.saved_at && (
+                          <span className="flex items-center gap-0.5" title="Saved to your notes">
+                              <Bookmark className="w-3 h-3 fill-current" /> Saved
+                          </span>
+                      )}
+                      
+                      {/* Hover Actions (Only if not selection mode) */}
+                      {!isSelectionMode && m.id && (
+                        <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-2 ml-2">
+                             {/* Save Toggle */}
+                             <button onClick={() => {
+                                 const newSet = new Set([m.id!]);
+                                 setSelectedIds(newSet);
+                                 // Immediate action hack or just toggle? Better to just trigger single action
+                                 // But for now, let's keep it simple: Select Mode is main way.
+                                 // Or maybe a quick save button?
+                                 // Let's rely on selection mode for consistency as per plan.
+                             }} className="hover:text-white">
+                                 {/* <MoreHorizontal size={12} /> */}
+                             </button>
+                        </div>
+                      )}
+                  </div>
+                </div>
+              </div>
+            ));
+        })()}
         {/* Invisible element to scroll to */}
         <div ref={messagesEndRef} />
       </div>
