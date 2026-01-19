@@ -16,7 +16,7 @@ import type { StudentContext } from "@/types/durmahContext";
 import type { DurmahContextPacket } from "@/types/durmah";
 import { formatTodayForDisplay } from "@/lib/durmah/phase";
 import { useDurmahSettings } from "@/hooks/useDurmahSettings";
-import { Settings, X, ArrowRight, AlertTriangle, Check, Volume2, Brain, Zap, RefreshCw, MoreHorizontal, Trash2, Smile, CheckSquare, Square, Save, Bookmark, Filter } from "lucide-react";
+import { Settings, X, ArrowRight, AlertTriangle, Check, Volume2, Brain, Zap, RefreshCw, MoreHorizontal, Trash2, Smile, CheckSquare, Square, Save, Bookmark, Filter, Minimize2, GripVertical } from "lucide-react";
 import Link from 'next/link';
 import toast from "react-hot-toast";
 import { useRouter } from 'next/router';
@@ -311,6 +311,62 @@ export default function DurmahWidget() {
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [viewMode, setViewMode] = useState<'session' | 'saved'>('session');
+
+  // Desktop Resize State (default dimensions from CSS)
+  const DEFAULT_WIDTH = 400;
+  const DEFAULT_HEIGHT = 600;
+  const [widgetSize, setWidgetSize] = useState({ width: DEFAULT_WIDTH, height: DEFAULT_HEIGHT });
+  const [isResized, setIsResized] = useState(false);
+  const resizeRef = useRef<{ startX: number; startY: number; startW: number; startH: number } | null>(null);
+
+  const resetWidgetSize = () => {
+    setWidgetSize({ width: DEFAULT_WIDTH, height: DEFAULT_HEIGHT });
+    setIsResized(false);
+  };
+
+  const handleResizeStart = (e: React.MouseEvent | React.TouchEvent) => {
+    e.preventDefault();
+    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+    
+    resizeRef.current = {
+      startX: clientX,
+      startY: clientY,
+      startW: widgetSize.width,
+      startH: widgetSize.height,
+    };
+    
+    const handleResizeMove = (moveE: MouseEvent | TouchEvent) => {
+      if (!resizeRef.current) return;
+      const moveX = 'touches' in moveE ? moveE.touches[0].clientX : moveE.clientX;
+      const moveY = 'touches' in moveE ? moveE.touches[0].clientY : moveE.clientY;
+      
+      // Resize from top-left corner (widget is anchored bottom-right)
+      const deltaX = resizeRef.current.startX - moveX;
+      const deltaY = resizeRef.current.startY - moveY;
+      
+      const newWidth = Math.max(350, Math.min(800, resizeRef.current.startW + deltaX));
+      const newHeight = Math.max(400, Math.min(900, resizeRef.current.startH + deltaY));
+      
+      setWidgetSize({ width: newWidth, height: newHeight });
+      if (newWidth !== DEFAULT_WIDTH || newHeight !== DEFAULT_HEIGHT) {
+        setIsResized(true);
+      }
+    };
+    
+    const handleResizeEnd = () => {
+      resizeRef.current = null;
+      document.removeEventListener('mousemove', handleResizeMove);
+      document.removeEventListener('mouseup', handleResizeEnd);
+      document.removeEventListener('touchmove', handleResizeMove);
+      document.removeEventListener('touchend', handleResizeEnd);
+    };
+    
+    document.addEventListener('mousemove', handleResizeMove);
+    document.addEventListener('mouseup', handleResizeEnd);
+    document.addEventListener('touchmove', handleResizeMove);
+    document.addEventListener('touchend', handleResizeEnd);
+  };
 
   // Session ID
   const sessionIdRef = useRef<string>('');
@@ -1608,8 +1664,26 @@ User question: ${userText}`;
 
   // 3. Open Chat Widget (Logged In)
   return (
-    <div className="fixed bottom-0 left-0 right-0 sm:left-auto sm:right-6 sm:bottom-24 z-[45] flex flex-col w-full sm:w-[400px] sm:max-w-md h-[450px] sm:h-[600px] max-h-[85vh] sm:max-h-[80vh] overflow-visible rounded-t-3xl sm:rounded-3xl border-t sm:border border-violet-100 bg-white shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.2)] sm:shadow-2xl animate-in slide-in-from-bottom-full sm:slide-in-from-bottom-10 fade-in duration-300">
-      {/* Premium Header Ribbon */}
+    <div 
+      className="fixed bottom-0 left-0 right-0 sm:left-auto sm:right-6 sm:bottom-24 z-[45] flex flex-col w-full sm:max-w-none h-[450px] max-h-[85vh] sm:max-h-[90vh] overflow-visible rounded-t-3xl sm:rounded-3xl border-t sm:border border-violet-100 bg-white shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.2)] sm:shadow-2xl animate-in slide-in-from-bottom-full sm:slide-in-from-bottom-10 fade-in duration-300"
+      style={{
+        // Desktop only: use state-controlled dimensions
+        width: typeof window !== 'undefined' && window.innerWidth >= 640 ? `${widgetSize.width}px` : undefined,
+        height: typeof window !== 'undefined' && window.innerWidth >= 640 ? `${widgetSize.height}px` : undefined,
+      }}
+    >
+      {/* Resize Handle - Desktop Only (top-left corner) */}
+      <div 
+        className="hidden sm:flex absolute top-0 left-0 w-6 h-6 cursor-nw-resize items-center justify-center z-50 group"
+        onMouseDown={handleResizeStart}
+        onTouchStart={handleResizeStart}
+        title="Drag to resize"
+      >
+        <div className="w-4 h-4 rounded-tl-xl bg-violet-500/30 group-hover:bg-violet-500/50 transition-colors flex items-center justify-center">
+          <GripVertical className="w-3 h-3 text-white/70 rotate-45" />
+        </div>
+      </div>
+
       {/* Premium Header Ribbon */}
       <header className={`relative flex-none flex items-center justify-between px-5 py-4 text-white shadow-md z-30 transition-colors duration-300 ${isSelectionMode ? 'bg-[#374151]' : 'bg-gradient-to-r from-violet-600 via-indigo-600 to-violet-700'}`}>
         
@@ -1711,6 +1785,17 @@ User question: ${userText}`;
 
         {/* Right side header controls */}
         <div className="flex items-center gap-2">
+          {/* Reset Size Button - Only shows when resized on desktop */}
+          {isResized && (
+            <button
+              onClick={resetWidgetSize}
+              className="hidden sm:flex p-2 rounded-full hover:bg-white/20 transition-colors"
+              title="Reset to default size"
+            >
+              <Minimize2 size={16} />
+            </button>
+          )}
+          
           <div className="relative" ref={headerMenuRef}>
             <button
               onClick={() => setShowHeaderMenu((prev) => !prev)}
