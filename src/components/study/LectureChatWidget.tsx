@@ -135,6 +135,18 @@ export default function LectureChatWidget({ lectureId, title }: LectureChatWidge
         ));
       }
 
+      // After streaming completes, refetch messages to get real DB IDs
+      // This is essential for the save feature to work correctly
+      const params = new URLSearchParams({ lectureId });
+      if (sessionIdRef.current) {
+          params.set('sessionId', sessionIdRef.current);
+      }
+      const refetchRes = await fetch(`/api/lectures/chat?${params}`);
+      if (refetchRes.ok) {
+          const data = await refetchRes.json();
+          setMessages(data.messages || []);
+      }
+
     } catch (err) {
       console.error(err);
       setMessages(prev => [...prev, { id: 'error', role: 'assistant', content: 'Sorry, I encountered an error.' }]);
