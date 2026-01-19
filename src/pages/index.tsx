@@ -47,12 +47,14 @@ const FeatureCarousel = ({ images }: { images: { src: string, caption: string }[
        </div>
    );
 
+   const currentImage = images[slide] || images[0];
+
    return (
       <div className="relative group w-full">
          <div className="relative overflow-hidden rounded-xl border border-gray-200 bg-gray-100 aspect-[16/10] shadow-sm">
              <Image 
-                src={images[slide].src} 
-                alt={images[slide].caption} 
+                src={currentImage.src} 
+                alt={currentImage.caption} 
                 fill 
                 className="object-cover object-top transition-all duration-500"
              />
@@ -60,7 +62,7 @@ const FeatureCarousel = ({ images }: { images: { src: string, caption: string }[
          </div>
          
          <div className="mt-4 flex items-center justify-between gap-4">
-            <p className="text-sm font-medium text-gray-900 flex-1">{images[slide].caption}</p>
+            <p className="text-sm font-medium text-gray-900 flex-1">{currentImage.caption}</p>
             
             <div className="flex gap-2 shrink-0">
                <button 
@@ -201,7 +203,7 @@ return (
                     id: 'my-lectures',
                     title: "My Lectures", 
                     desc: "Structured notes, key points, and lecturer signals.",
-                    img: "/landing/features/my-lectures/01.png", // Using the first verified upload
+                    img: "/images/dashboard.png", // Fixed 404
                     isNew: true
                  },
                  { 
@@ -284,11 +286,8 @@ return (
                         "Practice prompts for understanding and application (integrity-safe, no shortcuts)"
                       ],
                       carouselImages: [
-                         { src: "/landing/features/my-lectures/01.png", caption: "1) Your lecture library — everything organised by module and lecturer" },
-                         { src: "/landing/features/my-lectures/02.png", caption: "2) Add a lecture in minutes — paste Panopto captions or upload transcript" },
-                         { src: "/landing/features/my-lectures/03.png", caption: "3) Key points you can revise from — concise, searchable, week-ready" },
-                         { src: "/landing/features/my-lectures/04.png", caption: "4) Lecturer Emphasis signals — with evidence pulled from the transcript" },
-                         { src: "/landing/features/my-lectures/05.png", caption: "5) Practice prompts — strengthen understanding and application, safely" }
+                         { src: "/images/dashboard.png", caption: "1) Your lecture library — everything organised by module and lecturer" },
+                         { src: "/images/yaag.png", caption: "2) Add a lecture in minutes — paste Panopto captions or upload transcript" }
                       ]
                    },
                    { 
@@ -302,11 +301,8 @@ return (
                         "Built for calmer progress, not last-minute panic"
                       ],
                       carouselImages: [
-                         { src: "/landing/features/my-assignments/01.png", caption: "1) Assignment Hub — see every deadline and progress status at a glance" },
-                         { src: "/landing/features/my-assignments/02.png", caption: "2) Create an assignment — capture the brief, word limit, and due date" },
-                         { src: "/landing/features/my-assignments/03.png", caption: "3) Step-by-step assistant — understanding → research → structure" },
-                         { src: "/landing/features/my-assignments/04.png", caption: "4) Drafting hygiene + review — clarity, citations, and final checks" },
-                         { src: "/landing/features/my-assignments/05.png", caption: "5) Save & resume — pick up exactly where you left off" }
+                         { src: "/images/dashboard.png", caption: "1) Assignment Hub — see every deadline and progress status at a glance" },
+                         { src: "/images/yaag.png", caption: "2) Create an assignment — capture the brief, word limit, and due date" }
                       ]
                    },
                    { 
@@ -320,10 +316,8 @@ return (
                         "Clear reassurance: no exam paper guessing, no work to submit as your own"
                       ],
                       carouselImages: [
-                         { src: "/landing/features/exam-prep/01.png", caption: "1) Exam Prep overview — revision that feels organised, not overwhelming" },
-                         { src: "/landing/features/exam-prep/02.png", caption: "2) Practice prompts — tailored to what you learned in this lecture/module" },
-                         { src: "/landing/features/exam-prep/03.png", caption: "3) Structure drills — IRAC, issue-spotting, and application practice" },
-                         { src: "/landing/features/exam-prep/04.png", caption: "4) Integrity-first badge — built to help learning, not shortcut it" }
+                         { src: "/images/durmah.png", caption: "1) Exam Prep overview — revision that feels organised, not overwhelming" },
+                         { src: "/images/dashboard.png", caption: "2) Practice prompts — tailored to what you learned in this lecture/module" }
                       ]
                    },
                    { 
@@ -337,10 +331,8 @@ return (
                         "Always available — especially when you’re stuck late at night"
                       ],
                       carouselImages: [
-                         { src: "/landing/features/durmah/01.png", caption: "1) Ask a focused question — get a clear explanation, not waffle" },
-                         { src: "/landing/features/durmah/02.png", caption: "2) Reasoning mode — step-by-step understanding and application" },
-                         { src: "/landing/features/durmah/03.png", caption: "3) Build confidence — practice explaining concepts in your own words" },
-                         { src: "/landing/features/durmah/04.png", caption: "4) Support without judgement — helpful when stress is high" }
+                         { src: "/images/durmah.png", caption: "1) Ask a focused question — get a clear explanation, not waffle" },
+                         { src: "/images/dashboard.png", caption: "2) Reasoning mode — step-by-step understanding and application" }
                       ]
                    },
                    { 
@@ -349,8 +341,8 @@ return (
                       content: "The eagle-eye view of your entire Durham specific degree journey.",
                       bullets: ["Navigate Foundation to Year 3", "Interactive term columns (Michaelmas/Epiphany)", "Click to drill down into weekly details"],
                       carouselImages: [
-                          { src: "/landing/features/yaag/01.png", caption: "1) See your entire academic year at a glance" },
-                          { src: "/landing/features/yaag/02.png", caption: "2) Drill down into specific weeks and days" }
+                          { src: "/images/yaag.png", caption: "1) See your entire academic year at a glance" },
+                          { src: "/images/dashboard.png", caption: "2) Drill down into specific weeks and days" }
                       ]
                    }
                 ].map((panel) => (
@@ -414,19 +406,19 @@ return (
                      step: 1, 
                      title: 'My Lectures', 
                      desc: 'Structured notes, key points, and lecturer signals.',
-                     link: '/study/lectures'
+                     link: '/learn/durham-lectures'
                   },
                   { 
                      step: 2, 
                      title: 'My Assignments', 
                      desc: 'Break briefs into steps. Draft with focus.',
-                     link: '/assignments'
+                     link: '/learn/durham-assignments'
                   },
                   { 
                      step: 3, 
                      title: 'Exam Prep + Durmah', 
                      desc: 'Integrity-safe practice prompts & revision logic.',
-                     link: '/exam-prep'
+                     link: '/learn/durham-exam-prep'
                   }
                ].map((s) => (
                   <Link href={s.link} key={s.step} className="block group">
@@ -438,7 +430,7 @@ return (
                         <p className="text-base text-gray-600 leading-relaxed mb-6">{s.desc}</p>
                         
                         <div className="text-purple-600 font-semibold text-sm flex items-center gap-1 group-hover:gap-2 transition-all">
-                           Open tool <ArrowRight className="w-4 h-4" />
+                           Learn more <ArrowRight className="w-4 h-4" />
                         </div>
                      </div>
                   </Link>

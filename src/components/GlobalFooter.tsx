@@ -22,6 +22,7 @@ export default function GlobalFooter() {
         <div>
           <div className="font-semibold mb-2">Quick Links</div>
           <ul className="space-y-1 text-gray-700">
+            <li><Link className="hover:underline" href="/learn">Learning Hub</Link></li>
             <li><Link className="hover:underline" href="/about">About</Link></li>
             <li><Link className="hover:underline" href="/study-schedule">Study Schedule</Link></li>
             <li><Link className="hover:underline" href="/research-hub">Research Hub</Link></li>
