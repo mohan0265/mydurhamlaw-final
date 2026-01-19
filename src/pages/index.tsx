@@ -50,9 +50,12 @@ export default function DurhamLanding() {
                   Durham Law support, <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-300 to-indigo-300">24/7.</span>
                 </h1>
                 
-                <p className="text-lg sm:text-xl text-blue-100 mb-10 max-w-xl mx-auto lg:mx-0 leading-relaxed opacity-90">
-                  Turn transcripts into clarity. Capture lecturer emphasis. Plan your entire Durham year in one view.
-                </p>
+                <div className="mt-4 text-lg text-white/80 max-w-xl leading-relaxed">
+                  Turn lectures into clarity. Turn deadlines into a plan.
+                </div>
+                <div className="mt-2 text-sm text-white/70">
+                  Durham-specific. Integrity-first. Built for Michaelmas → Epiphany → Easter.
+                </div>
                 
                 <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
                   <Link href="/signup">
@@ -67,20 +70,15 @@ export default function DurhamLanding() {
                   </Link>
                 </div>
                 
-                <div className="mt-8 flex items-center justify-center lg:justify-start gap-6 text-sm text-gray-400">
-                   <div className="flex items-center gap-2">
-                      <Shield className="w-4 h-4 text-gray-300" /> Integrity First
-                   </div>
-                   <div className="flex items-center gap-2">
-                       <CheckCircle className="w-4 h-4 text-gray-300" /> Durham Specific
-                   </div>
+                <div className="mt-4 text-xs text-white/75 flex items-center justify-center lg:justify-start gap-2">
+                   <Shield className="w-3 h-3" /> Integrity-first learning support — we help you understand and practise, not shortcut.
                 </div>
               </div>
 
               {/* Right: Screenshot (Desktop only mostly) */}
               <div className="relative hidden lg:block animate-in fade-in slide-in-from-right-8 duration-1000 delay-200">
-                 <div className="relative rounded-3xl border border-white/10 bg-white/5 p-3 shadow-2xl backdrop-blur-sm transform rotate-[-2deg] hover:rotate-0 transition-transform duration-700">
-                    <div className="rounded-2xl overflow-hidden border border-white/10 shadow-inner bg-gray-900">
+                 <div className="relative rounded-3xl border border-white/15 bg-white/10 p-4 shadow-2xl backdrop-blur transform rotate-[-2deg] hover:rotate-0 transition-transform duration-700">
+                    <div className="rounded-2xl overflow-hidden border border-white/10 shadow-inner bg-gray-900 w-full h-auto">
                        <Image 
                           src="/images/dashboard.png" 
                           alt="MyDurhamLaw Dashboard" 
@@ -108,7 +106,7 @@ export default function DurhamLanding() {
       </div>
 
       {/* 2) WIDGET GALLERY (Product Proof) */}
-      <section className="py-20 bg-gray-50">
+      <section id="features" className="py-20 bg-gradient-to-b from-white to-gray-50">
         <div className="max-w-7xl mx-auto px-6">
            <div className="text-center mb-16">
               <h2 className="text-3xl font-bold text-gray-900 mb-4">Everything needed to survive (and thrive)</h2>
@@ -119,25 +117,25 @@ export default function DurhamLanding() {
               {[
                  { 
                     title: "Smart Dashboard", 
-                    desc: "Your daily focus, prioritized by deadlines.",
+                    desc: "Your next best action, based on deadlines and workload.",
                     img: "/images/dashboard.png",
                     link: "#"
                  },
                  { 
                     title: "Year At A Glance", 
-                    desc: "The entire 3-term structure in one view.",
+                    desc: "See the whole year in 3 terms — then drill down to week/day.",
                     img: "/images/yaag.png",
                     link: "#"
                  },
                  { 
                     title: "Durmah AI", 
-                    desc: "24/7 clarifications without judgement.",
+                    desc: "Ask anything. Get explanations, practice prompts, and marking-style guidance.",
                     img: "/images/durmah.png",
                     link: "#"
                  },
                  { 
                     title: "Always With You", 
-                    desc: "Stay connected to home, stress-free.",
+                    desc: "Optional parent presence — supportive, never intrusive.",
                     img: "/images/awy.png",
                     link: "#"
                  }
@@ -164,8 +162,34 @@ export default function DurhamLanding() {
         </div>
       </section>
 
-      {/* 3) LECTURER EMPHASIS & INTEGRITY */}
-      <section className="py-20 bg-white border-y border-gray-100">
+      {/* 3) HOW IT WORKS (New Section) */}
+      <section id="how-it-works" className="py-14 bg-white border-b border-gray-100">
+         <div className="mx-auto max-w-6xl px-4 sm:px-6">
+            <div className="text-center">
+               <h2 className="text-3xl font-bold text-gray-900">How it works</h2>
+               <p className="mt-2 text-base text-gray-600">Three steps. Less stress. More clarity.</p>
+            </div>
+
+            <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
+               {[
+                  { step: 1, title: 'Upload or pick a lecture', desc: 'Add a transcript or open a lecture you’ve uploaded.' },
+                  { step: 2, title: 'Get structured clarity', desc: 'Notes, key points, glossary, and lecturer emphasis — with evidence.' },
+                  { step: 3, title: 'Turn it into a plan', desc: 'Practice prompts + deadlines + YAAG keep your week on track.' }
+               ].map((s) => (
+                  <div key={s.step} className="rounded-2xl border border-gray-200 bg-white shadow-sm p-6 hover:shadow-md transition">
+                     <div className="inline-flex items-center rounded-full bg-purple-50 text-purple-700 border border-purple-100 px-3 py-1 text-xs font-semibold mb-4">
+                        Step {s.step}
+                     </div>
+                     <h3 className="text-lg font-bold text-gray-900 mb-2">{s.title}</h3>
+                     <p className="text-sm text-gray-600 leading-relaxed">{s.desc}</p>
+                  </div>
+               ))}
+            </div>
+         </div>
+      </section>
+
+      {/* 4) LECTURER EMPHASIS & INTEGRITY */}
+      <section id="lecturer-emphasis" className="py-20 bg-white border-y border-gray-100">
         <div className="max-w-6xl mx-auto px-6">
            <div className="flex flex-col md:flex-row items-center gap-16">
               <div className="flex-1 space-y-6">
@@ -181,7 +205,7 @@ export default function DurhamLanding() {
                  
                  <div className="space-y-4 pt-4">
                     {[
-                       "Identify high-yield exam topics",
+                       "Identify lecturer-emphasised concepts (with transcript evidence)",
                        "Spot common mistakes before you make them",
                        "Turn emphasis into integrity-safe practice prompts"
                     ].map((feat, i) => (
@@ -247,12 +271,15 @@ export default function DurhamLanding() {
          <div className="relative z-10 max-w-3xl mx-auto px-6">
             <h2 className="text-3xl sm:text-5xl font-bold text-white mb-6 tracking-tight">Ready to feel confident?</h2>
             <p className="text-xl text-gray-400 mb-10">Join students from every Durham college.</p>
+            <div className="mt-4 text-center">
+               <div className="text-sm font-semibold text-white/90">£24.99 / month • £199 / year (save ~33%)</div>
+               <div className="mt-1 text-xs text-white/70">14-day trial • cancel anytime • no commitment</div>
+            </div>
             <Link href="/signup">
-               <button className="bg-white text-purple-950 font-bold py-4 px-12 rounded-full text-lg shadow-2xl hover:shadow-white/20 hover:scale-105 transition-all transform">
-                  Start Your 14-Day Trial
+               <button className="mt-6 bg-white text-purple-950 font-bold py-4 px-12 rounded-full text-lg shadow-2xl hover:shadow-white/20 hover:scale-105 transition-all transform">
+                  Start your 14-day trial
                </button>
             </Link>
-            <p className="mt-6 text-sm text-gray-500">No credit card required • Cancel anytime</p>
          </div>
       </section>
     </>
