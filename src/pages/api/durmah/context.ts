@@ -230,6 +230,34 @@ export default async function handler(
       .order('lecture_date', { ascending: false, nullsFirst: false })
       .limit(5);
 
+    // FETCH: CURRENT LECTURE DETAILS (if strictly on a lecture page)
+    let currentLecture: any = undefined;
+    const lectureIdParam = req.query.lectureId;
+    if (pageHint === 'lecture' && typeof lectureIdParam === 'string' && lectureIdParam.length > 5) {
+      console.log(`[context] Fetching deep details for lecture: ${lectureIdParam}`);
+      const { data: lectureDetail } = await supabaseClient
+        .from('lectures')
+        .select('id, title, module_code, module_name, lecturer_name, lecture_date, summary, key_points, engagement_hooks')
+        .eq('id', lectureIdParam)
+        .eq('user_id', user.id)
+        .maybeSingle();
+      
+      if (lectureDetail) {
+        currentLecture = {
+          id: lectureDetail.id,
+          title: lectureDetail.title,
+          module_code: lectureDetail.module_code,
+          module_name: lectureDetail.module_name,
+          lecturer_name: lectureDetail.lecturer_name,
+          lecture_date: lectureDetail.lecture_date,
+          summary: lectureDetail.summary,
+          key_points: lectureDetail.key_points,
+          engagement_hooks: lectureDetail.engagement_hooks,
+        };
+        console.log(`[context] ✓ Loaded current lecture: ${lectureDetail.title}`);
+      }
+    }
+
 
     // Build response with TIMEZONE TRUTH embedded
     const studentContext: StudentContext = {
@@ -273,6 +301,7 @@ export default async function handler(
           lecturer_name: l.lecturer_name,
           lecture_date: l.lecture_date,
         })),
+        current: currentLecture,
       },
     };
 

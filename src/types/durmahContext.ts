@@ -75,6 +75,17 @@ export interface StudentContext {
       lecturer_name?: string;
       lecture_date?: string;
     }>;
+    current?: {
+      id: string;
+      title: string;
+      module_code?: string;
+      module_name?: string;
+      lecturer_name?: string;
+      lecture_date?: string;
+      summary?: string;
+      key_points?: string[];
+      engagement_hooks?: string[];
+    };
   };
 }
 

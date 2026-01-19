@@ -805,6 +805,21 @@ export default function DurmahWidget() {
         params.set('pageHint', 'assignments');
         params.set('rangeDays', '14');
       }
+      // Lecture Details Page
+      else if (currentPath.includes('/study/lectures/') || (query.id && (currentPath === '/study/lectures/[id]' || router.asPath.includes('/study/lectures/')))) {
+        const lectureId = typeof query.id === 'string' ? query.id : null;
+        if (lectureId) {
+          params.set('pageHint', 'lecture');
+          params.set('lectureId', lectureId);
+          params.set('rangeDays', '7'); // Short range for relevant nearby events
+        } else {
+             // Fallback if ID parsing fails
+             const today = new Date().toISOString().substring(0, 10);
+            params.set('focusDate', today);
+            params.set('rangeDays', '14');
+            params.set('pageHint', 'dashboard');
+        }
+      }
       // Default: 14 days from today
       else {
         const today = new Date().toISOString().substring(0, 10);
