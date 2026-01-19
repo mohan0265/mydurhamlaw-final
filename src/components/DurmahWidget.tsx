@@ -320,12 +320,24 @@ export default function DurmahWidget() {
     }
   }, []);
 
-  const toggleSelection = (id?: string) => {
-      if (!id) return;
+  // Helper to get a stable message key (prefer DB id, fallback to timestamp)
+  const getMessageKey = (m: Msg): string => m.id || m.ts.toString();
+
+  const toggleSelection = (key: string) => {
+      if (!key) return;
       const next = new Set(selectedIds);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
       setSelectedIds(next);
+  };
+
+  const selectAllMessages = () => {
+      const allKeys = messages.map(m => getMessageKey(m));
+      setSelectedIds(new Set(allKeys));
+  };
+
+  const deselectAllMessages = () => {
+      setSelectedIds(new Set());
   };
 
   const handleManageAction = async (action: 'save' | 'unsave' | 'delete_selected' | 'clear_unsaved') => {
@@ -337,6 +349,8 @@ export default function DurmahWidget() {
           body.scope = 'session';
           body.sessionId = sessionIdRef.current;
       } else {
+          // Convert selected keys back to DB IDs where possible
+          // For messages without DB IDs (ts-based), we'll need to handle them differently
           body.messageIds = Array.from(selectedIds);
       }
 
@@ -350,13 +364,13 @@ export default function DurmahWidget() {
           
           if (res.ok) {
               if (action === 'save') {
-                  setMessages(prev => prev.map(m => (m.id && selectedIds.has(m.id)) ? { ...m, saved_at: new Date().toISOString() } : m));
+                  setMessages(prev => prev.map(m => selectedIds.has(getMessageKey(m)) ? { ...m, saved_at: new Date().toISOString() } : m));
                   toast.success('Saved selected', { id: toastId });
               } else if (action === 'unsave') {
-                  setMessages(prev => prev.map(m => (m.id && selectedIds.has(m.id)) ? { ...m, saved_at: null } : m));
+                  setMessages(prev => prev.map(m => selectedIds.has(getMessageKey(m)) ? { ...m, saved_at: null } : m));
                   toast.success('Unsaved selected', { id: toastId });
               } else if (action === 'delete_selected') {
-                  setMessages(prev => prev.filter(m => !m.id || !selectedIds.has(m.id)));
+                  setMessages(prev => prev.filter(m => !selectedIds.has(getMessageKey(m))));
                   toast.success('Deleted', { id: toastId });
               } else if (action === 'clear_unsaved') {
                   setMessages(prev => prev.filter(m => m.saved_at)); 
@@ -1604,11 +1618,31 @@ User question: ${userText}`;
                  <button onClick={() => { setIsSelectionMode(false); setSelectedIds(new Set()); }} className="hover:bg-white/10 p-1 rounded">
                     <X className="w-5 h-5 text-white" />
                  </button>
+                 
+                 {/* Select All / Deselect All Checkbox */}
+                 <button 
+                    onClick={() => {
+                        if (selectedIds.size === messages.length && messages.length > 0) {
+                            deselectAllMessages();
+                        } else {
+                            selectAllMessages();
+                        }
+                    }}
+                    className="p-1 hover:bg-white/10 rounded"
+                    title={selectedIds.size === messages.length ? "Deselect all" : "Select all"}
+                 >
+                    {selectedIds.size === messages.length && messages.length > 0 ? 
+                        <CheckSquare className="w-5 h-5 text-green-400" /> : 
+                        <Square className="w-5 h-5 text-white/60" />
+                    }
+                 </button>
+                 
                  <span className="font-bold text-sm flex-1">{selectedIds.size} selected</span>
                  
                  {/* Save Selected */}
                  <button onClick={() => handleManageAction('save')} 
-                        className="flex items-center gap-1 bg-green-500 hover:bg-green-600 px-3 py-1.5 rounded text-xs font-bold transition-colors shadow-sm"
+                        disabled={selectedIds.size === 0}
+                        className={`flex items-center gap-1 px-3 py-1.5 rounded text-xs font-bold transition-colors shadow-sm ${selectedIds.size === 0 ? 'bg-gray-500 cursor-not-allowed' : 'bg-green-500 hover:bg-green-600'}`}
                         title="Keep only the messages you'll want to revisit.">
                     <Save className="w-3 h-3" /> Save
                  </button>
@@ -1948,13 +1982,13 @@ User question: ${userText}`;
             return filteredMessages.map((m) => (
               <div key={m.ts} className={`flex ${m.role === "you" ? "justify-end" : "justify-start"} group relative mb-2`}>
                 
-                {/* Selection Checkbox (Left for both, or dynamic?) Let's put it on the far left/right depending on role if we want, or just always left. */}
-                {isSelectionMode && m.id && (
-                    <div className={`flex items-center ${m.role === "you" ? "mr-2 order-last" : "ml-2 order-first"}`}>
-                        <button onClick={() => toggleSelection(m.id)} className="p-1 hover:bg-gray-100 rounded">
-                            {selectedIds.has(m.id) ? 
+                {/* Selection Checkbox - Shows for ALL messages in selection mode */}
+                {isSelectionMode && (
+                    <div className={`flex items-center ${m.role === "you" ? "mr-2 order-last" : "mr-2 order-first"}`}>
+                        <button onClick={() => toggleSelection(getMessageKey(m))} className="p-1 hover:bg-gray-100 rounded transition-colors">
+                            {selectedIds.has(getMessageKey(m)) ? 
                                 <CheckSquare className="w-5 h-5 text-violet-600" /> : 
-                                <Square className="w-5 h-5 text-gray-300" />
+                                <Square className="w-5 h-5 text-gray-300 hover:text-gray-400" />
                             }
                         </button>
                     </div>
@@ -1965,7 +1999,7 @@ User question: ${userText}`;
                     m.role === "you"
                       ? "bg-gradient-to-br from-violet-600 to-indigo-600 text-white rounded-tr-sm"
                       : "bg-white text-gray-800 border border-gray-100 rounded-tl-sm hover:shadow-md"
-                  } ${isSelectionMode && m.id && selectedIds.has(m.id) ? 'ring-2 ring-violet-400 ring-offset-2' : ''}`}
+                  } ${isSelectionMode && selectedIds.has(getMessageKey(m)) ? 'ring-2 ring-violet-400 ring-offset-2' : ''}`}
                 >
                   {m.text}
                   
