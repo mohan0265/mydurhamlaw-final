@@ -87,5 +87,11 @@ export interface StudentContext {
       engagement_hooks?: string[];
     };
   };
+  // MEMORY: Recent chat history for continuity
+  recentMemories?: Array<{
+    role: string;
+    content: string;
+    ts: string; // ISO string
+  }>;
 }
 

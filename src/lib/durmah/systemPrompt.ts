@@ -179,6 +179,17 @@ STUDENT: ${student.displayName}, ${student.yearGroup}, ${student.term} Week ${st
     block += `\nTo discuss a specific lecture, use get_lecture_details(lectureId) to fetch its content.`;
   }
 
+  // RECENT MEMORIES (Conversation Continuity)
+  if (context.recentMemories && context.recentMemories.length > 0) {
+    block += `\n\n🧠 RECENT MEMORIES (Last ${context.recentMemories.length} interactions):\n`;
+    context.recentMemories.forEach((m) => {
+        const role = m.role === 'user' ? 'Student' : 'Durmah';
+        const snippet = m.content.length > 150 ? m.content.substring(0, 150) + '...' : m.content;
+        block += `- ${role}: "${snippet}"\n`;
+    });
+    block += `\nUse these memories to maintain conversation continuity. If the user refers to "what I just said" or "that lecture", look here first.`;
+  }
+
   block += `\nTotal assignments: ${assignments.total}`;
 
   return block;

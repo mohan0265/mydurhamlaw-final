@@ -152,21 +152,21 @@ export default async function handler(
     });
     
     const upcoming = assignments
-      .filter(a => 
+      .filter((a: any) => 
         a.due_date && new Date(a.due_date) >= now && a.status !== 'completed'
       )
       .map(enrichAssignment)
       .slice(0, 10); // Increased from 5 to 10 for better context
     
     const overdue = assignments
-      .filter(a =>
+      .filter((a: any) =>
         a.due_date && new Date(a.due_date) < now && a.status !== 'completed'
       )
       .map(enrichAssignment)
       .slice(0, 5);
     
     const recentlyCreated = assignments
-      .filter(a => new Date(a.created_at) > new Date(now.getTime() - 7*24*60*60*1000))
+      .filter((a: any) => new Date(a.created_at) > new Date(now.getTime() - 7*24*60*60*1000))
       .map(enrichAssignment)
       .slice(0, 3);
 
@@ -259,6 +259,27 @@ export default async function handler(
     }
 
 
+    // FETCH: MEMORIES (Recent conversation history)
+    // We fetch the last 15 messages to give immediate continuity
+    const { data: memoryData } = await supabaseClient
+      .from('durmah_messages')
+      .select('role, content, created_at')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(15);
+    
+    // Reverse to chronological order for the prompt
+    const recentMemories = (memoryData || [])
+      .reverse()
+      .map((m: any) => ({
+        role: m.role,
+        content: m.content,
+        ts: m.created_at
+      }));
+
+    console.log(`[context] Fetched ${recentMemories.length} recent memories`);
+
+
     // Build response with TIMEZONE TRUTH embedded
     const studentContext: StudentContext = {
       student: {
@@ -281,7 +302,7 @@ export default async function handler(
         total: assignments.length,
       },
       schedule: {
-        todaysClasses: (todaysEvents || []).map(e => ({
+        todaysClasses: (todaysEvents || []).map((e: any) => ({
           module_name: e.title,
           time: `${new Date(e.start_time).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone })} - ${e.end_time ? new Date(e.end_time).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone }) : ''}`,
         })),
@@ -293,7 +314,7 @@ export default async function handler(
       },
       // LECTURES: Recent lecture recordings (metadata only, no transcript)
       lectures: {
-        recent: (recentLectures || []).map(l => ({
+        recent: (recentLectures || []).map((l: any) => ({
           id: l.id,
           title: l.title,
           module_code: l.module_code,
@@ -303,6 +324,7 @@ export default async function handler(
         })),
         current: currentLecture,
       },
+      recentMemories,
     };
 
     console.log(`[context] ✓ SUCCESS: yaag=${yaagEvents.length}, assignments=${studentContext.assignments.total}, lectures=${recentLectures?.length || 0}`);
