@@ -48,6 +48,7 @@ const FeatureCarousel = ({ images }: { images: { src: string, caption: string }[
    );
 
    const currentImage = images[slide] || images[0];
+   if (!currentImage) return null;
 
    return (
       <div className="relative group w-full">
