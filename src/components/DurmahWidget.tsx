@@ -399,45 +399,110 @@ export default function DurmahWidget() {
   const handleManageAction = async (action: 'save' | 'unsave' | 'delete_selected' | 'clear_unsaved') => {
       if ((action === 'delete_selected' || action === 'save' || action === 'unsave') && selectedIds.size === 0) return;
 
-      const body: any = { action };
-      if (action === 'clear_unsaved') {
-          if (!window.confirm('Clear all unsaved messages from this session?')) return;
-          body.scope = 'session';
-          body.sessionId = sessionIdRef.current;
-      } else {
-          // Convert selected keys back to DB IDs where possible
-          // For messages without DB IDs (ts-based), we'll need to handle them differently
-          body.messageIds = Array.from(selectedIds);
-      }
-
       const toastId = toast.loading('Processing...');
+      
       try {
-          const res = await fetch('/api/durmah/chat-manage', {
-              method: 'POST',
-              headers: {'Content-Type': 'application/json'},
-              body: JSON.stringify(body)
-          });
-          
-          if (res.ok) {
-              if (action === 'save') {
-                  setMessages(prev => prev.map(m => selectedIds.has(getMessageKey(m)) ? { ...m, saved_at: new Date().toISOString() } : m));
-                  toast.success('Saved selected', { id: toastId });
-              } else if (action === 'unsave') {
-                  setMessages(prev => prev.map(m => selectedIds.has(getMessageKey(m)) ? { ...m, saved_at: null } : m));
-                  toast.success('Unsaved selected', { id: toastId });
-              } else if (action === 'delete_selected') {
-                  setMessages(prev => prev.filter(m => !selectedIds.has(getMessageKey(m))));
-                  toast.success('Deleted', { id: toastId });
-              } else if (action === 'clear_unsaved') {
-                  setMessages(prev => prev.filter(m => m.saved_at)); 
-                  toast.success('Cleared unsaved', { id: toastId });
+          const userId = user?.id;
+          if (!userId) {
+              toast.error('Not authenticated', { id: toastId });
+              return;
+          }
+
+          if (action === 'clear_unsaved') {
+              if (!window.confirm('Clear all unsaved messages from this session?')) {
+                  toast.dismiss(toastId);
+                  return;
               }
+              // Delete unsaved messages from this session
+              setMessages(prev => prev.filter(m => m.saved_at));
+              toast.success('Cleared unsaved', { id: toastId });
               setSelectedIds(new Set());
               setIsSelectionMode(false);
-          } else {
-              toast.error('Failed', { id: toastId });
+              return;
           }
+
+          // Get selected messages
+          const selectedMessages = messages.filter(m => selectedIds.has(getMessageKey(m)));
+          
+          if (action === 'save') {
+              // For each selected message, insert into durmah_messages if not already there
+              // Then mark as saved
+              const now = new Date().toISOString();
+              
+              for (const msg of selectedMessages) {
+                  if (!msg.id || msg.id.match(/^\d+$/)) { // Timestamp-based ID (not a UUID)
+                      // Insert into durmah_messages
+                      const { data: insertedData, error: insertError } = await supabaseClient
+                          .from('durmah_messages')
+                          .insert({
+                              user_id: userId,
+                              role: msg.role === 'you' ? 'user' : 'assistant',
+                              content: msg.text,
+                              source: 'voice',
+                              session_id: sessionIdRef.current || null,
+                              saved_at: now,
+                          })
+                          .select('id')
+                          .single();
+                      
+                      if (insertError) {
+                          console.error('[Durmah Save] Insert error:', insertError);
+                          continue;
+                      }
+                      
+                      // Update local state with the new DB ID
+                      setMessages(prev => prev.map(m => 
+                          getMessageKey(m) === getMessageKey(msg) 
+                              ? { ...m, id: insertedData.id, saved_at: now }
+                              : m
+                      ));
+                  } else {
+                      // Already has a DB ID, just mark as saved
+                      const { error: updateError } = await supabaseClient
+                          .from('durmah_messages')
+                          .update({ saved_at: now })
+                          .eq('id', msg.id)
+                          .eq('user_id', userId);
+                      
+                      if (!updateError) {
+                          setMessages(prev => prev.map(m => 
+                              getMessageKey(m) === getMessageKey(msg) ? { ...m, saved_at: now } : m
+                          ));
+                      }
+                  }
+              }
+              toast.success('Saved selected', { id: toastId });
+          } else if (action === 'unsave') {
+              // Unsave - set saved_at to null
+              for (const msg of selectedMessages) {
+                  if (msg.id && !msg.id.match(/^\d+$/)) {
+                      await supabaseClient
+                          .from('durmah_messages')
+                          .update({ saved_at: null })
+                          .eq('id', msg.id)
+                          .eq('user_id', userId);
+                  }
+              }
+              setMessages(prev => prev.map(m => selectedIds.has(getMessageKey(m)) ? { ...m, saved_at: null } : m));
+              toast.success('Unsaved selected', { id: toastId });
+          } else if (action === 'delete_selected') {
+              // Delete from DB if they have DB IDs
+              const dbIds = selectedMessages.filter(m => m.id && !m.id.match(/^\d+$/)).map(m => m.id!);
+              if (dbIds.length > 0) {
+                  await supabaseClient
+                      .from('durmah_messages')
+                      .delete()
+                      .in('id', dbIds)
+                      .eq('user_id', userId);
+              }
+              setMessages(prev => prev.filter(m => !selectedIds.has(getMessageKey(m))));
+              toast.success('Deleted', { id: toastId });
+          }
+          
+          setSelectedIds(new Set());
+          setIsSelectionMode(false);
       } catch (e) {
+          console.error('[Durmah Manage] Error:', e);
           toast.error('Error', { id: toastId });
       }
   };
