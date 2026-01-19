@@ -57,17 +57,17 @@ export const PricingPlans: React.FC<PricingPlansProps> = ({
         <div className="bg-white rounded-2xl p-8 border border-gray-200 flex flex-col">
           <div className="mb-6">
             <h3 className="text-xl font-bold text-gray-900 mb-2">Free</h3>
-            <p className="text-gray-500 text-sm h-10">Experience the full power of Durmah and AI tools (trial limits apply).</p>
+            <p className="text-gray-500 text-sm h-10">Start with a 14-day full-access trial. After that, light daily limits apply.</p>
           </div>
           <div className="text-4xl font-extrabold text-gray-900 mb-6">£0</div>
           
           <ul className="space-y-4 mb-8 flex-1">
-            <Feature included text="Durmah Voice: Trial limits" />
-            <Feature included text="Durmah Text: Daily limits" />
-            <Feature included text="Lecture Tools: 1 Upload/mo" />
-            <Feature included text="Assignment Help: Intro mode" />
-            <Feature included text="Exam Prep: Intro mode" />
-            <Feature included text="YAAG (Interactive - Term 1)" />
+            <Feature included text="Durmah Voice: 120 mins/mo (fair use)" />
+            <Feature included text="Durmah Text: 30 msgs/day" />
+            <Feature included text="Lecture Tools: 4 Uploads/mo" />
+            <Feature included text="Assignment Help: Starter mode" />
+            <Feature included text="Exam Prep: Starter mode" />
+            <Feature included text="YAAG (Full Access — Year/Month/Week)" />
             <Feature included text="Community & Wellbeing Access" />
           </ul>
 
@@ -98,12 +98,12 @@ export const PricingPlans: React.FC<PricingPlansProps> = ({
           </div>
           
           <ul className="space-y-4 mb-8 flex-1">
-            <Feature included text="Durmah Voice: 120 mins/mo" />
-            <Feature included text="Durmah Text: 250 msgs/mo" />
-            <Feature included text="Lecture Tools: 5 Uploads/mo" />
-            <Feature included text="Assignment Assist: 20 actions" />
-            <Feature included text="Exam Prep: 30 sets/mo" />
-            <Feature included text="YAAG (Full Academic Year)" />
+            <Feature included text="Durmah Voice: 1,200 mins/mo (fair use)" />
+            <Feature included text="Durmah Text: 2,000 msgs/mo" />
+            <Feature included text="Lecture Tools: 24 Uploads/mo" />
+            <Feature included text="Assignment Assist: 120 actions/mo" />
+            <Feature included text="Exam Prep: 120 sets/mo" />
+            <Feature included text="YAAG (Full Access — Year/Month/Week)" />
             <Feature included text="Community & Wellbeing Access" />
           </ul>
 
@@ -131,11 +131,11 @@ export const PricingPlans: React.FC<PricingPlansProps> = ({
           </div>
           
           <ul className="space-y-4 mb-8 flex-1">
-            <Feature included text="Durmah Voice: 300 mins/mo" />
+            <Feature included text="Durmah Voice: 4,000 mins/mo (fair use)" />
             <Feature included text="Durmah Text: Unlimited" />
             <Feature included text="Lecture Tools: Unlimited" />
-            <Feature included text="Assignment Assist: 60 actions" />
-            <Feature included text="Exam Prep: 120 sets/mo" />
+            <Feature included text="Assignment Assist: Unlimited" />
+            <Feature included text="Exam Prep: Unlimited" />
             <Feature included text="YAAG (Full + Analytics)" />
             <Feature included text="Priority Study Sprint Mode" />
           </ul>
@@ -147,6 +147,10 @@ export const PricingPlans: React.FC<PricingPlansProps> = ({
             Go Pro
           </button>
         </div>
+      </div>
+
+      <div className="mt-8 mb-6 text-center text-sm text-gray-500 max-w-2xl mx-auto">
+        Fair use applies to protect performance for everyone. Normal study use is always fine.
       </div>
 
       {/* PARENT ADD-ON */}
