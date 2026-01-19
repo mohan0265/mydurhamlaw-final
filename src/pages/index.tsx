@@ -152,6 +152,12 @@ export default function DurhamLanding() {
                           fill
                           className="object-cover group-hover:scale-105 transition-transform duration-500"
                        />
+                       {/* Name Overlay (Privacy) - Scaled for small card */}
+                       {(item.id === 'dashboard' || item.id === 'yaag') && (
+                          <div className="absolute top-[8%] left-[28%] bg-gray-100 rounded-sm px-1 flex items-center justify-center shadow-sm z-10 w-[20%] h-[8%]">
+                             <span className="text-gray-800 font-bold text-[6px] sm:text-[8px]">Student</span>
+                          </div>
+                       )}
                     </div>
                     <div className="mt-auto">
                        <h3 className="text-base font-bold text-gray-900 mb-1">{item.title}</h3>
@@ -207,7 +213,7 @@ export default function DurhamLanding() {
                       id: 'awy',
                       title: "Always With You", 
                       content: "Stay connected to your support network without it becoming a distraction.",
-                      bullets: ["See loved ones' online status", "One-tap video calling", "Privacy-focused design"],
+                      bullets: ["See loved ones' online status", "Connect via WhatsApp, FaceTime, or Google Meet", "Privacy-focused design"],
                       img: "/images/awy.png" 
                    }
                 ].map((panel) => (
@@ -230,8 +236,15 @@ export default function DurhamLanding() {
                                    {panel.bullets.map((b, i) => <li key={i}>{b}</li>)}
                                </ul>
                                
-                               <div className="rounded-xl overflow-hidden border border-gray-200 bg-gray-50 shadow-inner">
+                               <div className="rounded-xl overflow-hidden border border-gray-200 bg-gray-50 shadow-inner relative">
                                    <Image src={panel.img} alt={`${panel.title} Preview`} width={700} height={400} className="w-full h-auto" />
+                                   
+                                   {/* Name Overlay for Dashboard & YAAG (Privacy) */}
+                                   {(panel.id === 'dashboard' || panel.id === 'yaag') && (
+                                      <div className="absolute top-[8%] left-[28%] bg-gray-100 rounded-md px-2 py-0.5 flex items-center justify-center shadow-sm z-10 w-[20%] max-w-[140px] h-[7%] max-h-[30px]">
+                                         <span className="text-gray-800 font-bold text-[10px] sm:text-xs lg:text-sm">Student</span>
+                                      </div>
+                                   )}
                                </div>
 
                                <div className="mt-6 flex flex-col sm:flex-row gap-3">
