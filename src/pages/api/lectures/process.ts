@@ -98,10 +98,11 @@ OUTPUT REQUIREMENTS:
 - If you cannot find any meaningful signals, output an empty array.
 
 OUTPUT JSON KEYS (MUST MATCH):
-summary, key_points, discussion_topics, exam_prompts, glossary, engagement_hooks, exam_signals[]
+summary, key_points, discussion_topics, exam_prompts, glossary, engagement_hooks, exam_signals[], teaching_style, lecturer_name_detected
 
 JSON SCHEMA (MUST MATCH EXACTLY):
 {
+  "lecturer_name_detected": "string | null",
   "summary": "string",
   "key_points": ["string"],
   "discussion_topics": ["string"],
@@ -125,7 +126,15 @@ JSON SCHEMA (MUST MATCH EXACTLY):
         { "start_char": 0, "end_char": 0 }
       ]
     }
-  ]
+  ],
+  "teaching_style": {
+     "pace_level": "Slow|Medium|Fast", 
+     "structure_level": "Low|Medium|High",
+     "exam_orientation_level": "Low|Medium|High",
+     "emphasis_score": 50,
+     "recommended_study_tactics": ["string", "string", "string"],
+     "common_pitfalls": ["string", "string"]
+  }
 }
 
 TRANSCRIPT:
@@ -134,7 +143,14 @@ ${transcript.substring(0, 15000)} ${transcript.length > 15000 ? '... [truncated]
 LECTURE: ${lectureTitle}
 MODULE: ${moduleName || 'Law'}
 
-Extract the lecturer's name if explicitly introduced or mentioned (e.g., "I'm Professor Smith"). If not found, return null.`;
+Extract:
+1. Lecturer name (if explicitly introduced).
+2. "teaching_style":
+   - Pace: Infer from word density/repetition (Slow/Medium/Fast).
+   - Structure: usage of signposting/headings (High/Medium/Low).
+   - Exam Orientation: frequency of assessment mentions (High/Medium/Low).
+   - Emphasis Score: 0-100 based on intensity of cues.
+   - Tactics/Pitfalls: specific to this lecturer's style inferred from transcript.`;
 
   const response = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
@@ -146,7 +162,7 @@ Extract the lecturer's name if explicitly introduced or mentioned (e.g., "I'm Pr
       model: 'gpt-4o',
       messages: [
         { role: 'system', content: 'You are a law education expert. Always respond with valid JSON only, no markdown.' },
-        { role: 'user', content: prompt + `\n\nOUTPUT JSON SCHEMA EXTENSION:\nInclude "lecturer_name_detected": "string" or null.` },
+        { role: 'user', content: prompt },
       ],
       temperature: 0.7,
       max_tokens: 4000,
@@ -333,19 +349,22 @@ export default async function handler(
         .single();
       
       if (lecturerData && !lecturerError) {
-        // 2. Update/Init Insights
-        // We do a simplified upsert here. Real aggregation would be a separate background job or more complex logic.
-        // For now, facilitate the existence of the row.
+        // 2. Update Actions
+        const style = (notes as any).teaching_style || {};
+        
         const { error: insightError } = await supabase
           .from('lecturer_insights')
           .upsert({ 
              lecturer_id: lecturerData.id,
-             // Simple increment is hard in one atomic upsert without valid SQL function or transaction, 
-             // so we just ensure it exists. The aggregation logic is separate.
+             // We merge or overwrite the insights JSON. 
+             // Ideally we aggregate, but for now we take the latest lecture's style analysis as the "current" snapshot,
+             // or mix it. For MVP, overwriting with latest specific style data is acceptable or we should merge.
+             // Let's store the raw style object.
+             insights_json: style,
              updated_at: new Date().toISOString()
-          }, { onConflict: 'lecturer_id', ignoreDuplicates: true }); 
+          }, { onConflict: 'lecturer_id' }); // Remove ignoreDuplicates to allow updating
           
-          if(insightError) console.error('Insight init error', insightError);
+          if(insightError) console.error('Insight update error', insightError);
 
           // Optional: Link lecture to lecturer (if column exists, or we use name matching)
           // For now, we update the lecture's lecturer_name text field if it was empty

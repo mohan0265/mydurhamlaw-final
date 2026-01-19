@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
-import { ArrowLeft, User, Shield, Zap, Clock, Brain, MessageSquare, CheckCircle, Lock } from 'lucide-react';
+import { ArrowLeft, User, Shield, Zap, Clock, Brain, MessageSquare, CheckCircle, Lock, Target } from 'lucide-react';
 import GlobalHeader from '@/components/GlobalHeader';
 import { toast } from 'react-hot-toast';
 
@@ -29,10 +29,17 @@ export default function LecturerDetail() {
   const submitFeedback = async () => {
       setSending(true);
       try {
-          // Mock endpoint or real one? Created placeholder earlier?
-          // I didn't create the feedback submit endpoint yet. I'll mock successful alert for now or implement it.
-          // Wait, I put "Create api/lecturers/feedback" in tasks, but haven't implemented it.
-          // I will assume it's created or will be.
+          const res = await fetch('/api/lecturers/feedback', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                  lecturerId: lecturer.id,
+                  feedback: feedback
+              })
+          });
+          
+          if (!res.ok) throw new Error('Failed');
+          
           toast.success("Feedback saved privately.");
           setSending(false);
       } catch(e) {
@@ -71,7 +78,9 @@ export default function LecturerDetail() {
                     </div>
                     <div>
                         <h1 className="text-3xl font-bold">{lecturer.name}</h1>
-                        <p className="text-indigo-200">Teaching Style Insights • Based on {lecturer.lecturer_insights?.[0]?.lecture_count || 0} lectures</p>
+                        <p className="text-indigo-200 text-sm max-w-xl mt-1">
+                            Learning-focused patterns from lecture transcripts — to help you study smarter (not judge people).
+                        </p>
                     </div>
                  </div>
              </div>
@@ -79,15 +88,16 @@ export default function LecturerDetail() {
              <div className="p-8">
                  {/* Insight Chips */}
                  <div className="flex flex-wrap gap-4 mb-8">
-                     <InsightChip label="Structure" value={insights.structure_level || 'High'} icon={<Brain className="w-4 h-4"/>} />
-                     <InsightChip label="Pace" value={insights.pace_level || 'Fast'} icon={<Clock className="w-4 h-4"/>} />
-                     <InsightChip label="Emphasis" value={(insights.emphasis_score || 80) + '%'} icon={<Zap className="w-4 h-4 text-yellow-500"/>} />
+                     <InsightChip label="Structure" value={insights.structure_level || 'Medium'} icon={<Brain className="w-4 h-4"/>} />
+                     <InsightChip label="Pace" value={insights.pace_level || 'Moderate'} icon={<Clock className="w-4 h-4"/>} />
+                     <InsightChip label="Exam Orientation" value={insights.exam_orientation_level || 'Medium'} icon={<Target className="w-4 h-4 text-red-500"/>} />
+                     <InsightChip label="Emphasis" value={(insights.emphasis_score || 50) + '/100'} icon={<Zap className="w-4 h-4 text-yellow-500"/>} />
                  </div>
 
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                      <div>
                          <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
-                             <CheckCircle className="w-5 h-5 text-green-600" /> Recommended Study Tactics
+                             <CheckCircle className="w-5 h-5 text-green-600" /> Best way to study for this lecturer
                          </h3>
                          <ul className="space-y-3">
                              {insights.recommended_study_tactics?.map((t: string, i: number) => (
