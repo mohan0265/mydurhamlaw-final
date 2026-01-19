@@ -10,7 +10,7 @@ export default function LecturerDetail() {
   const { id } = router.query;
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [feedback, setFeedback] = useState<any>({ pace: null, clarity: null, examples: null });
+  const [feedback, setFeedback] = useState<any>({ pace: null, clarity: null, examples: null, best_tip: '' });
   const [sending, setSending] = useState(false);
 
   useEffect(() => {
