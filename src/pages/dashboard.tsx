@@ -15,9 +15,12 @@ import TodaysTasksWidget from '@/components/dashboard/TodaysTasksWidget';
 import MemoryJournalWidget from '@/components/dashboard/MemoryJournalWidget';
 import WellbeingTipWidget from '@/components/dashboard/WellbeingTipWidget';
 
+import { useUserDisplayName } from '@/hooks/useUserDisplayName';
+
 export default function Dashboard() {
   const router = useRouter();
   const { user, loading } = useAuth() || { user: null, loading: true };
+  const { displayName } = useUserDisplayName();
   const [focusItem, setFocusItem] = useState<{title: string, type: string, link: string} | null>(null);
   const [supportExpanded, setSupportExpanded] = useState(false);
 
@@ -41,7 +44,7 @@ export default function Dashboard() {
   if (loading) return <div className="min-h-screen flex items-center justify-center bg-gray-50 text-indigo-600 font-medium">Loading...</div>;
   if (!user) { router.replace('/login'); return null; }
 
-  const firstName = user.user_metadata?.first_name || 'Student';
+  const firstName = displayName || user.user_metadata?.first_name || 'Student';
 
   return (
     <>
