@@ -3,13 +3,14 @@ import Head from 'next/head'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter } from 'next/router'
-import { Brain, Heart, Calendar, Shield, CheckCircle, Target, ArrowRight } from 'lucide-react'
+import { Brain, Heart, Calendar, Shield, CheckCircle, Target, ArrowRight, ChevronDown } from 'lucide-react'
 import { useAuth } from '@/lib/supabase/AuthContext'
 import { isRouteAbortError } from '@/lib/navigation/safeNavigate'
 
 export default function DurhamLanding() {
   const router = useRouter()
   const { user } = useAuth()
+  const [activePanel, setActivePanel] = React.useState<string | null>('dashboard')
 
   // Redirect logged-in users
   React.useEffect(() => {
@@ -75,31 +76,34 @@ export default function DurhamLanding() {
                 </div>
               </div>
 
-              {/* Right: Screenshot (Desktop only mostly) */}
-              <div className="relative hidden lg:block animate-in fade-in slide-in-from-right-8 duration-1000 delay-200">
-                 <div className="relative rounded-3xl border border-white/15 bg-white/10 p-4 shadow-2xl backdrop-blur transform rotate-[-2deg] hover:rotate-0 transition-transform duration-700">
-                    <div className="rounded-2xl overflow-hidden border border-white/10 shadow-inner bg-gray-900 w-full h-auto">
-                       <Image 
-                          src="/images/dashboard.png" 
-                          alt="MyDurhamLaw Dashboard" 
-                          width={800} 
-                          height={600} 
-                          className="w-full h-auto object-cover opacity-95 hover:opacity-100 transition-opacity"
-                          priority
-                       />
-                    </div>
-                    {/* Floating Badge */}
-                    <div className="absolute -bottom-6 -left-6 bg-white rounded-xl p-4 shadow-xl border border-gray-100 flex items-center gap-3 animate-bounce-slow">
-                        <div className="bg-green-100 p-2 rounded-lg text-green-600">
-                           <CheckCircle className="w-6 h-6" />
-                        </div>
-                        <div>
-                           <div className="text-xs text-gray-500 font-semibold uppercase">Status</div>
-                           <div className="text-sm font-bold text-gray-900">All Systems Operational</div>
-                        </div>
-                    </div>
-                 </div>
-              </div>
+               <div className="relative hidden lg:block animate-in fade-in slide-in-from-right-8 duration-1000 delay-200">
+                  <div className="relative rounded-3xl border border-white/15 bg-white/10 p-4 shadow-2xl backdrop-blur transform rotate-[-2deg] hover:rotate-0 transition-transform duration-700">
+                     <div className="rounded-2xl overflow-hidden border border-white/10 shadow-inner bg-gray-900 w-full h-auto relative">
+                        <Image 
+                           src="/images/dashboard.png" 
+                           alt="MyDurhamLaw Dashboard" 
+                           width={800} 
+                           height={600} 
+                           className="w-full h-auto object-cover opacity-95 hover:opacity-100 transition-opacity"
+                           priority
+                        />
+                         {/* Name Overlay (Privacy) */}
+                         <div className="absolute top-[8%] left-[28%] bg-gray-100 rounded-md px-3 py-1 flex items-center justify-center shadow-sm z-10 w-[180px] h-[30px]">
+                            <span className="text-gray-800 font-bold text-lg">Student</span>
+                         </div>
+                     </div>
+                     {/* Floating Badge */}
+                     <div className="absolute -bottom-6 -left-6 bg-white rounded-xl p-4 shadow-xl border border-gray-100 flex items-center gap-3 animate-bounce-slow">
+                         <div className="bg-green-100 p-2 rounded-lg text-green-600">
+                            <CheckCircle className="w-6 h-6" />
+                         </div>
+                         <div>
+                            <div className="text-xs text-gray-500 font-semibold uppercase">Status</div>
+                            <div className="text-sm font-bold text-gray-900">All Systems Operational</div>
+                         </div>
+                     </div>
+                  </div>
+               </div>
 
            </div>
         </div>
@@ -116,31 +120,31 @@ export default function DurhamLanding() {
            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {[
                  { 
+                    id: 'dashboard',
                     title: "Smart Dashboard", 
                     desc: "Your next best action, based on deadlines and workload.",
                     img: "/images/dashboard.png",
-                    link: "#"
                  },
                  { 
+                    id: 'yaag',
                     title: "Year At A Glance", 
                     desc: "See the whole year in 3 terms — then drill down to week/day.",
                     img: "/images/yaag.png",
-                    link: "#"
                  },
                  { 
+                    id: 'durmah',
                     title: "Durmah AI", 
                     desc: "Ask anything. Get explanations, practice prompts, and marking-style guidance.",
                     img: "/images/durmah.png",
-                    link: "#"
                  },
                  { 
+                    id: 'awy',
                     title: "Always With You", 
                     desc: "Optional parent presence — supportive, never intrusive.",
                     img: "/images/awy.png",
-                    link: "#"
                  }
               ].map((item, i) => (
-                 <div key={i} className="group rounded-2xl border border-gray-200 bg-white shadow-sm hover:shadow-lg transition-all duration-300 p-4 flex flex-col">
+                 <div key={item.id} className="group rounded-2xl border border-gray-200 bg-white shadow-sm hover:shadow-lg transition-all duration-300 p-4 flex flex-col">
                     <div className="rounded-xl overflow-hidden border border-gray-100 mb-4 bg-gray-100 aspect-[4/3] relative">
                        <Image 
                           src={item.img} 
@@ -152,14 +156,102 @@ export default function DurhamLanding() {
                     <div className="mt-auto">
                        <h3 className="text-base font-bold text-gray-900 mb-1">{item.title}</h3>
                        <p className="text-xs text-gray-500 leading-relaxed mb-3">{item.desc}</p>
-                       <span className="text-xs font-semibold text-purple-600 flex items-center gap-1 group-hover:gap-2 transition-all">
+                       <button 
+                           onClick={() => {
+                               setActivePanel(item.id);
+                               document.getElementById('feature-spotlight')?.scrollIntoView({ behavior: 'smooth' });
+                           }}
+                           className="text-xs font-semibold text-purple-600 flex items-center gap-1 group-hover:gap-2 transition-all hover:bg-purple-50 rounded px-2 py-1 -ml-2 w-fit"
+                       >
                           See feature <ArrowRight className="w-3 h-3" />
-                       </span>
+                       </button>
                     </div>
                  </div>
               ))}
            </div>
         </div>
+      </section>
+
+      {/* 2.5) FEATURE SPOTLIGHT (Accordion) */}
+      <section id="feature-spotlight" className="py-12 bg-white border-b border-gray-100">
+         <div className="max-w-4xl mx-auto px-6">
+             <div className="text-center mb-10">
+                <h2 className="text-2xl font-bold text-gray-900">Feature spotlight</h2>
+                <p className="text-gray-500 text-sm mt-1">A closer look — with real screenshots.</p>
+             </div>
+             
+             <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden divide-y divide-gray-100">
+                {[
+                   { 
+                      id: 'dashboard',
+                      title: "Smart Dashboard", 
+                      content: "Starts your day with clarity. We aggregate your deadlines, lecture schedule, and workload into one view.",
+                      bullets: ["Prioritized daily task list", "Weather & Campus status integration", "Morning briefing with key academic updates"],
+                      img: "/images/dashboard.png" 
+                   },
+                   { 
+                      id: 'yaag',
+                      title: "Year At A Glance", 
+                      content: "The eagle-eye view of your entire Durham specific degree journey.",
+                      bullets: ["Navigate Foundation to Year 3", "Interactive term columns (Michaelmas/Epiphany)", "Click to drill down into weekly details"],
+                      img: "/images/yaag.png" 
+                   },
+                   { 
+                      id: 'durmah',
+                      title: "Durmah AI", 
+                      content: "Your always-on legal study partner. Ask specific questions about your modules or cases.",
+                      bullets: ["Trained on legal reasoning structure", "Upload transcripts for analysis", "Voice-enabled for natural conversation"],
+                      img: "/images/durmah.png" 
+                   },
+                   { 
+                      id: 'awy',
+                      title: "Always With You", 
+                      content: "Stay connected to your support network without it becoming a distraction.",
+                      bullets: ["See loved ones' online status", "One-tap video calling", "Privacy-focused design"],
+                      img: "/images/awy.png" 
+                   }
+                ].map((panel) => (
+                    <div key={panel.id} className="group">
+                        <button 
+                           onClick={() => setActivePanel(activePanel === panel.id ? null : panel.id)}
+                           className={`w-full flex items-center justify-between px-6 py-4 text-left hover:bg-gray-50 transition-colors ${activePanel === panel.id ? 'bg-gray-50' : ''}`}
+                        >
+                           <span className={`text-base font-semibold ${activePanel === panel.id ? 'text-purple-700' : 'text-gray-900'}`}>{panel.title}</span>
+                           <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-transform duration-200 ${activePanel === panel.id ? 'rotate-180 bg-white shadow-sm' : ''}`}>
+                               <ChevronDown className={`w-4 h-4 text-gray-500`} />
+                           </div>
+                        </button>
+                        
+                        {/* Panel Content */}
+                        <div className={`overflow-hidden transition-all duration-300 ease-in-out ${activePanel === panel.id ? 'max-h-[800px] opacity-100' : 'max-h-0 opacity-0'}`}>
+                           <div className="px-6 pb-6 pt-0">
+                               <p className="text-sm text-gray-600 mb-4">{panel.content}</p>
+                               <ul className="space-y-2 list-disc pl-5 text-sm text-gray-600 mb-6">
+                                   {panel.bullets.map((b, i) => <li key={i}>{b}</li>)}
+                               </ul>
+                               
+                               <div className="rounded-xl overflow-hidden border border-gray-200 bg-gray-50 shadow-inner">
+                                   <Image src={panel.img} alt={`${panel.title} Preview`} width={700} height={400} className="w-full h-auto" />
+                               </div>
+
+                               <div className="mt-6 flex flex-col sm:flex-row gap-3">
+                                  <Link href="/signup">
+                                    <button className="text-sm bg-purple-600 text-white font-semibold py-2.5 px-6 rounded-lg hover:bg-purple-700 transition shadow-sm">
+                                        Start your 14-day trial
+                                    </button>
+                                  </Link>
+                                  <Link href="/pricing">
+                                     <button className="text-sm border border-gray-300 text-gray-700 font-medium py-2.5 px-6 rounded-lg hover:bg-gray-50 transition">
+                                        See pricing
+                                     </button>
+                                  </Link>
+                               </div>
+                           </div>
+                        </div>
+                    </div>
+                ))}
+             </div>
+         </div>
       </section>
 
       {/* 3) HOW IT WORKS (New Section) */}
