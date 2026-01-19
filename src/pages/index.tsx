@@ -43,7 +43,7 @@ export default function DurhamLanding() {
               <div className="text-center lg:text-left">
                 <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md px-4 py-1.5 rounded-full border border-white/20 mb-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
                   <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
-                  <span className="text-sm font-medium text-gray-200">Accepting Foundation & Year 1 Students</span>
+                  <span className="text-sm font-medium text-gray-200">Accepting All Years (Foundation – Year 3)</span>
                 </div>
 
                 <h1 className="text-4xl sm:text-5xl lg:text-7xl font-extrabold mb-6 tracking-tight leading-[1.1] text-white">
