@@ -38,8 +38,10 @@ type YearViewProps = {
   onModuleClick?: (idOrTitle: string) => void
   onEventClick?: (idOrTitle: string) => void
   // NEW: Real user data
+  // NEW: Real user data
   userEvents?: UserEvent[]
   userAssessments?: UserAssessment[]
+  isReadOnly?: boolean
 }
 
 /** Decide which plan to show from the userYearOfStudy */
@@ -63,6 +65,7 @@ export function YearView({
   onModuleClick,
   userEvents = [],
   userAssessments = [],
+  isReadOnly = false,
 }: YearViewProps) {
   const plan = resolvePlan(userYearOfStudy)
 
@@ -89,9 +92,9 @@ export function YearView({
               Modules from curriculum plan • Your imported deadlines shown below
             </div>
           </div>
-          <Badge className="bg-purple-100 text-purple-800">
+          <Badge className={`bg-purple-100 text-purple-800 ${isReadOnly ? 'opacity-50' : ''}`}>
             <Calendar className="w-4 h-4 mr-1" />
-            Eagle-eye view
+            {isReadOnly ? 'Eagle-eye view (Read only)' : 'Eagle-eye view'}
           </Badge>
         </div>
       </Card>
@@ -107,6 +110,7 @@ export function YearView({
           onModuleClick={onModuleClick}
           userEvents={userEvents}
           userAssessments={userAssessments}
+          isReadOnly={isReadOnly}
         />
 
         <SemesterColumn
@@ -118,6 +122,7 @@ export function YearView({
           onModuleClick={onModuleClick}
           userEvents={userEvents}
           userAssessments={userAssessments}
+          isReadOnly={isReadOnly}
         />
 
         <SemesterColumn
@@ -129,6 +134,7 @@ export function YearView({
           onModuleClick={onModuleClick}
           userEvents={userEvents}
           userAssessments={userAssessments}
+          isReadOnly={isReadOnly}
         />
       </div>
     </div>

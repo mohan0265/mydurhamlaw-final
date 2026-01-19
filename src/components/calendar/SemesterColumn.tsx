@@ -29,9 +29,8 @@ type Props = {
   modules: ModulePlan[]          // PLAN layer: modules taught this term (structure only)
   allModules: ModulePlan[]       // PLAN layer: whole-year list (structure only)
   onModuleClick?: (idOrTitle: string) => void
-  // NEW: Real user data
-  userEvents?: UserEvent[]
-  userAssessments?: UserAssessment[]
+  // NEW: Read-only mode for non-active years
+  isReadOnly?: boolean
 }
 
 /** --- tiny date helpers (no date-fns needed) ------------------------------ */
@@ -41,7 +40,7 @@ function addDays(d: Date, n: number) {
   return x
 }
 function asDate(iso: string) {
-  // ISO like \"2025-10-06\"
+  // ISO like "2025-10-06"
   return new Date(iso + (iso.length <= 10 ? 'T00:00:00Z' : ''))
 }
 function formatDMmm(d: Date) {
@@ -57,7 +56,7 @@ function weekWindow(isoMonday: string) {
   return { start, end }
 }
 
-/** Label like \"W3 · 20 Oct\" */
+/** Label like "W3 · 20 Oct" */
 function weekLabel(isoMonday: string, idx: number) {
   return `W${idx + 1} · ${formatDMmm(asDate(isoMonday))}`
 }
@@ -72,6 +71,7 @@ export default function SemesterColumn({
   onModuleClick,
   userEvents = [],
   userAssessments = [],
+  isReadOnly = false,
 }: Props) {
   // Map REAL assessments to weeks (NOT from PLAN - from user data only)
   const weekAssessments = useMemo(() => {
@@ -122,7 +122,7 @@ export default function SemesterColumn({
   }, [term.weeks, userEvents])
 
   return (
-    <Card className="p-4 md:p-5">
+    <Card className={`p-4 md:p-5 ${isReadOnly ? 'opacity-90' : ''}`}>
       {/* Header */}
       <div className="flex items-start justify-between mb-3">
         <div>
@@ -168,6 +168,22 @@ export default function SemesterColumn({
           const weekAssigns = weekAssessments[wkISO] || []
           const weekEvts = weekEvents[wkISO] || []
           
+          if (isReadOnly) {
+            return (
+              <div 
+                key={wkISO}
+                className="rounded-lg border border-dashed border-gray-200 bg-gray-50 p-2 cursor-not-allowed opacity-75"
+                title="Detailed calendar is available for your current year of study."
+              >
+                 <div className="flex items-center justify-between">
+                  <div className="text-xs font-medium text-gray-500">
+                    {weekLabel(wkISO, idx)}
+                  </div>
+                </div>
+              </div>
+            )
+          }
+
           return (
             <Link
               key={wkISO}
