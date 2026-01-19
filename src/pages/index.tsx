@@ -302,11 +302,11 @@ return (
                         "Built for calmer progress, not last-minute panic"
                       ],
                       carouselImages: [
-                         { src: "/images/dashboard.png", caption: "1) Assignment Hub — see every deadline and progress status at a glance" },
-                         { src: "/images/dashboard.png", caption: "2) Create an assignment — capture the brief, word limit, and due date" },
-                         { src: "/images/dashboard.png", caption: "3) Step-by-step assistant — understanding → research → structure" },
-                         { src: "/images/dashboard.png", caption: "4) Drafting hygiene + review — clarity, citations, and final checks" },
-                         { src: "/images/dashboard.png", caption: "5) Save & resume — pick up exactly where you left off" }
+                         { src: "/landing/features/my-assignments/01.png", caption: "1) Assignment Hub — see every deadline and progress status at a glance" },
+                         { src: "/landing/features/my-assignments/02.png", caption: "2) Create an assignment — capture the brief, word limit, and due date" },
+                         { src: "/landing/features/my-assignments/03.png", caption: "3) Step-by-step assistant — understanding → research → structure" },
+                         { src: "/landing/features/my-assignments/04.png", caption: "4) Drafting hygiene + review — clarity, citations, and final checks" },
+                         { src: "/landing/features/my-assignments/05.png", caption: "5) Save & resume — pick up exactly where you left off" }
                       ]
                    },
                    { 
@@ -320,10 +320,10 @@ return (
                         "Clear reassurance: no exam paper guessing, no work to submit as your own"
                       ],
                       carouselImages: [
-                         { src: "/images/durmah.png", caption: "1) Exam Prep overview — revision that feels organised, not overwhelming" },
-                         { src: "/images/durmah.png", caption: "2) Practice prompts — tailored to what you learned in this lecture/module" },
-                         { src: "/images/durmah.png", caption: "3) Structure drills — IRAC, issue-spotting, and application practice" },
-                         { src: "/images/durmah.png", caption: "4) Integrity-first badge — built to help learning, not shortcut it" }
+                         { src: "/landing/features/exam-prep/01.png", caption: "1) Exam Prep overview — revision that feels organised, not overwhelming" },
+                         { src: "/landing/features/exam-prep/02.png", caption: "2) Practice prompts — tailored to what you learned in this lecture/module" },
+                         { src: "/landing/features/exam-prep/03.png", caption: "3) Structure drills — IRAC, issue-spotting, and application practice" },
+                         { src: "/landing/features/exam-prep/04.png", caption: "4) Integrity-first badge — built to help learning, not shortcut it" }
                       ]
                    },
                    { 
@@ -337,10 +337,10 @@ return (
                         "Always available — especially when you’re stuck late at night"
                       ],
                       carouselImages: [
-                         { src: "/images/durmah.png", caption: "1) Ask a focused question — get a clear explanation, not waffle" },
-                         { src: "/images/durmah.png", caption: "2) Reasoning mode — step-by-step understanding and application" },
-                         { src: "/images/durmah.png", caption: "3) Build confidence — practice explaining concepts in your own words" },
-                         { src: "/images/durmah.png", caption: "4) Support without judgement — helpful when stress is high" }
+                         { src: "/landing/features/durmah/01.png", caption: "1) Ask a focused question — get a clear explanation, not waffle" },
+                         { src: "/landing/features/durmah/02.png", caption: "2) Reasoning mode — step-by-step understanding and application" },
+                         { src: "/landing/features/durmah/03.png", caption: "3) Build confidence — practice explaining concepts in your own words" },
+                         { src: "/landing/features/durmah/04.png", caption: "4) Support without judgement — helpful when stress is high" }
                       ]
                    },
                    { 
@@ -349,8 +349,8 @@ return (
                       content: "The eagle-eye view of your entire Durham specific degree journey.",
                       bullets: ["Navigate Foundation to Year 3", "Interactive term columns (Michaelmas/Epiphany)", "Click to drill down into weekly details"],
                       carouselImages: [
-                          { src: "/images/yaag.png", caption: "1) See your entire academic year at a glance" },
-                          { src: "/images/yaag.png", caption: "2) Drill down into specific weeks and days" }
+                          { src: "/landing/features/yaag/01.png", caption: "1) See your entire academic year at a glance" },
+                          { src: "/landing/features/yaag/02.png", caption: "2) Drill down into specific weeks and days" }
                       ]
                    }
                 ].map((panel) => (
