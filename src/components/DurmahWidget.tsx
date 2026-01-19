@@ -326,8 +326,8 @@ export default function DurmahWidget() {
 
   const handleResizeStart = (e: React.MouseEvent | React.TouchEvent) => {
     e.preventDefault();
-    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
-    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+    const clientX = 'touches' in e && e.touches[0] ? e.touches[0].clientX : (e as React.MouseEvent).clientX;
+    const clientY = 'touches' in e && e.touches[0] ? e.touches[0].clientY : (e as React.MouseEvent).clientY;
     
     resizeRef.current = {
       startX: clientX,
@@ -338,8 +338,8 @@ export default function DurmahWidget() {
     
     const handleResizeMove = (moveE: MouseEvent | TouchEvent) => {
       if (!resizeRef.current) return;
-      const moveX = 'touches' in moveE ? moveE.touches[0].clientX : moveE.clientX;
-      const moveY = 'touches' in moveE ? moveE.touches[0].clientY : moveE.clientY;
+      const moveX = 'touches' in moveE && moveE.touches[0] ? moveE.touches[0].clientX : (moveE as MouseEvent).clientX;
+      const moveY = 'touches' in moveE && moveE.touches[0] ? moveE.touches[0].clientY : (moveE as MouseEvent).clientY;
       
       // Resize from top-left corner (widget is anchored bottom-right)
       const deltaX = resizeRef.current.startX - moveX;
