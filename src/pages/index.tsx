@@ -281,14 +281,15 @@ return (
                       title: "My Lectures", 
                       content: "The foundation of your week. Everything in one place.",
                       bullets: [
-                        "Structured notes from your own transcript — clear, modular, and Durham-ready",
-                        "Key points + glossary in one place (so revision is fast, not frantic)",
-                        "Lecturer Emphasis with transcript evidence — what they repeated and stressed",
-                        "Practice prompts for understanding and application (integrity-safe, no shortcuts)"
+                        "Turn Panopto captions or transcripts into structured, readable notes",
+                        "Key points, glossary, and 'why it matters' in a Durham-ready layout",
+                        "Lecturer emphasis signals (with transcript evidence) to guide revision",
+                        "Ask Durmah inside the lecture page — save only what's worth keeping"
                       ],
                       carouselImages: [
-                         { src: "/images/dashboard.png", caption: "1) Your lecture library — everything organised by module and lecturer" },
-                         { src: "/images/yaag.png", caption: "2) Add a lecture in minutes — paste Panopto captions or upload transcript" }
+                         { src: "/assets/onboarding/blackboard-courses-list.png", caption: "1) Your lecture library — searchable, organised, Durham-ready" },
+                         { src: "/images/dashboard.png", caption: "2) Add a lecture in minutes — paste Panopto captions or upload a transcript" },
+                         { src: "/images/durmah.png", caption: "3) Exam Prep tab — emphasis signals + integrity-safe practice prompts" }
                       ]
                    },
                    { 
@@ -296,54 +297,78 @@ return (
                       title: "My Assignments", 
                       content: "Calmer progress. Better structure.",
                       bullets: [
-                        "Turn a brief into a clear plan: requirements → approach → structure",
-                        "Guided workflow: understanding, research, structure, drafting hygiene, review",
-                        "Helps you learn the skill — you stay in control of the final writing",
-                        "Built for calmer progress, not last-minute panic"
+                         "Convert a brief into a clear plan: requirements → approach → structure",
+                         "Guided workflow: understanding, research, structure, drafting, review",
+                         "Integrity-first scaffolds — you stay in control of your final writing",
+                         "Keep everything tied to your deadline, word limit, and marking criteria"
                       ],
                       carouselImages: [
-                         { src: "/images/dashboard.png", caption: "1) Assignment Hub — see every deadline and progress status at a glance" },
-                         { src: "/images/yaag.png", caption: "2) Create an assignment — capture the brief, word limit, and due date" }
+                         { src: "/assets/onboarding/blackboard-assessment-info.png", caption: "1) Assignment Hub — every deadline and progress status in one view" },
+                         { src: "/assets/onboarding/blackboard-due-dates.png", caption: "2) Create an assignment — capture the brief, word limit, and due date" },
+                         { src: "/images/dashboard.png", caption: "3) Assignment Assistant — step-by-step guidance without taking over your writing" }
                       ]
                    },
                    { 
                       id: 'exam-prep',
                       title: "Exam Prep", 
-                      content: "Practice that respects academic integrity.",
+                      content: "Practice understanding, application, and structure — without shortcuts.",
                       bullets: [
-                        "Integrity-safe practice that follows your learning — not “predictions”",
-                        "IRAC / structure drills for application and reasoning (marks live here)",
-                        "Practice prompts generated from your lectures and course content",
-                        "Clear reassurance: no exam paper guessing, no work to submit as your own"
+                        "Build confidence with issue-spotting and IRAC-style practice drills",
+                        "Generate practice prompts from what you actually learned in lectures",
+                        "Focus on application and reasoning — never 'exam predictions'",
+                        "Revision prompts that respect academic integrity and your own voice"
                       ],
                       carouselImages: [
-                         { src: "/images/durmah.png", caption: "1) Exam Prep overview — revision that feels organised, not overwhelming" },
-                         { src: "/images/dashboard.png", caption: "2) Practice prompts — tailored to what you learned in this lecture/module" }
+                         { src: "/images/durmah.png", caption: "1) Lecturer emphasis signals — what was stressed, with transcript evidence" },
+                         { src: "/images/dashboard.png", caption: "2) Practice prompts — apply concepts using short, focused drills" },
+                         { src: "/images/durmah.png", caption: "3) Filter by emphasis — revise what mattered most, not what's loudest" }
                       ]
                    },
                    { 
                       id: 'durmah',
                       title: "Durmah AI", 
-                      content: "Your 24/7 Legal Eagle Buddy.",
+                      content: "Always available — and aware of what you're working on.",
                       bullets: [
-                        "Your Legal Eagle Buddy: tutor-style explanations + reasoning practice",
-                        "Ask “why”, “how”, “what if” — and get calm, structured answers",
-                        "Helps you revise by understanding, not memorising blindly",
-                        "Always available — especially when you’re stuck late at night"
+                        "Ask questions in-context (lectures, assignments, exam prep, wellbeing)",
+                        "Clear explanations, examples, and 'check-your-understanding' prompts",
+                        "Optional voice mode for quick support while studying",
+                        "Your saved highlights become your personal revision memory"
                       ],
                       carouselImages: [
-                         { src: "/images/durmah.png", caption: "1) Ask a focused question — get a clear explanation, not waffle" },
-                         { src: "/images/dashboard.png", caption: "2) Reasoning mode — step-by-step understanding and application" }
+                         { src: "/images/durmah.png", caption: "1) Ask anything — clear explanations, examples, and check-your-understanding" },
+                         { src: "/images/durmah.png", caption: "2) Voice mode — quick support while you study" },
+                         { src: "/images/durmah.png", caption: "3) Saved highlights — your personal revision memory across the app" }
                       ]
                    },
                    { 
                       id: 'yaag',
                       title: "Year At A Glance", 
-                      content: "The eagle-eye view of your entire Durham specific degree journey.",
-                      bullets: ["Navigate Foundation to Year 3", "Interactive term columns (Michaelmas/Epiphany)", "Click to drill down into weekly details"],
+                      content: "See the whole year in 3 terms — then drill down to month/week/day.",
+                      bullets: [
+                         "A true eagle-eye view of your workload across Michaelmas → Epiphany → Easter",
+                         "Deadlines and assessments sit where they belong in the calendar",
+                         "Click from year → month → week → day without losing context",
+                         "Your current year links into full detail views; other years stay overview-only"
+                      ],
                       carouselImages: [
-                          { src: "/images/yaag.png", caption: "1) See your entire academic year at a glance" },
-                          { src: "/images/dashboard.png", caption: "2) Drill down into specific weeks and days" }
+                          { src: "/images/yaag.png", caption: "1) Year view — three terms side-by-side, at a glance" },
+                          { src: "/images/yaag.png", caption: "2) Month view — see deadlines in context, not scattered across tabs" },
+                          { src: "/assets/onboarding/mytimetable-export.png", caption: "3) Week view — your workload, timetable, and tasks together" }
+                      ]
+                   },
+                   { 
+                      id: 'awy',
+                      title: "Always With You", 
+                      content: "Optional presence support — calm, not intrusive.",
+                      bullets: [
+                         "See when loved ones are available (opt-in only)",
+                         "One-click video call when you want support",
+                         "Designed for emotional presence, not distraction",
+                         "You control visibility, availability, and privacy"
+                      ],
+                      carouselImages: [
+                          { src: "/images/awy.png", caption: "1) Presence, not pressure — opt-in availability for loved ones" },
+                          { src: "/images/awy.png", caption: "2) One-click video call — support when you choose" }
                       ]
                    }
                 ].map((panel) => (
