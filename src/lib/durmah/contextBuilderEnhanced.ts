@@ -1,6 +1,35 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { DurmahContextPacket } from '@/types/durmah';
 
+// Durham Term Calendar 2025-26
+const DURHAM_TERMS = [
+  { term: 'Michaelmas', start: '2025-10-06', end: '2025-12-12' },
+  { term: 'Epiphany', start: '2026-01-12', end: '2026-03-20' },
+  { term: 'Easter', start: '2026-04-27', end: '2026-06-19' },
+];
+
+function computeAcademicContext() {
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  
+  let term = 'Vacation';
+  let weekOfTerm = 0;
+  
+  for (const window of DURHAM_TERMS) {
+    const start = new Date(window.start);
+    const end = new Date(window.end);
+    if (today >= start && today <= end) {
+      term = window.term;
+      const diffMs = today.getTime() - start.getTime();
+      const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+      weekOfTerm = Math.floor(diffDays / 7) + 1;
+      break;
+    }
+  }
+  
+  return { term, weekOfTerm };
+}
+
 /**
  * Enhanced context builder for Durmah Core
  * Fetches assignment progress (AW tables) and AWY presence data
@@ -183,24 +212,54 @@ export async function fetchAWYContext(
 }
 
 /**
- * Enhance base context packet with assignments, AWY data, and lectures
+ * Fetch user profile for personalization (name, year group)
+ */
+export async function fetchProfileContext(
+  supabase: SupabaseClient,
+  userId: string
+): Promise<{
+  displayName: string | null;
+  yearGroup: string | null;
+  yearOfStudy: string | null;
+}> {
+  const { data } = await supabase
+    .from('profiles')
+    .select('display_name, year_group, year_of_study')
+    .eq('id', userId)
+    .maybeSingle();
+
+  return {
+    displayName: data?.display_name ?? null,
+    yearGroup: data?.year_of_study ?? data?.year_group ?? null,
+    yearOfStudy: data?.year_of_study ?? data?.year_group ?? null,
+  };
+}
+
+/**
+ * Enhance base context packet with assignments, AWY data, lectures, profile, and academic
  */
 export async function enhanceDurmahContext(
   supabase: SupabaseClient,
   userId: string,
   baseContext: DurmahContextPacket
 ): Promise<DurmahContextPacket> {
-  // Fetch enhanced context in parallel
-  const [assignments, awy, lectures] = await Promise.all([
+  // Fetch enhanced context in parallel (including profile!)
+  const [assignments, awy, lectures, profile] = await Promise.all([
     fetchAssignmentsContext(supabase, userId),
     fetchAWYContext(supabase, userId),
     fetchLecturesContext(supabase, userId),
+    fetchProfileContext(supabase, userId),
   ]);
+
+  // Compute academic context (term, week)
+  const academic = computeAcademicContext();
 
   return {
     ...baseContext,
     assignments,
     awy,
-    lectures, // NEW: Include lectures with summaries for Durmah to discuss
+    lectures,
+    profile, // CRITICAL: Include profile for personalization
+    academic, // CRITICAL: Include term/week for context
   };
 }
