@@ -548,6 +548,8 @@ export function useDurmahRealtime({
             }
             // Audio playback (unrelated to transcription)
             else if (type === "response.audio.delta") {
+              // P2 FIX: Commented out to prevent double-audio (echo) since WebRTC track handles audio
+              /*
               const b64 = payload.delta as string;
               const bytes = Uint8Array.from(atob(b64), (c) =>
                 c.charCodeAt(0)
@@ -571,6 +573,8 @@ export function useDurmahRealtime({
                   { once: true }
                 );
               }
+              */
+             debugLog(`[SKIP] response.audio.delta (handled by WebRTC track)`);
             }
             // Error handling
             else if (type === "response.error") {

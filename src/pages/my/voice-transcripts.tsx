@@ -60,19 +60,90 @@ function VoiceTranscriptsPage() {
 
   const loadEntries = useCallback(async () => {
     setLoading(true);
-    const { data, error } = await supabase
-      .from("voice_journals")
-      .select("id, topic, created_at, started_at, ended_at, duration_seconds, transcript")
-      .order("created_at", { ascending: false });
+    
+    try {
+        // 1. Fetch Legacy/Bulk Voice Journals
+        const { data: journals, error: journalError } = await supabase
+        .from("voice_journals")
+        .select("id, topic, created_at, started_at, ended_at, duration_seconds, transcript")
+        .order("created_at", { ascending: false });
 
-    if (error) {
-      console.error("[VoiceTranscripts] Failed to fetch voice_journals", error);
-      toast.error("Couldn't load voice transcripts.");
+        if (journalError) throw journalError;
+
+        // 2. Fetch Itemized Saved Messages
+        const { data: messages, error: msgError } = await supabase
+        .from("durmah_messages")
+        .select("id, content, role, created_at, session_id, saved_at")
+        .not("saved_at", "is", null) // Only saved items
+        .order("created_at", { ascending: true }); // Order by time within session
+
+        if (msgError) throw msgError;
+
+        // 3. Group Messages by Session
+        const messageGroups: Record<string, VoiceJournalRow> = {};
+        
+        // Helper to normalize message role
+        const normalizeRole = (r: string) => r === 'user' ? 'you' : r === 'assistant' ? 'durmah' : r;
+
+        messages?.forEach(msg => {
+            const sessionId = msg.session_id || `legacy-${msg.created_at.substring(0, 10)}`;
+            
+            if (!messageGroups[sessionId]) {
+                messageGroups[sessionId] = {
+                    id: sessionId,
+                    topic: "Saved Highlights",
+                    created_at: msg.created_at, // Will pick earliest
+                    started_at: msg.created_at,
+                    ended_at: msg.created_at,
+                    duration_seconds: 0,
+                    transcript: []
+                };
+            }
+            
+            const group = messageGroups[sessionId];
+            // Update timestamps
+            if (new Date(msg.created_at) < new Date(group.created_at)) group.created_at = msg.created_at;
+            if (new Date(msg.created_at) > new Date(group.ended_at!)) group.ended_at = msg.created_at;
+            
+            // Add turn
+            group.transcript?.push({
+                role: normalizeRole(msg.role),
+                text: msg.content,
+                ts: new Date(msg.created_at).getTime(),
+                timestamp: new Date(msg.created_at).getTime()
+            });
+        });
+
+        // 4. Convert Groups to Array
+        const messageEntries = Object.values(messageGroups).map(g => {
+             // Calculate duration
+             const start = new Date(g.started_at!).getTime();
+             const end = new Date(g.ended_at!).getTime();
+             return {
+                 ...g,
+                 duration_seconds: Math.round((end - start) / 1000),
+                 topic: `Saved Highlights (${new Date(g.created_at).toLocaleDateString()})` 
+             };
+        });
+
+        // 5. Merge and Sort
+        // Deduping: If a session exists in both (unlikely given new flow, but possible), prefer Journal?
+        // Actually, let's just show both if they somehow exist, or filter. 
+        // Simple merge:
+        const allEntries = [...(journals || []), ...messageEntries];
+        
+        // Sort by created_at desc
+        allEntries.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+        setEntries(allEntries);
+        
+    } catch (error) {
+      console.error("[VoiceTranscripts] Failed to fetch data", error);
+      toast.error("Couldn't load transcripts.");
       setEntries([]);
-    } else {
-      setEntries((data as VoiceJournalRow[]) || []);
+    } finally {
+        setLoading(false);
     }
-    setLoading(false);
   }, []);
 
   useEffect(() => {

@@ -2101,15 +2101,9 @@ User question: ${userText}`;
               <button
                 onClick={discardVoiceTranscript}
                 className="text-xs font-medium px-3 py-1.5 rounded-lg text-gray-600 hover:bg-gray-200/50 transition-colors"
+                title="Close transcript"
               >
-                Discard
-              </button>
-              <button
-                onClick={saveVoiceTranscript}
-                className="text-xs font-bold px-4 py-2 rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 shadow-md transition-all hover:shadow-lg hover:scale-105 flex items-center gap-1.5"
-              >
-                <Check size={14} className="stroke-[3]" />
-                Save to Chat
+                Close View
               </button>
             </div>
           </div>
