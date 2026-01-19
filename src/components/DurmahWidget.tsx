@@ -421,8 +421,17 @@ export default function DurmahWidget() {
               return;
           }
 
-          // Get selected messages
-          const selectedMessages = messages.filter(m => selectedIds.has(getMessageKey(m)));
+          // Get selected messages from BOTH persistent messages and ephemeral transcript
+          const allCandidates = [...messages, ...callTranscript.map(t => ({
+              ...t,
+              // Normalize ephemeral transcript to Msg shape if needed
+              // callTranscript is { role: 'you'|'durmah', text: string, ts: number }
+              // Msg is { id?: string, role: 'you'|'durmah', text: string, ts: number, saved_at?: string|null, session_id?: string }
+              // It matches enough.
+          }))];
+
+          // Filter by selected IDs, ensuring uniqueness by ID/TS
+          const selectedMessages = allCandidates.filter(m => selectedIds.has(getMessageKey(m as any)));
           
           if (action === 'save') {
               // For each selected message, insert into durmah_messages if not already there
@@ -2073,13 +2082,26 @@ User question: ${userText}`;
           ) : (
             <div className="space-y-3 pr-2">
               {callTranscript.map((m) => (
-                <div key={m.ts} className={`flex ${m.role === "you" ? "justify-end" : "justify-start"}`}>
+                <div key={m.ts} className={`flex ${m.role === "you" ? "justify-end" : "justify-start"} items-end gap-2`}>
+                   
+                   {/* Selection Checkbox for Live Transcript */}
+                   {isSelectionMode && (
+                        <div className={`flex items-center ${m.role === "you" ? "order-last" : "order-first"}`}>
+                            <button onClick={() => toggleSelection(getMessageKey(m as any))} className="p-1 hover:bg-gray-100 rounded transition-colors">
+                                {selectedIds.has(getMessageKey(m as any)) ? 
+                                    <CheckSquare className="w-5 h-5 text-violet-600" /> : 
+                                    <Square className="w-5 h-5 text-gray-300 hover:text-gray-400" />
+                                }
+                            </button>
+                        </div>
+                    )}
+
                   <div
                     className={`px-3 py-2 rounded-2xl text-sm shadow-sm ${
                       m.role === "you"
                         ? "bg-violet-600 text-white rounded-tr-none"
                         : "bg-white text-slate-800 border border-violet-100 rounded-tl-none"
-                    }`}
+                    } ${isSelectionMode && selectedIds.has(getMessageKey(m as any)) ? 'ring-2 ring-violet-400 ring-offset-2' : ''}`}
                   >
                     {m.text}
                   </div>
