@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 // ... imports
 import { getSupabaseClient } from '@/lib/supabase/client';
+import LectureChatWidget from '@/components/study/LectureChatWidget';
 // ... existing imports
 
 interface LectureDetail {
@@ -411,10 +412,7 @@ export default function LectureDetailPage() {
       )}
       
 
-// ... existing imports ...
-import LectureChatWidget from '@/components/study/LectureChatWidget';
 
-// ... existing code ...
 
       {/* Transcript Logic (kept same) */}
       {lecture.transcript && (
