@@ -268,9 +268,9 @@ export default function GlobalHeader() {
             <div className="flex items-center gap-3">
               <Link href="/" className="flex items-center">
                 <img 
-                  src="/images/MyDurhamLaw%20ImageGPT.png" 
+                  src="/MyDurhamLaw%20ImageGPT.png" 
                   alt="MyDurhamLaw" 
-                  className="h-10 w-auto object-contain"
+                  className="h-12 w-auto object-contain"
                 />
               </Link>
             </div>
