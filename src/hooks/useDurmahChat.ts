@@ -96,7 +96,21 @@ export function useDurmahChat({ source, scope, context = {}, initialMessages = [
   };
 
   const sendMessage = useCallback(async (content: string, modality: 'text'|'voice' = 'text') => {
-    if (!content.trim() || !conversationId || !user) return;
+    console.log('[useDurmahChat] sendMessage called', { content, conversationId, user: !!user });
+
+    if (!content.trim()) return;
+    
+    if (!user) {
+        toast.error('You must be logged in to chat');
+        return;
+    }
+
+    if (!conversationId) {
+        console.error('[useDurmahChat] No conversation ID available');
+        toast.error('Connection not ready. Please try again in a moment.');
+        // Try to recover ID?
+        return;
+    }
 
     // Optimistic Update
     const tempId = crypto.randomUUID();

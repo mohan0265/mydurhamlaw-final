@@ -100,7 +100,7 @@ export default function LectureChatWidget({ lectureId, title }: LectureChatWidge
   };
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden flex flex-col h-[600px] shadow-sm">
+    <div className={`bg-white rounded-xl border border-gray-200 overflow-hidden flex flex-col shadow-sm transition-all duration-300 ${visibleMessages.length > 0 ? 'h-[600px]' : 'h-auto'}`}>
       {/* Header */}
       <div className="bg-purple-600 p-4 text-white flex flex-col gap-2 transition-colors duration-300" 
            style={isSelectionMode ? { backgroundColor: '#374151' } : {}}>
