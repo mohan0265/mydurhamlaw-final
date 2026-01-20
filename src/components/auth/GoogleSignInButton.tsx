@@ -15,7 +15,11 @@ interface GoogleSignInButtonProps {
 }
 
 const GoogleSignInButton = ({ agree, displayName, yearGroup, plan }: GoogleSignInButtonProps) => {
-  /* ... */
+  const [loading, setLoading] = useState(false)
+
+  const handleGoogleSignIn = async () => {
+    setLoading(true)
+    try {
   
       // ✅ Store signup metadata in localStorage AND sessionStorage for redundancy
       const signupMetadata: SignupMetadata & { plan?: string } = {

@@ -88,6 +88,7 @@ export const PricingPlans: React.FC<PricingPlansProps> = ({
             <h3 className="text-xl font-bold text-indigo-900 mb-2">Core</h3>
             <p className="text-indigo-600/80 text-sm h-10">Full academic year planning and workflow support.</p>
           </div>
+          <div className="flex items-baseline mb-6">
              <span className="text-4xl font-extrabold text-gray-900">
                {billing === 'monthly' ? '£13.99' : '£119'}
              </span>
@@ -102,34 +103,57 @@ export const PricingPlans: React.FC<PricingPlansProps> = ({
           </div>
           
           <ul className="space-y-4 mb-8 flex-1">
-/* ... */
+            <Feature included text="Durmah Voice: 1,000 mins/mo" />
+            <Feature included text="Durmah Text: Unlimited" />
+            <Feature included text="Lecture Tools: 20 Uploads/mo" />
+            <Feature included text="Assignment Assist: Standard" />
+            <Feature included text="YAAG (Full + Deadlines)" />
+          </ul>
+
+          <button
+            onClick={() => handleSelect(billing === 'monthly' ? 'core_monthly' : 'core_annual')}
+            className="w-full py-3 px-4 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-200"
+          >
+            Get Core
+          </button>
+        </div>
+
+        {/* PRO PLAN */}
+        <div className="bg-white rounded-2xl p-8 border border-gray-200 flex flex-col relative overflow-hidden">
+          <div className="absolute top-0 right-0 bg-yellow-400 text-yellow-900 text-[10px] font-bold px-2 py-1 rounded-bl-lg">
+            BEST VALUE
+          </div>
+          <div className="mb-6">
+            <h3 className="text-xl font-bold text-gray-900 mb-2">Pro</h3>
+            <p className="text-gray-500 text-sm h-10">Maximum power for serious high-achievers.</p>
+          </div>
+          
           <div className="flex items-baseline mb-6">
-             <span className="text-4xl font-extrabold text-white">
+             <span className="text-4xl font-extrabold text-gray-900">
                {billing === 'monthly' ? '£24.99' : '£199'}
              </span>
-             <span className="text-gray-400 ml-2 text-sm">
+             <span className="text-gray-500 ml-2 text-sm">
                /{billing === 'monthly' ? 'mo' : 'yr'}
              </span>
              {billing === 'annual' && (
-                <span className="ml-3 bg-green-900 text-green-300 border border-green-800 text-xs px-2 py-1 rounded-full font-bold">
+                <span className="ml-3 bg-green-100 text-green-700 text-xs px-2 py-1 rounded-full font-bold">
                   Save ~33%
                 </span>
              )}
           </div>
           
           <ul className="space-y-4 mb-8 flex-1">
-            <Feature included text="Durmah Voice: 4,000 mins/mo (fair use)" />
+            <Feature included text="Durmah Voice: 4,000 mins/mo" />
             <Feature included text="Durmah Text: Unlimited" />
             <Feature included text="Lecture Tools: Unlimited" />
-            <Feature included text="Assignment Assist: Unlimited" />
-            <Feature included text="Exam Prep: Unlimited" />
+            <Feature included text="Assignment Assist: Advanced" />
+            <Feature included text="Study Sprint Mode: Priority" />
             <Feature included text="YAAG (Full + Analytics)" />
-            <Feature included text="Priority Study Sprint Mode" />
           </ul>
 
           <button
             onClick={() => handleSelect(billing === 'monthly' ? 'pro_monthly' : 'pro_annual')}
-            className="w-full py-3 px-4 bg-white text-gray-900 rounded-xl font-bold hover:bg-gray-100 transition-colors"
+            className="w-full py-3 px-4 bg-gray-900 text-white rounded-xl font-bold hover:bg-gray-800 transition-colors"
           >
             Go Pro
           </button>

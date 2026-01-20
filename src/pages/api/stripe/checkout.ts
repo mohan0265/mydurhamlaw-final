@@ -35,7 +35,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-  try {
     // Body: { plan: 'core_monthly' | 'core_annual' | 'pro_monthly' | 'pro_annual' | 'free' }
     const { plan } = (req.body || {}) as { plan?: string };
     
