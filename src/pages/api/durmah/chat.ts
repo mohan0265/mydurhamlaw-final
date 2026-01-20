@@ -72,7 +72,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         schedule: { todaysClasses: [] }
     };
 
-    const enhancedContext = await enhanceDurmahContext(supabase, userId, baseCtx as any, finalConversationId);
+    let enhancedContext = baseCtx as any;
+    try {
+        console.log('[chat] Building context for:', userId);
+        enhancedContext = await enhanceDurmahContext(supabase, userId, baseCtx as any, finalConversationId);
+    } catch (ctxErr) {
+        console.error('[chat] Context enhancement failed, proceeding with base context:', ctxErr);
+        // Fallback to base context is better than crashing
+    }
     
     // 4. Construct System Prompt
     let systemPromptText = buildDurmahSystemPrompt(true);
@@ -91,21 +98,25 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     
     // Quick Fix for Lecture Content Injection if needed:
     if (scope === 'lecture' && context.lectureId) {
-        // Fetch lecture details lightly
-        const { data: lecture } = await supabase
-            .from('lecture_notes')
-            .select('summary, key_points')
-            .eq('lecture_id', context.lectureId)
-            .maybeSingle();
-            
-        if (lecture) {
-            systemPromptText += `\n\nCURRENT LECTURE CONTEXT:\nSummary: ${lecture.summary?.substring(0, 1000)}\nKey Points: ${lecture.key_points?.join('; ')}`;
+        try {
+            // Fetch lecture details lightly
+            const { data: lecture } = await supabase
+                .from('lecture_notes')
+                .select('summary, key_points')
+                .eq('lecture_id', context.lectureId)
+                .maybeSingle(); // Use maybeSingle to avoid 406 on zero rows
+                
+            if (lecture) {
+                systemPromptText += `\n\nCURRENT LECTURE CONTEXT:\nSummary: ${lecture.summary?.substring(0, 1000)}\nKey Points: ${lecture.key_points?.join('; ')}`;
+            }
+        } catch (lErr) {
+            console.error('[chat] Lecture context fetch failed:', lErr);
         }
     }
 
     // 5. Construct Chat History for LLM
     // enhancedContext.recentMemories contains the merged history from retrieval.
-    const historyMessages = (enhancedContext.recentMemories || []).map(m => ({
+    const historyMessages = (enhancedContext.recentMemories || []).map((m: any) => ({
         role: m.role as 'user'|'assistant',
         content: m.content
     }));
@@ -117,6 +128,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     ];
 
     // 6. Persist USER Message
+    console.log('[chat] Saving user message...');
     const { data: userMsgData, error: insertError } = await supabase.from('durmah_messages').insert({
         user_id: userId,
         role: 'user',
@@ -131,12 +143,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     if (insertError) {
         console.error('Failed to save user message', insertError);
+        // We continue anyway, though history might be desynced
     }
 
     // 7. Get AI Response
+    console.log('[chat] Calling OpenAI...');
     const reply = await callOpenAI(messagesForLLM);
 
     // 8. Persist ASSISTANT Message
+    console.log('[chat] Saving assistant response...');
     const { data: assistantMsgData } = await supabase.from('durmah_messages').insert({
          user_id: userId,
          role: 'assistant',
@@ -144,6 +159,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
          conversation_id: finalConversationId,
          source,
          scope,
+         scope_id: context.lectureId || context.assignmentId || undefined, // Store ID if available for easier filtering later
          visibility: 'ephemeral', // Assistant replies ephemeral by default
          context: context,
          modality: 'text'
@@ -157,7 +173,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
 
   } catch (err: any) {
-    console.error('[durmah/chat] error', err);
-    return res.status(500).json({ ok: false, error: err?.message || 'chat_failed' });
+    console.error('[durmah/chat] Critical error:', err);
+    // Return actual error message for debugging (in dev/beta this is fine)
+    return res.status(500).json({ 
+        ok: false, 
+        error: err?.message || 'chat_failed',
+        stack: process.env.NODE_ENV === 'development' ? err?.stack : undefined
+    });
   }
 }
