@@ -142,7 +142,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
          conversation_id: finalConversationId,
          source,
          scope,
-         scope_id: context.lectureId || context.assignmentId || undefined, // Store ID if available for easier filtering later
+         scope,
+         scope_id: (context.lectureId && context.lectureId.length === 36) ? context.lectureId : 
+                   (context.assignmentId && context.assignmentId.length === 36) ? context.assignmentId : null,
          visibility: 'ephemeral', // Assistant replies ephemeral by default
          context: context,
          modality: 'text'
