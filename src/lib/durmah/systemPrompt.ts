@@ -112,7 +112,7 @@ STUDENT: ${student.displayName}, ${student.yearGroup}, ${student.term} Week ${st
   }
 
   // Upcoming deadlines
-  if (assignments.upcoming.length > 0) {
+  if (assignments?.upcoming?.length > 0) {
     block += `UPCOMING DEADLINES:\n`;
     assignments.upcoming.forEach((a) => {
       block += `- "${a.title}" (${a.module}) - ${a.daysLeft} day${a.daysLeft === 1 ? '' : 's'} left\n`;
@@ -122,7 +122,7 @@ STUDENT: ${student.displayName}, ${student.yearGroup}, ${student.term} Week ${st
   }
 
   // Overdue (RED FLAG)
-  if (assignments.overdue.length > 0) {
+  if (assignments?.overdue?.length > 0) {
     block += `\n⚠️ OVERDUE:\n`;
     assignments.overdue.forEach((a) => {
       block += `- "${a.title}" (${a.module}) - ${a.daysOver} day${a.daysOver === 1 ? '' : 's'} overdue\n`;
@@ -130,7 +130,7 @@ STUDENT: ${student.displayName}, ${student.yearGroup}, ${student.term} Week ${st
   }
 
   // Recently created
-  if (assignments.recentlyCreated.length > 0) {
+  if (assignments?.recentlyCreated?.length > 0) {
     block += `\nRECENTLY ADDED:\n`;
     assignments.recentlyCreated.slice(0, 3).forEach((a) => {
       block += `- "${a.title}" (${a.module})\n`;
@@ -138,7 +138,7 @@ STUDENT: ${student.displayName}, ${student.yearGroup}, ${student.term} Week ${st
   }
 
   // Today's schedule
-  if (schedule.todaysClasses.length > 0) {
+  if (schedule?.todaysClasses?.length > 0) {
     block += `\nTODAY'S SCHEDULE:\n`;
     schedule.todaysClasses.forEach((c) => {
       block += `- ${c.module_name} at ${c.time}\n`;
@@ -148,7 +148,7 @@ STUDENT: ${student.displayName}, ${student.yearGroup}, ${student.term} Week ${st
   }
 
   // YAAG CALENDAR (CENTRAL INTELLIGENCE!)
-  if (context.yaag && context.yaag.itemsByDay) {
+  if (context.yaag?.itemsByDay) {
     const dates = Object.keys(context.yaag.itemsByDay).sort();
     block += `\n\n📅 CALENDAR DATA (${context.yaag.rangeStart} to ${context.yaag.rangeEnd}):\n`;
     block += `Available dates: ${dates.length} days\n`;
