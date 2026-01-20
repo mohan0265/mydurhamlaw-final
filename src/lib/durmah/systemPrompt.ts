@@ -99,10 +99,10 @@ STUDENT: ${student.displayName}, ${student.yearGroup}, ${student.term} Week ${st
 `;
 
   // CURRENT LECTURE CONTEXT (Central Intelligence Injection)
-  if (context.lectures?.current) {
     const l = context.lectures.current;
-    block += `\nCurrently Viewing Lecture: "${l.title}" (${l.module_name})\n`;
+    block += `\nCurrently Viewing / Active Lecture: "${l.title}" (${l.module_name})\n`;
     if (l.summary) block += `Summary: ${l.summary.substring(0, 300)}...\n`;
+    if (l.transcript_snippet) block += `Raw Transcript Snippet: "${l.transcript_snippet.substring(0, 500)}..."\n[Full context available to referencing]\n`;
     if (l.key_points && l.key_points.length > 0) block += `Key Points: ${l.key_points.slice(0, 3).join('; ')}\n`;
     if (l.engagement_hooks && l.engagement_hooks.length > 0) block += `Discussion Hooks: ${l.engagement_hooks.slice(0, 2).join('; ')}\n`;
     block += `\nYou can refer to this lecture content directly in your conversation.\n\n`;

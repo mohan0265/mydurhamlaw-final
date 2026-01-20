@@ -85,6 +85,7 @@ export interface StudentContext {
       summary?: string;
       key_points?: string[];
       engagement_hooks?: string[];
+      transcript_snippet?: string;
     };
   };
   // MEMORY: Recent chat history for continuity

@@ -112,12 +112,55 @@ export async function fetchAssignmentsContext(
 }
 
 /**
+ * Helper to fetch detailed content for a specific lecture
+ * Falls back to raw transcript if notes are missing
+ */
+async function fetchLectureDetails(supabase: SupabaseClient, lectureId: string) {
+    try {
+        // 1. Try Notes/Summary
+        const { data: notes } = await supabase
+            .from('lecture_notes')
+            .select('summary, key_points, engagement_hooks')
+            .eq('lecture_id', lectureId)
+            .maybeSingle();
+
+        if (notes) {
+            return {
+                summary: notes.summary,
+                key_points: notes.key_points ? (Array.isArray(notes.key_points) ? notes.key_points : []) : [],
+                engagement_hooks: notes.engagement_hooks ? (Array.isArray(notes.engagement_hooks) ? notes.engagement_hooks : []) : [],
+            };
+        }
+
+        // 2. Fallback to Transcript
+        const { data: transcript } = await supabase
+            .from('lecture_transcripts')
+            .select('transcript_text')
+            .eq('lecture_id', lectureId)
+            .maybeSingle();
+
+        if (transcript?.transcript_text) {
+            return {
+                summary: undefined,
+                key_points: [],
+                engagement_hooks: [],
+                transcript_snippet: transcript.transcript_text.substring(0, 4000) // Truncate
+            };
+        }
+    } catch (e) {
+        console.error('Error fetching lecture details:', e);
+    }
+    return null;
+}
+
+/**
  * Fetch recent lectures METADATA only for global Durmah context
- * Content (summary, key_points, engagement_hooks) fetched on-demand via tool
+ * AND fetch detailed content for the Active or Latest lecture (Central Intelligence)
  */
 export async function fetchLecturesContext(
   supabase: SupabaseClient,
-  userId: string
+  userId: string,
+  activeLectureId?: string
 ): Promise<{
   recent: Array<{
     id: string;
@@ -128,6 +171,7 @@ export async function fetchLecturesContext(
     lecture_date?: string;
     status: string;
   }>;
+  current?: DurmahContextPacket['lectures']['current']; // Use the type from DurmahContextPacket
   total: number;
 }> {
   // Fetch recent lectures - METADATA ONLY (no notes join)
@@ -135,8 +179,7 @@ export async function fetchLecturesContext(
     .from('lectures')
     .select('id, title, module_code, module_name, lecturer_name, lecture_date, status')
     .eq('user_id', userId)
-    .eq('status', 'ready')
-    .order('lecture_date', { ascending: false, nullsFirst: false })
+    .order('lecture_date', { ascending: false, nullsFirst: false }) // Fetch all recent, regardless of status for list
     .limit(5);
 
   const recentLectures = (lectures || []).map(l => ({
@@ -147,11 +190,41 @@ export async function fetchLecturesContext(
     lecturer_name: l.lecturer_name,
     lecture_date: l.lecture_date,
     status: l.status,
-    // NO summary, key_points, engagement_hooks here - fetch on demand
   }));
+
+  // CENTRAL INTELLIGENCE: Determine which lecture is "Current"
+  let currentLectureDetails = null;
+  let targetLecture = null;
+
+  if (activeLectureId) {
+      // Case A: User is ON a specific lecture page
+      targetLecture = recentLectures.find(l => l.id === activeLectureId);
+      // If not in recent list, we might need to fetch metadata separately, but for now assume in list or we just fetch details
+      if (!targetLecture) {
+           // Fetch metadata if not in recent list
+           const { data: specific } = await supabase.from('lectures').select('id, title, module_name').eq('id', activeLectureId).maybeSingle();
+           if (specific) targetLecture = specific;
+      }
+  } else if (recentLectures.length > 0) {
+      // Case B: Global Scope - Use the LATEST lecture as context
+      targetLecture = recentLectures[0];
+  }
+
+  if (targetLecture) {
+      const details = await fetchLectureDetails(supabase, targetLecture.id);
+      if (details) {
+          currentLectureDetails = {
+              id: targetLecture.id,
+              title: targetLecture.title,
+              module_name: targetLecture.module_name,
+              ...details
+          };
+      }
+  }
 
   return {
     recent: recentLectures,
+    current: currentLectureDetails || undefined,
     total: lectures?.length || 0,
   };
 }
@@ -290,13 +363,14 @@ export async function enhanceDurmahContext(
   supabase: SupabaseClient,
   userId: string,
   baseContext: DurmahContextPacket,
-  conversationId?: string 
+  conversationId?: string,
+  activeLectureId?: string 
 ): Promise<DurmahContextPacket> {
   // Fetch enhanced context in parallel
   const [assignments, awy, lectures, profile, globalTail] = await Promise.all([
     fetchAssignmentsContext(supabase, userId),
     fetchAWYContext(supabase, userId),
-    fetchLecturesContext(supabase, userId),
+    fetchLecturesContext(supabase, userId, activeLectureId), // PASS activeLectureId
     fetchProfileContext(supabase, userId),
     fetchGlobalChatTail(supabase, userId)
   ]);

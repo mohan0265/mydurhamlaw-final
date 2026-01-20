@@ -75,7 +75,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     let enhancedContext = baseCtx as any;
     try {
         console.log('[chat] Building context for:', userId);
-        enhancedContext = await enhanceDurmahContext(supabase, userId, baseCtx as any, finalConversationId);
+        // PASS context.lectureId (if any) as activeLectureId
+        // The centralized builder will fetch notes OR transcript fallback
+        enhancedContext = await enhanceDurmahContext(supabase, userId, baseCtx as any, finalConversationId, context.lectureId);
     } catch (ctxErr) {
         console.error('[chat] Context enhancement failed, proceeding with base context:', ctxErr);
         // Fallback to base context is better than crashing
@@ -88,31 +90,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const contextBlock = buildDurmahContextBlock(enhancedContext);
     systemPromptText += `\n\n${contextBlock}`;
 
-    // Inject Specific Context Payload (e.g. current lecture summary passed from client?)
-    // If client passes explicit `context` (like lectureId), contextBuilder might have fetched metadata, 
-    // but maybe we need deeper content here?
-    // For now, rely on `enhancedContext.lectures.current` if contextBuilder populated it.
-    // NOTE: enhanceDurmahContext doesn't populate `current` by default unless we specifically logic for it.
-    // The previous implementation had `currentLecture` logic.
-    // User Requirement: "Retrieve relevant lecture notes... based on contextRef"
-    
-    // Quick Fix for Lecture Content Injection if needed:
-    if (scope === 'lecture' && context.lectureId) {
-        try {
-            // Fetch lecture details lightly
-            const { data: lecture } = await supabase
-                .from('lecture_notes')
-                .select('summary, key_points')
-                .eq('lecture_id', context.lectureId)
-                .maybeSingle(); // Use maybeSingle to avoid 406 on zero rows
-                
-            if (lecture) {
-                systemPromptText += `\n\nCURRENT LECTURE CONTEXT:\nSummary: ${lecture.summary?.substring(0, 1000)}\nKey Points: ${lecture.key_points?.join('; ')}`;
-            }
-        } catch (lErr) {
-            console.error('[chat] Lecture context fetch failed:', lErr);
-        }
-    }
+    // Note: Manual lecture fetching logic REMOVED - handled by enhanceDurmahContext + systemPrompt now.
 
     // 5. Construct Chat History for LLM
     // enhancedContext.recentMemories contains the merged history from retrieval.

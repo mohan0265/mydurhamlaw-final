@@ -134,6 +134,18 @@ export type DurmahContextPacket = {
       lecture_date?: string;
       status: string;
     }>;
+    current?: {
+      id: string;
+      title: string;
+      module_code?: string;
+      module_name?: string;
+      lecturer_name?: string;
+      lecture_date?: string;
+      summary?: string;
+      key_points?: string[];
+      engagement_hooks?: string[];
+      transcript_snippet?: string;
+    };
     total: number;
   };
 };
