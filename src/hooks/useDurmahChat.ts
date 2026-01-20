@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { useSupabaseClient, useUser } from '@supabase/auth-helpers-react';
+import { useSupabaseClient, useUser } from '@/lib/supabase/AuthContext';
 import toast from 'react-hot-toast';
 import { v5 as uuidv5 } from 'uuid';
 
