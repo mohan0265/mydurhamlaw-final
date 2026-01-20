@@ -120,7 +120,7 @@ import { X, User, Heart, Scale } from 'lucide-react';
 
 // ... (existing imports)
 
-import { BrandMark } from '@/components/brand/BrandMark';
+// BrandMark import removed
 
 // ... (existing imports)
 
@@ -269,12 +269,31 @@ export default function GlobalHeader() {
       <header className="sticky top-0 z-50 bg-gradient-to-r from-violet-700 to-indigo-700 shadow border-b border-white/5">
         <nav className="mx-auto max-w-7xl px-4 sm:px-6">
           <div className="min-h-[72px] md:min-h-[80px] py-3 flex items-center justify-between">
-            {/* Brand - Premium Component */}
-            <div className="flex items-center gap-3">
-              <Link href="/" className="flex items-center gap-2 group focus:outline-none focus:ring-2 focus:ring-white/50 rounded-lg">
-                <BrandMark variant="header" />
-              </Link>
-            </div>
+            {/* Brand */}
+            <Link
+              href="/"
+              className="flex items-center gap-3 rounded-xl px-2 py-2 group focus:outline-none focus:ring-2 focus:ring-white/50"
+              aria-label="MyDurhamLaw Home"
+            >
+              {/* Icon badge (high contrast on purple) */}
+              <div className="h-10 w-10 rounded-xl bg-white/10 border border-white/15 flex items-center justify-center shadow-sm">
+                {/* Option A: Lucide icon (instant crisp) */}
+                <Scale className="h-6 w-6 text-amber-300" />
+              </div>
+
+              {/* Wordmark (text = always crisp) */}
+              <div className="leading-none">
+                <span className="text-white font-semibold tracking-tight text-xl md:text-2xl">
+                  MyDurham
+                </span>
+                <span className="text-amber-300 italic font-semibold text-xl md:text-2xl ml-0.5">
+                  Law
+                </span>
+                <div className="text-white/70 text-[11px] md:text-xs mt-1 tracking-wide">
+                  Durham Law Companion
+                </div>
+              </div>
+            </Link>
 
             {/* Desktop nav */}
             <div className="hidden md:flex items-center gap-1">
