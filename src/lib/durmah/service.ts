@@ -1,122 +1,58 @@
-// src/lib/durmah/service.ts
-import { getSupabaseClient } from '@/lib/supabase/client';
 
-export type StudentContext = {
-  userId: string | null;
-  name: string | null;
-  yearOfStudy: string | null;
-  upcoming: Array<{ title: string; dueAt: string }>;
-  lastMemory: { last_seen_at: string; last_topic: string | null; last_message: string | null } | null;
-};
+import { createClient } from '@supabase/supabase-js';
 
-const EMPTY_CONTEXT: StudentContext = {
-  userId: null,
-  name: null,
-  yearOfStudy: null,
-  upcoming: [],
-  lastMemory: null,
-};
+// Robust configuration access
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY!;
+const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-4o'; // Default to smart model
 
-export async function getStudentContext(): Promise<StudentContext> {
-  const supabase = getSupabaseClient();
-  if (!supabase) {
-    return { ...EMPTY_CONTEXT };
-  }
-
-  let userId: string | null = null;
-  try {
-    const { data: session } = await supabase.auth.getSession();
-    userId = session?.session?.user?.id ?? null;
-  } catch {
-    userId = null;
-  }
-
-  let name: string | null = null;
-  let year: string | null = null;
-  if (userId) {
-    try {
-      const { data } = await supabase
-        .from('profiles')
-        .select('display_name, year_of_study')
-        .eq('id', userId)
-        .maybeSingle();
-      name = data?.display_name ?? null;
-      year = data?.year_of_study ?? null;
-    } catch {
-      name = null;
-      year = null;
+/**
+ * Call OpenAI Chat Completion (Robust Implementation)
+ */
+export async function callOpenAI(messages: any[]) {
+    if (!OPENAI_API_KEY) {
+        throw new Error('Missing OPENAI_API_KEY environment variable');
     }
-  }
 
-  const upcoming: Array<{ title: string; dueAt: string }> = [];
-  if (userId) {
+    if (!messages || !Array.isArray(messages) || messages.length === 0) {
+        console.warn('[callOpenAI] Empty messages array passed');
+        return "I'm sorry, I didn't catch that. Could you repeat?";
+    }
+
     try {
-      const nowIso = new Date().toISOString();
-      let query = await supabase
-        .from('assignments')
-        .select('title, due_at')
-        .gte('due_at', nowIso)
-        .order('due_at', { ascending: true })
-        .limit(3);
+        const response = await fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${OPENAI_API_KEY}`
+            },
+            body: JSON.stringify({
+                model: OPENAI_MODEL,
+                messages: messages.map(m => ({
+                    role: m.role,
+                    content: m.content
+                })),
+                temperature: 0.7,
+                max_tokens: 1000,
+            })
+        });
 
-      const needsFallback = Boolean(query?.error && query.error.message?.includes('relation'))
-        || query?.error?.code === 'PGRST116';
-
-      if (needsFallback) {
-        query = await supabase
-          .from('tasks')
-          .select('title, due_at')
-          .gte('due_at', nowIso)
-          .order('due_at', { ascending: true })
-          .limit(3);
-      }
-
-      if (query?.data) {
-        for (const item of query.data) {
-          if (item?.title && item?.due_at) {
-            upcoming.push({ title: item.title, dueAt: item.due_at });
-          }
+        if (!response.ok) {
+            const errText = await response.text();
+            console.error('[callOpenAI] API Error:', response.status, errText);
+            throw new Error(`OpenAI API Error: ${response.status} ${errText}`);
         }
-      }
-    } catch {
-      upcoming.length = 0;
+
+        const data = await response.json();
+        
+        if (!data.choices || data.choices.length === 0) {
+            console.error('[callOpenAI] No choices returned');
+            return "Thinking..."; // Fallback
+        }
+
+        return data.choices[0].message.content;
+
+    } catch (error: any) {
+        console.error('[callOpenAI] Exception:', error);
+        throw new Error(error.message || 'Failed to contact AI service');
     }
-  }
-
-  let lastMemory: StudentContext['lastMemory'] = null;
-  if (userId) {
-    try {
-      const { data } = await supabase
-        .from('durmah_memory')
-        .select('last_seen_at, last_topic, last_message')
-        .eq('user_id', userId)
-        .order('last_seen_at', { ascending: false })
-        .limit(1);
-      lastMemory = data?.[0] ?? null;
-    } catch {
-      lastMemory = null;
-    }
-  }
-
-  return {
-    userId,
-    name,
-    yearOfStudy: year,
-    upcoming,
-    lastMemory,
-  };
-}
-
-export function composeOpener(ctx: StudentContext): string {
-  const hour = new Date().getHours();
-  const hello = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
-  const who = ctx.name || 'there';
-  const year = ctx.yearOfStudy ? ` • Year ${ctx.yearOfStudy}` : '';
-  const deadline = ctx.upcoming[0];
-
-  const nudge = deadline
-    ? `Heads-up: “${deadline.title}” is due ${new Date(deadline.dueAt).toLocaleDateString()}. Want to plan the next step together?`
-    : `Want to pick up where we left off${ctx.lastMemory?.last_topic ? ` on “${ctx.lastMemory.last_topic}”` : ''}?`;
-
-  return `${hello}, ${who}${year}! I’m here with you. ${nudge}`;
 }
