@@ -271,25 +271,7 @@ export default function Dashboard() {
 
       </main>
 
-      {/* SUPPORT WIDGET */}
-      <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-2">
-         {supportExpanded && (
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-xl p-2 w-48 mb-2 animate-in slide-in-from-bottom-2">
-               <button className="w-full text-left px-3 py-2.5 rounded-xl hover:bg-gray-50 text-sm font-medium text-gray-700 flex items-center gap-3 transition">
-                  <Video className="w-4 h-4 text-purple-600" /> Durmah
-               </button>
-               <button className="w-full text-left px-3 py-2.5 rounded-xl hover:bg-gray-50 text-sm font-medium text-gray-700 flex items-center gap-3 transition">
-                  <Heart className="w-4 h-4 text-pink-500" /> Always With You
-               </button>
-            </div>
-         )}
-         <button 
-           onClick={() => setSupportExpanded(!supportExpanded)}
-           className="h-12 px-6 bg-white text-gray-900 font-bold rounded-full shadow-lg border border-gray-200 hover:shadow-xl hover:scale-105 transition flex items-center gap-2"
-         >
-            {supportExpanded ? 'Close' : 'Support'}
-         </button>
-      </div>
+
     </>
   );
 }
