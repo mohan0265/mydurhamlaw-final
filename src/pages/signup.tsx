@@ -18,6 +18,9 @@ export default function SignUpPage() {
   const [displayName, setDisplayName] = useState('')
   const [yearGroup, setYearGroup] = useState<YearGroup | ''>('')
   const [agree, setAgree] = useState(false)
+  
+  const { plan } = router.query;
+  const planId = Array.isArray(plan) ? plan[0] : plan;
 
   useEffect(() => {
     const supabase = getSupabaseClient()
@@ -133,6 +136,7 @@ export default function SignUpPage() {
               agree={agree}
               displayName={displayName}
               yearGroup={yearGroup as YearGroup}
+              plan={planId}
             />
           </div>
         </div>

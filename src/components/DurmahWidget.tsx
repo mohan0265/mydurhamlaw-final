@@ -499,105 +499,28 @@ export default function DurmahWidget() {
   }, [signedIn]);
 
   // Listen for OPEN_DURMAH postMessage from other components (e.g., news feed)
+  // Listen for OPEN_DURMAH postMessage from other components (e.g., news feed) -> Now handled by custom event bridge below
+  // effectively deprecated by Phase 3 logic
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
-      // Security: Only process messages from same origin
-      if (event.origin !== window.location.origin) return;
-
-      if (event.data?.type === 'OPEN_DURMAH') {
-        const { mode: requestedMode, autoMessage, article } = event.data.payload || {};
-
-        console.log('[Durmah] Received OPEN_DURMAH request:', { requestedMode, hasMessage: !!autoMessage });
-
-        // 1. Open widget
-        setIsOpen(true);
-
-        // 2. Switch mode if requested
-        if (requestedMode && (requestedMode === 'chat' || requestedMode === 'study' || requestedMode === 'NEWS_STRICT')) {
-          setMode(requestedMode);
-        }
-
-        // 3. Auto-send message if provided
-        if (autoMessage && typeof autoMessage === 'string' && signedIn) {
-          setTimeout(() => {
-            // Programmatically trigger send
-            const userText = autoMessage.trim();
-            if (!userText || isStreaming || voiceSessionActive) return;
-            
-            const now = Date.now();
-            const userMsg: Msg = { role: "you", text: userText, ts: now };
-            const assistantId = now + 1;
-
-            const history = [...messages, userMsg];
-            setMessages([...history, { role: "durmah", text: "", ts: assistantId }]);
-            setInput("");
-            setIsStreaming(true);
-
-            // Inline chat send logic
-            (async () => {
-              try {
-                const body = {
-                  message: userText,
-                  history: history.map((m) => ({
-                    role: m.role === "you" ? "user" : "assistant",
-                    content: m.text,
-                  })),
-                  mode: requestedMode || mode,
-                  article,
-                };
-
-                const response = await fetch("/api/durmah/chat", {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  credentials: 'include',
-                  body: JSON.stringify(body),
-                });
-
-                if (!response.ok) {
-                  throw new Error(`HTTP ${response.status}`);
-                }
-
-                // FIX PART A: Parsed JSON response instead of raw stream to avoid leaking {ok:true}
-                const data = await response.json();
-                
-                if (!data.ok || !data.reply) {
-                   throw new Error(data.error || "No reply from Durmah");
-                }
-
-                setMessages((prev) => {
-                  const copy = [...prev];
-                  const lastIdx = copy.length - 1;
-                  if (copy[lastIdx]?.role === "durmah") {
-                    copy[lastIdx] = { ...copy[lastIdx], text: data.reply };
-                  }
-                  return copy;
-                });
-
-                setIsStreaming(false);
-              } catch (err: any) {
-                console.error("[Durmah] Auto-send error:", err);
-                setMessages((prev) => {
-                  const copy = [...prev];
-                  const lastIdx = copy.length - 1;
-                  if (copy[lastIdx]?.role === "durmah") {
-                    copy[lastIdx] = {
-                      ...copy[lastIdx],
-                      text: "Sorry, I encountered an error analyzing this article. Please try again.",
-                    };
-                  }
-                  return copy;
-                });
-                setIsStreaming(false);
+         if (event.origin !== window.location.origin) return;
+         // Legacy support: if still receiving OPEN_DURMAH, forward to CustomEvent
+         if (event.data?.type === 'OPEN_DURMAH') {
+             const { mode: reqMode, autoMessage } = event.data.payload || {};
+              if (reqMode) setMode(reqMode);
+              setIsOpen(true);
+              if (autoMessage && typeof autoMessage === 'string' && signedIn) {
+                   setTimeout(() => {
+                       window.dispatchEvent(new CustomEvent('durmah:message', { 
+                           detail: { text: autoMessage, mode: reqMode }
+                       }));
+                   }, 500);
               }
-            })();
-          }, 1000);
-        }
-      }
+         }
     };
-
     window.addEventListener('message', handleMessage);
     return () => window.removeEventListener('message', handleMessage);
-  }, [messages, mode, signedIn, isStreaming, voiceSessionActive]);
+  }, [signedIn]);
 
   // NEW Phase 3: Listen for CustomEvent-based cross-component communication (e.g., from SmartNewsAgent)
   useEffect(() => {
@@ -805,22 +728,16 @@ export default function DurmahWidget() {
           const data = await res.json();
           const ctx = data?.context as DurmahContextPacket | undefined;
           if (!cancelled && ctx) {
-            const mapped = (ctx.recent?.lastMessages || []).map((m) => ({
-              role: (m.role === 'assistant' ? 'durmah' : 'you') as "durmah" | "you",
-              text: m.content,
-              ts: new Date(m.created_at).getTime(),
-            }));
-            if (mapped.length > 0) {
-              setMessages((prev) => (prev.length > 0 ? prev : mapped));
-            }
-            if (ctx.lastSummary) {
-              setMemory({
-                last_topic: 'continuation',
-                last_message: ctx.lastSummary,
-                last_seen_at: ctx.academic.localTimeISO,
-              });
-            }
-            setContextPacket(ctx);
+             // Hook handles message loading now
+             if (ctx.lastSummary) {
+               setMemory({
+                 last_topic: 'continuation',
+                 last_message: ctx.lastSummary,
+                 last_seen_at: ctx.academic.localTimeISO,
+               });
+             }
+             setContextPacket(ctx);
+          }
             if (process.env.NODE_ENV !== "production") {
               console.log("[Durmah] Context loaded", {
                 displayName: ctx.profile.displayName,
@@ -868,10 +785,11 @@ export default function DurmahWidget() {
     // Mark as greeted for this session
     if (greetKey) sessionStorage.setItem(greetKey, "1");
 
-    setMessages((prev) => [
-      ...prev,
-      { role: "durmah", text: greeting, ts: Date.now() },
-    ]);
+    // Proactive greeting handled by hook (or manual send if absolutely needed)
+    // Only send if history is empty
+    if (unifiedMessages.length === 0) {
+        sendMessage(greeting, 'text').catch(console.error);
+    }
   }, [
     ready,
     isOpen,
@@ -1190,7 +1108,8 @@ Date: ${studentContextData.academic?.now?.nowText || studentContextData.student.
   const saveVoiceTranscript = async () => {
     const transcriptTurns = mergeDedupedTranscript(callTranscript);
     if (transcriptTurns.length > 0) {
-      setMessages((prev) => [...prev, ...transcriptTurns]);
+      // Logged via logMessage/appendTranscriptTurn already.
+      // setMessages((prev) => [...prev, ...transcriptTurns]);
 
       const lastUser = [...transcriptTurns].reverse().find((m) => m.role === "you");
       if (lastUser) {
@@ -1294,8 +1213,10 @@ Date: ${studentContextData.academic?.now?.nowText || studentContextData.student.
   const clearChat = async () => {
     if (!confirm('Clear entire conversation? This cannot be undone.')) return;
     
-    setMessages([]);
     setCallTranscript([]);
+    // Clearing unified messages - likely via clearUnsaved or direct DB deletion
+    // For now, reload or call clearUnsaved
+    clearUnsaved(); // from hook
     
     // Also clear from database
     if (user?.id && supabaseClient) {

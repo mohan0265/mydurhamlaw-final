@@ -35,18 +35,26 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    const { plan } = (req.body || {}) as { plan?: 'monthly' | 'annual' };
-    if (plan !== 'monthly' && plan !== 'annual') {
-      return res.status(400).json({ error: 'Invalid plan' });
-    }
+  try {
+    // Body: { plan: 'core_monthly' | 'core_annual' | 'pro_monthly' | 'pro_annual' | 'free' }
+    const { plan } = (req.body || {}) as { plan?: string };
+    
+    // Map plan keys to Environment Variables
+    const priceMap: Record<string, string | undefined> = {
+       'core_monthly': process.env.STRIPE_PRICE_CORE_MONTHLY,
+       'core_annual': process.env.STRIPE_PRICE_CORE_ANNUAL,
+       'pro_monthly': process.env.STRIPE_PRICE_PRO_MONTHLY,
+       'pro_annual': process.env.STRIPE_PRICE_PRO_ANNUAL,
+       // Legacy fallback
+       'monthly': process.env.STRIPE_PRICE_MONTHLY, 
+       'annual': process.env.STRIPE_PRICE_ANNUAL
+    };
 
-    const priceId =
-      plan === 'monthly'
-        ? process.env.STRIPE_PRICE_MONTHLY
-        : process.env.STRIPE_PRICE_ANNUAL;
+    const priceId = plan ? priceMap[plan] : undefined;
 
     if (!priceId) {
-      return res.status(500).json({ error: 'Stripe Price ID not configured' });
+      console.error(`[Stripe] Invalid plan requested: ${plan}`);
+      return res.status(400).json({ error: 'Invalid or missing plan configuration' });
     }
 
     const trialDays = Number.parseInt(process.env.STRIPE_TRIAL_DAYS || '14', 10);

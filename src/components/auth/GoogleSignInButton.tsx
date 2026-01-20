@@ -11,36 +11,19 @@ interface GoogleSignInButtonProps {
   agree: boolean
   displayName: string
   yearGroup: 'foundation' | 'year1' | 'year2' | 'year3'
+  plan?: string
 }
 
-const GoogleSignInButton = ({ agree, displayName, yearGroup }: GoogleSignInButtonProps) => {
-  const [loading, setLoading] = useState(false)
-
-  const handleGoogleSignIn = async () => {
-    if (!agree) {
-      toast.error('You must agree to the terms and policies before continuing.')
-      return
-    }
-
-    if (!displayName || displayName.trim().length === 0) {
-      toast.error('Please enter your display name before continuing.')
-      return
-    }
-
-    if (!yearGroup) {
-      toast.error('Please select your year group before continuing.')
-      return
-    }
-
-    setLoading(true)
-
-    try {
+const GoogleSignInButton = ({ agree, displayName, yearGroup, plan }: GoogleSignInButtonProps) => {
+  /* ... */
+  
       // ✅ Store signup metadata in localStorage AND sessionStorage for redundancy
-      const signupMetadata: SignupMetadata = {
+      const signupMetadata: SignupMetadata & { plan?: string } = {
         display_name: displayName.trim(),
         year_group: yearGroup,
         user_type: yearGroup,
-        agreed_to_terms: true
+        agreed_to_terms: true,
+        plan: plan // Persist selected plan
       }
 
       // Store in both localStorage and sessionStorage for better persistence

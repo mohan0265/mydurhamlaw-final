@@ -241,6 +241,34 @@ export default function LoginRedirectPage() {
             setStatus(`Welcome! Redirecting to your family dashboard...`);
             navigateOnce('/loved-one-dashboard', 1500);
           } else {
+             // CHECK FOR STRIPE PLAN
+             const selectedPlan = signupMetadata?.plan;
+             if (selectedPlan && selectedPlan !== 'free') {
+                 setStatus("Account created! Redirecting to payment...");
+                 console.log(`[auth/callback] Initiating checkout for plan: ${selectedPlan}`);
+                 
+                 try {
+                     const res = await fetch('/api/stripe/checkout', {
+                         method: 'POST',
+                         headers: { 'Content-Type': 'application/json' },
+                         body: JSON.stringify({ plan: selectedPlan })
+                     });
+                     
+                     if (res.ok) {
+                         const { url } = await res.json();
+                         if (url) {
+                             console.log('[auth/callback] Redirecting to Stripe:', url);
+                             window.location.href = url;
+                             return;
+                         }
+                     } else {
+                         console.error('[auth/callback] Checkout creation failed');
+                     }
+                 } catch (e) {
+                     console.error('[auth/callback] Checkout error:', e);
+                 }
+             }
+
             setStatus("Welcome! Let's complete your profile...");
             navigateOnce('/complete-profile', 1500);
           }

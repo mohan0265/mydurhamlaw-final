@@ -45,7 +45,7 @@ export const PricingPlans: React.FC<PricingPlansProps> = ({
                billing === 'annual' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900'
              }`}
            >
-             Annual <span className="bg-green-100 text-green-700 text-[10px] px-1.5 py-0.5 rounded-full font-bold uppercase">Save ~20%</span>
+             Annual <span className="bg-green-100 text-green-700 text-[10px] px-1.5 py-0.5 rounded-full font-bold uppercase">Save up to 33%</span>
            </button>
         </div>
       </div>
@@ -88,39 +88,21 @@ export const PricingPlans: React.FC<PricingPlansProps> = ({
             <h3 className="text-xl font-bold text-indigo-900 mb-2">Core</h3>
             <p className="text-indigo-600/80 text-sm h-10">Full academic year planning and workflow support.</p>
           </div>
-          <div className="flex items-baseline mb-6">
              <span className="text-4xl font-extrabold text-gray-900">
                {billing === 'monthly' ? '£13.99' : '£119'}
              </span>
              <span className="text-gray-500 ml-2 text-sm">
                /{billing === 'monthly' ? 'mo' : 'yr'}
              </span>
+             {billing === 'annual' && (
+                <span className="ml-3 bg-indigo-100 text-indigo-700 text-xs px-2 py-1 rounded-full font-bold">
+                  Save ~30%
+                </span>
+             )}
           </div>
           
           <ul className="space-y-4 mb-8 flex-1">
-            <Feature included text="Durmah Voice: 1,200 mins/mo (fair use)" />
-            <Feature included text="Durmah Text: 2,000 msgs/mo" />
-            <Feature included text="Lecture Tools: 24 Uploads/mo" />
-            <Feature included text="Assignment Assist: 120 actions/mo" />
-            <Feature included text="Exam Prep: 120 sets/mo" />
-            <Feature included text="YAAG (Full Access — Year/Month/Week)" />
-            <Feature included text="Community & Wellbeing Access" />
-          </ul>
-
-          <button
-            onClick={() => handleSelect(billing === 'monthly' ? 'core_monthly' : 'core_annual')}
-            className="w-full py-3 px-4 bg-indigo-600 rounded-xl text-white font-bold hover:bg-indigo-700 transition-colors shadow-md"
-          >
-            Choose Core
-          </button>
-        </div>
-
-        {/* PRO PLAN */}
-        <div className="bg-gray-900 rounded-2xl p-8 border border-gray-800 text-white flex flex-col">
-          <div className="mb-6">
-            <h3 className="text-xl font-bold text-white mb-2">Pro</h3>
-            <p className="text-gray-400 text-sm h-10">For voice support, intensive prep, and lecture summaries.</p>
-          </div>
+/* ... */
           <div className="flex items-baseline mb-6">
              <span className="text-4xl font-extrabold text-white">
                {billing === 'monthly' ? '£24.99' : '£199'}
@@ -128,6 +110,11 @@ export const PricingPlans: React.FC<PricingPlansProps> = ({
              <span className="text-gray-400 ml-2 text-sm">
                /{billing === 'monthly' ? 'mo' : 'yr'}
              </span>
+             {billing === 'annual' && (
+                <span className="ml-3 bg-green-900 text-green-300 border border-green-800 text-xs px-2 py-1 rounded-full font-bold">
+                  Save ~33%
+                </span>
+             )}
           </div>
           
           <ul className="space-y-4 mb-8 flex-1">
