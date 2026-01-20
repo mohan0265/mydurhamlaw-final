@@ -43,6 +43,7 @@ type Props = {
   rows: AdminRow[]
   users: AdminUser[]
   connections: AWYConn[]
+  requests: any[] // access_requests
   error?: string | null
 }
 
@@ -61,7 +62,7 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
   if (!token || !exp || token !== exp) {
     return {
       redirect: { destination: "/admin/login", permanent: false },
-      props: { authorized: false, rows: [], users: [], connections: [], error: null }
+      props: { authorized: false, rows: [], users: [], connections: [], requests: [], error: null }
     }
   }
 
@@ -73,6 +74,7 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
         rows: [],
         users: [],
         connections: [],
+        requests: [],
         error: "Server misconfigured: missing Supabase admin env vars"
       }
     }
@@ -219,12 +221,26 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
     console.error('Failed to load invites', e);
   }
 
+  // Fetch Access Requests (Pending)
+  let requests: any[] = []
+  try {
+    const { data: reqs } = await adminClient
+      .from('access_requests')
+      .select('*')
+      .eq('request_status', 'pending')
+      .order('created_at', { ascending: false });
+    requests = reqs || [];
+  } catch (e) {
+    console.error('Failed to load requests', e);
+  }
+
   return {
     props: {
       authorized: true,
       rows: profilesWithNewFields,
       users,
       connections,
+      requests,
       error: error ? error.message : errMsg
     }
   }
@@ -239,12 +255,13 @@ function getDaysLeft(trialEndsAt: string | null): number | null {
   return Math.ceil(diffMs / (1000 * 60 * 60 * 24));
 }
 
-export default function AdminDashboard({ authorized, rows, users, connections, error }: Props) {
+export default function AdminDashboard({ authorized, rows, users, connections, requests, error }: Props) {
   if (!authorized) return null
 
   const [showInviteStudent, setShowInviteStudent] = useState(false)
   const [showCreateStudent, setShowCreateStudent] = useState(false)
   const [showCreateLovedOne, setShowCreateLovedOne] = useState(false)
+  const [activeTab, setActiveTab] = useState<'profiles' | 'requests'>('profiles')
   const [filter, setFilter] = useState<'all' | 'test' | 'real'>('all')
   const [inviteResult, setInviteResult] = useState<any>(null)
   const [selectedStudent, setSelectedStudent] = useState<AdminRow | null>(null)
@@ -442,6 +459,47 @@ export default function AdminDashboard({ authorized, rows, users, connections, e
     }
   }
 
+  // Access Request Handlers
+  const approveRequest = async (requestId: string) => {
+    try {
+      const res = await fetch('/api/admin/approve-request', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ requestId })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+
+      // Show invite link
+      prompt(
+        `✅ Request Approved!\n\nHere is the INVITE LINK for ${data.email}.\nCopy and send it to them manually if needed (safety first):`,
+        data.inviteUrl
+      );
+      window.location.reload();
+    } catch (e: any) {
+      alert(`Approval Failed: ${e.message}`);
+    }
+  };
+
+  const rejectRequest = async (requestId: string) => {
+    if (!confirm('Reject this request?')) return;
+    try {
+      const res = await fetch('/api/admin/reject-request', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ requestId })
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error);
+      }
+      alert('Request Rejected.');
+      window.location.reload();
+    } catch (e: any) {
+      alert(`Rejection Failed: ${e.message}`);
+    }
+  };
+
   // Multi-select state
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
 
@@ -616,6 +674,106 @@ export default function AdminDashboard({ authorized, rows, users, connections, e
           </div>
         )}
 
+        {/* TABS */}
+        <div className="flex border-b border-slate-200 mb-6">
+          <button
+            onClick={() => setActiveTab('profiles')}
+            className={`px-6 py-3 text-sm font-medium transition ${
+              activeTab === 'profiles'
+                ? 'border-b-2 border-purple-600 text-purple-600'
+                : 'text-slate-500 hover:text-slate-700'
+            }`}
+          >
+            User Profiles
+          </button>
+          <button
+            onClick={() => setActiveTab('requests')}
+            className={`px-6 py-3 text-sm font-medium transition flex items-center gap-2 ${
+              activeTab === 'requests'
+                ? 'border-b-2 border-purple-600 text-purple-600'
+                : 'text-slate-500 hover:text-slate-700'
+            }`}
+          >
+            Access Requests
+            {requests.length > 0 && (
+              <span className="bg-red-100 text-red-600 px-2 py-0.5 rounded-full text-xs font-bold">
+                {requests.length}
+              </span>
+            )}
+          </button>
+        </div>
+
+        {activeTab === 'requests' ? (
+          /* ACCESS REQUESTS TABLE */
+          <div className="overflow-auto border border-slate-100 rounded-xl mb-8 animate-in fade-in slide-in-from-left-4">
+             <table className="min-w-full text-sm">
+               <thead className="bg-slate-50 text-slate-500">
+                 <tr>
+                   <th className="px-4 py-3 text-left">Date</th>
+                   <th className="px-4 py-3 text-left">Name / Email</th>
+                   <th className="px-4 py-3 text-left">Cohort</th>
+                   <th className="px-4 py-3 text-left w-1/3">Message</th>
+                   <th className="px-4 py-3 text-left">Details</th>
+                   <th className="px-4 py-3 text-left">Actions</th>
+                 </tr>
+               </thead>
+               <tbody className="divide-y divide-slate-100">
+                 {requests.length === 0 ? (
+                   <tr>
+                     <td colSpan={6} className="px-4 py-8 text-center text-slate-400">
+                       No pending requests.
+                     </td>
+                   </tr>
+                 ) : (
+                   requests.map((req) => (
+                     <tr key={req.id} className="hover:bg-slate-50 transition">
+                       <td className="px-4 py-3 whitespace-nowrap text-slate-500">
+                         {new Date(req.created_at).toLocaleDateString()}
+                       </td>
+                       <td className="px-4 py-3">
+                         <div className="font-medium text-slate-900">{req.name}</div>
+                         <div className="text-slate-500 text-xs font-mono">{req.email}</div>
+                       </td>
+                       <td className="px-4 py-3">
+                         <span className="bg-blue-50 text-blue-700 px-2 py-1 rounded-md text-xs font-medium border border-blue-100 uppercase">
+                           {req.cohort}
+                         </span>
+                       </td>
+                       <td className="px-4 py-3">
+                         <div className="text-slate-600 text-xs line-clamp-3 bg-slate-50 p-2 rounded border border-slate-100 italic">
+                           "{req.message || 'No message'}"
+                         </div>
+                       </td>
+                       <td className="px-4 py-3 text-xs text-slate-500">
+                         {req.expected_term && <div>Term: {req.expected_term}</div>}
+                         {req.college && <div>College: {req.college}</div>}
+                         <div className="mt-1 text-[10px] text-slate-400">IP: {req.ip_hash?.substring(0,8)}...</div>
+                       </td>
+                       <td className="px-4 py-3">
+                         <div className="flex gap-2">
+                           <button
+                             onClick={() => approveRequest(req.id)}
+                             className="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded text-xs font-semibold shadow-sm transition"
+                           >
+                             Approve
+                           </button>
+                           <button
+                             onClick={() => rejectRequest(req.id)}
+                             className="px-3 py-1.5 bg-white border border-red-200 text-red-600 hover:bg-red-50 rounded text-xs font-medium transition"
+                           >
+                             Reject
+                           </button>
+                         </div>
+                       </td>
+                     </tr>
+                   ))
+                 )}
+               </tbody>
+             </table>
+          </div>
+        ) : (
+          /* PROFILES CONTENT (Original) */
+          <>
         {/* Filter */}
         <div className="mb-4 flex gap-2">
           <button onClick={() => setFilter('all')} className={`px-3 py-1 rounded text-sm ${filter === 'all' ? 'bg-slate-800 text-white' : 'bg-slate-100'}`}>All</button>
@@ -835,6 +993,8 @@ export default function AdminDashboard({ authorized, rows, users, connections, e
             </tbody>
           </table>
         </div>
+          </>
+        )}
       </div>
 
       {/* Invite Student Modal */}
