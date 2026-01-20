@@ -87,7 +87,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     let systemPromptText = buildDurmahSystemPrompt(true);
     
     // Inject enhanced context block
+    console.log('[chat] Building context block with keys:', Object.keys(enhancedContext));
+    if (enhancedContext.lectures) console.log('[chat] Context Lectures:', enhancedContext.lectures?.recent?.length, 'Current:', !!enhancedContext.lectures?.current);
+    if (enhancedContext.assignments) console.log('[chat] Context Assignments:', enhancedContext.assignments?.total);
+
     const contextBlock = buildDurmahContextBlock(enhancedContext);
+    console.log('[chat] Context block built, length:', contextBlock.length);
     systemPromptText += `\n\n${contextBlock}`;
 
     // Note: Manual lecture fetching logic REMOVED - handled by enhanceDurmahContext + systemPrompt now.
