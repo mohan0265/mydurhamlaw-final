@@ -17,7 +17,7 @@ import { Toaster } from 'react-hot-toast';
 import LayoutShell from '@/layout/LayoutShell';
 import Router from 'next/router';
 import { isRouteAbortError } from '@/lib/navigation/safeNavigate';
-import { SupportWidget } from '@/components/support/SupportWidget';
+import { isRouteAbortError } from '@/lib/navigation/safeNavigate';
 
 // Server-only init
 /*
@@ -170,7 +170,7 @@ export default function App({ Component, pageProps }: AppProps) {
                 <LayoutShell>
                   <Component {...pageProps} />
                 </LayoutShell>
-                <SupportWidget />
+
 
                 {/* Global Toaster */}
                 <Toaster

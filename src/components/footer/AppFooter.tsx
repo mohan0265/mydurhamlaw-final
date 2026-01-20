@@ -66,11 +66,11 @@ export const AppFooter: React.FC<AppFooterProps> = ({ isAuthed }) => {
 
   // Helper to render a link list
   const renderLinks = (links: FooterLink[]) => (
-    <ul className="space-y-3">
+    <ul className="space-y-2">
       {links.map((link, idx) => (
         <li key={idx}>
           {link.disabled ? (
-            <span className="text-gray-500 cursor-not-allowed flex items-center text-sm">
+            <span className="text-gray-500 cursor-not-allowed flex items-center text-xs">
               {link.icon || null}
               {link.label}
               <span className="ml-2 text-[10px] uppercase bg-gray-800 text-gray-400 px-1.5 py-0.5 rounded">Soon</span>
@@ -78,7 +78,7 @@ export const AppFooter: React.FC<AppFooterProps> = ({ isAuthed }) => {
           ) : (
             <Link 
               href={link.href} 
-              className="text-gray-300 hover:text-blue-400 transition-colors duration-200 flex items-center text-sm group"
+              className="text-gray-300 hover:text-blue-400 transition-colors duration-200 flex items-center text-xs group"
               target={link.isExternal ? "_blank" : undefined}
             >
               {link.icon || null}
@@ -92,38 +92,38 @@ export const AppFooter: React.FC<AppFooterProps> = ({ isAuthed }) => {
   )
 
   return (
-    <footer className="bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900 text-white py-16">
+    <footer className="bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900 text-white py-10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Main Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
           
           {/* Col 1: Brand */}
           <div className="md:col-span-1">
-            <h3 className="text-2xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent mb-4 flex items-center gap-2">
-              <Scale className="w-6 h-6 text-yellow-400" />
+            <h3 className="text-xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent mb-3 flex items-center gap-2">
+              <Scale className="w-5 h-5 text-yellow-400" />
               MyDurhamLaw
             </h3>
-            <p className="text-gray-300 mb-6 leading-relaxed text-sm">
+            <p className="text-gray-300 mb-4 leading-relaxed text-xs">
               The ethical AI study companion built exclusively for Durham University Law students. 
-              Transforming legal education with integrity, intelligence, and care.
+              Transforming legal education with integrity.
             </p>
-            <div className="flex space-x-4">
-              <div className="w-10 h-10 bg-blue-500/20 rounded-lg flex items-center justify-center">
-                <Shield className="w-5 h-5 text-blue-400" />
+            <div className="flex space-x-3">
+              <div className="w-8 h-8 bg-blue-500/20 rounded-lg flex items-center justify-center">
+                <Shield className="w-4 h-4 text-blue-400" />
               </div>
-              <div className="w-10 h-10 bg-pink-500/20 rounded-lg flex items-center justify-center">
-                <Heart className="w-5 h-5 text-pink-400" />
+              <div className="w-8 h-8 bg-pink-500/20 rounded-lg flex items-center justify-center">
+                <Heart className="w-4 h-4 text-pink-400" />
               </div>
-              <div className="w-10 h-10 bg-purple-500/20 rounded-lg flex items-center justify-center">
-                <GraduationCap className="w-5 h-5 text-purple-400" />
+              <div className="w-8 h-8 bg-purple-500/20 rounded-lg flex items-center justify-center">
+                <GraduationCap className="w-4 h-4 text-purple-400" />
               </div>
             </div>
           </div>
 
           {/* Col 2: Primary Links (Context Aware) */}
           <div>
-            <h4 className="text-lg font-bold mb-6 text-white border-b border-white/10 pb-2 inline-block">
+            <h4 className="text-sm font-bold mb-4 text-white border-b border-white/10 pb-2 inline-block">
               {isAuthed ? 'Study & Progress' : 'Explore'}
             </h4>
             {isAuthed ? renderLinks(studentStudyLinks) : renderLinks(publicLearnLinks)}
@@ -131,28 +131,28 @@ export const AppFooter: React.FC<AppFooterProps> = ({ isAuthed }) => {
 
           {/* Col 3: Secondary Links (Context Aware) */}
           <div>
-            <h4 className="text-lg font-bold mb-6 text-white border-b border-white/10 pb-2 inline-block">
+            <h4 className="text-sm font-bold mb-4 text-white border-b border-white/10 pb-2 inline-block">
               {isAuthed ? 'Community' : 'Support'}
             </h4>
             {isAuthed ? renderLinks(studentCommunityLinks) : (
-               <ul className="space-y-3">
-                 <li><Link href="/help" className="text-gray-300 hover:text-blue-400 text-sm">Help Center</Link></li>
-                 <li><Link href="/contact" className="text-gray-300 hover:text-blue-400 text-sm">Contact Us</Link></li>
-                 <li><span className="text-gray-500 text-sm cursor-not-allowed">Live Chat (Coming Soon)</span></li>
+               <ul className="space-y-2">
+                 <li><Link href="/help" className="text-gray-300 hover:text-blue-400 text-xs">Help Center</Link></li>
+                 <li><Link href="/contact" className="text-gray-300 hover:text-blue-400 text-xs">Contact Us</Link></li>
+                 <li><span className="text-gray-500 text-xs cursor-not-allowed">Live Chat (Coming Soon)</span></li>
                </ul>
             )}
           </div>
 
           {/* Col 4: Legal & Contact (Always visible) */}
           <div>
-            <h4 className="text-lg font-bold mb-6 text-white border-b border-white/10 pb-2 inline-block">
+            <h4 className="text-sm font-bold mb-4 text-white border-b border-white/10 pb-2 inline-block">
               Legal & Safety
             </h4>
             {renderLinks(legalLinks)}
             
-            <div className="mt-6 pt-6 border-t border-white/10">
-               <a href="mailto:support@mydurhamlaw.com" className="text-gray-300 hover:text-blue-400 transition-colors duration-200 flex items-center text-sm">
-                  <Mail className="w-4 h-4 mr-2" />
+            <div className="mt-4 pt-4 border-t border-white/10">
+               <a href="mailto:support@mydurhamlaw.com" className="text-gray-300 hover:text-blue-400 transition-colors duration-200 flex items-center text-xs">
+                  <Mail className="w-3 h-3 mr-2" />
                   support@mydurhamlaw.com
                </a>
             </div>
@@ -161,16 +161,13 @@ export const AppFooter: React.FC<AppFooterProps> = ({ isAuthed }) => {
         </div>
 
         {/* Disclaimer Notice */}
-        <div className="bg-blue-500/10 backdrop-blur-sm rounded-xl p-6 border border-blue-400/20 mb-8">
+        <div className="bg-blue-500/10 backdrop-blur-sm rounded-lg p-4 border border-blue-400/20 mb-6">
           <div className="flex items-start space-x-3">
-            <MapPin className="w-5 h-5 text-blue-400 mt-1 flex-shrink-0" />
+            <MapPin className="w-4 h-4 text-blue-400 mt-0.5 flex-shrink-0" />
             <div>
-              <h5 className="font-semibold text-blue-300 mb-2 text-sm uppercase tracking-wider">Independent Development Notice</h5>
-              <p className="text-blue-100 text-xs leading-relaxed">
-                MyDurhamLaw is independently developed and is not affiliated with, endorsed by, or officially 
-                connected to Durham University or its law faculty. All university trademarks and content 
-                remain the property of their respective owners. We are a third-party educational technology 
-                service designed to support Durham Law students.
+              <h5 className="font-semibold text-blue-300 mb-1 text-[10px] uppercase tracking-wider">Independent Development Notice</h5>
+              <p className="text-blue-100 text-[10px] leading-relaxed">
+                MyDurhamLaw is an independent educational technology service designed to support Durham Law students. Not affiliated with Durham University.
               </p>
             </div>
           </div>
@@ -178,14 +175,14 @@ export const AppFooter: React.FC<AppFooterProps> = ({ isAuthed }) => {
 
         {/* SEO Keywords (Public Only) */}
         {!isAuthed && (
-          <div className="border-t border-gray-700 pt-8 mb-8">
-            <h5 className="text-xs font-semibold text-gray-500 mb-4 uppercase tracking-wider">Popular Topics</h5>
+          <div className="border-t border-gray-700 pt-4 mb-6">
+            <h5 className="text-[10px] font-semibold text-gray-500 mb-2 uppercase tracking-wider">Popular Topics</h5>
             <div className="flex flex-wrap gap-2">
               {seoLinks.map((link, i) => (
                  <Link 
                    key={i} 
                    href={link.href} 
-                   className="text-[10px] text-gray-400 bg-white/5 hover:bg-white/10 px-3 py-1.5 rounded-full transition-colors"
+                   className="text-[10px] text-gray-400 bg-white/5 hover:bg-white/10 px-2 py-1 rounded transition-colors"
                  >
                    {link.label}
                  </Link>
@@ -195,14 +192,14 @@ export const AppFooter: React.FC<AppFooterProps> = ({ isAuthed }) => {
         )}
 
         {/* Bottom Bar */}
-        <div className="border-t border-gray-700 pt-8 flex flex-col md:flex-row justify-between items-center text-sm">
-          <p className="text-gray-500 mb-4 md:mb-0 text-center md:text-left">
-            © {new Date().getFullYear()} MyDurhamLaw. Built with care for legal excellence. All rights reserved.
+        <div className="border-t border-gray-700 pt-6 flex flex-col md:flex-row justify-between items-center text-xs">
+          <p className="text-gray-500 mb-3 md:mb-0 text-center md:text-left">
+            © {new Date().getFullYear()} MyDurhamLaw. Built with care for legal excellence.
           </p>
           
-          <div className="flex items-center space-x-6">
+          <div className="flex items-center space-x-4">
             {!isAuthed && (
-              <Link href="/signup" className="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-full transition-all text-sm font-medium border border-white/10">
+              <Link href="/signup" className="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white px-3 py-1.5 rounded-full transition-all text-xs font-medium border border-white/10">
                 Start Free Trial
               </Link>
             )}
