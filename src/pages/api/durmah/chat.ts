@@ -135,7 +135,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // 8. Persist ASSISTANT Message
     console.log('[chat] Saving assistant response...');
-    const { data: assistantMsgData } = await supabase.from('durmah_messages').insert({
+    const { data: assistantMsgData, error: assistantInsertError } = await supabase.from('durmah_messages').insert({
          user_id: userId,
          role: 'assistant',
          content: reply,
@@ -147,6 +147,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
          context: context,
          modality: 'text'
     }).select('id').single();
+
+    if (assistantInsertError) {
+        console.error('Failed to save assistant message', assistantInsertError);
+    }
 
     return res.status(200).json({ 
         ok: true, 
