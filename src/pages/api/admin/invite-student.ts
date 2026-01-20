@@ -150,49 +150,61 @@ async function sendInviteEmail(
   const htmlContent = `
 <!DOCTYPE html>
 <html>
-<body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #f5f5f5;">
-  <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px 30px; text-align: center;">
-    <h1 style="color: white; margin: 0; font-size: 32px;">MyDurhamLaw</h1>
-    <p style="color: rgba(255,255,255,0.9); margin: 10px 0 0 0; font-size: 16px;">Your Legal Eagle Companion</p>
+<body style="font-family: 'Helvetica Neue', Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f9fafb; color: #111827;">
+  
+  <!-- Header Banner with New Logo -->
+  <div style="background-color: #ffffff; padding: 0; text-align: center; border-bottom: 1px solid #e5e7eb;">
+    <img src="https://mydurhamlaw.com/images/MyDurhamLaw%20ImageGPT.png" alt="MyDurhamLaw - Legal Eagle Companion" style="width: 100%; max-width: 600px; height: auto; display: block; margin: 0 auto;" />
   </div>
   
-  <div style="padding: 40px 30px; background: white;">
-    <h2 style="color: #333; margin: 0 0 20px 0;">Hi ${displayName}! 👋</h2>
+  <div style="padding: 40px 30px; background-color: #ffffff;">
+    <h2 style="color: #4338ca; margin: 0 0 20px 0; font-size: 24px; font-weight: 700;">Hi ${displayName}! 👋</h2>
     
-    <p style="color: #555; line-height: 1.8; font-size: 16px;">
-      You've been invited to try <strong>MyDurhamLaw</strong> – your AI-powered study companion 
-      designed specifically for Durham Law students.
+    <p style="color: #374151; line-height: 1.8; font-size: 16px;">
+      You've been invited to join <strong>MyDurhamLaw</strong> – the ultimate AI study companion used by top students to conquer their law degree.
+    </p>
+
+    <p style="color: #374151; line-height: 1.8; font-size: 16px;">
+      Mastering the law isn't just about reading; it's about strategy. We've built the tools you need to handle your learning like a true <strong>Legal Eagle</strong>:
     </p>
     
-    <div style="background: #f8f9fa; border-left: 4px solid #667eea; padding: 20px; margin: 25px 0;">
-      <p style="margin: 0 0 15px 0; color: #555; font-size: 15px;">
-        <strong style="color: #667eea;">✨ Your ${trialDays}-day trial includes:</strong>
+    <div style="background-color: #f3f4f6; border-radius: 12px; padding: 25px; margin: 25px 0; border: 1px solid #e5e7eb;">
+      <p style="margin: 0 0 15px 0; color: #111827; font-size: 16px; font-weight: 600;">
+        ✨ Your ${trialDays}-Day Legal Eagle Access Includes:
       </p>
-      <ul style="margin: 0; padding-left: 20px; color: #555; line-height: 2;">
-        <li>AI assignment assistant (Durmah)</li>
-        <li>Year-at-a-Glance calendar</li>
-        <li>Exam preparation tools</li>
-        <li>Always With You (AWY) widget</li>
+      <ul style="margin: 0; padding-left: 20px; color: #4b5563; line-height: 1.8;">
+        <li style="margin-bottom: 10px;">
+          <strong>🚀 Conquer Your Lectures:</strong> Upload Panopto recordings & slides for instant AI summaries, key case extraction, and deep-dive Q&A.
+        </li>
+        <li style="margin-bottom: 10px;">
+          <strong>🦉 Durmah AI Tutor:</strong> Your always-on study buddy for essay planning, problem questions, and doctrinal clarity.
+        </li>
+        <li style="margin-bottom: 10px;">
+          <strong>📅 Year-at-a-Glance:</strong> Visualise your entire academic year, deadline by deadline, so you never miss a beat.
+        </li>
+        <li>
+          <strong>⚖️ Exam Mastery:</strong> Targeted revision tools to turn confusion into distinction-level confidence.
+        </li>
       </ul>
     </div>
     
-    <div style="text-align: center; margin: 35px 0;">
+    <div style="text-align: center; margin: 40px 0;">
       <a href="${inviteUrl}" 
-         style="display: inline-block; background: #667eea; color: white; 
-                padding: 16px 40px; text-decoration: none; border-radius: 8px; 
-                font-weight: bold; font-size: 16px; box-shadow: 0 4px 6px rgba(102, 126, 234, 0.3);">
-        Accept Invite & Sign In with Google
+         style="display: inline-block; background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); color: white; 
+                padding: 16px 40px; text-decoration: none; border-radius: 50px; 
+                font-weight: bold; font-size: 16px; box-shadow: 0 4px 15px rgba(79, 70, 229, 0.4); transition: transform 0.2s;">
+        Accept Invite & Start Conquering
       </a>
     </div>
     
-    <p style="color: #999; font-size: 13px; text-align: center; margin: 30px 0 0 0;">
-      This invite expires on ${expiresAt.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
+    <p style="color: #6b7280; font-size: 14px; text-align: center; margin: 30px 0 0 0;">
+      This exclusive invite link expires on ${expiresAt.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}.
     </p>
     
-    <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
+    <hr style="border: none; border-top: 1px solid #f3f4f6; margin: 30px 0;">
     
-    <p style="color: #999; font-size: 12px; text-align: center; margin: 0;">
-      Sent to ${email} • MyDurhamLaw • Durham University Law Students
+    <p style="color: #9ca3af; font-size: 12px; text-align: center; margin: 0;">
+      Sent to ${email} • MyDurhamLaw • Excellence in Legal Education
     </p>
   </div>
 </body>
@@ -202,27 +214,29 @@ async function sendInviteEmail(
   const textContent = `
 Hi ${displayName}!
 
-You've been invited to try MyDurhamLaw - your AI-powered study companion for Durham Law students.
+You've been invited to join MyDurhamLaw – the ultimate AI study companion for conquering your law degree.
 
-Your ${trialDays}-day trial includes:
-- AI assignment assistant (Durmah)
-- Year-at-a-Glance calendar
-- Exam preparation tools
-- Always With You (AWY) widget
+Mastering the law isn't just about reading; it's about strategy. Use MyDurhamLaw to handle your learning like a top Legal Eagle.
 
-Accept your invite:
+Your ${trialDays}-Day Access Includes:
+* Conquer Your Lectures: AI analysis of Panopto recordings & slides.
+* Durmah AI Tutor: Essay planning and doctrinal clarity.
+* Year-at-a-Glance: Visualise every deadline.
+* Exam Mastery: Targeted revision tools.
+
+Accept your invite here:
 ${inviteUrl}
 
 This invite expires on ${expiresAt.toLocaleDateString('en-GB')}.
 
 ---
-MyDurhamLaw • Durham University Law Students
+MyDurhamLaw • Excellence in Legal Education
   `;
 
   await resend.emails.send({
     from: 'MyDurhamLaw <noreply@mydurhamlaw.com>',
     to: email,
-    subject: "You're invited to MyDurhamLaw Trial! 🎓",
+    subject: "You're invited: Master your Law Degree with MyDurhamLaw 🎓",
     html: htmlContent,
     text: textContent,
   });
