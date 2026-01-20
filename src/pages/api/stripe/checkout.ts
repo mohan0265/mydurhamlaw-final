@@ -67,7 +67,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       cancel_url: `${origin}/pricing`,
       subscription_data: {
         trial_period_days: Number.isFinite(trialDays) ? trialDays : 14,
-        metadata: { plan },
+        metadata: { plan: plan || '' },
       },
       // If you want to pre-fill with an email (optional),
       // set customer_email here after you add server auth.
