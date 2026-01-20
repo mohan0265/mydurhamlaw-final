@@ -305,6 +305,7 @@ export async function fetchProfileContext(
     displayName: data?.display_name ?? null,
     yearGroup: data?.year_of_study ?? data?.year_group ?? null,
     yearOfStudy: data?.year_of_study ?? data?.year_group ?? null,
+    role: 'student' // Default role
   };
 }
 
