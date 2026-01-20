@@ -91,7 +91,7 @@ export interface StudentContext {
   recentMemories?: Array<{
     role: string;
     content: string;
-    ts: string; // ISO string
+    ts?: string; // ISO string
+    saved_at?: string | null;
   }>;
 }
-

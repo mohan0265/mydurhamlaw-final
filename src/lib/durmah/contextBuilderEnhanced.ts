@@ -238,18 +238,73 @@ export async function fetchProfileContext(
 /**
  * Enhance base context packet with assignments, AWY data, lectures, profile, and academic
  */
+
+/**
+ * Fetch Context-Specific Chat History (Stage A)
+ */
+export async function fetchConversationHistory(
+  supabase: SupabaseClient,
+  conversationId: string,
+  limit = 10
+) {
+  const { data } = await supabase
+    .from('durmah_messages')
+    .select('role, content, created_at, saved_at')
+    .eq('conversation_id', conversationId)
+    .order('created_at', { ascending: false })
+    .limit(limit);
+    
+  return (data || []).reverse().map(m => ({
+    role: m.role,
+    content: m.content,
+    ts: m.created_at,
+    saved_at: m.saved_at
+  }));
+}
+
+/**
+ * Fetch Global Chat Tail (Stage B - Continuity)
+ */
+export async function fetchGlobalChatTail(
+  supabase: SupabaseClient,
+  userId: string,
+  limit = 6
+) {
+  const { data } = await supabase
+    .from('durmah_messages')
+    .select('role, content, created_at, scope, saved_at')
+    .eq('user_id', userId)
+    .eq('scope', 'global')
+    .order('created_at', { ascending: false })
+    .limit(limit);
+
+  return (data || []).reverse().map(m => ({
+    role: m.role,
+    content: m.content,
+    ts: m.created_at,
+    saved_at: m.saved_at
+  }));
+}
+
 export async function enhanceDurmahContext(
   supabase: SupabaseClient,
   userId: string,
-  baseContext: DurmahContextPacket
+  baseContext: DurmahContextPacket,
+  conversationId?: string 
 ): Promise<DurmahContextPacket> {
-  // Fetch enhanced context in parallel (including profile!)
-  const [assignments, awy, lectures, profile] = await Promise.all([
+  // Fetch enhanced context in parallel
+  const [assignments, awy, lectures, profile, globalTail] = await Promise.all([
     fetchAssignmentsContext(supabase, userId),
     fetchAWYContext(supabase, userId),
     fetchLecturesContext(supabase, userId),
     fetchProfileContext(supabase, userId),
+    fetchGlobalChatTail(supabase, userId)
   ]);
+
+  let localHistory: any[] = [];
+  if (conversationId) {
+      localHistory = await fetchConversationHistory(supabase, conversationId);
+  }
 
   // Compute academic context (term, week)
   const academic = computeAcademicContext();
@@ -261,5 +316,10 @@ export async function enhanceDurmahContext(
     lectures,
     profile, // CRITICAL: Include profile for personalization
     academic, // CRITICAL: Include term/week for context
+    recentMemories: [...globalTail, ...localHistory] // Merge for now, or keep separate? 
+    // Ideally we want to pass them separate so Prompt Builder can label them.
+    // But StudentContext interface just has 'recentMemories'. 
+    // I will merge them but maybe Prompt knows?
+    // Actually, let's keep it simple: merge unique messages.
   };
 }
