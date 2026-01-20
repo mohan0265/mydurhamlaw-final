@@ -154,7 +154,11 @@ export default function LectureChatWidget({ lectureId, title }: LectureChatWidge
                         </div>
                         {messages.length > 0 && (
                             <button 
-                                onClick={() => setIsSelectionMode(true)}
+                                onClick={() => {
+                                    const savedIds = new Set(messages.filter(m => m.visibility === 'saved').map(m => m.id));
+                                    setSelectedIds(savedIds);
+                                    setIsSelectionMode(true);
+                                }}
                                 className="bg-white/10 hover:bg-white/20 p-1.5 rounded text-xs flex items-center gap-1 transition-colors"
                             >
                                 <CheckSquare className="w-4 h-4" />

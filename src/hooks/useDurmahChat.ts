@@ -76,7 +76,7 @@ export function useDurmahChat({ source, scope, context = {}, initialMessages = [
   }, [user, scope, JSON.stringify(context)]);
 
   const fetchMessages = async (cId: string) => {
-      if (!cId) return;
+      if (!cId || !supabase) return; // Guard against null client
       const { data, error } = await supabase
         .from('durmah_messages')
         .select('*')
