@@ -289,7 +289,7 @@ export default function DurmahWidget() {
   const [mode, setMode] = useState<'chat' | 'study' | 'NEWS_STRICT'>('chat'); // NEW: Chat vs Study Mode
   
   // UNIFIED CHAT HOOK
-  const { messages: unifiedMessages, sendMessage, logMessage, isLoading: chatIsLoading, toggleSaveMetadata } = useDurmahChat({
+  const { messages: unifiedMessages, sendMessage, logMessage, isLoading: chatIsLoading, toggleSaveMetadata, clearUnsaved, deleteMessages } = useDurmahChat({
       source: 'widget',
       scope: 'global',
       context: { mode } // Pass mode as context
@@ -706,6 +706,7 @@ export default function DurmahWidget() {
   }, []);
 
   // 2. Memory & Context
+  // 2. Memory & Context
   useEffect(() => {
     if (!signedIn || !isOpen) return;
     let cancelled = false;
@@ -727,6 +728,7 @@ export default function DurmahWidget() {
         if (res.ok) {
           const data = await res.json();
           const ctx = data?.context as DurmahContextPacket | undefined;
+          
           if (!cancelled && ctx) {
              // Hook handles message loading now
              if (ctx.lastSummary) {
@@ -737,16 +739,16 @@ export default function DurmahWidget() {
                });
              }
              setContextPacket(ctx);
-          }
-            if (process.env.NODE_ENV !== "production") {
-              console.log("[Durmah] Context loaded", {
-                displayName: ctx.profile.displayName,
-                yearGroup: ctx.profile.yearGroup,
-                term: ctx.academic.term,
-                weekOfTerm: ctx.academic.weekOfTerm,
-                lastThreadId: ctx.threadId,
-              });
-            }
+
+             if (process.env.NODE_ENV !== "production") {
+               console.log("[Durmah] Context loaded", {
+                 displayName: ctx.profile.displayName,
+                 yearGroup: ctx.profile.yearGroup,
+                 term: ctx.academic.term,
+                 weekOfTerm: ctx.academic.weekOfTerm,
+                 lastThreadId: ctx.threadId,
+               });
+             }
           }
         }
       } catch (e) {
