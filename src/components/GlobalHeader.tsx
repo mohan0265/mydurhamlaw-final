@@ -125,10 +125,147 @@ import { BrandMark } from '@/components/brand/BrandMark';
 // ... (existing imports)
 
 export default function GlobalHeader() {
-  // ... (existing state)
+  const { user } = useAuth() || { user: null };
+  const [openMobile, setOpenMobile] = useState(false);
+  const [showLoginModal, setShowLoginModal] = useState(false);
+
+  // Role detection state
+  const [displayName, setDisplayName] = useState<string>('Student');
+  const [isLovedOne, setIsLovedOne] = useState(false);
+
+  // Fetch display name and role from profiles table
+  useEffect(() => {
+    if (!user) {
+      setDisplayName('Student');
+      setIsLovedOne(false);
+      return;
+    }
+
+    const fetchUserInfo = async () => {
+      try {
+        const {getSupabaseClient} = await import('@/lib/supabase/client');
+        const supabase = getSupabaseClient();
+        if (!supabase) {
+          setDisplayName(user.email?.split('@')[0] || 'Student');
+          return;
+        }
+
+        const {data, error} = await supabase
+          .from('profiles')
+          .select('display_name, user_role')
+          .eq('id', user.id)
+          .single();
+
+        if (data?.display_name) {
+          setDisplayName(data.display_name);
+        } else {
+          setDisplayName(user.email?.split('@')[0] || 'Student');
+        }
+
+        // Check if user is a loved one
+        if (data?.user_role === 'loved_one') {
+          setIsLovedOne(true);
+        } else {
+          // Also check awy_connections as backup
+          if (user.email) {
+            const { data: connData } = await supabase
+              .from('awy_connections')
+              .select('id')
+              .ilike('loved_email', user.email)
+              .in('status', ['active', 'accepted', 'granted'])
+              .limit(1)
+              .maybeSingle();
+            
+            if (connData) {
+              setIsLovedOne(true);
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Failed to fetch user info:', err);
+        setDisplayName(user.email?.split('@')[0] || 'Student');
+      }
+    };
+
+    fetchUserInfo();
+  }, [user]);
+
+  // --- STUDENT MENUS ---
+  const studentStudyMenu: Menu = useMemo(
+    () => ({
+      label: 'Study',
+      items: [
+        { label: 'Year at a Glance', href: '/year-at-a-glance' },
+        { label: 'Assignments', href: '/assignments' },
+        { label: 'My Lectures', href: '/study/lectures' },
+        { label: 'Research Hub', href: '/research-hub' },
+      ],
+    }),
+    []
+  );
+
+  const studentCommunityMenu: Menu = useMemo(
+    () => ({
+      label: 'Community',
+      items: [
+        { label: 'Student Lounge', href: '/lounge' },
+        { label: 'Community Hub', href: '/community' },
+        // Live News moved to top level
+      ],
+    }),
+    []
+  );
+
+  const studentInfoMenu: Menu = useMemo(
+    () => ({
+      label: 'Info',
+      items: [
+        { label: 'About', href: '/about' },
+        { label: 'Pricing', href: '/pricing' },
+        { label: 'Exam Prep', href: '/exam-prep' },
+  { label: 'Wellbeing', href: '/wellbeing' },
+  { label: 'Refer a Friend', href: '/refer' },
+  { label: 'My Progress', href: '/progress' }, // User Profile & Loved Ones
+      ],
+    }),
+    []
+  );
+
+  // --- LOVED ONE MENUS (Restricted) ---
+  const lovedOneExploreMenu: Menu = useMemo(
+    () => ({
+      label: 'Explore',
+      items: [
+        { label: 'Academic Calendar', href: '/year-at-a-glance' },
+        { label: 'Community Hub', href: '/community' },
+      ],
+    }),
+    []
+  );
+
+  const lovedOneInfoMenu: Menu = useMemo(
+    () => ({
+      label: 'Info',
+      items: [
+        { label: 'About MyDurhamLaw', href: '/about' },
+        { label: 'Contact', href: '/contact' },
+      ],
+    }),
+    []
+  );
+
+  // Choose menus based on role
+  const studyMenu = isLovedOne ? lovedOneExploreMenu : studentStudyMenu;
+  const communityMenu = isLovedOne ? null : studentCommunityMenu; // Loved ones don't need separate community menu
+  const infoMenu = isLovedOne ? lovedOneInfoMenu : studentInfoMenu;
+  
+  // Dashboard link
+  const dashboardHref = isLovedOne ? '/loved-one-dashboard' : '/dashboard';
+  const dashboardLabel = isLovedOne ? 'My Dashboard' : 'Dashboard';
 
   return (
     <>
+
       <header className="sticky top-0 z-50 bg-gradient-to-r from-violet-700 to-indigo-700 shadow border-b border-white/5">
         <nav className="mx-auto max-w-7xl px-4 sm:px-6">
           <div className="min-h-[72px] md:min-h-[80px] py-3 flex items-center justify-between">
