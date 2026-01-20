@@ -266,8 +266,12 @@ export default function GlobalHeader() {
           <div className="h-14 flex items-center justify-between">
             {/* Brand */}
             <div className="flex items-center gap-3">
-              <Link href="/" className="text-white font-semibold text-lg">
-                My <span className="text-pink-200">Durham</span> Law
+              <Link href="/" className="flex items-center">
+                <img 
+                  src="/images/MyDurhamLaw%20ImageGPT.png" 
+                  alt="MyDurhamLaw" 
+                  className="h-10 w-auto object-contain"
+                />
               </Link>
             </div>
 

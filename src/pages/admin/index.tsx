@@ -189,6 +189,36 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
     errMsg = e?.message || "Failed to load auth users"
   }
 
+  // Fetch Pending Invitations
+  try {
+    const { data: invites } = await adminClient
+      .from('student_invitations')
+      .select('*')
+      .eq('status', 'pending');
+    
+    if (invites) {
+      const inviteRows: AdminRow[] = invites.map((inv: any) => ({
+        id: `invite_${inv.id}`,
+        user_id: undefined,
+        email: inv.email,
+        display_name: inv.display_name,
+        user_role: 'student', // Default role
+        year_group: inv.year_group,
+        trial_started_at: null,
+        trial_ends_at: null, // Could use inv.expires_at, but it's invite expiry not trial end
+        trial_ever_used: false,
+        is_test_account: false,
+        subscription_status: 'invited', // Custom status
+        subscription_ends_at: null,
+      }));
+      
+      // Add invites to the TOP of the list
+      profilesWithNewFields = [...inviteRows, ...profilesWithNewFields];
+    }
+  } catch (e) {
+    console.error('Failed to load invites', e);
+  }
+
   return {
     props: {
       authorized: true,
@@ -563,13 +593,25 @@ export default function AdminDashboard({ authorized, rows, users, connections, e
                     </td>
                     <td className="px-3 py-2">
                       <div className="flex flex-wrap gap-1">
-                        <button onClick={(e) => { e.stopPropagation(); extendTrial(r.user_id || r.id, 7); }} className="text-blue-600 hover:underline text-xs">+7d</button>
-                        <button onClick={(e) => { e.stopPropagation(); openTrialDateEditor(r); }} className="text-green-600 hover:underline text-xs">Edit</button>
-                        {r.email && (
-                          <button onClick={() => resetPassword(r.user_id || r.id, r.email!)} className="text-purple-600 hover:underline text-xs">🔑Reset</button>
-                        )}
-                        {r.is_test_account && (
-                          <button onClick={() => deleteAccount(r.user_id || r.id)} className="text-red-600 hover:underline text-xs">Del</button>
+                        {r.subscription_status === 'invited' ? (
+                           <div className="flex flex-col">
+                             <span className="text-orange-600 text-xs font-semibold flex items-center gap-1">
+                               <span className="w-2 h-2 rounded-full bg-orange-500 animate-pulse"></span>
+                               Pending
+                             </span>
+                             <span className="text-[10px] text-gray-400">Wait for signup</span>
+                           </div>
+                        ) : (
+                          <>
+                            <button onClick={(e) => { e.stopPropagation(); extendTrial(r.user_id || r.id, 7); }} className="text-blue-600 hover:underline text-xs">+7d</button>
+                            <button onClick={(e) => { e.stopPropagation(); openTrialDateEditor(r); }} className="text-green-600 hover:underline text-xs">Edit</button>
+                            {r.email && (
+                              <button onClick={() => resetPassword(r.user_id || r.id, r.email!)} className="text-purple-600 hover:underline text-xs">🔑Reset</button>
+                            )}
+                            {r.is_test_account && (
+                              <button onClick={() => deleteAccount(r.user_id || r.id)} className="text-red-600 hover:underline text-xs">Del</button>
+                            )}
+                          </>
                         )}
                       </div>
                     </td>
