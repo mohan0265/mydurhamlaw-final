@@ -2,18 +2,17 @@
 import Link from 'next/link'
 import { useMemo } from 'react'
 
+import { BrandMark } from '@/components/brand/BrandMark'
+
 export default function GlobalFooter() {
   const year = useMemo(() => new Date().getFullYear(), [])
 
   return (
-    <footer className="mt-8 border-t bg-white/90 backdrop-blur">
-      <div className="mx-auto max-w-7xl px-4 py-8 grid gap-8 md:grid-cols-3 text-sm">
+    <footer className="mt-8 border-t bg-gray-50 border-gray-200">
+      <div className="mx-auto max-w-7xl px-4 py-12 grid gap-8 md:grid-cols-3 text-sm">
         <div>
-          <div className="font-extrabold text-lg mb-2">
-            <span className="mr-1">⚖️</span>
-            My<span className="text-pink-600">Durham</span>Law
-          </div>
-          <div className="space-y-2 text-gray-600 text-xs sm:text-sm">
+          <BrandMark variant="footer" />
+          <div className="mt-4 space-y-2 text-gray-600 text-xs sm:text-sm max-w-xs">
             <p>Durmah - Your Legal Eagle AI Mentor</p>
             <p>Always With You - Emotional presence for Durham Law students and their loved ones.</p>
           </div>
