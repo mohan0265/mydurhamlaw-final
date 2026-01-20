@@ -141,7 +141,15 @@ export function useDurmahChat({ source, scope, context = {}, initialMessages = [
       });
 
       if (!response.ok) {
-          throw new Error('Failed to send message');
+          let errorMsg = 'Failed to send message';
+          try {
+              const errData = await response.json();
+              errorMsg = errData.error || errData.message || errorMsg;
+              console.error('[useDurmahChat] Server Error:', errData);
+          } catch (e) {
+              // Ignore json parse error
+          }
+          throw new Error(errorMsg);
       }
 
       // We expect a stream or JSON. 
@@ -171,9 +179,9 @@ export function useDurmahChat({ source, scope, context = {}, initialMessages = [
       };
       setMessages(prev => [...prev, assistantMsg]);
 
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      toast.error('Failed to send message');
+      toast.error(err.message || 'Failed to send message');
       // Revert optimistic? Or show error state
     } finally {
       setIsLoading(false);
