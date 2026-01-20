@@ -110,7 +110,6 @@ STUDENT: ${student.displayName}, ${student.yearGroup}, ${student.term} Week ${st
         block += `\nYou can refer to this lecture content directly in your conversation.\n\n`;
     }
   }
-  }
 
   // Upcoming deadlines
   if (assignments.upcoming.length > 0) {
