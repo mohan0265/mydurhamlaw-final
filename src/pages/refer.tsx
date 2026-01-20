@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import Head from 'next/head';
 import { useAuth } from '@/lib/supabase/AuthContext';
 import GlobalHeader from '@/components/GlobalHeader';
-import EnhancedFooter from '@/components/homepage/EnhancedFooter';
 import { Plus, Trash2, Mail, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
@@ -54,6 +53,7 @@ export default function ReferPage() {
 
     const updateRow = (idx: number, field: 'email' | 'name', val: string) => {
         const newRows = [...invites];
+        if (!newRows[idx]) return;
         newRows[idx][field] = val;
         // Reset status on edit
         delete newRows[idx].status;
@@ -92,7 +92,7 @@ export default function ReferPage() {
                 data.results.forEach((r: any) => {
                     // Match back to row by email (simple)
                     const idx = newRows.findIndex(row => row.email.trim().toLowerCase() === r.email);
-                    if (idx !== -1) {
+                    if (idx !== -1 && newRows[idx]) {
                         newRows[idx].status = r.status;
                         if (r.status === 'invited') successCount++;
                     }
@@ -239,7 +239,6 @@ export default function ReferPage() {
                 </div>
 
             </main>
-            <EnhancedFooter />
         </div>
     );
 }
