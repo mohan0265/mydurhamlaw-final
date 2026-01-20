@@ -442,6 +442,97 @@ export default function AdminDashboard({ authorized, rows, users, connections, e
     }
   }
 
+  // Multi-select state
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+
+  // Toggle selection for a single row
+  const toggleSelection = (id: string) => {
+    const newSelected = new Set(selectedIds)
+    if (newSelected.has(id)) {
+      newSelected.delete(id)
+    } else {
+      newSelected.add(id)
+    }
+    setSelectedIds(newSelected)
+  }
+
+  // Toggle all visible rows
+  const toggleSelectAll = () => {
+    if (selectedIds.size === filteredRows.length && filteredRows.length > 0) {
+      setSelectedIds(new Set())
+    } else {
+      setSelectedIds(new Set(filteredRows.map(r => r.id)))
+    }
+  }
+
+  // Bulk Delete
+  const handleBulkDelete = async () => {
+    if (!confirm(`Delete ${selectedIds.size} selected accounts? This cannot be undone.`)) return
+
+    let successCount = 0
+    let failCount = 0
+
+    const idsToDelete = Array.from(selectedIds)
+    
+    // Process sequentially to avoid overwhelming server/db
+    for (const id of idsToDelete) {
+      // Check if it's an invite Row (starts with invite_) or actual user
+      // Current delete API expects userId. invites don't have userId yet usually?
+      // But my invite logic assigned id=`invite_${inv.id}`. The delete API takes userId.
+      // Invites are in 'student_invitations' table, so we need a separate delete invite API ideally.
+      // But for now, let's just handle test accounts.
+      
+      const row = rows.find(r => r.id === id)
+      if (!row) continue
+
+      if (id.startsWith('invite_')) {
+        // Invite deletion not yet implemented in API, skip/alert
+        console.warn('Cannot delete invite via bulk yet', id)
+        continue
+      }
+
+      if (!row.is_test_account) {
+        // Skip real accounts for safety
+        continue 
+      }
+
+      const res = await fetch("/api/admin/delete-test-account", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: row.user_id || row.id })
+      })
+
+      if (res.ok) {
+        successCount++
+      } else {
+        failCount++
+      }
+    }
+
+    alert(`Deleted ${successCount} accounts. ${failCount > 0 ? `Failed: ${failCount}` : ''}`)
+    window.location.reload()
+  }
+
+  // Bulk Extend
+  const handleBulkExtend = async (days: number) => {
+    const count = selectedIds.size
+    if (!confirm(`Extend trial by ${days} days for ${count} users?`)) return
+
+    for (const id of Array.from(selectedIds)) {
+      if (id.startsWith('invite_')) continue
+      const row = rows.find(r => r.id === id)
+      if (row) {
+        await fetch("/api/admin/extend-trial", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId: row.user_id || row.id, extensionDays: days })
+        })
+      }
+    }
+    alert("Bulk extension complete")
+    window.location.reload()
+  }
+
   const students = rows.filter(r => r.user_role === 'student')
   const filteredRows = 
     filter === 'all' 
@@ -474,33 +565,56 @@ export default function AdminDashboard({ authorized, rows, users, connections, e
           </div>
         )}
 
-        {/* Quick Actions */}
-        <div className="mb-6 p-4 border border-blue-100 bg-blue-50 rounded-xl">
-          <h2 className="text-sm font-semibold text-slate-800 mb-3">Quick Actions</h2>
-          <div className="flex gap-2 flex-wrap">
-            <button 
-              onClick={() => {
-                setInviteResult(null);
-                setShowInviteStudent(true);
-              }}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700"
-            >
-              📧 Invite Student
-            </button>
-            <button 
-              onClick={() => setShowCreateStudent(true)}
-              className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-semibold hover:bg-green-700"
-            >
-              + Create with Password
-            </button>
-            <button 
-              onClick={() => setShowCreateLovedOne(true)}
-              className="px-4 py-2 bg-purple-600 text-white rounded-lg text-sm font-semibold hover:bg-purple-700"
-            >
-              + Create Loved One
-            </button>
+        {/* Quick Actions / Bulk Actions Toolbar */}
+        {selectedIds.size > 0 ? (
+          <div className="mb-6 p-4 border border-purple-200 bg-purple-50 rounded-xl flex items-center justify-between animate-in fade-in slide-in-from-top-2">
+            <div className="flex items-center gap-3">
+              <span className="font-bold text-purple-900">{selectedIds.size} Selected</span>
+              <button onClick={() => setSelectedIds(new Set())} className="text-purple-600 text-sm hover:underline">Clear</button>
+            </div>
+            <div className="flex gap-2">
+              <button 
+                onClick={() => handleBulkExtend(7)}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 shadow-sm"
+              >
+                +7 Days Trial
+              </button>
+              <button 
+                onClick={handleBulkDelete}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-semibold hover:bg-red-700 shadow-sm"
+              >
+                Delete Selected
+              </button>
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="mb-6 p-4 border border-blue-100 bg-blue-50 rounded-xl">
+            <h2 className="text-sm font-semibold text-slate-800 mb-3">Quick Actions</h2>
+            <div className="flex gap-2 flex-wrap">
+              <button 
+                onClick={() => {
+                  setInviteResult(null);
+                  setShowInviteStudent(true);
+                }}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700"
+              >
+                📧 Invite Student
+              </button>
+              <button 
+                onClick={() => setShowCreateStudent(true)}
+                className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-semibold hover:bg-green-700"
+              >
+                + Create with Password
+              </button>
+              <button 
+                onClick={() => setShowCreateLovedOne(true)}
+                className="px-4 py-2 bg-purple-600 text-white rounded-lg text-sm font-semibold hover:bg-purple-700"
+              >
+                + Create Loved One
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Filter */}
         <div className="mb-4 flex gap-2">
@@ -517,19 +631,19 @@ export default function AdminDashboard({ authorized, rows, users, connections, e
               [Test: {rows.filter(r => r.is_test_account).length} | Real: {rows.filter(r => !r.is_test_account).length}]
             </span>
           </h2>
-          {selectedStudent && (
-            <button 
-              onClick={() => setSelectedStudent(null)}
-              className="text-sm text-blue-600 hover:underline"
-            >
-              ✕ Clear Selection
-            </button>
-          )}
         </div>
         <div className="overflow-auto border border-slate-100 rounded-xl mb-8">
           <table className="min-w-full text-sm">
             <thead className="bg-slate-100">
               <tr>
+                <th className="px-3 py-2 w-10 text-center">
+                  <input 
+                    type="checkbox" 
+                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    checked={selectedIds.size === filteredRows.length && filteredRows.length > 0}
+                    onChange={toggleSelectAll}
+                  />
+                </th>
                 <th className="text-left px-2 py-2 w-10">#</th>
                 <th className="text-left px-3 py-2">Email</th>
                 <th className="text-left px-3 py-2">Name</th>
@@ -544,18 +658,26 @@ export default function AdminDashboard({ authorized, rows, users, connections, e
             <tbody>
               {filteredRows.map((r, index) => {
                 const daysLeft = getDaysLeft(r.trial_ends_at);
-                const isSelected = selectedStudent?.id === r.id;
+                const isSelected = selectedIds.has(r.id);
+                
                 return (
                   <tr 
                     key={r.id} 
-                    onClick={() => setSelectedStudent(isSelected ? null : r)}
-                    className={`border-t border-slate-100 cursor-pointer transition-colors ${
+                    className={`border-t border-slate-100 transition-colors ${
                       isSelected 
-                        ? 'bg-blue-50 border-l-4 border-l-blue-500' 
+                        ? 'bg-blue-50' 
                         : 'hover:bg-slate-50'
                     }`}
                   >
-                    <td className="px-2 py-2 text-center text-slate-400 font-mono">{index + 1}</td>
+                    <td className="px-3 py-2 text-center">
+                       <input 
+                        type="checkbox" 
+                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        checked={isSelected}
+                        onChange={() => toggleSelection(r.id)}
+                      />
+                    </td>
+                    <td className="px-2 py-2 text-center text-slate-400 font-mono" onClick={() => setSelectedStudent(r)}>{index + 1}</td>
                     <td className="px-3 py-2">
                       <div className="flex flex-col gap-1">
                         <div className="flex items-center gap-2">
