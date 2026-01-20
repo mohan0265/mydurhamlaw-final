@@ -116,7 +116,7 @@ function HoverMenu({
   );
 }
 
-import { X, User, Heart } from 'lucide-react';
+import { X, User, Heart, Scale } from 'lucide-react';
 
 // ... (existing imports)
 
@@ -264,14 +264,15 @@ export default function GlobalHeader() {
       <header className="sticky top-0 z-50 bg-gradient-to-r from-violet-700 to-indigo-700 shadow">
         <nav className="mx-auto max-w-7xl px-4 sm:px-6">
           <div className="h-14 flex items-center justify-between">
-            {/* Brand */}
+            {/* Brand - Code First Vector Logo */}
             <div className="flex items-center gap-3">
-              <Link href="/" className="flex items-center">
-                <img 
-                  src="/MyDurhamLaw%20ImageGPT.png" 
-                  alt="MyDurhamLaw" 
-                  className="h-12 w-auto object-contain"
-                />
+              <Link href="/" className="flex items-center gap-2 group">
+                <div className="relative flex items-center justify-center w-10 h-10 bg-white/10 rounded-lg group-hover:bg-white/20 transition-all border border-white/10">
+                  <Scale className="h-6 w-6 text-yellow-400 drop-shadow-sm" />
+                </div>
+                <div className="flex flex-col leading-tight">
+                  <span className="text-white font-bold tracking-tight text-lg">MyDurham<span className="text-yellow-400 font-serif italic text-xl ml-[1px]">Law</span></span>
+                </div>
               </Link>
             </div>
 
