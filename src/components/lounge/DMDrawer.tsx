@@ -45,6 +45,15 @@ const DMDrawer: React.FC<DMDrawerProps> = ({
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Auto-resize textarea
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto'; // Reset
+      textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 200)}px`;
+    }
+  }, [input]);
 
   useEffect(() => {
     if (!user || !resolvedPeer) return;
@@ -157,10 +166,11 @@ const DMDrawer: React.FC<DMDrawerProps> = ({
           )}
           <div ref={messagesEndRef} />
         </div>
-        <div className="border-t bg-white p-3 flex gap-2">
-          <input
-            type="text"
-            className="flex-1 px-3 py-2 rounded-lg border outline-blue-300 focus:ring"
+        <div className="border-t bg-white p-3 flex items-end gap-2">
+          <textarea
+            ref={textareaRef}
+            rows={1}
+            className="flex-1 px-3 py-2 rounded-lg border outline-blue-300 focus:ring resize-none min-h-[42px] max-h-[200px] overflow-y-auto"
             placeholder="Type message..."
             value={input}
             onChange={(e) => setInput(e.target.value)}
@@ -172,6 +182,7 @@ const DMDrawer: React.FC<DMDrawerProps> = ({
             disabled={!input.trim()}
             variant="primary"
             aria-label="Send DM"
+            className="min-h-[42px]"
           >
             Send
           </Button>
