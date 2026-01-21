@@ -33,6 +33,15 @@ export default function LectureChatWidget({ lectureId, title }: LectureChatWidge
   const [viewMode, setViewMode] = useState<'session' | 'saved'>('session');
   
   const scrollRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Auto-resize textarea
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+      textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 200)}px`;
+    }
+  }, [input]);
 
   // Auto-scroll on new messages (only in session view)
   useEffect(() => {
@@ -215,28 +224,40 @@ export default function LectureChatWidget({ lectureId, title }: LectureChatWidge
           )}
       </div>
 
-      {/* Input */}
-      {!isSelectionMode && (
-          <div className="bg-white border-t border-gray-100">
-              <form onSubmit={handleSubmit} className="p-3 flex gap-2">
-                 <input
-                    type="text"
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    placeholder="Ask about this lecture..."
-                    className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-purple-500 focus:border-purple-500"
-                    disabled={isLoading}
-                 />
-                 <Button 
-                    type="submit" 
-                    disabled={isLoading || !input.trim()}
-                    className="bg-purple-600 hover:bg-purple-700 text-white"
-                 >
-                    <Send className="w-4 h-4" />
-                 </Button>
-              </form>
-          </div>
-      )}
+       {/* Input */}
+       {!isSelectionMode && (
+           <div className="bg-white border-t border-gray-100">
+               <form 
+                  onSubmit={(e) => { e.preventDefault(); if (!input.trim() || isLoading) return; sendMessage(input); setInput(''); }} 
+                  className="p-3 flex gap-2 items-end"
+               >
+                  <textarea
+                     ref={textareaRef}
+                     value={input}
+                     onChange={(e) => setInput(e.target.value)}
+                     onKeyDown={(e) => {
+                         if (e.key === 'Enter' && !e.shiftKey) {
+                             e.preventDefault();
+                             if (!input.trim() || isLoading) return;
+                             sendMessage(input);
+                             setInput('');
+                         }
+                     }}
+                     placeholder="Ask about this lecture..."
+                     rows={1}
+                     className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-purple-500 focus:border-purple-500 resize-none min-h-[40px] max-h-[200px] overflow-y-auto"
+                     disabled={isLoading}
+                  />
+                  <Button 
+                     type="submit" 
+                     disabled={isLoading || !input.trim()}
+                     className="bg-purple-600 hover:bg-purple-700 text-white h-10 w-10 p-0 flex items-center justify-center shrink-0 mb-[1px]"
+                  >
+                     <Send className="w-4 h-4" />
+                  </Button>
+               </form>
+           </div>
+       )}
     </div>
   );
 }
