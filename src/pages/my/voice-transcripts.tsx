@@ -603,16 +603,19 @@ export default withAuthProtection(function VoiceTranscriptsPage() {
                    )}
 
                    <div className="space-y-4">
-                      {transcripts.find(t => t.id === expandedTranscript)?.transcript?.map((turn, i) => (
-                         <div key={i} className={`flex ${turn.role === 'you' ? 'justify-end' : 'justify-start'}`}>
-                            <div className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-relaxed shadow-sm ${
-                              turn.role === 'you' ? 'bg-violet-600 text-white rounded-tr-none' : 'bg-slate-100 text-slate-700 rounded-tl-none'
-                            }`}>
-                               <p className="text-[10px] font-bold uppercase opacity-60 mb-1">{turn.role === 'you' ? 'You' : 'Durmah'}</p>
-                               {turn.text}
-                            </div>
-                         </div>
-                      ))}
+                      {transcripts.find(t => t.id === expandedTranscript)?.transcript?.map((turn, i) => {
+                         const isUser = turn.role === 'you' || turn.role === 'user';
+                         return (
+                          <div key={i} className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
+                             <div className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-relaxed shadow-sm ${
+                               isUser ? 'bg-violet-600 text-white rounded-tr-none' : 'bg-slate-100 text-slate-700 rounded-tl-none'
+                             }`}>
+                                <p className="text-[10px] font-bold uppercase opacity-60 mb-1">{isUser ? 'You' : 'Durmah'}</p>
+                                {turn.text}
+                             </div>
+                          </div>
+                         );
+                      })}
                    </div>
                 </div>
 

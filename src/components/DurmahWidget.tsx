@@ -1190,7 +1190,7 @@ Date: ${studentContextData.academic?.now?.nowText || studentContextData.student.
       
       const normalizedTranscript = await Promise.all(
         transcriptTurns.map(async (turn) => ({
-          role: turn.role === "you" ? "user" : "durmah",
+          role: turn.role === "you" ? "you" : "durmah",
           text: await normalizeTranscriptLanguage(turn.text),
           timestamp: turn.ts,
         }))
