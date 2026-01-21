@@ -29,12 +29,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const from = (p - 1) * ps;
     const to = from + ps - 1;
 
+    const selectStr = folderId 
+      ? `*, transcript_folder_items!inner(folder_id)` 
+      : `*, transcript_folder_items!left(folder_id)`;
+
     let supabaseQuery = supabase
       .from('voice_journals')
-      .select(`
-        *,
-        transcript_folder_items!left(folder_id)
-      `, { count: 'exact' })
+      .select(selectStr, { count: 'exact' })
       .eq('user_id', user.id);
 
     // 1. Full-Text Search
