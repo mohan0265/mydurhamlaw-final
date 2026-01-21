@@ -53,9 +53,11 @@ export default function LectureChatWidget({ lectureId, title }: LectureChatWidge
   }, [messages, isSelectionMode, viewMode]);
 
   // Derived state for view: Session view hides saved messages to keep it focused on current flow
-  const visibleMessages = viewMode === 'saved' 
-      ? messages.filter(m => m.visibility === 'saved' || m.saved_at) 
-      : messages.filter(m => !(m.visibility === 'saved' || m.saved_at));
+  const isSaved = (m: any) => m.visibility === 'saved' || !!m.saved_at;
+  const savedMessages = messages.filter(isSaved);
+  const sessionMessages = messages.filter(m => !isSaved(m));
+
+  const visibleMessages = viewMode === 'saved' ? savedMessages : sessionMessages;
 
   // Check if all visible messages are selected
   const allSelected = visibleMessages.length > 0 && 
@@ -313,11 +315,12 @@ export default function LectureChatWidget({ lectureId, title }: LectureChatWidge
                      placeholder="Ask about this lecture..."
                      rows={1}
                      className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-purple-500 focus:border-purple-500 resize-none min-h-[40px] max-h-[200px] overflow-y-auto"
-                     disabled={isLoading}
+                     // Disabled removed to allow typing while streaming/loading
                   />
                   <Button 
                      type="submit" 
                      disabled={isLoading || !input.trim()}
+                     onMouseDown={(e) => e.preventDefault()} // Prevent focus loss
                      className="bg-purple-600 hover:bg-purple-700 text-white h-10 w-10 p-0 flex items-center justify-center shrink-0 mb-[1px]"
                   >
                      <Send className="w-4 h-4" />

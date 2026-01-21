@@ -86,15 +86,26 @@ CLARIFICATION LOOP:
  * CRITICAL: Uses academic.now for TIMEZONE TRUTH - never compute dates locally
  */
 export function buildDurmahContextBlock(context: StudentContext): string {
-  const { student, assignments, schedule, academic } = context;
+  const student = context?.student ?? null;
+  const assignments = context?.assignments ?? { total: 0, upcoming: [], overdue: [], recentlyCreated: [] };
+  const schedule = context?.schedule ?? { todaysClasses: [] };
+  const academic = context?.academic ?? null;
   
   // TIMEZONE TRUTH: Use academic.now if available, else fallback
-  const nowText = academic?.now?.nowText || new Date(student.localTimeISO).toLocaleString('en-GB', { timeZone: 'Europe/London' });
-  const todayKey = academic?.now?.dayKey || student.localTimeISO.substring(0, 10);
+  const academicNow = academic?.now ?? null;
+  const localISO = academicNow?.localTimeISO ?? student?.localTimeISO ?? new Date().toISOString();
   
+  const nowText = academicNow?.nowText || new Date(localISO).toLocaleString('en-GB', { timeZone: 'Europe/London' });
+  const todayKey = academicNow?.dayKey || localISO.substring(0, 10);
+  
+  const displayName = student?.displayName ?? 'Student';
+  const yearGroup = student?.yearGroup ?? 'Unknown Year';
+  const term = student?.term ?? 'Unknown Term';
+  const weekOfTerm = student?.weekOfTerm ?? '?';
+
   // Keep context block COMPACT for voice mode
   let block = `NOW: ${nowText}
-STUDENT: ${student.displayName}, ${student.yearGroup}, ${student.term} Week ${student.weekOfTerm}
+STUDENT: ${displayName}, ${yearGroup}, ${term} Week ${weekOfTerm}
 
 `;
 

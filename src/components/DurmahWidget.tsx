@@ -1398,6 +1398,9 @@ Date: ${studentContextData.academic?.now?.nowText || studentContextData.student.
   async function send() {
     if (!signedIn || !input.trim() || isStreaming || isVoiceActive) return;
 
+    // Auto-switch to session view if in saved view
+    if (viewMode !== 'session') setViewMode('session');
+
     const userText = input.trim();
     let enrichedMessage = userText; // Initialize with userText
 
@@ -1972,7 +1975,11 @@ User question: ${userText}`;
         
         {/* Filtered Messages Logic: session mode hides saved messages to keep focus on current chat */}
         {(() => {
-            const filteredMessages = viewMode === 'saved' ? messages.filter(m => m.saved_at) : messages.filter(m => !m.saved_at);
+            const isSaved = (m: any) => m.visibility === 'saved' || !!m.saved_at;
+            const savedMessages = messages.filter(isSaved);
+            const sessionMessages = messages.filter(m => !isSaved(m));
+            
+            const filteredMessages = viewMode === 'saved' ? savedMessages : sessionMessages;
             
             if (filteredMessages.length === 0 && viewMode === 'saved') {
                 return (
@@ -2076,11 +2083,13 @@ User question: ${userText}`;
             }}
             placeholder="Ask Durmah..."
             className="flex-1 px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 transition-all bg-gray-50 focus:bg-white resize-none min-h-[46px] max-h-[200px] overflow-y-auto"
+            // Never disabled to maintain focus
           />
 
           <button
             onClick={send}
-            disabled={!input.trim()}
+            disabled={isStreaming || !input.trim()}
+            onMouseDown={(e) => e.preventDefault()} // Prevent focus loss
             className="p-3 h-[46px] rounded-xl bg-violet-600 text-white hover:bg-violet-700 disabled:bg-gray-100 disabled:text-gray-400 transition-all shadow-md hover:shadow-lg disabled:shadow-none self-end"
           >
             <ArrowRight size={18} />
