@@ -439,6 +439,7 @@ export default function DurmahWidget() {
       try {
           // Bulk processing via hook (toggleSaveMetadata)
           const ids = Array.from(selectedIds);
+          let failureCount = 0;
 
           if (action === 'save' || action === 'unsave') {
               for (const id of ids) {
@@ -447,24 +448,30 @@ export default function DurmahWidget() {
                  
                  // Only toggle if state differs
                  if (action === 'save' && !m.saved_at) {
-                     await toggleSaveMetadata(id, 'ephemeral', true); // Silent
+                     const success = await toggleSaveMetadata(id, 'ephemeral', true); // Silent
+                     if (!success) failureCount++;
                  } else if (action === 'unsave' && m.saved_at) {
-                     await toggleSaveMetadata(id, 'saved', true); // Silent
+                     const success = await toggleSaveMetadata(id, 'saved', true); // Silent
+                     if (!success) failureCount++;
                  }
               }
-              toast.success(action === 'save' ? 'Messages saved' : 'Messages unsaved', { id: toastId });
+              // Refresh state to ensure consistency
+              refetchMessages();
           } else if (action === 'delete_selected') {
               await deleteMessages(ids);
-              toast.success('Messages deleted', { id: toastId });
           } else if (action === 'clear_unsaved') {
               await clearUnsaved();
-              toast.success('Unsaved messages cleared', { id: toastId });
           }
-          
+
+          if (failureCount > 0) {
+              toast.error(`Some messages (${failureCount}) failed to save. Check RLS.`, { id: toastId });
+          } else {
+              toast.success('Done', { id: toastId });
+          }
           setSelectedIds(new Set());
           setIsSelectionMode(false);
-      } catch (e) {
-          console.error('[Durmah Manage] Error:', e);
+      } catch (err) {
+          console.error('[Durmah Manage] Error:', err);
           toast.error('Error', { id: toastId });
       }
   };
@@ -1385,13 +1392,11 @@ Date: ${studentContextData.academic?.now?.nowText || studentContextData.student.
     if (!signedIn || !input.trim() || isStreaming || isVoiceActive) return;
 
     const userText = input.trim();
-    setInput(""); // Clear immediately (Optimistic)
-    setIsStreaming(true);
+    let enrichedMessage = userText; // Initialize with userText
 
     // ----------------------------
     // ONBOARDING SEARCH INTEGRATION
     // ----------------------------
-    let enrichedMessage = userText;
     const helpKeywords = [
       'how do i', 'how to', 'where do i', 'where can i',
       'sync', 'timetable', 'blackboard', 'panopto', 
@@ -1438,18 +1443,25 @@ User question: ${userText}`;
       }
     }
 
+    setInput("");
+    
+    // Auto-focus immediately after clearing
+    requestAnimationFrame(() => textareaRef.current?.focus());
+
+    // Auto-resize textarea back to default
+    if (textareaRef.current) {
+        textareaRef.current.style.height = '46px';
+    }
+
     try {
       // Unified Send
       await sendMessage(enrichedMessage, 'text');
-      
-      // Auto-focus back to input
-      setTimeout(() => {
-        textareaRef.current?.focus();
-      }, 10);
     } catch (err: any) {
         console.error(err);
         toast.error("Failed to send");
     } finally {
+      // Ensure focus is regained after assistant reply starts/completes
+      requestAnimationFrame(() => textareaRef.current?.focus());
       setIsStreaming(false);
     }
   }

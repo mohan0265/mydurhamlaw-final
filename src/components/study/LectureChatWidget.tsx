@@ -70,12 +70,20 @@ export default function LectureChatWidget({ lectureId, title }: LectureChatWidge
     // Fire and forget (hook handles state)
     const content = input;
     setInput(''); // Clear immediately
-    await sendMessage(content);
     
-    // Auto-focus back to input
-    setTimeout(() => {
+    // Auto-focus immediately
+    requestAnimationFrame(() => {
       textareaRef.current?.focus();
-    }, 10);
+    });
+
+    try {
+      await sendMessage(content);
+    } finally {
+      // Auto-focus back to input
+      requestAnimationFrame(() => {
+        textareaRef.current?.focus();
+      });
+    }
   };
 
   const toggleSelection = (id: string) => {
@@ -95,50 +103,41 @@ export default function LectureChatWidget({ lectureId, title }: LectureChatWidge
   };
 
   const handleBulkAction = async (action: 'save' | 'unsave' | 'delete' | 'clear_unsaved') => {
+      if ((action === 'delete' || action === 'save' || action === 'unsave') && selectedIds.size === 0) return;
+
       const toastId = toast.loading('Processing...');
       
       try {
-          if (action === 'delete') {
-              if (selectedIds.size === 0) {
-                  toast.dismiss(toastId);
-                  return;
-              }
-              const ids = Array.from(selectedIds);
-              await deleteMessages(ids);
-              toast.success('Messages deleted', { id: toastId });
-              setSelectedIds(new Set());
-              setIsSelectionMode(false);
-          } 
-          else if (action === 'clear_unsaved') {
-              await clearUnsaved();
-              toast.success('Unsaved messages cleared', { id: toastId });
-              setSelectedIds(new Set());
-              setIsSelectionMode(false);
-          }
-          else if (action === 'save' || action === 'unsave') {
-              if (selectedIds.size === 0) {
-                  toast.dismiss(toastId);
-                  return;
-              }
-              const ids = Array.from(selectedIds);
-              
+          const ids = Array.from(selectedIds);
+          let failureCount = 0;
+
+          if (action === 'save' || action === 'unsave') {
               for (const id of ids) {
-                 const m = messages.find(msg => msg.id === id);
-                 if (!m) continue;
-                 
-                 // For 'save': only toggle if NOT already saved
-                 // For 'unsave': only toggle if currently saved
-                 if (action === 'save' && m.visibility !== 'saved') {
-                     await toggleSaveMetadata(id, m.visibility, true); // silent
-                 } else if (action === 'unsave' && (m.visibility === 'saved' || m.saved_at)) {
-                     await toggleSaveMetadata(id, 'saved', true); // silent
-                 }
+                  const m = messages.find(msg => msg.id === id);
+                  if (!m) continue;
+                  
+                  if (action === 'save' && !m.saved_at) {
+                      const success = await toggleSaveMetadata(id, 'ephemeral', true);
+                      if (!success) failureCount++;
+                  } else if (action === 'unsave' && m.saved_at) {
+                      const success = await toggleSaveMetadata(id, 'saved', true);
+                      if (!success) failureCount++;
+                  }
               }
-              
-              toast.success(action === 'save' ? 'Messages saved' : 'Messages unsaved', { id: toastId });
-              setSelectedIds(new Set());
-              setIsSelectionMode(false);
+              refetchMessages();
+          } else if (action === 'delete') {
+              await deleteMessages(ids);
+          } else if (action === 'clear_unsaved') {
+              await clearUnsaved();
           }
+
+          if (failureCount > 0) {
+              toast.error(`Some messages (${failureCount}) failed to save. Check RLS.`, { id: toastId });
+          } else {
+              toast.success('Done', { id: toastId });
+          }
+          setSelectedIds(new Set());
+          setIsSelectionMode(false);
       } catch (err) {
           console.error('[LectureChatWidget] Bulk action error:', err);
           toast.error('Failed to process', { id: toastId });

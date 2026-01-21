@@ -200,11 +200,11 @@ export function useDurmahChat({ source, scope, context = {}, initialMessages = [
 
 
 
-  const toggleSaveMetadata = useCallback(async (msgId: string, currentVisibility: string | undefined, silent = false) => {
+  const toggleSaveMetadata = useCallback(async (msgId: string, currentVisibility: string | undefined, silent = false): Promise<boolean> => {
       if (!supabase) {
           console.error('[useDurmahChat] Cannot toggle save: supabase client not available');
           if (!silent) toast.error('Connection not ready');
-          return;
+          return false;
       }
 
       const newVisibility = currentVisibility === 'saved' ? 'ephemeral' : 'saved';
@@ -224,17 +224,19 @@ export function useDurmahChat({ source, scope, context = {}, initialMessages = [
               // Revert optimistic update on error
               setMessages(prev => prev.map(m => m.id === msgId ? { ...m, visibility: currentVisibility as any, saved_at: currentVisibility === 'saved' ? m.saved_at : null } : m));
               if (!silent) toast.error('Failed to update message');
-              return;
+              return false;
           }
           
           if (!silent) {
               toast.success(newVisibility === 'saved' ? 'Message saved' : 'Message unsaved');
           }
+          return true;
       } catch (err) {
           console.error('[useDurmahChat] Unexpected toggle error:', err);
           // Revert on unexpected error
           setMessages(prev => prev.map(m => m.id === msgId ? { ...m, visibility: currentVisibility as any } : m));
           if (!silent) toast.error('Failed to update message');
+          return false;
       }
   }, [supabase]);
 
@@ -326,18 +328,24 @@ export function useDurmahChat({ source, scope, context = {}, initialMessages = [
           return;
       }
 
-      // Store unsaved messages for potential rollback
-      const unsavedMessages = messages.filter(m => m.visibility !== 'saved');
+      // 1. Identify Unsaved: Neither visibility 'saved' OR nor saved_at timestamp
+      const unsavedMessages = messages.filter(m => !(m.visibility === 'saved' || !!m.saved_at));
       
-      // Optimistic update
-      setMessages(prev => prev.filter(m => m.visibility === 'saved'));
+      if (unsavedMessages.length === 0) {
+          return;
+      }
+
+      // Optimistic update: ONLY remove those that are truly unsaved
+      setMessages(prev => prev.filter(m => (m.visibility === 'saved' || !!m.saved_at)));
 
       try {
+          // 2. Precise DB deletion for unsaved messages in this conversation
           const { error } = await supabase
             .from('durmah_messages')
             .delete()
             .eq('conversation_id', conversationId)
-            .neq('visibility', 'saved'); // Only delete non-saved
+            .is('saved_at', null)
+            .or('visibility.is.null,visibility.neq.saved');
 
           if (error) {
               console.error('[useDurmahChat] Clear unsaved error:', error);
@@ -349,7 +357,7 @@ export function useDurmahChat({ source, scope, context = {}, initialMessages = [
               return;
           }
           
-          toast.success('Cleared unsaved messages');
+          toast.success(`Cleared ${unsavedMessages.length} unsaved messages`);
       } catch (err) {
           console.error('[useDurmahChat] Unexpected clear error:', err);
           // Rollback
