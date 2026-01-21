@@ -1869,7 +1869,7 @@ User question: ${userText}`;
           <button
             onClick={() => setIsOpen(false)}
             className="p-2 rounded-full hover:bg-white/20 transition-colors"
-            title="Minimize (voice chat continues in background)"
+            title="Minimize window but continue voice chat"
           >
             <Minus size={20} />
           </button>
@@ -1877,7 +1877,7 @@ User question: ${userText}`;
           <button
             onClick={handleClose}
             className="p-2 rounded-full hover:bg-white/20 transition-colors"
-            title="Close (will prompt to save)"
+            title="Close widget and save session"
           >
             <X size={20} />
           </button>
