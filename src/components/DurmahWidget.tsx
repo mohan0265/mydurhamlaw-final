@@ -1734,35 +1734,19 @@ User question: ${userText}`;
                     </div>
                   )}
 
-                  {/* View/Mode Controls */}
-                  <div className="mt-2 flex gap-2">
-                      {/* View Toggle */}
-                      <div className="flex bg-black/20 rounded-lg p-0.5 self-start backdrop-blur-sm border border-white/10">
-                        <button 
-                          onClick={(e) => { e.stopPropagation(); setViewMode('session'); }}
-                          className={`px-3 py-1 text-[10px] font-bold rounded-md transition-all ${viewMode === 'session' ? 'bg-white text-violet-700 shadow-sm' : 'text-violet-100 hover:bg-white/10'}`}
-                        >
-                          This Session
-                        </button>
-                        <button 
-                          onClick={(e) => { e.stopPropagation(); setViewMode('saved'); }}
-                          className={`px-3 py-1 text-[10px] font-bold rounded-md transition-all ${viewMode === 'saved' ? 'bg-white text-violet-700 shadow-sm' : 'text-violet-100 hover:bg-white/10'}`}
-                        >
-                          Saved
-                        </button>
-                      </div>
-
-                      {/* Select Button */}
-                      {messages.length > 0 && (
-                        <button 
-                            onClick={(e) => { e.stopPropagation(); setIsSelectionMode(true); }}
-                            className="bg-black/20 hover:bg-white/20 p-1.5 rounded-lg text-xs flex items-center gap-1 transition-colors border border-white/10 backdrop-blur-sm text-violet-100"
-                            title="Manage messages"
-                        >
-                            <CheckSquare className="w-4 h-4" />
-                        </button>
-                      )}
-                  </div>
+                  {/* Select Messages Button Only - No Confusing Toggle */}
+                  {messages.length > 0 && (
+                    <div className="mt-2">
+                      <button 
+                          onClick={(e) => { e.stopPropagation(); setIsSelectionMode(true); }}
+                          className="bg-black/20 hover:bg-white/20 px-3 py-1.5 rounded-lg text-xs flex items-center gap-2 transition-colors border border-white/10 backdrop-blur-sm text-violet-100"
+                          title="Select messages to save"
+                      >
+                          <CheckSquare className="w-4 h-4" />
+                          <span className="font-medium">Select Messages</span>
+                      </button>
+                    </div>
+                  )}
 
                   {showVoiceStatus && (
                     <span className={`text-[10px] font-medium ${voiceStatusClass}`}>
