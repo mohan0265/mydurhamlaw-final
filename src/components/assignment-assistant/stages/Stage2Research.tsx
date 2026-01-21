@@ -27,6 +27,15 @@ export default function Stage2Research({ assignmentId, briefData, onComplete }: 
   const [durmahMessages, setDurmahMessages] = useState<any[]>([]);
   const [userInput, setUserInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const textareaRef = React.useRef<HTMLTextAreaElement>(null);
+
+  // Auto-resize textarea
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto'; // Reset
+      textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 200)}px`;
+    }
+  }, [userInput]);
 
   const minSources = 5;
   const researchComplete = notes.length >= minSources;
@@ -243,16 +252,23 @@ export default function Stage2Research({ assignmentId, briefData, onComplete }: 
           ))}
         </div>
 
-        <div className="flex gap-2">
-          <input
-            type="text"
+        <div className="flex items-end gap-2">
+          <textarea
+            ref={textareaRef}
+            rows={1}
             value={userInput}
             onChange={(e) => setUserInput(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+              }
+            }}
             placeholder="Ask for research guidance..."
-            className="flex-1 px-3 py-2 border rounded-lg"
+            className="flex-1 px-3 py-2 border rounded-lg resize-none min-h-[42px] max-h-[200px] overflow-y-auto"
+            disabled={loading}
           />
-          <button onClick={sendMessage} disabled={loading} className="px-4 py-2 bg-violet-600 text-white rounded-lg">
+          <button onClick={sendMessage} disabled={loading} className="px-4 py-2 bg-violet-600 text-white rounded-lg h-[42px] flex items-center justify-center self-end">
             Send
           </button>
         </div>
