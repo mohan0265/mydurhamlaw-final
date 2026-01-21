@@ -34,10 +34,18 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   const [internalInput, setInternalInput] = useState('')
   const inputValue = externalInput !== undefined ? externalInput : internalInput
   const setInputValue = externalSetInput || setInternalInput
-  const inputRef = useRef<HTMLInputElement>(null)
+  const inputRef = useRef<HTMLTextAreaElement>(null)
   const pauseTimerRef = useRef<NodeJS.Timeout>()
   const lastTranscriptRef = useRef('')
   const [interimTranscript, setInterimTranscript] = useState('')
+
+  // Auto-resize textarea
+  useEffect(() => {
+    if (inputRef.current) {
+      inputRef.current.style.height = 'auto';
+      inputRef.current.style.height = `${Math.min(inputRef.current.scrollHeight, 200)}px`;
+    }
+  }, [inputValue]);
 
   // === ADVANCED PAUSE DETECTION & AUTO-SUBMIT ===
   
@@ -151,7 +159,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     }
   }
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const newValue = e.target.value
     setInputValue(newValue)
     
@@ -199,16 +207,24 @@ export const ChatInput: React.FC<ChatInputProps> = ({
         className="flex items-center space-x-2 sm:space-x-3 p-2 sm:p-3 mx-2 sm:mx-4 mb-2 sm:mb-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-2xl shadow-lg focus-within:ring-2 focus-within:ring-purple-500 focus-within:border-transparent transition-all duration-200"
       >
         {/* Main text input with live transcription */}
-        <input
+        {/* Main text input with live transcription */}
+        <textarea
           ref={inputRef}
-          type="text"
           value={inputValue}
           onChange={handleInputChange}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+              e.preventDefault();
+              // Create synthetic event or call handler directly
+              handleSubmit(e as any);
+            }
+          }}
           placeholder={isListening ? 'Listening...' : placeholder}
           disabled={disabled}
-          className="flex-1 px-3 sm:px-4 py-3 sm:py-2 bg-transparent text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none resize-none text-sm sm:text-base leading-relaxed disabled:opacity-50 min-h-[44px]"
+          className="flex-1 px-3 sm:px-4 py-3 sm:py-2 bg-transparent text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none resize-none text-sm sm:text-base leading-relaxed disabled:opacity-50 min-h-[44px] max-h-[200px] overflow-y-auto"
           aria-label="Chat with Durmah"
           autoComplete="off"
+          rows={1}
         />
 
         {/* Single mic icon (ChatGPT style) */}
