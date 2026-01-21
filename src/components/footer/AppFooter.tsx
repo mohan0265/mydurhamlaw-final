@@ -203,9 +203,9 @@ export const AppFooter: React.FC<AppFooterProps> = ({ isAuthed }) => {
                 Start Free Trial
               </Link>
             )}
-            <Link href="/sitemap.xml" className="text-gray-500 hover:text-white transition-colors">
+            <a href="/sitemap.xml" className="text-gray-500 hover:text-white transition-colors">
               Sitemap
-            </Link>
+            </a>
           </div>
         </div>
 
