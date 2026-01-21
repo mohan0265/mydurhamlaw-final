@@ -22,6 +22,7 @@ import Link from 'next/link';
 import toast from "react-hot-toast";
 import { useRouter } from 'next/router';
 import { getSupabaseClient } from "@/lib/supabase/client";
+import SaveConversationModal from '@/components/SaveConversationModal'; // NEW: Session save modal
 
 // Voice Provider Selection - checks localStorage override first, then environment variable
 // This allows runtime switching without redeployment (e.g., if Gemini fails)
@@ -286,20 +287,55 @@ export default function DurmahWidget() {
   const [isOpen, setIsOpen] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [ready, setReady] = useState(false);
-  const [mode, setMode] = useState<'chat' | 'study' | 'NEWS_STRICT'>('chat'); // NEW: Chat vs Study Mode
+  const [mode, setMode] = useState<'chat' | 'study' | 'NEWS_STRICT'>('chat');
   
-  // UNIFIED CHAT HOOK
-  const { messages: unifiedMessages, sendMessage, logMessage, isLoading: chatIsLoading, toggleSaveMetadata, clearUnsaved, deleteMessages, refetchMessages, conversationId } = useDurmahChat({
+  // NEW: Session Management State
+  const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
+  const [showSaveModal, setShowSaveModal] = useState(false);
+  
+  // Generate new session ID on widget open
+  useEffect(() => {
+    if (isOpen && !currentSessionId) {
+      const newSessionId = crypto.randomUUID();
+      setCurrentSessionId(newSessionId);
+      console.log('[DurmahWidget] New session created:', newSessionId);
+    }
+  }, [isOpen, currentSessionId]);
+  
+  // UNIFIED CHAT HOOK with session management
+  const { 
+    messages: unifiedMessages, 
+    sendMessage, 
+    logMessage, 
+    isLoading: chatIsLoading, 
+    toggleSaveMetadata, 
+    clearUnsaved, 
+    deleteMessages, 
+    refetchMessages, 
+    conversationId,
+    createSession,
+    saveSession,
+    discardSession
+  } = useDurmahChat({
       source: 'widget',
       scope: 'global',
       context: { 
         mode,
         lectureId: router.pathname.includes('/study/lectures') ? (router.query.id as string) : undefined,
         assignmentId: router.pathname.includes('/assignments') ? (router.query.assignmentId as string) : undefined
-      }
+      },
+      sessionId: currentSessionId,
+      skipAutoFetch: true  // Don't auto-load old messages
   });
 
-  const scope = 'global'; // Define scope for usage in clearChat
+  // Create session record when session ID is generated
+  useEffect(() => {
+    if (currentSessionId && createSession && signedIn) {
+      createSession(currentSessionId);
+    }
+  }, [currentSessionId, createSession, signedIn]);
+
+  const scope = 'global';
 
   // Map unified messages to legacy Msg format for UI compatibility
   const messages = useMemo<Msg[]>(() => {
@@ -309,7 +345,6 @@ export default function DurmahWidget() {
           text: m.content,
           ts: new Date(m.created_at).getTime(),
           saved_at: m.saved_at,
-          // session_id: ... not strictly needed for UI usually
       }));
   }, [unifiedMessages]);
 
@@ -328,7 +363,6 @@ export default function DurmahWidget() {
   const [contextPacket, setContextPacket] = useState<DurmahContextPacket | null>(null);
   const [contextTimeLabel, setContextTimeLabel] = useState<string | null>(null);
   
-  // NEW: Unified Durmah Intelligence - StudentContext from Phase 1
   const [studentContextData, setStudentContextData] = useState<StudentContext | null>(null);
   const [contextLoading, setContextLoading] = useState(false);
   const [lastProactiveGreeting, setLastProactiveGreeting] = useState<string | null>(null);
@@ -1231,6 +1265,67 @@ Date: ${studentContextData.academic?.now?.nowText || studentContextData.student.
     setVoiceSessionEndedAt(null);
   };
   
+  // ----------------------------
+  // SESSION MANAGEMENT HANDLERS
+  // ----------------------------
+  
+  /**
+   * Handle widget close: prompt to save/discard if there are messages
+   */
+  const handleClose = () => {
+    if (messages.length > 0) {
+      // Show save modal
+      setShowSaveModal(true);
+   } else {
+      // No messages, just minimize
+      setIsOpen(false);
+    }
+  };
+
+  /**
+   * Start a new session (after save/discard)
+   */
+  const startNewSession = () => {
+    // Clear current session
+    setCurrentSessionId(null);
+    // Widget will auto-generate new session ID on next open
+    setIsOpen(false);
+    setShowSaveModal(false);
+  };
+
+  /**
+   * Handle Save All from modal
+   */
+  const handleSaveSession = async () => {
+    if (saveSession) {
+      const success = await saveSession();
+      if (success) {
+        startNewSession();
+      }
+    }
+  };
+
+  /**
+   * Handle Discard from modal
+   */
+  const handleDiscardSession = async () => {
+    if (discardSession) {
+      const success = await discardSession();
+      if (success) {
+        startNewSession();
+      }
+    }
+  };
+
+  /**
+   * Handle Select Messages from modal
+   */
+  const handleSelectMessages = () => {
+    setShowSaveModal(false);
+    setIsSelectionMode(true);
+    // User will manually save selected messages, then close
+  };
+  
   // CLEAR CHAT - Clears entire conversation history for this SPECIFIC TOPIC/WIDGET
   const clearChat = async () => {
     // We only clear the current conversation scope (e.g. current lecture, current assignment, or global widget thread)
@@ -1793,9 +1888,9 @@ User question: ${userText}`;
           </button>
 
           <button
-            onClick={() => setIsOpen(false)}
+            onClick={handleClose}
             className="p-2 rounded-full hover:bg-white/20 transition-colors"
-            title="Minimize (voice continues)"
+            title="Close (will prompt to save)"
           >
             <X size={20} />
           </button>
@@ -2132,6 +2227,16 @@ User question: ${userText}`;
           `}</style>
         </div>
       )}
+
+      {/* Save Conversation Modal */}
+      <SaveConversationModal
+        isOpen={showSaveModal}
+        onClose={() => setShowSaveModal(false)}
+        messageCount={messages.length}
+        onSaveAll={handleSaveSession}
+        onSelectMessages={handleSelectMessages}
+        onDiscard={handleDiscardSession}
+      />
     </div>
   );
 }
