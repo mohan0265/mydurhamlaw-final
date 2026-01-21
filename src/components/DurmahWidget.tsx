@@ -292,7 +292,11 @@ export default function DurmahWidget() {
   const { messages: unifiedMessages, sendMessage, logMessage, isLoading: chatIsLoading, toggleSaveMetadata, clearUnsaved, deleteMessages } = useDurmahChat({
       source: 'widget',
       scope: 'global',
-      context: { mode } // Pass mode as context
+      context: { 
+        mode,
+        lectureId: router.pathname.includes('/study/lectures') ? (router.query.id as string) : undefined,
+        assignmentId: router.pathname.includes('/assignments') ? (router.query.assignmentId as string) : undefined
+      }
   });
 
   // Map unified messages to legacy Msg format for UI compatibility
@@ -441,9 +445,9 @@ export default function DurmahWidget() {
                  
                  // Only toggle if state differs
                  if (action === 'save' && !m.saved_at) {
-                     await toggleSaveMetadata(id, 'ephemeral'); // Switch to saved
+                     await toggleSaveMetadata(id, 'ephemeral', true); // Silent
                  } else if (action === 'unsave' && m.saved_at) {
-                     await toggleSaveMetadata(id, 'saved'); // Switch to ephemeral
+                     await toggleSaveMetadata(id, 'saved', true); // Silent
                  }
               }
               toast.success(action === 'save' ? 'Messages saved' : 'Messages unsaved', { id: toastId });

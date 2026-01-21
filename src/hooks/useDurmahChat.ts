@@ -76,6 +76,7 @@ export function useDurmahChat({ source, scope, context = {}, initialMessages = [
   }, [user, scope, JSON.stringify(context)]);
 
   const fetchMessages = async (cId: string) => {
+      console.log('[useDurmahChat] Fetching messages for Conversation ID:', cId);
       if (!cId || !supabase) return; // Guard against null client
       const { data, error } = await supabase
         .from('durmah_messages')
@@ -83,7 +84,12 @@ export function useDurmahChat({ source, scope, context = {}, initialMessages = [
         .eq('conversation_id', cId)
         .order('created_at', { ascending: true });
       
+      if (error) {
+           console.error('[useDurmahChat] Fetch error:', error);
+      }
+      
       if (data) {
+          console.log(`[useDurmahChat] Fetched ${data.length} messages`);
           setMessages(data.map((m: any) => ({
               id: m.id,
               role: m.role,
@@ -188,7 +194,9 @@ export function useDurmahChat({ source, scope, context = {}, initialMessages = [
     }
   }, [conversationId, source, scope, context, user]);
 
-  const toggleSaveMetadata = useCallback(async (msgId: string, currentVisibility: string | undefined) => {
+
+
+  const toggleSaveMetadata = useCallback(async (msgId: string, currentVisibility: string | undefined, silent = false) => {
       const newVisibility = currentVisibility === 'saved' ? 'ephemeral' : 'saved';
       const newSavedAt = newVisibility === 'saved' ? new Date().toISOString() : null;
 
@@ -200,7 +208,9 @@ export function useDurmahChat({ source, scope, context = {}, initialMessages = [
         .update({ visibility: newVisibility, saved_at: newSavedAt })
         .eq('id', msgId);
       
-      toast.success(newVisibility === 'saved' ? 'Message saved' : 'Message unsaved');
+      if (!silent) {
+          toast.success(newVisibility === 'saved' ? 'Message saved' : 'Message unsaved');
+      }
   }, [supabase]);
 
   // Log a message directly (e.g. from Voice Transcript) without triggering LLM

@@ -397,6 +397,18 @@ export async function enhanceDurmahContext(
   // Compute academic context (term, week)
   const academic = computeAcademicContext();
 
+  // Deduplicate messages (prefer localHistory)
+  const messageMap = new Map();
+  
+  [...globalTail, ...localHistory].forEach(m => {
+      // Create unique key based on content + role (timestamp might vary slightly if fetched differently)
+      // or use provided timestamp if stable.
+      const key = `${m.ts}-${m.role}-${m.content.substring(0, 20)}`;
+      messageMap.set(key, m);
+  });
+
+  const uniqueMessages = Array.from(messageMap.values()).sort((a, b) => new Date(a.ts).getTime() - new Date(b.ts).getTime());
+
   return {
     ...baseContext,
     assignments,
@@ -404,10 +416,6 @@ export async function enhanceDurmahContext(
     lectures,
     profile, // CRITICAL: Include profile for personalization
     academic: academic as any, // CRITICAL: Include term/week for context
-    recentMessages: [...globalTail, ...localHistory] as any[] // Merge for now, or keep separate? 
-    // Ideally we want to pass them separate so Prompt Builder can label them.
-    // But StudentContext interface just has 'recentMemories'. 
-    // I will merge them but maybe Prompt knows?
-    // Actually, let's keep it simple: merge unique messages.
+    recentMessages: uniqueMessages as any[] 
   };
 }
