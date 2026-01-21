@@ -696,6 +696,8 @@ export default withAuthProtection(function VoiceTranscriptsPage() {
              </motion.div>
           </div>
         )}
+      </AnimatePresence>
+
       <AnimatePresence>
         {transcriptToMove && (
           <SaveToFolderModal
