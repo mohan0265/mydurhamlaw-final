@@ -32,12 +32,21 @@ export function SupportChat({ initialCategory = 'Other', compact = false }: Prop
   const [speechAvailable, setSpeechAvailable] = useState(false)
   const [reading, setReading] = useState(false)
   const honeypotRef = useRef<HTMLInputElement | null>(null)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   useEffect(() => {
     const synth = typeof window !== 'undefined' ? window.speechSynthesis : null
     const rec = typeof window !== 'undefined' ? (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition : null
     setSpeechAvailable(Boolean(synth && rec))
   }, [])
+
+  // Auto-resize textarea
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto'; // Reset
+      textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 200)}px`;
+    }
+  }, [input]);
 
   const appendMessage = (msg: Message) => setMessages((prev) => [...prev, msg])
 
@@ -214,13 +223,20 @@ export function SupportChat({ initialCategory = 'Other', compact = false }: Prop
         {loading && <div className="text-xs text-slate-500">Sending…</div>}
       </div>
 
-      <div className="flex items-center gap-2">
-        <input
+      <div className="flex items-end gap-2">
+        <textarea
+          ref={textareaRef}
+          rows={1}
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          onKeyDown={sendOnEnter}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+              e.preventDefault();
+              sendMessage();
+            }
+          }}
           placeholder="Describe the issue…"
-          className="flex-1 border rounded-lg px-3 py-2"
+          className="flex-1 border rounded-lg px-3 py-2 resize-none min-h-[38px] max-h-[200px] overflow-y-auto"
         />
         {voiceEnabled && speechAvailable && (
           <button onClick={startVoice} className="px-3 py-2 rounded-lg border border-slate-200 text-slate-600">
@@ -230,7 +246,7 @@ export function SupportChat({ initialCategory = 'Other', compact = false }: Prop
         <button
           onClick={sendMessage}
           disabled={loading}
-          className="px-4 py-2 rounded-lg bg-purple-600 text-white font-semibold hover:bg-purple-700 disabled:opacity-60"
+          className="px-4 py-2 rounded-lg bg-purple-600 text-white font-semibold hover:bg-purple-700 disabled:opacity-60 h-[38px] flex items-center justify-center"
         >
           Send
         </button>
