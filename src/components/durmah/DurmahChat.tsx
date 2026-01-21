@@ -33,6 +33,15 @@ export default function DurmahChat({
   const [isStreaming, setIsStreaming] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const streamControllerRef = useRef<AbortController | null>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Auto-resize textarea
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto'; // Reset
+      textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 200)}px`;
+    }
+  }, [input]);
 
   // Auto-scroll
   useEffect(() => {
@@ -255,6 +264,8 @@ ${systemHint || ""}
       <div className="p-3 border-t border-gray-100 bg-white rounded-b-xl">
         <div className="flex gap-2">
           <textarea
+            ref={textareaRef}
+            rows={1}
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => {
@@ -264,12 +275,12 @@ ${systemHint || ""}
               }
             }}
             placeholder="Ask for help..."
-            className="flex-1 resize-none h-12 py-2 px-3 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-violet-300 focus:ring-2 focus:ring-violet-50 transition-all"
+            className="flex-1 resize-none py-2 px-3 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-violet-300 focus:ring-2 focus:ring-violet-50 transition-all min-h-[48px] max-h-[200px] overflow-y-auto"
           />
           <button
             onClick={sendMessage}
             disabled={!input.trim() || isStreaming}
-            className="w-12 h-12 flex items-center justify-center bg-violet-600 text-white rounded-lg hover:bg-violet-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="w-12 h-12 flex items-center justify-center bg-violet-600 text-white rounded-lg hover:bg-violet-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors self-end"
           >
             <Send size={18} />
           </button>

@@ -338,6 +338,15 @@ export default function DurmahWidget() {
   const [widgetSize, setWidgetSize] = useState({ width: DEFAULT_WIDTH, height: DEFAULT_HEIGHT });
   const [isResized, setIsResized] = useState(false);
   const resizeRef = useRef<{ startX: number; startY: number; startW: number; startH: number } | null>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Auto-resize textarea
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto'; // Reset
+      textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 200)}px`;
+    }
+  }, [input]);
 
   const resetWidgetSize = () => {
     setWidgetSize({ width: DEFAULT_WIDTH, height: DEFAULT_HEIGHT });
@@ -1985,18 +1994,25 @@ User question: ${userText}`;
       {/* --------------- TEXT INPUT BAR ---------------- */}
       {!isVoiceActive && !showSettings && (
         <div className="flex-none border-t border-gray-100 p-4 flex gap-3 items-center bg-white z-10">
-          <input
+          <textarea
+            ref={textareaRef}
+            rows={1}
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && send()}
+            onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    send();
+                }
+            }}
             placeholder="Ask Durmah..."
-            className="flex-1 px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 transition-all bg-gray-50 focus:bg-white"
+            className="flex-1 px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 transition-all bg-gray-50 focus:bg-white resize-none min-h-[46px] max-h-[200px] overflow-y-auto"
           />
 
           <button
             onClick={send}
             disabled={!input.trim()}
-            className="p-3 rounded-xl bg-violet-600 text-white hover:bg-violet-700 disabled:bg-gray-100 disabled:text-gray-400 transition-all shadow-md hover:shadow-lg disabled:shadow-none"
+            className="p-3 h-[46px] rounded-xl bg-violet-600 text-white hover:bg-violet-700 disabled:bg-gray-100 disabled:text-gray-400 transition-all shadow-md hover:shadow-lg disabled:shadow-none self-end"
           >
             <ArrowRight size={18} />
           </button>
