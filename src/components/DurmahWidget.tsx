@@ -17,7 +17,7 @@ import type { StudentContext } from "@/types/durmahContext";
 import type { DurmahContextPacket } from "@/types/durmah";
 import { formatTodayForDisplay } from "@/lib/durmah/phase";
 import { useDurmahSettings } from "@/hooks/useDurmahSettings";
-import { Settings, X, ArrowRight, AlertTriangle, Check, Volume2, Brain, Zap, RefreshCw, MoreHorizontal, Trash2, Smile, CheckSquare, Square, Save, Bookmark, Filter, Minimize2, GripVertical } from "lucide-react";
+import { Settings, X, ArrowRight, AlertTriangle, Check, Volume2, Brain, Zap, RefreshCw, MoreHorizontal, Trash2, Smile, CheckSquare, Square, Save, Bookmark, BookmarkX, Filter, Minimize2, GripVertical } from "lucide-react";
 import Link from 'next/link';
 import toast from "react-hot-toast";
 import { useRouter } from 'next/router';
@@ -1571,7 +1571,7 @@ User question: ${userText}`;
                         disabled={selectedIds.size === 0}
                         className={`flex items-center gap-1 px-3 py-1.5 rounded text-xs font-bold transition-colors shadow-sm ${selectedIds.size === 0 ? 'bg-gray-500 cursor-not-allowed' : 'bg-amber-500 hover:bg-amber-600'}`}
                         title="Remove selected messages from saved notes.">
-                    <Bookmark className="w-3 h-3" /> Unsave
+                    <BookmarkX className="w-3 h-3" /> Unsave
                  </button>
                  
                  {/* Clear Unsaved (Contextual) */}
