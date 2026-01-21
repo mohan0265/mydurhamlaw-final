@@ -160,6 +160,8 @@ const FolderTreeNode = ({
   );
 };
 
+const PAGE_SIZE = 20;
+
 export default withAuthProtection(function VoiceTranscriptsPage() {
   const [loading, setLoading] = useState(true);
   const [folders, setFolders] = useState<TranscriptFolder[]>([]);
@@ -557,7 +559,7 @@ export default withAuthProtection(function VoiceTranscriptsPage() {
             </AnimatePresence>
 
             {/* Pagination Placeholder */}
-            {totalCount > ps && (
+            {totalCount > PAGE_SIZE && (
                <div className="mt-12 flex justify-center pb-8">
                   <button 
                     onClick={() => setPage(prev => prev + 1)}
