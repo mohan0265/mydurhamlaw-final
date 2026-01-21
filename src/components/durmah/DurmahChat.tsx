@@ -70,19 +70,35 @@ export default function DurmahChat({
   const systemPrompt = useMemo(() => {
     // Base student context
     const studentContext = {
-      userId: user?.id || "anon",
-      firstName: durmahCtx.firstName || "Student",
-      university: "Durham University",
-      programme: durmahCtx.programme || "Law",
-      yearGroup: durmahCtx.yearKey || "year1",
-      academicYear: durmahCtx.academicYear || "2025/26",
-      modules: durmahCtx.modules || [],
-      nowPhase: durmahCtx.nowPhase || "term time",
-      currentPhase: durmahCtx.nowPhase || "term time",
-      keyDates: durmahCtx.keyDates || [],
-      todayLabel: new Date().toDateString(),
-      upcomingTasks,
-      todaysEvents
+      student: {
+        displayName: (durmahCtx as any).profile?.displayName || durmahCtx.firstName || "Student",
+        yearGroup: (durmahCtx as any).profile?.yearGroup || durmahCtx.yearKey || "year1",
+        term: durmahCtx.nowPhase || "term time",
+        weekOfTerm: (durmahCtx as any).academic?.weekOfTerm || 0,
+        localTimeISO: new Date().toISOString(),
+      },
+      academic: {
+        timezone: 'Europe/London',
+        now: {
+            nowText: new Date().toLocaleString('en-GB', { timeZone: 'Europe/London' }),
+            dayKey: new Date().toISOString().split('T')[0],
+            timeZone: 'Europe/London'
+        } as any
+      },
+      assignments: {
+        upcoming: upcomingTasks || [],
+        overdue: [],
+        recentlyCreated: [],
+        total: (upcomingTasks?.length || 0)
+      },
+      schedule: {
+        todaysClasses: todaysEvents?.map((e: any) => ({ module_name: e.title, time: e.start })) || []
+      },
+      yaag: {
+          itemsByDay: {},
+          rangeStart: '',
+          rangeEnd: ''
+      }
     };
 
     let contextInstruction = "";

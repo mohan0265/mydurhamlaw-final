@@ -52,10 +52,10 @@ export default function LectureChatWidget({ lectureId, title }: LectureChatWidge
     }
   }, [messages, isSelectionMode, viewMode]);
 
-  // Derived state for view
+  // Derived state for view: Session view hides saved messages to keep it focused on current flow
   const visibleMessages = viewMode === 'saved' 
       ? messages.filter(m => m.visibility === 'saved' || m.saved_at) 
-      : messages;
+      : messages.filter(m => !(m.visibility === 'saved' || m.saved_at));
 
   // Check if all visible messages are selected
   const allSelected = visibleMessages.length > 0 && 
@@ -307,9 +307,7 @@ export default function LectureChatWidget({ lectureId, title }: LectureChatWidge
                      onKeyDown={(e) => {
                          if (e.key === 'Enter' && !e.shiftKey) {
                              e.preventDefault();
-                             if (!input.trim() || isLoading) return;
-                             sendMessage(input);
-                             setInput('');
+                             handleSubmit(e);
                          }
                      }}
                      placeholder="Ask about this lecture..."

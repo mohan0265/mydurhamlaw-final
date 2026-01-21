@@ -1265,6 +1265,13 @@ Date: ${studentContextData.academic?.now?.nowText || studentContextData.student.
         console.error('[DurmahWidget] Failed to clear messages:', err);
         toast.error('Failed to clear chat');
       }
+    } else {
+      console.warn('[DurmahWidget] Clear chat failed: missing user, client, or conversationId', { 
+        userId: user?.id, 
+        hasClient: !!supabaseClient, 
+        conversationId 
+      });
+      toast.error('Unable to clear chat - check connection');
     }
   };
 
@@ -1963,9 +1970,9 @@ User question: ${userText}`;
            </div>
         )}
         
-        {/* Filtered Messages Logic */}
+        {/* Filtered Messages Logic: session mode hides saved messages to keep focus on current chat */}
         {(() => {
-            const filteredMessages = viewMode === 'saved' ? messages.filter(m => m.saved_at) : messages;
+            const filteredMessages = viewMode === 'saved' ? messages.filter(m => m.saved_at) : messages.filter(m => !m.saved_at);
             
             if (filteredMessages.length === 0 && viewMode === 'saved') {
                 return (
