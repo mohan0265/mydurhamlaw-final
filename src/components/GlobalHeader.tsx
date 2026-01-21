@@ -268,28 +268,33 @@ export default function GlobalHeader() {
 
       <header className="sticky top-0 z-50 bg-gradient-to-r from-violet-700 to-indigo-700 shadow border-b border-white/5">
         <nav className="mx-auto max-w-7xl px-4 sm:px-6">
-          <div className="min-h-[72px] md:min-h-[80px] py-3 flex items-center justify-between">
+          <div className="min-h-[72px] md:min-h-[110px] py-4 flex items-center justify-between transition-all duration-300">
             {/* Brand */}
             <Link
               href="/"
-              className="flex items-center gap-3 rounded-xl px-2 py-2 group focus:outline-none focus:ring-2 focus:ring-white/50"
+              className="flex items-center gap-4 rounded-xl px-2 py-2 group focus:outline-none focus:ring-2 focus:ring-white/50"
               aria-label="MyDurhamLaw Home"
             >
-              {/* Icon badge (high contrast on purple) */}
-              <div className="h-10 w-10 rounded-xl bg-white/10 border border-white/15 flex items-center justify-center shadow-sm">
-                {/* Option A: Lucide icon (instant crisp) */}
-                <Scale className="h-6 w-6 text-amber-300" />
+              {/* Icon badge (New Gold Scale Logo) */}
+              <div className="h-12 w-12 md:h-20 md:w-20 relative shrink-0 transition-transform group-hover:scale-105 duration-300">
+                <img 
+                  src="/assets/logo/scale-icon-gold.webp" 
+                  alt="MyDurham Law Scale" 
+                  className="h-full w-full object-contain drop-shadow-lg"
+                />
               </div>
 
-              {/* Wordmark (text = always crisp) */}
-              <div className="leading-none">
-                <span className="text-white font-semibold tracking-tight text-xl md:text-2xl">
-                  MyDurham
-                </span>
-                <span className="text-amber-300 italic font-semibold text-xl md:text-2xl ml-0.5">
-                  Law
-                </span>
-                <div className="text-white/70 text-[11px] md:text-xs mt-1 tracking-wide">
+              {/* Wordmark */}
+              <div className="leading-none flex flex-col justify-center">
+                <div className="tracking-tight text-white drop-shadow-md">
+                  <span className="font-bold text-2xl md:text-4xl">
+                    MyDurham
+                  </span>
+                  <span className="text-amber-300 italic font-bold text-2xl md:text-4xl ml-1">
+                    Law
+                  </span>
+                </div>
+                <div className="text-white/80 text-[11px] md:text-sm mt-1.5 font-medium tracking-wide uppercase">
                   Durham Law Companion
                 </div>
               </div>
