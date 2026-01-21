@@ -23,6 +23,8 @@ import toast from "react-hot-toast";
 import { useRouter } from 'next/router';
 import { getSupabaseClient } from "@/lib/supabase/client";
 import SaveConversationModal from '@/components/SaveConversationModal'; // NEW: Session save modal
+import SaveToFolderModal from '@/components/durmah/SaveToFolderModal';
+
 
 // Voice Provider Selection - checks localStorage override first, then environment variable
 // This allows runtime switching without redeployment (e.g., if Gemini fails)
@@ -293,6 +295,12 @@ export default function DurmahWidget() {
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [isSessionSaved, setIsSessionSaved] = useState(false);
+
+  // Explorer Upgrade State
+  const [showFolderPicker, setShowFolderPicker] = useState(false);
+  const [transcriptForFolder, setTranscriptForFolder] = useState<any>(null);
+  const [isSavingTranscript, setIsSavingTranscript] = useState(false);
+
   
   // Generate new session ID on widget open
   useEffect(() => {
@@ -1162,97 +1170,88 @@ Date: ${studentContextData.academic?.now?.nowText || studentContextData.student.
   const saveVoiceTranscript = async () => {
     const transcriptTurns = mergeDedupedTranscript(callTranscript);
     if (transcriptTurns.length > 0) {
-      // Logged via logMessage/appendTranscriptTurn already.
-      // setMessages((prev) => [...prev, ...transcriptTurns]);
-
       const lastUser = [...transcriptTurns].reverse().find((m) => m.role === "you");
       if (lastUser) {
         const topic = inferTopic(lastUser.text);
         try {
-          const token = await resolveAccessToken();
-          if (!token) {
-            toast.error("Session expired. Please sign in again to save Durmah updates.");
-            return;
-          }
-
           const res = await fetchAuthed("/api/durmah/memory", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ last_topic: topic, last_message: lastUser.text }),
           });
-          if (res.status === 401 || res.status === 403) {
-            toast.error("Session expired. Please sign in again to save Durmah updates.");
-            return;
-          }
-          setMemory((prev: any) => ({ ...prev, last_topic: topic, last_message: lastUser.text }));
-        } catch {
-          // Non-blocking memory update failure
-        }
+          if (res.ok) setMemory((prev: any) => ({ ...prev, last_topic: topic, last_message: lastUser.text }));
+        } catch { }
       }
 
-      try {
-        const sessionStart = voiceSessionStartedAt ?? new Date();
-        const sessionEnd = voiceSessionEndedAt ?? new Date();
-        const durationSeconds = Math.max(
-          0,
-          Math.round((sessionEnd.getTime() - sessionStart.getTime()) / 1000)
-        );
-        const sessionIdentifier = voiceSessionId ?? createVoiceSessionId();
-        const normalizedTranscript = await Promise.all(
-          transcriptTurns.map(async (turn) => ({
-            role: turn.role === "you" ? "user" : "durmah",
-            text: await normalizeTranscriptLanguage(turn.text),
-            timestamp: turn.ts,
-          }))
-        );
-        const firstUserTurn = transcriptTurns.find((turn) => turn.role === "you");
-        const topic =
-          firstUserTurn && firstUserTurn.text
-            ? firstUserTurn.text.slice(0, 60)
-            : "Durmah Voice Session";
+      // Instead of direct save, prepare payload and show folder picker
+      const sessionStart = voiceSessionStartedAt ?? new Date();
+      const sessionEnd = voiceSessionEndedAt ?? new Date();
+      const durationSeconds = Math.max(0, Math.round((sessionEnd.getTime() - sessionStart.getTime()) / 1000));
+      
+      const normalizedTranscript = await Promise.all(
+        transcriptTurns.map(async (turn) => ({
+          role: turn.role === "you" ? "user" : "durmah",
+          text: await normalizeTranscriptLanguage(turn.text),
+          timestamp: turn.ts,
+        }))
+      );
 
-        let supabaseUserId = user?.id ?? null;
-        if (!supabaseUserId) {
-          try {
-            const { data } = await supabaseClient.auth.getUser();
-            supabaseUserId = data.user?.id ?? null;
-          } catch {
-            supabaseUserId = null;
-          }
-        }
+      const firstUserTurn = transcriptTurns.find((turn) => turn.role === "you");
+      const topic = firstUserTurn && firstUserTurn.text ? firstUserTurn.text.slice(0, 60) : "Durmah Voice Session";
+      const content_text = normalizedTranscript.map(t => `${t.role}: ${t.text}`).join('\n');
 
-        if (!supabaseUserId) {
-          toast.error("Saved to chat, but couldn't archive transcript.");
-        } else {
-          const { error } = await supabaseClient.from("voice_journals").insert({
-            user_id: supabaseUserId,
-            session_id: sessionIdentifier,
-            started_at: sessionStart.toISOString(),
-            ended_at: sessionEnd.toISOString(),
-            duration_seconds: durationSeconds,
-            topic,
-            summary: null,
-            transcript: normalizedTranscript,
-          });
-          if (error) {
-            throw error;
-          }
-          setIsSessionSaved(true);
-          toast.success("Voice transcript saved to library.");
-        }
-      } catch (err) {
-        console.error("[DurmahVoice] Failed to persist transcript", err);
-        toast.error("Saved to chat, but couldn't archive transcript.");
-      }
+      setTranscriptForFolder({
+        topic,
+        summary: null,
+        transcript: normalizedTranscript,
+        content_text,
+        duration_seconds: durationSeconds,
+        started_at: sessionStart.toISOString(),
+        ended_at: sessionEnd.toISOString(),
+      });
+      
+      setShowFolderPicker(true);
     }
-    setShowVoiceTranscript(false);
-    setCallTranscript([]);
-    setVoiceSessionHadTurns(false);
-    setVoiceSessionActive(false);
-    setVoiceSessionId(null);
-    setVoiceSessionStartedAt(null);
-    setVoiceSessionEndedAt(null);
   };
+
+  const handleFinalSaveToFolder = async (folderId: string) => {
+    if (!transcriptForFolder) return;
+    setIsSavingTranscript(true);
+    try {
+        const resp = await fetch('/api/transcripts/save', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                transcriptPayload: transcriptForFolder,
+                folderId
+            })
+        });
+        const json = await resp.json();
+        if (json.ok) {
+            toast.success("Transcript archived successfully!");
+            setIsSessionSaved(true);
+            localStorage.setItem('durmah:lastFolderId', folderId);
+            setShowFolderPicker(false);
+            setTranscriptForFolder(null);
+            
+            // Cleanup session
+            setShowVoiceTranscript(false);
+            setCallTranscript([]);
+            setVoiceSessionHadTurns(false);
+            setVoiceSessionActive(false);
+            setVoiceSessionId(null);
+            setVoiceSessionStartedAt(null);
+            setVoiceSessionEndedAt(null);
+        } else {
+            toast.error(json.error || "Failed to archive transcript");
+        }
+    } catch (err) {
+        toast.error("Network error saving transcript");
+    } finally {
+        setIsSavingTranscript(false);
+    }
+  };
+
 
   const discardVoiceTranscript = () => {
     setShowVoiceTranscript(false);
@@ -2219,14 +2218,15 @@ User question: ${userText}`;
         </div>
       )}
 
-      {/* Save Conversation Modal */}
-      <SaveConversationModal
-        isOpen={showSaveModal}
-        onClose={() => setShowSaveModal(false)}
-        messageCount={messages.length}
-        onSaveAll={handleSaveSession}
-        onSelectMessages={handleSelectMessages}
-        onDiscard={handleDiscardSession}
+      {/* Save To Folder Modal (Explorer Upgrade) */}
+      <SaveToFolderModal 
+        isOpen={showFolderPicker}
+        onClose={() => {
+            setShowFolderPicker(false);
+            setTranscriptForFolder(null);
+        }}
+        onSave={handleFinalSaveToFolder}
+        isSaving={isSavingTranscript}
       />
     </div>
   );
