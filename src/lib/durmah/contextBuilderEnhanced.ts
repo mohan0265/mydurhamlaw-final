@@ -350,18 +350,17 @@ export async function fetchConversationHistory(
 }
 
 /**
- * Fetch Global Chat Tail (Stage B - Continuity)
+ * Fetch Recent Chat Tail (Across all scopes for Continuity)
  */
-export async function fetchGlobalChatTail(
+export async function fetchRecentTailAcrossScopes(
   supabase: SupabaseClient,
   userId: string,
-  limit = 6
+  limit = 8
 ) {
   const { data } = await supabase
     .from('durmah_messages')
     .select('role, content, created_at, scope, saved_at')
     .eq('user_id', userId)
-    .eq('scope', 'global')
     .order('created_at', { ascending: false })
     .limit(limit);
 
@@ -381,12 +380,12 @@ export async function enhanceDurmahContext(
   activeLectureId?: string 
 ): Promise<DurmahContextPacket> {
   // Fetch enhanced context in parallel
-  const [assignments, awy, lectures, profile, globalTail] = await Promise.all([
+  const [assignments, awy, lectures, profile, recentTail] = await Promise.all([
     fetchAssignmentsContext(supabase, userId),
     fetchAWYContext(supabase, userId),
     fetchLecturesContext(supabase, userId, activeLectureId), // PASS activeLectureId
     fetchProfileContext(supabase, userId),
-    fetchGlobalChatTail(supabase, userId)
+    fetchRecentTailAcrossScopes(supabase, userId)
   ]);
 
   let localHistory: any[] = [];
@@ -400,7 +399,8 @@ export async function enhanceDurmahContext(
   // Deduplicate messages (prefer localHistory)
   const messageMap = new Map();
   
-  [...globalTail, ...localHistory].forEach(m => {
+  // Combine cross-scope recent tail and the specific conversation history
+  [...recentTail, ...localHistory].forEach(m => {
       // Create unique key based on content + role ONLY (ignoring timestamp as it varies between local/DB)
       // Normalize content to remove whitespace noise
       const cleanContent = m.content?.trim().substring(0, 50) || '';

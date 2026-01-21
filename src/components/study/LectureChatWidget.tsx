@@ -292,10 +292,10 @@ export default function LectureChatWidget({ lectureId, title }: LectureChatWidge
        {/* Input */}
        {!isSelectionMode && (
            <div className="bg-white border-t border-gray-100">
-               <form 
-                  onSubmit={(e) => { e.preventDefault(); if (!input.trim() || isLoading) return; sendMessage(input); setInput(''); }} 
-                  className="p-3 flex gap-2 items-end"
-               >
+                <form 
+                   onSubmit={handleSubmit}
+                   className="p-3 flex gap-2 items-end"
+                >
                   <textarea
                      ref={textareaRef}
                      value={input}
