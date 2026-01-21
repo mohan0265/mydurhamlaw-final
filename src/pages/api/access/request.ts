@@ -54,7 +54,7 @@ function getClientIP(req: NextApiRequest): string {
   // Check various headers for real IP (Netlify/Vercel compatible)
   const forwarded = req.headers['x-forwarded-for'];
   if (forwarded) {
-    return Array.isArray(forwarded) ? forwarded[0] : forwarded.split(',')[0];
+    return (Array.isArray(forwarded) ? forwarded[0] : (forwarded as string).split(',')[0]) || 'unknown';
   }
   return req.headers['x-real-ip'] as string || 'unknown';
 }

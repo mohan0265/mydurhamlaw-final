@@ -90,7 +90,7 @@ export function dateToDayKey(date: Date, timeZone: string): string {
  */
 export function dayKeyToSerial(dayKey: string): number {
   const [y, m, d] = dayKey.split('-').map(Number);
-  return Math.floor(Date.UTC(y, m - 1, d) / 86400000);
+  return Math.floor(Date.UTC(y || 0, (m || 1) - 1, d || 1) / 86400000);
 }
 
 /**

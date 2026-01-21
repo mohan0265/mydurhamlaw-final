@@ -86,6 +86,7 @@ export interface DurmahHistoryResponse {
   latest_session: DurmahSession | null;
   last_summary: DurmahSummary | null;
   last_messages: DurmahMessage[];
+  recent_interests?: any[];
   context_loaded: boolean;
 }
 

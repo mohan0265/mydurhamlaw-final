@@ -49,7 +49,7 @@ export default function DurmahChatPanel({
   const [showSources, setShowSources] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {

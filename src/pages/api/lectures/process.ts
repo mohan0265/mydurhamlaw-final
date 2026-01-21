@@ -188,7 +188,7 @@ Extract:
       key_points: [],
       discussion_topics: [],
       exam_prompts: [],
-      exam_prompts: [],
+
        glossary: [],
        engagement_hooks: [],
        exam_signals: [],
@@ -333,7 +333,7 @@ export default async function handler(
         discussion_topics: notes.discussion_topics,
         exam_prompts: notes.exam_prompts,
         glossary: notes.glossary,
-        glossary: notes.glossary,
+
         engagement_hooks: notes.engagement_hooks || [],
         exam_signals: notes.exam_signals || [],
       });

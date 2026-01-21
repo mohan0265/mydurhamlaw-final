@@ -94,6 +94,6 @@ export const getDurmahPresetById = (
 ): DurmahVoicePreset => {
   // Safe cast or find
   return (
-    DURMAH_VOICE_PRESETS.find((p) => p.id === id) ?? DURMAH_VOICE_PRESETS[0]
+    (DURMAH_VOICE_PRESETS.find((p) => p.id === (id as any)) ?? DURMAH_VOICE_PRESETS[0])!
   );
 };

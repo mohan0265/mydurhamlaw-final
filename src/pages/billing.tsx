@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { GetServerSideProps } from 'next';
 import Head from 'next/head';
-import { getSupabaseServerClient } from '@/lib/supabase/server';
+import { createPagesServerClient } from '@supabase/auth-helpers-nextjs';
 import { SubscriptionStatus } from '@/components/billing/SubscriptionStatus';
 import { PricingPlans } from '@/components/billing/PricingPlans';
 import { TrialBanner } from '@/components/billing/TrialBanner';
@@ -240,8 +240,8 @@ const BillingHistory: React.FC<{ userId: string }> = ({ userId }) => {
   );
 };
 
-export const getServerSideProps: GetServerSideProps = async () => {
-  const supabase = getSupabaseServerClient();
+export const getServerSideProps: GetServerSideProps = async (context) => {
+  const supabase = createPagesServerClient(context);
 
   const {
     data: { user },

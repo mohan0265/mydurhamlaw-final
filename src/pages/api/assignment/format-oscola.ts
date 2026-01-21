@@ -55,7 +55,7 @@ function extractCitations(text: string): any[] {
   while ((match = citationRegex.exec(text)) !== null) {
     citations.push({
       number: match[1],
-      text: match[2].trim(),
+      text: (match[2] || '').trim(),
     });
   }
 

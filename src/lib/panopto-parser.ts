@@ -25,14 +25,14 @@ export function parsePanoptoTitle(rawText: string): PanoptoMetadata {
   // Allow leading whitespace. Match any CAPS+DIGITS pattern at start.
   const codeMatch = rawText.match(/^\s*([A-Z]+\d+)/i);
   if (codeMatch) {
-    result.moduleCode = codeMatch[1].toUpperCase();
+    result.moduleCode = (codeMatch[1] || '').toUpperCase();
   }
 
   // 2. Extract Module Name
   // Between " - " and " (" or " >". Allow extra spaces.
   const nameMatch = rawText.match(/-\s+(.+?)\s+(?:\(|>)/);
   if (nameMatch) {
-    result.moduleName = nameMatch[1].trim();
+    result.moduleName = (nameMatch[1] || '').trim();
   }
 
   // 3. Extract Date (e.g., 11/12/2025)
@@ -48,7 +48,7 @@ export function parsePanoptoTitle(rawText: string): PanoptoMetadata {
   // If no " : ", use the whole text or fallback
   const titleParts = rawText.split(' : ');
   if (titleParts.length > 1) {
-    result.title = titleParts[titleParts.length - 1].trim();
+    result.title = titleParts[titleParts.length - 1]?.trim() || null;
   } else {
     // Fallback: if no specific title part, use the raw text but maybe clean it up?
     // For now, let's leave it null to let the user decide, or defaults to raw

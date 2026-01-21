@@ -174,16 +174,17 @@ export default async function handler(
       // CRITICAL: Extract YYYY-MM-DD from due_date to match plan event format
       // due_date is stored as DATE type, but may include time component when queried
       // We need simple "2026-01-30" not "2026-01-30T04:00:00+00:00"
-      const dateOnly = typeof assignment.due_date === 'string' 
-        ? assignment.due_date.substring(0, 10)  // Extract YYYY-MM-DD
-        : assignment.due_date;
+      const anyAssignment = assignment as any;
+      const dateOnly = typeof anyAssignment.due_date === 'string' 
+        ? anyAssignment.due_date.substring(0, 10)  // Extract YYYY-MM-DD
+        : new Date(anyAssignment.due_date).toISOString().substring(0, 10);
 
       return {
         id: `assignment-${assignment.id}`,
         title: assignment.title,
         date: dateOnly,  // NOW MATCHES: "2026-01-30" format
         allDay: true, // Assignments are deadlines, not timed events
-        kind: 'deadline' as const, // Use deadline kind for visual distinction
+        kind: 'assessment' as const, // Use assessment kind (was deadline)
         meta: {
           source: 'assignment',
           assignmentId: assignment.id,

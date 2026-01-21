@@ -107,6 +107,10 @@ export const WeekGrid: React.FC<WeekGridProps> = ({
   const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
   const [modalDate, setModalDate] = useState<string | undefined>();
   const [modalItem, setModalItem] = useState<any>(null);
+  
+  // Plan Modal state
+  const [planModalOpen, setPlanModalOpen] = useState(false);
+  const [planModalEvent, setPlanModalEvent] = useState<NormalizedEvent | null>(null);
 
   const weekStart = parseISOUTC(mondayISO);
   const weekEnd = addDays(weekStart, 6);
@@ -487,6 +491,19 @@ export const WeekGrid: React.FC<WeekGridProps> = ({
         onClose={() => setModalOpen(false)}
         onSave={handleModalSave}
         initialDate={modalDate}
+        item={modalItem}
+        mode={modalMode}
+      />
+      
+      {/* Plan Event Modal */}
+      <PlanEventModal
+        isOpen={planModalOpen}
+        onClose={() => setPlanModalOpen(false)}
+        onSave={() => {
+          setPlanModalOpen(false);
+          onEventsChange?.();
+        }}
+        event={planModalEvent}
       />
     </div>
   );

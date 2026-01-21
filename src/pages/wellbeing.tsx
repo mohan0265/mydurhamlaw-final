@@ -81,7 +81,11 @@ function WellbeingPage() {
                 </div>
                 <div className="flex-1 relative">
                   {/* Allow chat without pledge on wellbeing page */}
-                  <WellbeingChat allowWithoutPledge={true} />
+                  <WellbeingChat 
+                    allowWithoutPledge={true}
+                    assistanceLevel="L1"
+                    pledgedAt={null}
+                  />
                 </div>
               </div>
             </div>

@@ -9,9 +9,21 @@ import {
   ShieldAlert, AlertTriangle, PlusCircle, CheckCircle, ExternalLink
 } from 'lucide-react';
 // ... imports
+import toast from 'react-hot-toast';
 import { getSupabaseClient } from '@/lib/supabase/client';
 import LectureChatWidget from '@/components/study/LectureChatWidget';
 // ... existing imports
+
+
+interface ExamSignal {
+  signal_strength: number;
+  topic_title: string;
+  why_it_matters: string;
+  what_to_master: string[];
+  common_traps: string[];
+  evidence_quotes?: string[];
+  practice_prompts: { type: string; prompt: string }[];
+}
 
 interface LectureDetail {
   id: string;

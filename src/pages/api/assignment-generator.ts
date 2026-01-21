@@ -1,5 +1,6 @@
 import { getSupabaseClient } from '@/lib/supabase/client'
 import { generateEmbedding, preprocessTextForEmbedding } from '@/lib/server/embeddings'
+import { streamGPT4oResponse } from '@/lib/server/openai'
 
 export const config = { runtime: 'nodejs' };
 

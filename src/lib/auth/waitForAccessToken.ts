@@ -32,7 +32,7 @@ function readCookieToken(): string | null {
     }, {});
 
   for (const base in chunkGroups) {
-    const parts = chunkGroups[base]
+    const parts = (chunkGroups[base] || [])
       .sort((a, b) => {
         const ai = Number(a.split('.').pop());
         const bi = Number(b.split('.').pop());
@@ -56,7 +56,7 @@ function readCookieToken(): string | null {
   const jsonCookieKey = keys.find((k) => k.includes('auth-token'));
   if (jsonCookieKey) {
     try {
-      const parsed = JSON.parse(cookies[jsonCookieKey]);
+      const parsed = JSON.parse(cookies[jsonCookieKey] || '');
       const token =
         parsed?.currentSession?.access_token ||
         parsed?.currentSession?.accessToken ||

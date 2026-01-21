@@ -1,7 +1,7 @@
 // src/components/calendar/PlanEventModal.tsx
 import React, { useState, useEffect } from 'react';
 import { X, RotateCcw } from 'lucide-react';
-import { createClient } from '@/lib/supabase/client';
+import { getSupabaseClient } from '@/lib/supabase/client';
 import { useAuth } from '@/lib/supabase/AuthContext';
 import toast from 'react-hot-toast';
 import type { NormalizedEvent } from '@/lib/calendar/normalize';
@@ -53,7 +53,7 @@ export const PlanEventModal: React.FC<PlanEventModalProps> = ({
     }
 
     setSaving(true);
-    const supabase = createClient();
+    const supabase = getSupabaseClient();
 
     try {
       if (isOverride && event.meta?.personalItemId) {
@@ -113,7 +113,7 @@ export const PlanEventModal: React.FC<PlanEventModalProps> = ({
     }
 
     setSaving(true);
-    const supabase = createClient();
+    const supabase = getSupabaseClient();
 
     try {
       const { error } = await supabase

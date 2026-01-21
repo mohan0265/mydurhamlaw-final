@@ -20,7 +20,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   // Mask emails for privacy/security display
   const maskedDocs = data.map(ref => ({
       ...ref,
-      referred_email: maskEmail(ref.referred_email)
+      referred_email: ref.referred_email ? maskEmail(ref.referred_email) : 'Unknown'
   }));
 
   return res.status(200).json({ referrals: maskedDocs });
@@ -30,7 +30,7 @@ function maskEmail(email: string) {
     const parts = email.split('@');
     if (parts.length < 2) return email;
     
-    const local = parts[0];
+    const local = parts[0] || '';
     const domain = parts[1];
     
     if (local.length <= 2) return `${local}***@${domain}`;

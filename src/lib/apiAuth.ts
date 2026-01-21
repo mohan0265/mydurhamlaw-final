@@ -62,7 +62,7 @@ export function getBearerToken(req: NextApiRequest): {
     }, {});
 
   for (const base in chunkGroups) {
-    const parts = chunkGroups[base]
+    const parts = (chunkGroups[base] || [])
       .sort((a, b) => {
         const ai = Number(a.split('.').pop());
         const bi = Number(b.split('.').pop());
@@ -94,7 +94,7 @@ type ApiAuthResult =
   | { status: 'ok'; user: any; supabase: SupabaseClient; tokenSource: 'header' | 'cookie'; cookieNames: string[] }
   | { status: 'missing_token'; tokenSource: 'none'; cookieNames: string[] }
   | { status: 'invalid_token'; tokenSource: 'header' | 'cookie'; cookieNames: string[] }
-  | { status: 'misconfigured'; tokenSource: 'none'; cookieNames: string[] };
+  | { status: 'misconfigured'; tokenSource: 'header' | 'cookie' | 'none'; cookieNames: string[] };
 
 function logMissingToken(reason: string) {
   if (process.env.NODE_ENV !== 'production') {

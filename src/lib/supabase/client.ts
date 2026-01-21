@@ -29,7 +29,7 @@ export function getSupabaseClient(): SupabaseClient {
         cookieOptions: { name: 'sb-auth-token' },
         supabaseUrl: url,
         supabaseKey: key,
-      });
+      } as any) as unknown as SupabaseClient;
       
       // Disable auto URL detection to avoid double exchange
       if (supabase && (supabase as any).auth) {
@@ -48,5 +48,5 @@ export function getSupabaseClient(): SupabaseClient {
       });
     }
   }
-  return supabase;
+  return supabase!;
 }

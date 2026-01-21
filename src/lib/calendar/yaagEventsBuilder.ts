@@ -157,7 +157,7 @@ export async function buildYAAGEvents(options: YAAGEventsOptions): Promise<Norma
       title: assignment.title,
       date: dateOnly,
       allDay: true,
-      kind: 'deadline' as const,
+      kind: 'assessment' as const,
       meta: {
         source: 'assignment',
         assignmentId: assignment.id,
@@ -240,7 +240,7 @@ export function groupEventsByDate(events: NormalizedEvent[]): Record<string, Nor
     if (!grouped[event.date]) {
       grouped[event.date] = [];
     }
-    grouped[event.date].push(event);
+    grouped[event.date]!.push(event);
   }
   
   return grouped;

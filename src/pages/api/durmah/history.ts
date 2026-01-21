@@ -99,8 +99,8 @@ export default async function handler(
       latest_session: sessionData,
       last_summary: lastSummary,
       last_messages: lastMessages,
-      recent_interests: interests || [],
-      context_loaded: lastMessages.length > 0 || lastSummary !== null || (interests && interests.length > 0),
+      recent_interests: (interests as any[]) || [],
+      context_loaded: lastMessages.length > 0 || lastSummary !== null || (interests?.length || 0) > 0,
     };
 
     return res.status(200).json(response);

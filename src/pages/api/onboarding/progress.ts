@@ -91,7 +91,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
              const { count } = await supabase
                .from('awy_connections')
                .select('*', { count: 'exact', head: true })
-               .or(`user_id.eq.${userId},loved_email.eq.${session.user.email}`); 
+               .or(`user_id.eq.${userId},loved_email.eq.${session.user.email || ''}`); 
              if (count && count > 0) isDone = true;
              break;
            }
@@ -127,7 +127,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
               completed: true,
               completed_at: new Date().toISOString(),
               updated_at: new Date().toISOString(),
-            })
+            }) as any
         );
         // Update local map to reflect it
         progressMap.set(key, { completed: true, completed_at: new Date().toISOString() });

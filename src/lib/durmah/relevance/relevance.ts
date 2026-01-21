@@ -112,7 +112,7 @@ export function expandTerms(signals: QuerySignals): Map<string, number> {
     const moduleData = MODULE_KEYWORDS[signals.detectedModule];
 
     // Doctrines (highest weight)
-    const doctrines = [...(moduleData.doctrines || [])];
+    const doctrines = [...((moduleData as any).doctrines || [])];
     doctrines.forEach((term) => {
       if (!termWeights.has(term)) {
         termWeights.set(normalize(term), 8);

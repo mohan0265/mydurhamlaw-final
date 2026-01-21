@@ -441,7 +441,7 @@ export default function AdminAccessControl({ authorized, adminEmail }: Props) {
 
 export const getServerSideProps: GetServerSideProps = async ({ req, res }) => {
   // Verify admin access using new system
-  const { isAdmin, email } = await verifyAdminAccess(req, res);
+  const { isAdmin, email } = await verifyAdminAccess(req as any, res as any);
 
   if (!isAdmin) {
     return {

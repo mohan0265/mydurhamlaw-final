@@ -108,9 +108,13 @@ All substantive content and analysis is the student's original work. AI tools we
               })
             ),
             new Paragraph({
-              text: "All substantive content and analysis is the student's original work. AI tools were used only for permitted purposes as outlined in the assessment guidelines. The student takes full responsibility for the accuracy of all content.",
+              children: [
+                new TextRun({
+                  text: "All substantive content and analysis is the student's original work. AI tools were used only for permitted purposes as outlined in the assessment guidelines. The student takes full responsibility for the accuracy of all content.",
+                  italics: true,
+                })
+              ],
               spacing: { before: 200, after: 200 },
-              italics: true,
             }),
           ],
         }],

@@ -72,7 +72,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         if (subscriptionInfo) {
           // If the stored subscription says inactive but fallback says still in trial window, prefer fallback
           const merged =
-            fallback.inTrial && (!subscriptionInfo.inTrial || subscriptionInfo.status === 'inactive')
+            fallback.inTrial && (!(subscriptionInfo as any).inTrial || (subscriptionInfo as any).status === 'inactive')
               ? {
                   ...subscriptionInfo,
                   inTrial: true,

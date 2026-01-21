@@ -3,7 +3,7 @@ import { ArrowRight, Brain, AlertTriangle, Send } from 'lucide-react';
 import { useAuth } from '@/lib/supabase/AuthContext';
 import { useDurmah } from '@/lib/durmah/context';
 import { useDurmahDynamicContext } from '@/hooks/useDurmahDynamicContext';
-import { buildDurmahSystemPrompt } from '@/lib/durmah/systemPrompt';
+import { buildDurmahSystemPrompt, buildDurmahContextBlock } from '@/lib/durmah/systemPrompt';
 
 type Msg = { role: "durmah" | "you"; text: string; ts: number };
 
@@ -118,8 +118,12 @@ ${systemHint || ""}
     // Combine standard prompt with specific context
     // We can reuse buildDurmahSystemPrompt and append, or build a custom one.
     // Ideally we append our specific instructions to the standard persona.
-    const basePrompt = buildDurmahSystemPrompt(studentContext as any, null, upcomingTasks, todaysEvents, { systemTone: "Mentor" });
-    return `${basePrompt}\n\n${contextInstruction}`;
+    // const basePrompt = buildDurmahSystemPrompt(studentContext as any, null, upcomingTasks, todaysEvents, { systemTone: "Mentor" });
+    // return `${basePrompt}\n\n${contextInstruction}`;
+
+    const identity = buildDurmahSystemPrompt(true); // true = indicate context usage
+    const baseContext = buildDurmahContextBlock(studentContext as any);
+    return `${identity}\n\n${baseContext}\n\n${contextInstruction}`;
   }, [user, durmahCtx, upcomingTasks, todaysEvents, contextType, contextTitle, contextId, systemHint]);
 
   async function sendMessage() {

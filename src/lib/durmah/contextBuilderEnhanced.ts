@@ -27,7 +27,19 @@ function computeAcademicContext() {
     }
   }
   
-  return { term, weekOfTerm };
+
+  const localTimeISO = now.toISOString();
+  
+  return { 
+    term: term as any, 
+    weekOfTerm, 
+    dayOfTerm: 1, 
+    dayLabel: now.toLocaleDateString('en-GB', { weekday: 'long' }),
+    timezone: 'Europe/London',
+    localTimeISO,
+    timeOfDay: now.getHours() < 12 ? 'morning' : now.getHours() < 17 ? 'afternoon' : 'evening',
+    academicYearLabel: '2025/26'
+  };
 }
 
 /**
@@ -171,7 +183,7 @@ export async function fetchLecturesContext(
     lecture_date?: string;
     status: string;
   }>;
-  current?: DurmahContextPacket['lectures']['current']; // Use the type from DurmahContextPacket
+  current?: NonNullable<DurmahContextPacket['lectures']>['current']; // Use the type from DurmahContextPacket
   total: number;
 }> {
   // Fetch recent lectures - METADATA ONLY (no notes join)
@@ -294,6 +306,7 @@ export async function fetchProfileContext(
   displayName: string | null;
   yearGroup: string | null;
   yearOfStudy: string | null;
+  role: string;
 }> {
   const { data } = await supabase
     .from('profiles')
@@ -390,8 +403,8 @@ export async function enhanceDurmahContext(
     awy,
     lectures,
     profile, // CRITICAL: Include profile for personalization
-    academic, // CRITICAL: Include term/week for context
-    recentMemories: [...globalTail, ...localHistory] // Merge for now, or keep separate? 
+    academic: academic as any, // CRITICAL: Include term/week for context
+    recentMessages: [...globalTail, ...localHistory] as any[] // Merge for now, or keep separate? 
     // Ideally we want to pass them separate so Prompt Builder can label them.
     // But StudentContext interface just has 'recentMemories'. 
     // I will merge them but maybe Prompt knows?

@@ -155,7 +155,7 @@ export default function AssignmentDetail({ assignment, onUpdate, onPlanWithAI, o
       toast.success('✅ Generating download...');
     } catch (error) {
       console.error('[Download Error]:', error);
-      toast.error('Failed to generate document: ' + (error.message || 'Unknown error'));
+      toast.error('Failed to generate document: ' + ((error as any).message || 'Unknown error'));
     } finally {
       setLoading(false);
     }

@@ -104,13 +104,13 @@ export default function StudySchedulePage() {
       exam: d3.toISOString().split('T')[0],
     };
   };
-  const upcomingDates = getUpcomingDates();
+  const [upcomingDates] = useState(getUpcomingDates());
   
   const [calendarEvents] = useState<CalendarEvent[]>([
     {
       id: '1',
       title: 'Contract Law Essay Due',
-      date: upcomingDates.essay,
+      date: upcomingDates.essay as string,
       startTime: '23:59',
       endTime: '23:59',
       type: 'assignment',
@@ -120,7 +120,7 @@ export default function StudySchedulePage() {
     {
       id: '2',
       title: 'Study Session - Tort Cases',
-      date: upcomingDates.study,
+      date: upcomingDates.study as string,
       startTime: '15:00',
       endTime: '17:00',
       type: 'study',
@@ -130,7 +130,7 @@ export default function StudySchedulePage() {
     {
       id: '3',
       title: 'Midterm Exam - Constitutional Law',
-      date: upcomingDates.exam,
+      date: upcomingDates.exam as string,
       startTime: '09:00',
       endTime: '12:00',
       type: 'exam',

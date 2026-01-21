@@ -25,9 +25,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     }
 
     const admin = getSupabaseAdmin();
+    
+    if (!admin) {
+        throw new Error('Supabase Admin not initialized');
+    }
 
     // Query assignment_files for this assignment
-    const { data, error } = await admin
+    const { data, error } = await admin!
       .from('assignment_files')
       .select('bucket, path, original_name, mime_type, size_bytes')
       .eq('assignment_id', assignmentId)
@@ -45,11 +49,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 
     return res.status(200).json({
       file: {
-        bucket: data.bucket,
-        path: data.path,
-        originalName: data.original_name || 'assignment-brief.pdf',
-        mimeType: data.mime_type || 'application/pdf',
-        sizeBytes: data.size_bytes || 0,
+        bucket: (data as any).bucket,
+        path: (data as any).path,
+        originalName: (data as any).original_name || 'assignment-brief.pdf',
+        mimeType: (data as any).mime_type || 'application/pdf',
+        sizeBytes: (data as any).size_bytes || 0,
       },
     });
   } catch (e: any) {

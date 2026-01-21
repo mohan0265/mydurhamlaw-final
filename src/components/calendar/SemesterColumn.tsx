@@ -31,6 +31,8 @@ type Props = {
   onModuleClick?: (idOrTitle: string) => void
   // NEW: Read-only mode for non-active years
   isReadOnly?: boolean
+  userEvents?: UserEvent[]
+  userAssessments?: UserAssessment[]
 }
 
 /** --- tiny date helpers (no date-fns needed) ------------------------------ */

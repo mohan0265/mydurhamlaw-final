@@ -40,7 +40,7 @@ export function useDurmahSettings() {
         if (data?.durmah_voice_id) {
           // Validate that the ID exists in our presets
           const preset = getDurmahVoicePreset(data.durmah_voice_id);
-          setVoiceId(preset.id as DurmahVoiceId);
+          setVoiceId(preset!.id as DurmahVoiceId);
         }
       } catch (err: any) {
         // If the column doesn't exist yet (migration not run), just ignore and use default

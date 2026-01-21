@@ -207,7 +207,7 @@ export default function LoginRedirectPage() {
             id: user.id,
             user_role: userRole,
             display_name: actualDisplayName,  // ✅ Use actual name from signup!
-            agreed_to_terms: userRole === 'loved_one' ? true : (signupMetadata?.agreed_to_terms || false),
+            agreed_to_terms: userRole === 'loved_one' ? true : ((signupMetadata as any)?.agreed_to_terms || false),
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
             created_via: 'manual',
@@ -242,7 +242,7 @@ export default function LoginRedirectPage() {
             navigateOnce('/loved-one-dashboard', 1500);
           } else {
              // CHECK FOR STRIPE PLAN
-             const selectedPlan = signupMetadata?.plan;
+             const selectedPlan = (signupMetadata as any)?.plan;
              if (selectedPlan && selectedPlan !== 'free') {
                  setStatus("Account created! Redirecting to payment...");
                  console.log(`[auth/callback] Initiating checkout for plan: ${selectedPlan}`);

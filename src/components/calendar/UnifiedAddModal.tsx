@@ -17,6 +17,8 @@ interface UnifiedAddModalProps {
   onSave: () => void;
   initialDate?: string; // YYYY-MM-DD
   category?: ItemCategory; // Pre-select category
+  item?: any;
+  mode?: 'create' | 'edit';
 }
 
 export default function UnifiedAddModal({
@@ -25,6 +27,8 @@ export default function UnifiedAddModal({
   onSave,
   initialDate,
   category: initialCategory = 'personal',
+  item,
+  mode = 'create',
 }: UnifiedAddModalProps) {
   const router = useRouter();
   const { user } = useAuth();
@@ -59,14 +63,33 @@ export default function UnifiedAddModal({
     briefFile: null as File | null,
   });
 
-  // Reset on category change
+  // Reset on category change or item edit
   useEffect(() => {
     if (isOpen) {
       const date = initialDate || new Date().toISOString().substring(0, 10);
-      setPersonalData(prev => ({ ...prev, date }));
-      setAssignmentData(prev => ({ ...prev, dueDate: date }));
+      
+      if (mode === 'edit' && item) {
+        // Populate form with existing item data
+        if (item.type) {
+            // It's likely a personal item
+             setPersonalData({
+                title: item.title || '',
+                type: item.type || 'study',
+                date: item.start_at ? item.start_at.substring(0, 10) : date,
+                isAllDay: item.is_all_day || false,
+                startTime: item.start_at && !item.is_all_day ? item.start_at.substring(11, 16) : '09:00',
+                endTime: item.end_at ? item.end_at.substring(11, 16) : '10:00',
+                priority: item.priority || 'medium',
+                notes: item.notes || '',
+             });
+        }
+      } else {
+        // Reset to defaults for create mode
+        setPersonalData(prev => ({ ...prev, date, title: '', notes: '' }));
+        setAssignmentData(prev => ({ ...prev, dueDate: date, title: '', brief: '' }));
+      }
     }
-  }, [isOpen, initialDate]);
+  }, [isOpen, initialDate, item, mode]);
 
   const handleSavePersonal = async () => {
     if (!personalData.title.trim()) {
@@ -104,7 +127,9 @@ export default function UnifiedAddModal({
         completed: false,
       };
 
-      const { error } = await supabase.from('personal_items').insert([payload]);
+      const { error } = mode === 'edit' && item?.id
+        ? await supabase.from('personal_items').update(payload).eq('id', item.id)
+        : await supabase.from('personal_items').insert([payload]);
       if (error) throw error;
 
       toast.success('Personal item added');

@@ -45,7 +45,7 @@ export default async function handler(
 
     // 3. Extract <title>
     const titleMatch = html.match(/<title>([^<]*)<\/title>/i);
-    const pageTitle = titleMatch ? titleMatch[1].trim() : null;
+    const pageTitle = titleMatch ? (titleMatch[1] || '').trim() : null;
 
     if (!pageTitle) {
       return res.status(200).json({ success: false, reason: 'No title tag found' });

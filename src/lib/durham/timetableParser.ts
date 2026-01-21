@@ -48,7 +48,7 @@ export function parseTimetableText(text: string): ParsedTimetableEvent[] {
 
     if (remaining.includes(',')) {
       const parts = remaining.split(',');
-      title = parts[0].trim();
+      title = (parts[0] || '').trim();
       location = parts.slice(1).join(',').trim();
     } else {
         // Fallback: if ends with typical location indicators or just take the last part? 
