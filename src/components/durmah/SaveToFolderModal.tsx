@@ -18,6 +18,8 @@ interface SaveToFolderModalProps {
   onClose: () => void;
   onSave: (folderId: string) => Promise<void>;
   isSaving: boolean;
+  title?: string;
+  buttonText?: string;
 }
 
 const FolderPickerItem = ({ 
@@ -153,7 +155,7 @@ export default function SaveToFolderModal({ isOpen, onClose, onSave, isSaving }:
       >
         <div className="p-6 border-b border-slate-100 flex items-center justify-between">
           <div>
-            <h2 className="text-xl font-bold text-slate-900">Save Transcript</h2>
+            <h2 className="text-xl font-bold text-slate-900">{title || "Save Transcript"}</h2>
             <p className="text-xs text-slate-500 font-medium">Choose a destination folder</p>
           </div>
           <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-xl transition">
@@ -231,12 +233,12 @@ export default function SaveToFolderModal({ isOpen, onClose, onSave, isSaving }:
             {isSaving ? (
                <>
                  <Loader2 className="w-4 h-4 animate-spin" />
-                 Saving...
+                 Processing...
                </>
             ) : (
                <>
                  <Check className="w-4 h-4" />
-                 Confirm & Save
+                 {buttonText || "Confirm & Save"}
                </>
             )}
           </button>

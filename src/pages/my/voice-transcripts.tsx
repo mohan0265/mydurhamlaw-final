@@ -7,10 +7,12 @@ import {
   Trash2, Copy, ChevronDown, ChevronRight, Pin, PinOff,
   Filter, Loader2, X, FolderPlus, List, Bookmark,
   MoreHorizontal, Download, Share2, CornerDownRight,
-  Home, ChevronLeft, Edit3, Archive, Grid, LayoutList
+  Home, ChevronLeft, Edit3, Archive, Grid, LayoutList,
+  FolderInput
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
+import SaveToFolderModal from "@/components/durmah/SaveToFolderModal";
 
 const supabase = getSupabaseClient();
 
@@ -176,6 +178,10 @@ export default withAuthProtection(function VoiceTranscriptsPage() {
   const [viewMode, setViewMode] = useState<'grid'|'list'>('grid');
   const [expandedTranscript, setExpandedTranscript] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
+  
+  // -- Move to Folder State --
+  const [transcriptToMove, setTranscriptToMove] = useState<VoiceJournalRow | null>(null);
+  const [isMoving, setIsMoving] = useState(false);
 
   // --- Data Loading ---
 
@@ -335,6 +341,49 @@ export default withAuthProtection(function VoiceTranscriptsPage() {
       toast.error("Delete failed");
     } finally {
       setBusyId(null);
+    }
+  };
+
+  const handleConfirmMove = async (targetFolderId: string) => {
+    if (!transcriptToMove) return;
+    setIsMoving(true);
+    try {
+      // 1. Assign to new folder
+      const assignResp = await fetch('/api/transcripts/folders/assign', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+            transcriptId: transcriptToMove.id, 
+            folderId: targetFolderId, 
+            assigned: true 
+        })
+      });
+      const assignJson = await assignResp.json();
+      
+      if (!assignJson.ok) {
+        throw new Error(assignJson.error || "Failed to assign to new folder");
+      }
+
+      // 2. If we are in a specific folder (not All/Pinned), remove from current
+      if (selectedFolderId !== 'all' && selectedFolderId !== 'pinned' && selectedFolderId !== targetFolderId) {
+        await fetch('/api/transcripts/folders/assign', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+              transcriptId: transcriptToMove.id, 
+              folderId: selectedFolderId, 
+              assigned: false 
+          })
+        });
+      }
+
+      toast.success("Transcript moved successfully");
+      setTranscriptToMove(null);
+      loadTranscripts();
+    } catch (err: any) {
+      toast.error(err.message || "An error occurred while moving");
+    } finally {
+      setIsMoving(false);
     }
   };
 
@@ -527,6 +576,13 @@ export default withAuthProtection(function VoiceTranscriptsPage() {
                       {/* Overly Actions on Hover */}
                       <div className="flex items-center justify-end gap-1 mt-6 opacity-0 group-hover:opacity-100 transition-opacity">
                          <button 
+                            onClick={() => setTranscriptToMove(t)}
+                            className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition" 
+                            title="Move to Folder"
+                         >
+                            <FolderInput className="w-4 h-4" />
+                         </button>
+                         <button 
                             onClick={() => {
                                 const text = (t.transcript || []).map(turn => `${turn.role || '??'}: ${turn.text || ''}`).join('\n');
                                 navigator.clipboard.writeText(text).then(() => toast.success("Copied transcript"));
@@ -639,6 +695,17 @@ export default withAuthProtection(function VoiceTranscriptsPage() {
                 </div>
              </motion.div>
           </div>
+        )}
+      <AnimatePresence>
+        {transcriptToMove && (
+          <SaveToFolderModal
+            isOpen={true}
+            onClose={() => setTranscriptToMove(null)}
+            onSave={handleConfirmMove}
+            isSaving={isMoving}
+            title="Move Transcript"
+            buttonText="Move to this Folder"
+          />
         )}
       </AnimatePresence>
 

@@ -198,6 +198,7 @@ export default function GlobalHeader() {
         { label: 'Year at a Glance', href: '/year-at-a-glance' },
         { label: 'Assignments', href: '/assignments' },
         { label: 'My Lectures', href: '/study/lectures' },
+        { label: 'Durmah Transcript Archive', href: '/my/voice-transcripts' },
         { label: 'Research Hub', href: '/research-hub' },
       ],
     }),
@@ -225,7 +226,7 @@ export default function GlobalHeader() {
         { label: 'Exam Prep', href: '/exam-prep' },
   { label: 'Wellbeing', href: '/wellbeing' },
   { label: 'Refer a Friend', href: '/refer' },
-  { label: 'My Progress', href: '/progress' }, // User Profile & Loved Ones
+  { label: 'My Progress', href: '/profile' }, // User Profile & Loved Ones
       ],
     }),
     []
