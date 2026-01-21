@@ -14,6 +14,10 @@ export interface UseDurmahChatOptions {
   scope: ChatScope;
   context?: Record<string, any>; // e.g. { lectureId: '...' }
   initialMessages?: any[];
+  // NEW: Session management options
+  sessionId?: string | null;  // Explicit session ID (overrides auto-generation)
+  skipAutoFetch?: boolean;  // Don't auto-fetch messages on mount
+  onSessionCreate?: (sessionId: string) => void;  // Callback when session created
 }
 
 export type DurmahMessage = {
@@ -26,13 +30,21 @@ export type DurmahMessage = {
   visibility?: 'ephemeral' | 'saved';
 };
 
-export function useDurmahChat({ source, scope, context = {}, initialMessages = [] }: UseDurmahChatOptions) {
+export function useDurmahChat({ 
+  source, 
+  scope, 
+  context = {}, 
+  initialMessages = [],
+  sessionId = null,
+  skipAutoFetch = false,
+  onSessionCreate
+}: UseDurmahChatOptions) {
   const supabase = useSupabaseClient();
   const user = useUser();
   
   const [messages, setMessages] = useState<DurmahMessage[]>(initialMessages);
   const [isLoading, setIsLoading] = useState(false);
-  const [conversationId, setConversationId] = useState<string | null>(null);
+  const [conversationId, setConversationId] = useState<string | null>(sessionId);
   
   // Ref to track if we've already fetched for the current conversation
   const fetchedRef = useRef<string | null>(null);
@@ -45,35 +57,42 @@ export function useDurmahChat({ source, scope, context = {}, initialMessages = [
   useEffect(() => {
     if (!user) return;
     
+    // If explicit sessionId provided, use it
+    if (sessionId) {
+      setConversationId(sessionId);
+      if (!skipAutoFetch && fetchedRef.current !== sessionId) {
+        fetchedRef.current = sessionId;
+        fetchMessages(sessionId);
+      }
+      return;
+    }
+    
+    // Otherwise, generate stable ID (legacy behavior)
     let cId: string;
 
     if (scope === 'global') {
-      // Stable Global ID for user
       cId = uuidv5(`global-${user.id}`, DURMAH_NAMESPACE);
     } 
     else if (scope === 'lecture' && lectureId) {
-       // Stable Lecture Thread ID
        cId = uuidv5(`lecture-${user.id}-${lectureId}`, DURMAH_NAMESPACE);
     }
     else if (scope === 'assignment' && assignmentId) {
-        // Stable Assignment Thread ID
         cId = uuidv5(`assignment-${user.id}-${assignmentId}`, DURMAH_NAMESPACE);
     }
     else {
-      // Fallback to global if specific ID not provided
       console.warn('[useDurmahChat] Scope requires ID but none provided. Falling back to global.');
       cId = uuidv5(`global-${user.id}`, DURMAH_NAMESPACE);
     }
 
     setConversationId(cId);
 
-    // Fetch messages if we haven't for this conversation ID yet
-    if (fetchedRef.current !== cId && initialMessages.length === 0) {
+    // Fetch messages if auto-fetch enabled
+    if (!skipAutoFetch && fetchedRef.current !== cId && initialMessages.length === 0) {
         fetchedRef.current = cId;
         fetchMessages(cId);
     }
 
-  }, [user, scope, lectureId, assignmentId]);
+  }, [user, scope, lectureId, assignmentId, sessionId, skipAutoFetch]);
 
   const fetchMessages = useCallback(async (cId: string) => {
       console.log('[useDurmahChat] Fetching messages for Conversation ID:', cId);
@@ -368,6 +387,183 @@ export function useDurmahChat({ source, scope, context = {}, initialMessages = [
       }
   }, [supabase, conversationId, messages]);
 
+  // ----------------------------
+  // SESSION MANAGEMENT FUNCTIONS
+  // ----------------------------
+
+  /**
+   * Create a new session record in the database
+   * Call this when starting a new session (widget open, mic start)
+   */
+  const createSession = useCallback(async (sessionId: string, title?: string) => {
+    if (!user || !supabase) {
+      console.warn('[useDurmahChat] Cannot create session: missing user or supabase');
+      return false;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('durmah_sessions')
+        .insert({
+          id: sessionId,
+          user_id: user.id,
+          source,
+          scope,
+          scope_id: context.lectureId || context.assignmentId || null,
+          title: title || `Session ${new Date().toLocaleString()}`,
+          created_at: new Date().toISOString(),
+          saved: false,
+          message_count: 0
+        });
+
+      if (error) {
+        console.error('[useDurmahChat] Create session error:', error);
+        return false;
+      }
+
+      console.log('[useDurmahChat] Session created:', sessionId);
+      if (onSessionCreate) {
+        onSessionCreate(sessionId);
+      }
+      return true;
+    } catch (err) {
+      console.error('[useDurmahChat] Unexpected create session error:', err);
+      return false;
+    }
+  }, [user, supabase, source, scope, context, onSessionCreate]);
+
+  /**
+   * Save entire session: mark all messages as saved + update session record
+   * Returns true on success
+   */
+  const saveSession = useCallback(async (sessionId?: string, customTitle?: string) => {
+    const targetSessionId = sessionId || conversationId;
+    if (!targetSessionId || !user || !supabase) {
+      console.warn('[useDurmahChat] Cannot save session: missing required data');
+      return false;
+    }
+
+    try {
+      // 1. Mark all messages in session as saved
+      const { error: messagesError } = await supabase
+        .from('durmah_messages')
+        .update({
+          visibility: 'saved',
+          saved_at: new Date().toISOString()
+        })
+        .eq('conversation_id', targetSessionId);
+
+      if (messagesError) {
+        console.error('[useDurmahChat] Save messages error:', messagesError);
+        toast.error('Failed to save messages');
+        return false;
+      }
+
+      // 2. Generate session title if not provided
+      const sessionTitle = customTitle || generateSessionTitle();
+
+      // 3. Update session record
+      const { error: sessionError } = await supabase
+        .from('durmah_sessions')
+        .update({
+          saved: true,
+          closed_at: new Date().toISOString(),
+          title: sessionTitle,
+          message_count: messages.length
+        })
+        .eq('id', targetSessionId);
+
+      if (sessionError) {
+        console.error('[useDurmahChat] Save session error:', sessionError);
+        toast.error('Failed to update session');
+        return false;
+      }
+
+      // 4. Update local state
+      setMessages(prev => prev.map(m => ({
+        ...m,
+        visibility: 'saved' as any,
+        saved_at: new Date().toISOString()
+      })));
+
+      toast.success('Session saved to library');
+      return true;
+    } catch (err) {
+      console.error('[useDurmahChat] Unexpected save session error:', err);
+      toast.error('Failed to save session');
+      return false;
+    }
+  }, [conversationId, user, supabase, messages]);
+
+  /**
+   * Discard entire session: delete all messages + session record
+   * Returns true on success
+   */
+  const discardSession = useCallback(async (sessionId?: string) => {
+    const targetSessionId = sessionId || conversationId;
+    if (!targetSessionId || !supabase) {
+      console.warn('[useDurmahChat] Cannot discard session: missing required data');
+      return false;
+    }
+
+    try {
+      // 1. Delete all messages
+      const { error: messagesError } = await supabase
+        .from('durmah_messages')
+        .delete()
+        .eq('conversation_id', targetSessionId);
+
+      if (messagesError) {
+        console.error('[useDurmahChat] Delete messages error:', messagesError);
+        toast.error('Failed to delete messages');
+        return false;
+      }
+
+      // 2. Delete session record
+      const { error: sessionError } = await supabase
+        .from('durmah_sessions')
+        .delete()
+        .eq('id', targetSessionId);
+
+      if (sessionError) {
+        console.error('[useDurmahChat] Delete session error:', sessionError);
+        // Non-critical if session record doesn't exist
+      }
+
+      // 3. Clear local state
+      setMessages([]);
+      
+      toast.success('Session discarded');
+      return true;
+    } catch (err) {
+      console.error('[useDurmahChat] Unexpected discard session error:', err);
+      toast.error('Failed to discard session');
+      return false;
+    }
+  }, [conversationId, supabase]);
+
+  /**
+   * Helper: Generate session title from messages
+   */
+  const generateSessionTitle = useCallback(() => {
+    if (messages.length === 0) {
+      return `Empty Session - ${new Date().toLocaleString()}`;
+    }
+
+    // Get first user message for context
+    const firstUserMsg = messages.find(m => m.role === 'user');
+    if (firstUserMsg) {
+      const preview = firstUserMsg.content.substring(0, 40);
+      return `${preview}${firstUserMsg.content.length > 40 ? '...' : ''}`;
+    }
+
+    // Fallback: use source/scope info
+    const sourceLabel = scope === 'lecture' ? 'Lecture Chat' : 
+                       scope === 'assignment' ? 'Assignment Chat' : 
+                       'Durmah Session';
+    return `${sourceLabel} - ${new Date().toLocaleString()}`;
+  }, [messages, scope]);
+
   return {
     messages,
     sendMessage,
@@ -377,6 +573,10 @@ export function useDurmahChat({ source, scope, context = {}, initialMessages = [
     deleteMessages,
     clearUnsaved,
     logMessage,
-    refetchMessages // NEW: Expose manual refetch
+    refetchMessages,
+    // NEW: Session management
+    createSession,
+    saveSession,
+    discardSession
   };
 }
