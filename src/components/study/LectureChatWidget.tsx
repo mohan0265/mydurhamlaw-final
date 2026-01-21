@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Loader2, Sparkles, Trash2, CheckSquare, Square, X, Bookmark, Save } from 'lucide-react';
+import { Send, Loader2, Sparkles, Trash2, CheckSquare, Square, X, Bookmark, Save, BookmarkX } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { useDurmahChat } from '@/hooks/useDurmahChat';
+import toast from 'react-hot-toast';
 
 interface LectureChatWidgetProps {
   lectureId: string;
@@ -18,7 +19,8 @@ export default function LectureChatWidget({ lectureId, title }: LectureChatWidge
       conversationId, 
       toggleSaveMetadata, 
       deleteMessages, 
-      clearUnsaved 
+      clearUnsaved,
+      refetchMessages 
   } = useDurmahChat({
       source: 'lecture',
       scope: 'lecture',
@@ -52,8 +54,12 @@ export default function LectureChatWidget({ lectureId, title }: LectureChatWidge
 
   // Derived state for view
   const visibleMessages = viewMode === 'saved' 
-      ? messages.filter(m => m.visibility === 'saved') 
+      ? messages.filter(m => m.visibility === 'saved' || m.saved_at) 
       : messages;
+
+  // Check if all visible messages are selected
+  const allSelected = visibleMessages.length > 0 && 
+      visibleMessages.every(m => selectedIds.has(m.id));
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -74,37 +80,63 @@ export default function LectureChatWidget({ lectureId, title }: LectureChatWidge
       setSelectedIds(next);
   };
 
-  const handleBulkAction = async (action: 'save' | 'unsave' | 'delete') => {
-      if (selectedIds.size === 0) return;
-      const ids = Array.from(selectedIds);
+  const selectAllVisible = () => {
+      const allIds = visibleMessages.map(m => m.id);
+      setSelectedIds(new Set(allIds));
+  };
 
-      if (action === 'delete') {
-          await deleteMessages(ids);
-          setSelectedIds(new Set());
-          setIsSelectionMode(false);
-      } 
-      else if (action === 'save' || action === 'unsave') {
-          // Toggle each (inefficient if mixed, but usually user saves unsaved items)
-          // Ideally hook should have bulkUpdate, but we can loop for now or add bulk later.
-          // Since we rely on toggle in UI, let's just toggle.
-          // Actually, 'save' implies set visibility='saved'.
-          // 'unsave' implies set visibility='ephemeral'.
-          // My hook only has toggle.
-          // I should ideally add bulkSave to hook, but for now I will iterate toggle 
-          // ONLY if needed. 
-          // Current UI sends individual toggles.
-          // Let's implement loop for now.
-          for (const id of ids) {
-             const m = messages.find(msg => msg.id === id);
-             if (!m) continue;
-             if (action === 'save' && m.visibility !== 'saved') {
-                 await toggleSaveMetadata(id, m.visibility);
-             } else if (action === 'unsave' && m.visibility === 'saved') {
-                 await toggleSaveMetadata(id, m.visibility);
-             }
+  const deselectAll = () => {
+      setSelectedIds(new Set());
+  };
+
+  const handleBulkAction = async (action: 'save' | 'unsave' | 'delete' | 'clear_unsaved') => {
+      const toastId = toast.loading('Processing...');
+      
+      try {
+          if (action === 'delete') {
+              if (selectedIds.size === 0) {
+                  toast.dismiss(toastId);
+                  return;
+              }
+              const ids = Array.from(selectedIds);
+              await deleteMessages(ids);
+              toast.success('Messages deleted', { id: toastId });
+              setSelectedIds(new Set());
+              setIsSelectionMode(false);
+          } 
+          else if (action === 'clear_unsaved') {
+              await clearUnsaved();
+              toast.success('Unsaved messages cleared', { id: toastId });
+              setSelectedIds(new Set());
+              setIsSelectionMode(false);
           }
-          setSelectedIds(new Set());
-          setIsSelectionMode(false);
+          else if (action === 'save' || action === 'unsave') {
+              if (selectedIds.size === 0) {
+                  toast.dismiss(toastId);
+                  return;
+              }
+              const ids = Array.from(selectedIds);
+              
+              for (const id of ids) {
+                 const m = messages.find(msg => msg.id === id);
+                 if (!m) continue;
+                 
+                 // For 'save': only toggle if NOT already saved
+                 // For 'unsave': only toggle if currently saved
+                 if (action === 'save' && m.visibility !== 'saved') {
+                     await toggleSaveMetadata(id, m.visibility, true); // silent
+                 } else if (action === 'unsave' && (m.visibility === 'saved' || m.saved_at)) {
+                     await toggleSaveMetadata(id, 'saved', true); // silent
+                 }
+              }
+              
+              toast.success(action === 'save' ? 'Messages saved' : 'Messages unsaved', { id: toastId });
+              setSelectedIds(new Set());
+              setIsSelectionMode(false);
+          }
+      } catch (err) {
+          console.error('[LectureChatWidget] Bulk action error:', err);
+          toast.error('Failed to process', { id: toastId });
       }
   };
 
@@ -116,22 +148,52 @@ export default function LectureChatWidget({ lectureId, title }: LectureChatWidge
          
          <div className="flex items-center justify-between">
              {isSelectionMode ? (
-                 <div className="flex items-center gap-3 w-full">
-                     <button onClick={() => { setIsSelectionMode(false); setSelectedIds(new Set()); }} className="hover:bg-white/10 p-1 rounded">
+                 <div className="flex items-center gap-2 w-full flex-wrap">
+                     {/* Close Selection Mode */}
+                     <button onClick={() => { setIsSelectionMode(false); setSelectedIds(new Set()); }} className="hover:bg-white/10 p-1 rounded" title="Cancel">
                         <X className="w-5 h-5 text-white" />
                      </button>
-                     <span className="font-bold text-sm">{selectedIds.size} selected</span>
                      
-                     <div className="flex gap-2 ml-auto">
+                     {/* Select All / Deselect All Toggle */}
+                     <button 
+                         onClick={() => allSelected ? deselectAll() : selectAllVisible()}
+                         className="hover:bg-white/10 p-1 rounded" 
+                         title={allSelected ? "Deselect all" : "Select all"}
+                     >
+                         {allSelected ? 
+                             <CheckSquare className="w-5 h-5 text-green-400" /> : 
+                             <Square className="w-5 h-5 text-white/60" />
+                         }
+                     </button>
+                     
+                     <span className="font-bold text-sm flex-1">{selectedIds.size} selected</span>
+                     
+                     <div className="flex gap-2">
+                        {/* Save Selected */}
                         <button onClick={() => handleBulkAction('save')} 
-                                className="flex items-center gap-1 bg-green-500 hover:bg-green-600 px-3 py-1.5 rounded text-xs font-bold transition-colors">
-                            <Save className="w-4 h-4" /> Save
+                                disabled={selectedIds.size === 0}
+                                className={`flex items-center gap-1 px-3 py-1.5 rounded text-xs font-bold transition-colors ${selectedIds.size === 0 ? 'bg-gray-500 cursor-not-allowed' : 'bg-green-500 hover:bg-green-600'}`}
+                                title="Save selected messages">
+                            <Save className="w-3 h-3" /> Save
                         </button>
+                        
+                        {/* Unsave Selected */}
+                        <button onClick={() => handleBulkAction('unsave')} 
+                                disabled={selectedIds.size === 0}
+                                className={`flex items-center gap-1 px-3 py-1.5 rounded text-xs font-bold transition-colors ${selectedIds.size === 0 ? 'bg-gray-500 cursor-not-allowed' : 'bg-amber-500 hover:bg-amber-600'}`}
+                                title="Unsave selected messages">
+                            <BookmarkX className="w-3 h-3" /> Unsave
+                        </button>
+                        
+                        {/* Clear All Unsaved */}
                         <button onClick={() => {
-                                if (confirm('Clear ALL unsaved messages?')) clearUnsaved();
+                                if (confirm('Clear ALL unsaved messages from this chat? Saved messages will remain.')) {
+                                    handleBulkAction('clear_unsaved');
+                                }
                         }} 
-                                className="flex items-center gap-1 bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded text-xs font-bold transition-colors">
-                            <Trash2 className="w-4 h-4" /> Clear Unsaved
+                                className="flex items-center gap-1 bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded text-xs font-bold transition-colors"
+                                title="Delete all messages that haven't been saved">
+                            <Trash2 className="w-3 h-3" /> Clear Unsaved
                         </button>
                      </div>
                  </div>
@@ -147,6 +209,7 @@ export default function LectureChatWidget({ lectureId, title }: LectureChatWidge
                         </div>
                     </div>
                     <div className="flex items-center gap-2">
+                        {/* Chat / Saved Toggle */}
                         <div className="flex bg-black/20 rounded-lg p-0.5">
                             <button 
                                 onClick={() => setViewMode('session')}
@@ -161,14 +224,16 @@ export default function LectureChatWidget({ lectureId, title }: LectureChatWidge
                                 Saved
                             </button>
                         </div>
+                        
+                        {/* Enter Selection Mode (select none initially) */}
                         {messages.length > 0 && (
                             <button 
                                 onClick={() => {
-                                    const savedIds = new Set(messages.filter(m => m.visibility === 'saved').map(m => m.id));
-                                    setSelectedIds(savedIds);
+                                    setSelectedIds(new Set()); // Start with none selected
                                     setIsSelectionMode(true);
                                 }}
                                 className="bg-white/10 hover:bg-white/20 p-1.5 rounded text-xs flex items-center gap-1 transition-colors"
+                                title="Select messages to save or delete"
                             >
                                 <CheckSquare className="w-4 h-4" />
                             </button>
@@ -204,10 +269,10 @@ export default function LectureChatWidget({ lectureId, title }: LectureChatWidge
                         msg.role === 'user' 
                         ? 'bg-purple-600 text-white rounded-br-none' 
                         : 'bg-white border border-gray-200 text-gray-800 rounded-bl-none shadow-sm'
-                    }`}>
+                    } ${isSelectionMode && selectedIds.has(msg.id) ? 'ring-2 ring-purple-400 ring-offset-2' : ''}`}>
                         {msg.content}
                     </div>
-                    {msg.visibility === 'saved' && (
+                    {(msg.visibility === 'saved' || msg.saved_at) && (
                         <div className={`absolute -bottom-5 ${msg.role === 'user' ? 'right-0' : 'left-0'} flex items-center gap-1 text-[10px] text-gray-400 font-medium`}>
                             <Bookmark className="w-3 h-3 fill-gray-400" /> Saved
                         </div>

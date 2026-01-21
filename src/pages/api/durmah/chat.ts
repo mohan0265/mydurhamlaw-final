@@ -3,6 +3,7 @@ import { createPagesServerClient } from '@supabase/auth-helpers-nextjs';
 import { enhanceDurmahContext } from '@/lib/durmah/contextBuilderEnhanced';
 import { DEFAULT_TZ, formatNowPacket, getDaysLeft } from '@/lib/durmah/timezone';
 import { buildDurmahSystemPrompt, buildDurmahContextBlock } from '@/lib/durmah/systemPrompt';
+import type { PostgrestError } from '@supabase/supabase-js';
 
 // Helper: Call OpenAI
 async function callOpenAI(messages: { role: 'system' | 'user' | 'assistant'; content: string }[]) {
@@ -64,6 +65,43 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     
     const finalConversationId = conversationId || crypto.randomUUID();
 
+    // Normalize scope_id (lecture/assignment UUID if present)
+    const scopeId =
+      (context?.lectureId && typeof context.lectureId === 'string' && context.lectureId.length === 36)
+        ? context.lectureId
+        : (context?.assignmentId && typeof context.assignmentId === 'string' && context.assignmentId.length === 36)
+          ? context.assignmentId
+          : null;
+
+    // Insert helper: retries without scope_id if column missing in DB
+    async function insertDurmahMessage(payload: any): Promise<{ data: any; error: PostgrestError | null; usedScopeId: boolean }> {
+      const attempt = async (p: any) => {
+        return await supabase
+          .from('durmah_messages')
+          .insert(p)
+          .select('id')
+          .single();
+      };
+
+      const { data, error } = await attempt(payload);
+      if (!error) return { data, error: null, usedScopeId: 'scope_id' in payload };
+
+      const msg = (error as any)?.message || '';
+      const details = (error as any)?.details || '';
+      const combined = `${msg} ${details}`.toLowerCase();
+
+      // Common Supabase/Postgres phrasing: "column \"scope_id\" of relation \"durmah_messages\" does not exist"
+      if (combined.includes('scope_id') && combined.includes('does not exist')) {
+        console.warn('[chat] scope_id column missing, retrying insert without it');
+        const fallback = { ...payload };
+        delete fallback.scope_id;
+        const retry = await attempt(fallback);
+        return { data: retry.data, error: retry.error, usedScopeId: false };
+      }
+
+      return { data: null, error, usedScopeId: 'scope_id' in payload };
+    }
+
     // 3. Build Durmah Context (Two-Stage Retrieval)
     // We pass finalConversationId so the builder can fetch Local History + Global Tail
     const baseCtx = { 
@@ -113,54 +151,66 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         { role: 'user' as const, content: message }
     ];
 
-    // 6. Persist USER Message
+    // 6. Persist USER Message (schema-safe)
     console.log('[chat] Saving user message...');
-    const { data: userMsgData, error: insertError } = await supabase.from('durmah_messages').insert({
+    const { data: userMsgData, error: insertError, usedScopeId: usedScopeIdUser } = await insertDurmahMessage({
         user_id: userId,
         role: 'user',
         content: message,
-        conversation_id: finalConversationId, // UNIFIED
+        conversation_id: finalConversationId,
         source,
         scope,
+        scope_id: scopeId,
         visibility,
-        context: context, // Store raw context JSON
+        context: context,
         modality,
-    }).select('id').single();
+    });
 
     if (insertError) {
-        console.error('Failed to save user message', insertError);
+        console.error('[chat] Failed to save user message:', insertError);
         // We continue anyway, though history might be desynced
+    } else {
+        console.log('[chat] User message saved:', userMsgData?.id, 'usedScopeId:', usedScopeIdUser);
     }
 
     // 7. Get AI Response
     console.log('[chat] Calling OpenAI...');
     const reply = await callOpenAI(messagesForLLM);
 
-    // 8. Persist ASSISTANT Message
+    // 8. Persist ASSISTANT Message (schema-safe)
     console.log('[chat] Saving assistant response...');
-    const { data: assistantMsgData, error: assistantInsertError } = await supabase.from('durmah_messages').insert({
+    const { data: assistantMsgData, error: assistantInsertError, usedScopeId: usedScopeIdAssistant } = await insertDurmahMessage({
          user_id: userId,
          role: 'assistant',
          content: reply,
          conversation_id: finalConversationId,
          source,
          scope,
-         scope_id: (context.lectureId && context.lectureId.length === 36) ? context.lectureId : 
-                   (context.assignmentId && context.assignmentId.length === 36) ? context.assignmentId : null,
+         scope_id: scopeId,
          visibility: 'ephemeral', // Assistant replies ephemeral by default
          context: context,
          modality: 'text'
-    }).select('id').single();
+    });
 
     if (assistantInsertError) {
-        console.error('Failed to save assistant message', assistantInsertError);
+        console.error('[chat] Failed to save assistant message:', assistantInsertError);
+    } else {
+        console.log('[chat] Assistant message saved:', assistantMsgData?.id, 'usedScopeId:', usedScopeIdAssistant);
     }
 
     return res.status(200).json({ 
         ok: true, 
         reply, 
         userMsgId: userMsgData?.id, 
-        assistantMsgId: assistantMsgData?.id 
+        assistantMsgId: assistantMsgData?.id,
+        // Dev diagnostics for debugging persistence
+        persistence: {
+          userUsedScopeId: usedScopeIdUser,
+          assistantUsedScopeId: usedScopeIdAssistant,
+          userSaved: !!userMsgData?.id,
+          assistantSaved: !!assistantMsgData?.id,
+          assistantSaveError: process.env.NODE_ENV === 'development' ? (assistantInsertError as any)?.message : undefined
+        }
     });
 
   } catch (err: any) {
