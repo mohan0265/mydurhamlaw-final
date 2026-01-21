@@ -292,13 +292,14 @@ export default function DurmahWidget() {
   // NEW: Session Management State
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
   const [showSaveModal, setShowSaveModal] = useState(false);
+  const [isSessionSaved, setIsSessionSaved] = useState(false);
   
   // Generate new session ID on widget open
   useEffect(() => {
     if (isOpen && !currentSessionId) {
       const newSessionId = crypto.randomUUID();
       setCurrentSessionId(newSessionId);
-      console.log('[DurmahWidget] New session created:', newSessionId);
+      setIsSessionSaved(false); // Reset saved status for new session
     }
   }, [isOpen, currentSessionId]);
   
@@ -495,6 +496,9 @@ export default function DurmahWidget() {
               toast.error(`Some messages (${failureCount}) failed to save. Check RLS.`, { id: toastId });
           } else {
               toast.success('Done', { id: toastId });
+          }
+          if (action === 'save') {
+              setIsSessionSaved(true);
           }
           setSelectedIds(new Set());
           setIsSelectionMode(false);
@@ -1233,6 +1237,7 @@ Date: ${studentContextData.academic?.now?.nowText || studentContextData.student.
           if (error) {
             throw error;
           }
+          setIsSessionSaved(true);
           toast.success("Voice transcript saved to library.");
         }
       } catch (err) {
@@ -1264,14 +1269,14 @@ Date: ${studentContextData.academic?.now?.nowText || studentContextData.student.
   // ----------------------------
   
   /**
-   * Handle widget close: prompt to save/discard if there are messages
+   * Handle widget close: prompt to save/discard if there are messages and session not yet saved
    */
   const handleClose = () => {
-    if (messages.length > 0) {
+    if (messages.length > 0 && !isSessionSaved) {
       // Show save modal
       setShowSaveModal(true);
    } else {
-      // No messages, just minimize
+      // No messages or already saved, just minimize
       setIsOpen(false);
     }
   };
@@ -1282,6 +1287,7 @@ Date: ${studentContextData.academic?.now?.nowText || studentContextData.student.
   const startNewSession = () => {
     // Clear current session
     setCurrentSessionId(null);
+    setIsSessionSaved(false);
     // Widget will auto-generate new session ID on next open
     setIsOpen(false);
     setShowSaveModal(false);
