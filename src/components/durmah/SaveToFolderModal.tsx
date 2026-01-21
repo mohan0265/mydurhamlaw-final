@@ -79,7 +79,7 @@ const FolderPickerItem = ({
   );
 };
 
-export default function SaveToFolderModal({ isOpen, onClose, onSave, isSaving }: SaveToFolderModalProps) {
+export default function SaveToFolderModal({ isOpen, onClose, onSave, isSaving, title, buttonText }: SaveToFolderModalProps) {
   const [folders, setFolders] = useState<FolderNode[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null);
