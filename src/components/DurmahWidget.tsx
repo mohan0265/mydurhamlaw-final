@@ -328,12 +328,6 @@ export default function DurmahWidget() {
       skipAutoFetch: true  // Don't auto-load old messages
   });
 
-  // Create session record when session ID is generated
-  useEffect(() => {
-    if (currentSessionId && createSession && signedIn) {
-      createSession(currentSessionId);
-    }
-  }, [currentSessionId, createSession, signedIn]);
 
   const scope = 'global';
 
