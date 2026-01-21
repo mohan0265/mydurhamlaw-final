@@ -49,13 +49,22 @@ export default function DurmahChatPanel({
   const [showSources, setShowSources] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
-    if (isOpen && inputRef.current) {
-      inputRef.current.focus();
+    if (isOpen && textareaRef.current) {
+      textareaRef.current.focus();
     }
   }, [isOpen]);
+
+  // Auto-resize textarea
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto'; // Reset
+      textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 200)}px`;
+    }
+  }, [input]);
 
   useEffect(() => {
     scrollToBottom();
@@ -228,21 +237,33 @@ export default function DurmahChatPanel({
                 </div>
 
                 {/* Input */}
-                <form onSubmit={sendMessage} className="p-4 border-t border-gray-200">
-                  <div className="flex space-x-2">
-                    <input
-                      ref={inputRef}
-                      type="text"
+                <form 
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    sendMessage(e);
+                  }} 
+                  className="p-4 border-t border-gray-200"
+                >
+                  <div className="flex space-x-2 items-end">
+                    <textarea
+                      ref={textareaRef}
+                      rows={1}
                       value={input}
                       onChange={(e) => setInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          e.preventDefault();
+                          sendMessage(e);
+                        }
+                      }}
                       placeholder="Ask about legal concepts..."
-                      className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none min-h-[38px] max-h-[200px] overflow-y-auto"
                       disabled={isLoading}
                     />
                     <button
                       type="submit"
                       disabled={isLoading || !input.trim()}
-                      className="bg-blue-600 text-white rounded-lg px-3 py-2 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="bg-blue-600 text-white rounded-lg px-3 py-2 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed h-[38px] flex items-center justify-center"
                     >
                       <Send className="h-4 w-4" />
                     </button>
