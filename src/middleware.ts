@@ -40,19 +40,11 @@ export async function middleware(req: NextRequest) {
       userRole = 'student';
     }
 
-    if (userRole === 'student') {
-      const {
-        data: profile,
-        error: profileError,
-      } = await supabase
-        .from('profiles')
-        .select('user_role')
-        .eq('id', session.user.id)
-        .maybeSingle();
-
-      if (!profileError && profile?.user_role) {
-        userRole = profile.user_role as string;
-      }
+    // Reliance on session.user.user_metadata for role
+    // We skip the DB call here to prevent Edge Function timeouts on slow connections/cold starts.
+    // Ensure that login/profile updates sync the role to user_metadata.
+    if (userRole === 'student' && meta.user_metadata?.role) {
+       userRole = meta.user_metadata.role;
     }
 
     // Define allowed paths

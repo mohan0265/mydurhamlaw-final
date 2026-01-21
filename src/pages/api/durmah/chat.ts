@@ -96,10 +96,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     systemPromptText += `\n\n${contextBlock}`;
 
     // Note: Manual lecture fetching logic REMOVED - handled by enhanceDurmahContext + systemPrompt now.
+    
+    // ANTI-REPETITION OVERRIDE
+    systemPromptText += `\n\n[CRITICAL INSTRUCTION: DO NOT REPEAT YOURSELF]\n- If the user asks why you are repeating yourself, apologize and CHANGE your phrasing significantly.\n- Do NOT use the same "I aim to provide..." template twice in a row.\n- If the user discusses "testing", acknowledge it briefly but do not loop into the same explanation unless asked.`;
 
     // 5. Construct Chat History for LLM
-    // enhancedContext.recentMemories contains the merged history from retrieval.
-    const historyMessages = (enhancedContext.recentMemories || []).map((m: any) => ({
+    // enhancedContext.recentMessages contains the merged history from retrieval.
+    const historyMessages = (enhancedContext.recentMessages || []).map((m: any) => ({
         role: m.role as 'user'|'assistant',
         content: m.content
     }));

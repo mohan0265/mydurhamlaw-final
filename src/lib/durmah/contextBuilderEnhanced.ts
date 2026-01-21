@@ -401,10 +401,16 @@ export async function enhanceDurmahContext(
   const messageMap = new Map();
   
   [...globalTail, ...localHistory].forEach(m => {
-      // Create unique key based on content + role (timestamp might vary slightly if fetched differently)
-      // or use provided timestamp if stable.
-      const key = `${m.ts}-${m.role}-${m.content.substring(0, 20)}`;
-      messageMap.set(key, m);
+      // Create unique key based on content + role ONLY (ignoring timestamp as it varies between local/DB)
+      // Normalize content to remove whitespace noise
+      const cleanContent = m.content?.trim().substring(0, 50) || '';
+      const key = `${m.role}-${cleanContent}`;
+      
+      // If key exists, we keep the one with the 'valid' timestamp or just the first one?
+      // Actually, we want to overlay local over global if they match.
+      if (!messageMap.has(key)) {
+         messageMap.set(key, m);
+      }
   });
 
   const uniqueMessages = Array.from(messageMap.values()).sort((a, b) => new Date(a.ts).getTime() - new Date(b.ts).getTime());
@@ -416,6 +422,6 @@ export async function enhanceDurmahContext(
     lectures,
     profile, // CRITICAL: Include profile for personalization
     academic: academic as any, // CRITICAL: Include term/week for context
-    recentMessages: uniqueMessages as any[] 
+    recentMessages: uniqueMessages as any[] // CRITICAL: Merged + deduplicated chat history for LLM
   };
 }

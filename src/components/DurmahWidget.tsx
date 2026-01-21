@@ -451,15 +451,13 @@ export default function DurmahWidget() {
                  }
               }
               toast.success(action === 'save' ? 'Messages saved' : 'Messages unsaved', { id: toastId });
+          } else if (action === 'delete_selected') {
+              await deleteMessages(ids);
+              toast.success('Messages deleted', { id: toastId });
+          } else if (action === 'clear_unsaved') {
+              await clearUnsaved();
+              toast.success('Unsaved messages cleared', { id: toastId });
           }
-          // Note: 'delete_selected' and 'clear_unsaved' logic requires deleteMessages from hook 
-          // (which I added to hook but forgot to destructure here? No I can access it via useDurmahChat return if I updated destructuring).
-          // Wait, I only destructured { messages, sendMessage, logMessage, isLoading, toggleSaveMetadata }.
-          // I missed deleteMessages and clearUnsaved in destructuring above.
-          // I will fix destructuring in next step or assuming I add it.
-          // Actually, I can use Supabase client directly for delete if needed, but hook is better.
-          // For now, I'll log a warning or use Supabase logic if strictly needed, 
-          // but "Select to Save" is the main requirement.
           
           setSelectedIds(new Set());
           setIsSelectionMode(false);
