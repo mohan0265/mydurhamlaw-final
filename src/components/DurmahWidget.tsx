@@ -2015,24 +2015,22 @@ User question: ${userText}`;
             </div>
           )}
 
-          <div className="flex justify-between gap-3 pt-3 mt-2 border-t border-violet-200/50 sticky bottom-0 bg-violet-50/0">
+          <div className="flex justify-between gap-3 pt-4 mt-3 border-t border-violet-200 sticky bottom-0 bg-violet-50/95 backdrop-blur-sm">
             <button
-              onClick={clearChat}
-              className="text-xs font-medium px-3 py-1.5 rounded-lg text-gray-600  hover:bg-gray-200/50 transition-colors flex items-center gap-1"
-              title="Clear entire conversation"
+              onClick={discardVoiceTranscript}
+              className="flex-1 text-sm font-medium px-4 py-2.5 rounded-xl text-gray-600 hover:bg-white/80 transition-colors border border-gray-300 bg-white/60"
+              title="Close without saving transcript"
             >
-              <Trash2 size={12} />
-              Clear Chat
+              Close
             </button>
-            <div className="flex gap-2">
-              <button
-                onClick={discardVoiceTranscript}
-                className="text-xs font-medium px-3 py-1.5 rounded-lg text-gray-600 hover:bg-gray-200/50 transition-colors"
-                title="Close transcript"
-              >
-                Close View
-              </button>
-            </div>
+            <button
+              onClick={saveVoiceTranscript}
+              className="flex-1 text-sm font-bold px-6 py-2.5 rounded-xl bg-green-500 hover:bg-green-600 text-white transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2"
+              title="Save this voice transcript to your library"
+            >
+              <Save size={16} />
+              Save Transcript
+            </button>
           </div>
         </div>
       )}
