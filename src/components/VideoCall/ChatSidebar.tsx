@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Send, X } from 'lucide-react';
 
 interface ChatSidebarProps {
@@ -9,6 +9,15 @@ interface ChatSidebarProps {
 export const ChatSidebar: React.FC<ChatSidebarProps> = ({ lovedOneName, onClose }) => {
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState<Array<{ id: string; text: string; sender: string; timestamp: Date }>>([]);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Auto-resize textarea
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto'; // Reset
+      textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 200)}px`;
+    }
+  }, [message]);
 
   const sendMessage = () => {
     if (message.trim()) {
@@ -53,18 +62,24 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({ lovedOneName, onClose 
 
       {/* Message Input */}
       <div className="p-4 border-t">
-        <div className="flex space-x-2">
-          <input
-            type="text"
+        <div className="flex items-end space-x-2">
+          <textarea
+            ref={textareaRef}
+            rows={1}
             value={message}
             onChange={(e) => setMessage(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+              }
+            }}
             placeholder="Type a message..."
-            className="flex-1 p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+            className="flex-1 p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none min-h-[42px] max-h-[200px] overflow-y-auto"
           />
           <button
             onClick={sendMessage}
-            className="p-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+            className="p-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors h-[42px] flex items-center justify-center"
           >
             <Send size={20} />
           </button>
