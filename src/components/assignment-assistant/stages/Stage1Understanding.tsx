@@ -22,6 +22,15 @@ export default function Stage1Understanding({
   const [quizPassed, setQuizPassed] = useState(false);
   const [quizScore, setQuizScore] = useState(0);
   const [legalIssues, setLegalIssues] = useState<string[]>([]);
+  const textareaRef = React.useRef<HTMLTextAreaElement>(null);
+
+  // Auto-resize textarea
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto'; // Reset
+      textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 200)}px`;
+    }
+  }, [userInput]);
 
   // NEW: Use comprehensive autosave hook
   const { saving, saved, error: saveError, saveToAutosave } = useAutosave({
@@ -197,12 +206,18 @@ export default function Stage1Understanding({
 
         <div className="flex gap-2">
           <textarea
+            ref={textareaRef}
             value={userInput}
             onChange={(e) => setUserInput(e.target.value)}
-            onKeyPress={handleKeyPress}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+              }
+            }}
             placeholder="Type your response..."
-            className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent resize-none"
-            rows={2}
+            className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent resize-none min-h-[50px] max-h-[200px] overflow-y-auto"
+            rows={1}
             disabled={loading}
           />
           <button
