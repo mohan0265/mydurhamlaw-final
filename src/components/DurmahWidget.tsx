@@ -289,7 +289,7 @@ export default function DurmahWidget() {
   const [mode, setMode] = useState<'chat' | 'study' | 'NEWS_STRICT'>('chat'); // NEW: Chat vs Study Mode
   
   // UNIFIED CHAT HOOK
-  const { messages: unifiedMessages, sendMessage, logMessage, isLoading: chatIsLoading, toggleSaveMetadata, clearUnsaved, deleteMessages } = useDurmahChat({
+  const { messages: unifiedMessages, sendMessage, logMessage, isLoading: chatIsLoading, toggleSaveMetadata, clearUnsaved, deleteMessages, refetchMessages } = useDurmahChat({
       source: 'widget',
       scope: 'global',
       context: { 
@@ -1562,8 +1562,16 @@ User question: ${userText}`;
                  <button onClick={() => handleManageAction('save')} 
                         disabled={selectedIds.size === 0}
                         className={`flex items-center gap-1 px-3 py-1.5 rounded text-xs font-bold transition-colors shadow-sm ${selectedIds.size === 0 ? 'bg-gray-500 cursor-not-allowed' : 'bg-green-500 hover:bg-green-600'}`}
-                        title="Keep only the messages you'll want to revisit.">
+                        title="Save selected messages to your notes.">
                     <Save className="w-3 h-3" /> Save
+                 </button>
+                 
+                 {/* Unsave Selected */}
+                 <button onClick={() => handleManageAction('unsave')} 
+                        disabled={selectedIds.size === 0}
+                        className={`flex items-center gap-1 px-3 py-1.5 rounded text-xs font-bold transition-colors shadow-sm ${selectedIds.size === 0 ? 'bg-gray-500 cursor-not-allowed' : 'bg-amber-500 hover:bg-amber-600'}`}
+                        title="Remove selected messages from saved notes.">
+                    <Bookmark className="w-3 h-3" /> Unsave
                  </button>
                  
                  {/* Clear Unsaved (Contextual) */}

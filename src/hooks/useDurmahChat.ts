@@ -33,6 +33,13 @@ export function useDurmahChat({ source, scope, context = {}, initialMessages = [
   const [messages, setMessages] = useState<DurmahMessage[]>(initialMessages);
   const [isLoading, setIsLoading] = useState(false);
   const [conversationId, setConversationId] = useState<string | null>(null);
+  
+  // Ref to track if we've already fetched for the current conversation
+  const fetchedRef = useRef<string | null>(null);
+
+  // Extract stable context values to avoid JSON.stringify in dependency array
+  const lectureId = context.lectureId;
+  const assignmentId = context.assignmentId;
 
   // 1. Determine Conversation ID
   useEffect(() => {
@@ -44,62 +51,71 @@ export function useDurmahChat({ source, scope, context = {}, initialMessages = [
       // Stable Global ID for user
       cId = uuidv5(`global-${user.id}`, DURMAH_NAMESPACE);
     } 
-    else if (scope === 'lecture' && context.lectureId) {
+    else if (scope === 'lecture' && lectureId) {
        // Stable Lecture Thread ID
-       cId = uuidv5(`lecture-${user.id}-${context.lectureId}`, DURMAH_NAMESPACE);
+       cId = uuidv5(`lecture-${user.id}-${lectureId}`, DURMAH_NAMESPACE);
     }
-    else if (scope === 'assignment' && context.assignmentId) {
+    else if (scope === 'assignment' && assignmentId) {
         // Stable Assignment Thread ID
-        cId = uuidv5(`assignment-${user.id}-${context.assignmentId}`, DURMAH_NAMESPACE);
+        cId = uuidv5(`assignment-${user.id}-${assignmentId}`, DURMAH_NAMESPACE);
     }
     else {
-      // Fallback: Random session if weird scope
-      // Or maybe session-based?
-      // Let's default to a random session ID if we can't be deterministic yet
-      // BUT user wants deterministic.
-      // If scope is missing ID, maybe just global?
-      console.warn('[useDurmahChat] Scope requires ID but none provided. Falling back to random.');
-      cId = crypto.randomUUID(); 
+      // Fallback to global if specific ID not provided
+      console.warn('[useDurmahChat] Scope requires ID but none provided. Falling back to global.');
+      cId = uuidv5(`global-${user.id}`, DURMAH_NAMESPACE);
     }
 
     setConversationId(cId);
 
-    // Initial Load?
-    // We rely on initialMessages usually, but we could fetch here.
-    // For now, assume parent passes initial or we fetch?
-    // Let's implement fetch if empty.
-    
-    if (initialMessages.length === 0) {
+    // Fetch messages if we haven't for this conversation ID yet
+    if (fetchedRef.current !== cId && initialMessages.length === 0) {
+        fetchedRef.current = cId;
         fetchMessages(cId);
     }
 
-  }, [user, scope, JSON.stringify(context)]);
+  }, [user, scope, lectureId, assignmentId]);
 
-  const fetchMessages = async (cId: string) => {
+  const fetchMessages = useCallback(async (cId: string) => {
       console.log('[useDurmahChat] Fetching messages for Conversation ID:', cId);
-      if (!cId || !supabase) return; // Guard against null client
-      const { data, error } = await supabase
-        .from('durmah_messages')
-        .select('*')
-        .eq('conversation_id', cId)
-        .order('created_at', { ascending: true });
-      
-      if (error) {
-           console.error('[useDurmahChat] Fetch error:', error);
+      if (!cId || !supabase) {
+          console.warn('[useDurmahChat] Cannot fetch: missing cId or supabase client');
+          return;
       }
       
-      if (data) {
-          console.log(`[useDurmahChat] Fetched ${data.length} messages`);
-          setMessages(data.map((m: any) => ({
-              id: m.id,
-              role: m.role,
-              content: m.content,
-              created_at: m.created_at,
-              saved_at: m.saved_at,
-              visibility: m.visibility
-          })));
+      try {
+          const { data, error } = await supabase
+            .from('durmah_messages')
+            .select('*')
+            .eq('conversation_id', cId)
+            .order('created_at', { ascending: true });
+          
+          if (error) {
+               console.error('[useDurmahChat] Fetch error:', error);
+               return;
+          }
+          
+          if (data) {
+              console.log(`[useDurmahChat] Fetched ${data.length} messages from database`);
+              setMessages(data.map((m: any) => ({
+                  id: m.id,
+                  role: m.role,
+                  content: m.content,
+                  created_at: m.created_at,
+                  saved_at: m.saved_at,
+                  visibility: m.visibility
+              })));
+          }
+      } catch (err) {
+          console.error('[useDurmahChat] Unexpected fetch error:', err);
       }
-  };
+  }, [supabase]);
+
+  // Manual refetch function for external use
+  const refetchMessages = useCallback(() => {
+      if (conversationId) {
+          fetchMessages(conversationId);
+      }
+  }, [conversationId, fetchMessages]);
 
   const sendMessage = useCallback(async (content: string, modality: 'text'|'voice' = 'text') => {
     console.log('[useDurmahChat] sendMessage called', { content, conversationId, user: !!user });
@@ -114,7 +130,6 @@ export function useDurmahChat({ source, scope, context = {}, initialMessages = [
     if (!conversationId) {
         console.error('[useDurmahChat] No conversation ID available');
         toast.error('Connection not ready. Please try again in a moment.');
-        // Try to recover ID?
         return;
     }
 
@@ -157,25 +172,13 @@ export function useDurmahChat({ source, scope, context = {}, initialMessages = [
           }
           throw new Error(errorMsg);
       }
-
-      // We expect a stream or JSON. 
-      // The updated API should probably return standard JSON for simplicity first, 
-      // OR stream.
-      // If stream, we need reader.
-      // For now, let's assume JSON to start (easier reliable implementation), 
-      // then upgrade to stream if "Streaming" was strict requirement.
-      // The Legacy API used stream.
-      // I will implement non-stream first for robustness, then stream if needed.
-      // Actually, user likes "Voice" which implies streaming/realtime.
-      // But for "Chat Widget", standard request is safer.
-      // Let's handle JSON response for now.
       
       const data = await response.json();
       
-      // Update with real ID if returned
+      // Update user message with real ID from server
       setMessages(prev => prev.map(m => m.id === tempId ? { ...m, id: data.userMsgId || m.id } : m));
 
-      // Append assistant reply
+      // Append assistant reply with server-assigned ID
       const assistantMsg: DurmahMessage = {
           id: data.assistantMsgId || crypto.randomUUID(),
           role: 'assistant',
@@ -186,9 +189,10 @@ export function useDurmahChat({ source, scope, context = {}, initialMessages = [
       setMessages(prev => [...prev, assistantMsg]);
 
     } catch (err: any) {
-      console.error(err);
+      console.error('[useDurmahChat] Send error:', err);
       toast.error(err.message || 'Failed to send message');
-      // Revert optimistic? Or show error state
+      // Remove the optimistic user message on error
+      setMessages(prev => prev.filter(m => m.id !== tempId));
     } finally {
       setIsLoading(false);
     }
@@ -197,92 +201,164 @@ export function useDurmahChat({ source, scope, context = {}, initialMessages = [
 
 
   const toggleSaveMetadata = useCallback(async (msgId: string, currentVisibility: string | undefined, silent = false) => {
+      if (!supabase) {
+          console.error('[useDurmahChat] Cannot toggle save: supabase client not available');
+          if (!silent) toast.error('Connection not ready');
+          return;
+      }
+
       const newVisibility = currentVisibility === 'saved' ? 'ephemeral' : 'saved';
       const newSavedAt = newVisibility === 'saved' ? new Date().toISOString() : null;
 
-      // Optimistic
+      // Optimistic update
       setMessages(prev => prev.map(m => m.id === msgId ? { ...m, visibility: newVisibility as any, saved_at: newSavedAt } : m));
 
-      await supabase
-        .from('durmah_messages')
-        .update({ visibility: newVisibility, saved_at: newSavedAt })
-        .eq('id', msgId);
-      
-      if (!silent) {
-          toast.success(newVisibility === 'saved' ? 'Message saved' : 'Message unsaved');
+      try {
+          const { error } = await supabase
+            .from('durmah_messages')
+            .update({ visibility: newVisibility, saved_at: newSavedAt })
+            .eq('id', msgId);
+          
+          if (error) {
+              console.error('[useDurmahChat] Toggle save error:', error);
+              // Revert optimistic update on error
+              setMessages(prev => prev.map(m => m.id === msgId ? { ...m, visibility: currentVisibility as any, saved_at: currentVisibility === 'saved' ? m.saved_at : null } : m));
+              if (!silent) toast.error('Failed to update message');
+              return;
+          }
+          
+          if (!silent) {
+              toast.success(newVisibility === 'saved' ? 'Message saved' : 'Message unsaved');
+          }
+      } catch (err) {
+          console.error('[useDurmahChat] Unexpected toggle error:', err);
+          // Revert on unexpected error
+          setMessages(prev => prev.map(m => m.id === msgId ? { ...m, visibility: currentVisibility as any } : m));
+          if (!silent) toast.error('Failed to update message');
       }
   }, [supabase]);
 
   // Log a message directly (e.g. from Voice Transcript) without triggering LLM
   const logMessage = useCallback(async (role: 'user'|'assistant', content: string, modality: 'text'|'voice' = 'text') => {
-      if (!conversationId || !user) return;
+      if (!conversationId || !user || !supabase) {
+          console.warn('[useDurmahChat] Cannot log message: missing required context');
+          return;
+      }
 
-      const { data, error } = await supabase
-        .from('durmah_messages')
-        .insert({
-            user_id: user.id,
-            conversation_id: conversationId,
-            role,
-            content,
-            modality,
-            source,
-            scope,
-            visibility: 'ephemeral'
-        })
-        .select('id, created_at')
-        .single();
-      
-      if (data) {
-          const newMsg: DurmahMessage = {
-              id: data.id,
-              role,
-              content,
-              created_at: data.created_at,
-              visibility: 'ephemeral'
-          };
-          setMessages(prev => [...prev, newMsg]);
+      try {
+          const { data, error } = await supabase
+            .from('durmah_messages')
+            .insert({
+                user_id: user.id,
+                conversation_id: conversationId,
+                role,
+                content,
+                modality,
+                source,
+                scope,
+                visibility: 'ephemeral'
+            })
+            .select('id, created_at')
+            .single();
+          
+          if (error) {
+              console.error('[useDurmahChat] Log message error:', error);
+              return;
+          }
+
+          if (data) {
+              const newMsg: DurmahMessage = {
+                  id: data.id,
+                  role,
+                  content,
+                  created_at: data.created_at,
+                  visibility: 'ephemeral'
+              };
+              setMessages(prev => [...prev, newMsg]);
+          }
+      } catch (err) {
+          console.error('[useDurmahChat] Unexpected log error:', err);
       }
   }, [supabase, conversationId, user, source, scope]);
 
   const deleteMessages = useCallback(async (ids: string[]) => {
-      if (!ids.length) return;
+      if (!ids.length || !supabase) {
+          console.warn('[useDurmahChat] Cannot delete: no IDs or supabase client missing');
+          return;
+      }
+      
+      // Store messages for potential rollback
+      const deletedMessages = messages.filter(m => ids.includes(m.id));
       
       // Optimistic delete
       setMessages(prev => prev.filter(m => !ids.includes(m.id)));
 
-      const { error } = await supabase
-        .from('durmah_messages')
-        .delete()
-        .in('id', ids);
+      try {
+          const { error } = await supabase
+            .from('durmah_messages')
+            .delete()
+            .in('id', ids);
 
-      if (error) {
-          console.error('Failed to delete', error);
-          toast.error('Failed to delete');
-          // Revert? Hard to revert delete without fetching. 
-          // Assume success usually.
-      } else {
+          if (error) {
+              console.error('[useDurmahChat] Delete error:', error);
+              // Rollback: restore deleted messages
+              setMessages(prev => [...prev, ...deletedMessages].sort((a, b) => 
+                  new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+              ));
+              toast.error('Failed to delete');
+              return;
+          }
+          
           toast.success('Deleted');
+      } catch (err) {
+          console.error('[useDurmahChat] Unexpected delete error:', err);
+          // Rollback
+          setMessages(prev => [...prev, ...deletedMessages].sort((a, b) => 
+              new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+          ));
+          toast.error('Failed to delete');
       }
-  }, [supabase]);
+  }, [supabase, messages]);
 
   const clearUnsaved = useCallback(async () => {
-      if (!conversationId) return;
+      if (!conversationId || !supabase) {
+          console.warn('[useDurmahChat] Cannot clear unsaved: missing context');
+          return;
+      }
 
-      // Optimistic
+      // Store unsaved messages for potential rollback
+      const unsavedMessages = messages.filter(m => m.visibility !== 'saved');
+      
+      // Optimistic update
       setMessages(prev => prev.filter(m => m.visibility === 'saved'));
 
-      const { error } = await supabase
-        .from('durmah_messages')
-        .delete()
-        .eq('conversation_id', conversationId)
-        .neq('visibility', 'saved'); // Only delete non-saved
+      try {
+          const { error } = await supabase
+            .from('durmah_messages')
+            .delete()
+            .eq('conversation_id', conversationId)
+            .neq('visibility', 'saved'); // Only delete non-saved
 
-      if (error) {
-          toast.error('Failed to clear unsaved');
-      } else {
+          if (error) {
+              console.error('[useDurmahChat] Clear unsaved error:', error);
+              // Rollback
+              setMessages(prev => [...prev, ...unsavedMessages].sort((a, b) => 
+                  new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+              ));
+              toast.error('Failed to clear unsaved');
+              return;
+          }
+          
           toast.success('Cleared unsaved messages');
+      } catch (err) {
+          console.error('[useDurmahChat] Unexpected clear error:', err);
+          // Rollback
+          setMessages(prev => [...prev, ...unsavedMessages].sort((a, b) => 
+              new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+          ));
+          toast.error('Failed to clear unsaved');
       }
-  }, [supabase, conversationId]);
+  }, [supabase, conversationId, messages]);
 
   return {
     messages,
@@ -292,6 +368,7 @@ export function useDurmahChat({ source, scope, context = {}, initialMessages = [
     toggleSaveMetadata,
     deleteMessages,
     clearUnsaved,
-    logMessage
+    logMessage,
+    refetchMessages // NEW: Expose manual refetch
   };
 }
