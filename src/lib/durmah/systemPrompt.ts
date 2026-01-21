@@ -93,7 +93,7 @@ export function buildDurmahContextBlock(context: StudentContext): string {
   
   // TIMEZONE TRUTH: Use academic.now if available, else fallback
   const academicNow = academic?.now ?? null;
-  const localISO = academicNow?.localTimeISO ?? student?.localTimeISO ?? new Date().toISOString();
+  const localISO = academicNow?.isoUTC ?? student?.localTimeISO ?? new Date().toISOString();
   
   const nowText = academicNow?.nowText || new Date(localISO).toLocaleString('en-GB', { timeZone: 'Europe/London' });
   const todayKey = academicNow?.dayKey || localISO.substring(0, 10);
