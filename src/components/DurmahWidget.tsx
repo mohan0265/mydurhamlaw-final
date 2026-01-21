@@ -17,7 +17,7 @@ import type { StudentContext } from "@/types/durmahContext";
 import type { DurmahContextPacket } from "@/types/durmah";
 import { formatTodayForDisplay } from "@/lib/durmah/phase";
 import { useDurmahSettings } from "@/hooks/useDurmahSettings";
-import { Settings, X, ArrowRight, AlertTriangle, Check, Volume2, Brain, Zap, RefreshCw, MoreHorizontal, Trash2, Smile, CheckSquare, Square, Save, Bookmark, BookmarkX, Filter, Minimize2, GripVertical } from "lucide-react";
+import { Settings, X, ArrowRight, AlertTriangle, Check, Volume2, Brain, Zap, RefreshCw, MoreHorizontal, Trash2, Smile, CheckSquare, Square, Save, Bookmark, BookmarkX, Filter, Minimize2, GripVertical, Minus } from "lucide-react";
 import Link from 'next/link';
 import toast from "react-hot-toast";
 import { useRouter } from 'next/router';
@@ -1863,6 +1863,15 @@ User question: ${userText}`;
             ) : (
               <span className="text-sm font-medium">Mic</span>
             )}
+          </button>
+
+          {/* Minimize button - hide widget while keeping voice active */}
+          <button
+            onClick={() => setIsOpen(false)}
+            className="p-2 rounded-full hover:bg-white/20 transition-colors"
+            title="Minimize (voice chat continues in background)"
+          >
+            <Minus size={20} />
           </button>
 
           <button
