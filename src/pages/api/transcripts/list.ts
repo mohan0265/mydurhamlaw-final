@@ -29,65 +29,89 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const from = (p - 1) * ps;
     const to = from + ps - 1;
 
-    const selectStr = folderId 
-      ? `*, transcript_folder_items!inner(folder_id)` 
-      : `*, transcript_folder_items!left(folder_id)`;
-
-    let supabaseQuery = supabase
-      .from('voice_journals')
-      .select(selectStr, { count: 'exact' })
-      .eq('user_id', user.id);
-
-    // 1. Full-Text Search
-    if (query) {
-      // Use the search_tsv column with plainto_tsquery or websearch_to_tsquery
-      supabaseQuery = supabaseQuery.textSearch('search_tsv', query as string, {
-        type: 'websearch',
-        config: 'english'
-      });
-    }
-
-    // 2. Folder Filtering
-    if (folderId) {
-      supabaseQuery = supabaseQuery.eq('transcript_folder_items.folder_id', folderId);
-    } else if (unfoldered === 'true') {
-      supabaseQuery = supabaseQuery.is('transcript_folder_items.folder_id', null);
-    }
-
-    // 3. Pinned Filtering
-    if (pinned === 'true') {
-      supabaseQuery = supabaseQuery.eq('is_pinned', true);
-    }
-
-    // 4. Sorting
-    if (query) {
-      // If searching, we skip custom sort to allow rank-based sorting if desired, 
-      // but usually users want recent first even in search results if not using rank.
-      // Supabase's textSearch doesn't easily expose rank yet in simple select.
-      supabaseQuery = supabaseQuery.order('created_at', { ascending: false });
-    } else {
-      switch (sort) {
-        case 'oldest':
-          supabaseQuery = supabaseQuery.order('created_at', { ascending: true });
-          break;
-        case 'title':
-          supabaseQuery = supabaseQuery.order('topic', { ascending: true });
-          break;
-        case 'recent':
-        default:
-          // Pinned often come first in "All" view
-          if (pinned !== 'true' && !folderId) {
-             supabaseQuery = supabaseQuery.order('is_pinned', { ascending: false });
-          }
-          supabaseQuery = supabaseQuery.order('created_at', { ascending: false });
-          break;
+    // 0. Handle Recursive Folders if folderId is provided
+    let targetFolderIds: string[] = [];
+    if (folderId && folderId !== 'all' && folderId !== 'pinned') {
+      const { data: descendantData } = await supabase.rpc('get_folder_descendants', { p_folder_id: folderId });
+      if (descendantData) {
+        targetFolderIds = descendantData.map((d: any) => d.folder_id);
+      } else {
+        targetFolderIds = [folderId as string];
       }
     }
 
-    // 5. Pagination
-    supabaseQuery = supabaseQuery.range(from, to);
+    const selectStr = folderId && folderId !== 'all' && folderId !== 'pinned'
+      ? `*, transcript_folder_items!inner(folder_id)` 
+      : `*, transcript_folder_items!left(folder_id)`;
 
-    const { data, count, error } = await supabaseQuery;
+    const buildQuery = (isFallback = false) => {
+      let q = supabase
+        .from('voice_journals')
+        .select(selectStr, { count: 'exact' })
+        .eq('user_id', user.id);
+
+      // 1. Search Logic
+      if (query) {
+        if (!isFallback) {
+          q = q.textSearch('search_tsv', query as string, {
+            type: 'websearch',
+            config: 'english'
+          });
+        } else {
+          // Fallback to ilike if TSV search yields nothing
+          q = q.or(`topic.ilike.%${query}%,summary.ilike.%${query}%,content_text.ilike.%${query}%`);
+        }
+      }
+
+      // 2. Folder Filtering
+      if (folderId && folderId !== 'all' && folderId !== 'pinned') {
+        q = q.in('transcript_folder_items.folder_id', targetFolderIds);
+      } else if (unfoldered === 'true') {
+        q = q.is('transcript_folder_items.folder_id', null);
+      }
+
+      // 3. Pinned Filtering
+      if (pinned === 'true') {
+        q = q.eq('is_pinned', true);
+      }
+
+      // 4. Sorting
+      if (query && !isFallback) {
+        q = q.order('created_at', { ascending: false });
+      } else {
+        switch (sort) {
+          case 'oldest':
+            q = q.order('created_at', { ascending: true });
+            break;
+          case 'title':
+            q = q.order('topic', { ascending: true });
+            break;
+          case 'recent':
+          default:
+            if (pinned !== 'true' && (!folderId || folderId === 'all')) {
+               q = q.order('is_pinned', { ascending: false });
+            }
+            q = q.order('created_at', { ascending: false });
+            break;
+        }
+      }
+
+      // 5. Pagination
+      q = q.range(from, to);
+      return q;
+    };
+
+    let { data, count, error } = await buildQuery(false);
+
+    // Phase B — Fallback Hardening
+    if (!error && query && (!data || data.length === 0)) {
+      console.log('[transcripts/list] TSV search yielded no results, trying ilike fallback...');
+      const fallbackResult = await buildQuery(true);
+      if (!fallbackResult.error) {
+        data = fallbackResult.data;
+        count = fallbackResult.count;
+      }
+    }
 
     if (error) throw error;
 

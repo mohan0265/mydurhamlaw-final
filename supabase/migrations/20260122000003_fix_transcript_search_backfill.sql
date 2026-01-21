@@ -31,23 +31,27 @@ $$ LANGUAGE plpgsql;
 -- 2. Update trigger to include content_text in the "OF" list
 DROP TRIGGER IF EXISTS trg_voice_journals_tsv ON public.voice_journals;
 CREATE TRIGGER trg_voice_journals_tsv
-    BEFORE INSERT OR UPDATE
+    BEFORE INSERT OR UPDATE OF topic, summary, transcript, content_text
     ON public.voice_journals
     FOR EACH ROW EXECUTE FUNCTION public.voice_journals_generate_tsv();
 
--- 3. Backfill content_text where missing
-UPDATE public.voice_journals 
-SET content_text = (
-    SELECT string_agg(msg->>'text', ' ') 
-    FROM jsonb_array_elements(transcript) AS msg
-)
-WHERE (content_text IS NULL OR content_text = '') 
-AND transcript IS NOT NULL 
-AND jsonb_array_length(transcript) > 0;
+-- 3. Backfill content_text and fire triggers explicitly
+-- Use the exact command requested for firing triggers
+UPDATE public.voice_journals SET transcript = transcript, content_text = content_text;
 
--- 4. Force re-generation of all search_tsv
--- This will fire the trigger and update search_tsv for every row
-UPDATE public.voice_journals 
-SET updated_at = NOW();
+-- 4. Helper for Recursive Folder Search (Phase C Support)
+CREATE OR REPLACE FUNCTION public.get_folder_descendants(p_folder_id UUID)
+RETURNS TABLE (folder_id UUID) AS $$
+BEGIN
+    RETURN QUERY
+    WITH RECURSIVE descendants AS (
+        SELECT f.id FROM public.transcript_folders f WHERE f.id = p_folder_id
+        UNION ALL
+        SELECT f.id FROM public.transcript_folders f
+        JOIN descendants d ON f.parent_id = d.id
+    )
+    SELECT d.id FROM descendants d;
+END;
+$$ LANGUAGE plpgsql STABLE;
 
 COMMIT;
