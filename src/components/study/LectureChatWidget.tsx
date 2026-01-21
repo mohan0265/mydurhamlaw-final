@@ -71,6 +71,11 @@ export default function LectureChatWidget({ lectureId, title }: LectureChatWidge
     const content = input;
     setInput(''); // Clear immediately
     await sendMessage(content);
+    
+    // Auto-focus back to input
+    setTimeout(() => {
+      textareaRef.current?.focus();
+    }, 10);
   };
 
   const toggleSelection = (id: string) => {

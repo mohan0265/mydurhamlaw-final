@@ -289,7 +289,7 @@ export default function DurmahWidget() {
   const [mode, setMode] = useState<'chat' | 'study' | 'NEWS_STRICT'>('chat'); // NEW: Chat vs Study Mode
   
   // UNIFIED CHAT HOOK
-  const { messages: unifiedMessages, sendMessage, logMessage, isLoading: chatIsLoading, toggleSaveMetadata, clearUnsaved, deleteMessages, refetchMessages } = useDurmahChat({
+  const { messages: unifiedMessages, sendMessage, logMessage, isLoading: chatIsLoading, toggleSaveMetadata, clearUnsaved, deleteMessages, refetchMessages, conversationId } = useDurmahChat({
       source: 'widget',
       scope: 'global',
       context: { 
@@ -298,6 +298,8 @@ export default function DurmahWidget() {
         assignmentId: router.pathname.includes('/assignments') ? (router.query.assignmentId as string) : undefined
       }
   });
+
+  const scope = 'global'; // Define scope for usage in clearChat
 
   // Map unified messages to legacy Msg format for UI compatibility
   const messages = useMemo<Msg[]>(() => {
@@ -1222,25 +1224,39 @@ Date: ${studentContextData.academic?.now?.nowText || studentContextData.student.
     setVoiceSessionEndedAt(null);
   };
   
-  // CLEAR CHAT - Clears entire conversation history
+  // CLEAR CHAT - Clears entire conversation history for this SPECIFIC TOPIC/WIDGET
   const clearChat = async () => {
-    if (!confirm('Clear entire conversation? This cannot be undone.')) return;
+    // We only clear the current conversation scope (e.g. current lecture, current assignment, or global widget thread)
+    // This preserves "Saved Transcripts" in the library that reside in other threads or are archived elsewhere.
+    const warning = `Are you sure you want to clear your chat history for this ${scope === 'global' ? 'widget' : scope}? \n\nAll messages currently visible here will be deleted. Your saved highlights in the separate Library will remain safe.`;
+    
+    if (!confirm(warning)) return;
     
     setCallTranscript([]);
-    // Clearing unified messages - likely via clearUnsaved or direct DB deletion
-    // For now, reload or call clearUnsaved
-    clearUnsaved(); // from hook
+    // Clearing local state via hook
+    // Note: useDurmahChat's clearUnsaved only clears UN-saved. 
+    // We want a full clear, so we'll do it via DB and then reload/reset.
     
-    // Also clear from database
-    if (user?.id && supabaseClient) {
+    if (user?.id && supabaseClient && conversationId) {
       try {
-        await supabaseClient
+        const { error } = await supabaseClient
           .from('durmah_messages')
           .delete()
-          .eq('user_id', user.id);
-        toast.success('Chat cleared');
+          .eq('conversation_id', conversationId); // CRITICAL: Scoped to current thread only
+          
+        if (error) throw error;
+        
+        toast.success('Chat history cleared');
+        // Force a refresh of the messages in the hook
+        if (typeof refetchMessages === 'function') {
+           refetchMessages();
+        } else {
+           // Fallback: clear local state manually if refetch not enough
+           window.location.reload(); 
+        }
       } catch (err) {
         console.error('[DurmahWidget] Failed to clear messages:', err);
+        toast.error('Failed to clear chat');
       }
     }
   };
@@ -1425,6 +1441,11 @@ User question: ${userText}`;
     try {
       // Unified Send
       await sendMessage(enrichedMessage, 'text');
+      
+      // Auto-focus back to input
+      setTimeout(() => {
+        textareaRef.current?.focus();
+      }, 10);
     } catch (err: any) {
         console.error(err);
         toast.error("Failed to send");
@@ -1694,11 +1715,30 @@ User question: ${userText}`;
                       Reset Timetable (dev)
                       <RefreshCw size={14} className="text-red-500" />
                     </button>
+                    <button
+                      className="w-full text-left px-4 py-2.5 hover:bg-red-50 flex items-center justify-between border-t border-gray-100 text-red-600"
+                      onClick={() => {
+                        clearChat();
+                        setShowHeaderMenu(false);
+                      }}
+                    >
+                      Clear All Messages
+                      <Trash2 size={14} className="text-red-500" />
+                    </button>
                   </>
                 )}
               </div>
             )}
           </div>
+
+          <button
+            onClick={clearChat}
+            className="p-2 rounded-full hover:bg-white/20 transition-colors text-white/80 hover:text-white"
+            title="Clear entire conversation"
+          >
+            <Trash2 size={18} />
+          </button>
+
           <button
             onClick={() => setShowSettings(!showSettings)}
             className="p-2 rounded-full hover:bg-white/20 transition-colors"
