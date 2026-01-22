@@ -34,6 +34,8 @@ interface DurmahChatProps {
   systemHint?: string;
   initialPrompt?: string;
   className?: string;
+  isMinimized?: boolean;
+  onToggleMinimize?: () => void;
 }
 
 export default function DurmahChat({
@@ -42,7 +44,9 @@ export default function DurmahChat({
   contextId,
   systemHint,
   initialPrompt,
-  className = ""
+  className = "",
+  isMinimized = false,
+  onToggleMinimize,
 }: DurmahChatProps) {
   const { user } = useAuth();
   const supabase = useSupabaseClient();
@@ -55,7 +59,8 @@ export default function DurmahChat({
   
   // State
   const [input, setInput] = useState("");
-  const [isExpanded, setIsExpanded] = useState(false);
+  // Local expand state for chat history ONLY when minimized
+  const [isHistoryVisible, setIsHistoryVisible] = useState(false);
   const [lastSyncedAt, setLastSyncedAt] = useState<Date | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
   
@@ -262,11 +267,22 @@ export default function DurmahChat({
       }
   };
 
+  // Determine if we should show full UI or Minimized Pill
+  const showFullUI = !isMinimized || isHistoryVisible;
+
   return (
-    <div className={`flex flex-col bg-white rounded-xl shadow-sm border border-gray-200 transition-all duration-300 ${isExpanded ? 'fixed inset-4 z-50 shadow-2xl' : 'h-[600px]'} ${className}`}>
+    <div className={`flex flex-col bg-white rounded-xl shadow-sm border border-gray-200 transition-all duration-300 ${className}`}>
       {/* Header */}
       {/* Header matching DurmahWidget */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-gradient-to-r from-violet-600 to-indigo-600 text-white rounded-t-xl shrink-0">
+      <div 
+          className={`flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-gradient-to-r from-violet-600 to-indigo-600 text-white shrink-0 ${
+              isMinimized ? 'rounded-xl cursor-pointer hover:from-violet-500 hover:to-indigo-500' : 'rounded-t-xl'
+          }`}
+          onClick={() => {
+              // Clicking header in minimized mode expands the history/input temporarily (like accordion)
+              if(isMinimized && !onToggleMinimize) setIsHistoryVisible(!isHistoryVisible);
+          }}
+      >
         <div className="flex items-center gap-2">
             {/* Brain/Mic Icon Bubble */}
             <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors shadow-sm ${
@@ -282,18 +298,23 @@ export default function DurmahChat({
                     Durmah
                     {isSyncing && <Loader2 size={10} className="animate-spin text-white/70" />}
                     {!isSyncing && lastSyncedAt && <Check size={10} className="text-green-300" title="Saved" />}
-                    <span className="px-1.5 py-0.5 bg-white/20 rounded text-[10px] font-medium text-white/90">BETA</span>
+                    {isMinimized && <span className="text-[10px] bg-white/20 px-1 rounded ml-1">Mini</span>}
                 </div>
-                <div className="text-xs text-indigo-100 font-medium truncate max-w-[150px]">
-                    {contextType === 'assignment' ? 'Assignment Mentor' : 'Exam Coach'}
-                </div>
+                {!isMinimized && (
+                    <div className="text-xs text-indigo-100 font-medium truncate max-w-[150px]">
+                        {contextType === 'assignment' ? 'Assignment Mentor' : 'Exam Coach'}
+                    </div>
+                )}
             </div>
         </div>
         
-        <div className="flex items-center gap-1">
-            {/* Voice Toggle - Large Red Pill if Active */}
+        <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
+            {/* Voice Toggle - Visible even in Minimized State */}
             <button
-                onClick={() => toggleVoice()}
+                onClick={(e) => {
+                    e.stopPropagation();
+                    toggleVoice();
+                }}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all font-medium text-xs ${
                     isVoiceConnected 
                     ? 'bg-red-500 text-white hover:bg-red-600 shadow-lg ring-2 ring-red-300/50 animate-pulse' 
@@ -301,140 +322,146 @@ export default function DurmahChat({
                 }`}
                 title={isVoiceConnected ? "End Voice Chat" : "Start Voice Chat"}
             >
-                {isVoiceConnected ? (
-                    <>
-                        <MicOff size={14} />
-                        <span className="hidden sm:inline">End Voice</span>
-                    </>
-                ) : (
-                    <>
-                        <Mic size={14} />
-                        <span className="hidden sm:inline">Voice</span>
-                    </>
-                )}
+                {isVoiceConnected ? <MicOff size={14} /> : <Mic size={14} />}
+                {isVoiceConnected ? <span className="hidden sm:inline">End</span> : (!isMinimized && <span className="hidden sm:inline">Voice</span>)}
             </button>
 
-            {/* Expand Toggle */}
-            <button 
-                onClick={() => setIsExpanded(!isExpanded)}
-                className="p-2 text-white/70 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
-            >
-                {isExpanded ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
-            </button>
-        </div>
-      </div>
-
-      {/* Ethics Banner */}
-      <div className="bg-blue-50 px-4 py-2 border-b border-blue-100 flex items-start gap-2">
-        <AlertTriangle className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" />
-        <p className="text-[10px] text-blue-700 leading-tight">
-             Durmah helps you plan and revise. {contextType === 'assignment' ? 'Always submit your own original work.' : 'Do not use during live exams.'}
-        </p>
-      </div>
-
-      {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50/50">
-        {/* Render Chat Messages */}
-        {messages.map((m) => (
-          <div key={m.id || m.created_at} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
-            <div
-              className={`px-4 py-3 rounded-2xl max-w-[85%] text-sm shadow-sm leading-relaxed group relative ${
-                m.role === "user"
-                  ? "bg-violet-600 text-white rounded-tr-sm"
-                  : "bg-white text-gray-800 border border-gray-100 rounded-tl-sm transition-colors hover:border-violet-200"
-              }`}
-            >
-              <div className="whitespace-pre-wrap">{m.content}</div>
-              
-              {/* Copy Button (only on hover) */}
-              {m.role === 'assistant' && (
-                  <button 
-                    onClick={() => {
-                        navigator.clipboard.writeText(m.content);
-                        toast.success("Copied to clipboard");
+            {/* Minimize/Dock Switcher (If handler provided) */}
+            {onToggleMinimize && (
+                <button 
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        // If minimizing, hide local history
+                        if(!isMinimized) setIsHistoryVisible(false);
+                        onToggleMinimize();
                     }}
-                    className="absolute -right-8 top-2 opacity-0 group-hover:opacity-100 p-1.5 text-gray-400 hover:text-violet-600 bg-white rounded-full shadow-sm border border-gray-100 transition-all"
-                    title="Copy to Draft / Clipboard"
-                  >
-                      <FileText size={12} />
-                  </button>
-              )}
-            </div>
-          </div>
-        ))}
-        
-        {/* Loading Indicator */}
-        {isChatLoading && (
-           <div className="flex justify-start">
-              <div className="px-4 py-3 bg-white rounded-2xl rounded-tl-sm border border-gray-100 shadow-sm flex gap-1 items-center">
-                 <span className="w-1.5 h-1.5 bg-violet-400 rounded-full animate-bounce"></span>
-                 <span className="w-1.5 h-1.5 bg-violet-400 rounded-full animate-bounce delay-75"></span>
-                 <span className="w-1.5 h-1.5 bg-violet-400 rounded-full animate-bounce delay-150"></span>
-              </div>
-           </div>
-        )}
-        
-         {/* Voice Status Indicator Overlay */}
-        {isVoiceConnected && (
-            <div className="sticky bottom-0 left-0 right-0 p-2 flex justify-center pointer-events-none">
-                 <div className="bg-black/70 backdrop-blur-md text-white text-xs px-3 py-1.5 rounded-full flex items-center gap-2 shadow-lg animate-in fade-in slide-in-from-bottom-2">
-                     {isVoiceListening ? (
-                         <>
-                            <Mic size={12} className="text-red-400 animate-pulse" />
-                            <span>Listening...</span>
-                         </>
-                     ) : isVoiceSpeaking ? (
-                         <>
-                            <Brain size={12} className="text-violet-300 animate-pulse" />
-                            <span>Speaking...</span>
-                         </>
-                     ) : (
-                         <span className="opacity-80">Voice Active</span>
-                     )}
-                 </div>
-            </div>
-        )}
-
-        <div ref={messagesEndRef} />
-      </div>
-
-      {/* Input Area */}
-      <div className="p-3 border-t border-gray-100 bg-white rounded-b-xl">
-        <div className="flex gap-2">
-          <textarea
-            ref={textareaRef}
-            rows={1}
-            value={input}
-            onChange={(e) => {
-                setInput(e.target.value);
-                // Auto-grow
-                e.target.style.height = 'auto';
-                e.target.style.height = `${Math.min(e.target.scrollHeight, 150)}px`;
-            }}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                handleSendMessage();
-              }
-            }}
-            placeholder={isVoiceConnected ? "Voice active (speak now)..." : "Ask for help..."}
-            disabled={isVoiceConnected} 
-            className="flex-1 resize-none py-2 px-3 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-violet-300 focus:ring-2 focus:ring-violet-50 transition-all min-h-[44px] max-h-[150px] overflow-y-auto disabled:bg-gray-50 disabled:text-gray-400"
-          />
-          <button
-            onClick={handleSendMessage}
-            disabled={!input.trim() || isChatLoading || isVoiceConnected}
-            className="w-11 h-11 flex items-center justify-center bg-violet-600 text-white rounded-lg hover:bg-violet-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors self-end shadow-sm"
-          >
-            <Send size={18} />
-          </button>
+                    className="p-2 text-white/70 hover:text-white hover:bg-white/10 rounded-lg transition-colors ml-1"
+                    title={isMinimized ? "Dock / Expand" : "Minimize to Floating"}
+                >
+                    {isMinimized ? <Maximize2 size={16} /> : <Minimize2 size={16} />}
+                </button>
+            )}
         </div>
-        {!isVoiceConnected && (
-            <div className="text-[10px] text-center text-gray-400 mt-2">
-            AI can make mistakes. Auto-saves to "{`Assignment: ${contextTitle.substring(0,15)}...`}"
-            </div>
-        )}
       </div>
+
+      {/* Ethics Banner (Only in expanded view) */}
+      {showFullUI && (
+        <div className="bg-blue-50 px-4 py-2 border-b border-blue-100 flex items-start gap-2 animate-in slide-in-from-top-2 fade-in">
+            <AlertTriangle className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" />
+            <p className="text-[10px] text-blue-700 leading-tight">
+                Durmah helps you plan and revise. {contextType === 'assignment' ? 'Always submit your own original work.' : 'Do not use during live exams.'}
+            </p>
+        </div>
+      )}
+
+      {/* Content Area (Hidden if minimized, unless history manually toggled) */}
+      {showFullUI && (
+          <>
+            {/* Messages Area */}
+            <div className={`flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50/50 ${isMinimized ? 'max-h-[400px]' : ''}`}>
+                {/* Render Chat Messages */}
+                {messages.map((m) => (
+                <div key={m.id || m.created_at} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
+                    <div
+                    className={`px-4 py-3 rounded-2xl max-w-[85%] text-sm shadow-sm leading-relaxed group relative ${
+                        m.role === "user"
+                        ? "bg-violet-600 text-white rounded-tr-sm"
+                        : "bg-white text-gray-800 border border-gray-100 rounded-tl-sm transition-colors hover:border-violet-200"
+                    }`}
+                    >
+                    <div className="whitespace-pre-wrap">{m.content}</div>
+                    
+                    {/* Copy Button (only on hover) */}
+                    {m.role === 'assistant' && (
+                        <button 
+                            onClick={() => {
+                                navigator.clipboard.writeText(m.content);
+                                toast.success("Copied to clipboard");
+                            }}
+                            className="absolute -right-8 top-2 opacity-0 group-hover:opacity-100 p-1.5 text-gray-400 hover:text-violet-600 bg-white rounded-full shadow-sm border border-gray-100 transition-all"
+                            title="Copy to Draft / Clipboard"
+                        >
+                            <FileText size={12} />
+                        </button>
+                    )}
+                    </div>
+                </div>
+                ))}
+                
+                {/* Loading Indicator */}
+                {isChatLoading && (
+                <div className="flex justify-start">
+                    <div className="px-4 py-3 bg-white rounded-2xl rounded-tl-sm border border-gray-100 shadow-sm flex gap-1 items-center">
+                        <span className="w-1.5 h-1.5 bg-violet-400 rounded-full animate-bounce"></span>
+                        <span className="w-1.5 h-1.5 bg-violet-400 rounded-full animate-bounce delay-75"></span>
+                        <span className="w-1.5 h-1.5 bg-violet-400 rounded-full animate-bounce delay-150"></span>
+                    </div>
+                </div>
+                )}
+                
+                {/* Voice Status Indicator Overlay */}
+                {isVoiceConnected && (
+                    <div className="sticky bottom-0 left-0 right-0 p-2 flex justify-center pointer-events-none">
+                        <div className="bg-black/70 backdrop-blur-md text-white text-xs px-3 py-1.5 rounded-full flex items-center gap-2 shadow-lg animate-in fade-in slide-in-from-bottom-2">
+                            {isVoiceListening ? (
+                                <>
+                                    <Mic size={12} className="text-red-400 animate-pulse" />
+                                    <span>Listening...</span>
+                                </>
+                            ) : isVoiceSpeaking ? (
+                                <>
+                                    <Brain size={12} className="text-violet-300 animate-pulse" />
+                                    <span>Speaking...</span>
+                                </>
+                            ) : (
+                                <span className="opacity-80">Voice Active</span>
+                            )}
+                        </div>
+                    </div>
+                )}
+
+                <div ref={messagesEndRef} />
+            </div>
+
+            {/* Input Area */}
+            <div className="p-3 border-t border-gray-100 bg-white rounded-b-xl">
+                <div className="flex gap-2">
+                <textarea
+                    ref={textareaRef}
+                    rows={1}
+                    value={input}
+                    onChange={(e) => {
+                        setInput(e.target.value);
+                        // Auto-grow
+                        e.target.style.height = 'auto';
+                        e.target.style.height = `${Math.min(e.target.scrollHeight, 150)}px`;
+                    }}
+                    onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        handleSendMessage();
+                    }
+                    }}
+                    placeholder={isVoiceConnected ? "Voice active (speak now)..." : "Ask for help..."}
+                    disabled={isVoiceConnected} 
+                    className="flex-1 resize-none py-2 px-3 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-violet-300 focus:ring-2 focus:ring-violet-50 transition-all min-h-[44px] max-h-[150px] overflow-y-auto disabled:bg-gray-50 disabled:text-gray-400"
+                />
+                <button
+                    onClick={handleSendMessage}
+                    disabled={!input.trim() || isChatLoading || isVoiceConnected}
+                    className="w-11 h-11 flex items-center justify-center bg-violet-600 text-white rounded-lg hover:bg-violet-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors self-end shadow-sm"
+                >
+                    <Send size={18} />
+                </button>
+                </div>
+                {!isVoiceConnected && (
+                    <div className="text-[10px] text-center text-gray-400 mt-2">
+                    AI can make mistakes. Auto-saves to "{`Assignment: ${contextTitle.substring(0,15)}...`}"
+                    </div>
+                )}
+            </div>
+          </>
+      )}
     </div>
   );
 }

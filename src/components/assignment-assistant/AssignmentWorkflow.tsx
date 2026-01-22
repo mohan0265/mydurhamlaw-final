@@ -1,7 +1,7 @@
 /* eslint-disable @next/next/no-async-client-component */
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/router';
 import { X, CheckCircle, Circle, ArrowLeft, Home, Save } from 'lucide-react';
 import ModeSelector from './ModeSelector';
@@ -52,6 +52,11 @@ export default function AssignmentWorkflow({
   // Persistent Editor State (Hoisted)
   const [draftHtml, setDraftHtml] = useState('');
   const [draftText, setDraftText] = useState('');
+
+  // UI State for Layout
+  const [leftColWidth, setLeftColWidth] = useState(25); // Percentage
+  const [isDurmahMinimized, setIsDurmahMinimized] = useState(false);
+  const [isResizing, setIsResizing] = useState(false);
   
   // Initialize draft from loaded progress
   useEffect(() => {
@@ -80,6 +85,31 @@ export default function AssignmentWorkflow({
     { num: 5, name: 'Formatting', completed: false },
     { num: 6, name: 'Review', completed: false },
   ];
+
+  // Resizing Logic
+  const handleMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsResizing(true);
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+  };
+
+  const handleMouseMove = useCallback((e: MouseEvent) => {
+    // Calculate percentage based on window width
+    // We want the left column to be roughly where the mouse is
+    const newWidth = (e.clientX / window.innerWidth) * 100;
+    // Limit between 15% and 50%
+    if (newWidth > 15 && newWidth < 50) {
+      setLeftColWidth(newWidth);
+    }
+  }, []);
+
+  const handleMouseUp = useCallback(() => {
+    setIsResizing(false);
+    document.removeEventListener('mousemove', handleMouseMove);
+    document.removeEventListener('mouseup', handleMouseUp);
+  }, [handleMouseMove]);
+
 
   // Read stage from URL on mount
   useEffect(() => {
@@ -226,17 +256,17 @@ export default function AssignmentWorkflow({
 
   const handleModeSelection = (selectedMode: 'normal' | 'express') => {
     setMode(selectedMode);
-    // Skip upload and go straight to Stage 1 since brief already uploaded during assignment creation
+    // Skip upload and go straight to Stage 1 since brief already uploaded assignment creation
     setCurrentStage(1);
     setUploadMode(false);
   };
 
   return (
     <div className="fixed inset-0 bg-black/50 z-[70] flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-[95vw] h-[95vh] flex flex-col">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-[95vw] h-[95vh] flex flex-col relative overflow-hidden">
         {/* Header */}
-        <div className="p-4 border-b bg-gradient-to-r from-violet-600 to-indigo-600 text-white rounded-t-2xl shrink-0">
-           {/* ... Header Content (Keep existing) ... */}
+        <div className="p-4 border-b bg-gradient-to-r from-violet-600 to-indigo-600 text-white shrink-0">
+           {/* ... Header Content ... */}
            <div className="flex items-center justify-between mb-4">
             <div className="flex flex-col gap-1">
               <h1 className="text-xl font-bold">Assignment Assistant</h1>
@@ -270,7 +300,7 @@ export default function AssignmentWorkflow({
 
           {!uploadMode && (
             <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-white/20">
-               {/* Stepper (Keep existing but compact) */}
+               {/* Stepper */}
                {stages.map((stage, idx) => (
                  <div key={stage.num} className="flex items-center shrink-0">
                     <button
@@ -293,11 +323,14 @@ export default function AssignmentWorkflow({
           )}
         </div>
 
-        {/* 3-Column Workspace */}
-        <div className="flex-1 overflow-hidden flex flex-row">
+        {/* Resizable 3-Column Workspace */}
+        <div className="flex-1 overflow-hidden flex flex-row relative">
           
-          {/* LEFT: Stage Guide (25%) */}
-          <div className="w-1/4 min-w-[300px] border-r border-gray-200 overflow-y-auto bg-gray-50 flex flex-col">
+          {/* LEFT: Stage Guide (Resizable) */}
+          <div 
+             className="min-w-[300px] border-r border-gray-200 overflow-y-auto bg-gray-50 flex flex-col shrink-0"
+             style={{ width: `${leftColWidth}%` }}
+          >
             <div className="p-4 bg-white border-b sticky top-0 z-10 shadow-sm">
                 <h3 className="font-bold text-gray-800 flex items-center gap-2">
                    <div className="bg-violet-100 text-violet-700 w-6 h-6 rounded-full flex items-center justify-center text-xs">
@@ -371,9 +404,18 @@ export default function AssignmentWorkflow({
             </div>
           </div>
 
-          {/* MIDDLE: Persistent Editor (45%) */}
-          <div className="flex-1 flex flex-col bg-white min-w-[500px] relative">
-             {/* Import AssignmentEditor dynamically or top-left */}
+          {/* DRAG HANDLE */}
+          <div 
+             className={`w-1 bg-gray-200 hover:bg-violet-400 cursor-col-resize z-20 flex flex-col justify-center items-center transition-colors ${
+                 isResizing ? 'bg-violet-500' : ''
+             }`}
+             onMouseDown={handleMouseDown}
+          >
+             <div className="w-0.5 h-8 bg-black/10 rounded-full" />
+          </div>
+
+          {/* MIDDLE: Persistent Editor (Expands to fill) */}
+          <div className="flex-1 flex flex-col bg-white min-w-[400px] relative z-0">
              <div className="absolute inset-0 flex flex-col">
                 <AssignmentEditor 
                    valueHtml={draftHtml}
@@ -383,14 +425,26 @@ export default function AssignmentWorkflow({
              </div>
           </div>
 
-          {/* RIGHT: Durmah Mentor (30%) */}
-          <div className="w-[350px] bg-white border-l border-gray-200 flex flex-col shadow-inner z-20">
+          {/* RIGHT: Durmah Mentor (Dockable) */}
+          {/* If Minimized: Undock via CSS absolute positioning. If NOT minimized: Standard Flex column */}
+          <div 
+             className={`transition-all duration-300 ease-in-out bg-white border-l border-gray-200 flex flex-col shadow-inner z-30
+                 ${isDurmahMinimized 
+                     ? 'absolute bottom-4 right-4 w-[340px] h-auto max-h-[500px] border rounded-xl shadow-2xl !border-gray-200' 
+                     : 'w-[350px] h-full border-t-0 border-b-0 rounded-none' 
+                 }
+             `}
+          >
              <DurmahChat 
                contextType="assignment"
                contextTitle={safeAssignmentData.title}
                contextId={assignmentId}
                systemHint={`User is currently in Stage ${currentStage}: ${stages.find(s=>s.num===currentStage)?.name}. Help them with this specific stage.`}
-               className="h-full border-0 rounded-none"
+               className={`h-full border-0 ${isDurmahMinimized ? 'rounded-xl' : 'rounded-none'}`}
+               
+               // NEW Props for Minimization
+               isMinimized={isDurmahMinimized}
+               onToggleMinimize={() => setIsDurmahMinimized(!isDurmahMinimized)}
              />
           </div>
 
