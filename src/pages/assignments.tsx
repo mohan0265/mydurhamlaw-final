@@ -31,6 +31,7 @@ export default function AssignmentsPage() {
   
   // UI State
   const [showCreateForm, setShowCreateForm] = useState(false)
+  const [isEditing, setIsEditing] = useState(false) // NEW: Edit mode
   const [showWorkflow, setShowWorkflow] = useState(false)
   
   // Chat State
@@ -141,6 +142,7 @@ export default function AssignmentsPage() {
   // Handlers
   const handleCreateSave = () => {
     setShowCreateForm(false)
+    setIsEditing(false)
     fetchAssignments()
     router.push('/assignments', undefined, { shallow: true });
   }
@@ -184,7 +186,10 @@ Please help me:
 
     setChatInitialPrompt(prompt);
     
-    // If using a global widget event as fallback
+    // Explicitly open workflow modal
+    setShowWorkflow(true);
+    
+    // Send context to sidebar chat as well (optional, for continuity)
     if (typeof window !== 'undefined') {
         window.dispatchEvent(new CustomEvent('durmah:message', { 
             detail: { text: prompt, mode: 'study' }
@@ -239,11 +244,15 @@ Please help me:
 
             {/* Center Col: Detail or Form (5 cols) */}
             <div className="lg:col-span-5 h-full">
-               {showCreateForm ? (
+               {showCreateForm || (isEditing && selectedAssignment) ? (
                  <AssignmentCreateForm 
-                   onCancel={() => setShowCreateForm(false)} 
+                   onCancel={() => {
+                      setShowCreateForm(false);
+                      setIsEditing(false);
+                   }} 
                    onSave={handleCreateSave}
                    initialDate={router.query.date ? new Date(router.query.date as string) : undefined}
+                   initialData={isEditing && selectedAssignment ? selectedAssignment : undefined}
                  />
                ) : selectedAssignment ? (
                  <AssignmentDetail 

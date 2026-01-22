@@ -4,13 +4,16 @@ import { useAuth } from '@/lib/supabase/AuthContext';
 import { Loader2, Calendar as CalendarIcon, Save, X, Upload, FileText, CheckCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 
+import { Assignment } from '@/types/assignments';
+
 interface AssignmentCreateFormProps {
   onCancel: () => void;
   onSave: () => void;
   initialDate?: Date; // For YAAG quick-add
+  initialData?: Assignment; // For editing
 }
 
-export default function AssignmentCreateForm({ onCancel, onSave, initialDate }: AssignmentCreateFormProps) {
+export default function AssignmentCreateForm({ onCancel, onSave, initialDate, initialData }: AssignmentCreateFormProps) {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -18,15 +21,19 @@ export default function AssignmentCreateForm({ onCancel, onSave, initialDate }: 
   const [uploadedFileData, setUploadedFileData] = useState<any>(null); // Store upload result for linking
   
   const [formData, setFormData] = useState({
-    title: '',
-    module_code: '',
-    module_name: '',
-    assignment_type: 'Essay',
-    due_date: initialDate ? initialDate.toISOString().split('T')[0] : '',
-    due_time: '12:00',
-    question_text: '',
-    estimated_effort_hours: '',
-    word_limit: '' // NEW: Word limit field
+    title: initialData?.title || '',
+    module_code: initialData?.module_code || '',
+    module_name: initialData?.module_name || '',
+    assignment_type: initialData?.assignment_type || 'Essay',
+    due_date: initialData?.due_date 
+      ? new Date(initialData.due_date).toISOString().split('T')[0] 
+      : (initialDate ? initialDate.toISOString().split('T')[0] : ''),
+    due_time: initialData?.due_date 
+      ? new Date(initialData.due_date).toLocaleTimeString('en-GB', {hour: '2-digit', minute:'2-digit'})
+      : '12:00',
+    question_text: initialData?.question_text || '',
+    estimated_effort_hours: initialData?.estimated_effort_hours?.toString() || '',
+    word_limit: initialData?.word_limit?.toString() || '' // NEW: Word limit field
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -44,9 +51,10 @@ export default function AssignmentCreateForm({ onCancel, onSave, initialDate }: 
     const dueDateTime = new Date(`${formData.due_date}T${formData.due_time || '23:59'}:00`).toISOString();
 
     try {
-      const { data: newAssignment, error } = await supabase
-        .from('assignments')
-        .insert({
+    try {
+      let data, error;
+      
+      const payload = {
           user_id: user.id,
           title: formData.title,
           module_code: formData.module_code,
@@ -56,10 +64,32 @@ export default function AssignmentCreateForm({ onCancel, onSave, initialDate }: 
           question_text: formData.question_text,
           estimated_effort_hours: formData.estimated_effort_hours ? parseFloat(formData.estimated_effort_hours) : null,
           word_limit: formData.word_limit ? parseInt(formData.word_limit) : null, // NEW: Save word limit
-          status: 'not_started'
-        })
-        .select()
-        .single();
+          status: initialData ? initialData.status : 'not_started'
+      };
+
+      if (initialData) {
+         // UPDATE
+         const res = await supabase
+           .from('assignments')
+           .update({ ...payload, updated_at: new Date().toISOString() })
+           .eq('id', initialData.id)
+           .select()
+           .single();
+         data = res.data;
+         error = res.error;
+      } else {
+         // INSERT
+         const res = await supabase
+           .from('assignments')
+           .insert(payload)
+           .select()
+           .single();
+         data = res.data;
+         error = res.error;
+      }
+
+      if (error) throw error;
+      const newAssignment = data;
 
       if (error) throw error;
 
@@ -77,7 +107,7 @@ export default function AssignmentCreateForm({ onCancel, onSave, initialDate }: 
         });
       }
 
-      toast.success("Assignment created!");
+      toast.success(initialData ? "Assignment updated!" : "Assignment created!");
       
       // FIRE AND FORGET: Mark onboarding task as complete
       fetch('/api/onboarding/complete', {
@@ -214,8 +244,8 @@ export default function AssignmentCreateForm({ onCancel, onSave, initialDate }: 
             <FileText className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h2 className="text-2xl font-bold text-gray-900">New Assignment</h2>
-            <p className="text-sm text-gray-500">Add your assignment details below</p>
+            <h2 className="text-2xl font-bold text-gray-900">{initialData ? 'Edit Assignment' : 'New Assignment'}</h2>
+            <p className="text-sm text-gray-500">{initialData ? 'Update details below' : 'Add your assignment details below'}</p>
           </div>
         </div>
         <button
@@ -407,7 +437,7 @@ export default function AssignmentCreateForm({ onCancel, onSave, initialDate }: 
             disabled={loading}
             className="flex-1 py-2.5 bg-violet-600 text-white rounded-lg font-medium hover:bg-violet-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-70"
           >
-            {loading ? <Loader2 className="animate-spin w-5 h-5" /> : <><Save size={18} /> Create Assignment</>}
+            {loading ? <Loader2 className="animate-spin w-5 h-5" /> : <><Save size={18} /> {initialData ? 'Update Assignment' : 'Create Assignment'}</>}
           </button>
         </div>
       </form>

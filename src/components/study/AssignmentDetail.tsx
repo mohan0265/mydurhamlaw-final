@@ -3,7 +3,7 @@ import { format, differenceInDays } from 'date-fns';
 import { getSupabaseClient } from '@/lib/supabase/client';
 import { Assignment, AssignmentStatus } from '@/types/assignments';
 import { 
-  Calendar, CheckCircle, Trash2, Brain, Eye, 
+  Calendar, CheckCircle, Trash2, Brain, Eye, Pencil,
   LayoutDashboard, FileText, CheckSquare, Award, Flag, Send 
 } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -22,10 +22,11 @@ interface AssignmentDetailProps {
   assignment: Assignment;
   onUpdate: () => void;
   onPlanWithAI: () => void;
+  onEdit: () => void; // NEW
   onDelete: () => void;
 }
 
-export default function AssignmentDetail({ assignment, onUpdate, onPlanWithAI, onDelete }: AssignmentDetailProps) {
+export default function AssignmentDetail({ assignment, onUpdate, onPlanWithAI, onEdit, onDelete }: AssignmentDetailProps) {
   const [activeTab, setActiveTab] = useState('overview');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showPreviewModal, setShowPreviewModal] = useState(false);
@@ -88,6 +89,13 @@ export default function AssignmentDetail({ assignment, onUpdate, onPlanWithAI, o
                className="bg-gradient-to-r from-violet-600 to-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all flex items-center gap-2"
              >
                <Brain size={16} /> Plan with Durmah
+             </button>
+             <button 
+                onClick={onEdit}
+                className="p-2 text-gray-400 hover:text-violet-600 hover:bg-violet-50 rounded-lg transition"
+                title="Edit Assignment Details"
+             >
+                <Pencil size={18} />
              </button>
              <button 
                 onClick={() => setShowDeleteConfirm(true)}
