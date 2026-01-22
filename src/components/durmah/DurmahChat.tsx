@@ -63,6 +63,8 @@ export default function DurmahChat({
   const [isHistoryVisible, setIsHistoryVisible] = useState(false);
   const [lastSyncedAt, setLastSyncedAt] = useState<Date | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
+  const showFullUI = !isMinimized || isHistoryVisible;
+
   
   // Refs
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -166,7 +168,20 @@ INSTRUCTIONS:
     }
   }, [messages, voiceTranscript]);
 
-  // ... (lines 162-288)
+  // 5. Handle Send Message
+  const handleSendMessage = async () => {
+      if (!input.trim() || isChatLoading) return;
+      
+      const textToSend = input;
+      setInput("");
+      
+      // Reset textarea height
+      if (textareaRef.current) {
+          textareaRef.current.style.height = 'auto';
+      }
+
+      await sendMessage(textToSend);
+  };
 
   return (
     <div className={`flex flex-col bg-white rounded-xl shadow-sm border border-gray-200 transition-all duration-300 ${className}`}>
@@ -175,7 +190,7 @@ INSTRUCTIONS:
       {/* ... Ethics Banner (366-374) ... */}
 
       {/* Content Area (Hidden if minimized, unless history manually toggled) */}
-      {showFullUI && (
+      {(!isMinimized || isHistoryVisible) && (
           <>
             {/* Messages Area */}
             <div 
