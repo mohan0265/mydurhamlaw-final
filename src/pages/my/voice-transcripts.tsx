@@ -8,7 +8,7 @@ import {
   Filter, Loader2, X, FolderPlus, List, Bookmark,
   MoreHorizontal, Download, Share2, CornerDownRight,
   Home, ChevronLeft, Edit3, Archive, Grid, LayoutList,
-  FolderInput
+  FolderInput, ChevronUp, ChevronDown as ChevronDownIcon
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
@@ -63,7 +63,7 @@ function formatDate(value: string | null) {
 
 // --- Components ---
 
-const Breadcrumbs = ({ path, onNavigate }: { path: { id: string; name: string }[], onNavigate: (id: string) => void }) => (
+const Breadcrumbs = ({ path, onNavigate, isPinned }: { path: { id: string; name: string }[], onNavigate: (id: string) => void, isPinned: boolean }) => (
   <nav className="flex items-center gap-1 text-sm text-slate-500 mb-4 overflow-x-auto whitespace-nowrap pb-2">
     <button onClick={() => onNavigate('all')} className="hover:text-violet-600 transition flex items-center gap-1">
       <Home className="w-4 h-4" />
@@ -164,13 +164,190 @@ const FolderTreeNode = ({
 
 const PAGE_SIZE = 20;
 
+// Helper Component for Highlighting
+const HighlightedText = ({ text, query, currentMatchIndex, matchCounter, onMatchFound }: { 
+  text: string; 
+  query: string; 
+  currentMatchIndex: number;
+  matchCounter: { count: number };
+  onMatchFound?: (el: HTMLElement) => void;
+}) => {
+  if (!query) return <>{text}</>;
+
+  const parts = text.split(new RegExp(`(${query})`, 'gi'));
+  
+  return (
+    <>
+      {parts.map((part, i) => {
+        if (part.toLowerCase() === query.toLowerCase()) {
+          const matchIndex = matchCounter.count++;
+          const isCurrent = matchIndex === currentMatchIndex;
+          
+          return (
+            <span 
+              key={i} 
+              id={`match-${matchIndex}`}
+              className={`rounded px-0.5 transition-all duration-300 ${isCurrent ? 'bg-amber-300 text-slate-900 shadow-sm ring-2 ring-amber-400' : 'bg-yellow-200 text-slate-900'}`}
+            >
+              {part}
+            </span>
+          );
+        }
+        return part;
+      })}
+    </>
+  );
+};
+
+const TranscriptDetailsModal = ({ isOpen, onClose, transcript, searchQuery }: { isOpen: boolean; onClose: () => void; transcript: VoiceJournalRow | null; searchQuery: string }) => {
+  const [currentMatchIndex, setCurrentMatchIndex] = useState(0);
+  const [totalMatches, setTotalMatches] = useState(0);
+
+  // Reset match index when query changes or modal opens
+  useEffect(() => {
+    setCurrentMatchIndex(0);
+    if (!transcript || !searchQuery) {
+      setTotalMatches(0);
+      return;
+    }
+
+    // Count total matches
+    let count = 0;
+    const re = new RegExp(searchQuery, 'gi');
+    if (transcript.topic) count += (transcript.topic.match(re) || []).length;
+    if (transcript.summary) count += (transcript.summary.match(re) || []).length;
+    transcript.transcript?.forEach(turn => {
+      if (turn.text) count += (turn.text.match(re) || []).length;
+    });
+    setTotalMatches(count);
+
+  }, [searchQuery, transcript]);
+
+  // Scroll to match
+  useEffect(() => {
+    if (totalMatches > 0) {
+      const el = document.getElementById(`match-${currentMatchIndex}`);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }
+  }, [currentMatchIndex, totalMatches]);
+
+  const handleNext = () => setCurrentMatchIndex(prev => (prev + 1) % totalMatches);
+  const handlePrev = () => setCurrentMatchIndex(prev => (prev - 1 + totalMatches) % totalMatches);
+
+  if (!isOpen || !transcript) return null;
+
+  // Use a mutable counter for rendering pass
+  const renderCounter = { count: 0 };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-slate-900/60 backdrop-blur-sm">
+       <motion.div 
+         initial={{ opacity: 0, scale: 0.95 }}
+         animate={{ opacity: 1, scale: 1 }}
+         exit={{ opacity: 0, scale: 0.95 }}
+         className="bg-white w-full max-w-3xl max-h-[90vh] rounded-3xl shadow-2xl overflow-hidden flex flex-col"
+       >
+          <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/80">
+             <div className="flex items-center gap-4">
+               <div>
+                  <h2 className="text-xl font-bold text-slate-900">
+                     <HighlightedText 
+                        text={transcript.topic || 'Untitled'} 
+                        query={searchQuery} 
+                        currentMatchIndex={currentMatchIndex}
+                        matchCounter={renderCounter}
+                     />
+                  </h2>
+                  <p className="text-xs text-slate-500 font-medium">
+                     {formatDate(transcript.started_at || transcript.created_at)}
+                  </p>
+               </div>
+               {searchQuery && totalMatches > 0 && (
+                 <div className="flex items-center gap-1 bg-white border border-slate-200 rounded-lg p-1 shadow-sm">
+                   <button onClick={handlePrev} className="p-1 hover:bg-slate-100 rounded text-slate-500 hover:text-slate-900 transition"><ChevronUp className="w-4 h-4" /></button>
+                   <span className="text-xs font-bold text-slate-600 px-1 min-w-[3rem] text-center">{currentMatchIndex + 1} / {totalMatches}</span>
+                   <button onClick={handleNext} className="p-1 hover:bg-slate-100 rounded text-slate-500 hover:text-slate-900 transition"><ChevronDownIcon className="w-4 h-4" /></button>
+                 </div>
+               )}
+             </div>
+             <button onClick={onClose} className="p-2 hover:bg-white rounded-xl shadow-sm transition">
+                <X className="w-5 h-5 text-slate-400" />
+             </button>
+          </div>
+          
+          <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
+             {transcript.summary && (
+               <div className="bg-violet-50 rounded-2xl p-5 border border-violet-100">
+                  <h4 className="text-[10px] font-bold text-violet-700 uppercase tracking-widest mb-2">Auto Summary</h4>
+                  <p className="text-sm text-slate-700 leading-relaxed">
+                     <HighlightedText 
+                        text={transcript.summary} 
+                        query={searchQuery} 
+                        currentMatchIndex={currentMatchIndex}
+                        matchCounter={renderCounter}
+                     />
+                  </p>
+               </div>
+             )}
+
+             <div className="space-y-4">
+                {transcript.transcript?.map((turn, i) => {
+                   const isUser = turn.role === 'you' || turn.role === 'user';
+                   return (
+                    <div key={i} className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
+                       <div className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-relaxed shadow-sm ${
+                         isUser ? 'bg-violet-600 text-white rounded-tr-none' : 'bg-slate-100 text-slate-700 rounded-tl-none'
+                       }`}>
+                          <p className="text-[10px] font-bold uppercase opacity-60 mb-1">{isUser ? 'You' : 'Durmah'}</p>
+                          <HighlightedText 
+                            text={turn.text || ''} 
+                            query={searchQuery} 
+                            currentMatchIndex={currentMatchIndex}
+                            matchCounter={renderCounter}
+                          />
+                       </div>
+                    </div>
+                   );
+                })}
+             </div>
+          </div>
+
+          <div className="p-6 border-t border-slate-100 flex items-center justify-between">
+             <button 
+               onClick={() => {
+                 const text = (transcript.transcript || []).map(turn => `${turn.role || '??'}: ${turn.text || ''}`).join('\n');
+                 navigator.clipboard.writeText(text).then(() => toast.success("Copied transcript"));
+               }}
+               className="flex items-center gap-2 text-sm font-bold text-slate-600 hover:text-violet-600 transition"
+             >
+               <Copy className="w-4 h-4" /> Copy Full Text
+             </button>
+             <button 
+              onClick={onClose}
+              className="px-6 py-2.5 bg-slate-900 text-white text-sm font-bold rounded-xl hover:bg-violet-600 transition"
+             >
+              Close View
+             </button>
+          </div>
+       </motion.div>
+    </div>
+  );
+
+};
+
 export default withAuthProtection(function VoiceTranscriptsPage() {
   const [loading, setLoading] = useState(true);
   const [folders, setFolders] = useState<TranscriptFolder[]>([]);
   const [transcripts, setTranscripts] = useState<VoiceJournalRow[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const [page, setPage] = useState(1);
-  const [selectedFolderId, setSelectedFolderId] = useState('all');
+  const [activeFolderId, setActiveFolderId] = useState('all');
+  const [isPinnedMode, setIsPinnedMode] = useState(false);
+  // Derived for backward compatibility in some helpers
+  const selectedFolderId = activeFolderId; 
+
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
@@ -202,8 +379,8 @@ export default withAuthProtection(function VoiceTranscriptsPage() {
         page: page.toString(),
         sort,
         query: debouncedQuery,
-        folderId: selectedFolderId === 'all' || selectedFolderId === 'pinned' ? '' : selectedFolderId,
-        pinned: selectedFolderId === 'pinned' ? 'true' : ''
+        folderId: activeFolderId === 'all' ? '' : activeFolderId,
+        pinned: isPinnedMode ? 'true' : ''
       });
       const resp = await fetch(`/api/transcripts/list?${params.toString()}`);
       const json = await resp.json();
@@ -216,7 +393,7 @@ export default withAuthProtection(function VoiceTranscriptsPage() {
     } finally {
       setLoading(false);
     }
-  }, [page, sort, debouncedQuery, selectedFolderId]);
+  }, [page, sort, debouncedQuery, activeFolderId, isPinnedMode]);
 
   useEffect(() => {
     loadFolders();
@@ -234,7 +411,7 @@ export default withAuthProtection(function VoiceTranscriptsPage() {
 
   // --- Breadcrumb Logic ---
   const breadcrumbs = useMemo(() => {
-    if (selectedFolderId === 'all' || selectedFolderId === 'pinned') return [];
+    if (activeFolderId === 'all') return [];
     
     const findPath = (nodes: TranscriptFolder[], targetId: string, currentPath: {id:string, name:string}[] = []): {id:string, name:string}[] | null => {
       for (const node of nodes) {
@@ -246,8 +423,8 @@ export default withAuthProtection(function VoiceTranscriptsPage() {
       }
       return null;
     };
-    return findPath(folders, selectedFolderId) || [];
-  }, [folders, selectedFolderId]);
+    return findPath(folders, activeFolderId) || [];
+  }, [folders, activeFolderId]);
 
   // --- Folder Actions ---
   
@@ -302,7 +479,7 @@ export default withAuthProtection(function VoiceTranscriptsPage() {
       });
       if (resp.ok) {
         toast.success("Folder deleted");
-        if (selectedFolderId === id) setSelectedFolderId('all');
+        if (activeFolderId === id) setActiveFolderId('all');
         loadFolders();
       }
     } catch (err) {
@@ -364,14 +541,14 @@ export default withAuthProtection(function VoiceTranscriptsPage() {
         throw new Error(assignJson.error || "Failed to assign to new folder");
       }
 
-      // 2. If we are in a specific folder (not All/Pinned), remove from current
-      if (selectedFolderId !== 'all' && selectedFolderId !== 'pinned' && selectedFolderId !== targetFolderId) {
+      // 2. If we are in a specific folder (not All), remove from current
+      if (activeFolderId !== 'all' && activeFolderId !== targetFolderId) {
         await fetch('/api/transcripts/folders/assign', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ 
               transcriptId: transcriptToMove.id, 
-              folderId: selectedFolderId, 
+              folderId: activeFolderId, 
               assigned: false 
           })
         });
@@ -412,22 +589,22 @@ export default withAuthProtection(function VoiceTranscriptsPage() {
           
           <nav className="space-y-1 mb-8">
             <button 
-              onClick={() => setSelectedFolderId('all')}
+              onClick={() => { setActiveFolderId('all'); setIsPinnedMode(false); }}
               className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-semibold transition ${
-                selectedFolderId === 'all' ? 'bg-violet-50 text-violet-700' : 'text-slate-600 hover:bg-slate-50'
+                activeFolderId === 'all' && !isPinnedMode ? 'bg-violet-50 text-violet-700' : 'text-slate-600 hover:bg-slate-50'
               }`}
             >
               <List className="w-4 h-4" />
               All Transcripts
             </button>
             <button 
-              onClick={() => setSelectedFolderId('pinned')}
+              onClick={() => { setActiveFolderId('all'); setIsPinnedMode(true); }}
               className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-semibold transition ${
-                selectedFolderId === 'pinned' ? 'bg-violet-50 text-violet-700' : 'text-slate-600 hover:bg-slate-50'
+                isPinnedMode && activeFolderId === 'all' ? 'bg-violet-50 text-violet-700' : 'text-slate-600 hover:bg-slate-50'
               }`}
             >
-              <Star className={`w-4 h-4 ${selectedFolderId === 'pinned' ? 'text-amber-500 fill-amber-500' : 'text-slate-400'}`} />
-              Pinned
+              <Star className={`w-4 h-4 ${isPinnedMode || (activeFolderId === 'all' && isPinnedMode) ? 'text-amber-500 fill-amber-500' : 'text-slate-400'}`} />
+              Pinned Items
             </button>
           </nav>
 
@@ -440,8 +617,8 @@ export default withAuthProtection(function VoiceTranscriptsPage() {
                 <FolderTreeNode 
                   key={folder.id} 
                   folder={folder} 
-                  selectedId={selectedFolderId}
-                  onSelect={setSelectedFolderId}
+                  selectedId={activeFolderId}
+                  onSelect={(id) => setActiveFolderId(id)}
                   expandedFolders={expandedFolders}
                   toggleExpand={toggleExpandFolder}
                   onCreateSubfolder={handleCreateFolder}
@@ -461,12 +638,18 @@ export default withAuthProtection(function VoiceTranscriptsPage() {
           <div className="max-w-6xl mx-auto">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div className="min-w-0">
-                <Breadcrumbs path={breadcrumbs} onNavigate={setSelectedFolderId} />
-                <h1 className="text-2xl font-bold text-slate-900 truncate">
-                  {selectedFolderId === 'all' ? 'All Transcripts' : 
-                   selectedFolderId === 'pinned' ? 'Pinned Highlights' : 
-                   breadcrumbs[breadcrumbs.length - 1]?.name || 'Explorer'}
-                </h1>
+                <Breadcrumbs path={breadcrumbs} onNavigate={setActiveFolderId} isPinned={isPinnedMode} />
+                <div className="flex items-center gap-2">
+                  <h1 className="text-2xl font-bold text-slate-900 truncate flex items-center gap-2">
+                    {activeFolderId === 'all' ? 'All Transcripts' : 
+                     breadcrumbs[breadcrumbs.length - 1]?.name || 'Explorer'}
+                  </h1>
+                  {isPinnedMode && (
+                    <span className="bg-amber-100 text-amber-700 text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
+                      <Star className="w-3 h-3 fill-amber-700" /> Pinned Only
+                    </span>
+                  )}
+                </div>
               </div>
 
               <div className="flex items-center gap-2">
@@ -630,73 +813,13 @@ export default withAuthProtection(function VoiceTranscriptsPage() {
         </div>
       </main>
 
-      {/* --- Detail Modal (Slide over or overlay) --- */}
-      <AnimatePresence>
-        {expandedTranscript && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-slate-900/60 backdrop-blur-sm">
-             <motion.div 
-               initial={{ opacity: 0, scale: 0.95 }}
-               animate={{ opacity: 1, scale: 1 }}
-               exit={{ opacity: 0, scale: 0.95 }}
-               className="bg-white w-full max-w-3xl max-h-[90vh] rounded-3xl shadow-2xl overflow-hidden flex flex-col"
-             >
-                <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/80">
-                   <div>
-                      <h2 className="text-xl font-bold text-slate-900">Transcript Details</h2>
-                      <p className="text-xs text-slate-500 font-medium">{transcripts.find(t => t.id === expandedTranscript)?.topic}</p>
-                   </div>
-                   <button onClick={() => setExpandedTranscript(null)} className="p-2 hover:bg-white rounded-xl shadow-sm transition">
-                      <X className="w-5 h-5 text-slate-400" />
-                   </button>
-                </div>
-                
-                <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
-                   {transcripts.find(t => t.id === expandedTranscript)?.summary && (
-                     <div className="bg-violet-50 rounded-2xl p-5 border border-violet-100">
-                        <h4 className="text-[10px] font-bold text-violet-700 uppercase tracking-widest mb-2">Auto Summary</h4>
-                        <p className="text-sm text-slate-700 leading-relaxed">{transcripts.find(t => t.id === expandedTranscript)?.summary}</p>
-                     </div>
-                   )}
 
-                   <div className="space-y-4">
-                      {transcripts.find(t => t.id === expandedTranscript)?.transcript?.map((turn, i) => {
-                         const isUser = turn.role === 'you' || turn.role === 'user';
-                         return (
-                          <div key={i} className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
-                             <div className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-relaxed shadow-sm ${
-                               isUser ? 'bg-violet-600 text-white rounded-tr-none' : 'bg-slate-100 text-slate-700 rounded-tl-none'
-                             }`}>
-                                <p className="text-[10px] font-bold uppercase opacity-60 mb-1">{isUser ? 'You' : 'Durmah'}</p>
-                                {turn.text}
-                             </div>
-                          </div>
-                         );
-                      })}
-                   </div>
-                </div>
-
-                <div className="p-6 border-t border-slate-100 flex items-center justify-between">
-                   <button 
-                     onClick={() => {
-                       const t = transcripts.find(x => x.id === expandedTranscript);
-                       const text = (t?.transcript || []).map(turn => `${turn.role || '??'}: ${turn.text || ''}`).join('\n');
-                       navigator.clipboard.writeText(text).then(() => toast.success("Copied transcript"));
-                     }}
-                     className="flex items-center gap-2 text-sm font-bold text-slate-600 hover:text-violet-600 transition"
-                   >
-                     <Copy className="w-4 h-4" /> Copy Full Text
-                   </button>
-                   <button 
-                    onClick={() => setExpandedTranscript(null)}
-                    className="px-6 py-2.5 bg-slate-900 text-white text-sm font-bold rounded-xl hover:bg-violet-600 transition"
-                   >
-                    Close View
-                   </button>
-                </div>
-             </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+      <TranscriptDetailsModal 
+        isOpen={!!expandedTranscript}
+        onClose={() => setExpandedTranscript(null)}
+        transcript={transcripts.find(t => t.id === expandedTranscript) || null}
+        searchQuery={searchQuery}
+      />
 
       <AnimatePresence>
         {transcriptToMove && (
