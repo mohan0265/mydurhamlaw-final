@@ -5,6 +5,7 @@ import { Assignment } from '@/types/assignments';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { BookOpen, Clock, ArrowRight, Plus } from 'lucide-react';
 import { format } from 'date-fns';
+import { calculateDeadlineStatus } from '@/lib/utils/deadline';
 
 export default function UpcomingAssignmentsWidget({ userId }: { userId: string }) {
   const [assignments, setAssignments] = useState<Assignment[]>([]);
@@ -60,8 +61,11 @@ export default function UpcomingAssignmentsWidget({ userId }: { userId: string }
                     <span className="text-[10px] font-bold uppercase tracking-wider text-violet-600 bg-violet-50 px-1.5 rounded-sm">
                        {a.assignment_type || 'Task'}
                     </span>
-                    <span className="text-xs text-gray-500 group-hover:text-violet-600 flex items-center gap-1">
-                       <Clock size={10} /> {format(new Date(a.due_date), 'MMM d')}
+                    <span className={`text-xs flex items-center gap-1 ${calculateDeadlineStatus(a.due_date).isUrgent ? 'text-orange-600 font-bold' : 'text-gray-500 group-hover:text-violet-600'}`}>
+                       <Clock size={10} /> 
+                       {calculateDeadlineStatus(a.due_date).isUrgent 
+                          ? calculateDeadlineStatus(a.due_date).text 
+                          : format(new Date(a.due_date), 'MMM d')}
                     </span>
                  </div>
                  <h4 className="text-sm font-bold text-gray-800 line-clamp-1 mb-0.5">{a.title}</h4>

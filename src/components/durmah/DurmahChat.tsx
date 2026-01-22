@@ -83,6 +83,26 @@ export default function DurmahChat({
     sessionId: contextId ? uuidv5(`assignment-${user?.id}-${contextId}`, DURMAH_NAMESPACE) : null
   });
 
+  // Audio Ref for Voice
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  // CRITICAL FIX: Create audio element ONCE
+  useEffect(() => {
+    if (!audioRef.current) {
+        const audio = document.createElement('audio');
+        audio.style.display = 'none';
+        audio.id = `durmah-chat-audio-${contextId || 'general'}`;
+        document.body.appendChild(audio);
+        audioRef.current = audio;
+    }
+    return () => {
+        if (audioRef.current && document.body.contains(audioRef.current)) {
+            document.body.removeChild(audioRef.current);
+            audioRef.current = null;
+        }
+    };
+  }, [contextId]);
+
   // 2. Initialize Voice Hook
   const {
     isConnected: isVoiceConnected,
@@ -97,7 +117,8 @@ export default function DurmahChat({
     userName: durmahCtx.firstName || 'Student',
     voiceId: voiceId,
     initialMessage: initialPrompt || `I'm ready to help with ${contextTitle}.`,
-    systemInstruction: `You are Durmah, a helpful academic tutor. You are helping with the assignment: "${contextTitle}". Be concise, encouraging, and helpful. Do not write the essay for the student.`
+    systemInstruction: `You are Durmah, a helpful academic tutor. You are helping with the assignment: "${contextTitle}". Be concise, encouraging, and helpful. Do not write the essay for the student.`,
+    audioRef // Pass the audio ref!
   });
 
   // 3. Sync Voice Transcript to Chat

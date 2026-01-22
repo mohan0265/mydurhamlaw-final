@@ -1,5 +1,6 @@
 import { Assignment } from '@/types/assignments';
 import { differenceInDays, format } from 'date-fns';
+import { calculateDeadlineStatus } from '@/lib/utils/deadline';
 import { Calendar, Clock, BookOpen, Target, Percent } from 'lucide-react';
 
 interface OverviewTabProps {
@@ -8,20 +9,19 @@ interface OverviewTabProps {
 
 export default function OverviewTab({ assignment }: OverviewTabProps) {
   const due = new Date(assignment.due_date);
-  const daysLeft = differenceInDays(due, new Date());
-  const isOverdue = daysLeft < 0;
+  const status = calculateDeadlineStatus(assignment.due_date);
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
       {/* Key Metrics Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className={`p-4 rounded-xl border ${isOverdue ? 'bg-red-50 border-red-100' : 'bg-blue-50 border-blue-100'}`}>
-          <div className={`${isOverdue ? 'text-red-500' : 'text-blue-500'} mb-2`}><Clock size={20} /></div>
-          <p className={`text-xs ${isOverdue ? 'text-red-600' : 'text-blue-600'} font-bold uppercase tracking-wider`}>Time Remaining</p>
-          <p className={`text-xl font-bold ${isOverdue ? 'text-red-900' : 'text-blue-900'}`}>
-             {isOverdue ? 'Overdue' : `${daysLeft} days`}
+        <div className={`p-4 rounded-xl border ${status.bgClass}`}>
+          <div className={`${status.colorClass.replace('text-', 'text-opacity-80 text-')} mb-2`}><Clock size={20} /></div>
+          <p className={`text-xs ${status.colorClass} font-bold uppercase tracking-wider`}>Time Remaining</p>
+          <p className={`text-xl font-bold ${status.colorClass}`}>
+             {status.text}
           </p>
-          <p className="text-xs opacity-70 mt-1">{format(due, 'MMM d, yyyy')}</p>
+          <p className="text-xs opacity-70 mt-1 text-gray-600">{format(due, 'MMM d, HH:mm')}</p>
         </div>
 
         <div className="bg-purple-50 p-4 rounded-xl border border-purple-100">
