@@ -170,29 +170,23 @@ export default function AssignmentsPage() {
     if (!selectedAssignment) return;
     
     // Build context-aware prompt
+    // Build context-aware prompt (Internal System Context)
     const brief = selectedAssignment.brief_rich 
       ? (typeof selectedAssignment.brief_rich === 'string' ? selectedAssignment.brief_rich : JSON.stringify(selectedAssignment.brief_rich))
       : selectedAssignment.question_text || 'No brief provided.';
 
-    const prompt = `I want to plan my assignment "${selectedAssignment.title}".
-Due Date: ${new Date(selectedAssignment.due_date).toDateString()}
-Module: ${selectedAssignment.module_code || 'Unknown'}
-Brief: ${brief.substring(0, 1000)}
-
-Please help me:
-1. Break this down into key milestones.
-2. Suggest a checklist of tasks.
-3. Identify key resources I might need.`;
-
-    setChatInitialPrompt(prompt);
+    // User-facing message (Simple)
+    const userMessage = `I'd like to plan my assignment "${selectedAssignment.title}".`;
+    
+    setChatInitialPrompt(userMessage);
     
     // Explicitly open workflow modal
     setShowWorkflow(true);
     
-    // Send context to sidebar chat as well (optional, for continuity)
+    // Send SHORT message to sidebar chat/global widget
     if (typeof window !== 'undefined') {
         window.dispatchEvent(new CustomEvent('durmah:message', { 
-            detail: { text: prompt, mode: 'study' }
+            detail: { text: userMessage, mode: 'study' }
         }));
     }
     
@@ -281,6 +275,7 @@ Please help me:
                   contextTitle={selectedAssignment.title}
                   contextId={selectedAssignment.id}
                   initialPrompt={chatInitialPrompt}
+                  systemHint={`Brief: ${selectedAssignment.brief_rich}`} 
                 />
               )}
             </div>

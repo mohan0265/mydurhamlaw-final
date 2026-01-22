@@ -207,7 +207,7 @@ INSTRUCTIONS:
                         : "bg-white text-gray-800 border border-gray-100 rounded-tl-sm transition-colors hover:border-violet-200"
                     }`}
                     >
-                    <div className="whitespace-pre-wrap">{m.content}</div>
+                    <div className="whitespace-pre-wrap max-h-[300px] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 pr-1">{m.content}</div>
                     
                     {/* Copy Button (only on hover) */}
                     {m.role === 'assistant' && (

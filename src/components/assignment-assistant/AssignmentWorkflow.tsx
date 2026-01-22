@@ -470,7 +470,13 @@ export default function AssignmentWorkflow({
                contextType="assignment"
                contextTitle={safeAssignmentData.title}
                contextId={assignmentId}
-               systemHint={`User is currently in Stage ${currentStage}: ${stages.find(s=>s.num===currentStage)?.name}. Help them with this specific stage.`}
+               systemHint={`User is currently in Stage ${currentStage}: ${stages.find(s=>s.num===currentStage)?.name}. 
+               
+ASSIGNMENT CONTEXT:
+Brief: ${safeAssignmentData.brief_rich || safeAssignmentData.question_text || 'No brief'}
+Due: ${safeAssignmentData.due_date}
+
+INSTRUCTION: Help them with this specific stage.`}
                className={`h-full border-0 ${isDurmahMinimized ? 'rounded-xl' : 'rounded-none'}`}
                
                // NEW Props for Minimization
