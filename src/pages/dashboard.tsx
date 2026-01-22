@@ -158,7 +158,9 @@ export default function Dashboard() {
            <CoreActionCard 
               title="Assignments"
               icon={<FileText className="w-5 h-5 text-orange-600" />}
-              link="/assignments"
+              link={nextAssignment && nextAssignment.current_stage > 0 
+                  ? `/assignments?assignmentId=${nextAssignment.id}&view=workflow&stage=${nextAssignment.current_stage}` 
+                  : "/assignments"}
               preview={
                  nextAssignment ? (
                      <div className="mt-3">

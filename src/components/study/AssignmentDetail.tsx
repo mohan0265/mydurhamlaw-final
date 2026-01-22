@@ -88,7 +88,8 @@ export default function AssignmentDetail({ assignment, onUpdate, onPlanWithAI, o
                onClick={onPlanWithAI}
                className="bg-gradient-to-r from-violet-600 to-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all flex items-center gap-2"
              >
-               <Brain size={16} /> Plan with Durmah
+               {status === 'not_started' ? <Brain size={16} /> : <div className="flex items-center gap-1"><Brain size={16} /><span className="text-white/50 text-[10px] mx-1">|</span></div>}
+               {status === 'not_started' ? 'Plan with Durmah' : 'Resume Assignment'}
              </button>
              <button 
                 onClick={onEdit}

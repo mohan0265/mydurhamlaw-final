@@ -58,6 +58,9 @@ export default function AssignmentWorkflow({
   const [isDurmahMinimized, setIsDurmahMinimized] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
   
+  // Jump Logic State
+  const [showJumpConfirm, setShowJumpConfirm] = useState<{target: number, name: string} | null>(null);
+  
   // Initialize draft from loaded progress
   useEffect(() => {
     if (stageData?.draft) {
@@ -282,6 +285,14 @@ export default function AssignmentWorkflow({
             
             <div className="flex items-center gap-2">
               <button
+                 onClick={onClose}
+                 className="px-3 py-1.5 bg-white/10 hover:bg-white/20 rounded-lg transition flex items-center gap-2 border border-white/20"
+              >
+                  <ArrowLeft size={16} />
+                  <span className="text-sm font-medium">Back to Details</span>
+              </button>
+              
+              <button
                 onClick={onClose}
                 className="px-3 py-1.5 bg-white/20 hover:bg-white/30 rounded-lg transition flex items-center gap-2"
               >
@@ -302,21 +313,41 @@ export default function AssignmentWorkflow({
             <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-white/20">
                {/* Stepper */}
                {stages.map((stage, idx) => (
-                 <div key={stage.num} className="flex items-center shrink-0">
-                    <button
-                      onClick={() => {
-                        if (stage.num <= currentStage || stageData[`stage_${stage.num}_complete`]) {
+                 <div key={stage.num} className="flex flex-col items-center gap-1 shrink-0 px-2 group cursor-pointer relative"
+                    onClick={() => {
+                        // Allow clicking ANY stage
+                        if (stage.num === currentStage) return;
+                        
+                        // If moving back or to a completed stage, just go
+                        if (stage.num < currentStage || stageData[`stage_${stage.num}_complete`]) {
                            setCurrentStage(stage.num);
+                        } else {
+                           // If jumping forward to unstarted stage, confirm
+                           setShowJumpConfirm({ target: stage.num, name: stage.name });
                         }
-                      }}
-                      className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm transition-all ${
-                        currentStage === stage.num ? 'bg-white text-violet-600 ring-2 ring-white' :
-                        stage.num < currentStage ? 'bg-green-400 text-white' : 'bg-white/20 text-white/50'
-                      }`}
-                    >
-                       {stage.num < currentStage ? <CheckCircle size={16} /> : stage.num}
-                    </button>
-                    {idx < stages.length - 1 && <div className="w-8 h-0.5 bg-white/20 mx-1" />}
+                    }}
+                 >
+                    <div className="flex items-center">
+                        <button
+                          className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm transition-all z-10 ${
+                            currentStage === stage.num ? 'bg-white text-violet-600 ring-4 ring-white/30 scale-110' :
+                            stage.num < currentStage ? 'bg-green-400 text-white' : 'bg-white/20 text-white hover:bg-white/30'
+                          }`}
+                        >
+                           {stage.num < currentStage ? <CheckCircle size={16} /> : stage.num}
+                        </button>
+                        {idx < stages.length - 1 && (
+                            <div className={`h-0.5 w-12 transition-all ${
+                                currentStage > stage.num ? 'bg-green-400/50' : 'bg-white/10'
+                            }`} />
+                        )}
+                    </div>
+                    {/* Label */}
+                    <span className={`text-[10px] font-semibold transition-colors uppercase tracking-wider ${
+                        currentStage === stage.num ? 'text-white' : 'text-white/50 group-hover:text-white/80'
+                    }`}>
+                        {stage.name}
+                    </span>
                  </div>
                ))}
             </div>
@@ -450,6 +481,39 @@ export default function AssignmentWorkflow({
 
         </div>
       </div>
+      {/* Jump Confirmation Modal */}
+      {showJumpConfirm && (
+        <div className="absolute inset-0 z-[80] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in">
+             <div className="bg-white rounded-2xl p-6 shadow-2xl max-w-md w-full border border-gray-100">
+                <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center text-orange-600 mb-4 mx-auto">
+                    <ArrowLeft className="w-6 h-6 rotate-180" />
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 text-center mb-2">Jump to {showJumpConfirm.name}?</h3>
+                <p className="text-gray-600 text-center text-sm mb-6">
+                    You're skipping ahead. This is great if you've already done work outside the app. 
+                    <br/><br/>
+                    We'll let you paste your work, but Durmah might have less context to help you.
+                </p>
+                <div className="flex gap-3">
+                    <button 
+                        onClick={() => setShowJumpConfirm(null)}
+                        className="flex-1 py-3 rounded-xl border border-gray-200 font-bold text-gray-700 hover:bg-gray-50 transition"
+                    >
+                        Cancel
+                    </button>
+                    <button 
+                        onClick={() => {
+                            setCurrentStage(showJumpConfirm.target);
+                            setShowJumpConfirm(null);
+                        }}
+                        className="flex-1 py-3 rounded-xl bg-violet-600 font-bold text-white hover:bg-violet-700 transition shadow-lg shadow-violet-200"
+                    >
+                        Yes, Jump
+                    </button>
+                </div>
+             </div>
+        </div>
+      )}
     </div>
   );
 }

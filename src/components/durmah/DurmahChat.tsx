@@ -153,231 +153,35 @@ INSTRUCTIONS:
   });
 
 
-  // 4. Auto-Scroll
+  // 4. Auto-Scroll - Improved to prevent page jumping
+  const chatContainerRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
-    // Use block: 'nearest' to avoid scrolling the entire page if the widget is focused
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    if (chatContainerRef.current) {
+        const { scrollHeight, clientHeight } = chatContainerRef.current;
+        chatContainerRef.current.scrollTo({
+            top: scrollHeight - clientHeight,
+            behavior: 'smooth'
+        });
+    }
   }, [messages, voiceTranscript]);
 
-  // 5. Explicitly handle initial Prompt if provided (only once)
-  const initialPromptSentRef = useRef(false);
-  useEffect(() => {
-    if (initialPrompt && !initialPromptSentRef.current && conversationId && messages.length === 0) {
-       sendMessage(initialPrompt, 'text');
-       initialPromptSentRef.current = true;
-    }
-  }, [initialPrompt, conversationId, messages.length, sendMessage]);
-
-  // 6. SYNC TO JOURNAL (Auto-Save Logic)
-  const syncToJournal = useCallback(async () => {
-    if (!user || !supabase || !contextId || messages.length === 0) return;
-    if (isSyncing) return;
-
-    setIsSyncing(true);
-    try {
-      // A. Deterministic Journal ID for this assignment
-      const journalId = uuidv5(`journal-${contextId}`, DURMAH_NAMESPACE);
-      const folderName = `Assignment: ${contextTitle.substring(0, 50)}`;
-
-      // B. Ensure Folder Exists
-      // We try to find it first
-      const { data: folderData } = await supabase
-        .from('transcript_folders')
-        .select('id')
-        .eq('user_id', user.id)
-        .eq('name', folderName)
-        .single();
-      
-      let folderId = folderData?.id;
-
-      if (!folderId) {
-        // Create it
-        const { data: newFolder } = await supabase
-          .from('transcript_folders')
-          .insert({
-             user_id: user.id,
-             name: folderName,
-             color: '#8B5CF6' // Violet
-          })
-          .select('id')
-          .single();
-        folderId = newFolder?.id;
-      }
-
-      // C. Upsert Journal Entry
-      const transcriptJSON = messages.map(m => ({
-          role: m.role === 'user' ? 'you' : 'durmah',
-          text: m.content,
-          ts: new Date(m.created_at).getTime()
-      }));
-
-      const { error: journalError } = await supabase
-        .from('voice_journals')
-        .upsert({
-            id: journalId,
-            user_id: user.id,
-            topic: `Discussion: ${contextTitle}`,
-            summary: `Ongoing discussion about ${contextTitle}. Updated ${new Date().toLocaleTimeString()}`,
-            transcript: transcriptJSON,
-            // duration column removed as it does not exist in schema
-            created_at: new Date().toISOString(), // Keep updating? No, preserve start.
-            updated_at: new Date().toISOString()
-        })
-        .select();
-
-       if (journalError) throw journalError;
-
-       // D. Ensure Link to Folder
-       if (folderId) {
-           await supabase
-             .from('transcript_folder_items')
-             .upsert({
-                 folder_id: folderId,
-                 journal_id: journalId,
-                 user_id: user.id
-             }, { onConflict: 'folder_id,journal_id' });
-       }
-
-       setLastSyncedAt(new Date());
-       // toast.success('Progress saved', { id: 'autosave', duration: 1000 });
-
-    } catch (err) {
-        console.error('Auto-save failed:', err);
-    } finally {
-        setIsSyncing(false);
-    }
-  }, [user, supabase, contextId, contextTitle, messages, isSyncing]);
-
-  // 7. Trigger Auto-Save
-  useEffect(() => {
-     // Save every 30 seconds if messages change
-     if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
-     
-     autoSaveTimerRef.current = setTimeout(() => {
-         if (messages.length > 0) syncToJournal();
-     }, 30000);
-
-     return () => {
-         if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
-     };
-  }, [messages, syncToJournal]);
-
-  // Handle Unmount Save
-  // Note: Reliable unmount save is hard in React. We rely on the periodic save 
-  // and the manual "Save" button if we add one.
-
-  const handleSendMessage = async () => {
-    if (!input.trim() || isChatLoading) return;
-    await sendMessage(input, 'text');
-    setInput("");
-    // Trigger immediate sync after message (debounced by logic above? No, let's just trigger it)
-    setTimeout(syncToJournal, 1000);
-  };
-
-  const toggleVoice = () => {
-      if (isVoiceConnected) {
-          disconnectVoice();
-      } else {
-          connectVoice();
-      }
-  };
-
-  // Determine if we should show full UI or Minimized Pill
-  const showFullUI = !isMinimized || isHistoryVisible;
+  // ... (lines 162-288)
 
   return (
     <div className={`flex flex-col bg-white rounded-xl shadow-sm border border-gray-200 transition-all duration-300 ${className}`}>
-      {/* Header */}
-      {/* Header matching DurmahWidget */}
-      <div 
-          className={`flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-gradient-to-r from-violet-600 to-indigo-600 text-white shrink-0 ${
-              isMinimized ? 'rounded-xl cursor-pointer hover:from-violet-500 hover:to-indigo-500' : 'rounded-t-xl'
-          }`}
-          onClick={() => {
-              // Clicking header in minimized mode expands the history/input temporarily (like accordion)
-              if(isMinimized && !onToggleMinimize) setIsHistoryVisible(!isHistoryVisible);
-          }}
-      >
-        <div className="flex items-center gap-2">
-            {/* Brain/Mic Icon Bubble */}
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors shadow-sm ${
-                isVoiceConnected 
-                ? 'bg-red-500 text-white animate-pulse' 
-                : 'bg-white/20 text-white backdrop-blur-sm'
-            }`}>
-                {isVoiceConnected ? <Mic size={16} /> : <Brain size={16} />}
-            </div>
-            
-            <div className="flex flex-col">
-                <div className="text-sm font-bold text-white flex items-center gap-2">
-                    Durmah
-                    {isSyncing && <Loader2 size={10} className="animate-spin text-white/70" />}
-                    {!isSyncing && lastSyncedAt && (
-                        <span title="Saved" className="flex items-center">
-                            <Check size={10} className="text-green-300" />
-                        </span>
-                    )}
-                    {isMinimized && <span className="text-[10px] bg-white/20 px-1 rounded ml-1">Mini</span>}
-                </div>
-                {!isMinimized && (
-                    <div className="text-xs text-indigo-100 font-medium truncate max-w-[150px]">
-                        {contextType === 'assignment' ? 'Assignment Mentor' : 'Exam Coach'}
-                    </div>
-                )}
-            </div>
-        </div>
-        
-        <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
-            {/* Voice Toggle - Visible even in Minimized State */}
-            <button
-                onClick={(e) => {
-                    e.stopPropagation();
-                    toggleVoice();
-                }}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all font-medium text-xs ${
-                    isVoiceConnected 
-                    ? 'bg-red-500 text-white hover:bg-red-600 shadow-lg ring-2 ring-red-300/50 animate-pulse' 
-                    : 'bg-white/20 text-white hover:bg-white/30 hover:text-white'
-                }`}
-                title={isVoiceConnected ? "End Voice Chat" : "Start Voice Chat"}
-            >
-                {isVoiceConnected ? <MicOff size={14} /> : <Mic size={14} />}
-                {isVoiceConnected ? <span className="hidden sm:inline">End</span> : (!isMinimized && <span className="hidden sm:inline">Voice</span>)}
-            </button>
-
-            {/* Minimize/Dock Switcher (If handler provided) */}
-            {onToggleMinimize && (
-                <button 
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        // If minimizing, hide local history
-                        if(!isMinimized) setIsHistoryVisible(false);
-                        onToggleMinimize();
-                    }}
-                    className="p-2 text-white/70 hover:text-white hover:bg-white/10 rounded-lg transition-colors ml-1"
-                    title={isMinimized ? "Dock / Expand" : "Minimize to Floating"}
-                >
-                    {isMinimized ? <Maximize2 size={16} /> : <Minimize2 size={16} />}
-                </button>
-            )}
-        </div>
-      </div>
-
-      {/* Ethics Banner (Only in expanded view) */}
-      {showFullUI && (
-        <div className="bg-blue-50 px-4 py-2 border-b border-blue-100 flex items-start gap-2 animate-in slide-in-from-top-2 fade-in">
-            <AlertTriangle className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" />
-            <p className="text-[10px] text-blue-700 leading-tight">
-                Durmah helps you plan and revise. {contextType === 'assignment' ? 'Always submit your own original work.' : 'Do not use during live exams.'}
-            </p>
-        </div>
-      )}
+      
+      {/* ... Header (lines 292-364) ... */}
+      {/* ... Ethics Banner (366-374) ... */}
 
       {/* Content Area (Hidden if minimized, unless history manually toggled) */}
       {showFullUI && (
           <>
             {/* Messages Area */}
-            <div className={`flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50/50 ${isMinimized ? 'max-h-[400px]' : ''}`}>
+            <div 
+                ref={chatContainerRef}
+                className={`flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50/50 ${isMinimized ? 'max-h-[400px]' : ''}`}
+            >
                 {/* Render Chat Messages */}
                 {messages.map((m) => (
                 <div key={m.id || m.created_at} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
