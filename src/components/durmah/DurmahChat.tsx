@@ -177,7 +177,7 @@ export default function DurmahChat({
             topic: `Discussion: ${contextTitle}`,
             summary: `Ongoing discussion about ${contextTitle}. Updated ${new Date().toLocaleTimeString()}`,
             transcript: transcriptJSON,
-            duration: 0, // Text chat
+            // duration column removed as it does not exist in schema
             created_at: new Date().toISOString(), // Keep updating? No, preserve start.
             updated_at: new Date().toISOString()
         })
@@ -263,7 +263,7 @@ export default function DurmahChat({
         <div className="flex items-center gap-2">
             {/* Voice Toggle */}
             <button
-                onClick={toggleVoice}
+                onClick={() => toggleVoice()}
                 className={`p-2 rounded-full transition-colors ${
                     isVoiceConnected 
                     ? 'bg-red-500 text-white hover:bg-red-600 shadow-md ring-2 ring-red-200' 
