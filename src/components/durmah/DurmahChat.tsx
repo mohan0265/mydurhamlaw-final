@@ -353,7 +353,7 @@ export default function DurmahChat({
                         toast.success("Copied to clipboard");
                     }}
                     className="absolute -right-8 top-2 opacity-0 group-hover:opacity-100 p-1.5 text-gray-400 hover:text-violet-600 bg-white rounded-full shadow-sm border border-gray-100 transition-all"
-                    title="Copy text"
+                    title="Copy to Draft / Clipboard"
                   >
                       <FileText size={12} />
                   </button>

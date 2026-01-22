@@ -75,6 +75,33 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // Insert helper: retries without scope_id if column missing in DB
     async function insertDurmahMessage(payload: any): Promise<{ data: any; error: PostgrestError | null; usedScopeId: boolean }> {
+      
+      // New Logic: Check if Assignment Scope -> Redirect to new tables
+      if (scope === 'assignment' && context?.assignmentId) {
+          const sessionId = payload.conversation_id;
+          const assignmentId = context.assignmentId;
+          
+          // 1. Ensure Session
+          await supabase.from('assignment_sessions').upsert({
+              id: sessionId,
+              assignment_id: assignmentId,
+              user_id: userId,
+              title: 'Assignment Chat' // Could be better but efficient
+          }, { onConflict: 'id' });
+
+          // 2. Insert Message
+          const { data, error } = await supabase.from('assignment_session_messages').insert({
+              session_id: sessionId,
+              user_id: userId,
+              role: payload.role,
+              content: payload.content,
+              // sentiment/tokens can be added later
+          }).select('id').single();
+
+          return { data, error, usedScopeId: true };
+      }
+
+      // Legacy Logic
       const attempt = async (p: any) => {
         return await supabase
           .from('durmah_messages')

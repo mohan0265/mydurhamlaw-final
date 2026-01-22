@@ -42,6 +42,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .single();
 
     if (error) {
+        // If unique violation (already completed), return success
+        if (error.code === '23505') { // unique_violation
+            return res.status(200).json({ success: true, message: 'Already completed' });
+        }
         // If foreign key violation (invalid task_key), return 400
         if (error.code === '23503') { // foreign_key_violation
             return res.status(400).json({ error: 'Invalid task_key' });

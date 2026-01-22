@@ -102,32 +102,58 @@ export function useDurmahChat({
       }
       
       try {
-          const { data, error } = await supabase
-            .from('durmah_messages')
-            .select('*')
-            .eq('conversation_id', cId)
-            .order('created_at', { ascending: true });
-          
-          if (error) {
-               console.error('[useDurmahChat] Fetch error:', error);
-               return;
-          }
-          
-          if (data) {
-              console.log(`[useDurmahChat] Fetched ${data.length} messages from database`);
-              setMessages(data.map((m: any) => ({
-                  id: m.id,
-                  role: m.role,
-                  content: m.content,
-                  created_at: m.created_at,
-                  saved_at: m.saved_at,
-                  visibility: m.visibility
-              })));
+          // SELECT table based on scope
+          if (scope === 'assignment') {
+             const { data, error } = await supabase
+               .from('assignment_session_messages')
+               .select('*')
+               .eq('session_id', cId)
+               .order('created_at', { ascending: true });
+
+             if (error) {
+                 console.error('[useDurmahChat] Fetch assignment messages error:', error);
+                 return;
+             }
+             if (data) {
+                  console.log(`[useDurmahChat] Fetched ${data.length} messages from assignment_session_messages`);
+                  setMessages(data.map((m: any) => ({
+                      id: m.id,
+                      role: m.role,
+                      content: m.content || '(no content)',
+                      created_at: m.created_at,
+                      // assignment_session_messages might not have same visibility columns yet, adapting:
+                      visibility: 'saved' // Assignments are always saved
+                  })));
+             }
+          } else {
+              // Legacy/Global behavior
+              const { data, error } = await supabase
+                .from('durmah_messages')
+                .select('*')
+                .eq('conversation_id', cId)
+                .order('created_at', { ascending: true });
+              
+              if (error) {
+                   console.error('[useDurmahChat] Fetch error:', error);
+                   return;
+              }
+              
+              if (data) {
+                  console.log(`[useDurmahChat] Fetched ${data.length} messages from database`);
+                  setMessages(data.map((m: any) => ({
+                      id: m.id,
+                      role: m.role,
+                      content: m.content,
+                      created_at: m.created_at,
+                      saved_at: m.saved_at,
+                      visibility: m.visibility
+                  })));
+              }
           }
       } catch (err) {
           console.error('[useDurmahChat] Unexpected fetch error:', err);
       }
-  }, [supabase]);
+  }, [supabase, scope]);
 
   // Manual refetch function for external use
   const refetchMessages = useCallback(() => {
@@ -146,7 +172,20 @@ export function useDurmahChat({
         return;
     }
 
-    if (!conversationId) {
+    let targetId = conversationId;
+
+    // Fallback: Check if we can generate it immediately (race condition fix)
+    if (!targetId && user) {
+        if (scope === 'assignment' && assignmentId) {
+            targetId = uuidv5(`assignment-${user.id}-${assignmentId}`, DURMAH_NAMESPACE);
+            setConversationId(targetId); // update state for next time
+        } else if (scope === 'global') {
+             targetId = uuidv5(`global-${user.id}`, DURMAH_NAMESPACE);
+             setConversationId(targetId);
+        }
+    }
+
+    if (!targetId) {
         console.error('[useDurmahChat] No conversation ID available');
         toast.error('Connection not ready. Please try again in a moment.');
         return;
@@ -172,7 +211,7 @@ export function useDurmahChat({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           message: content,
-          conversationId,
+          conversationId: targetId,
           source,
           scope,
           context,
@@ -215,7 +254,7 @@ export function useDurmahChat({
     } finally {
       setIsLoading(false);
     }
-  }, [conversationId, source, scope, context, user]);
+  }, [conversationId, source, scope, context, user, assignmentId]);
 
 
 
@@ -267,7 +306,31 @@ export function useDurmahChat({
       }
 
       try {
-          const { data, error } = await supabase
+          let data, error;
+
+          if (scope === 'assignment' && context.assignmentId) {
+             // 1. Ensure Session Exists
+             await supabase.from('assignment_sessions').upsert({
+                 id: conversationId,
+                 assignment_id: context.assignmentId,
+                 user_id: user.id,
+                 title: `Session ${new Date().toLocaleDateString()}`
+             }, { onConflict: 'id' });
+
+             // 2. Insert Message
+             const res = await supabase.from('assignment_session_messages').insert({
+                 session_id: conversationId,
+                 user_id: user.id,
+                 role,
+                 content,
+                 // modality not in schema yet, adding to content metadata if needed or ignore
+             }).select('id, created_at').single();
+             
+             data = res.data; 
+             error = res.error;
+          } else {
+             // Legacy
+             const res = await supabase
             .from('durmah_messages')
             .insert({
                 user_id: user.id,
@@ -281,6 +344,9 @@ export function useDurmahChat({
             })
             .select('id, created_at')
             .single();
+            data = res.data;
+            error = res.error;
+          }
           
           if (error) {
               console.error('[useDurmahChat] Log message error:', error);
@@ -293,14 +359,14 @@ export function useDurmahChat({
                   role,
                   content,
                   created_at: data.created_at,
-                  visibility: 'ephemeral'
+                  visibility: scope === 'assignment' ? 'saved' : 'ephemeral'
               };
               setMessages(prev => [...prev, newMsg]);
           }
       } catch (err) {
           console.error('[useDurmahChat] Unexpected log error:', err);
       }
-  }, [supabase, conversationId, user, source, scope]);
+  }, [supabase, conversationId, user, source, scope, context]);
 
   const deleteMessages = useCallback(async (ids: string[]) => {
       if (!ids.length || !supabase) {
