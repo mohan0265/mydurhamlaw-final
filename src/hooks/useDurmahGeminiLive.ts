@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { waitForAccessToken } from "@/lib/auth/waitForAccessToken";
+import { DURMAH_TOOLS } from "@/lib/durmah/tools";
 
 // Get proxy URL from env and ensure it ends with /ws
 const RAW_PROXY_URL = (process.env.NEXT_PUBLIC_DURMAH_GEMINI_PROXY_WS_URL || "").trim();
@@ -194,6 +195,53 @@ export function useDurmahGeminiLive({
     }
   }, []);
 
+  const handleFunctionCall = useCallback(async (functionCall: any) => {
+      const { name, args, id } = functionCall;
+      console.log(`[GeminiFunction] Call: ${name}`, args);
+      
+      let toolResult: any;
+      try {
+          if (name === "get_yaag_events") {
+            const { startISO, endISO } = args;
+            const res = await fetch(`/api/durmah/tools/yaag-events?startISO=${startISO}&endISO=${endISO}`);
+            toolResult = await res.json();
+          } else if (name === "get_news_headlines") {
+            const params = new URLSearchParams();
+            if (args.limit) params.set("limit", String(args.limit));
+            if (args.topic) params.set("topic", args.topic);
+            const res = await fetch(`/api/durmah/tools/news-headlines?${params}`);
+            toolResult = await res.json();
+          } else if (name === "get_assignment_details") {
+            const res = await fetch(`/api/durmah/tools/assignment-by-id?id=${args.assignmentId}`);
+            toolResult = await res.json();
+          } else {
+            console.warn(`[GeminiFunction] Unknown tool: ${name}`);
+            toolResult = { error: "Unknown function: " + name };
+          }
+      } catch (err: any) {
+          console.error(`[GeminiFunction] Failed execution:`, err);
+          toolResult = { error: err.message || "Execution failed" };
+      }
+      
+      // Send response back
+      const toolResponse = {
+          tool_response: {
+              function_responses: [
+                  {
+                      name: name,
+                      response: { result: toolResult },
+                      id: id
+                  }
+              ]
+          }
+      };
+      
+      if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+          console.log(`[GeminiFunction] Sending response for ${name}`);
+          wsRef.current.send(JSON.stringify({ client_content: { turns: [ { role: "user", parts: [ toolResponse ] } ], turn_complete: true } }));
+      }
+  }, []);
+
   const startListening = useCallback(async () => {
     try {
       setStatus("connecting");
@@ -244,11 +292,16 @@ export function useDurmahGeminiLive({
 
       ws.onopen = () => {
         console.info("[DurmahGemini] WS open");
+        
+        // Map DURMAH_TOOLS to Gemini format (functionDeclarations)
+        const tools = [{ function_declarations: DURMAH_TOOLS }];
+
         // Send Handshake with correct snake_case field names per Gemini Live API spec
         const setupMsg = {
             auth: token ?? null, 
             setup: {
                 model: MODEL_ID,
+                tools: tools,
                 generation_config: {
                     response_modalities: ["AUDIO", "TEXT"],
                     speech_config: {
@@ -298,8 +351,28 @@ export function useDurmahGeminiLive({
                   cleanup(false);
                   return;
                 }
+                
+                // Handle Tool Calls
+                if (json?.toolCall) {
+                    const funcCalls = json.toolCall.functionCalls;
+                    if (funcCalls && funcCalls.length > 0) {
+                        for (const fc of funcCalls) {
+                            handleFunctionCall(fc);
+                        }
+                    }
+                    return; // Don't process as turn content
+                }
+                
+                if (json?.serverContent?.toolCall) {
+                   const funcCalls = json.serverContent.toolCall.functionCalls;
+                   if (funcCalls && funcCalls.length > 0) {
+                        for (const fc of funcCalls) {
+                            handleFunctionCall(fc);
+                        }
+                   }
+                }
 
-                // Handle Server Content
+                // Handle Server Content (Model Turn)
                 if (json.serverContent) {
                     const turn = json.serverContent.modelTurn;
                     if (turn) {
@@ -316,12 +389,6 @@ export function useDurmahGeminiLive({
                         setSpeaking(false); // Rough heuristic
                     }
                 }
-                // Determine user transcript from partials?
-                // Does Gemini echo user transcript? It might not in "Live" mode v1beta1 unless configured?
-                // Actually it does not echo transcript by default in some versions.
-                // If it does not, we lose user transcript.
-                // workaround: we just show "..." or nothing for user.
-                // OR we can rely on our visualizer.
              };
              msgFn(event.data);
          } catch (e) {
@@ -391,7 +458,7 @@ export function useDurmahGeminiLive({
       setStatus("error");
       cleanup(false);
     }
-  }, [systemPrompt, voice, onTurn, stopListening, queueAudioPayload, flushAudioQueue, cleanup]);
+  }, [systemPrompt, voice, onTurn, stopListening, queueAudioPayload, flushAudioQueue, cleanup, handleFunctionCall]);
 
   const voiceActive = status === "connecting" || status === "listening" || status === "speaking";
 
