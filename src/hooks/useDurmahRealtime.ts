@@ -641,14 +641,14 @@ export function useDurmahRealtime({
     const payload = {
       type: "session.update",
       session: {
-        instructions: systemPrompt,
+        instructions: systemPrompt || "",
       },
     };
 
     try {
       if (REALTIME_DEBUG || true) {
-        console.log(`[DurmahRealtime] session.update sent (len=${systemPrompt.length})`);
-        console.log(`[DurmahRealtime] Instructions prefix: ${systemPrompt.slice(0, 120)}...`);
+        console.log(`[DurmahRealtime] session.update sent (len=${(systemPrompt || "").length})`);
+        console.log(`[DurmahRealtime] Instructions prefix: ${(systemPrompt || "").slice(0, 120)}...`);
       }
       dcRef.current.send(JSON.stringify(payload));
     } catch (e) {

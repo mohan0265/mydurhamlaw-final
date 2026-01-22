@@ -109,6 +109,24 @@ export default function DurmahChat({
   }, [contextId]);
 
   // 2. Initialize Voice Hook
+  
+  // Handler for voice transcripts
+  const handleVoiceTurn = useCallback(async (turn: { speaker: 'user' | 'durmah'; text: string }) => {
+      // Log to chat history without triggering text response
+      if (!turn.text) return;
+      
+      // Determine role
+      const role = turn.speaker === 'user' ? 'user' : 'assistant';
+      
+      // Use logMessage directly from useDurmahChat to persist to DB and update UI
+      if (logMessage) {
+          await logMessage({
+              role,
+              content: turn.text
+          });
+      }
+  }, [logMessage]);
+
   const {
     isConnected: isVoiceConnected,
     isListening: isVoiceListening,
@@ -122,20 +140,20 @@ export default function DurmahChat({
     userName: durmahCtx.firstName || 'Student',
     voiceId: voiceId,
     initialMessage: initialPrompt || `I'm ready to help with ${contextTitle}.`,
+    // Pass BOTH systemInstruction (Gemini) and systemPrompt (Realtime)
     systemInstruction: `You are Durmah, a helpful academic tutor. You are helping with the assignment: "${contextTitle}". Be concise, encouraging, and helpful. Do not write the essay for the student.`,
+    systemPrompt: `You are Durmah, a helpful academic tutor. You are helping with the assignment: "${contextTitle}". 
+    
+CONTEXT:
+${systemHint || 'No specific stage context provided.'}
+
+INSTRUCTIONS:
+- Be concise, encouraging, and helpful.
+- Do not write the essay for the student.
+- If the user asks for milestones or specific help, use the context provided.`,
+    onTurn: handleVoiceTurn,
     audioRef // Pass the audio ref!
   });
-
-  // 3. Sync Voice Transcript to Chat
-  useEffect(() => {
-    // When voice transcript updates, we could log it to the chat
-    // For now, let's rely on the voice provider handling the conversation flow
-    // and manual syncing if desired. 
-    // BUT: Students want a text record of the voice chat. 
-    // Realtime API usually provides transcripts.
-    // If specific hook supports onMessage, use that. 
-    // Assuming simple integration for now: Voice operates somewhat independently but shares context.
-  }, [voiceTranscript]);
 
 
   // 4. Auto-Scroll
