@@ -15,13 +15,15 @@ import TodaysTasksWidget from '@/components/dashboard/TodaysTasksWidget';
 import MemoryJournalWidget from '@/components/dashboard/MemoryJournalWidget';
 import WellbeingTipWidget from '@/components/dashboard/WellbeingTipWidget';
 
+import CountdownTimer from '@/components/ui/CountdownTimer';
+
 import { useUserDisplayName } from '@/hooks/useUserDisplayName';
 
 export default function Dashboard() {
   const router = useRouter();
   const { user, loading } = useAuth() || { user: null, loading: true };
   const { displayName } = useUserDisplayName();
-  const [focusItem, setFocusItem] = useState<{title: string, type: string, link: string} | null>(null);
+  const [focusItem, setFocusItem] = useState<{title: string, type: string, link: string, due_date?: string} | null>(null);
   const [supportExpanded, setSupportExpanded] = useState(false);
 
   useEffect(() => {
@@ -34,7 +36,8 @@ export default function Dashboard() {
            setFocusItem({
              title: next.title,
              type: 'Assignment Due',
-             link: `/assignments?assignmentId=${next.id}`
+             link: `/assignments?assignmentId=${next.id}`,
+             due_date: next.due_date // Pass due date for timer
            });
         }
       }).catch(err => console.error('Focus fetch error', err));
@@ -93,13 +96,25 @@ export default function Dashboard() {
                     <Zap className="w-3 h-3 text-yellow-300" />
                     <span className="text-xs font-bold uppercase tracking-wider text-yellow-100">Next Best Action</span>
                  </div>
-                 <h2 className="text-2xl md:text-3xl font-bold leading-tight">
-                    {focusItem ? `Continue working on ${focusItem.title}` : "Start your Contract Law revision"}
-                 </h2>
-                 <p className="text-indigo-100 text-base md:text-lg max-w-xl">
-                    {focusItem ? "You have a deadline approaching. 20 minutes now will save hours later." : "Based on your recent lectures, this is the highest-impact focus area."}
-                 </p>
-              </div>
+                  <h2 className="text-2xl md:text-3xl font-bold leading-tight">
+                     {focusItem ? `Continue working on ${focusItem.title}` : "Start your Contract Law revision"}
+                  </h2>
+                  <div className="text-indigo-100 text-base md:text-lg max-w-xl">
+                     {focusItem ? (
+                        <div className="flex flex-col gap-1">
+                           <span>You have a deadline approaching.</span>
+                           {focusItem.due_date && (
+                              <div className="flex items-center gap-2 mt-1">
+                                 <span className="text-sm opacity-80">Time Remaining:</span>
+                                 <CountdownTimer dueDate={focusItem.due_date} style="banner" showSeconds={true} />
+                              </div>
+                           )}
+                        </div>
+                     ) : (
+                        "Based on your recent lectures, this is the highest-impact focus area."
+                     )}
+                  </div>
+               </div>
               
               <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
                  <button onClick={() => router.push(focusItem?.link || '/study/lectures')} className="inline-flex items-center justify-center gap-2 rounded-xl bg-white text-indigo-900 font-bold px-6 py-3.5 hover:bg-indigo-50 transition shadow-lg whitespace-nowrap">

@@ -14,6 +14,7 @@ import Stage5Formatting from './stages/Stage5Formatting';
 import Stage6Review from './stages/Stage6Review';
 import { getSupabaseClient } from '@/lib/supabase/client';
 import toast from 'react-hot-toast';
+import CountdownTimer from '@/components/ui/CountdownTimer';
 
 // Props interface - these functions are valid in 'use client' components
 interface AssignmentWorkflowProps {
@@ -211,8 +212,16 @@ export default function AssignmentWorkflow({
         {/* Header */}
         <div className="p-6 border-b bg-gradient-to-r from-violet-600 to-indigo-600 text-white rounded-t-2xl">
           <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-3">
+            <div className="flex flex-col gap-1">
               <h1 className="text-2xl font-bold">Assignment Assistant</h1>
+              {safeAssignmentData.due_date && (
+                 <CountdownTimer 
+                    dueDate={safeAssignmentData.due_date} 
+                    style="minimal" 
+                    showSeconds={true}
+                    className="text-white/90 text-sm"
+                 />
+              )}
             </div>
             
             <div className="flex items-center gap-2">
