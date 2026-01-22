@@ -15,6 +15,7 @@ import Stage6Review from './stages/Stage6Review';
 import { getSupabaseClient } from '@/lib/supabase/client';
 import toast from 'react-hot-toast';
 import CountdownTimer from '@/components/ui/CountdownTimer';
+import DurmahChat from '@/components/durmah/DurmahChat';
 
 // Props interface - these functions are valid in 'use client' components
 interface AssignmentWorkflowProps {
@@ -299,75 +300,93 @@ export default function AssignmentWorkflow({
         </div>
 
         {/* Content Area */}
-        <div className="flex-1 overflow-y-auto p-6">
-          {!mode ? (
-            <ModeSelector 
-              onSelectMode={handleModeSelection}
-              assignmentData={safeAssignmentData}
-            />
-          ) : uploadMode ? (
-            <div className="h-full flex flex-col justify-center">
-              <AssignmentUploader
-                assignmentId={assignmentId}
-                onUploadComplete={handleUploadComplete}
-                onCancel={onClose}
+        <div className="flex-1 overflow-hidden flex flex-row">
+          
+          {/* Main Stage Content - Scrollable */}
+          <div className="flex-1 overflow-y-auto p-6">
+            {!mode ? (
+              <ModeSelector 
+                onSelectMode={handleModeSelection}
+                assignmentData={safeAssignmentData}
               />
-              <button
-                onClick={skipToManualEntry}
-                className="mt-4 text-center text-sm text-gray-600 hover:text-violet-600"
-              >
-                Skip upload and enter details manually
-              </button>
-            </div>
-          ) : (
-            <>
-              {currentStage === 1 && (
-                <Stage1Understanding
+            ) : uploadMode ? (
+              <div className="h-full flex flex-col justify-center">
+                <AssignmentUploader
                   assignmentId={assignmentId}
-                  briefData={briefData || assignmentData}
-                  onComplete={(data) => handleStageComplete(1, data)}
+                  onUploadComplete={handleUploadComplete}
+                  onCancel={onClose}
                 />
-              )}
-              {currentStage === 2 && (
-                <Stage2Research
-                  assignmentId={assignmentId}
-                  briefData={briefData || assignmentData}
-                  onComplete={(data) => handleStageComplete(2, data)}
+                <button
+                  onClick={skipToManualEntry}
+                  className="mt-4 text-center text-sm text-gray-600 hover:text-violet-600"
+                >
+                  Skip upload and enter details manually
+                </button>
+              </div>
+            ) : (
+              <div className="max-w-4xl mx-auto">
+                {currentStage === 1 && (
+                  <Stage1Understanding
+                    assignmentId={assignmentId}
+                    briefData={briefData || assignmentData}
+                    onComplete={(data) => handleStageComplete(1, data)}
+                  />
+                )}
+                {currentStage === 2 && (
+                  <Stage2Research
+                    assignmentId={assignmentId}
+                    briefData={briefData || assignmentData}
+                    onComplete={(data) => handleStageComplete(2, data)}
+                  />
+                )}
+                {currentStage === 3 && (
+                  <Stage3Structure
+                    assignmentId={assignmentId}
+                    briefData={briefData || assignmentData}
+                    onComplete={(data) => handleStageComplete(3, data)}
+                  />
+                )}
+                {currentStage === 4 && (
+                  <Stage4Drafting
+                    assignmentId={assignmentId}
+                    briefData={briefData || assignmentData}
+                    outline={stageData.stage3?.outlineStructure || []}
+                    onComplete={(data) => handleStageComplete(4, data)}
+                  />
+                )}
+                {currentStage === 5 && (
+                  <Stage5Formatting
+                    assignmentId={assignmentId}
+                    briefData={briefData || assignmentData}
+                    draft={stageData.stage4?.draft || ''}
+                    onComplete={(data) => handleStageComplete(5, data)}
+                  />
+                )}
+                {currentStage === 6 && (
+                  <Stage6Review
+                    assignmentId={assignmentId}
+                    briefData={briefData || assignmentData}
+                    aiUsageLog={stageData.stage4?.aiAssistanceUsed || []}
+                    finalDraft={stageData.stage5?.formattedDraft || stageData.stage4?.draft || ''}
+                    onComplete={() => handleStageComplete(6, {})}
+                  />
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Right Sidebar: Durmah Chat (Persistent) */}
+          {/* Only show when not in mode selection or upload mode to avoid clutter initially, or show always? User said "all the phases". */}
+          {mode && !uploadMode && (
+             <div className="w-[400px] border-l border-gray-200 bg-gray-50 flex flex-col shadow-inner z-10">
+                <DurmahChat 
+                  contextType="assignment"
+                  contextTitle={safeAssignmentData.title}
+                  contextId={assignmentId}
+                  systemHint={`User is currently in Stage ${currentStage}: ${stages.find(s=>s.num===currentStage)?.name}. Help them with this specific stage.`}
+                  className="h-full border-0 rounded-none bg-transparent"
                 />
-              )}
-              {currentStage === 3 && (
-                <Stage3Structure
-                  assignmentId={assignmentId}
-                  briefData={briefData || assignmentData}
-                  onComplete={(data) => handleStageComplete(3, data)}
-                />
-              )}
-              {currentStage === 4 && (
-                <Stage4Drafting
-                  assignmentId={assignmentId}
-                  briefData={briefData || assignmentData}
-                  outline={stageData.stage3?.outlineStructure || []}
-                  onComplete={(data) => handleStageComplete(4, data)}
-                />
-              )}
-              {currentStage === 5 && (
-                <Stage5Formatting
-                  assignmentId={assignmentId}
-                  briefData={briefData || assignmentData}
-                  draft={stageData.stage4?.draft || ''}
-                  onComplete={(data) => handleStageComplete(5, data)}
-                />
-              )}
-              {currentStage === 6 && (
-                <Stage6Review
-                  assignmentId={assignmentId}
-                  briefData={briefData || assignmentData}
-                  aiUsageLog={stageData.stage4?.aiAssistanceUsed || []}
-                  finalDraft={stageData.stage5?.formattedDraft || stageData.stage4?.draft || ''}
-                  onComplete={() => handleStageComplete(6, {})}
-                />
-              )}
-            </>
+             </div>
           )}
         </div>
       </div>

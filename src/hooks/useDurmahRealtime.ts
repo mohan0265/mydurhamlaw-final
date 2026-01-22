@@ -766,6 +766,13 @@ export function useDurmahRealtime({
   return {
     startListening,
     stopListening,
+    // Standard Interface Aliases for DurmahChat.tsx compatibility
+    connect: startListening,
+    disconnect: stopListening,
+    isConnected: voiceActive,
+    isListening: voiceActive, // Already present but confirming
+    isSpeaking: speaking,     // Aligning naming if needed, though 'speaking' is returned below
+    
     isListening: voiceActive,
     status,
     speaking,

@@ -24,6 +24,7 @@ export default function Dashboard() {
   const { user, loading } = useAuth() || { user: null, loading: true };
   const { displayName } = useUserDisplayName();
   const [focusItem, setFocusItem] = useState<{title: string, type: string, link: string, due_date?: string} | null>(null);
+  const [nextAssignment, setNextAssignment] = useState<any>(null);
   const [supportExpanded, setSupportExpanded] = useState(false);
 
   useEffect(() => {
@@ -33,6 +34,7 @@ export default function Dashboard() {
       }).then(data => {
         if(data?.upcomingAssignments?.length > 0) {
            const next = data.upcomingAssignments[0];
+           setNextAssignment(next);
            setFocusItem({
              title: next.title,
              type: 'Assignment Due',
@@ -158,20 +160,35 @@ export default function Dashboard() {
               icon={<FileText className="w-5 h-5 text-orange-600" />}
               link="/assignments"
               preview={
-                 <div className="mt-3">
-                    <div className="flex items-center justify-between text-xs mb-1.5">
-                       <span className="font-medium text-gray-700">Formative Essay</span>
-                       <span className="text-orange-600 font-bold">Due 3d</span>
-                    </div>
-                    <div className="w-full bg-gray-100 rounded-full h-1.5">
-                       <div className="bg-orange-500 h-1.5 rounded-full w-2/3"></div>
-                    </div>
-                    <div className="mt-1.5 text-[10px] text-gray-500 flex justify-between">
-                       <span>Outline</span>
-                       <span className="font-medium text-gray-900">Drafting</span>
-                       <span>Review</span>
-                    </div>
-                 </div>
+                 nextAssignment ? (
+                     <div className="mt-3">
+                        <div className="flex items-center justify-between text-xs mb-1.5 gap-2">
+                           <span className="font-medium text-gray-700 truncate" title={nextAssignment.title}>
+                              {nextAssignment.title}
+                           </span>
+                           <span className={`font-bold whitespace-nowrap ${nextAssignment.daysLeft <= 3 ? 'text-red-600' : 'text-orange-600'}`}>
+                              {nextAssignment.daysLeft <= 0 ? 'Due Today' : `Due ${nextAssignment.daysLeft}d`}
+                           </span>
+                        </div>
+                        <div className="w-full bg-gray-100 rounded-full h-1.5 mb-1.5">
+                           <div 
+                              className={`h-1.5 rounded-full transition-all ${nextAssignment.daysLeft <= 3 ? 'bg-red-500' : 'bg-orange-500'}`}
+                              style={{ width: `${Math.max(5, (nextAssignment.current_stage / 6) * 100)}%` }}
+                           ></div>
+                        </div>
+                        <div className="flex justify-between text-[10px] text-gray-500">
+                           <span>Stage {nextAssignment.current_stage || 0}/6</span>
+                           <span className="font-medium text-gray-900 capitalize truncate max-w-[80px]">
+                              {nextAssignment.status === 'not_started' ? 'Not Started' : nextAssignment.status?.replace('_', ' ') || 'Active'}
+                           </span>
+                        </div>
+                     </div>
+                  ) : (
+                     <div className="mt-3 flex flex-col justify-center h-full min-h-[60px] text-center">
+                        <span className="text-xs text-gray-400">No active assignments</span>
+                        <span className="text-[10px] text-gray-300">Great job!</span>
+                     </div>
+                  )
               }
            />
 
