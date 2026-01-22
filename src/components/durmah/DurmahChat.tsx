@@ -186,8 +186,92 @@ INSTRUCTIONS:
   return (
     <div className={`flex flex-col bg-white rounded-xl shadow-sm border border-gray-200 transition-all duration-300 ${className}`}>
       
-      {/* ... Header (lines 292-364) ... */}
-      {/* ... Ethics Banner (366-374) ... */}
+      {/* Header */}
+      <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-white rounded-t-xl shrink-0">
+        <div className="flex items-center gap-3">
+          <div className="relative">
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-500 ${
+              isVoiceListening ? 'bg-red-100 text-red-600 scale-110' : 
+              isVoiceSpeaking ? 'bg-violet-100 text-violet-600 scale-110' : 
+              'bg-gray-100 text-gray-600'
+            }`}>
+              {isVoiceListening ? <Mic size={20} className="animate-pulse" /> : 
+               isVoiceSpeaking ? <Brain size={20} className="animate-pulse" /> :
+               <Brain size={20} />}
+            </div>
+            {/* Online/Active Dot */}
+            <div className={`absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 border-2 border-white rounded-full transition-colors ${
+                isVoiceConnected ? 'bg-green-500' : 'bg-gray-300'
+            }`}></div>
+          </div>
+          
+          <div className="flex flex-col">
+            <h3 className="font-bold text-gray-800 text-sm leading-tight flex items-center gap-2">
+              Durmah
+              <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-violet-100 text-violet-700 uppercase tracking-wide">
+                Virtual Tutor
+              </span>
+            </h3>
+            <p className="text-xs text-gray-500 truncate max-w-[150px]">
+              {isVoiceConnected ? (isVoiceListening ? "Listening..." : isVoiceSpeaking ? "Speaking..." : "Voice Active") : contextTitle}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-1">
+          {/* Voice Toggle */}
+          <button
+            onClick={isVoiceConnected ? disconnectVoice : connectVoice}
+            className={`p-2 rounded-lg transition-all duration-300 ${
+                isVoiceConnected 
+                ? 'bg-red-50 text-red-500 hover:bg-red-100' 
+                : 'bg-gray-50 text-gray-500 hover:bg-violet-50 hover:text-violet-600'
+            }`}
+            title={isVoiceConnected ? "End Voice Session" : "Start Voice Session"}
+          >
+            {isVoiceConnected ? <MicOff size={18} /> : <Mic size={18} />}
+          </button>
+          
+          {/* Minimize/Maximize (Optional based on prop) */}
+          {onToggleMinimize && (
+              <button
+                onClick={onToggleMinimize}
+                className="p-2 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                  {isMinimized ? <Maximize2 size={18} /> : <Minimize2 size={18} />}
+              </button>
+          )}
+
+           {/* Expand History Toggle (Local state when minimized) - Optional UX */}
+           {isMinimized && !onToggleMinimize && (
+               <button
+                  onClick={() => setIsHistoryVisible(!isHistoryVisible)}
+                  className={`p-2 rounded-lg transition-colors ${isHistoryVisible ? 'bg-violet-100 text-violet-600' : 'hover:bg-gray-100 text-gray-400'}`}
+               >
+                   <FileText size={18} />
+               </button>
+           )}
+        </div>
+      </div>
+
+      {/* Connection Error Banner */}
+      {!isVoiceConnected && isChatLoading && !messages.length && (
+          <div className="bg-amber-50 text-amber-800 text-xs px-4 py-2 flex items-center gap-2">
+              <Loader2 size={12} className="animate-spin" />
+              <span>Connecting to Durmah...</span>
+          </div>
+      )}
+
+      {/* Ethics Banner */}
+      {(!isMinimized || isHistoryVisible) && (
+        <div className="bg-rose-50 border-b border-rose-100 px-4 py-3 flex gap-3 shrink-0">
+          <AlertTriangle className="text-rose-500 shrink-0 mt-0.5" size={14} />
+          <p className="text-[10px] leading-relaxed text-rose-700 font-medium">
+            <strong className="block text-rose-800 mb-0.5">Academic Integrity Alert</strong>
+            Durmah is a tutor, not a writer. I can explain legal concepts and critique your logic, but I cannot write or rewrite your essay for you.
+          </p>
+        </div>
+      )}
 
       {/* Content Area (Hidden if minimized, unless history manually toggled) */}
       {(!isMinimized || isHistoryVisible) && (
