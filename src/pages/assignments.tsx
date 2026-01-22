@@ -260,6 +260,7 @@ Please help me:
                    onUpdate={handleUpdate}
                    onDelete={handleDelete}
                    onPlanWithAI={handlePlanWithAI} 
+                   onEdit={() => setIsEditing(true)}
                  />
                ) : (
                  <div className="bg-white/50 border border-white/50 rounded-xl h-full flex flex-col items-center justify-center text-gray-500 p-8 text-center dashed-border">

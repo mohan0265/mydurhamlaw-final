@@ -243,41 +243,59 @@ export default function DurmahChat({
   return (
     <div className={`flex flex-col bg-white rounded-xl shadow-sm border border-gray-200 transition-all duration-300 ${isExpanded ? 'fixed inset-4 z-50 shadow-2xl' : 'h-[600px]'} ${className}`}>
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-gradient-to-r from-violet-50 to-white rounded-t-xl">
+      {/* Header matching DurmahWidget */}
+      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-gradient-to-r from-violet-600 to-indigo-600 text-white rounded-t-xl shrink-0">
         <div className="flex items-center gap-2">
-          <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${isVoiceConnected ? 'bg-red-100 text-red-600 animate-pulse' : 'bg-violet-100 text-violet-600'}`}>
-            {isVoiceConnected ? <Mic size={16} /> : <Brain size={16} />}
-          </div>
-          <div>
-            <div className="text-sm font-bold text-gray-800 flex items-center gap-2">
-                Durmah
-                {isSyncing && <Loader2 size={10} className="animate-spin text-gray-400" />}
-                {!isSyncing && lastSyncedAt && <Check size={10} className="text-green-500" title="Saved" />}
+            {/* Brain/Mic Icon Bubble */}
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors shadow-sm ${
+                isVoiceConnected 
+                ? 'bg-red-500 text-white animate-pulse' 
+                : 'bg-white/20 text-white backdrop-blur-sm'
+            }`}>
+                {isVoiceConnected ? <Mic size={16} /> : <Brain size={16} />}
             </div>
-            <div className="text-xs text-violet-600 font-medium truncate max-w-[150px]">
-              {contextType === 'assignment' ? 'Assignment Mentor' : 'Exam Coach'}
+            
+            <div className="flex flex-col">
+                <div className="text-sm font-bold text-white flex items-center gap-2">
+                    Durmah
+                    {isSyncing && <Loader2 size={10} className="animate-spin text-white/70" />}
+                    {!isSyncing && lastSyncedAt && <Check size={10} className="text-green-300" title="Saved" />}
+                    <span className="px-1.5 py-0.5 bg-white/20 rounded text-[10px] font-medium text-white/90">BETA</span>
+                </div>
+                <div className="text-xs text-indigo-100 font-medium truncate max-w-[150px]">
+                    {contextType === 'assignment' ? 'Assignment Mentor' : 'Exam Coach'}
+                </div>
             </div>
-          </div>
         </div>
         
-        <div className="flex items-center gap-2">
-            {/* Voice Toggle */}
+        <div className="flex items-center gap-1">
+            {/* Voice Toggle - Large Red Pill if Active */}
             <button
                 onClick={() => toggleVoice()}
-                className={`p-2 rounded-full transition-colors ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all font-medium text-xs ${
                     isVoiceConnected 
-                    ? 'bg-red-500 text-white hover:bg-red-600 shadow-md ring-2 ring-red-200' 
-                    : 'bg-gray-100 text-gray-600 hover:bg-violet-100 hover:text-violet-600'
+                    ? 'bg-red-500 text-white hover:bg-red-600 shadow-lg ring-2 ring-red-300/50 animate-pulse' 
+                    : 'bg-white/20 text-white hover:bg-white/30 hover:text-white'
                 }`}
-                title={isVoiceConnected ? "Stop Voice Mode" : "Start Voice Mode"}
+                title={isVoiceConnected ? "End Voice Chat" : "Start Voice Chat"}
             >
-                {isVoiceConnected ? <MicOff size={16} /> : <Mic size={16} />}
+                {isVoiceConnected ? (
+                    <>
+                        <MicOff size={14} />
+                        <span className="hidden sm:inline">End Voice</span>
+                    </>
+                ) : (
+                    <>
+                        <Mic size={14} />
+                        <span className="hidden sm:inline">Voice</span>
+                    </>
+                )}
             </button>
 
             {/* Expand Toggle */}
             <button 
                 onClick={() => setIsExpanded(!isExpanded)}
-                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg"
+                className="p-2 text-white/70 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
             >
                 {isExpanded ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
             </button>
