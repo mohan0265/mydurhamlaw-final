@@ -13,228 +13,71 @@ interface Stage4DraftingProps {
 }
 
 export default function Stage4Drafting({ assignmentId, briefData, outline, onComplete }: Stage4DraftingProps) {
-  const [content, setContent] = useState('');
-  const [durmahFeedback, setDurmahFeedback] = useState('');
-  const [aiUsageLog, setAiUsageLog] = useState<string[]>([]);
-
-  const wordCount = content.trim().split(/\s+/).filter(w => w).length;
-  const wordLimit = briefData?.wordLimit || 1500;
-  const sections = outline || [];
-
-  // Autosave integration - replaces old localStorage-only autosave
-  const { saving, saved, error: saveError, saveToAutosave } = useAutosave({
-    assignmentId,
-    stepKey: 'stage_4_drafting',
-    workflowKey: 'assignment_workflow',
-  });
-
-  useEffect(() => {
-    const saved = localStorage.getItem(`draft_${assignmentId}`);
-    if (saved) {
-      const data = JSON.parse(saved);
-      setContent(data.content || '');
-      setAiUsageLog(data.aiUsageLog || []);
-    }
-  }, []);
-
-  // Trigger autosave when content or AI usage log changes
-  useEffect(() => {
-    if (content.trim()) {
-      saveToAutosave({ content, wordCount, aiUsageLog });
-    }
-  }, [content, aiUsageLog, saveToAutosave]);
-
-  // Also keep localStorage as fallback
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      localStorage.setItem(`draft_${assignmentId}`, JSON.stringify({
-        content,
-        wordCount,
-        aiUsageLog,
-        savedAt: new Date().toISOString()
-      }));
-    }, 1000);
-    return () => clearTimeout(timer);
-  }, [content, aiUsageLog]);
-
-
-
-  const getFeedback = async () => {
-    if (!content.trim()) {
-      toast.error('Write some content first');
-      return;
-    }
-
-    try {
-      const response = await fetch('/api/assignment/durmah-stage', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include', // FIX: Include cookies for authentication
-        body: JSON.stringify({
-          assignmentId,
-          stage: 4,
-          userMessage: `Please review this section: ${content.slice(-500)}`, // Last 500 chars
-          context: {
-            questionText: briefData?.questionText,
-            wordCount,
-            wordLimit,
-          },
-        }),
-      });
-
-      const data = await response.json();
-      setDurmahFeedback(data.response);
-      
-      const logEntry = `Feedback requested - ${new Date().toLocaleTimeString()}`;
-      setAiUsageLog([...aiUsageLog, logEntry]);
-      
-    } catch (error) {
-      toast.error('Failed to get feedback');
-    }
-  };
-
+  // We no longer manage content here - it is in the persistent editor in the middle column
+  
   const handleComplete = () => {
-    // Soft validation - warn but don't block
-    if (wordCount < wordLimit * 0.5) {
-      toast('⚠️ Draft is quite short. Consider adding more content before finalizing.', {
-        duration: 4000,
-        icon: '📝',
-      });
-    } else if (wordCount > wordLimit * 1.1) {
-      toast('⚠️ Draft exceeds word limit. Consider trimming before submission.', {
-        duration: 4000,
-        icon: '✂️',
-      });
-    }
-
-    // Always allow progression (students can save partial drafts)
+    // Just complete the stage
     onComplete({
-      currentWordCount: wordCount,
-      sectionsCompleted: sections.map(s => s.title),
-      aiAssistanceUsed: aiUsageLog,
-      draft: content,
+      completedAt: new Date().toISOString()
     });
   };
 
   return (
-    <div className="h-full overflow-y-auto">
-      <div className="grid grid-cols-3 gap-4 pb-6">
-        {/* Left: Writing Area (2 cols) */}
-        <div className="col-span-2 bg-white rounded-xl shadow-lg p-6 flex flex-col">
-          <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-orange-600 rounded-lg">
-              <Edit3 className="text-white" size={24} />
-            </div>
-            <div>
-              <h2 className="text-xl font-bold">Stage 4: Drafting</h2>
-              <p className="text-sm text-gray-600">
-                {wordCount} / {wordLimit} words
-              </p>
-            </div>
+    <div className="h-full flex flex-col space-y-4">
+       <div className="bg-orange-50 p-4 rounded-xl border border-orange-100">
+          <div className="flex items-center gap-3 mb-2">
+             <div className="p-2 bg-orange-600 rounded-lg text-white">
+                <Edit3 size={20} />
+             </div>
+             <div>
+                <h3 className="font-bold text-gray-800">Drafting Phase</h3>
+                <p className="text-xs text-gray-600">Write your essay in the editor panel (center).</p>
+             </div>
           </div>
-          <div className="flex items-center gap-2">
-            {/* Autosave indicator - More prominent */}
-            <div className="px-3 py-1 rounded-full bg-gray-50 flex items-center gap-2 text-sm font-medium">
-              {saving && (
-                <>
-                  <Cloud className="animate-pulse text-blue-600" size={16} />
-                  <span className="text-blue-600">Saving...</span>
-                </>
-              )}
-              {saved && !saving && (
-                <>
-                  <CheckCircle size={16} className="text-green-600" />
-                  <span className="text-green-600">✓ Saved</span>
-                </>
-              )}
-              {saveError && (
-                <>
-                  <CloudOff size={16} className="text-orange-600" />
-                  <span className="text-orange-600">⚠ Saved locally</span>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
+          <p className="text-sm text-gray-700">
+             Focus on getting your arguments down. Use the formatting tools in the editor toolbar.
+             Durmah (right) can help you refine your arguments.
+          </p>
+       </div>
 
-        {/* Word Count Bar */}
-        <div className="mb-4">
-          <div className="w-full bg-gray-200 rounded-full h-2">
-            <div 
-              className={`h-2 rounded-full transition-all ${
-                wordCount > wordLimit * 1.1 ? 'bg-red-500' : 
-                wordCount >= wordLimit * 0.9 ? 'bg-green-500' : 'bg-blue-500'
-              }`}
-              style={{width: `${Math.min((wordCount / wordLimit) * 100, 100)}%`}}
-            />
-          </div>
-        </div>
-
-        {/* Academic Integrity Warning */}
-        <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-2">
-          <AlertTriangle className="text-amber-600 flex-shrink-0 mt-0.5" size={20} />
-          <div className="text-sm text-amber-800">
-            <p className="font-semibold">Academic Integrity Reminder</p>
-            <p className="text-xs mt-1">
-              Write your own work. Durmah provides guidance only - not full paragraphs.
-              All AI assistance is logged and must be declared.
-            </p>
-          </div>
-        </div>
-
-
-        {/* Editor - Fixed height so buttons stay visible */}
-        <textarea
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
-          placeholder="Start writing your essay here... Remember to cite sources as you go!"
-          className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-orange-500 resize-none font-serif text-gray-800 leading-relaxed h-[400px]"
-        />
-
-        {/* Action buttons - ALWAYS visible at bottom */}
-        <div className="mt-4 flex gap-2">
-          <button onClick={getFeedback} className="flex-1 px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700">
-            Get Durmah Feedback
-          </button>
-          <button onClick={handleComplete} className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center justify-center gap-2 font-semibold">
-            Continue to Formatting <ArrowRight size={20} />
-          </button>
-        </div>
-      </div>
-
-      {/* Right: Durmah Feedback & AI Usage - Max height to prevent overflow */}
-      <div className="bg-white rounded-xl shadow-lg p-6 flex flex-col">
-        <h3 className="text-lg font-bold mb-4">Durmah Feedback</h3>
-        
-        {durmahFeedback ? (
-          <div className="mb-4 max-h-[400px] overflow-y-auto">
-            <div className="p-4 bg-gray-100 rounded-lg">
-              <p className="text-sm whitespace-pre-wrap">{durmahFeedback}</p>
-            </div>
-          </div>
-        ) : (
-          <div className="flex-1 flex items-center justify-center text-gray-400 text-sm text-center">
-            Write some content and click "Get Feedback" for Durmah's guidance
-          </div>
-        )}
-
-        <div className="mt-auto">
-          <h4 className="font-semibold text-sm mb-2">AI Assistance Log</h4>
-          <div className="bg-gray-50 rounded-lg p-3 max-h-40 overflow-y-auto">
-            {aiUsageLog.length > 0 ? (
-              <ul className="text-xs space-y-1">
-                {aiUsageLog.map((log, idx) => (
-                  <li key={idx} className="text-gray-600">• {log}</li>
-                ))}
+       <div className="flex-1 overflow-y-auto space-y-4">
+           {/* Guidelines */}
+           <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+              <h4 className="font-semibold mb-2 flex items-center gap-2">
+                  <span className="w-6 h-6 rounded-full bg-violet-100 text-violet-600 flex items-center justify-center text-xs">1</span>
+                  Structure (IRAC)
+              </h4>
+              <p className="text-sm text-gray-600 mb-2">Ensure each paragraph follows IRAC:</p>
+              <ul className="text-xs text-gray-500 space-y-1 list-disc pl-4">
+                  <li><strong>Issue:</strong> State the legal issue.</li>
+                  <li><strong>Rule:</strong> Cite the relevant case or statute.</li>
+                  <li><strong>Analysis:</strong> Apply the rule to the facts.</li>
+                  <li><strong>Conclusion:</strong> Conclude on the issue.</li>
               </ul>
-            ) : (
-              <p className="text-xs text-gray-400">No AI assistance used yet</p>
-            )}
-          </div>
-        </div>
-      </div>
-      </div>
+           </div>
+
+           <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+              <h4 className="font-semibold mb-2 flex items-center gap-2">
+                  <span className="w-6 h-6 rounded-full bg-violet-100 text-violet-600 flex items-center justify-center text-xs">2</span>
+                  Formatting Tips
+              </h4>
+              <ul className="text-xs text-gray-500 space-y-1 list-disc pl-4">
+                  <li>Use <strong>Times New Roman, 12pt</strong> (Default).</li>
+                  <li>Double spacing is enforced automatically.</li>
+                  <li>Use <strong>Bold</strong> for headings only.</li>
+              </ul>
+           </div>
+       </div>
+
+       <div className="pt-4 border-t border-gray-200">
+          <button 
+            onClick={handleComplete}
+            className="w-full py-3 bg-violet-600 text-white rounded-xl hover:bg-violet-700 font-medium flex items-center justify-center gap-2 shadow-sm"
+          >
+             <span>Check Draft & Proceed to Formatting</span>
+             <ArrowRight size={18} />
+          </button>
+       </div>
     </div>
   );
 }

@@ -49,7 +49,7 @@ interface UseDurmahRealtimeProps {
 function normalizeDurmahTranscriptions(text: string): string {
   if (!text) return "";
   const mapping: Record<string, RegExp> = {
-    "Durmah": /\b(denmark|dharma|darma|durma|derma|doormah|duma)\b/gi,
+    "Durmah": /\b(denmark|dharma|darma|durma|derma|doormah|duma|shimmer)\b/gi,
   };
   
   let normalized = text;
@@ -65,7 +65,7 @@ function normalizeDurmahTranscriptions(text: string): string {
 
 export function useDurmahRealtime({
   systemPrompt,
-  voice = "charon",
+  voice = "shimmer",
   onTurn,
   audioRef,
 }: UseDurmahRealtimeProps) {

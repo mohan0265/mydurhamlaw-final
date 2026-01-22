@@ -16,6 +16,7 @@ import { getSupabaseClient } from '@/lib/supabase/client';
 import toast from 'react-hot-toast';
 import CountdownTimer from '@/components/ui/CountdownTimer';
 import DurmahChat from '@/components/durmah/DurmahChat';
+import AssignmentEditor from './AssignmentEditor';
 
 // Props interface - these functions are valid in 'use client' components
 interface AssignmentWorkflowProps {
@@ -47,6 +48,29 @@ export default function AssignmentWorkflow({
   const [briefData, setBriefData] = useState<any>(null);
   const [stageData, setStageData] = useState<any>({});
   const [uploadMode, setUploadMode] = useState(false); // Start with false - students already uploaded during creation
+  
+  // Persistent Editor State (Hoisted)
+  const [draftHtml, setDraftHtml] = useState('');
+  const [draftText, setDraftText] = useState('');
+  
+  // Initialize draft from loaded progress
+  useEffect(() => {
+    if (stageData?.draft) {
+       setDraftHtml(stageData.draft.html || '');
+       setDraftText(stageData.draft.text || '');
+    }
+  }, [stageData]);
+
+  // Handle Editor Changes
+  const handleEditorChange = (html: string, text: string) => {
+      setDraftHtml(html);
+      setDraftText(text);
+      // Update local stageData state so it gets saved on next sync
+      setStageData((prev: any) => ({
+          ...prev,
+          draft: { html, text, updatedAt: new Date().toISOString() }
+      }));
+  };
 
   const stages = [
     { num: 1, name: 'Understanding', completed: false },
@@ -209,185 +233,167 @@ export default function AssignmentWorkflow({
 
   return (
     <div className="fixed inset-0 bg-black/50 z-[70] flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-7xl h-[90vh] flex flex-col">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-[95vw] h-[95vh] flex flex-col">
         {/* Header */}
-        <div className="p-6 border-b bg-gradient-to-r from-violet-600 to-indigo-600 text-white rounded-t-2xl">
-          <div className="flex items-center justify-between mb-4">
+        <div className="p-4 border-b bg-gradient-to-r from-violet-600 to-indigo-600 text-white rounded-t-2xl shrink-0">
+           {/* ... Header Content (Keep existing) ... */}
+           <div className="flex items-center justify-between mb-4">
             <div className="flex flex-col gap-1">
-              <h1 className="text-2xl font-bold">Assignment Assistant</h1>
+              <h1 className="text-xl font-bold">Assignment Assistant</h1>
               {safeAssignmentData.due_date && (
                  <CountdownTimer 
                     dueDate={safeAssignmentData.due_date} 
                     style="minimal" 
                     showSeconds={true}
-                    className="text-white/90 text-sm"
+                    className="text-white/90 text-xs"
                  />
               )}
             </div>
             
             <div className="flex items-center gap-2">
-              {/* Save & Exit Button */}
               <button
                 onClick={onClose}
-                className="px-4 py-2 bg-white/20 hover:bg-white/30 rounded-lg transition flex items-center gap-2"
-                title="Save progress and return to assignment"
+                className="px-3 py-1.5 bg-white/20 hover:bg-white/30 rounded-lg transition flex items-center gap-2"
               >
-                <Save size={18} />
+                <Save size={16} />
                 <span className="text-sm font-medium">Save & Exit</span>
               </button>
               
-              {/* Back to Dashboard */}
-              <button
-                onClick={() => {
-                  router.push('/dashboard');
-                }}
-                className="px-4 py-2 bg-white/20 hover:bg-white/30 rounded-lg transition flex items-center gap-2"
-                title="Exit to dashboard"
-              >
-                <Home size={18} />
-                <span className="text-sm font-medium">Dashboard</span>
-              </button>
-              
-              {/* Close X Button */}
               <button 
                 onClick={onClose} 
-                className="p-2 hover:bg-white/20 rounded-full transition"
-                title="Close and return"
+                className="p-1.5 hover:bg-white/20 rounded-full transition"
               >
-                <X size={24} />
+                <X size={20} />
               </button>
             </div>
           </div>
 
-          {/* Progress Stepper */}
           {!uploadMode && (
-            <div className="flex items-center gap-2 overflow-x-auto">
-              {stages.map((stage, idx) => (
-                <div key={stage.num} className="flex items-center">
-                  <div className="flex flex-col items-center">
+            <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-white/20">
+               {/* Stepper (Keep existing but compact) */}
+               {stages.map((stage, idx) => (
+                 <div key={stage.num} className="flex items-center shrink-0">
                     <button
                       onClick={() => {
-                        if (stage.num < currentStage) {
-                          // Allow going back to previous stages
-                          setCurrentStage(stage.num);
-                          // Update URL
-                          router.push(
-                            `/assignments?assignmentId=${assignmentId}&view=workflow&stage=${stage.num}`,
-                            undefined,
-                            { shallow: true }
-                          );
-                          toast.success(`Returned to Stage ${stage.num}: ${stage.name}`);
+                        if (stage.num <= currentStage || stageData[`stage_${stage.num}_complete`]) {
+                           setCurrentStage(stage.num);
                         }
                       }}
-                      disabled={stage.num > currentStage}
-                      className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold transition-all ${
-                        currentStage > stage.num ? 'bg-green-500 cursor-pointer hover:bg-green-600' :
-                        currentStage === stage.num ? 'bg-white text-violet-600' :
-                        'bg-white/30 cursor-not-allowed'
+                      className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm transition-all ${
+                        currentStage === stage.num ? 'bg-white text-violet-600 ring-2 ring-white' :
+                        stage.num < currentStage ? 'bg-green-400 text-white' : 'bg-white/20 text-white/50'
                       }`}
                     >
-                      {currentStage > stage.num ? <CheckCircle size={20} /> : stage.num}
+                       {stage.num < currentStage ? <CheckCircle size={16} /> : stage.num}
                     </button>
-                    <span className="text-xs mt-1 whitespace-nowrap">{stage.name}</span>
-                  </div>
-                  {idx < stages.length - 1 && (
-                    <div className={`w-12 h-1 mx-2 ${currentStage > stage.num ? 'bg-green-500' : 'bg-white/30'}`} />
-                  )}
-                </div>
-              ))}
+                    {idx < stages.length - 1 && <div className="w-8 h-0.5 bg-white/20 mx-1" />}
+                 </div>
+               ))}
             </div>
           )}
         </div>
 
-        {/* Content Area */}
+        {/* 3-Column Workspace */}
         <div className="flex-1 overflow-hidden flex flex-row">
           
-          {/* Main Stage Content - Scrollable */}
-          <div className="flex-1 overflow-y-auto p-6">
-            {!mode ? (
-              <ModeSelector 
-                onSelectMode={handleModeSelection}
-                assignmentData={safeAssignmentData}
-              />
-            ) : uploadMode ? (
-              <div className="h-full flex flex-col justify-center">
+          {/* LEFT: Stage Guide (25%) */}
+          <div className="w-1/4 min-w-[300px] border-r border-gray-200 overflow-y-auto bg-gray-50 flex flex-col">
+            <div className="p-4 bg-white border-b sticky top-0 z-10 shadow-sm">
+                <h3 className="font-bold text-gray-800 flex items-center gap-2">
+                   <div className="bg-violet-100 text-violet-700 w-6 h-6 rounded-full flex items-center justify-center text-xs">
+                     {currentStage}
+                   </div>
+                   {stages.find(s=>s.num===currentStage)?.name}
+                </h3>
+            </div>
+            <div className="p-4 flex-1">
+              {!mode ? (
+                <ModeSelector 
+                  onSelectMode={handleModeSelection}
+                  assignmentData={safeAssignmentData}
+                />
+              ) : uploadMode ? (
                 <AssignmentUploader
                   assignmentId={assignmentId}
                   onUploadComplete={handleUploadComplete}
                   onCancel={onClose}
                 />
-                <button
-                  onClick={skipToManualEntry}
-                  className="mt-4 text-center text-sm text-gray-600 hover:text-violet-600"
-                >
-                  Skip upload and enter details manually
-                </button>
-              </div>
-            ) : (
-              <div className="max-w-4xl mx-auto">
-                {currentStage === 1 && (
-                  <Stage1Understanding
-                    assignmentId={assignmentId}
-                    briefData={briefData || assignmentData}
-                    onComplete={(data) => handleStageComplete(1, data)}
-                  />
-                )}
-                {currentStage === 2 && (
-                  <Stage2Research
-                    assignmentId={assignmentId}
-                    briefData={briefData || assignmentData}
-                    onComplete={(data) => handleStageComplete(2, data)}
-                  />
-                )}
-                {currentStage === 3 && (
-                  <Stage3Structure
-                    assignmentId={assignmentId}
-                    briefData={briefData || assignmentData}
-                    onComplete={(data) => handleStageComplete(3, data)}
-                  />
-                )}
-                {currentStage === 4 && (
-                  <Stage4Drafting
-                    assignmentId={assignmentId}
-                    briefData={briefData || assignmentData}
-                    outline={stageData.stage3?.outlineStructure || []}
-                    onComplete={(data) => handleStageComplete(4, data)}
-                  />
-                )}
-                {currentStage === 5 && (
-                  <Stage5Formatting
-                    assignmentId={assignmentId}
-                    briefData={briefData || assignmentData}
-                    draft={stageData.stage4?.draft || ''}
-                    onComplete={(data) => handleStageComplete(5, data)}
-                  />
-                )}
-                {currentStage === 6 && (
-                  <Stage6Review
-                    assignmentId={assignmentId}
-                    briefData={briefData || assignmentData}
-                    aiUsageLog={stageData.stage4?.aiAssistanceUsed || []}
-                    finalDraft={stageData.stage5?.formattedDraft || stageData.stage4?.draft || ''}
-                    onComplete={() => handleStageComplete(6, {})}
-                  />
-                )}
-              </div>
-            )}
+              ) : (
+                <>
+                  {currentStage === 1 && (
+                    <Stage1Understanding
+                      assignmentId={assignmentId}
+                      briefData={briefData || assignmentData}
+                      onComplete={(data) => handleStageComplete(1, data)}
+                    />
+                  )}
+                  {currentStage === 2 && (
+                    <Stage2Research
+                      assignmentId={assignmentId}
+                      briefData={briefData || assignmentData}
+                      onComplete={(data) => handleStageComplete(2, data)}
+                    />
+                  )}
+                  {currentStage === 3 && (
+                    <Stage3Structure
+                      assignmentId={assignmentId}
+                      briefData={briefData || assignmentData}
+                      onComplete={(data) => handleStageComplete(3, data)}
+                    />
+                  )}
+                  {currentStage === 4 && (
+                    <Stage4Drafting
+                       assignmentId={assignmentId}
+                       briefData={briefData || assignmentData}
+                       outline={stageData.stage3?.outlineStructure || []}
+                       onComplete={(data) => handleStageComplete(4, data)}
+                    />
+                  )}
+                  {currentStage === 5 && (
+                    <Stage5Formatting
+                      assignmentId={assignmentId}
+                      briefData={briefData || assignmentData}
+                      draft={draftText} // Pass persistent draft
+                      onComplete={(data) => handleStageComplete(5, data)}
+                    />
+                  )}
+                  {currentStage === 6 && (
+                    <Stage6Review
+                      assignmentId={assignmentId}
+                      briefData={briefData || assignmentData}
+                      aiUsageLog={stageData.stage4?.aiAssistanceUsed || []}
+                      finalDraft={draftText} // Pass persistent draft
+                      onComplete={() => handleStageComplete(6, {})}
+                    />
+                  )}
+                </>
+              )}
+            </div>
           </div>
 
-          {/* Right Sidebar: Durmah Chat (Persistent) */}
-          {/* Only show when not in mode selection or upload mode to avoid clutter initially, or show always? User said "all the phases". */}
-          {mode && !uploadMode && (
-             <div className="w-[400px] border-l border-gray-200 bg-gray-50 flex flex-col shadow-inner z-10">
-                <DurmahChat 
-                  contextType="assignment"
-                  contextTitle={safeAssignmentData.title}
-                  contextId={assignmentId}
-                  systemHint={`User is currently in Stage ${currentStage}: ${stages.find(s=>s.num===currentStage)?.name}. Help them with this specific stage.`}
-                  className="h-full border-0 rounded-none bg-transparent"
+          {/* MIDDLE: Persistent Editor (45%) */}
+          <div className="flex-1 flex flex-col bg-white min-w-[500px] relative">
+             {/* Import AssignmentEditor dynamically or top-left */}
+             <div className="absolute inset-0 flex flex-col">
+                <AssignmentEditor 
+                   valueHtml={draftHtml}
+                   onChange={handleEditorChange}
+                   className="h-full border-x border-gray-200"
                 />
              </div>
-          )}
+          </div>
+
+          {/* RIGHT: Durmah Mentor (30%) */}
+          <div className="w-[350px] bg-white border-l border-gray-200 flex flex-col shadow-inner z-20">
+             <DurmahChat 
+               contextType="assignment"
+               contextTitle={safeAssignmentData.title}
+               contextId={assignmentId}
+               systemHint={`User is currently in Stage ${currentStage}: ${stages.find(s=>s.num===currentStage)?.name}. Help them with this specific stage.`}
+               className="h-full border-0 rounded-none"
+             />
+          </div>
+
         </div>
       </div>
     </div>

@@ -135,7 +135,8 @@ export default function DurmahChat({
 
   // 4. Auto-Scroll
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    // Use block: 'nearest' to avoid scrolling the entire page if the widget is focused
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }, [messages, voiceTranscript]);
 
   // 5. Explicitly handle initial Prompt if provided (only once)
