@@ -43,6 +43,13 @@ interface UseDurmahRealtimeProps {
   voice?: string;
   onTurn?: (turn: VoiceTurn) => void;
   audioRef: React.RefObject<HTMLAudioElement>;
+  
+  // Compat Props (ignored or mapped)
+  enabled?: boolean;
+  userName?: string;
+  voiceId?: string; // map to voice
+  initialMessage?: string;
+  systemInstruction?: string; // map to systemPrompt if needed
 }
 
 // P6B: Normalize common mishears of "Durmah"
@@ -66,9 +73,12 @@ function normalizeDurmahTranscriptions(text: string): string {
 export function useDurmahRealtime({
   systemPrompt,
   voice = "shimmer",
+  voiceId,
   onTurn,
   audioRef,
 }: UseDurmahRealtimeProps) {
+  // Use voiceId as override if provided
+  const activeVoice = voiceId || voice;
   const [status, setStatus] = useState<
     "idle" | "connecting" | "listening" | "speaking" | "previewing" | "error"
   >("idle");
@@ -766,17 +776,21 @@ export function useDurmahRealtime({
   return {
     startListening,
     stopListening,
-    // Standard Interface Aliases for DurmahChat.tsx compatibility
+    
+    // Standard Aliases
     connect: startListening,
     disconnect: stopListening,
     isConnected: voiceActive,
-    isListening: voiceActive, // Already present but confirming
-    isSpeaking: speaking,     // Aligning naming if needed, though 'speaking' is returned below
-    
     isListening: voiceActive,
+    isSpeaking: speaking,
+
     status,
     speaking,
     error,
     playVoicePreview,
+    
+    // Compat fields
+    mode: 'voice',
+    transcript: '', 
   };
 }

@@ -21,6 +21,13 @@ interface UseDurmahGeminiLiveProps {
   voice?: string; // Gemini Live voices are different, we might map or ignore
   onTurn?: (turn: VoiceTurn) => void;
   audioRef: React.RefObject<HTMLAudioElement>; // Not strictly used if we use Web Audio API for smooth playback, but kept for interface compat.
+  
+  // Compat Props
+  enabled?: boolean;
+  userName?: string;
+  voiceId?: string;
+  initialMessage?: string;
+  systemInstruction?: string;
 }
 
 function arrayBufferToBase64(buffer: ArrayBuffer) {
@@ -51,6 +58,7 @@ export function useDurmahGeminiLive({
   systemPrompt,
   voice, // e.g. "Puck", "Charon", "Kore", "Fenrir" etc. Gemini has "Aoede", "Charon", "Fenrir", "Kore", "Puck"
   onTurn,
+  // ignore compat props
 }: UseDurmahGeminiLiveProps) {
   const [status, setStatus] = useState<"idle" | "connecting" | "listening" | "speaking" | "error">("idle");
   const [speaking, setSpeaking] = useState(false);
@@ -385,11 +393,20 @@ export function useDurmahGeminiLive({
     }
   }, [systemPrompt, voice, onTurn, stopListening, queueAudioPayload, flushAudioQueue, cleanup]);
 
+  const voiceActive = status === "connecting" || status === "listening" || status === "speaking";
+
   return {
     status,
-    isListening: status === "listening" || status === "speaking",
+    isListening: voiceActive,
     startListening,
     stopListening,
+    // Standard Interface Aliases for DurmahChat.tsx compatibility
+    connect: startListening,
+    disconnect: stopListening,
+    isConnected: voiceActive,
+    isSpeaking: speaking, 
+    mode: 'voice', // static for now
+    transcript: '', // Gemini Live handles transcripts internally or via events, we might need to expose if we capture it
     playVoicePreview: async () => {}, // No-op for now
     error,
     lastError: error,

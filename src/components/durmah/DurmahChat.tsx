@@ -120,10 +120,7 @@ export default function DurmahChat({
       
       // Use logMessage directly from useDurmahChat to persist to DB and update UI
       if (logMessage) {
-          await logMessage({
-              role,
-              content: turn.text
-          });
+          await logMessage(role, turn.text, 'voice');
       }
   }, [logMessage]);
 
@@ -315,7 +312,11 @@ INSTRUCTIONS:
                 <div className="text-sm font-bold text-white flex items-center gap-2">
                     Durmah
                     {isSyncing && <Loader2 size={10} className="animate-spin text-white/70" />}
-                    {!isSyncing && lastSyncedAt && <Check size={10} className="text-green-300" title="Saved" />}
+                    {!isSyncing && lastSyncedAt && (
+                        <span title="Saved" className="flex items-center">
+                            <Check size={10} className="text-green-300" />
+                        </span>
+                    )}
                     {isMinimized && <span className="text-[10px] bg-white/20 px-1 rounded ml-1">Mini</span>}
                 </div>
                 {!isMinimized && (
