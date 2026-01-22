@@ -166,12 +166,32 @@ export default function AssignmentsPage() {
 
   const handlePlanWithAI = () => {
     if (!selectedAssignment) return;
-    // URL-based navigation: add view=workflow param
-    router.push(
-      `/assignments?assignmentId=${selectedAssignment.id}&view=workflow`,
-      undefined,
-      { shallow: true }
-    );
+    
+    // Build context-aware prompt
+    const brief = selectedAssignment.brief_rich 
+      ? (typeof selectedAssignment.brief_rich === 'string' ? selectedAssignment.brief_rich : JSON.stringify(selectedAssignment.brief_rich))
+      : selectedAssignment.question_text || 'No brief provided.';
+
+    const prompt = `I want to plan my assignment "${selectedAssignment.title}".
+Due Date: ${new Date(selectedAssignment.due_date).toDateString()}
+Module: ${selectedAssignment.module_code || 'Unknown'}
+Brief: ${brief.substring(0, 1000)}
+
+Please help me:
+1. Break this down into key milestones.
+2. Suggest a checklist of tasks.
+3. Identify key resources I might need.`;
+
+    setChatInitialPrompt(prompt);
+    
+    // If using a global widget event as fallback
+    if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('durmah:message', { 
+            detail: { text: prompt, mode: 'study' }
+        }));
+    }
+    
+    toast.success("Durmah briefed with assignment context");
   }
 
   if (loading || isRoleChecking || isLovedOne) {

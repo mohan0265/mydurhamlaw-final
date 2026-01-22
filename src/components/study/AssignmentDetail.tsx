@@ -1,11 +1,22 @@
 import { useState, useEffect } from 'react';
 import { format, differenceInDays } from 'date-fns';
 import { getSupabaseClient } from '@/lib/supabase/client';
-import {Assignment, AssignmentStatus } from '@/types/assignments';
-import { Calendar, CheckCircle, Clock, Trash2, Brain, Download, Eye } from 'lucide-react';
+import { Assignment, AssignmentStatus } from '@/types/assignments';
+import { 
+  Calendar, CheckCircle, Trash2, Brain, Eye, 
+  LayoutDashboard, FileText, CheckSquare, Award, Flag, Send 
+} from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useScrollToTop } from '@/hooks/useScrollToTop';
 import AssignmentPreviewModal from './AssignmentPreviewModal';
+
+// Tabs
+import OverviewTab from './tabs/OverviewTab';
+import BriefTab from './tabs/BriefTab';
+import ChecklistTab from './tabs/ChecklistTab';
+import RubricTab from './tabs/RubricTab';
+import MilestonesTab from './tabs/MilestonesTab';
+import SubmissionTab from './tabs/SubmissionTab';
 
 interface AssignmentDetailProps {
   assignment: Assignment;
@@ -15,14 +26,13 @@ interface AssignmentDetailProps {
 }
 
 export default function AssignmentDetail({ assignment, onUpdate, onPlanWithAI, onDelete }: AssignmentDetailProps) {
-  const [loading, setLoading] = useState(false);
-  const [status, setStatus] = useState<AssignmentStatus>(assignment.status);
+  const [activeTab, setActiveTab] = useState('overview');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [finalDraft, setFinalDraft] = useState<string | null>(null);
-  const [aiUsageLog, setAiUsageLog] = useState<string[]>([]);
   const [showPreviewModal, setShowPreviewModal] = useState(false);
+  
+  // Status State (for header access)
+  const [status, setStatus] = useState<AssignmentStatus>(assignment.status);
 
-  // Scroll to top when component mounts
   useScrollToTop();
 
   useEffect(() => {
@@ -41,256 +51,92 @@ export default function AssignmentDetail({ assignment, onUpdate, onPlanWithAI, o
       onUpdate();
     } catch {
       toast.error("Failed to update status");
-      setStatus(assignment.status); // revert
-    }
-  };
-
-  // Fetch final draft if assignment is completed
-  useEffect(() => {
-    if (status === 'completed') {
-      const fetchDraft = async () => {
-        const supabase = getSupabaseClient();
-        
-        // Try Stage 5 (formatted draft) first, then fall back to Stage 4 (raw draft)
-        let draft = null;
-        let aiLog: string[] = [];
-        
-        // Stage 5: Formatting & Citations (has formattedDraft)
-        const { data: stage5Data } = await supabase
-          .from('assignment_progress')
-          .select('content')
-          .eq('assignment_id', assignment.id)
-          .eq('step_key', 'stage_5_formatting')
-          .maybeSingle();
-        
-        if (stage5Data?.content?.formattedDraft) {
-          draft = stage5Data.content.formattedDraft;
-        }
-        
-        // Fallback to Stage 4 if Stage 5 doesn't exist
-        if (!draft) {
-          const { data: stage4Data } = await supabase
-            .from('assignment_progress')
-            .select('content')
-            .eq('assignment_id', assignment.id)
-            .eq('step_key', 'stage_4_drafting')
-            .maybeSingle();
-          
-          if (stage4Data?.content?.content) {
-            draft = stage4Data.content.content;
-          }
-          
-          // Get AI usage log from Stage 4
-          if (stage4Data?.content?.aiUsageLog) {
-            aiLog = stage4Data.content.aiUsageLog;
-          }
-        }
-        
-        setFinalDraft(draft);
-        setAiUsageLog(aiLog);
-      };
-      fetchDraft();
-    }
-  }, [status, assignment.id]);
-
-  const copyToClipboard = async () => {
-    if (!finalDraft) {
-      toast.error('No draft available');
-      return;
-    }
-   try {
-      await navigator.clipboard.writeText(finalDraft);
-      toast.success('✅ Essay copied! Paste into Microsoft Word.');
-    } catch (error) {
-      toast.error('Failed to copy text');
-    }
-  };
-
-  const downloadAssignment = () => {
-    if (!finalDraft) {
-      toast.error('No draft available for download');
-      return;
-    }
-
-    try {
-      setLoading(true);
-      
-      // Create form to submit data via POST
-      const form = document.createElement('form');
-      form.method = 'POST';
-      form.action = '/.netlify/functions/generate-assignment-doc';
-      form.target = 'download_iframe';
-      form.style.display = 'none';
-
-      // Add hidden iframe to receive response
-      let iframe = document.getElementById('download_iframe') as HTMLIFrameElement;
-      if (!iframe) {
-        iframe = document.createElement('iframe');
-        iframe.id = 'download_iframe';
-        iframe.name = 'download_iframe';
-        iframe.style.display = 'none';
-        document.body.appendChild(iframe);
-      }
-
-      // Add data as form field
-      const input = document.createElement('input');
-      input.type = 'hidden';
-      input.name = 'payload';
-      input.value = JSON.stringify({
-        assignment: {
-          module_code: assignment.module_code,
-          module_name: assignment.module_name,
-          title: assignment.title,
-          due_date: assignment.due_date ? format(new Date(assignment.due_date), 'PPP') : null,
-        },
-        finalDraft,
-        aiUsageLog,
-      });
-
-      form.appendChild(input);
-      document.body.appendChild(form);
-      form.submit();
-      document.body.removeChild(form);
-      
-      toast.success('✅ Generating download...');
-    } catch (error) {
-      console.error('[Download Error]:', error);
-      toast.error('Failed to generate document: ' + ((error as any).message || 'Unknown error'));
-    } finally {
-      setLoading(false);
+      setStatus(assignment.status);
     }
   };
 
   const daysLeft = differenceInDays(new Date(assignment.due_date), new Date());
   const isOverdue = daysLeft < 0;
 
+  const tabs = [
+    { id: 'overview', label: 'Overview', icon: LayoutDashboard },
+    { id: 'brief', label: 'Brief', icon: FileText },
+    { id: 'checklist', label: 'Checklist', icon: CheckSquare },
+    { id: 'rubric', label: 'Rubric', icon: Award },
+    { id: 'milestones', label: 'Milestones', icon: Flag },
+    { id: 'submission', label: 'Submission', icon: Send },
+  ];
+
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 h-[600px] flex flex-col overflow-y-auto">
+    <div className="bg-white rounded-xl shadow-sm border border-gray-200 h-[800px] flex flex-col overflow-hidden">
       {/* Header */}
-      <div className="mb-6">
-        <div className="flex justify-between items-start mb-2">
-          <h2 className="text-2xl font-bold text-gray-800 leading-tight">{assignment.title}</h2>
-          <button 
-            onClick={() => setShowDeleteConfirm(true)}
-            className="px-3 py-1.5 bg-red-500 text-white text-sm rounded-lg hover:bg-red-600 transition flex items-center gap-1.5"
-            title="Delete this assignment"
-          >
-            <Trash2 size={16} />
-            Delete
-          </button>
-        </div>
-        
-        <div className="flex flex-wrap gap-3 text-sm text-gray-600 mb-4">
-          {assignment.module_code && (
-             <span className="font-mono bg-gray-100 px-2 py-0.5 rounded text-gray-700">{assignment.module_code}</span>
-          )}
-          {assignment.module_name && (
-             <span className="font-medium">{assignment.module_name}</span>
-          )}
-          <span className="text-gray-300">|</span>
-          <span>{assignment.assignment_type}</span>
-        </div>
-
-        <div className="flex items-center gap-4 bg-gray-50 p-3 rounded-lg border border-gray-100">
-          <div className={`flex items-center gap-2 ${isOverdue && status !== 'completed' ? 'text-red-600' : 'text-gray-700'}`}>
-             <Calendar size={18} />
-             <span className="font-medium">Due: {format(new Date(assignment.due_date), 'PPP p')}</span>
+      <div className="p-6 border-b border-gray-100 bg-white z-10">
+        <div className="flex justify-between items-start mb-4">
+          <div>
+              <h2 className="text-2xl font-bold text-gray-800 leading-tight">{assignment.title}</h2>
+              <div className="flex flex-wrap gap-2 mt-2 text-sm">
+                {assignment.module_code && <span className="font-mono bg-gray-100/50 px-2 py-0.5 rounded text-gray-600">{assignment.module_code}</span>}
+                <span className={`flex items-center gap-1 font-medium ${isOverdue ? 'text-red-600' : 'text-gray-500'}`}>
+                    <Calendar size={14} />
+                    {format(new Date(assignment.due_date), 'MMM d')} ({isOverdue ? 'Overdue' : `${daysLeft}d left`})
+                </span>
+              </div>
           </div>
-          <div className={`text-xs font-bold px-2 py-0.5 rounded-full ${
-            status === 'completed' ? 'bg-green-100 text-green-700' : 
-            isOverdue ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'
-          }`}>
-             {status === 'completed' ? 'Completed' : isOverdue ? 'Overdue' : `${daysLeft} days left`}
-          </div>
-        </div>
-      </div>
-
-      {/* Status Control */}
-      <div className="mb-6">
-        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Status</label>
-        <div className="grid grid-cols-3 gap-2">
-           {(['not_started', 'planning', 'drafting', 'editing', 'submitted', 'completed'] as AssignmentStatus[]).map((s) => (
-             <button
-               key={s}
-               onClick={() => updateStatus(s)}
-               className={`py-2 px-1 text-xs font-medium rounded-md border transition-all ${
-                 status === s
-                   ? 'bg-violet-600 text-white border-violet-600 shadow-md'
-                   : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
-               }`}
-             >
-               {s.replace('_', ' ')}
-             </button>
-           ))}
-        </div>
-      </div>
-
-      {/* Question / Brief */}
-      <div className="flex-1 min-h-0 flex flex-col mb-6">
-         <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Assignment Brief</label>
-         <div className="flex-1 bg-gray-50 rounded-lg border border-gray-200 p-4 overflow-y-auto whitespace-pre-wrap text-sm text-gray-800 leading-relaxed shadow-inner">
-           {assignment.question_text || <span className="text-gray-400 italic">No brief provided.</span>}
-         </div>
-      </div>
-
-      {/* Actions */}
-      <div className="flex flex-col gap-3">
-        {/* Quick copy button for completed assignments */}
-        {status === 'completed' && finalDraft && (
           <div className="flex gap-2">
-            <button
-              onClick={copyToClipboard}
-              className="flex-1 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-xl font-bold shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2"
-            >
-              📋 Copy Text
-            </button>
-            <button
-              onClick={() => setShowPreviewModal(true)}
-              className="flex-1 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl font-bold shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2"
-            >
-              <Eye size={18} />
-              Review & Download
-            </button>
+             <button
+               onClick={onPlanWithAI}
+               className="bg-gradient-to-r from-violet-600 to-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all flex items-center gap-2"
+             >
+               <Brain size={16} /> Plan with Durmah
+             </button>
+             <button 
+                onClick={() => setShowDeleteConfirm(true)}
+                className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition"
+             >
+                <Trash2 size={18} />
+             </button>
           </div>
-        )}
-        
-        <div className="flex gap-3">
-          <button
-            onClick={onPlanWithAI}
-            className="flex-1 py-3 bg-gradient-to-r from-violet-600 to-indigo-600 text-white rounded-xl font-bold shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2"
-          >
-            <Brain size={18} />
-            Plan with Durmah
-          </button>
-          {status !== 'completed' && status !== 'submitted' && (
-            <button
-              onClick={() => updateStatus('submitted')}
-              className="flex-none px-6 py-3 bg-green-600 text-white rounded-xl font-bold hover:bg-green-700 shadow-md transition-all flex items-center justify-center gap-2"
-            >
-              <CheckCircle size={18} /> Submit
-            </button>
-          )}
+        </div>
+
+        {/* Tab Navigation */}
+        <div className="flex items-center gap-1 overflow-x-auto no-scrollbar pb-1">
+            {tabs.map(tab => (
+                <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${
+                        activeTab === tab.id 
+                        ? 'bg-gray-900 text-white shadow-sm' 
+                        : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
+                    }`}
+                >
+                    <tab.icon size={16} className={activeTab === tab.id ? 'text-violet-300' : ''} />
+                    {tab.label}
+                </button>
+            ))}
         </div>
       </div>
 
-      {/* Preview Modal */}
-      <AssignmentPreviewModal
-        assignment={assignment}
-        finalDraft={finalDraft}
-        aiUsageLog={aiUsageLog}
-        isOpen={showPreviewModal}
-        onClose={() => setShowPreviewModal(false)}
-        onDownload={downloadAssignment}
-      />
+      {/* Content Area */}
+      <div className="flex-1 overflow-hidden bg-[#F8FAFC] relative">
+          <div className="absolute inset-0 p-6 overflow-y-auto custom-scrollbar">
+             {activeTab === 'overview' && <OverviewTab assignment={assignment} />}
+             {activeTab === 'brief' && <BriefTab assignment={assignment} onUpdate={onUpdate} />}
+             {activeTab === 'checklist' && <ChecklistTab assignment={assignment} />}
+             {activeTab === 'rubric' && <RubricTab assignment={assignment} />}
+             {activeTab === 'milestones' && <MilestonesTab assignment={assignment} />}
+             {activeTab === 'submission' && <SubmissionTab assignment={assignment} />}
+          </div>
+      </div>
 
       {/* Delete Confirmation Modal */}
       {showDeleteConfirm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setShowDeleteConfirm(false)}>
-          <div className="bg-white rounded-xl shadow-2xl p-6 max-w-md mx-4" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-xl font-bold text-gray-800 mb-3">Delete Assignment?</h3>
-            <p className="text-gray-600 mb-6">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setShowDeleteConfirm(false)}>
+          <div className="bg-white rounded-xl shadow-2xl p-6 max-w-md w-full" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-xl font-bold text-gray-800 mb-2">Delete Assignment?</h3>
+            <p className="text-gray-600 mb-6 text-sm">
               Are you sure you want to delete <span className="font-semibold">"{assignment.title}"</span>? 
-              This action cannot be undone and all progress will be lost.
+              This matches the "measure twice, cut once" principle—deletion is permanent.
             </p>
             <div className="flex gap-3">
               <button
@@ -304,14 +150,25 @@ export default function AssignmentDetail({ assignment, onUpdate, onPlanWithAI, o
                   setShowDeleteConfirm(false);
                   onDelete();
                 }}
-                className="flex-1 px-4 py-2.5 bg-red-500 text-white rounded-lg hover:bg-red-600 font-medium transition"
+                className="flex-1 px-4 py-2.5 bg-red-500 text-white rounded-lg hover:bg-red-600 font-bold transition"
               >
-                Delete Assignment
+                Yes, Delete
               </button>
             </div >
           </div >
         </div >
       )}
-    </div >
+
+      {/* Preview Modal (kept for compatibility) */}
+      <AssignmentPreviewModal
+        assignment={assignment}
+        finalDraft={null}
+        aiUsageLog={[]}
+        isOpen={showPreviewModal}
+        onClose={() => setShowPreviewModal(false)}
+        onDownload={() => {}}
+      />
+    </div>
   );
 }
+
