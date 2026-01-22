@@ -1,16 +1,36 @@
-import { useState, useRef, useEffect, useMemo } from 'react';
-import { ArrowRight, Brain, AlertTriangle, Send } from 'lucide-react';
-import { useAuth } from '@/lib/supabase/AuthContext';
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import { Brain, AlertTriangle, Send, Mic, MicOff, Maximize2, Minimize2, FileText, Check, Loader2 } from 'lucide-react';
+import { useAuth, useSupabaseClient } from '@/lib/supabase/AuthContext';
 import { useDurmah } from '@/lib/durmah/context';
 import { useDurmahDynamicContext } from '@/hooks/useDurmahDynamicContext';
 import { buildDurmahSystemPrompt, buildDurmahContextBlock } from '@/lib/durmah/systemPrompt';
+import { useDurmahChat, DurmahMessage } from '@/hooks/useDurmahChat';
+import { useDurmahRealtime } from '@/hooks/useDurmahRealtime';
+import { useDurmahGeminiLive } from '@/hooks/useDurmahGeminiLive';
+import { useDurmahSettings } from '@/hooks/useDurmahSettings';
+import toast from 'react-hot-toast';
+import { v5 as uuidv5 } from 'uuid';
 
-type Msg = { role: "durmah" | "you"; text: string; ts: number };
+// Namespace for deterministic UUIDs (Durmah Context Namespace) matches useDurmahChat
+const DURMAH_NAMESPACE = '6ba7b810-9dad-11d1-80b4-00c04fd430c8';
+
+// Voice Provider Selection Logic
+function getVoiceProvider(): 'openai' | 'gemini' {
+  if (typeof window !== 'undefined') {
+    const override = localStorage.getItem('durmah_voice_override');
+    if (override === 'openai' || override === 'gemini') return override;
+  }
+  return (process.env.NEXT_PUBLIC_DURMAH_VOICE_PROVIDER || 'openai').toLowerCase() === 'gemini' 
+    ? 'gemini' 
+    : 'openai';
+}
+
+const VOICE_PROVIDER = getVoiceProvider();
 
 interface DurmahChatProps {
   contextType: "assignment" | "exam" | "general";
   contextTitle: string;
-  contextId?: string;
+  contextId?: string; // Assignment ID or Module Code
   systemHint?: string;
   initialPrompt?: string;
   className?: string;
@@ -25,289 +45,355 @@ export default function DurmahChat({
   className = ""
 }: DurmahChatProps) {
   const { user } = useAuth();
+  const supabase = useSupabaseClient();
   const durmahCtx = useDurmah();
   const { upcomingTasks, todaysEvents } = useDurmahDynamicContext();
+  const { voiceId } = useDurmahSettings();
 
-  const [messages, setMessages] = useState<Msg[]>([]);
+  // Voice Hook Selection
+  const useVoiceHook = VOICE_PROVIDER === 'gemini' ? useDurmahGeminiLive : useDurmahRealtime;
+  
+  // State
   const [input, setInput] = useState("");
-  const [isStreaming, setIsStreaming] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [lastSyncedAt, setLastSyncedAt] = useState<Date | null>(null);
+  const [isSyncing, setIsSyncing] = useState(false);
+  
+  // Refs
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const streamControllerRef = useRef<AbortController | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Auto-resize textarea
+  // 1. Initialize Chat Hook (Persistent Session per Assignment)
+  const { 
+    messages, 
+    sendMessage, 
+    isLoading: isChatLoading, 
+    conversationId,
+    logMessage
+  } = useDurmahChat({
+    source: 'assignment',
+    scope: 'assignment',
+    context: { 
+      assignmentId: contextId,
+      title: contextTitle,
+      mode: 'study' 
+    },
+    // Stabilize session ID based on Assignment ID for persistence
+    sessionId: contextId ? uuidv5(`assignment-${user?.id}-${contextId}`, DURMAH_NAMESPACE) : null
+  });
+
+  // 2. Initialize Voice Hook
+  const {
+    isConnected: isVoiceConnected,
+    isListening: isVoiceListening,
+    isSpeaking: isVoiceSpeaking,
+    connect: connectVoice,
+    disconnect: disconnectVoice,
+    mode: voiceMode,
+    transcript: voiceTranscript
+  } = useVoiceHook({
+    enabled: true,
+    userName: durmahCtx.firstName || 'Student',
+    voiceId: voiceId,
+    initialMessage: initialPrompt || `I'm ready to help with ${contextTitle}.`,
+    systemInstruction: `You are Durmah, a helpful academic tutor. You are helping with the assignment: "${contextTitle}". Be concise, encouraging, and helpful. Do not write the essay for the student.`
+  });
+
+  // 3. Sync Voice Transcript to Chat
   useEffect(() => {
-    if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto'; // Reset
-      textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 200)}px`;
-    }
-  }, [input]);
+    // When voice transcript updates, we could log it to the chat
+    // For now, let's rely on the voice provider handling the conversation flow
+    // and manual syncing if desired. 
+    // BUT: Students want a text record of the voice chat. 
+    // Realtime API usually provides transcripts.
+    // If specific hook supports onMessage, use that. 
+    // Assuming simple integration for now: Voice operates somewhat independently but shares context.
+  }, [voiceTranscript]);
 
-  // Auto-scroll
+
+  // 4. Auto-Scroll
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  }, [messages, voiceTranscript]);
 
-  // Initial greeting or prompt
+  // 5. Explicitly handle initial Prompt if provided (only once)
+  const initialPromptSentRef = useRef(false);
   useEffect(() => {
-    if (messages.length === 0) {
-      if (initialPrompt) {
-         // Auto-send initial prompt from user side perspective? Or system greeting?
-         // Usually better to have Durmah greet with context.
-         setMessages([{ role: "durmah", text: initialPrompt, ts: Date.now() }]);
-      } else {
-         const greeting = contextType === 'assignment' 
-            ? `I'm ready to help with "${contextTitle}". We can break it down, plan your research, or check your structure.`
-            : contextType === 'exam'
-            ? `Let's get exam ready for "${contextTitle}". I can help with revision planning and testing your knowledge.`
-            : `Hello! I'm listening.`;
-         setMessages([{ role: "durmah", text: greeting, ts: Date.now() }]);
-      }
+    if (initialPrompt && !initialPromptSentRef.current && conversationId && messages.length === 0) {
+       sendMessage(initialPrompt, 'text');
+       initialPromptSentRef.current = true;
     }
-  }, [contextType, contextTitle, initialPrompt, messages.length]);
+  }, [initialPrompt, conversationId, messages.length, sendMessage]);
 
-  // Construct context-aware system prompt
-  const systemPrompt = useMemo(() => {
-    // Base student context
-    const studentContext = {
-      student: {
-        displayName: (durmahCtx as any).profile?.displayName || durmahCtx.firstName || "Student",
-        yearGroup: (durmahCtx as any).profile?.yearGroup || durmahCtx.yearKey || "year1",
-        term: durmahCtx.nowPhase || "term time",
-        weekOfTerm: (durmahCtx as any).academic?.weekOfTerm || 0,
-        localTimeISO: new Date().toISOString(),
-      },
-      academic: {
-        timezone: 'Europe/London',
-        now: {
-            nowText: new Date().toLocaleString('en-GB', { timeZone: 'Europe/London' }),
-            dayKey: new Date().toISOString().split('T')[0],
-            timeZone: 'Europe/London'
-        } as any
-      },
-      assignments: {
-        upcoming: upcomingTasks || [],
-        overdue: [],
-        recentlyCreated: [],
-        total: (upcomingTasks?.length || 0)
-      },
-      schedule: {
-        todaysClasses: todaysEvents?.map((e: any) => ({ module_name: e.title, time: e.start })) || []
-      },
-      yaag: {
-          itemsByDay: {},
-          rangeStart: '',
-          rangeEnd: ''
-      }
-    };
+  // 6. SYNC TO JOURNAL (Auto-Save Logic)
+  const syncToJournal = useCallback(async () => {
+    if (!user || !supabase || !contextId || messages.length === 0) return;
+    if (isSyncing) return;
 
-    let contextInstruction = "";
-    if (contextType === "assignment") {
-      contextInstruction = `
-Current Context: ASSIGNMENT ASSISTANCE
-Assignment: "${contextTitle}"
-ID: ${contextId || 'N/A'}
-
-ROLE: You are an academic mentor. You MUST NOT write the student's assignment for them.
-- Help break down the question.
-- Suggest structures and outlines.
-- Explain legal concepts relative to the topic.
-- Critique draft text if provided.
-- REMIND them to follow Durham's academic integrity rules.
-- If asked to write the essay, refuse politely and offer to help plan it instead.
-${systemHint || ""}
-`;
-    } else if (contextType === "exam") {
-      contextInstruction = `
-Current Context: EXAM PREPARATION
-Module/Exam: "${contextTitle}"
-ID: ${contextId || 'N/A'}
-
-ROLE: You are a revision coach.
-- Focus on testing knowledge, explaining concepts, and revision planning.
-- Do NOT help with live exam questions.
-- If the student implies they are in a live exam, refuse to answer content questions.
-${systemHint || ""}
-`;
-    }
-
-    // Combine standard prompt with specific context
-    // We can reuse buildDurmahSystemPrompt and append, or build a custom one.
-    // Ideally we append our specific instructions to the standard persona.
-    // const basePrompt = buildDurmahSystemPrompt(studentContext as any, null, upcomingTasks, todaysEvents, { systemTone: "Mentor" });
-    // return `${basePrompt}\n\n${contextInstruction}`;
-
-    const identity = buildDurmahSystemPrompt(true); // true = indicate context usage
-    const baseContext = buildDurmahContextBlock(studentContext as any);
-    return `${identity}\n\n${baseContext}\n\n${contextInstruction}`;
-  }, [user, durmahCtx, upcomingTasks, todaysEvents, contextType, contextTitle, contextId, systemHint]);
-
-  async function sendMessage() {
-    if (!input.trim() || isStreaming) return;
-    const userText = input.trim();
-    setInput("");
-    
-    const now = Date.now();
-    const newHistory = [...messages, { role: "you" as const, text: userText, ts: now }];
-    setMessages(newHistory);
-    
-    // Add placeholder for AI response
-    const assistantId = now + 1;
-    setMessages(prev => [...prev, { role: "durmah", text: "", ts: assistantId }]);
-    setIsStreaming(true);
-
+    setIsSyncing(true);
     try {
-      const controller = new AbortController();
-      streamControllerRef.current = controller;
+      // A. Deterministic Journal ID for this assignment
+      const journalId = uuidv5(`journal-${contextId}`, DURMAH_NAMESPACE);
+      const folderName = `Assignment: ${contextTitle.substring(0, 50)}`;
 
-      // Prepare payload
-      const payloadMessages = [
-        { role: "system", content: systemPrompt },
-        ...newHistory.map(m => ({
-          role: m.role === "durmah" ? "assistant" : "user",
-          content: m.text
-        }))
-      ];
-
-      const res = await fetch("/api/chat-stream", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-           messages: payloadMessages,
-           // Metadata for backend logging if supported
-           metadata: {
-             pageContext: contextType,
-             contextId,
-             userId: user?.id
-           }
-        }),
-        signal: controller.signal
-      });
-
-      if (!res.ok) throw new Error(await res.text());
-      if (!res.body) return;
-
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let buf = "";
-
-      while (true) {
-        const { value, done } = await reader.read();
-        if (done) break;
-        buf += decoder.decode(value, { stream: true });
-        
-        setMessages(current => 
-          current.map(m => m.ts === assistantId ? { ...m, text: buf } : m)
-        );
-      }
+      // B. Ensure Folder Exists
+      // We try to find it first
+      const { data: folderData } = await supabase
+        .from('transcript_folders')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('name', folderName)
+        .single();
       
-      buf += decoder.decode();
-      setMessages(current => 
-        current.map(m => m.ts === assistantId ? { ...m, text: buf.trim() } : m)
-      );
+      let folderId = folderData?.id;
 
-    } catch (err: any) {
-      if (err.name !== 'AbortError') {
-        setMessages(current => 
-          current.map(m => m.ts === assistantId ? { ...m, text: "I'm having trouble connecting right now." } : m)
-        );
+      if (!folderId) {
+        // Create it
+        const { data: newFolder } = await supabase
+          .from('transcript_folders')
+          .insert({
+             user_id: user.id,
+             name: folderName,
+             color: '#8B5CF6' // Violet
+          })
+          .select('id')
+          .single();
+        folderId = newFolder?.id;
       }
+
+      // C. Upsert Journal Entry
+      const transcriptJSON = messages.map(m => ({
+          role: m.role === 'user' ? 'you' : 'durmah',
+          text: m.content,
+          ts: new Date(m.created_at).getTime()
+      }));
+
+      const { error: journalError } = await supabase
+        .from('voice_journals')
+        .upsert({
+            id: journalId,
+            user_id: user.id,
+            topic: `Discussion: ${contextTitle}`,
+            summary: `Ongoing discussion about ${contextTitle}. Updated ${new Date().toLocaleTimeString()}`,
+            transcript: transcriptJSON,
+            duration: 0, // Text chat
+            created_at: new Date().toISOString(), // Keep updating? No, preserve start.
+            updated_at: new Date().toISOString()
+        })
+        .select();
+
+       if (journalError) throw journalError;
+
+       // D. Ensure Link to Folder
+       if (folderId) {
+           await supabase
+             .from('transcript_folder_items')
+             .upsert({
+                 folder_id: folderId,
+                 journal_id: journalId,
+                 user_id: user.id
+             }, { onConflict: 'folder_id,journal_id' });
+       }
+
+       setLastSyncedAt(new Date());
+       // toast.success('Progress saved', { id: 'autosave', duration: 1000 });
+
+    } catch (err) {
+        console.error('Auto-save failed:', err);
     } finally {
-      setIsStreaming(false);
-      streamControllerRef.current = null;
+        setIsSyncing(false);
     }
-  }
+  }, [user, supabase, contextId, contextTitle, messages, isSyncing]);
+
+  // 7. Trigger Auto-Save
+  useEffect(() => {
+     // Save every 30 seconds if messages change
+     if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
+     
+     autoSaveTimerRef.current = setTimeout(() => {
+         if (messages.length > 0) syncToJournal();
+     }, 30000);
+
+     return () => {
+         if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
+     };
+  }, [messages, syncToJournal]);
+
+  // Handle Unmount Save
+  // Note: Reliable unmount save is hard in React. We rely on the periodic save 
+  // and the manual "Save" button if we add one.
+
+  const handleSendMessage = async () => {
+    if (!input.trim() || isChatLoading) return;
+    await sendMessage(input, 'text');
+    setInput("");
+    // Trigger immediate sync after message (debounced by logic above? No, let's just trigger it)
+    setTimeout(syncToJournal, 1000);
+  };
+
+  const toggleVoice = () => {
+      if (isVoiceConnected) {
+          disconnectVoice();
+      } else {
+          connectVoice();
+      }
+  };
 
   return (
-    <div className={`flex flex-col bg-white rounded-xl shadow-sm border border-gray-200 h-[600px] ${className}`}>
+    <div className={`flex flex-col bg-white rounded-xl shadow-sm border border-gray-200 transition-all duration-300 ${isExpanded ? 'fixed inset-4 z-50 shadow-2xl' : 'h-[600px]'} ${className}`}>
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-gradient-to-r from-violet-50 to-white rounded-t-xl">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-full bg-violet-100 flex items-center justify-center text-violet-600">
-            <Brain size={16} />
+          <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${isVoiceConnected ? 'bg-red-100 text-red-600 animate-pulse' : 'bg-violet-100 text-violet-600'}`}>
+            {isVoiceConnected ? <Mic size={16} /> : <Brain size={16} />}
           </div>
           <div>
-            <div className="text-sm font-bold text-gray-800">Durmah</div>
-            <div className="text-xs text-violet-600 font-medium">
+            <div className="text-sm font-bold text-gray-800 flex items-center gap-2">
+                Durmah
+                {isSyncing && <Loader2 size={10} className="animate-spin text-gray-400" />}
+                {!isSyncing && lastSyncedAt && <Check size={10} className="text-green-500" title="Saved" />}
+            </div>
+            <div className="text-xs text-violet-600 font-medium truncate max-w-[150px]">
               {contextType === 'assignment' ? 'Assignment Mentor' : 'Exam Coach'}
             </div>
           </div>
         </div>
-        {contextTitle && (
-          <div className="text-xs text-gray-400 max-w-[150px] truncate text-right">
-            {contextTitle}
-          </div>
-        )}
+        
+        <div className="flex items-center gap-2">
+            {/* Voice Toggle */}
+            <button
+                onClick={toggleVoice}
+                className={`p-2 rounded-full transition-colors ${
+                    isVoiceConnected 
+                    ? 'bg-red-500 text-white hover:bg-red-600 shadow-md ring-2 ring-red-200' 
+                    : 'bg-gray-100 text-gray-600 hover:bg-violet-100 hover:text-violet-600'
+                }`}
+                title={isVoiceConnected ? "Stop Voice Mode" : "Start Voice Mode"}
+            >
+                {isVoiceConnected ? <MicOff size={16} /> : <Mic size={16} />}
+            </button>
+
+            {/* Expand Toggle */}
+            <button 
+                onClick={() => setIsExpanded(!isExpanded)}
+                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg"
+            >
+                {isExpanded ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+            </button>
+        </div>
       </div>
 
       {/* Ethics Banner */}
       <div className="bg-blue-50 px-4 py-2 border-b border-blue-100 flex items-start gap-2">
         <AlertTriangle className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" />
-        <p className="text-xs text-blue-700 leading-tight">
-          {contextType === 'assignment' 
-            ? "Durmah helps you think, plan, and revise — not write your work for you. Always submit your own original work."
-            : "No AI use permitted in live exams or prohibited assessments. Use this for revision only."
-          }
+        <p className="text-[10px] text-blue-700 leading-tight">
+             Durmah helps you plan and revise. {contextType === 'assignment' ? 'Always submit your own original work.' : 'Do not use during live exams.'}
         </p>
       </div>
 
-      {/* Messages */}
+      {/* Messages Area */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50/50">
+        {/* Render Chat Messages */}
         {messages.map((m) => (
-          <div key={m.ts} className={`flex ${m.role === "you" ? "justify-end" : "justify-start"}`}>
+          <div key={m.id || m.created_at} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
             <div
-              className={`px-4 py-3 rounded-2xl max-w-[85%] text-sm shadow-sm leading-relaxed ${
-                m.role === "you"
+              className={`px-4 py-3 rounded-2xl max-w-[85%] text-sm shadow-sm leading-relaxed group relative ${
+                m.role === "user"
                   ? "bg-violet-600 text-white rounded-tr-sm"
-                  : "bg-white text-gray-800 border border-gray-100 rounded-tl-sm"
+                  : "bg-white text-gray-800 border border-gray-100 rounded-tl-sm transition-colors hover:border-violet-200"
               }`}
             >
-              <div className="whitespace-pre-wrap">{m.text}</div>
+              <div className="whitespace-pre-wrap">{m.content}</div>
+              
+              {/* Copy Button (only on hover) */}
+              {m.role === 'assistant' && (
+                  <button 
+                    onClick={() => {
+                        navigator.clipboard.writeText(m.content);
+                        toast.success("Copied to clipboard");
+                    }}
+                    className="absolute -right-8 top-2 opacity-0 group-hover:opacity-100 p-1.5 text-gray-400 hover:text-violet-600 bg-white rounded-full shadow-sm border border-gray-100 transition-all"
+                    title="Copy text"
+                  >
+                      <FileText size={12} />
+                  </button>
+              )}
             </div>
           </div>
         ))}
-         {isStreaming && (
-            <div className="flex justify-start">
-               <div className="px-4 py-3 bg-white rounded-2xl rounded-tl-sm border border-gray-100 shadow-sm">
-                  <div className="flex gap-1">
-                     <span className="w-1.5 h-1.5 bg-violet-400 rounded-full animate-bounce"></span>
-                     <span className="w-1.5 h-1.5 bg-violet-400 rounded-full animate-bounce delay-75"></span>
-                     <span className="w-1.5 h-1.5 bg-violet-400 rounded-full animate-bounce delay-150"></span>
-                  </div>
-               </div>
+        
+        {/* Loading Indicator */}
+        {isChatLoading && (
+           <div className="flex justify-start">
+              <div className="px-4 py-3 bg-white rounded-2xl rounded-tl-sm border border-gray-100 shadow-sm flex gap-1 items-center">
+                 <span className="w-1.5 h-1.5 bg-violet-400 rounded-full animate-bounce"></span>
+                 <span className="w-1.5 h-1.5 bg-violet-400 rounded-full animate-bounce delay-75"></span>
+                 <span className="w-1.5 h-1.5 bg-violet-400 rounded-full animate-bounce delay-150"></span>
+              </div>
+           </div>
+        )}
+        
+         {/* Voice Status Indicator Overlay */}
+        {isVoiceConnected && (
+            <div className="sticky bottom-0 left-0 right-0 p-2 flex justify-center pointer-events-none">
+                 <div className="bg-black/70 backdrop-blur-md text-white text-xs px-3 py-1.5 rounded-full flex items-center gap-2 shadow-lg animate-in fade-in slide-in-from-bottom-2">
+                     {isVoiceListening ? (
+                         <>
+                            <Mic size={12} className="text-red-400 animate-pulse" />
+                            <span>Listening...</span>
+                         </>
+                     ) : isVoiceSpeaking ? (
+                         <>
+                            <Brain size={12} className="text-violet-300 animate-pulse" />
+                            <span>Speaking...</span>
+                         </>
+                     ) : (
+                         <span className="opacity-80">Voice Active</span>
+                     )}
+                 </div>
             </div>
-         )}
+        )}
+
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input */}
+      {/* Input Area */}
       <div className="p-3 border-t border-gray-100 bg-white rounded-b-xl">
         <div className="flex gap-2">
           <textarea
             ref={textareaRef}
             rows={1}
             value={input}
-            onChange={(e) => setInput(e.target.value)}
+            onChange={(e) => {
+                setInput(e.target.value);
+                // Auto-grow
+                e.target.style.height = 'auto';
+                e.target.style.height = `${Math.min(e.target.scrollHeight, 150)}px`;
+            }}
             onKeyDown={(e) => {
               if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
-                sendMessage();
+                handleSendMessage();
               }
             }}
-            placeholder="Ask for help..."
-            className="flex-1 resize-none py-2 px-3 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-violet-300 focus:ring-2 focus:ring-violet-50 transition-all min-h-[48px] max-h-[200px] overflow-y-auto"
+            placeholder={isVoiceConnected ? "Voice active (speak now)..." : "Ask for help..."}
+            disabled={isVoiceConnected} 
+            className="flex-1 resize-none py-2 px-3 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-violet-300 focus:ring-2 focus:ring-violet-50 transition-all min-h-[44px] max-h-[150px] overflow-y-auto disabled:bg-gray-50 disabled:text-gray-400"
           />
           <button
-            onClick={sendMessage}
-            disabled={!input.trim() || isStreaming}
-            className="w-12 h-12 flex items-center justify-center bg-violet-600 text-white rounded-lg hover:bg-violet-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors self-end"
+            onClick={handleSendMessage}
+            disabled={!input.trim() || isChatLoading || isVoiceConnected}
+            className="w-11 h-11 flex items-center justify-center bg-violet-600 text-white rounded-lg hover:bg-violet-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors self-end shadow-sm"
           >
             <Send size={18} />
           </button>
         </div>
-        <div className="text-[10px] text-center text-gray-400 mt-2">
-          AI can make mistakes. Check important info.
-        </div>
+        {!isVoiceConnected && (
+            <div className="text-[10px] text-center text-gray-400 mt-2">
+            AI can make mistakes. Auto-saves to "{`Assignment: ${contextTitle.substring(0,15)}...`}"
+            </div>
+        )}
       </div>
     </div>
   );

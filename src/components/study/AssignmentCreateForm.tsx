@@ -51,7 +51,6 @@ export default function AssignmentCreateForm({ onCancel, onSave, initialDate, in
     const dueDateTime = new Date(`${formData.due_date}T${formData.due_time || '23:59'}:00`).toISOString();
 
     try {
-    try {
       let data, error;
       
       const payload = {
@@ -90,8 +89,6 @@ export default function AssignmentCreateForm({ onCancel, onSave, initialDate, in
 
       if (error) throw error;
       const newAssignment = data;
-
-      if (error) throw error;
 
       // Link uploaded file to assignment if exists
       if (newAssignment && uploadedFileData?.uploadedFile) {
