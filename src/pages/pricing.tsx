@@ -23,9 +23,11 @@ export default function PricingPage() {
 
   const handleSelectPlan = (planId: string) => {
     if (!user) {
-      window.location.href = `/signup?plan=${planId}&next=/pricing`;
+      // Route visitors through eligibility gate
+      window.location.href = `/eligibility?next=/signup&plan=${planId}`;
     } else {
       // Logic handled within PricingPlans for members
+      // (Includes admin exception and Stripe checkout)
     }
   };
 
@@ -250,7 +252,7 @@ export default function PricingPage() {
                 </Link>
               ) : (
                 <>
-                  <Link href="/signup?next=/pricing">
+                  <Link href="/eligibility?next=/signup&plan=free">
                     <Button className="bg-white text-blue-600 hover:bg-gray-100 px-8 py-3 text-lg w-full sm:w-auto">
                       Start Free Trial
                       <ArrowRight className="w-5 h-5 ml-2" />

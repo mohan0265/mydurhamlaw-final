@@ -16,6 +16,7 @@ import {
   BarChart3,
   Clock,
   CheckCircle,
+  Share2,
 } from 'lucide-react';
 
 interface BillingPageProps {
@@ -33,6 +34,29 @@ export default function BillingPage({ user }: BillingPageProps) {
     // The PricingPlans component can call /api/stripe/checkout under the hood
     console.log('Selected plan:', planId);
     alert('Redirecting to Stripe checkout…');
+  };
+
+  const handleSharePaymentLink = async (plan: string) => {
+    try {
+      const res = await fetch('/api/billing/generate-parent-link', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ plan })
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        // Copy link to clipboard
+        await navigator.clipboard.writeText(data.link);
+        alert(`Payment link copied! Share this with your parent/guardian:\n\n${data.link}\n\nLink expires: ${new Date(data.expires).toLocaleString()}`);
+      } else {
+        alert('Failed to generate payment link: ' + (data.error || 'Unknown error'));
+      }
+    } catch (error) {
+      console.error('Share link error:', error);
+      alert('Failed to generate payment link');
+    }
   };
 
   return (
@@ -107,9 +131,23 @@ export default function BillingPage({ user }: BillingPageProps) {
                         <BarChart3 className="w-4 h-4 mr-2" />
                         Check Usage
                       </Button>
+                      {/* Share Payment Link for Durham students */}
+                      {user.email?.endsWith('@durham.ac.uk') && (
+                        <div className="pt-2 border-t">
+                          <p className="text-xs text-gray-600 mb-2">Don't have a payment card?</p>
+                          <Button 
+                            onClick={() => handleSharePaymentLink('core_monthly')} 
+                            className="w-full justify-start bg-pink-50 text-pink-700 hover:bg-pink-100 border-pink-200"
+                            variant="outline"
+                          >
+                            <Share2 className="w-4 h-4 mr-2" />
+                            Share Payment Link with Parent
+                          </Button>
+                        </div>
+                      )}
                       {/* Open Stripe Portal */}
                       <ManageBillingButton>
-                        <span className="inline-flex items-center">
+                        <span  className="inline-flex items-center">
                           <FileText className="w-4 h-4 mr-2" />
                           Manage Billing / Invoices
                         </span>
