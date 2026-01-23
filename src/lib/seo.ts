@@ -50,7 +50,6 @@ const DEFAULT_OG_HEIGHT = '630';
 export function generateSEOTags(metadata: SEOMetadata & { version?: string }): GeneratedSEOTags {
   const {
     title,
-    description,
     canonical,
     ogImage = DEFAULT_OG_IMAGE,
     ogType = 'website',

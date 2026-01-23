@@ -2,7 +2,7 @@
 
 export type DurmahTimeOfDay = 'morning' | 'afternoon' | 'evening' | 'night';
 
-export type DurmahMode = 'general' | 'assignment' | 'lounge' | 'support' | 'planner' | 'awy' | 'quiz';;
+export type DurmahMode = 'general' | 'assignment' | 'lounge' | 'support' | 'planner' | 'awy' | 'quiz';
 
 export type DurmahContextPacket = {
   userId: string;

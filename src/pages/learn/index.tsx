@@ -9,6 +9,7 @@ import {
   Zap, 
   Star, 
   ChevronRight,
+  ArrowRight,
   BookOpen,
   GraduationCap
 } from 'lucide-react';
