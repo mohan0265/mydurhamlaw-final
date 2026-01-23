@@ -447,7 +447,7 @@ export function useDurmahChat({
           ));
           toast.error('Failed to delete');
       }
-  }, [supabase, messages]);
+  }, [supabase, messages, scope]);
 
   const clearUnsaved = useCallback(async () => {
       if (!conversationId || !supabase) {
@@ -464,6 +464,9 @@ export function useDurmahChat({
 
       // Optimistic update: ONLY remove those that are truly unsaved
       setMessages(prev => prev.filter(m => (m.visibility === 'saved' || !!m.saved_at)));
+      
+      // Assignment scope doesn't use ephemeral messages in the same way, return early
+      if (scope === 'assignment') return;
 
       try {
           // 2. Precise DB deletion for unsaved messages in this conversation
@@ -615,27 +618,51 @@ export function useDurmahChat({
     }
 
     try {
-      // 1. Delete all messages
-      const { error: messagesError } = await supabase
-        .from('durmah_messages')
-        .delete()
-        .eq('conversation_id', targetSessionId);
+      if (scope === 'assignment') {
+        // 1. Delete all messages from assignment_session_messages
+        const { error: messagesError } = await supabase
+          .from('assignment_session_messages')
+          .delete()
+          .eq('session_id', targetSessionId);
 
-      if (messagesError) {
-        console.error('[useDurmahChat] Delete messages error:', messagesError);
-        toast.error('Failed to delete messages');
-        return false;
-      }
+        if (messagesError) {
+          console.error('[useDurmahChat] Delete assignment messages error:', messagesError);
+          toast.error('Failed to delete messages');
+          return false;
+        }
 
-      // 2. Delete session record
-      const { error: sessionError } = await supabase
-        .from('durmah_sessions')
-        .delete()
-        .eq('id', targetSessionId);
+        // 2. Delete from assignment_sessions
+        const { error: sessionError } = await supabase
+          .from('assignment_sessions')
+          .delete()
+          .eq('id', targetSessionId);
 
-      if (sessionError) {
-        console.error('[useDurmahChat] Delete session error:', sessionError);
-        // Non-critical if session record doesn't exist
+        if (sessionError) {
+          console.error('[useDurmahChat] Delete assignment session error:', sessionError);
+        }
+      } else {
+        // Legacy/Global behavior
+        // 1. Delete all messages from durmah_messages
+        const { error: messagesError } = await supabase
+          .from('durmah_messages')
+          .delete()
+          .eq('conversation_id', targetSessionId);
+
+        if (messagesError) {
+          console.error('[useDurmahChat] Delete messages error:', messagesError);
+          toast.error('Failed to delete messages');
+          return false;
+        }
+
+        // 2. Delete session record from durmah_sessions
+        const { error: sessionError } = await supabase
+          .from('durmah_sessions')
+          .delete()
+          .eq('id', targetSessionId);
+
+        if (sessionError) {
+          console.error('[useDurmahChat] Delete session error:', sessionError);
+        }
       }
 
       // 3. Clear local state
@@ -648,7 +675,7 @@ export function useDurmahChat({
       toast.error('Failed to discard session');
       return false;
     }
-  }, [conversationId, supabase]);
+  }, [conversationId, supabase, scope]);
 
   /**
    * Helper: Generate session title from messages
