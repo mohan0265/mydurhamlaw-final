@@ -10,17 +10,21 @@ import {
   Loader2,
   CheckCircle2,
   BookOpen,
-  Info
+  Info,
+  ChevronRight,
+  Sparkles,
+  Quote
 } from 'lucide-react';
 import { useRouter } from 'next/router';
 import { getSupabaseClient } from '@/lib/supabase/client';
+import { QuizSourcesPanel } from './QuizSourcesPanel';
 import toast from 'react-hot-toast';
 
 interface Message {
   id: string;
   role: 'user' | 'assistant';
   content: string;
-  sources?: string[];
+  sources?: any[];
 }
 
 interface QuizSessionUIProps {
@@ -35,19 +39,36 @@ export const QuizSessionUI: React.FC<QuizSessionUIProps> = ({ sessionId, userId,
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isVoiceActive, setIsVoiceActive] = useState(initialMode === 'voice');
+  const [isSourcesOpen, setIsSourcesOpen] = useState(false);
+  const [currentSources, setCurrentSources] = useState<any[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const supabase = getSupabaseClient();
 
   useEffect(() => {
-    // Initial welcome message if no history
-    if (messages.length === 0) {
-      setMessages([{
-        id: 'welcome',
-        role: 'assistant',
-        content: "Hi Student! I'm Durmah. I've prepared a quiz session grounded in your lecture context. What topic should we start with, or shall I jump into a scenario?"
-      }]);
-    }
-  }, []);
+    // Fetch conversation history if any
+    const fetchHistory = async () => {
+      const { data } = await supabase
+        .from('quiz_messages')
+        .select('*')
+        .eq('session_id', sessionId)
+        .order('created_at', { ascending: true });
+      
+      if (data && data.length > 0) {
+        setMessages(data.map(m => ({
+          id: m.id,
+          role: m.role,
+          content: m.content
+        })));
+      } else {
+        setMessages([{
+          id: 'welcome',
+          role: 'assistant',
+          content: "Hi Student! I'm Durmah. I'm ready to quiz you on your selected material. What specific principle or scenario should we explore first?"
+        }]);
+      }
+    };
+    fetchHistory();
+  }, [sessionId]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -61,7 +82,6 @@ export const QuizSessionUI: React.FC<QuizSessionUIProps> = ({ sessionId, userId,
     setInput('');
     setIsLoading(true);
 
-    // Optimistic update
     const userMsg: Message = { id: Date.now().toString(), role: 'user', content: userText };
     setMessages(prev => [...prev, userMsg]);
 
@@ -69,11 +89,7 @@ export const QuizSessionUI: React.FC<QuizSessionUIProps> = ({ sessionId, userId,
       const res = await fetch('/.netlify/functions/quiz-send', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          sessionId,
-          userId,
-          message: userText
-        })
+        body: JSON.stringify({ sessionId, userId, message: userText })
       });
 
       if (!res.ok) throw new Error('Failed to get response');
@@ -87,6 +103,10 @@ export const QuizSessionUI: React.FC<QuizSessionUIProps> = ({ sessionId, userId,
       };
       
       setMessages(prev => [...prev, assistantMsg]);
+      if (data.sources) {
+        setCurrentSources(data.sources.map((s: string) => ({ title: s, type: 'Durham Source' })));
+        setIsSourcesOpen(true);
+      }
     } catch (err) {
       toast.error("Durmah is having trouble connecting. Try again?");
     } finally {
@@ -94,140 +114,148 @@ export const QuizSessionUI: React.FC<QuizSessionUIProps> = ({ sessionId, userId,
     }
   };
 
+  const formatContent = (content: string) => {
+     // Identify sections for rubric styling
+     const sections = content.split('\n\n');
+     return sections.map((section, idx) => {
+       if (section.startsWith('**What you did well**')) {
+         return <div key={idx} className="bg-green-50/50 p-4 rounded-2xl border border-green-100 mb-4 text-sm"><Sparkles className="w-3 h-3 text-green-600 mb-2" />{section}</div>;
+       }
+       if (section.startsWith('**Speak Law" Rewrite**') || section.includes('Speak Law')) {
+         return <div key={idx} className="bg-purple-900 text-white p-6 rounded-[2rem] my-6 shadow-xl relative overflow-hidden">
+           <Quote className="absolute top-4 right-4 w-12 h-12 text-white/5 opacity-20" />
+           <div className="text-[10px] uppercase font-black tracking-widest text-purple-200 mb-3">Speak Law Articulation</div>
+           <p className="text-lg font-medium italic italic leading-relaxed">"{section.split(':').slice(1).join(':').trim()}"</p>
+         </div>;
+       }
+       if (section.startsWith('**Model Structure (IRAC)**')) {
+         return <div key={idx} className="border-l-4 border-purple-200 pl-6 my-4 italic text-gray-500 font-medium">{section}</div>;
+       }
+       return <p key={idx} className="mb-4 leading-relaxed">{section}</p>;
+     });
+  };
+
   return (
-    <div className="flex-1 flex flex-col h-screen max-h-screen overflow-hidden bg-white">
-      {/* Premium Header */}
-      <header className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-white z-20 shadow-sm">
-        <div className="flex items-center gap-4">
-          <button 
-            onClick={() => router.back()}
-            className="p-2 hover:bg-gray-50 rounded-full transition text-gray-400"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
+    <div className="flex-1 flex h-screen max-h-screen overflow-hidden bg-white">
+      <div className="flex-1 flex flex-col h-full border-r border-gray-50">
+        <header className="px-8 py-6 border-b border-gray-100 flex items-center justify-between bg-white/80 backdrop-blur-xl z-20">
+          <div className="flex items-center gap-6">
+            <button 
+              onClick={() => router.push('/quiz')}
+              className="p-3 hover:bg-gray-100 rounded-2xl transition text-gray-400 group"
+            >
+              <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
+            </button>
+            <div className="flex items-center gap-4">
+               <div className="p-3 bg-purple-600 rounded-2xl shadow-lg shadow-purple-100">
+                  <Brain className="w-6 h-6 text-white" />
+               </div>
+               <div>
+                  <h1 className="font-black text-gray-900 tracking-tight">Active Quiz <span className="text-gray-400 font-medium">Session</span></h1>
+                  <div className="flex items-center gap-2 text-[10px] font-black text-purple-600 uppercase tracking-widest">
+                     <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
+                     Grounded Retrieval
+                  </div>
+               </div>
+            </div>
+          </div>
+
           <div className="flex items-center gap-3">
-             <div className="p-2 bg-indigo-600 rounded-xl">
-                <Brain className="w-5 h-5 text-white" />
-             </div>
-             <div>
-                <h1 className="font-bold text-gray-900 leading-tight">Quiz Me <span className="text-gray-400 text-sm font-medium">by Durmah</span></h1>
-                <div className="flex items-center gap-1.5 text-[10px] font-bold text-indigo-600 uppercase tracking-widest">
-                   <div className="w-1 h-1 bg-green-500 rounded-full animate-pulse"></div>
-                   Grounded Session
-                </div>
-             </div>
+              <button 
+                onClick={() => setIsVoiceActive(!isVoiceActive)}
+                className={`p-3.5 rounded-2xl border-2 transition-all flex items-center gap-3 ${isVoiceActive ? 'bg-purple-50 border-purple-200 text-purple-700 shadow-sm' : 'bg-white border-gray-100 text-gray-400 hover:border-gray-200'}`}
+              >
+                {isVoiceActive ? <Mic className="w-5 h-5" /> : <MicOff className="w-5 h-5" />}
+                <span className="text-xs font-black uppercase tracking-widest hidden sm:block">{isVoiceActive ? 'Voice Active' : 'Switch Mode'}</span>
+              </button>
+              <button 
+                onClick={() => setIsSourcesOpen(!isSourcesOpen)}
+                className={`p-3.5 rounded-2xl border-2 transition-all lg:hidden ${isSourcesOpen ? 'bg-purple-50 border-purple-200 text-purple-700' : 'bg-white border-gray-100 text-gray-400'}`}
+              >
+                <BookOpen className="w-5 h-5" />
+              </button>
           </div>
-        </div>
+        </header>
 
-        <div className="flex items-center gap-2">
-            <button 
-              onClick={() => setIsVoiceActive(!isVoiceActive)}
-              className={`p-2.5 rounded-xl border transition flex items-center gap-2 ${isVoiceActive ? 'bg-indigo-50 border-indigo-200 text-indigo-600' : 'bg-white border-gray-200 text-gray-400 hover:border-gray-300'}`}
-            >
-              {isVoiceActive ? <Mic className="w-5 h-5" /> : <MicOff className="w-5 h-5" />}
-              <span className="text-xs font-bold hidden sm:block">{isVoiceActive ? 'Voice Active' : 'Switch to Voice'}</span>
-            </button>
-            <button 
-              onClick={() => router.push('/dashboard')}
-              className="p-2.5 hover:bg-gray-50 rounded-xl text-gray-400 transition"
-            >
-              <X className="w-5 h-5" />
-            </button>
-        </div>
-      </header>
-
-      {/* Messages Area */}
-      <main className="flex-1 overflow-y-auto p-6 space-y-8 bg-gray-50/30">
-        <div className="max-w-3xl mx-auto w-full">
-          {messages.map((m) => (
-            <div key={m.id} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'} mb-8 animate-in fade-in slide-in-from-bottom-2 duration-300`}>
-              <div className={`max-w-[85%] lg:max-w-[75%] ${m.role === 'user' ? 'bg-indigo-600 text-white rounded-[1.5rem] rounded-tr-none px-6 py-4 shadow-lg shadow-indigo-100' : 'bg-white text-gray-900 rounded-[1.5rem] rounded-tl-none px-8 py-6 shadow-sm border border-gray-100'}`}>
-                
-                {m.role === 'assistant' && (
-                  <div className="flex items-center gap-2 mb-3 text-indigo-600">
-                    <GraduationCap className="w-4 h-4" />
-                    <span className="text-[10px] font-bold uppercase tracking-wider">Durmah\'s Reasoning</span>
-                  </div>
-                )}
-                
-                <div className={`whitespace-pre-wrap leading-relaxed ${m.role === 'user' ? 'text-white' : 'text-gray-800'}`}>
-                  {m.content}
-                </div>
-
-                {m.sources && m.sources.length > 0 && (
-                  <div className="mt-6 pt-4 border-t border-gray-50">
-                    <div className="flex items-center gap-2 mb-3 opacity-60">
-                       <BookOpen className="w-3 h-3" />
-                       <span className="text-[9px] font-bold uppercase tracking-widest">Grounding Sources</span>
+        <main className="flex-1 overflow-y-auto p-8 space-y-12 bg-[#FDFCFE]">
+          <div className="max-w-3xl mx-auto w-full">
+            {messages.map((m) => (
+              <div key={m.id} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'} mb-12 animate-in fade-in slide-in-from-bottom-4 duration-500`}>
+                <div className={`max-w-[90%] md:max-w-[85%] ${m.role === 'user' ? 'bg-gray-900 text-white rounded-[2rem] rounded-tr-none px-8 py-6 shadow-2xl' : 'bg-white text-gray-900 rounded-[2.5rem] rounded-tl-none px-10 py-8 shadow-sm border border-gray-100'}`}>
+                  
+                  {m.role === 'assistant' && (
+                    <div className="flex items-center gap-3 mb-6">
+                      <div className="p-2 bg-purple-50 rounded-xl">
+                        <GraduationCap className="w-4 h-4 text-purple-600" />
+                      </div>
+                      <span className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Tutorial Reasoning</span>
                     </div>
-                    <div className="flex flex-wrap gap-2">
-                      {m.sources.map((s, i) => (
-                        <div key={i} className="bg-gray-50 border border-gray-100 rounded-full px-3 py-1 text-[10px] text-gray-500 font-medium flex items-center gap-1.5">
-                           <CheckCircle2 className="w-3 h-3 text-indigo-400" />
-                           {s}
-                        </div>
-                      ))}
-                    </div>
+                  )}
+                  
+                  <div className={`text-base font-medium leading-relaxed ${m.role === 'user' ? 'text-gray-100' : 'text-gray-800'}`}>
+                    {m.role === 'assistant' ? formatContent(m.content) : m.content}
                   </div>
-                )}
-              </div>
-            </div>
-          ))}
-          {isLoading && (
-            <div className="flex justify-start mb-8 animate-pulse">
-              <div className="bg-white rounded-[1.5rem] rounded-tl-none px-8 py-6 shadow-sm border border-gray-100 flex items-center gap-3">
-                 <Loader2 className="w-4 h-4 text-indigo-600 animate-spin" />
-                 <span className="text-sm text-gray-400 font-medium">Durmah is thinking...</span>
-              </div>
-            </div>
-          )}
-          <div ref={messagesEndRef} />
-        </div>
-      </main>
-
-      {/* Input Area */}
-      <footer className="p-6 bg-white border-t border-gray-100">
-        <div className="max-w-3xl mx-auto relative">
-          <form onSubmit={handleSendMessage} className="relative group">
-            <textarea
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder={isVoiceActive ? "Speak or type your answer..." : "Type your legal argument or answer..."}
-              rows={1}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
-                  handleSendMessage();
-                }
-              }}
-              className="w-full bg-gray-50 border border-gray-200 rounded-[1.5rem] pl-6 pr-14 py-4 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all resize-none text-gray-800"
-            />
-            <button 
-              type="submit"
-              disabled={!input.trim() || isLoading}
-              className={`absolute right-2 top-1/2 -translate-y-1/2 p-2.5 rounded-full transition-all ${input.trim() ? 'bg-indigo-600 text-white shadow-lg' : 'bg-gray-100 text-gray-400'}`}
-            >
-              {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
-            </button>
-          </form>
-          
-          <div className="mt-4 flex items-center justify-between text-[11px] font-medium text-gray-400 px-2">
-             <div className="flex items-center gap-4">
-                <div className="flex items-center gap-1">
-                   <Info className="w-3 h-3" />
-                   Grounded in Lecture Transcripts
                 </div>
-                {isVoiceActive && (
-                  <div className="flex items-center gap-1 text-green-600">
-                    <Mic className="w-3 h-3" />
-                    Mic Listening
-                  </div>
-                )}
-             </div>
-             <p>Press Enter to send • Shift+Enter for new line</p>
+              </div>
+            ))}
+            {isLoading && (
+              <div className="flex justify-start mb-12 animate-pulse">
+                <div className="bg-white rounded-[2.5rem] rounded-tl-none px-10 py-8 shadow-sm border border-gray-100 flex items-center gap-4">
+                   <Loader2 className="w-5 h-5 text-purple-600 animate-spin" />
+                   <span className="text-sm text-gray-400 font-black uppercase tracking-widest">Durmah is reasoning...</span>
+                </div>
+              </div>
+            )}
+            <div ref={messagesEndRef} />
           </div>
-        </div>
-      </footer>
+        </main>
+
+        <footer className="p-8 bg-white border-t border-gray-50">
+          <div className="max-w-3xl mx-auto">
+            <form onSubmit={handleSendMessage} className="relative group">
+              <textarea
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                placeholder={isVoiceActive ? "Tell Durmah your argument..." : "Type your legal analysis..."}
+                rows={1}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSendMessage();
+                  }
+                }}
+                className="w-full bg-gray-50/50 border-2 border-transparent rounded-[2rem] pl-8 pr-16 py-6 focus:bg-white focus:border-purple-600/20 focus:ring-4 focus:ring-purple-500/5 outline-none transition-all resize-none text-gray-900 text-lg font-medium shadow-inner"
+              />
+              <button 
+                type="submit"
+                disabled={!input.trim() || isLoading}
+                className={`absolute right-3 top-1/2 -translate-y-1/2 p-4 rounded-[1.25rem] transition-all shadow-xl ${input.trim() ? 'bg-purple-600 text-white hover:bg-purple-700' : 'bg-gray-100 text-gray-300'}`}
+              >
+                {isLoading ? <Loader2 className="w-6 h-6 animate-spin" /> : <Send className="w-6 h-6" />}
+              </button>
+            </form>
+            
+            <div className="mt-6 flex items-center justify-between">
+               <div className="flex items-center gap-6 text-[10px] font-black uppercase tracking-widest text-gray-400">
+                  <div className="flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-purple-600 shadow-[0_0_8px_rgba(147,51,234,0.5)]" />
+                    Strict Grounding
+                  </div>
+                  {isVoiceActive && <div className="text-purple-600">Voice-to-Text Enabled</div>}
+               </div>
+               <div className="text-[10px] font-bold text-gray-300 uppercase tracking-widest">
+                  IRAC Rubric Active
+               </div>
+            </div>
+          </div>
+        </footer>
+      </div>
+
+      <QuizSourcesPanel 
+        sources={currentSources} 
+        isOpen={isSourcesOpen} 
+        onClose={() => setIsSourcesOpen(false)} 
+      />
     </div>
   );
 };

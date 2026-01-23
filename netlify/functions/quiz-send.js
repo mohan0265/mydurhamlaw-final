@@ -33,55 +33,87 @@ exports.handler = async (event, context) => {
       return { statusCode: 404, body: JSON.stringify({ error: 'Session not found' }) };
     }
 
-    // 2. Fetch Grounding Context (Academic Content / Lecture / Assignment)
+    // 2. Fetch Grounding Context
     let groundingData = "";
     let sources = [];
+    const { quiz_type, target_id, module_code, quiz_style = 'quick' } = session;
 
-    if (session.quiz_type === 'lecture' && session.target_id) {
+    if (quiz_type === 'lecture' && target_id) {
        const { data: transcript } = await supabase
          .from('lecture_transcripts')
-         .select('transcript_text')
-         .eq('lecture_id', session.target_id)
+         .select('transcript_text, lecture_id')
+         .eq('lecture_id', target_id)
          .single();
        if (transcript) {
          groundingData = transcript.transcript_text;
-         sources.push({ type: 'lecture', id: session.target_id, title: 'Lecture Transcript' });
+         sources.push({ type: 'lecture', id: target_id, title: 'Lecture Transcript' });
        }
-    } else if (session.quiz_type === 'module') {
+    } else if (quiz_type === 'assignment' && target_id) {
+       const { data: assignment } = await supabase
+         .from('assignments')
+         .select('id, title, content')
+         .eq('id', target_id)
+         .single();
+       if (assignment) {
+         groundingData = `Assignment Title: ${assignment.title}\n\nBrief:\n${assignment.content}`;
+         sources.push({ type: 'assignment', id: target_id, title: assignment.title });
+       }
+    } else if (quiz_type === 'module' || quiz_type === 'general') {
        const { data: content } = await supabase
          .from('durham_academic_content')
-         .select('content, title')
-         .eq('module_code', session.module_code)
+         .select('id, content, title')
+         .eq('module_code', module_code || 'GEN')
          .limit(5);
        if (content && content.length > 0) {
          groundingData = content.map(c => `[${c.title}]: ${c.content}`).join('\n\n');
-         content.forEach(c => sources.push({ type: 'academic_content', title: c.title }));
+         content.forEach(c => sources.push({ type: 'academic_content', id: c.id, title: c.title }));
        }
     }
 
-    // 3. Prepare Prompt
+    // 3. Retrieval Threshold Check
+    const minSources = (quiz_style === 'irac' || quiz_style === 'hypo') ? 3 : 1;
+    if (!groundingData || sources.length < minSources) {
+      if (!groundingData) {
+        return {
+          statusCode: 200,
+          headers: { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            answer: "I don't have enough Durham-specific material to quiz you accurately. Please select a lecture, assignment, or module outcomes with available content.",
+            sources: []
+          })
+        };
+      }
+    }
+
+    // 4. Prepare Prompt
     const systemPrompt = `
 You are Durmah, an expert law tutor for Durham University law students.
-You are in "QUIZ ME" mode. Your goal is to test the student's understanding of the provided context.
+You are in "QUIZ ME" mode. Your goal is to test the student's understanding of the provided Durham-specific context.
 
-GROUNDING DATA:
-${groundingData || "NO SPECIFIC CONTEXT PROVIDED. REFUSE TO QUIZ."}
+CURRENT STYLE: ${quiz_style}
+(Styles: quick = definitions/key facts, irac = Issue/Rule/App/Conclusion, hypo = complex problem solving, counter = debate/rebuttal)
+
+GROUNDING DATA (STRICT SOURCE):
+${groundingData}
 
 INSTRUCTIONS:
-1. ONLY use the grounding data for Durham-specific facts.
-2. If the user asks something outside the data, clearly state: "My academic records for this topic don't cover that specific detail, but generally speaking..."
-3. Use "Professor-style" feedback: rigorous, structured, and encouraging. Use the IRAC (Issue, Rule, Application, Conclusion) framework when evaluating their reasoning. Praise logical consistency and gently correct misapplications of principle.
-4. Keep questions focused on high-level application and reasoning (problem-solving), not just memorisation of facts.
-5. NEVER invent module requirements or Durham-specific rules. If the grounding data is missing a detail, acknowledge it.
+1. ONLY use facts from the GROUNDING DATA. Do not hallucinate case names or statutes not present in the data.
+2. Structure every evaluation of student answers using this RUBRIC:
+   - **What you did well**: 1-2 positive points about their logic.
+   - **What to improve**: Specific areas of reasoning to tighten.
+   - **Model Structure (IRAC)**: A brief bulleted breakdown of the "Ideal" answer.
+   - **"Speak Law" Rewrite**: 1-2 sentences of how to say this naturally and authoritatively in a seminar.
+3. Then, ask the NEXT QUESTION to keep the session active.
+4. If the grounding data is insufficient for a detail asked by the student, say: "My records for this specific module detail are limited, but based on the provided brief..."
     `;
 
-    // 4. Get Conversation History
+    // 5. history and call...
     const { data: history } = await supabase
       .from('quiz_messages')
       .select('role, content')
       .eq('session_id', sessionId)
       .order('created_at', { ascending: true })
-      .limit(10);
+      .limit(8);
 
     const messages = [
       { role: 'system', content: systemPrompt },
@@ -89,22 +121,16 @@ INSTRUCTIONS:
       { role: 'user', content: message }
     ];
 
-    // 5. Call OpenAI
     const completion = await openai.chat.completions.create({
       model: "gpt-4-turbo-preview",
       messages,
       temperature: 0.7,
+      max_tokens: 1000
     });
 
     const answer = completion.choices[0].message.content;
 
-    // 6. Persistence: Save Messages & Sources
-    const { data: userMsg } = await supabase
-      .from('quiz_messages')
-      .insert({ session_id: sessionId, user_id: userId, role: 'user', content: message })
-      .select()
-      .single();
-
+    // 6. Persistence
     const { data: assistantMsg } = await supabase
       .from('quiz_messages')
       .insert({ session_id: sessionId, user_id: userId, role: 'assistant', content: answer })
@@ -112,12 +138,11 @@ INSTRUCTIONS:
       .single();
 
     if (assistantMsg && sources.length > 0) {
-       const sourceInserts = sources.map(s => ({
+       const sourceInserts = sources.slice(0, 3).map(s => ({
          message_id: assistantMsg.id,
          source_type: s.type || 'academic_content',
          source_id: s.id || null,
-         content_snippet: groundingData.substring(0, 500),
-         relevance_score: 0.95
+         content_snippet: groundingData.substring(0, 500) // Simplified for now
        }));
        await supabase.from('quiz_message_sources').insert(sourceInserts);
     }

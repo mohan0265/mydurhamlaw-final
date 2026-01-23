@@ -9,6 +9,7 @@ import {
 import toast from 'react-hot-toast';
 import { useScrollToTop } from '@/hooks/useScrollToTop';
 import AssignmentPreviewModal from './AssignmentPreviewModal';
+import { QuizMeCard } from '../quiz/QuizMeCard';
 
 // Tabs
 import OverviewTab from './tabs/OverviewTab';
@@ -58,10 +59,10 @@ export default function AssignmentDetail({ assignment, onUpdate, onPlanWithAI, o
 
   const daysLeft = differenceInDays(new Date(assignment.due_date), new Date());
   const isOverdue = daysLeft < 0;
-
   const tabs = [
     { id: 'overview', label: 'Overview', icon: LayoutDashboard },
     { id: 'brief', label: 'Brief', icon: FileText },
+    { id: 'quiz', label: 'Quiz Me', icon: Brain },
     { id: 'checklist', label: 'Checklist', icon: CheckSquare },
     { id: 'rubric', label: 'Rubric', icon: Award },
     { id: 'milestones', label: 'Milestones', icon: Flag },
@@ -131,6 +132,11 @@ export default function AssignmentDetail({ assignment, onUpdate, onPlanWithAI, o
           <div className="absolute inset-0 p-6 overflow-y-auto custom-scrollbar">
              {activeTab === 'overview' && <OverviewTab assignment={assignment} />}
              {activeTab === 'brief' && <BriefTab assignment={assignment} onUpdate={onUpdate} />}
+             {activeTab === 'quiz' && (
+                <div className="p-4 bg-white rounded-3xl border border-purple-100 shadow-sm transition-all animate-in fade-in slide-in-from-bottom-2 duration-300">
+                   <QuizMeCard moduleCode={assignment.module_code} className="shadow-none border-none" />
+                </div>
+             )}
              {activeTab === 'checklist' && <ChecklistTab assignment={assignment} />}
              {activeTab === 'rubric' && <RubricTab assignment={assignment} />}
              {activeTab === 'milestones' && <MilestonesTab assignment={assignment} />}

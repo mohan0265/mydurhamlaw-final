@@ -197,6 +197,7 @@ export default function GlobalHeader() {
       label: 'Study',
       items: [
         { label: 'Learn Durham Law', href: '/learn' },
+        { label: 'Quiz Me (Durmah Mode)', href: '/quiz' },
         { label: 'Year at a Glance', href: '/year-at-a-glance' },
         { label: 'Assignments', href: '/assignments' },
         { label: 'My Lectures', href: '/study/lectures' },

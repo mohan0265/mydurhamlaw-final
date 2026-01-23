@@ -17,11 +17,17 @@ export const QuizMeCard: React.FC<QuizMeCardProps> = ({
 
   const handleLaunchQuiz = (mode: 'text' | 'voice') => {
     const query: any = { mode };
-    if (moduleCode) query.module = moduleCode;
-    if (lectureId) query.lecture = lectureId;
+    
+    if (lectureId) {
+      query.scope = 'lecture';
+      query.id = lectureId;
+    } else if (moduleCode) {
+      query.scope = 'module';
+      query.id = moduleCode;
+    }
     
     router.push({
-      pathname: '/study/quiz',
+      pathname: '/quiz',
       query
     });
   };
