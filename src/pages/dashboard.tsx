@@ -11,6 +11,7 @@ import { BookOpen, FileText, Calendar, Target, Shield, CheckCircle, HelpCircle, 
 
 // Components
 import { QuizMeCard } from '@/components/quiz/QuizMeCard';
+import UpcomingDeadlines from '@/components/dashboard/UpcomingDeadlines';
 import TodaysTasksWidget from '@/components/dashboard/TodaysTasksWidget';
 import MemoryJournalWidget from '@/components/dashboard/MemoryJournalWidget';
 import WellbeingTipWidget from '@/components/dashboard/WellbeingTipWidget';
