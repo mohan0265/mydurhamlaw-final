@@ -91,26 +91,26 @@ export default function PricingPage() {
 
       <div className="min-h-screen bg-white">
         {/* Hero Section */}
-        <div className="bg-gradient-to-br from-blue-50 to-purple-50 py-16">
+        <div className="bg-gradient-to-br from-blue-50 to-purple-50 pt-8 pb-10">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
+            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
               Choose Your Perfect Study Plan
             </h1>
-            <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
+            <p className="text-lg text-gray-600 mb-6 max-w-3xl mx-auto">
               Start with a free 14-day trial and discover how MyDurhamLaw can transform 
               your legal education experience at Durham University.
             </p>
-            <div className="flex items-center justify-center gap-4 text-sm text-gray-600">
+            <div className="flex items-center justify-center gap-4 text-xs text-gray-600">
               <div className="flex items-center gap-2">
-                <CheckCircle className="w-4 h-4 text-green-500" />
+                <CheckCircle className="w-3.5 h-3.5 text-green-500" />
                 <span>14-day free trial</span>
               </div>
               <div className="flex items-center gap-2">
-                <CheckCircle className="w-4 h-4 text-green-500" />
+                <CheckCircle className="w-3.5 h-3.5 text-green-500" />
                 <span>No credit card required</span>
               </div>
               <div className="flex items-center gap-2">
-                <CheckCircle className="w-4 h-4 text-green-500" />
+                <CheckCircle className="w-3.5 h-3.5 text-green-500" />
                 <span>Cancel anytime</span>
               </div>
             </div>
@@ -118,7 +118,7 @@ export default function PricingPage() {
         </div>
 
         {/* Pricing Plans */}
-        <div className="py-16">
+        <div className="py-10">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <PricingPlans 
               onSelectPlan={handleSelectPlan}
@@ -128,13 +128,13 @@ export default function PricingPage() {
         </div>
 
         {/* Features Section */}
-        <div className="py-16 bg-gray-50">
+        <div className="py-10 bg-gray-50">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl font-bold text-gray-900 mb-4">
+            <div className="text-center mb-10">
+              <h2 className="text-2xl font-bold text-gray-900 mb-3">
                 Everything You Need to Succeed
               </h2>
-              <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+              <p className="text-lg text-gray-600 max-w-3xl mx-auto">
                 MyDurhamLaw combines cutting-edge AI technology with thoughtful design 
                 to support every aspect of your legal education journey.
               </p>
@@ -160,13 +160,13 @@ export default function PricingPage() {
         </div>
 
         {/* Upcoming Reviews & Integrity */}
-        <div className="py-16">
+        <div className="py-10">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl font-bold text-gray-900 mb-4">
+            <div className="text-center mb-10">
+              <h2 className="text-2xl font-bold text-gray-900 mb-3">
                 Community & Trust
               </h2>
-              <p className="text-xl text-gray-600">
+              <p className="text-lg text-gray-600">
                 A platform built on honesty. No fake reviews, just real student experiences coming soon.
               </p>
             </div>
@@ -198,12 +198,12 @@ export default function PricingPage() {
         </div>
 
         {/* CTA Section */}
-        <div className="py-16 bg-gradient-to-r from-blue-600 to-purple-600">
+        <div className="py-10 bg-gradient-to-r from-blue-600 to-purple-600">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <h2 className="text-3xl font-bold text-white mb-4">
+            <h2 className="text-2xl font-bold text-white mb-3">
               Ready to Transform Your Law Studies?
             </h2>
-            <p className="text-xl text-blue-100 mb-8">
+            <p className="text-lg text-blue-100 mb-6">
               Join hundreds of Durham Law students who are already using MyDurhamLaw 
               to excel in their studies and stay connected with loved ones.
             </p>
@@ -231,10 +231,10 @@ export default function PricingPage() {
         </div>
 
         {/* FAQ Section */}
-        <div className="py-16">
+        <div className="py-10">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl font-bold text-gray-900 mb-4">
+            <div className="text-center mb-10">
+              <h2 className="text-2xl font-bold text-gray-900 mb-3">
                 Frequently Asked Questions
               </h2>
             </div>
