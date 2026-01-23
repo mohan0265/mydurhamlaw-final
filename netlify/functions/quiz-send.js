@@ -36,7 +36,8 @@ exports.handler = async (event, context) => {
     // 2. Fetch Grounding Context
     let groundingData = "";
     let sources = [];
-    const { quiz_type, target_id, module_code, quiz_style = 'quick' } = session;
+    const { quiz_type, target_id, module_code, performance_metadata } = session;
+    const quiz_style = performance_metadata?.quiz_style || 'quick';
 
     if (quiz_type === 'lecture' && target_id) {
        const { data: transcript } = await supabase

@@ -105,11 +105,13 @@ export const QuizMeSetupPanel: React.FC<QuizMeSetupPanelProps> = ({ onCancel }) 
           user_id: user?.id,
           module_code: selection?.code || selection?.id || null,
           quiz_type: scope,
-          target_id: selection?.id || null,
-          target_title: selection?.title || null,
-          quiz_style: style,
-          mode: mode,
-          status: 'active'
+          target_id: scope !== 'module' ? selection?.id : null,
+          status: 'active',
+          performance_metadata: {
+            mode: mode,
+            quiz_style: style,
+            target_title: selection?.title || null
+          }
         })
         .select()
         .single();
