@@ -519,42 +519,40 @@ export function useDurmahRealtime({
             }
             // Response.done - FALLBACK for assistant transcript
             else if (type === "response.done") {
-              debugLog("[RESPONSE.DONE] Parsing output for assistant text...");
-              // Extract assistant text from response.output array
-              const response = payload?.response;
-              if (response?.output) {
-                let extractedText = "";
-                for (const item of response.output) {
-                  if (item.type === "message" && item.role === "assistant") {
-                    // Walk content array for text
-                    if (Array.isArray(item.content)) {
-                      for (const content of item.content) {
-                        if (content.type === "text" && content.text) {
-                          extractedText += content.text + " ";
-                        } else if (content.type === "audio" && content.transcript) {
-                          // Audio with transcript
-                          extractedText += content.transcript + " ";
-                        } else if (content.transcript) {
-                          extractedText += content.transcript + " ";
+               const response = payload?.response;
+               // ONLY use this fallback if the response failed or cancelled, 
+               // otherwise rely on deltas/completed events to avoid duplication.
+               if (response?.status === "failed" || response?.status === "cancelled") {
+                  debugLog("[RESPONSE.DONE] Response failed/cancelled, checking output...");
+                   if (response?.output) {
+                        let extractedText = "";
+                        for (const item of response.output) {
+                          if (item.type === "message" && item.role === "assistant") {
+                            // Walk content array for text
+                            if (Array.isArray(item.content)) {
+                              for (const content of item.content) {
+                                if (content.type === "text" && content.text) {
+                                  extractedText += content.text + " ";
+                                } else if (content.type === "audio" && content.transcript) {
+                                  extractedText += content.transcript + " ";
+                                } else if (content.transcript) {
+                                  extractedText += content.transcript + " ";
+                                }
+                              }
+                            }
+                          }
                         }
-                      }
-                    }
-                  }
-                }
-                extractedText = extractedText.trim();
-                if (extractedText) {
-                  // Flush with extracted text
-                  flushAssistantText(extractedText);
-                  debugLog(`[FINALIZE ASSISTANT] via response.done: "${extractedText.slice(0, 50)}..."`);
-                } else {
-                  // No text extracted, flush buffer anyway
-                  flushAssistantText();
-                  debugLog(`[FINALIZE ASSISTANT] via response.done (no text in output)`);
-                }
-              } else {
-                flushAssistantText();
-                debugLog(`[FINALIZE ASSISTANT] via response.done (no output array)`);
-              }
+                        extractedText = extractedText.trim();
+                        if (extractedText) {
+                          flushAssistantText(extractedText);
+                          debugLog(`[FINALIZE ASSISTANT] via response.done (fallback): "${extractedText.slice(0, 50)}..."`);
+                        }
+                   }
+               } else {
+                   debugLog(`[RESPONSE.DONE] Success - skipping extraction (handled by deltas)`);
+                   // Still flush any remaining buffer just in case
+                   flushAssistantText();
+               }
             }
             // Audio playback (unrelated to transcription)
             else if (type === "response.audio.delta") {
