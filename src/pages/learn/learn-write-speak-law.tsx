@@ -125,8 +125,12 @@ export default function LearnWriteSpeakLaw() {
           </p>
 
           <div className="not-prose my-12 p-8 bg-white border border-purple-200 rounded-[2rem] shadow-sm relative overflow-hidden">
-             <div className="absolute top-0 right-0 p-4">
-                <GraduationCap className="w-16 h-16 text-purple-100" />
+             <div className="absolute top-0 right-0 p-4 translate-x-4 -translate-y-4">
+                <img 
+                   src="/assets/mascots/quiz-me-bunny.png" 
+                   alt="Quiz Me Mascot" 
+                   className="w-32 h-32 object-contain drop-shadow-[0_10px_10px_rgba(0,0,0,0.1)]"
+                />
              </div>
              <h3 className="text-2xl font-bold text-gray-900 mb-4">Try "Quiz Me"</h3>
              <p className="text-gray-600 mb-6 max-w-xl">
