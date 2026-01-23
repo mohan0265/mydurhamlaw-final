@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { 
   Send, 
   Mic, 
@@ -17,11 +17,13 @@ import {
   Save,
   Trash2,
   Download,
-  MoreVertical
+  MoreVertical,
+  Volume2
 } from 'lucide-react';
 import { useRouter } from 'next/router';
 import { getSupabaseClient } from '@/lib/supabase/client';
 import { QuizSourcesPanel } from './QuizSourcesPanel';
+import { useDurmahRealtime } from '@/hooks/useDurmahRealtime'; // OpenAI ONLY - no Gemini
 import toast from 'react-hot-toast';
 
 interface Message {
@@ -42,74 +44,85 @@ export const QuizSessionUI: React.FC<QuizSessionUIProps> = ({ sessionId, userId,
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [isVoiceActive, setIsVoiceActive] = useState(initialMode === 'voice');
   const [isSourcesOpen, setIsSourcesOpen] = useState(false);
   const [currentSources, setCurrentSources] = useState<any[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const supabase = getSupabaseClient();
 
-  // Voice capture state
-  const [isListening, setIsListening] = useState(false);
-  const [voiceTranscript, setVoiceTranscript] = useState('');
-  const recognitionRef = useRef<any>(null);
+  // Audio element ref for OpenAI Realtime voice playback
+  const audioRef = useRef<HTMLAudioElement>(null);
 
-  // Initialize Web Speech API
-  useEffect(() => {
-    if (typeof window !== 'undefined' && 'webkitSpeechRecognition' in window) {
-      const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
-      recognitionRef.current = new SpeechRecognition();
-      recognitionRef.current.continuous = true;
-      recognitionRef.current.interimResults = true;
-      recognitionRef.current.lang = 'en-GB';
+  // Quiz-specific guardrailed system prompt for OpenAI Realtime
+  const quizSystemPrompt = useMemo(() => `
+You are Durmah in QUIZ ME mode for Durham University Law students.
+You are conducting a spoken quiz session to test the student's legal reasoning and articulation skills.
 
-      recognitionRef.current.onresult = (event: any) => {
-        const transcript = Array.from(event.results)
-          .map((result: any) => result[0].transcript)
-          .join('');
-        setVoiceTranscript(transcript);
-        setInput(transcript);
+MODE: Real-time voice conversation (speak concisely, listen actively)
+
+CORE RULES:
+1. Stay focused on testing legal knowledge and reasoning
+2. Ask one question at a time, wait for the student's answer
+3. After the student responds, give brief feedback and ask a follow-up
+4. Keep responses short (1-2 sentences) for natural voice conversation
+5. If the student goes off-topic, gently redirect: "Let's focus on the legal principle..."
+6. Use IRAC structure when evaluating answers (Issue, Rule, Application, Conclusion)
+
+VOICE STYLE:
+- Speak like a supportive but rigorous law tutor
+- Be encouraging but also challenge weak reasoning
+- Use clear, articulate language suitable for legal education
+
+GROUNDING:
+- If you don't have specific Durham content, use general English Law principles
+- Be transparent: "Based on general legal principles..." when not grounded
+
+START: Greet the student warmly and ask what legal topic they'd like to quiz on today.
+  `.trim(), []);
+
+  // OpenAI Realtime Voice Hook (NOT Gemini)
+  const {
+    startListening,
+    stopListening,
+    isListening,
+    status: voiceStatus,
+    speaking,
+    error: voiceError
+  } = useDurmahRealtime({
+    systemPrompt: quizSystemPrompt,
+    voice: 'alloy', // OpenAI voice
+    audioRef,
+    onTurn: (turn) => {
+      // Append turns to the message transcript
+      const newMsg: Message = {
+        id: Date.now().toString(),
+        role: turn.speaker === 'user' ? 'user' : 'assistant',
+        content: turn.text
       };
-
-      recognitionRef.current.onend = () => {
-        setIsListening(false);
-        // If voice mode is still active, auto-send the transcript
-        if (voiceTranscript.trim() && isVoiceActive) {
-          // Auto-submit after speech ends
-        }
-      };
-
-      recognitionRef.current.onerror = (event: any) => {
-        console.error('Speech recognition error:', event.error);
-        setIsListening(false);
-        if (event.error === 'not-allowed') {
-          toast.error('Microphone access denied. Please enable mic permissions.');
-        }
-      };
+      setMessages(prev => [...prev, newMsg]);
     }
+  });
 
-    return () => {
-      if (recognitionRef.current) {
-        recognitionRef.current.stop();
-      }
-    };
-  }, [isVoiceActive]);
+  // Voice status helpers
+  const isVoiceConnecting = voiceStatus === 'connecting';
+  const isVoiceError = voiceStatus === 'error';
+  const voiceStatusLabel = isVoiceConnecting 
+    ? 'Connecting...' 
+    : isVoiceError 
+      ? 'Voice Error' 
+      : speaking 
+        ? 'Durmah Speaking...' 
+        : isListening 
+          ? 'Listening...' 
+          : 'Voice Ready';
 
-  // Toggle voice listening
-  const toggleVoiceCapture = () => {
-    if (!recognitionRef.current) {
-      toast.error('Speech recognition not supported in this browser. Try Chrome.');
-      return;
-    }
-
+  // Toggle voice session
+  const toggleVoiceSession = () => {
     if (isListening) {
-      recognitionRef.current.stop();
-      setIsListening(false);
+      stopListening();
+      toast.success('Voice session ended');
     } else {
-      setVoiceTranscript('');
-      setInput('');
-      recognitionRef.current.start();
-      setIsListening(true);
-      toast.success('Listening... Start speaking!');
+      startListening();
+      toast.success('Voice session started - speak to Durmah!');
     }
   };
 
@@ -139,8 +152,18 @@ export const QuizSessionUI: React.FC<QuizSessionUIProps> = ({ sessionId, userId,
     fetchHistory();
   }, [sessionId]);
 
+  // Scroll to bottom only when new messages arrive and user is near bottom
+  const chatContainerRef = useRef<HTMLDivElement>(null);
+  
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    // Only scroll if user is already near the bottom (within 100px)
+    if (chatContainerRef.current) {
+      const container = chatContainerRef.current;
+      const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 150;
+      if (isNearBottom) {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      }
+    }
   }, [messages]);
 
   const handleSendMessage = async (e?: React.FormEvent) => {
@@ -261,6 +284,9 @@ export const QuizSessionUI: React.FC<QuizSessionUIProps> = ({ sessionId, userId,
 
   return (
     <div className="flex-1 flex h-screen max-h-screen overflow-hidden bg-white">
+      {/* Hidden audio element for OpenAI Realtime voice playback */}
+      <audio ref={audioRef} autoPlay />
+      
       <div className="flex-1 flex flex-col h-full border-r border-gray-50">
         <header className="px-8 py-6 border-b border-gray-100 flex items-center justify-between bg-white/80 backdrop-blur-xl z-20">
           <div className="flex items-center gap-6">
@@ -285,30 +311,34 @@ export const QuizSessionUI: React.FC<QuizSessionUIProps> = ({ sessionId, userId,
           </div>
 
           <div className="flex items-center gap-3">
+              {/* OpenAI Realtime Voice Button */}
               <button 
-                onClick={() => {
-                  setIsVoiceActive(!isVoiceActive);
-                  if (!isVoiceActive) {
-                    // Turning voice on - start listening
-                    toggleVoiceCapture();
-                  } else {
-                    // Turning voice off - stop listening
-                    if (recognitionRef.current && isListening) {
-                      recognitionRef.current.stop();
-                      setIsListening(false);
-                    }
-                  }
-                }}
-                className={`p-3.5 rounded-2xl border-2 transition-all flex items-center gap-3 ${isListening ? 'bg-red-50 border-red-300 text-red-600 animate-pulse shadow-lg' : isVoiceActive ? 'bg-purple-50 border-purple-200 text-purple-700 shadow-sm' : 'bg-white border-gray-100 text-gray-400 hover:border-gray-200'}`}
+                onClick={toggleVoiceSession}
+                disabled={isVoiceConnecting}
+                className={`p-3.5 rounded-2xl border-2 transition-all flex items-center gap-3 ${
+                  isListening 
+                    ? 'bg-red-50 border-red-300 text-red-600 animate-pulse shadow-lg' 
+                    : speaking 
+                      ? 'bg-green-50 border-green-300 text-green-600 shadow-lg'
+                      : isVoiceConnecting
+                        ? 'bg-yellow-50 border-yellow-300 text-yellow-600'
+                        : 'bg-white border-gray-100 text-gray-400 hover:border-purple-200 hover:text-purple-600'
+                }`}
               >
                 {isListening ? (
                   <div className="relative">
                     <Mic className="w-5 h-5 text-red-500" />
                     <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full animate-ping" />
                   </div>
-                ) : isVoiceActive ? <Mic className="w-5 h-5" /> : <MicOff className="w-5 h-5" />}
+                ) : speaking ? (
+                  <Volume2 className="w-5 h-5 text-green-600 animate-pulse" />
+                ) : isVoiceConnecting ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : (
+                  <Mic className="w-5 h-5" />
+                )}
                 <span className="text-xs font-black uppercase tracking-widest hidden sm:block">
-                  {isListening ? 'Listening...' : isVoiceActive ? 'Voice Active' : 'Switch Mode'}
+                  {voiceStatusLabel}
                 </span>
               </button>
               <button 
