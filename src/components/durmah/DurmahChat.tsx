@@ -99,7 +99,8 @@ export default function DurmahChat({
     isLoading: isChatLoading, 
     conversationId,
     logMessage,
-    discardSession
+    discardSession,
+    deleteMessages
   } = useDurmahChat({
     source: 'assignment',
     scope: 'assignment',
@@ -132,6 +133,31 @@ export default function DurmahChat({
     };
   }, [contextId]);
 
+  // Cleanup: Remove consecutive duplicate greetings from history
+  useEffect(() => {
+      if (!isChatLoading && messages.length > 1) {
+          const duplicates: string[] = [];
+          // Check the first few messages for repeats
+          // We only care about the BEGINNING of the chat
+          const earlyMessages = messages.slice(0, 10);
+          
+          for (let i = 0; i < earlyMessages.length - 1; i++) {
+              const current = earlyMessages[i];
+              const next = earlyMessages[i+1];
+              
+              if (current && next && current.role === 'assistant' && next.role === 'assistant' && current.content === next.content) {
+                  // Found a duplicate - mark the *next* one for deletion (keep the first one)
+                  duplicates.push(next.id);
+              }
+          }
+
+          if (duplicates.length > 0 && deleteMessages) {
+              console.log('[DurmahChat] Cleaning up duplicate greetings:', duplicates);
+              deleteMessages(duplicates);
+          }
+      }
+  }, [isChatLoading, messages.length, deleteMessages]);
+
   // 2. Initialize Voice Hook
   
   // Handler for voice transcripts
@@ -160,7 +186,7 @@ export default function DurmahChat({
     enabled: true,
     userName: durmahCtx.firstName || 'Student',
     voiceId: voiceId,
-    initialMessage: initialPrompt || `I'm ready to help with ${contextTitle}.`,
+    // initialMessage: initialPrompt, // Disable auto-greeting to prevent persistent duplicates
     // Pass BOTH systemInstruction (Gemini) and systemPrompt (Realtime)
     systemInstruction: `You are Durmah, a helpful academic tutor. You are helping with the assignment: "${contextTitle}". Be concise, encouraging, and helpful. Do not write the essay for the student.`,
     systemPrompt: `You are Durmah, a helpful academic tutor. You are helping with the assignment: "${contextTitle}". 
