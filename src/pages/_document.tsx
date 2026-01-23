@@ -5,14 +5,17 @@ export default function Document() {
   return (
     <Html lang="en">
       <Head>
-        {/* ✅ Favicons for MyDurhamLaw */}
-        <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+        {/* Favicons - Gold Scale on Purple */}
+        <link rel="icon" href="/favicon.ico" />
         <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
         <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
         <link rel="manifest" href="/site.webmanifest" />
-        <link rel="shortcut icon" href="/favicon.ico" />
-        <meta name="msapplication-TileColor" content="#7c3aed" />
-        <meta name="theme-color" content="#7c3aed" />
+        
+        {/* Microsoft Tiles */}
+        <meta name="msapplication-TileColor" content="#5B2DCC" />
+        <meta name="msapplication-TileImage" content="/mstile-150x150.png" />
+        <meta name="theme-color" content="#5B2DCC" />
 
         {/* Preload critical fonts */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
