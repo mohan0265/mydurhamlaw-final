@@ -38,6 +38,8 @@ export interface GeneratedSEOTags {
 }
 
 const SITE_URL = 'https://mydurhamlaw.com';
+const SITE_NAME = 'MyDurhamLaw';
+const SITE_TAGLINE = 'Learn law. Write law. Speak law.';
 const DEFAULT_OG_IMAGE = `${SITE_URL}/og/og-default.png`;
 const DEFAULT_OG_WIDTH = '1200';
 const DEFAULT_OG_HEIGHT = '630';
@@ -72,8 +74,10 @@ export function generateSEOTags(metadata: SEOMetadata & { version?: string }): G
       : `${absoluteOgImage}?v=${version}`;
   }
 
+  const description = metadata.description || 'Durham Law support, 24/7. Learn concepts, write with integrity, and practise speaking law with "Quiz Me" — built for Durham students.';
+
   return {
-    title,
+    title: `${metadata.title} | ${SITE_NAME}`,
     description,
     canonical: absoluteCanonical,
     ogTitle: title,

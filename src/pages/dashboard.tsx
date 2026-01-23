@@ -10,7 +10,7 @@ import { getSupabaseClient } from '@/lib/supabase/client';
 import { BookOpen, FileText, Calendar, Target, Shield, CheckCircle, HelpCircle, ArrowRight, Zap, Heart, Video, MoreHorizontal, Clock, TrendingUp } from 'lucide-react';
 
 // Components
-import UpcomingDeadlines from '@/components/dashboard/UpcomingDeadlines';
+import { QuizMeCard } from '@/components/quiz/QuizMeCard';
 import TodaysTasksWidget from '@/components/dashboard/TodaysTasksWidget';
 import MemoryJournalWidget from '@/components/dashboard/MemoryJournalWidget';
 import WellbeingTipWidget from '@/components/dashboard/WellbeingTipWidget';

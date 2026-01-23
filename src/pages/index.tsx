@@ -130,14 +130,15 @@ return (
                 </div>
 
                 <h1 className="text-4xl sm:text-5xl lg:text-7xl font-extrabold mb-6 tracking-tight leading-[1.05] text-white">
-                  Durham Law support, <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-300 to-indigo-300">24/7.</span>
+                  Learn law. Write law. <br className="hidden sm:block" />
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-300 to-indigo-300">Speak law.</span>
                 </h1>
                 
                 <div className="mt-4 text-xl sm:text-2xl text-white/90 max-w-xl leading-relaxed font-light">
-                  Expert <Link href="/learn" className="text-purple-300 hover:underline decoration-white/30 decoration-2">Durham Law study support</Link> — turn lectures into clarity. Turn deadlines into a plan.
+                  Expert Durham Law support — we help you turn knowledge into real-world legal reasoning, out loud.
                 </div>
                 <div className="mt-4 text-sm text-white/60 font-medium tracking-wide uppercase">
-                  Durham-specific • Integrity-first • Built around Michaelmas → Epiphany → Easter
+                  Durham-specific • Integrity-first • Quiz Me (Text & Voice)
                 </div>
                 
                 <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center lg:justify-start items-center">

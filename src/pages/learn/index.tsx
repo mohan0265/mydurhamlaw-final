@@ -8,12 +8,21 @@ import {
   Shield, 
   Zap, 
   Star, 
-  ArrowRight,
-  BookOpen
+  ChevronRight,
+  BookOpen,
+  GraduationCap
 } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 
 const articles = [
+  {
+    icon: GraduationCap,
+    title: 'Learn law. Write law. Speak law.',
+    description: 'Understand the three pillars of legal mastery. Why law school focus on reading and writing is only half the battle.',
+    slug: 'learn-write-speak-law',
+    category: 'Brand Pillar',
+    readTime: '10 min read'
+  },
   {
     icon: Brain,
     title: 'Durham Law AI Study Assistant: Complete Setup Guide',
@@ -101,7 +110,7 @@ export default function LearnHub() {
               Educational Resources
             </span>
             <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 mb-6 tracking-tight">
-              Learn: <span className="text-blue-600">UK Law Study Skills, Wellbeing, and Exam Strategy</span>
+              Learn law. Write law. <span className="text-blue-600">Speak law.</span>
             </h1>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
               Step-by-step guides helping you master legal study, maintain integrity, 

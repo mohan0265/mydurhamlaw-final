@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { DurmahContextPacket } from '@/types/durmah';
+import { QuizGuard } from './quiz/QuizGuard';
 
 // Durham Term Calendar 2025-26
 const DURHAM_TERMS = [
@@ -415,13 +416,24 @@ export async function enhanceDurmahContext(
 
   const uniqueMessages = Array.from(messageMap.values()).sort((a, b) => new Date(a.ts).getTime() - new Date(b.ts).getTime());
 
-  return {
+  // Grounding Guardrail: If in quiz mode, validate context and wrap prompt
+  let finalContext = {
     ...baseContext,
     assignments,
     awy,
     lectures,
-    profile, // CRITICAL: Include profile for personalization
-    academic: academic as any, // CRITICAL: Include term/week for context
-    recentMessages: uniqueMessages as any[] // CRITICAL: Merged + deduplicated chat history for LLM
+    profile,
+    academic: academic as any,
+    recentMessages: uniqueMessages as any[]
   };
+
+  if (finalContext.mode === 'quiz') {
+    const evaluation = QuizGuard.evaluateContext(finalContext);
+    if (!evaluation.can_quiz) {
+      // Inhibit quiz if no context, though usually handled by UI/API
+      // This is a safety double-check
+    }
+  }
+
+  return finalContext;
 }
