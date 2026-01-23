@@ -48,6 +48,10 @@ export function useDurmahChat({
   
   // Ref to track if we've already fetched for the current conversation
   const fetchedRef = useRef<string | null>(null);
+  
+  // Refs for deduplication
+  const lastSendRef = useRef<{ text: string; ts: number } | null>(null);
+  const lastLoggedRef = useRef<{ role: string; content: string; ts: number } | null>(null);
 
   // Extract stable context values to avoid JSON.stringify in dependency array
   const lectureId = context.lectureId;
@@ -116,7 +120,17 @@ export function useDurmahChat({
              }
              if (data) {
                   console.log(`[useDurmahChat] Fetched ${data.length} messages from assignment_session_messages`);
-                  setMessages(data.map((m: any) => ({
+                  
+                  // Dedupe consecutive identical messages (UI-level safety net)
+                  const deduped: any[] = [];
+                  data.forEach((m: any) => {
+                      const last = deduped[deduped.length - 1];
+                      if (!last || last.role !== m.role || last.content !== m.content) {
+                          deduped.push(m);
+                      }
+                  });
+
+                  setMessages(deduped.map((m: any) => ({
                       id: m.id,
                       role: m.role,
                       content: m.content || '(no content)',
@@ -161,11 +175,19 @@ export function useDurmahChat({
           fetchMessages(conversationId);
       }
   }, [conversationId, fetchMessages]);
-
   const sendMessage = useCallback(async (content: string, modality: 'text'|'voice' = 'text') => {
+
     console.log('[useDurmahChat] sendMessage called', { content, conversationId, user: !!user });
 
     if (!content.trim()) return;
+    
+    // Client-side dedupe guard (1500ms)
+    const nowTs = Date.now();
+    if (lastSendRef.current && lastSendRef.current.text === content && (nowTs - lastSendRef.current.ts < 1500)) {
+        console.warn('[useDurmahChat] sendMessage: Blocking rapid duplicate send');
+        return;
+    }
+    lastSendRef.current = { text: content, ts: nowTs };
     
     if (!user) {
         toast.error('You must be logged in to chat');
@@ -318,12 +340,15 @@ export function useDurmahChat({
              }, { onConflict: 'id' });
 
              // 1.5. Deduplicate (Prevent accidental double-sends)
-             const lastMsg = messages[messages.length - 1];
-             if (lastMsg && lastMsg.role === role && lastMsg.content === content && 
-                 (new Date().getTime() - new Date(lastMsg.created_at).getTime() < 2000)) {
+             const nowTs = Date.now();
+             if (lastLoggedRef.current && 
+                 lastLoggedRef.current.role === role && 
+                 lastLoggedRef.current.content === content && 
+                 (nowTs - lastLoggedRef.current.ts < 2000)) {
                  console.warn('[useDurmahChat] Dropping duplicate message:', content.substring(0, 20));
                  return;
              }
+             lastLoggedRef.current = { role, content, ts: nowTs };
 
              // 2. Insert Message
              const res = await supabase.from('assignment_session_messages').insert({
@@ -389,8 +414,9 @@ export function useDurmahChat({
       setMessages(prev => prev.filter(m => !ids.includes(m.id)));
 
       try {
+          const tableName = scope === 'assignment' ? 'assignment_session_messages' : 'durmah_messages';
           const { error } = await supabase
-            .from('durmah_messages')
+            .from(tableName)
             .delete()
             .in('id', ids);
 

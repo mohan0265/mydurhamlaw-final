@@ -89,6 +89,25 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
               title: 'Assignment Chat' // Could be better but efficient
           }, { onConflict: 'id' });
 
+          // 1.5 Deduplication Check (Dedupe window: 3s)
+          const threshold = new Date(Date.now() - 3000).toISOString();
+          const { data: existing, error: checkError } = await supabase
+              .from('assignment_session_messages')
+              .select('id')
+              .eq('session_id', sessionId)
+              .eq('user_id', userId)
+              .eq('role', payload.role)
+              .eq('content', payload.content)
+              .gt('created_at', threshold)
+              .order('created_at', { ascending: false })
+              .limit(1)
+              .maybeSingle();
+
+          if (!checkError && existing) {
+              console.log('[chat] Skipping duplicate insert for:', payload.role);
+              return { data: existing, error: null, usedScopeId: true };
+          }
+
           // 2. Insert Message
           const { data, error } = await supabase.from('assignment_session_messages').insert({
               session_id: sessionId,
