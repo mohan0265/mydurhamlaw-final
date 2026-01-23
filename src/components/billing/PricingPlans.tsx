@@ -30,12 +30,12 @@ export const PricingPlans: React.FC<PricingPlansProps> = ({
     }
 
     if (plan === 'free') {
-      router.push(`/signup?plan=${plan}&parent=${parentAddOn}`);
+      router.push(`/signup?plan=${plan}&parent=${parentAddOn}&next=/pricing`);
       return;
     }
 
     if (!user) {
-      router.push(`/login?redirect=/pricing`);
+      router.push(`/signup?plan=${plan}&parent=${parentAddOn}&next=/pricing`);
       return;
     }
 
@@ -233,6 +233,14 @@ export const PricingPlans: React.FC<PricingPlansProps> = ({
           </div>
         </div>
       </div>
+
+      {!user && (
+        <div className="mt-4 text-center">
+          <p className="text-xs text-indigo-600 font-medium">
+            New here? You'll create your account first, then confirm your plan choice.
+          </p>
+        </div>
+      )}
 
       <div className="mt-6 text-center text-[10px] text-gray-400">
         Prices include VAT where applicable. You can cancel at any time.

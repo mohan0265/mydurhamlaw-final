@@ -15,45 +15,56 @@ import {
   Shield,
   Zap
 } from 'lucide-react';
+import { useAuth } from '@/lib/supabase/AuthContext';
 
 export default function PricingPage() {
+  const { user, loading } = useAuth();
   const [showAnnualPricing, setShowAnnualPricing] = useState(false);
 
   const handleSelectPlan = (planId: string) => {
-    // Redirect to signup or billing page
-    window.location.href = `/signup?plan=${planId}`;
+    if (!user) {
+      window.location.href = `/signup?plan=${planId}&next=/pricing`;
+    } else {
+      // Logic handled within PricingPlans for members
+    }
   };
 
   const features = [
     {
       icon: Brain,
       title: 'AI-Powered Study Assistant',
-      description: 'Get personalized help with legal concepts, case analysis, and essay writing'
+      description: 'Get personalized help with legal concepts, case analysis, and essay writing',
+      link: '/learn/ai-study-assistant'
     },
     {
       icon: Users,
       title: 'Always With You (AWY)',
-      description: 'Stay connected with family and friends through our unique presence system'
+      description: 'Stay connected with family and friends through our unique presence system',
+      link: '/learn/always-with-you'
     },
     {
       icon: MessageSquare,
       title: 'Smart Chat Interface',
-      description: 'Natural language conversations with context-aware responses'
+      description: 'Natural language conversations with context-aware responses',
+      link: '/learn/smart-chat-interface'
     },
     {
       icon: Shield,
       title: 'Academic Integrity',
-      description: 'Built-in safeguards to maintain academic honesty and transparency'
+      description: 'Built-in safeguards to maintain academic honesty and transparency',
+      link: '/learn/academic-integrity'
     },
     {
       icon: Zap,
       title: 'Real-time Collaboration',
-      description: 'Work together with classmates and study groups seamlessly'
+      description: 'Work together with classmates and study groups seamlessly',
+      link: '/learn/real-time-collaboration'
     },
     {
       icon: Star,
       title: 'Premium Support',
-      description: 'Priority customer support and exclusive study resources'
+      description: 'Priority customer support and exclusive study resources',
+      link: '/learn/premium-support'
     }
   ];
 
@@ -63,30 +74,45 @@ export default function PricingPage() {
       icon: MessageSquare,
       text: '"This app looks like a very useful AI assisted tool, which we couldn\'t even imagine during undergraduate days. Students nowadays are so much more privileged with these kind of tools available."',
       author: 'Ex-UK Law Graduate',
-      cta: 'Read More'
+      cta: 'Read More',
+      link: '/learn'
     },
     {
       title: 'Your Voice Matters',
       icon: Users,
       text: 'Have you tried MyDurhamLaw? We want to hear from you. Help us shape the future of legal education @ Durham.',
-      cta: 'Submit Review'
+      cta: 'Submit Review',
+      link: '/community'
     },
     {
       title: 'Integrity Promise',
       icon: Shield,
       text: 'We believe in authentic growth. We will never post fake reviews or paid testimonials. Your trust is our priority.',
-      cta: 'Our Ethics'
+      cta: 'Our Ethics',
+      link: '/learn/academic-integrity'
     }
   ];
 
   return (
     <>
       <Head>
-        <title>Pricing - MyDurhamLaw AI Study Assistant</title>
+        <title>Pricing & Plans | MyDurhamLaw AI Study Assistant</title>
         <meta 
           name="description" 
-          content="Choose the perfect plan for your law studies at Durham University. Start with a free trial and upgrade to unlock premium features." 
+          content="Transform your legal education at Durham with ethical AI. 14-day free trial on all plans. Core and Pro options available for focused law students." 
         />
+        <link rel="canonical" href="https://mydurhamlaw.com/pricing" />
+        
+        {/* Open Graph */}
+        <meta property="og:title" content="Pricing & Plans | MyDurhamLaw AI Study Assistant" />
+        <meta property="og:description" content="Choose the perfect AI study plan. 14-day free trial. No credit card required." />
+        <meta property="og:url" content="https://mydurhamlaw.com/pricing" />
+        <meta property="og:type" content="website" />
+        
+        {/* Twitter */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Pricing & Plans | MyDurhamLaw" />
+        <meta name="twitter:description" content="Ethical AI study assistance for Durham Law students." />
       </Head>
 
       <div className="min-h-screen bg-white">
@@ -144,15 +170,20 @@ export default function PricingPage() {
               {features.map((feature, index) => {
                 const Icon = feature.icon;
                 return (
-                  <Card key={index} className="p-6 text-center">
-                    <Icon className="w-12 h-12 text-blue-600 mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                      {feature.title}
-                    </h3>
-                    <p className="text-gray-600">
-                      {feature.description}
-                    </p>
-                  </Card>
+                  <Link key={index} href={feature.link}>
+                    <Card className="p-6 text-center hover:shadow-lg transition-all hover:border-blue-300 group cursor-pointer h-full">
+                      <Icon className="w-12 h-12 text-blue-600 mx-auto mb-4 group-hover:scale-110 transition-transform" />
+                      <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                        {feature.title}
+                      </h3>
+                      <p className="text-gray-600 mb-4">
+                        {feature.description}
+                      </p>
+                      <div className="mt-auto text-blue-600 font-medium text-sm flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        Learn more <ArrowRight className="w-4 h-4" />
+                      </div>
+                    </Card>
+                  </Link>
                 );
               })}
             </div>
@@ -175,22 +206,24 @@ export default function PricingPage() {
               {upcomingReviews.map((item, index) => {
                 const Icon = item.icon;
                 return (
-                  <Card key={index} className="p-8 border-2 border-dashed border-gray-200 bg-gray-50/50 hover:border-blue-200 hover:bg-blue-50/30 transition-all cursor-default">
-                    <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mb-6 mx-auto text-blue-600">
-                      <Icon className="w-6 h-6" />
-                    </div>
-                    <h3 className="text-lg font-bold text-gray-900 mb-3 text-center">
-                      {item.title}
-                    </h3>
-                    <p className="text-gray-600 text-center mb-6 leading-relaxed text-sm">
-                      {item.text}
-                    </p>
-                    <div className="text-center">
-                      <span className="text-blue-600 font-semibold text-sm hover:underline cursor-pointer">
-                        {item.cta} &rarr;
-                      </span>
-                    </div>
-                  </Card>
+                  <Link key={index} href={item.link}>
+                    <Card className="p-8 border-2 border-dashed border-gray-200 bg-gray-50/50 hover:border-blue-200 hover:bg-blue-50/30 transition-all cursor-pointer group h-full flex flex-col">
+                      <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mb-6 mx-auto text-blue-600 group-hover:bg-blue-200 transition-colors">
+                        <Icon className="w-6 h-6" />
+                      </div>
+                      <h3 className="text-lg font-bold text-gray-900 mb-3 text-center">
+                        {item.title}
+                      </h3>
+                      <p className="text-gray-600 text-center mb-6 leading-relaxed text-sm flex-1">
+                        {item.text}
+                      </p>
+                      <div className="text-center mt-auto">
+                        <span className="text-blue-600 font-semibold text-sm group-hover:underline">
+                          {item.cta} &rarr;
+                        </span>
+                      </div>
+                    </Card>
+                  </Link>
                 );
               })}
             </div>
@@ -208,21 +241,31 @@ export default function PricingPage() {
               to excel in their studies and stay connected with loved ones.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button
-                onClick={() => handleSelectPlan('trial')}
-                className="bg-white text-blue-600 hover:bg-gray-100 px-8 py-3 text-lg"
-              >
-                Start Free Trial
-                <ArrowRight className="w-5 h-5 ml-2" />
-              </Button>
-              <Link href="/about">
-                <Button
-                  variant="outline"
-                  className="border-white text-white hover:bg-white hover:text-blue-600 px-8 py-3 text-lg"
-                >
-                  Learn More
-                </Button>
-              </Link>
+              {user ? (
+                <Link href="/dashboard">
+                  <Button className="bg-white text-blue-600 hover:bg-gray-100 px-8 py-3 text-lg w-full sm:w-auto">
+                    Go to Dashboard
+                    <ArrowRight className="w-5 h-5 ml-2" />
+                  </Button>
+                </Link>
+              ) : (
+                <>
+                  <Link href="/signup?next=/pricing">
+                    <Button className="bg-white text-blue-600 hover:bg-gray-100 px-8 py-3 text-lg w-full sm:w-auto">
+                      Start Free Trial
+                      <ArrowRight className="w-5 h-5 ml-2" />
+                    </Button>
+                  </Link>
+                  <Link href="/learn">
+                    <Button
+                      variant="outline"
+                      className="border-white text-white hover:bg-white hover:text-blue-600 px-8 py-3 text-lg w-full sm:w-auto"
+                    >
+                      Learn More
+                    </Button>
+                  </Link>
+                </>
+              )}
             </div>
             <p className="text-sm text-blue-100 mt-4">
               No credit card required • 14-day free trial • Cancel anytime
