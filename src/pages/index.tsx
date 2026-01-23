@@ -3,7 +3,7 @@ import Head from 'next/head'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter } from 'next/router'
-import { Brain, Heart, Calendar, Shield, CheckCircle, Target, ArrowRight, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Brain, Heart, Calendar, Shield, CheckCircle, Target, ArrowRight, ChevronDown, ChevronLeft, ChevronRight, BookOpen } from 'lucide-react'
 import { useAuth } from '@/lib/supabase/AuthContext'
 import { isRouteAbortError } from '@/lib/navigation/safeNavigate'
 
@@ -544,6 +544,90 @@ return (
                </div>
             </div>
          </div>
+      </section>
+
+      {/* POPULAR DURHAM LAW GUIDES */}
+      <section className="py-20 bg-white border-b border-gray-100">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-50 text-purple-600 text-xs font-bold uppercase tracking-wider mb-4">
+              <BookOpen className="w-3.5 h-3.5" />
+              Learning Hub
+            </span>
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">
+              Popular <span className="text-purple-600">Durham Law Guides</span>
+            </h2>
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+              Evidence-based study techniques, ethical AI use, and exam strategies—all Durham-specific.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[
+              {
+                title: 'Durham Law AI Study Assistant',
+                desc: 'Master Durmah for ethical case research, IRAC issue spotting, and exam prep.',
+                slug: 'durham-law-ai-study-assistant',
+                readTime: '12 min read'
+              },
+              {
+                title: 'Academic Integrity & AI Use',
+                desc: 'Understand Durham\'s AI policy. What\'s permitted, prohibited, and how to stay compliant.',
+                slug: 'durham-law-academic-integrity-ai',
+                readTime: '10 min read'
+              },
+              {
+                title: 'How to Ask Better Legal Questions',
+                desc: 'The 4-layer questioning framework for tutorials, research, and Durmah.',
+                slug: 'how-to-ask-better-legal-questions',
+                readTime: '8 min read'
+              },
+              {
+                title: 'Durham Law Study Groups',
+                desc: 'Build effective, compliant study groups with optimal meeting structures.',
+                slug: 'durham-law-study-groups',
+                readTime: '9 min read'
+              },
+              {
+                title: 'Durham Law Wellbeing Routine',
+                desc: 'Balance intensive study with sustainable sleep, movement, and connection habits.',
+                slug: 'durham-law-wellbeing-routine',
+                readTime: '7 min read'
+              },
+              {
+                title: 'Durham Law Exam Technique',
+                desc: 'IRAC method, essay structuring, time management, and ethical AI exam prep.',
+                slug: 'durham-law-exam-technique',
+                readTime: '11 min read'
+              }
+            ].map((guide) => (
+              <Link key={guide.slug} href={`/learn/${guide.slug}`}>
+                <div className="group p-6 rounded-xl border border-gray-200 bg-white hover:border-purple-300 hover:shadow-lg transition-all duration-300 h-full flex flex-col">
+                  <h3 className="text-lg font-bold text-gray-900 mb-2 group-hover:text-purple-700 transition-colors">
+                    {guide.title}
+                  </h3>
+                  <p className="text-sm text-gray-600 mb-4 flex-1">
+                    {guide.desc}
+                  </p>
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-gray-400">{guide.readTime}</span>
+                    <div className="text-purple-600 font-semibold flex items-center gap-1 group-hover:gap-2 transition-all">
+                      Read guide <ArrowRight className="w-3.5 h-3.5" />
+                    </div>
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+
+          <div className="mt-10 text-center">
+            <Link href="/learn">
+              <button className="inline-flex items-center gap-2 px-6 py-3 rounded-full border-2 border-purple-600 text-purple-600 font-bold hover:bg-purple-600 hover:text-white transition-all">
+                View All Guides <ArrowRight className="w-4 h-4" />
+              </button>
+            </Link>
+          </div>
+        </div>
       </section>
 
       {/* 5) CTA Footer */}

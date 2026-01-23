@@ -16,45 +16,51 @@ import { Card } from '@/components/ui/Card';
 const articles = [
   {
     icon: Brain,
-    title: 'AI Study Assistant for UK Law',
-    description: 'Study smarter without cutting corners. Learn ethics-first techniques for case reading and IRAC issue spotting.',
-    slug: 'ai-study-assistant',
-    category: 'Study Skills'
+    title: 'Durham Law AI Study Assistant: Complete Setup Guide',
+    description: 'Master Durmah\'s features for ethical, effective legal study. Case research, IRAC issue spotting, and exam prep.',
+    slug: 'durham-law-ai-study-assistant',
+    category: 'Study Skills',
+    readTime: '12 min read'
   },
   {
     icon: Shield,
-    title: 'Academic Integrity & Ethical AI',
-    description: 'A practical guide for UK law students on using AI ethically—avoiding misconduct while improving understanding.',
-    slug: 'academic-integrity',
-    category: 'Ethics'
+    title: 'Durham Law Academic Integrity & AI Use',
+    description: 'Understand Durham\'s AI policy. What\'s permitted, prohibited, and how to use AI ethically in legal education.',
+    slug: 'durham-law-academic-integrity-ai',
+    category: 'Ethics',
+    readTime: '10 min read'
   },
   {
     icon: MessageSquare,
-    title: 'Smart Chat: Effective Legal Prompts',
-    description: 'Ask better questions, get better answers. How to turn vague questions into structured legal reasoning.',
-    slug: 'smart-chat-interface',
-    category: 'Workflow'
+    title: 'How to Ask Better Legal Questions',
+    description: 'Frame precise analytical questions for tutorials, Durmah, and research. The 4-layer questioning framework.',
+    slug: 'how-to-ask-better-legal-questions',
+    category: 'Workflow',
+    readTime: '8 min read'
   },
   {
     icon: Users,
-    title: 'AWY Wellbeing & Presence',
-    description: 'Supporting wellbeing away from home. Stay connected, reduce isolation, and maintain healthy routines.',
-    slug: 'always-with-you',
-    category: 'Wellbeing'
-  },
-  {
-    icon: Zap,
-    title: 'Real-Time Collaboration',
-    description: 'Better seminars, better revision. How to collaborate effectively in study groups without wasting time.',
-    slug: 'real-time-collaboration',
-    category: 'Community'
+    title: 'Durham Law Study Groups: Collaboration Guide',
+    description: 'Build effective, compliant study groups. Optimal size, meeting structure, and ethical AI use for collaborative learning.',
+    slug: 'durham-law-study-groups',
+    category: 'Community',
+    readTime: '9 min read'
   },
   {
     icon: Star,
-    title: 'Premium Support & Exam Prep',
-    description: 'Structure, speed, and calm under pressure. Revision strategies for high-achieving law students.',
-    slug: 'premium-support',
-    category: 'Performance'
+    title: 'Durham Law Wellbeing Routine',
+    description: 'Balance intensive study with sustainable habits. Sleep, movement, nutrition, and connection strategies for law students.',
+    slug: 'durham-law-wellbeing-routine',
+    category: 'Wellbeing',
+    readTime: '7 min read'
+  },
+  {
+    icon: Zap,
+    title: 'Durham Law Exam Technique: First-Class Strategy',
+    description: 'Master problem questions with IRAC, structure essays, manage time, and use AI ethically for exam prep.',
+    slug: 'durham-law-exam-technique',
+    category: 'Performance',
+    readTime: '11 min read'
   }
 ];
 
@@ -106,9 +112,12 @@ export default function LearnHub() {
                       <h3 className="text-xl font-bold text-gray-900 mb-3 group-hover:text-blue-600 transition-colors">
                         {article.title}
                       </h3>
-                      <p className="text-gray-600 mb-6 flex-1 text-sm leading-relaxed">
+                      <p className="text-gray-600 mb-4 flex-1 text-sm leading-relaxed">
                         {article.description}
                       </p>
+                      {article.readTime && (
+                        <p className="text-gray-400 text-xs mb-3">{article.readTime}</p>
+                      )}
                       <div className="flex items-center gap-1.5 text-blue-600 font-bold text-sm">
                         Read Guide <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                       </div>
