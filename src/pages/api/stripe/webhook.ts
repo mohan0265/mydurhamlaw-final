@@ -66,16 +66,39 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const customerId = (s.customer as string) || null;
         const subscriptionId = (s.subscription as string) || null;
         const email = s.customer_details?.email || null;
+        const plan = s.metadata?.plan || null;
+        const parentAddOn = s.metadata?.parentAddOn === 'true';
 
-        // Try to store customer id on profile by email (ignore failure)
+        // 1) Store stripe_customer_id on profile by email
         if (email && customerId) {
           try {
-            await supabaseAdmin
+            const { data: userProfile } = await supabaseAdmin
               .from('profiles')
               .update({ stripe_customer_id: customerId })
-              .eq('email', email);
+              .eq('email', email)
+              .select('id')
+              .single();
+
+            // 2) Synchronize subscription state
+            if (userProfile?.id && subscriptionId && plan) {
+              const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+              
+              const currentPeriodEnd = unixToIsoMaybe(subscription.current_period_end);
+
+              // Update or Insert into user_subscriptions
+              await supabaseAdmin.from('user_subscriptions').upsert({
+                user_id: userProfile.id,
+                plan_id: plan,
+                status: 'active',
+                stripe_subscription_id: subscriptionId,
+                stripe_customer_id: customerId,
+                current_period_start: new Date().toISOString(),
+                current_period_end: currentPeriodEnd || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+                updated_at: new Date().toISOString()
+              }, { onConflict: 'user_id' });
+            }
           } catch (e) {
-            console.warn('[stripe/webhook] Could not store stripe_customer_id:', e);
+            console.error('[stripe/webhook] Sync error:', e);
           }
         }
 
@@ -100,15 +123,39 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       case 'customer.subscription.deleted': {
         const sub = event.data.object as Stripe.Subscription;
         const customerId = (sub.customer as string) || null;
-        const status = sub.status;
+        const status = sub.status === 'active' || sub.status === 'trailing' ? 'active' : sub.status;
 
-        // NOTE: do NOT trust Stripe types to always include this field.
-        // Read defensively to fix TS error across versions.
-        const rawCpe =
-          (sub as any)?.current_period_end ??
-          (sub as any)?.current_period_end_at ??
-          null;
-        const currentPeriodEndIso = unixToIsoMaybe(rawCpe);
+        const currentPeriodEndIso = unixToIsoMaybe(sub.current_period_end);
+        const plan = sub.metadata?.plan || null;
+
+        // Sync subscription state back to Supabase
+        if (customerId) {
+          try {
+            // Find user by stripe_customer_id
+            const { data: profile } = await supabaseAdmin
+              .from('profiles')
+              .select('id')
+              .eq('stripe_customer_id', customerId)
+              .maybeSingle();
+
+            if (profile?.id) {
+              const updateData: any = {
+                status: status,
+                current_period_end: currentPeriodEndIso || new Date().toISOString(),
+                updated_at: new Date().toISOString()
+              };
+              
+              if (plan) updateData.plan_id = plan;
+
+              await supabaseAdmin
+                .from('user_subscriptions')
+                .update(updateData)
+                .eq('user_id', profile.id);
+            }
+          } catch (e) {
+            console.error('[stripe/webhook] Subscription update sync error:', e);
+          }
+        }
 
         try {
           await supabaseAdmin.from('billing_events').insert([
@@ -117,7 +164,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
               customer_id: customerId,
               subscription_id: sub.id,
               status,
-              current_period_end: currentPeriodEndIso, // store as ISO string or null
+              current_period_end: currentPeriodEndIso,
               payload: sub,
             },
           ]);

@@ -1,7 +1,9 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Check, X, Shield } from 'lucide-react';
+import { useRouter } from 'next/router';
+import { Check, X, Shield, Loader2 } from 'lucide-react';
+import { useAuth } from '@/lib/supabase/AuthContext';
 
 type BillingPeriod = 'monthly' | 'annual';
 type PlanId = 'free' | 'core_monthly' | 'core_annual' | 'pro_monthly' | 'pro_annual';
@@ -15,14 +17,50 @@ export const PricingPlans: React.FC<PricingPlansProps> = ({
   onSelectPlan,
   showAnnualPricing = false,
 }) => {
+  const { user } = useAuth();
+  const router = useRouter();
   const [billing, setBilling] = useState<BillingPeriod>(showAnnualPricing ? 'annual' : 'monthly');
   const [parentAddOn, setParentAddOn] = useState(false);
+  const [loadingPlan, setLoadingPlan] = useState<PlanId | null>(null);
 
-  const handleSelect = (plan: PlanId) => {
+  const handleSelect = async (plan: PlanId) => {
     if (onSelectPlan) {
       onSelectPlan(plan);
-    } else {
-      window.location.href = `/signup?plan=${plan}&parent=${parentAddOn}`;
+      return;
+    }
+
+    if (plan === 'free') {
+      router.push(`/signup?plan=${plan}&parent=${parentAddOn}`);
+      return;
+    }
+
+    if (!user) {
+      router.push(`/login?redirect=/pricing`);
+      return;
+    }
+
+    try {
+      setLoadingPlan(plan);
+      const res = await fetch('/api/stripe/checkout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ plan, parentAddOn }),
+      });
+
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        console.error('No checkout URL returned', data);
+        alert('Failed to start checkout. Please try again.');
+      }
+    } catch (error) {
+      console.error('Checkout error:', error);
+      alert('An error occurred. Please try again.');
+    } finally {
+      setLoadingPlan(null);
     }
   };
 
@@ -72,9 +110,10 @@ export const PricingPlans: React.FC<PricingPlansProps> = ({
 
           <button
             onClick={() => handleSelect('free')}
-            className="w-full py-2.5 px-4 border border-gray-300 rounded-xl text-sm text-gray-700 font-bold hover:bg-gray-50 transition-colors"
+            disabled={loadingPlan !== null}
+            className="w-full py-2.5 px-4 border border-gray-300 rounded-xl text-sm text-gray-700 font-bold hover:bg-gray-50 transition-colors flex items-center justify-center gap-2"
           >
-            Start Free
+            {loadingPlan === 'free' ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Start Free'}
           </button>
         </div>
 
@@ -106,9 +145,14 @@ export const PricingPlans: React.FC<PricingPlansProps> = ({
 
           <button
             onClick={() => handleSelect(billing === 'monthly' ? 'core_monthly' : 'core_annual')}
-            className="w-full py-2.5 px-4 bg-indigo-600 text-white rounded-xl text-sm font-bold hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-200"
+            disabled={loadingPlan !== null}
+            className="w-full py-2.5 px-4 bg-indigo-600 text-white rounded-xl text-sm font-bold hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-200 flex items-center justify-center gap-2"
           >
-            Get Core
+            {loadingPlan && loadingPlan.startsWith('core') ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              'Get Core'
+            )}
           </button>
         </div>
 
@@ -142,9 +186,14 @@ export const PricingPlans: React.FC<PricingPlansProps> = ({
 
           <button
             onClick={() => handleSelect(billing === 'monthly' ? 'pro_monthly' : 'pro_annual')}
-            className="w-full py-2.5 px-4 bg-gray-900 text-white rounded-xl text-sm font-bold hover:bg-gray-800 transition-colors"
+            disabled={loadingPlan !== null}
+            className="w-full py-2.5 px-4 bg-gray-900 text-white rounded-xl text-sm font-bold hover:bg-gray-800 transition-colors flex items-center justify-center gap-2"
           >
-            Go Pro
+            {loadingPlan && loadingPlan.startsWith('pro') ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              'Go Pro'
+            )}
           </button>
         </div>
       </div>

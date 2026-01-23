@@ -35,8 +35,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    // Body: { plan: 'core_monthly' | 'core_annual' | 'pro_monthly' | 'pro_annual' | 'free' }
-    const { plan } = (req.body || {}) as { plan?: string };
+    // Body: { plan: 'core_monthly' | 'core_annual' | 'pro_monthly' | 'pro_annual' | 'free', parentAddOn?: boolean }
+    const { plan, parentAddOn } = (req.body || {}) as { plan?: string; parentAddOn?: boolean };
     
     // Map plan keys to Environment Variables
     const priceMap: Record<string, string | undefined> = {
@@ -59,18 +59,37 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const trialDays = Number.parseInt(process.env.STRIPE_TRIAL_DAYS || '14', 10);
     const origin = getOrigin(req);
 
+    const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = [
+      { price: priceId, quantity: 1 }
+    ];
+
+    // Add Parent Add-on if requested
+    if (parentAddOn) {
+      const isAnnual = plan?.includes('annual') || plan === 'annual';
+      const parentPriceId = isAnnual 
+        ? process.env.STRIPE_PRICE_PARENT_ADDON_ANNUAL 
+        : process.env.STRIPE_PRICE_PARENT_ADDON_MONTHLY;
+      
+      if (parentPriceId) {
+        lineItems.push({ price: parentPriceId, quantity: 1 });
+      } else {
+        console.warn(`[Stripe] Parent add-on requested but price ID missing for ${isAnnual ? 'annual' : 'monthly'}`);
+      }
+    }
+
     const session = await stripe.checkout.sessions.create({
       mode: 'subscription',
-      line_items: [{ price: priceId, quantity: 1 }],
+      line_items: lineItems,
       allow_promotion_codes: true,
-      success_url: `${origin}/success?session_id={CHECKOUT_SESSION_ID}`,
+      success_url: `${origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/pricing`,
       subscription_data: {
         trial_period_days: Number.isFinite(trialDays) ? trialDays : 14,
-        metadata: { plan: plan || '' },
+        metadata: { 
+          plan: plan || '',
+          parentAddOn: parentAddOn ? 'true' : 'false'
+        },
       },
-      // If you want to pre-fill with an email (optional),
-      // set customer_email here after you add server auth.
     });
 
     return res.status(200).json({ url: session.url });
