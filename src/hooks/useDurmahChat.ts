@@ -317,6 +317,14 @@ export function useDurmahChat({
                  title: `Session ${new Date().toLocaleDateString()}`
              }, { onConflict: 'id' });
 
+             // 1.5. Deduplicate (Prevent accidental double-sends)
+             const lastMsg = messages[messages.length - 1];
+             if (lastMsg && lastMsg.role === role && lastMsg.content === content && 
+                 (new Date().getTime() - new Date(lastMsg.created_at).getTime() < 2000)) {
+                 console.warn('[useDurmahChat] Dropping duplicate message:', content.substring(0, 20));
+                 return;
+             }
+
              // 2. Insert Message
              const res = await supabase.from('assignment_session_messages').insert({
                  session_id: conversationId,

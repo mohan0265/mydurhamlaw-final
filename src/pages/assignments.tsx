@@ -180,15 +180,14 @@ export default function AssignmentsPage() {
     
     setChatInitialPrompt(userMessage);
     
-    // Explicitly open workflow modal
+    // Explicity open workflow modal
     setShowWorkflow(true);
     
-    // Send SHORT message to sidebar chat/global widget
-    if (typeof window !== 'undefined') {
-        window.dispatchEvent(new CustomEvent('durmah:message', { 
-            detail: { text: userMessage, mode: 'study' }
-        }));
-    }
+    // REMOVED: Do not auto-dispatch message to global widget
+    // This prevents duplicate messages and ensures Durmah in the workflow starts fresh (or resumes properly)
+    // The workflow itself will handle context via systemHint
+    
+    toast.success("Opening Assignment Assistant");
     
     toast.success("Durmah briefed with assignment context");
   }

@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import { Brain, AlertTriangle, Send, Mic, MicOff, Maximize2, Minimize2, FileText, Check, Loader2, Square, CheckSquare, ListPlus, Copy, Plus } from 'lucide-react';
+import { Brain, AlertTriangle, Send, Mic, MicOff, Maximize2, Minimize2, FileText, Check, Loader2, Square, CheckSquare, ListPlus, Copy, Plus, Trash2 } from 'lucide-react';
 import { useAuth, useSupabaseClient } from '@/lib/supabase/AuthContext';
 import { useDurmah } from '@/lib/durmah/context';
 import { useDurmahDynamicContext } from '@/hooks/useDurmahDynamicContext';
@@ -98,7 +98,8 @@ export default function DurmahChat({
     sendMessage, 
     isLoading: isChatLoading, 
     conversationId,
-    logMessage
+    logMessage,
+    discardSession
   } = useDurmahChat({
     source: 'assignment',
     scope: 'assignment',
@@ -287,6 +288,21 @@ INSTRUCTIONS:
         </div>
 
         <div className="flex items-center gap-1">
+          {/* Clear Chat (Reset Session) */}
+          {messages.length > 0 && (
+             <button
+                onClick={async () => {
+                    if (window.confirm("Clear this chat history? This cannot be undone.")) {
+                        if (discardSession) await discardSession();
+                    }
+                }}
+                className="p-2 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors"
+                title="Clear Chat History"
+             >
+                 <Trash2 size={18} />
+             </button>
+          )}
+
           {/* Voice Toggle */}
           <button
             onClick={isVoiceConnected ? disconnectVoice : connectVoice}
