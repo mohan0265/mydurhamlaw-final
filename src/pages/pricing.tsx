@@ -142,6 +142,11 @@ export default function PricingPage() {
                 <span>Cancel anytime</span>
               </div>
             </div>
+            {/* Parent Payment Badge */}
+            <div className="mt-4 inline-flex items-center gap-2 bg-pink-50 border border-pink-200 text-pink-700 px-4 py-2 rounded-full text-xs font-medium">
+              <span>💳</span>
+              <span>Don't have a card? Your parent can pay for you!</span>
+            </div>
           </div>
         </div>
 
