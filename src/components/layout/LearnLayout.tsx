@@ -9,7 +9,8 @@ interface LearnLayoutProps {
   children: React.ReactNode;
   title: string;
   description: string;
-  slug: string;
+  canonicalUrl?: string; // Made optional for backwards compatibility
+  slug?: string; // Keep for backwards compatibility
   relatedArticles?: { title: string; slug: string }[];
 }
 
@@ -17,23 +18,25 @@ export const LearnLayout: React.FC<LearnLayoutProps> = ({
   children,
   title,
   description,
+  canonicalUrl,
   slug,
   relatedArticles = []
 }) => {
   const { user } = useAuth();
-  const canonicalUrl = `https://mydurhamlaw.com/learn/${slug}`;
+  // Use canonicalUrl if provided, otherwise construct from slug
+  const finalCanonicalUrl = canonicalUrl || `https://mydurhamlaw.com/learn/${slug}`;
 
   return (
     <div className="bg-white flex flex-col">
       <Head>
         <title>{title} - MyDurhamLaw Learn</title>
         <meta name="description" content={description} />
-        <link rel="canonical" href={canonicalUrl} />
+        <link rel="canonical" href={finalCanonicalUrl} />
         
         {/* Open Graph */}
         <meta property="og:title" content={title} />
         <meta property="og:description" content={description} />
-        <meta property="og:url" content={canonicalUrl} />
+        <meta property="og:url" content={finalCanonicalUrl} />
         <meta property="og:type" content="article" />
         <meta property="og:site_name" content="MyDurhamLaw" />
         <meta property="og:image" content="https://mydurhamlaw.com/og/og-default.png" />
@@ -125,3 +128,5 @@ export const LearnLayout: React.FC<LearnLayoutProps> = ({
     </div>
   );
 };
+
+export default LearnLayout;

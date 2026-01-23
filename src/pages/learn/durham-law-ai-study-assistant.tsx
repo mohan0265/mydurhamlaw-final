@@ -21,16 +21,16 @@ const faqs = [
     answer: 'Use AI to explain concepts in simpler terms, provide examples, or break down cases step-by-step. Ask it to quiz you, not to write your essays. The key is using AI as a study partner that helps you learn, not as a shortcut that bypasses learning.'
   },
   {
-    question: 'What's the difference between asking AI to "explain" vs "write" answers?',
-    answer: 'Asking AI to explain helps you understand—it's like asking a tutor "why does this work?" Asking AI to write answers for you is academic misconduct. The former builds knowledge; the latter bypasses it. Always keep control of your final written work.'
+    question: 'What\'s the difference between asking AI to "explain" vs "write" answers?',
+    answer: 'Asking AI to explain helps you understand - it\'s like asking a tutor "why does this work?" Asking AI to write answers for you is academic misconduct. The former builds knowledge; the latter bypasses it. Always keep control of your final written work.'
   },
   {
     question: 'Can I use AI-generated practice questions for exam prep?',
-    answer: 'Absolutely. Generating practice prompts, hypothetical scenarios, or issue-spotting exercises is one of the most ethical and effective uses of AI. Just ensure the questions relate to what you've actually studied in lectures and readings.'
+    answer: 'Absolutely. Generating practice prompts, hypothetical scenarios, or issue-spotting exercises is one of the most ethical and effective uses of AI. Just ensure the questions relate to what you\'ve actually studied in lectures and readings.'
   },
   {
     question: 'Does using MyDurhamLaw count as AI assistance I need to declare?',
-    answer: 'It depends on how you use it. If you use it to understand concepts, organize notes, or practice—that's typically like using a textbook (no declaration needed). If a tool generates text you incorporate into submitted work, check your module's AI policy. When in doubt, ask your supervisor or lecturer.'
+    answer: 'It depends on how you use it. If you use it to understand concepts, organize notes, or practice - that\'s typically like using a textbook (no declaration needed). If a tool generates text you incorporate into submitted work, check your module\'s AI policy. When in doubt, ask your supervisor or lecturer.'
   }
 ];
 
