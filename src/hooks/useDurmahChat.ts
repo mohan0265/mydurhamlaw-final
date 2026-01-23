@@ -627,7 +627,7 @@ export function useDurmahChat({
 
         if (messagesError) {
           console.error('[useDurmahChat] Delete assignment messages error:', messagesError);
-          toast.error('Failed to delete messages');
+          toast.error('Failed to clear messages');
           return false;
         }
 
@@ -640,6 +640,8 @@ export function useDurmahChat({
         if (sessionError) {
           console.error('[useDurmahChat] Delete assignment session error:', sessionError);
         }
+        
+        console.log(`[useDurmahChat] Assignment session ${targetSessionId} cleared successfully`);
       } else {
         // Legacy/Global behavior
         // 1. Delete all messages from durmah_messages
@@ -650,7 +652,7 @@ export function useDurmahChat({
 
         if (messagesError) {
           console.error('[useDurmahChat] Delete messages error:', messagesError);
-          toast.error('Failed to delete messages');
+          toast.error('Failed to clear messages');
           return false;
         }
 
@@ -663,6 +665,8 @@ export function useDurmahChat({
         if (sessionError) {
           console.error('[useDurmahChat] Delete session error:', sessionError);
         }
+        
+        console.log(`[useDurmahChat] Session ${targetSessionId} cleared successfully`);
       }
 
       // 3. Clear local state

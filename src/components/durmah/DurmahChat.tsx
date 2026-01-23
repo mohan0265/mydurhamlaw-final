@@ -336,7 +336,7 @@ INSTRUCTIONS:
           {messages.length > 0 && (
              <button
                 onClick={async () => {
-                    if (window.confirm("Clear this chat history? This cannot be undone.")) {
+                    if (window.confirm("Clear this assignment chat history? This affects only this assignment.")) {
                         if (discardSession) await discardSession();
                     }
                 }}
