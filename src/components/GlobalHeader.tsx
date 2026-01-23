@@ -3,6 +3,7 @@
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter } from 'next/router';
 import { useAuth } from '@/lib/supabase/AuthContext';
 import LogoutButton from '@/components/auth/LogoutButton';
@@ -273,32 +274,17 @@ export default function GlobalHeader() {
             {/* Brand */}
             <Link
               href="/"
-              className="flex items-center gap-4 rounded-xl px-2 py-2 group focus:outline-none focus:ring-2 focus:ring-white/50"
+              className="flex items-center rounded-xl px-2 py-2 group focus:outline-none focus:ring-2 focus:ring-white/50"
               aria-label="MyDurhamLaw Home"
             >
-              {/* Icon badge (New Gold Scale Logo) */}
-              <div className="h-12 w-12 md:h-20 md:w-20 relative shrink-0 transition-transform group-hover:scale-105 duration-300">
-                <img 
-                  src="/assets/logo/scale-icon-gold.webp" 
-                  alt="MyDurham Law Scale" 
-                  className="h-full w-full object-contain drop-shadow-lg"
-                />
-              </div>
-
-              {/* Wordmark */}
-              <div className="leading-none flex flex-col justify-center">
-                <div className="tracking-tight text-white drop-shadow-md">
-                  <span className="font-bold text-2xl md:text-4xl">
-                    MyDurham
-                  </span>
-                  <span className="text-amber-300 italic font-bold text-2xl md:text-4xl ml-1">
-                    Law
-                  </span>
-                </div>
-                <div className="text-white/80 text-[11px] md:text-sm mt-1.5 font-medium tracking-wide uppercase">
-                  Durham Law Companion
-                </div>
-              </div>
+              <Image 
+                src="/brand/mydurhamlaw-header-lockup.png"
+                alt="MyDurhamLaw"
+                width={200}
+                height={40}
+                priority
+                className="h-[28px] md:h-[34px] w-auto object-contain transition-transform group-hover:scale-105 duration-300"
+              />
             </Link>
 
             {/* Desktop nav */}
