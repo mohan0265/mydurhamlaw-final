@@ -1,98 +1,116 @@
 import React from 'react';
 import Link from 'next/link';
 import { LearnLayout } from '@/components/layout/LearnLayout';
-import { Users, Heart, Coffee, Shield } from 'lucide-react';
+import { Users, Heart, Coffee, Shield, CheckCircle } from 'lucide-react';
 
 export default function AlwaysWithYou() {
   return (
     <LearnLayout
-      title="Always With You: Student Wellbeing & Connection"
-      description="How to balance the high pressure of a Durham Law degree with emotional wellbeing and family connection."
+      title="Always With You (AWY): Wellbeing + Presence for Law Students Away From Home"
+      description="Discover how presence features can support student wellbeing—helping Durham law students stay connected, reduce isolation, and study with healthier routines."
       slug="always-with-you"
       relatedArticles={[
-        { title: 'Real-time Collaboration', slug: 'real-time-collaboration' },
-        { title: 'Premium Support & Revison', slug: 'premium-support' }
+        { title: 'Premium Support for High Achievers', slug: 'premium-support' },
+        { title: 'Real-time Collaboration', slug: 'real-time-collaboration' }
       ]}
     >
       <div className="prose prose-pink max-w-none">
-        <div className="flex items-center gap-4 mb-8">
-          <div className="p-3 bg-pink-50 rounded-2xl text-pink-600">
-            <Users className="w-8 h-8" />
+        <h1 className="text-3xl md:text-5xl font-extrabold text-gray-900 mb-6">Always With You (AWY): Wellbeing + Presence for Law Students Away From Home</h1>
+        <p className="text-xl text-gray-600 leading-relaxed mb-8">
+          Law school is as much a test of endurance as it is of intelligence. Standing between you and your career 
+          are thousands of pages of reading and high-pressure exam seasons. The **Always With You** (AWY) system 
+          ensures that your support network is never more than a glance away, helping you maintain the balance 
+          needed for long-term academic success.
+        </p>
+
+        <h2 className="text-2xl font-bold text-gray-900 mt-12 mb-6">What this means for UK law undergrads</h2>
+        <p>
+          The life of a law student can frequently feel isolating. Long revision blocks in the library and 
+          solo reading sessions can lead to burnout if not managed carefully. We know that wellbeing 
+          directly affects performance: sleep, stress management, and consistency are the invisible 
+          drivers of high grades.
+        </p>
+        <p>
+          AWY introduces the concept of "Presence"—a quiet, non-intrusive way to stay connected. 
+          It differs from constant messaging by allowing you to feel the presence of loved ones 
+          without the distraction of a full conversation, reducing loneliness during those 
+          deep-work sessions.
+        </p>
+
+        <h2 className="text-2xl font-bold text-gray-900 mt-12 mb-6">For Durham Law students</h2>
+        <p>
+          Adjusting to the unique rhythm of the Durham academic year—from the initial buzz of Michaelmas 
+          term to the intense pressure of the Easter exams—requires stamina. MyDurhamLaw helps you 
+          navigate these workload spikes while staying connected to your college community and 
+          family back home.
+        </p>
+        <p className="text-sm italic text-gray-500">
+          Note: MyDurhamLaw is an independent study companion and is not affiliated with Durham University.
+        </p>
+
+        <h2 className="text-2xl font-bold text-gray-900 mt-12 mb-6">Healthy routines that improve grades</h2>
+        <p>Success in law is about consistency, not just brilliance. Implement these routines to stay ahead:</p>
+        <ul className="space-y-4">
+          <li><strong>Weekly planning:</strong> Set 3 major priorities and leave 2 buffer slots for the unexpected.</li>
+          <li><strong>Micro-breaks:</strong> Follow the 50/10 rule—50 minutes of deep study followed by 10 minutes of complete rest.</li>
+          <li><strong>"Start small" technique:</strong> If you're procrastinating, commit to just 5 minutes of focused entry into the work.</li>
+        </ul>
+
+        <h2 className="text-2xl font-bold text-gray-900 mt-12 mb-6">Managing stress before seminars and exams</h2>
+        <p>Stress is natural, but it shouldn't be paralyzing. Use our pre-seminar preparation template:</p>
+        <div className="bg-pink-50 p-6 rounded-2xl my-8 border border-pink-100 font-medium text-pink-900">
+          Summary of Case → 2 Critical Questions → 1 Potential Critique
+        </div>
+        <p>
+          When exam anxiety hits, practice under timed conditions and review your work calmly. Remember, 
+          when you feel overwhelmed, the best reset is simple: controlled breathing and one achievable next action.
+        </p>
+
+        <h2 className="text-2xl font-bold text-gray-900 mt-12 mb-6">Boundaries and privacy (so it helps, not distracts)</h2>
+        <p>
+          Technology should serve you, not the other way around. You maintain 100% control over your 
+          availability. Choose when to be "Visible" to your support network and when to switch to 
+          "Deep Work" mode to eliminate distractions. AWY allows you to decide exactly what to 
+          share with parents and loved ones, keeping your independence while receiving their support.
+        </p>
+
+        <h2 className="text-2xl font-bold text-gray-900 mt-12 mb-6">How MyDurhamLaw helps</h2>
+        <p>
+          The AWY presence feature is available as an optional addon designed to support your routines, 
+          manage your check-ins, and signal your "I’m studying" mode to those who care about you. 
+          By prioritizing your mental health, we help you prioritize your grades.
+        </p>
+        <div className="mt-8">
+          <Link href="/pricing">
+             <button className="bg-pink-600 text-white font-bold py-3 px-8 rounded-xl hover:bg-pink-700 transition shadow-lg shadow-pink-200">
+               Start Free Trial
+             </button>
+          </Link>
+        </div>
+
+        <h2 className="text-2xl font-bold text-gray-900 mt-16 mb-6 pt-10 border-t">FAQ</h2>
+        <div className="space-y-6">
+          <div>
+            <h4 className="font-bold text-gray-900">Is AWY like WhatsApp or Zoom?</h4>
+            <p className="text-gray-600 text-sm">No. AWY is focused on "presence first." It’s designed to be minimal and non-intrusive, giving you the feeling of connection without the constant ping of a chat app.</p>
           </div>
           <div>
-            <h1 className="text-3xl md:text-4xl font-extrabold text-gray-900 mb-0">Always With You (AWY)</h1>
-            <p className="text-gray-500 font-medium">Prioritizing wellbeing in legal education</p>
+            <h4 className="font-bold text-gray-900">Can I control who sees me online?</h4>
+            <p className="text-gray-600 text-sm">Absolutely. Your privacy is paramount. You select exactly which contacts can see your status, and you can go "Invisible" at any time.</p>
+          </div>
+          <div>
+            <h4 className="font-bold text-gray-900">Will this distract me while studying?</h4>
+            <p className="text-gray-600 text-sm">The opposite—by signaling to others that you are in a deep study session, AWY actually helps protect your time and reduces the need for "Checking in" messages.</p>
+          </div>
+          <div>
+            <h4 className="font-bold text-gray-900">Why does wellbeing matter for law grades?</h4>
+            <p className="text-gray-600 text-sm">Cognitive performance drops sharply under high stress or exhaustion. Consistent wellbeing routines ensure your brain is at its sharpest when it matters most.</p>
           </div>
         </div>
 
-        <p className="text-xl text-gray-600 leading-relaxed mb-10">
-          A law degree at Durham is rewarding, but it can also be isolating. The pressure of reading lists, 
-          tutorial preparation, and summative deadlines can sometimes push social connection to the 
-          periphery. The **Always With You** (AWY) feature was built to ensure that while you study hard, 
-          you're never truly alone.
+        <p className="mt-20 text-[10px] text-gray-400 text-center uppercase tracking-widest">
+          MyDurhamLaw is an independent study companion and is not affiliated with Durham University.
         </p>
-
-        <h2 className="text-2xl font-bold text-gray-900 mt-12 mb-6">Managing Loneliness in Michaelmas</h2>
-        <p>
-          The transition to university life, especially in the first term, can be challenging. 
-          AWY allows students to maintain a "presence" with their loved ones. Whether it's your parents 
-          back home or a partner in another city, they can see when you're in the library and studying, 
-          offering a sense of shared experience without the need for constant messaging.
-        </p>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 my-10">
-          <div className="p-6 bg-pink-50 rounded-2xl border border-pink-100">
-            <Heart className="w-6 h-6 text-pink-600 mb-4" />
-            <h3 className="text-lg font-bold text-gray-900 mb-2">Emotional Support</h3>
-            <p className="text-sm text-gray-600 m-0">
-              Knowing someone is "there" with you in spirit reduces the cognitive load of stress during 
-              late-night revision sessions.
-            </p>
-          </div>
-          <div className="p-6 bg-blue-50 rounded-2xl border border-blue-100">
-            <Coffee className="w-6 h-6 text-blue-600 mb-4" />
-            <h3 className="text-lg font-bold text-gray-900 mb-2">Healthy Boundaries</h3>
-            <p className="text-sm text-gray-600 m-0">
-              Use AWY to show loved ones when you're "In the Zone," signaling that you're focused 
-              and will respond to messages later.
-            </p>
-          </div>
-        </div>
-
-        <h2 className="text-2xl font-bold text-gray-900 mt-12 mb-6">Connecting with Loved Ones</h2>
-        <p>
-          AWY isn't just a status badge. It's an invitation for support. Parents can use the Parent Add-on 
-          to receive weekly wellbeing scores (fully controlled by you), ensuring they can offer 
-          encouragement exactly when it's needed most—like the week leading up to Epiphany exams.
-        </p>
-
-        <h2 className="text-2xl font-bold text-gray-900 mt-12 mb-6">How MyDurhamLaw Helps</h2>
-        <p>
-          We believe that a happy student is a successful student. By bridging the gap between your 
-          academic life and your support network, we help you maintain the stamina needed for a 
-          qualifying law degree. Explore our <Link href="/pricing" className="text-pink-600 font-bold hover:underline">wellbeing features</Link> today.
-        </p>
-
-        {/* FAQ Section */}
-        <div className="mt-20">
-          <h2 className="text-2xl font-bold text-gray-900 mb-8">Frequently Asked Questions</h2>
-          <div className="space-y-6">
-            <div className="p-6 border border-gray-200 rounded-2xl">
-              <h4 className="font-bold text-gray-900 mb-2 underline decoration-pink-200 decoration-2 underline-offset-4">Is my privacy protected?</h4>
-              <p className="text-gray-600 text-sm m-0">
-                Absolutely. You have 100% control over who sees your status and what information is shared. 
-                You can turn off AWY presence at any time with a single click.
-              </p>
-            </div>
-            <div className="p-6 border border-gray-200 rounded-2xl">
-              <h4 className="font-bold text-gray-900 mb-2 underline decoration-pink-200 decoration-2 underline-offset-4">What does the "Parent Add-on" include?</h4>
-              <p className="text-gray-600 text-sm m-0">
-                It allows a designated parent to see your study status and receive a high-level weekly 
-                wellbeing summary, helping them stay connected to your journey without being intrusive.
-              </p>
-            </div>
-          </div>
-        </div>
       </div>
     </LearnLayout>
   );

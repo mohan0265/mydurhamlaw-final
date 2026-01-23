@@ -1,110 +1,133 @@
 import React from 'react';
 import Link from 'next/link';
 import { LearnLayout } from '@/components/layout/LearnLayout';
-import { Shield, Scale, FileCheck, Info } from 'lucide-react';
+import { Shield, Scale, FileCheck, Info, CheckCircle, AlertTriangle } from 'lucide-react';
 
 export default function AcademicIntegrity() {
   return (
     <LearnLayout
-      title="Academic Integrity: Using AI Ethically"
-      description="A guide for Durham Law students on the ethical use of AI assistants and maintaining academic standards."
+      title="Academic Integrity in Law School: How to Use AI Ethically (and Still Win Marks)"
+      description="A practical guide for UK law students on using AI ethically—avoiding misconduct, improving understanding, and building better arguments without ghostwriting."
       slug="academic-integrity"
       relatedArticles={[
         { title: 'AI Study Assistant', slug: 'ai-study-assistant' },
-        { title: 'Premium Support & Revison', slug: 'premium-support' }
+        { title: 'Smart Chat Interface', slug: 'smart-chat-interface' }
       ]}
     >
       <div className="prose prose-emerald max-w-none">
-        <div className="flex items-center gap-4 mb-8">
-          <div className="p-3 bg-emerald-50 rounded-2xl text-emerald-600">
-            <Shield className="w-8 h-8" />
+        <h1 className="text-3xl md:text-5xl font-extrabold text-gray-900 mb-6 font-serif">Academic Integrity in Law School: How to Use AI Ethically (and Still Win Marks)</h1>
+        <p className="text-xl text-gray-600 leading-relaxed mb-8 italic">
+          In the legal profession, integrity is not just a virtue—it's a requirement. As you build your reputation 
+          starting at university, understanding the boundary between AI as a tool and AI as an easy shortcut 
+          is essential for your future career and your academic standing.
+        </p>
+
+        <h2 className="text-2xl font-bold text-gray-900 mt-12 mb-6">Why integrity is a performance advantage</h2>
+        <p>
+          It’s tempting to look for shortcuts, but real improvement in law comes from mastering skills, not 
+          finding workarounds. Tutors at high-ranking universities reward authentic reasoning, clear 
+          referencing, and a unique legal voice. By using AI to sharpen your own thoughts rather than 
+          replace them, you build the muscle memory required for the Solicitors Qualifying Examination (SQE) 
+          and the Bar.
+        </p>
+
+        <h2 className="text-2xl font-bold text-gray-900 mt-12 mb-6">What crosses the line (common risk areas)</h2>
+        <p>Before you use any AI tool, be aware of what constitutes academic misconduct:</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 my-8">
+          <div className="p-4 bg-red-50 rounded-xl border border-red-100 flex gap-3 shadow-sm">
+            <AlertTriangle className="w-5 h-5 text-red-600 shrink-0" />
+            <span className="text-sm text-red-900">Submitting AI-written text as your own original work.</span>
           </div>
-          <div>
-            <h1 className="text-3xl md:text-4xl font-extrabold text-gray-900 mb-0">Academic Integrity</h1>
-            <p className="text-gray-500 font-medium">Integrity as a professional foundation</p>
+          <div className="p-4 bg-red-50 rounded-xl border border-red-100 flex gap-3 shadow-sm">
+            <AlertTriangle className="w-5 h-5 text-red-600 shrink-0" />
+            <span className="text-sm text-red-900">Paraphrasing AI-generated content without deep understanding.</span>
+          </div>
+          <div className="p-4 bg-red-50 rounded-xl border border-red-100 flex gap-3 shadow-sm">
+            <AlertTriangle className="w-5 h-5 text-red-600 shrink-0" />
+            <span className="text-sm text-red-900">Including fake citations or "hallucinated" cases invented by AI.</span>
+          </div>
+          <div className="p-4 bg-red-50 rounded-xl border border-red-100 flex gap-3 shadow-sm">
+            <AlertTriangle className="w-5 h-5 text-red-600 shrink-0" />
+            <span className="text-sm text-red-900">Over-relying on AI summaries instead of reading core authorities.</span>
           </div>
         </div>
 
-        <p className="text-xl text-gray-600 leading-relaxed mb-10">
-          In the legal profession, integrity is everything. As a law student at Durham, your reputation 
-          starts with your undergraduate degree. While AI offers powerful tools, it must be used 
-          with transparency and a commitment to original thought. At MyDurhamLaw, we adhere to a 
-          <strong> "Tutor, Not Ghostwriter"</strong> philosophy.
-        </p>
-
-        <h2 className="text-2xl font-bold text-gray-900 mt-12 mb-6">AI as your Personal Tutor</h2>
-        <p>
-          The most effective and ethical way to use MyDurhamLaw is to treat the AI as a 
-          high-level teaching assistant. Use it to:
-        </p>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 my-10">
-          <div className="p-6 bg-emerald-50 rounded-2xl border border-emerald-100">
-            <FileCheck className="w-6 h-6 text-emerald-600 mb-4" />
-            <h3 className="text-lg font-bold text-gray-900 mb-2">Check Understanding</h3>
-            <p className="text-sm text-gray-600 m-0">
-              "I think X case established Y principle. Is that a correct reading of the judgment?"
-            </p>
-          </div>
-          <div className="p-6 bg-emerald-50 rounded-2xl border border-emerald-100">
-            <Scale className="w-6 h-6 text-emerald-600 mb-4" />
-            <h3 className="text-lg font-bold text-gray-900 mb-2">Build Structure</h3>
-            <p className="text-sm text-gray-600 m-0">
-              "Here are the points I want to make in my essay on Contract Law. Does this order flow logically?"
-            </p>
-          </div>
-        </div>
-
-        <h2 className="text-2xl font-bold text-gray-900 mt-12 mb-6">What to Avoid</h2>
-        <p>
-          To maintain compliance with the University's academic misconduct policies, 
-          you should <strong>not</strong> use AI to:
-        </p>
-        <ul className="list-disc pl-6 space-y-3">
-          <li>Generate full drafts of summative assignments.</li>
-          <li>Write detailed case summaries that you then copy-paste into your work.</li>
-          <li>Submit any content that you do not fully understand and cannot explain independently.</li>
+        <h2 className="text-2xl font-bold text-gray-900 mt-12 mb-6">What’s usually safe and genuinely helpful</h2>
+        <p>To stay on the right side of the line, use MyDurhamLaw for these tasks:</p>
+        <ul className="space-y-3">
+          <li className="flex gap-2">
+            <CheckCircle className="w-5 h-5 text-emerald-600 shrink-0" />
+            <span><strong>Explaining Concepts:</strong> Ask the AI to explain complex doctrines (like Quistclose trusts or Proprietary Estoppel) in simpler terms until you grasp the core principle.</span>
+          </li>
+          <li className="flex gap-2">
+            <CheckCircle className="w-5 h-5 text-emerald-600 shrink-0" />
+            <span><strong>Testing Knowledge:</strong> Have the AI quiz you on cases or statutes.</span>
+          </li>
+          <li className="flex gap-2">
+            <CheckCircle className="w-5 h-5 text-emerald-600 shrink-0" />
+            <span><strong>Critiquing Outlines:</strong> Upload your essay skeleton for feedback on the logical flow of your argument.</span>
+          </li>
+          <li className="flex gap-2">
+            <CheckCircle className="w-5 h-5 text-emerald-600 shrink-0" />
+            <span><strong>Planning:</strong> Use AI to help manage your study time and structure your revision blocks.</span>
+          </li>
         </ul>
 
-        <div className="bg-gray-50 border-l-4 border-gray-900 p-6 my-10 rounded-r-xl">
-          <div className="flex items-center gap-2 mb-2">
-            <Info className="w-5 h-5 text-gray-900" />
-            <h3 className="text-gray-900 font-bold m-0">Transparency Promise</h3>
-          </div>
-          <p className="text-gray-800 m-0">
-            MyDurhamLaw will never include features that promote mass essay generation. Our goal is 
-            to help you develop *your* legal voice, not replace it.
-          </p>
-        </div>
-
-        <h2 className="text-2xl font-bold text-gray-900 mt-12 mb-6">How MyDurhamLaw Helps</h2>
+        <h2 className="text-2xl font-bold text-gray-900 mt-12 mb-6">Referencing expectations (general UK law context)</h2>
         <p>
-          Our platform is built with safeguards to encourage ethical use. By focusing on 
-          the <em>process</em> of legal reasoning rather than the final <em>output</em>, we help 
-          you prepare for the rigorous standards of the Solicitors Regulation Authority (SRA) 
-          and the Bar. Learn more about our <Link href="/pricing" className="text-emerald-600 font-bold hover:underline">ethical study tools</Link>.
+          While **OSCOLA** is the standard for legal referencing in the UK, never treat AI's citation output 
+          as perfect. **Keep a meticulous source trail.** Always cross-reference every case, statute, or 
+          textbook page number the AI suggests against your own primary reading. Precision is the 
+          hallmark of a lawyer; mistakes in referencing suggest sloppy research.
         </p>
 
-        {/* FAQ Section */}
-        <div className="mt-20">
-          <h2 className="text-2xl font-bold text-gray-900 mb-8">Frequently Asked Questions</h2>
-          <div className="space-y-6">
-            <div className="p-6 border border-gray-200 rounded-2xl">
-              <h4 className="font-bold text-gray-900 mb-2 underline decoration-emerald-200 decoration-2 underline-offset-4">Can Turnitin detect MyDurhamLaw?</h4>
-              <p className="text-gray-600 text-sm m-0">
-                Modern plagiarism software is increasingly capable of detecting AI-generated patterns. 
-                If you use AI to learn and then write your own work, you have nothing to fear. If you 
-                copy-paste, you are at high risk.
-              </p>
-            </div>
-            <div className="p-6 border border-gray-200 rounded-2xl">
-              <h4 className="font-bold text-gray-900 mb-2 underline decoration-emerald-200 decoration-2 underline-offset-4">Should I declare my use of AI?</h4>
-              <p className="text-gray-600 text-sm m-0">
-                Yes, if your department requires it. Transparency is always the best policy. 
-                We recommend keeping a log of how you used AI tools during your research process.
-              </p>
-            </div>
+        <h2 className="text-2xl font-bold text-gray-900 mt-12 mb-6">For Durham Law students</h2>
+        <p>
+          At Durham, the expectation is that you use AI to learn, then write in your own unique legal voice. 
+          Adopt a **"Tutor, Not Writer"** mindset. If you can't explain the logic of a paragraph without 
+          the AI's help, you shouldn't submit it.
+        </p>
+        <p className="text-sm italic text-gray-500">
+          Note: MyDurhamLaw is an independent study companion and is not affiliated with Durham University.
+        </p>
+
+        <h2 className="text-2xl font-bold text-gray-900 mt-12 mb-6">How MyDurhamLaw helps</h2>
+        <p>
+          We build ethical reminders directly into our user experience. Our tools are designed for planning, 
+          reasoning, and critique—not mass text generation. We focus on helping you build the skills 
+          that markers actually reward.
+        </p>
+        <div className="mt-8">
+          <Link href="/pricing">
+             <button className="bg-emerald-600 text-white font-bold py-3 px-8 rounded-xl hover:bg-emerald-700 transition shadow-lg shadow-emerald-200">
+               View Plans
+             </button>
+          </Link>
+        </div>
+
+        <h2 className="text-2xl font-bold text-gray-900 mt-16 mb-6 pt-10 border-t">FAQ</h2>
+        <div className="space-y-6">
+          <div>
+            <h4 className="font-bold text-gray-900">Can I use AI to improve my essay structure?</h4>
+            <p className="text-gray-600 text-sm m-0">Yes. Using AI to brainstorm a logical flow or ensure your points follow a clear IRAC structure is typically acceptable and encouraged as part of the learning process.</p>
+          </div>
+          <div>
+            <h4 className="font-bold text-gray-900">How do I avoid “fake citation” mistakes?</h4>
+            <p className="text-gray-600 text-sm m-0">Never copy a citation directly from a chat session without verifying it on Westlaw, Lexis, or in your textbook first. AI can sometimes combine facts from different cases.</p>
+          </div>
+          <div>
+            <h4 className="font-bold text-gray-900">Should I disclose AI use?</h4>
+            <p className="text-gray-600 text-sm m-0">Always follow your department’s specific rules. If in doubt, transparency is the safest policy. Keep a log of how AI assisted your research and planning.</p>
+          </div>
+          <div>
+            <h4 className="font-bold text-gray-900">What’s the safest way to use AI for problem questions?</h4>
+            <p className="text-gray-600 text-sm m-0">Use the AI to critique your issue-spotting or to suggest possible rules, then write the application of those rules yourself using the specific facts of the case.</p>
           </div>
         </div>
+
+        <p className="mt-20 text-[10px] text-gray-400 text-center uppercase tracking-widest">
+          MyDurhamLaw is an independent study companion and is not affiliated with Durham University.
+        </p>
       </div>
     </LearnLayout>
   );

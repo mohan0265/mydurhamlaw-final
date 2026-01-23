@@ -16,43 +16,43 @@ import { Card } from '@/components/ui/Card';
 const articles = [
   {
     icon: Brain,
-    title: 'AI Study Assistant: Mastering Law with AI',
-    description: 'Learn how to use AI for case analysis, IRAC issue spotting, and legal essay planning ethically.',
+    title: 'AI Study Assistant for UK Law',
+    description: 'Study smarter without cutting corners. Learn ethics-first techniques for case reading and IRAC issue spotting.',
     slug: 'ai-study-assistant',
     category: 'Study Skills'
   },
   {
     icon: Shield,
-    title: 'Academic Integrity & Ethical AI Use',
-    description: 'A guide for Durham Law students on using AI as a tutor, not a ghostwriter, to stay compliant.',
+    title: 'Academic Integrity & Ethical AI',
+    description: 'A practical guide for UK law students on using AI ethically—avoiding misconduct while improving understanding.',
     slug: 'academic-integrity',
     category: 'Ethics'
   },
   {
     icon: MessageSquare,
-    title: 'Smart Chat: Effective Legal Prompting',
-    description: 'How to communicate effectively with legal AI to get better insights from your lectures.',
+    title: 'Smart Chat: Effective Legal Prompts',
+    description: 'Ask better questions, get better answers. How to turn vague questions into structured legal reasoning.',
     slug: 'smart-chat-interface',
     category: 'Workflow'
   },
   {
     icon: Users,
-    title: 'Always With You: Student Wellbeing',
-    description: 'Managing loneliness and staying connected with family during high-pressure exam seasons.',
+    title: 'AWY Wellbeing & Presence',
+    description: 'Supporting wellbeing away from home. Stay connected, reduce isolation, and maintain healthy routines.',
     slug: 'always-with-you',
     category: 'Wellbeing'
   },
   {
     icon: Zap,
-    title: 'Real-time Collaboration & Accountability',
-    description: 'Setting up study groups and using MyDurhamLaw to stay accountable with your peers.',
+    title: 'Real-Time Collaboration',
+    description: 'Better seminars, better revision. How to collaborate effectively in study groups without wasting time.',
     slug: 'real-time-collaboration',
     category: 'Community'
   },
   {
     icon: Star,
-    title: 'Premium Support & Exam Excellence',
-    description: 'Strategies for high-performers to manage burnout and structure revision during final terms.',
+    title: 'Premium Support & Exam Prep',
+    description: 'Structure, speed, and calm under pressure. Revision strategies for high-achieving law students.',
     slug: 'premium-support',
     category: 'Performance'
   }
@@ -79,11 +79,11 @@ export default function LearnHub() {
               Educational Resources
             </span>
             <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 mb-6 tracking-tight">
-              Study & Progress <span className="text-blue-600">Guides</span>
+              Learn: <span className="text-blue-600">UK Law Study Skills, Wellbeing, and Exam Strategy</span>
             </h1>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
-              Everything you need to know about using AI ethically, mastering legal research, 
-              and maintaining wellbeing throughout your degree.
+              Step-by-step guides helping you master legal study, maintain integrity, 
+              and thrive throughout your degree.
             </p>
           </div>
         </div>
@@ -121,18 +121,21 @@ export default function LearnHub() {
         </div>
         
         {/* Support Section */}
-        <div className="bg-gray-50 py-16">
+        <div className="bg-gray-50 py-16 border-t border-gray-100">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">Can't find what you're looking for?</h2>
-            <p className="text-gray-600 mb-8">
-              We're constantly adding new resources. If you have a specific topic you'd like us to cover, 
-              please let us know.
-            </p>
-            <Link href="/community">
-              <span className="text-blue-600 font-bold hover:underline cursor-pointer">
-                Visit the Community Hub &rarr;
-              </span>
-            </Link>
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">Ready to apply these methods?</h2>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+              <Link href="/signup">
+                <button className="bg-blue-600 text-white font-bold py-3 px-8 rounded-full shadow-lg hover:bg-blue-700 transition transform hover:scale-105">
+                  Start Free Trial
+                </button>
+              </Link>
+              <Link href="/pricing">
+                <button className="bg-white text-gray-900 font-bold py-3 px-8 rounded-full border border-gray-200 shadow-sm hover:bg-gray-50 transition">
+                  View Plans & Pricing
+                </button>
+              </Link>
+            </div>
           </div>
         </div>
       </main>
