@@ -99,12 +99,13 @@ const FeatureCarousel = ({ images }: { images: { src: string, caption: string }[
 return (
     <>
       <Head>
-        <title>MyDurhamLaw – Durham Law Support, 24/7</title>
-        <meta name="description" content="Turn lectures into clarity. Turn deadlines into a plan. Integrity-first AI for Durham Law students." />
-        <meta property="og:title" content="MyDurhamLaw - Durham Law support, 24/7" />
-        <meta property="og:description" content="Turn lectures into clarity. Turn deadlines into a plan. Integrity-first AI for Durham Law students." />
+        <title>Durham Law Support & Study Help | MyDurhamLaw</title>
+        <meta name="description" content="24/7 Durham Law support and study assistance. Integrity-first AI platform for Durham University Law students. Get revision help, exam prep, and term-based guidance." />
+        <meta property="og:title" content="Durham Law Support & Study Help | MyDurhamLaw" />
+        <meta property="og:description" content="Durham Law support, 24/7. Integrity-first AI study assistant built specifically for Durham University Law students." />
         <meta property="og:image" content="https://mydurhamlaw.com/og/og-home.png" />
         <meta property="og:url" content="https://mydurhamlaw.com/" />
+        <link rel="canonical" href="https://mydurhamlaw.com/" />
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:image" content="https://mydurhamlaw.com/og/og-home.png" />
       </Head>
@@ -131,7 +132,7 @@ return (
                 </h1>
                 
                 <div className="mt-4 text-xl sm:text-2xl text-white/90 max-w-xl leading-relaxed font-light">
-                  Turn lectures into clarity.<br />Turn deadlines into a plan.
+                  Expert <Link href="/learn" className="text-purple-300 hover:underline decoration-white/30 decoration-2">Durham Law study support</Link> — turn lectures into clarity. Turn deadlines into a plan.
                 </div>
                 <div className="mt-4 text-sm text-white/60 font-medium tracking-wide uppercase">
                   Durham-specific • Integrity-first • Built around Michaelmas → Epiphany → Easter
@@ -198,8 +199,8 @@ return (
       <section id="features" className="py-20 bg-gradient-to-b from-white to-gray-50">
         <div className="max-w-7xl mx-auto px-6">
            <div className="text-center mb-16">
-              <h2 className="text-3xl font-bold text-gray-900 mb-4">Everything needed to survive (and thrive)</h2>
-              <p className="text-lg text-gray-600 max-w-2xl mx-auto">Not just generic tools. A suite built specifically for the Durham Law syllabus.</p>
+              <h2 className="text-3xl font-bold text-gray-900 mb-4">Complete Durham Law revision support</h2>
+              <p className="text-lg text-gray-600 max-w-2xl mx-auto">Not just generic tools. A suite built specifically for the Durham University Law syllabus.</p>
            </div>
 
            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
@@ -426,8 +427,8 @@ return (
       <section id="how-it-works" className="py-20 bg-white border-b border-gray-100">
          <div className="mx-auto max-w-6xl px-4 sm:px-6">
             <div className="text-center">
-               <h2 className="text-3xl font-bold text-gray-900">How MyDurhamLaw helps you every week</h2>
-               <p className="mt-2 text-base text-gray-600">A simple loop: clarity → coursework → confidence.</p>
+               <h2 className="text-3xl font-bold text-gray-900">Durham Law exam prep & revision workflow</h2>
+               <p className="mt-2 text-base text-gray-600">A simple loop designed for Durham Law students: clarity → coursework → confidence.</p>
             </div>
 
             <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -436,19 +437,22 @@ return (
                      step: 1, 
                      title: 'My Lectures', 
                      desc: 'Structured notes, key points, and lecturer signals.',
-                     link: '/learn/durham-lectures'
+                     link: '/learn/durham-law-ai-study-assistant',
+                     cta: 'Read lecture guide'
                   },
                   { 
                      step: 2, 
                      title: 'My Assignments', 
                      desc: 'Break briefs into steps. Draft with focus.',
-                     link: '/learn/durham-assignments'
+                     link: '/learn/durham-law-academic-integrity-ai',
+                     cta: 'Read assignment guide'
                   },
                   { 
                      step: 3, 
                      title: 'Exam Prep + Durmah', 
                      desc: 'Integrity-safe practice prompts & revision logic.',
-                     link: '/learn/durham-exam-prep'
+                     link: '/learn/durham-law-exam-technique',
+                     cta: 'Read exam guide'
                   }
                ].map((s) => (
                   <Link href={s.link} key={s.step} className="block group">

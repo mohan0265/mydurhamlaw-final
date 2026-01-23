@@ -17,11 +17,6 @@
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://mydurhamlaw.com/request-access</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
     <loc>https://mydurhamlaw.com/support</loc>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
@@ -34,32 +29,32 @@
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://mydurhamlaw.com/learn/ai-study-assistant</loc>
+    <loc>https://mydurhamlaw.com/learn/durham-law-ai-study-assistant</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://mydurhamlaw.com/learn/always-with-you</loc>
+    <loc>https://mydurhamlaw.com/learn/durham-law-wellbeing-routine</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://mydurhamlaw.com/learn/smart-chat-interface</loc>
+    <loc>https://mydurhamlaw.com/learn/how-to-ask-better-legal-questions</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://mydurhamlaw.com/learn/academic-integrity</loc>
+    <loc>https://mydurhamlaw.com/learn/durham-law-academic-integrity-ai</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://mydurhamlaw.com/learn/real-time-collaboration</loc>
+    <loc>https://mydurhamlaw.com/learn/durham-law-study-groups</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://mydurhamlaw.com/learn/premium-support</loc>
+    <loc>https://mydurhamlaw.com/learn/durham-law-exam-technique</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
