@@ -89,22 +89,46 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
               title: 'Assignment Chat' // Could be better but efficient
           }, { onConflict: 'id' });
 
-          // 1.5 Deduplication Check (Dedupe window: 3s)
+          // 1.5 Deduplication Check (Refined)
+          const normalize = (s: string) => s.trim().replace(/\s+/g, " ");
+          const normalizedContent = normalize(payload.content);
           const threshold = new Date(Date.now() - 3000).toISOString();
-          const { data: existing, error: checkError } = await supabase
+
+          // Seed Message Guard (Prevent duplicate welcome/initial prompts)
+          const isSeed = normalizedContent.toLowerCase().includes("ready to start") || 
+                         normalizedContent.toLowerCase().includes("hi i'm durmah") ||
+                         normalizedContent.toLowerCase().includes("how can i help");
+          
+          if (isSeed) {
+              const { count } = await supabase
+                  .from('assignment_session_messages')
+                  .select('*', { count: 'exact', head: true })
+                  .eq('session_id', sessionId);
+              
+              if (count && count > 0) {
+                  console.log('[chat] Blocking duplicate seed message');
+                  return { data: { id: 'seed-skipped' }, error: null, usedScopeId: true };
+              }
+          }
+
+          let query = supabase
               .from('assignment_session_messages')
               .select('id')
               .eq('session_id', sessionId)
-              .eq('user_id', userId)
               .eq('role', payload.role)
               .eq('content', payload.content)
               .gt('created_at', threshold)
               .order('created_at', { ascending: false })
-              .limit(1)
-              .maybeSingle();
+              .limit(1);
+
+          if (payload.role === 'user') {
+              query = query.eq('user_id', userId);
+          }
+
+          const { data: existing, error: checkError } = await query.maybeSingle();
 
           if (!checkError && existing) {
-              console.log('[chat] Skipping duplicate insert for:', payload.role);
+              console.log('[chat] Skipping duplicate insert (role matching) for:', payload.role);
               return { data: existing, error: null, usedScopeId: true };
           }
 
@@ -114,7 +138,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
               user_id: userId,
               role: payload.role,
               content: payload.content,
-              // sentiment/tokens can be added later
           }).select('id').single();
 
           return { data, error, usedScopeId: true };

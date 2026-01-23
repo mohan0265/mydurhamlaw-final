@@ -177,17 +177,18 @@ export function useDurmahChat({
   }, [conversationId, fetchMessages]);
   const sendMessage = useCallback(async (content: string, modality: 'text'|'voice' = 'text') => {
 
-    console.log('[useDurmahChat] sendMessage called', { content, conversationId, user: !!user });
+    const normalize = (s: string) => s.trim().replace(/\s+/g, " ");
+    const normalized = normalize(content);
 
-    if (!content.trim()) return;
+    if (!normalized) return;
     
     // Client-side dedupe guard (1500ms)
     const nowTs = Date.now();
-    if (lastSendRef.current && lastSendRef.current.text === content && (nowTs - lastSendRef.current.ts < 1500)) {
+    if (lastSendRef.current && lastSendRef.current.text === normalized && (nowTs - lastSendRef.current.ts < 1500)) {
         console.warn('[useDurmahChat] sendMessage: Blocking rapid duplicate send');
         return;
     }
-    lastSendRef.current = { text: content, ts: nowTs };
+    lastSendRef.current = { text: normalized, ts: nowTs };
     
     if (!user) {
         toast.error('You must be logged in to chat');
@@ -339,16 +340,23 @@ export function useDurmahChat({
                  title: `Session ${new Date().toLocaleDateString()}`
              }, { onConflict: 'id' });
 
-             // 1.5. Deduplicate (Prevent accidental double-sends)
+             // 1.5. Deduplicate (Refined)
+             const normalize = (s: string) => s.trim().replace(/\s+/g, " ");
+             const normalized = normalize(content);
              const nowTs = Date.now();
-             if (lastLoggedRef.current && 
-                 lastLoggedRef.current.role === role && 
-                 lastLoggedRef.current.content === content && 
-                 (nowTs - lastLoggedRef.current.ts < 2000)) {
-                 console.warn('[useDurmahChat] Dropping duplicate message:', content.substring(0, 20));
+             
+             const isMatch = lastLoggedRef.current && 
+                             lastLoggedRef.current.role === role && 
+                             lastLoggedRef.current.content === normalized && 
+                             (nowTs - lastLoggedRef.current.ts < 2000);
+             
+             // Additional check for role-specific user ID if applicable
+             // (role='assistant' ignores user_id, role='user' would match it implicitly via the ref)
+             if (isMatch) {
+                 console.warn('[useDurmahChat] Dropping duplicate message:', normalized.substring(0, 20));
                  return;
              }
-             lastLoggedRef.current = { role, content, ts: nowTs };
+             lastLoggedRef.current = { role, content: normalized, ts: nowTs };
 
              // 2. Insert Message
              const res = await supabase.from('assignment_session_messages').insert({

@@ -135,42 +135,42 @@ export default function DurmahChat({
     };
   }, [contextId]);
 
-  // Cleanup: Remove consecutive duplicate greetings from history
+  // Cleanup: Remove duplicate greetings from history (Refined)
   useEffect(() => {
       if (!isChatLoading && messages.length > 1) {
           const idsToDelete: string[] = [];
-          const seenGreetings = new Set<string>();
+          const seenNormalizedSet = new Set<string>();
+          const normalize = (s: string) => s.trim().replace(/\s+/g, " ").toLowerCase();
           
-          // Check the first 10 messages for greeting repeats
-          // We assume "Hi I'm Durmah" or similar generic starts are the culprits
+          // Check the first 15 messages for repeats
           const earlyMessages = messages.slice(0, 15);
           
-          earlyMessages.forEach((msg, index) => {
+          earlyMessages.forEach((msg) => {
               if (msg.role === 'assistant') {
-                  const isGreeting = msg.content.trim().startsWith("Hi I'm Durmah") || 
-                                   msg.content.includes("how can I help you today");
+                  const normalized = normalize(msg.content);
+                  const isGreeting = normalized.includes("hi i'm durmah") || 
+                                   normalized.includes("how can i help you today");
                   
                   if (isGreeting) {
-                      // Normalize content to detect near-duplicates if needed, or just strict equality
-                      // For now, if we found A greeting, and we see ANOTHER greeting, delete the second one
-                      // regardless of exact content match, to enforce "One Greeting Rule"
-                      if (seenGreetings.size > 0) {
-                          idsToDelete.push(msg.id || msg.created_at);
+                      // One Greeting Rule: if we've seen a greeting (exact or similar), delete subsequent ones
+                      if (seenNormalizedSet.size > 0) {
+                          idsToDelete.push(msg.id);
                       } else {
-                          seenGreetings.add(msg.content); 
+                          seenNormalizedSet.add(normalized); 
                       }
-                  } else if (index > 0) {
-                      // Also check for strict consecutive identical messages (generic dedupe)
-                      const prev = earlyMessages[index - 1];
-                      if (prev && prev.role === 'assistant' && prev.content === msg.content) {
-                           idsToDelete.push(msg.id || msg.created_at);
+                  } else {
+                      // Also check for strict duplicate assistant replies
+                      if (seenNormalizedSet.has(normalized)) {
+                           idsToDelete.push(msg.id);
+                      } else {
+                           seenNormalizedSet.add(normalized);
                       }
                   }
               }
           });
 
           if (idsToDelete.length > 0 && deleteMessages) {
-              console.log('[DurmahChat] Cleaning up duplicate greetings:', idsToDelete);
+              console.log('[DurmahChat] Aggressive cleanup of duplicate assistant messages:', idsToDelete);
               deleteMessages(idsToDelete);
           }
       }
