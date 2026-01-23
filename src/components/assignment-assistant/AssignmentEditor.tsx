@@ -26,16 +26,40 @@ const AssignmentEditor = forwardRef<AssignmentEditorHandle, AssignmentEditorProp
   const editorRef = useRef<HTMLDivElement>(null);
   const [wordCount, setWordCount] = useState(0);
 
-  // Initialize content on mount
+  // Track if this is the initial mount
+  const [isInitialized, setIsInitialized] = useState(false);
+
+  // Initialize content on mount and when valueHtml significantly changes
   useEffect(() => {
-    if (editorRef.current && editorRef.current.innerHTML !== valueHtml) {
-       // Only set if significantly different to avoid cursor jumping
-       // Simple check: if empty or mismatching length significantly
-       if (!editorRef.current.innerHTML || Math.abs(editorRef.current.innerHTML.length - valueHtml.length) > 5) {
-          editorRef.current.innerHTML = valueHtml;
-       }
+    if (!editorRef.current) return;
+
+    const currentContent = editorRef.current.innerHTML;
+    
+    // On first mount, always set the content
+    if (!isInitialized) {
+      editorRef.current.innerHTML = valueHtml || '';
+      setIsInitialized(true);
+      
+      // Update word count
+      const text = editorRef.current.innerText;
+      setWordCount(text.trim().split(/\s+/).filter(Boolean).length);
+      return;
     }
-  }, []); // Run once on mount, we don't auto-update from props continuously to avoid cursor issues
+
+    // After initialization, only update if there's a significant change from parent
+    // This handles stage transitions (e.g., moving to Review stage with final draft)
+    const isDifferent = currentContent !== valueHtml;
+    const isSignificantChange = Math.abs(currentContent.length - (valueHtml || '').length) > 50;
+    
+    // If parent is pushing new content (like when entering Review stage), update the editor
+    if (isDifferent && (isSignificantChange || currentContent === '' || currentContent === '<br>')) {
+      editorRef.current.innerHTML = valueHtml || '';
+      
+      // Update word count
+      const text = editorRef.current.innerText;
+      setWordCount(text.trim().split(/\s+/).filter(Boolean).length);
+    }
+  }, [valueHtml, isInitialized]);
 
   const handleInput = () => {
     if (editorRef.current) {
