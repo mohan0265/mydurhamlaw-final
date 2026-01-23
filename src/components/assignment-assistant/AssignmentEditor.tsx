@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, forwardRef, useImperativeHandle } from 'react';
 import { 
   Bold, Italic, Type, 
   List, ListOrdered, 
@@ -9,13 +9,20 @@ import { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType } fro
 import { saveAs } from 'file-saver';
 import toast from 'react-hot-toast';
 
+export interface AssignmentEditorHandle {
+  focus: () => void;
+  insertHtmlAtCursor: (html: string) => void;
+  appendHtml: (html: string) => void;
+  replaceSelection: (html: string) => void;
+}
+
 interface AssignmentEditorProps {
   valueHtml: string;
   onChange: (html: string, text: string) => void;
   className?: string;
 }
 
-export default function AssignmentEditor({ valueHtml, onChange, className = '' }: AssignmentEditorProps) {
+const AssignmentEditor = forwardRef<AssignmentEditorHandle, AssignmentEditorProps>(({ valueHtml, onChange, className = '' }, ref) => {
   const editorRef = useRef<HTMLDivElement>(null);
   const [wordCount, setWordCount] = useState(0);
 
@@ -38,6 +45,69 @@ export default function AssignmentEditor({ valueHtml, onChange, className = '' }
       onChange(html, text);
     }
   };
+
+  useImperativeHandle(ref, () => ({
+    focus: () => {
+      editorRef.current?.focus();
+    },
+    insertHtmlAtCursor: (html: string) => {
+      if (!editorRef.current) return;
+      editorRef.current.focus();
+
+      const sel = window.getSelection();
+      if (sel && sel.rangeCount > 0) {
+        const range = sel.getRangeAt(0);
+        // Check if range is inside editor
+        if (editorRef.current.contains(range.commonAncestorContainer)) {
+            range.deleteContents();
+            
+            const el = document.createElement("div");
+            el.innerHTML = html;
+            const frag = document.createDocumentFragment();
+            let lastNode;
+            while (el.firstChild) {
+                lastNode = frag.appendChild(el.firstChild);
+            }
+            range.insertNode(frag);
+            
+            // Move cursor after insertion
+            if (lastNode) {
+                range.setStartAfter(lastNode);
+                range.collapse(true);
+                sel.removeAllRanges();
+                sel.addRange(range);
+            }
+        } else {
+            // Fallback to append if selection is outside
+             editorRef.current.innerHTML += html;
+        }
+      } else {
+         editorRef.current.innerHTML += html;
+      }
+      handleInput(); // Trigger save
+    },
+    appendHtml: (html: string) => {
+        if (!editorRef.current) return;
+        editorRef.current.innerHTML += html;
+        handleInput();
+        // Scroll to bottom
+        requestAnimationFrame(() => {
+             if (editorRef.current) {
+                 editorRef.current.scrollTop = editorRef.current.scrollHeight;
+             }
+        });
+    },
+    replaceSelection: (html: string) => {
+         // Re-use insert for now
+         if (!editorRef.current) return;
+         editorRef.current.focus();
+         const sel = window.getSelection();
+         if (sel && sel.rangeCount > 0 && editorRef.current.contains(sel.anchorNode)) {
+             document.execCommand('insertHTML', false, html);
+             handleInput();
+         }
+    }
+  }));
 
   const execCmd = (command: string, value: string | undefined = undefined) => {
     document.execCommand(command, false, value);
@@ -150,7 +220,10 @@ export default function AssignmentEditor({ valueHtml, onChange, className = '' }
       </div>
     </div>
   );
-}
+});
+
+AssignmentEditor.displayName = 'AssignmentEditor';
+export default AssignmentEditor;
 
 function ToolBtn({ icon: Icon, onClick, title, label }: any) {
     return (

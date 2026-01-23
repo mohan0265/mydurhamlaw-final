@@ -1,7 +1,7 @@
 /* eslint-disable @next/next/no-async-client-component */
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/router';
 import { X, CheckCircle, Circle, ArrowLeft, Home, Save } from 'lucide-react';
 import ModeSelector from './ModeSelector';
@@ -16,7 +16,16 @@ import { getSupabaseClient } from '@/lib/supabase/client';
 import toast from 'react-hot-toast';
 import CountdownTimer from '@/components/ui/CountdownTimer';
 import DurmahChat from '@/components/durmah/DurmahChat';
-import AssignmentEditor from './AssignmentEditor';
+import AssignmentEditor, { AssignmentEditorHandle } from './AssignmentEditor';
+
+export interface InsertPayload {
+  source: 'durmah' | 'stage';
+  html?: string;
+  text?: string;
+  mode?: 'cursor' | 'append';
+  label?: string;
+  addPrefix?: boolean;
+}
 
 // Props interface - these functions are valid in 'use client' components
 interface AssignmentWorkflowProps {
@@ -52,6 +61,7 @@ export default function AssignmentWorkflow({
   // Persistent Editor State (Hoisted)
   const [draftHtml, setDraftHtml] = useState('');
   const [draftText, setDraftText] = useState('');
+  const editorRef = useRef<AssignmentEditorHandle>(null);
 
   // UI State for Layout
   const [leftColWidth, setLeftColWidth] = useState(25); // Percentage
@@ -78,6 +88,47 @@ export default function AssignmentWorkflow({
           ...prev,
           draft: { html, text, updatedAt: new Date().toISOString() }
       }));
+  };
+
+  const insertIntoDraft = (payload: InsertPayload) => {
+      let content = payload.html || payload.text || '';
+      
+      // 1. Sanitization / Normalization if it's plain text
+      if (!payload.html && payload.text) {
+          // Escape HTML entities to safely insert as text
+          const escaped = payload.text
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+          
+          // Convert newlines to paragraphs/breaks
+          // \n\n -> </p><p>
+          content = escaped.split(/\n\s*\n/).map(para => `<p>${para.replace(/\n/g, '<br/>')}</p>`).join('');
+      }
+
+      // 2. Add Prefix
+      if (payload.addPrefix) {
+          const prefixLabel = payload.label || (payload.source === 'durmah' ? 'Durmah suggestion' : 'Stage notes');
+          const prefixDisplay = `<p style="color: #666; font-style: italic; font-size: 0.9em; border-left: 2px solid #ccc; padding-left: 8px; margin-bottom: 4px;">[${prefixLabel} — rewrite in your own words]</p>`;
+          content = prefixDisplay + content;
+      }
+
+      // 3. Insert
+      if (payload.mode === 'append') {
+          editorRef.current?.appendHtml(content);
+      } else {
+          // Default to cursor
+          editorRef.current?.insertHtmlAtCursor(content);
+      }
+
+      toast.success("Inserted into Draft");
+      
+      // 4. Focus back
+      requestAnimationFrame(() => {
+          editorRef.current?.focus();
+      });
   };
 
   const stages = [
@@ -389,6 +440,8 @@ export default function AssignmentWorkflow({
                       assignmentId={assignmentId}
                       briefData={briefData || assignmentData}
                       onComplete={(data) => handleStageComplete(1, data)}
+                      // @ts-ignore
+                      onInsertToDraft={insertIntoDraft}
                     />
                   )}
                   {currentStage === 2 && (
@@ -396,6 +449,8 @@ export default function AssignmentWorkflow({
                       assignmentId={assignmentId}
                       briefData={briefData || assignmentData}
                       onComplete={(data) => handleStageComplete(2, data)}
+                      // @ts-ignore
+                      onInsertToDraft={insertIntoDraft}
                     />
                   )}
                   {currentStage === 3 && (
@@ -403,6 +458,8 @@ export default function AssignmentWorkflow({
                       assignmentId={assignmentId}
                       briefData={briefData || assignmentData}
                       onComplete={(data) => handleStageComplete(3, data)}
+                      // @ts-ignore
+                      onInsertToDraft={insertIntoDraft}
                     />
                   )}
                   {currentStage === 4 && (
@@ -411,6 +468,8 @@ export default function AssignmentWorkflow({
                        briefData={briefData || assignmentData}
                        outline={stageData.stage3?.outlineStructure || []}
                        onComplete={(data) => handleStageComplete(4, data)}
+                       // @ts-ignore
+                       onInsertToDraft={insertIntoDraft}
                     />
                   )}
                   {currentStage === 5 && (
@@ -449,6 +508,7 @@ export default function AssignmentWorkflow({
           <div className="flex-1 flex flex-col bg-white min-w-[400px] relative z-0">
              <div className="absolute inset-0 flex flex-col">
                 <AssignmentEditor 
+                   ref={editorRef}
                    valueHtml={draftHtml}
                    onChange={handleEditorChange}
                    className="h-full border-x border-gray-200"
@@ -482,6 +542,8 @@ INSTRUCTION: Help them with this specific stage.`}
                // NEW Props for Minimization
                isMinimized={isDurmahMinimized}
                onToggleMinimize={() => setIsDurmahMinimized(!isDurmahMinimized)}
+               // @ts-ignore
+               onInsertToDraft={insertIntoDraft}
              />
           </div>
 

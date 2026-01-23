@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import { Brain, AlertTriangle, Send, Mic, MicOff, Maximize2, Minimize2, FileText, Check, Loader2 } from 'lucide-react';
+import { Brain, AlertTriangle, Send, Mic, MicOff, Maximize2, Minimize2, FileText, Check, Loader2, Square, CheckSquare, ListPlus, Copy, Plus } from 'lucide-react';
 import { useAuth, useSupabaseClient } from '@/lib/supabase/AuthContext';
 import { useDurmah } from '@/lib/durmah/context';
 import { useDurmahDynamicContext } from '@/hooks/useDurmahDynamicContext';
@@ -36,6 +36,14 @@ interface DurmahChatProps {
   className?: string;
   isMinimized?: boolean;
   onToggleMinimize?: () => void;
+  onInsertToDraft?: (payload: { 
+     source: 'durmah'; 
+     text?: string; 
+     html?: string; 
+     mode?: 'cursor' | 'append'; 
+     label?: string; 
+     addPrefix?: boolean; 
+  }) => void;
 }
 
 export default function DurmahChat({
@@ -47,6 +55,7 @@ export default function DurmahChat({
   className = "",
   isMinimized = false,
   onToggleMinimize,
+  onInsertToDraft
 }: DurmahChatProps) {
   const { user } = useAuth();
   const supabase = useSupabaseClient();
@@ -61,15 +70,27 @@ export default function DurmahChat({
   const [input, setInput] = useState("");
   // Local expand state for chat history ONLY when minimized
   const [isHistoryVisible, setIsHistoryVisible] = useState(false);
-  const [lastSyncedAt, setLastSyncedAt] = useState<Date | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
-  const showFullUI = !isMinimized || isHistoryVisible;
+  
+  // Selection State for Insert-to-Draft
+  const [selectedMessageIds, setSelectedMessageIds] = useState<Set<string>>(new Set());
+  const [addPrefix, setAddPrefix] = useState(true);
 
+  // Load prefix preference
+  useEffect(() => {
+    const stored = localStorage.getItem('durmah_insert_prefix');
+    if (stored !== null) setAddPrefix(stored === 'true');
+  }, []);
+
+  const togglePrefix = () => {
+    const newVal = !addPrefix;
+    setAddPrefix(newVal);
+    localStorage.setItem('durmah_insert_prefix', String(newVal));
+  };
   
   // Refs
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // 1. Initialize Chat Hook (Persistent Session per Assignment)
   const { 
@@ -161,12 +182,59 @@ INSTRUCTIONS:
   useEffect(() => {
     if (chatContainerRef.current) {
         const { scrollHeight, clientHeight } = chatContainerRef.current;
-        chatContainerRef.current.scrollTo({
-            top: scrollHeight - clientHeight,
-            behavior: 'smooth'
-        });
+        const isNearBottom = scrollHeight - chatContainerRef.current.scrollTop - clientHeight < 100;
+        
+        // Only auto-scroll if user is near bottom or it's a new message from user
+        if (isNearBottom) {
+             chatContainerRef.current.scrollTo({
+                top: scrollHeight - clientHeight,
+                behavior: 'smooth'
+            });
+        }
     }
   }, [messages, voiceTranscript]);
+
+  // Insert Logic
+  const handleInsertSingle = (content: string) => {
+      if (onInsertToDraft) {
+          onInsertToDraft({
+              source: 'durmah',
+              text: content,
+              mode: 'cursor', // Single insert defaults to cursor
+              addPrefix: addPrefix
+          });
+      }
+  };
+
+  const handleInsertSelected = () => {
+      // Get selected messages in chronological order
+      // (messages array is already chronological)
+      const content = messages
+        .filter(m => selectedMessageIds.has(m.id || m.created_at))
+        .map(m => m.content)
+        .join('\n\n');
+      
+      if (onInsertToDraft && content) {
+          onInsertToDraft({
+              source: 'durmah',
+              text: content,
+              mode: 'append', // Bulk defaults to append
+              addPrefix: addPrefix
+          });
+          // Clear selection
+          setSelectedMessageIds(new Set());
+      }
+  };
+
+  const handleToggleSelect = (id: string) => {
+      const newSet = new Set(selectedMessageIds);
+      if (newSet.has(id)) {
+          newSet.delete(id);
+      } else {
+          newSet.add(id);
+      }
+      setSelectedMessageIds(newSet);
+  };
 
   // 5. Handle Send Message
   const handleSendMessage = async () => {
@@ -184,7 +252,7 @@ INSTRUCTIONS:
   };
 
   return (
-    <div className={`flex flex-col bg-white rounded-xl shadow-sm border border-gray-200 transition-all duration-300 ${className}`}>
+    <div className={`flex flex-col bg-white rounded-xl shadow-sm border border-gray-200 transition-all duration-300 ${className} relative overflow-hidden`}>
       
       {/* Header */}
       <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-white rounded-t-xl shrink-0">
@@ -279,36 +347,51 @@ INSTRUCTIONS:
             {/* Messages Area */}
             <div 
                 ref={chatContainerRef}
-                className={`flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50/50 ${isMinimized ? 'max-h-[400px]' : ''}`}
+                className={`flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50/50 ${isMinimized ? 'max-h-[400px]' : ''} pb-20`}
             >
                 {/* Render Chat Messages */}
-                {messages.map((m) => (
-                <div key={m.id || m.created_at} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
-                    <div
-                    className={`px-4 py-3 rounded-2xl max-w-[85%] text-sm shadow-sm leading-relaxed group relative ${
-                        m.role === "user"
-                        ? "bg-violet-600 text-white rounded-tr-sm"
-                        : "bg-white text-gray-800 border border-gray-100 rounded-tl-sm transition-colors hover:border-violet-200"
-                    }`}
-                    >
-                    <div className="whitespace-pre-wrap max-h-[300px] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 pr-1">{m.content}</div>
-                    
-                    {/* Copy Button (only on hover) */}
-                    {m.role === 'assistant' && (
-                        <button 
-                            onClick={() => {
-                                navigator.clipboard.writeText(m.content);
-                                toast.success("Copied to clipboard");
-                            }}
-                            className="absolute -right-8 top-2 opacity-0 group-hover:opacity-100 p-1.5 text-gray-400 hover:text-violet-600 bg-white rounded-full shadow-sm border border-gray-100 transition-all"
-                            title="Copy to Draft / Clipboard"
+                {messages.map((m) => {
+                  const mId = m.id || m.created_at;
+                  const isSelected = selectedMessageIds.has(mId);
+
+                  return (
+                    <div key={mId} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"} group/msg relative`}>
+                        {/* Selection Checkbox (Only for Assistant or if needed for user too. User messages usually not inserted?) */}
+                        {/* Actually user might want to insert their own voice transcript? Yes. */}
+                        {onInsertToDraft && (
+                           <button
+                             onClick={() => handleToggleSelect(mId)} 
+                             className={`absolute top-3 ${m.role === 'user' ? '-left-8' : '-right-8'} p-1 text-gray-400 hover:text-violet-600 transition-opacity ${isSelected ? 'opacity-100 text-violet-600' : 'opacity-0 group-hover/msg:opacity-100'}`}
+                           >
+                              {isSelected ? <CheckSquare size={16} /> : <Square size={16} />}
+                           </button>
+                        )}
+
+                        <div
+                        className={`px-4 py-3 rounded-2xl max-w-[85%] text-sm shadow-sm leading-relaxed relative border transition-all ${
+                            m.role === "user"
+                            ? "bg-violet-600 text-white rounded-tr-sm border-violet-600"
+                            : isSelected 
+                                ? "bg-violet-50 text-gray-800 border-violet-300 rounded-tl-sm ring-1 ring-violet-300"
+                                : "bg-white text-gray-800 border-gray-100 rounded-tl-sm hover:border-violet-200"
+                        }`}
                         >
-                            <FileText size={12} />
-                        </button>
-                    )}
+                        <div className="whitespace-pre-wrap max-h-[300px] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 pr-1">{m.content}</div>
+                        
+                        {/* Single Insert Button (only on hover, if not in bulk selection mode) */}
+                        {m.role === 'assistant' && onInsertToDraft && selectedMessageIds.size === 0 && (
+                            <button 
+                                onClick={() => handleInsertSingle(m.content)}
+                                className="absolute -right-2 -bottom-3 opacity-0 group-hover/msg:opacity-100 flex items-center gap-1 px-2 py-0.5 text-[10px] font-bold text-violet-600 bg-white rounded-full shadow-md border border-gray-200 hover:bg-violet-50 hover:border-violet-300 transition-all z-10"
+                                title="Insert into Draft"
+                            >
+                                <Plus size={10} /> Insert
+                            </button>
+                        )}
+                        </div>
                     </div>
-                </div>
-                ))}
+                  );
+                })}
                 
                 {/* Loading Indicator */}
                 {isChatLoading && (
@@ -345,8 +428,57 @@ INSTRUCTIONS:
                 <div ref={messagesEndRef} />
             </div>
 
+            {/* Sticky Action Bar (When messages selected) */}
+            {selectedMessageIds.size > 0 && (
+                <div className="absolute bottom-[72px] left-4 right-4 bg-gray-900/90 backdrop-blur text-white p-2 rounded-lg shadow-xl z-20 animate-in slide-in-from-bottom-4 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <span className="text-xs font-bold px-2 py-0.5 bg-white/20 rounded-full">{selectedMessageIds.size} selected</span>
+                        
+                        {/* Prefix Toggle */}
+                        <button 
+                            onClick={togglePrefix}
+                            className={`flex items-center gap-1.5 text-xs px-2 py-1 rounded transition ${addPrefix ? 'text-green-300 bg-green-900/30' : 'text-gray-400 hover:text-white'}`}
+                            title="Add 'Durmah Note' prefix to inserted text"
+                        >
+                            {addPrefix ? <CheckCircleIcon size={12} /> : <CircleIcon size={12} />}
+                            Integrity Prefix
+                        </button>
+                    </div>
+                    
+                    <div className="flex items-center gap-2">
+                         <button 
+                            onClick={() => setSelectedMessageIds(new Set())}
+                            className="p-1.5 hover:bg-white/10 rounded text-gray-400 hover:text-white transition"
+                            title="Clear selection"
+                         >
+                             <XIcon size={16} />
+                         </button>
+                         <div className="w-px h-4 bg-white/20 mx-1"/>
+                         <button
+                            onClick={() => {
+                                const content = messages.filter(m => selectedMessageIds.has(m.id||m.created_at)).map(m=>m.content).join('\n\n');
+                                navigator.clipboard.writeText(content);
+                                toast.success("Copied");
+                                setSelectedMessageIds(new Set());
+                            }}
+                            className="p-1.5 hover:bg-white/10 rounded text-white transition flex items-center gap-1"
+                            title="Copy to clipboard"
+                         >
+                             <Copy size={16} />
+                         </button>
+                         <button
+                            onClick={handleInsertSelected}
+                            className="px-3 py-1.5 bg-violet-600 hover:bg-violet-500 rounded text-xs font-bold transition shadow-lg shadow-violet-900/20 flex items-center gap-1.5"
+                         >
+                             <ListPlus size={14} />
+                             Insert
+                         </button>
+                    </div>
+                </div>
+            )}
+
             {/* Input Area */}
-            <div className="p-3 border-t border-gray-100 bg-white rounded-b-xl">
+            <div className="p-3 border-t border-gray-100 bg-white rounded-b-xl z-10 relative">
                 <div className="flex gap-2">
                 <textarea
                     ref={textareaRef}
@@ -386,4 +518,15 @@ INSTRUCTIONS:
       )}
     </div>
   );
+}
+
+// Icons for the Action Bar
+function CheckCircleIcon({size}: {size: number}) {
+    return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+}
+function CircleIcon({size}: {size: number}) {
+    return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/></svg>
+}
+function XIcon({size}: {size: number}) {
+    return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
 }

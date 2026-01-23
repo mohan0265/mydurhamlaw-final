@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { FileText, Plus, GripVertical, Trash2, ArrowRight, CheckCircle, Cloud, CloudOff } from 'lucide-react';
+import { FileText, Plus, GripVertical, Trash2, ArrowRight, CheckCircle, Cloud, CloudOff, LayoutTemplate, ArrowUpRight } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAutosave } from '@/hooks/useAutosave';
 
@@ -17,9 +17,10 @@ interface Stage3StructureProps {
   assignmentId: string;
   briefData: any;
   onComplete: (data: any) => void;
+  onInsertToDraft?: (payload: any) => void;
 }
 
-export default function Stage3Structure({ assignmentId, briefData, onComplete }: Stage3StructureProps) {
+export default function Stage3Structure({ assignmentId, briefData, onComplete, onInsertToDraft }: Stage3StructureProps) {
   const [sections, setSections] = useState<OutlineSection[]>([
     { id: '1', title: 'Introduction', type: 'introduction', estimatedWords: 150, notes: '' },
     { id: '2', title: 'Issue', type: 'issue', estimatedWords: 200, notes: '' },
@@ -64,6 +65,50 @@ export default function Stage3Structure({ assignmentId, briefData, onComplete }:
     setSections(sections.filter(s => s.id !== id));
   };
 
+  const generateSkeleton = () => {
+    if (!onInsertToDraft) return;
+
+    let skeletonHtml = '';
+    sections.forEach(section => {
+        // Heading
+        skeletonHtml += `<h2>${section.title}</h2>`;
+        
+        // Notes if any
+        if (section.notes) {
+            skeletonHtml += `<p style="color: #666; font-style: italic; background: #f9f9f9; padding: 4px;">[Note: ${section.notes}]</p>`;
+        }
+        
+        // OSCOLA for main body paragraphs
+        if (['issue', 'rule', 'application', 'argument'].includes(section.type) || section.type === 'custom') {
+            skeletonHtml += `<p><strong>Authorities (OSCOLA):</strong> <span style="color: #999;">[Add cases/statutes here]</span></p>`;
+        }
+
+        // Placeholder for Words
+        skeletonHtml += `<p><em>[Target: ${section.estimatedWords} words]</em></p><p><br/></p>`;
+    });
+
+    onInsertToDraft({
+        source: 'stage',
+        html: skeletonHtml,
+        mode: 'append', // Skeleton builds the whole doc usually
+        label: 'Structure Skeleton',
+        addPrefix: false 
+    });
+  };
+
+  const insertSection = (section: OutlineSection) => {
+     if (!onInsertToDraft) return;
+     let html = `<h3>${section.title}</h3>`;
+     if (section.notes) html += `<p>${section.notes}</p>`;
+     onInsertToDraft({
+         source: 'stage',
+         html: html,
+         mode: 'cursor',
+         label: `Section: ${section.title}`,
+         addPrefix: false
+     });
+  };
+
   const handleComplete = () => {
     if (sections.length < 3) {
       toast.error('Add at least 3 sections');
@@ -86,11 +131,11 @@ export default function Stage3Structure({ assignmentId, briefData, onComplete }:
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
           <div className="p-2 bg-purple-600 rounded-lg">
-            <FileText className="text-white" size={24} />
+            <LayoutTemplate className="text-white" size={24} />
           </div>
           <div>
-            <h2 className="text-xl font-bold">Stage 3: Structure Your Essay</h2>
-            <p className="text-sm text-gray-600">Using IRAC/ILAC framework</p>
+            <h2 className="text-xl font-bold">Stage 3: Structure</h2>
+            <p className="text-sm text-gray-600">Plan your essay</p>
           </div>
         </div>
         <div className="flex items-center gap-3">
@@ -106,7 +151,19 @@ export default function Stage3Structure({ assignmentId, briefData, onComplete }:
               <><CloudOff size={14} className="text-orange-600" /><span className="text-orange-600">Saved locally</span></>
             )}
           </div>
-          <button onClick={addSection} className="px-4 py-2 bg-purple-600 text-white rounded-lg flex items-center gap-2">
+          
+          {onInsertToDraft && (
+             <button 
+               onClick={generateSkeleton}
+               className="px-3 py-2 bg-indigo-100 text-indigo-700 hover:bg-indigo-200 rounded-lg flex items-center gap-2 text-sm font-semibold transition"
+               title="Generate full skeleton in Editor"
+             >
+                <FileText size={16} />
+                Generate Draft Skeleton
+             </button>
+          )}
+
+          <button onClick={addSection} className="px-4 py-2 bg-purple-600 text-white rounded-lg flex items-center gap-2 hover:bg-purple-700 transition">
             <Plus size={20} />
             Add Section
           </button>
@@ -132,7 +189,7 @@ export default function Stage3Structure({ assignmentId, briefData, onComplete }:
       {/* Sections List */}
       <div className="flex-1 overflow-y-auto space-y-3 mb-6">
         {sections.map((section, idx) => (
-          <div key={section.id} className="border rounded-lg p-4 bg-gray-50">
+          <div key={section.id} className="border rounded-lg p-4 bg-gray-50 group hover:shadow-sm transition-shadow">
             <div className="flex items-start gap-3">
               <GripVertical className="text-gray-400 cursor-move mt-2" size={20} />
               
@@ -164,6 +221,17 @@ export default function Stage3Structure({ assignmentId, briefData, onComplete }:
                     className="w-24 px-3 py-2 border rounded-lg text-center"
                     placeholder="words"
                   />
+                  
+                  {onInsertToDraft && (
+                      <button 
+                        onClick={() => insertSection(section)}
+                        className="p-2 text-indigo-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg"
+                        title="Insert just this section"
+                      >
+                          <ArrowUpRight size={20} />
+                      </button>
+                  )}
+
                   <button onClick={() => deleteSection(section.id)} className="p-2 text-red-500 hover:bg-red-50 rounded-lg">
                     <Trash2 size={20} />
                   </button>
@@ -182,18 +250,7 @@ export default function Stage3Structure({ assignmentId, briefData, onComplete }:
         ))}
       </div>
 
-      {/* IRAC Guide */}
-      <div className="mb-6 p-4 bg-blue-50 rounded-lg">
-        <h4 className="font-semibold mb-2">IRAC Structure Guide</h4>
-        <ul className="text-sm space-y-1 text-gray-700">
-          <li><strong>Issue:</strong> Identify the legal question</li>
-          <li><strong>Rule:</strong> State the relevant law (cases, statutes)</li>
-          <li><strong>Application:</strong> Apply law to your facts</li>
-          <li><strong>Conclusion:</strong> Summarize your answer</li>
-        </ul>
-      </div>
-
-      <button onClick={handleComplete} className="w-full px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center justify-center gap-2 font-semibold">
+      <button onClick={handleComplete} className="w-full px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center justify-center gap-2 font-semibold transition">
         Continue to Drafting <ArrowRight size={20} />
       </button>
     </div>

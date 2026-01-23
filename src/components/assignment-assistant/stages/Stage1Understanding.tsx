@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Brain, CheckCircle, Loader2, ArrowRight, Cloud, CloudOff } from 'lucide-react';
+import { Brain, CheckCircle, Loader2, ArrowRight, Cloud, CloudOff, Edit3, ArrowUpRight } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAutosave } from '@/hooks/useAutosave';
 
@@ -9,12 +9,14 @@ interface Stage1UnderstandingProps {
   assignmentId: string;
   briefData: any;
   onComplete: (data: any) => void;
+  onInsertToDraft?: (payload: any) => void;
 }
 
 export default function Stage1Understanding({ 
   assignmentId, 
   briefData, 
-  onComplete 
+  onComplete,
+  onInsertToDraft
 }: Stage1UnderstandingProps) {
   const [messages, setMessages] = useState<{role: string; content: string}[]>([]);
   const [userInput, setUserInput] = useState('');
@@ -23,6 +25,7 @@ export default function Stage1Understanding({
   const [quizScore, setQuizScore] = useState(0);
   const [legalIssues, setLegalIssues] = useState<string[]>([]);
   const textareaRef = React.useRef<HTMLTextAreaElement>(null);
+  const [writeInDraft, setWriteInDraft] = useState(false);
 
   // Auto-resize textarea
   useEffect(() => {
@@ -114,15 +117,16 @@ export default function Stage1Understanding({
   };
 
   const handleComplete = () => {
-    if (!quizPassed) {
-      toast.error('Please complete the understanding quiz first');
+    // If "Write in Draft" is ON, we assume they did the work in the editor
+    if (!quizPassed && !writeInDraft) {
+      toast.error('Please complete the understanding quiz first, or switch to "Write in Draft" mode.');
       return;
     }
 
     onComplete({
-      quizScore,
+      quizScore: writeInDraft ? 100 : quizScore,
       legalIssuesIdentified: legalIssues,
-      understandingLevel: 'high',
+      understandingLevel: writeInDraft ? 'manual' : 'high',
       transcript: messages,
     });
   };
@@ -131,14 +135,26 @@ export default function Stage1Understanding({
     <div className="h-full flex flex-col bg-white rounded-xl shadow-lg">
       {/* Header */}
       <div className="p-6 border-b bg-gradient-to-r from-violet-50 to-indigo-50">
-        <div className="flex items-center gap-3 mb-2">
-          <div className="p-2 bg-violet-600 rounded-lg">
-            <Brain className="text-white" size={24} />
-          </div>
-          <div>
-            <h2 className="text-xl font-bold text-gray-800">Stage 1: Understanding</h2>
-            <p className="text-sm text-gray-600">Let's make sure you understand the assignment</p>
-          </div>
+        <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-3">
+            <div className="p-2 bg-violet-600 rounded-lg">
+                <Brain className="text-white" size={24} />
+            </div>
+            <div>
+                <h2 className="text-xl font-bold text-gray-800">Stage 1: Understanding</h2>
+                <p className="text-sm text-gray-600">Let's make sure you understand the assignment</p>
+            </div>
+            </div>
+            {/* Toggle for Write In Draft */}
+            <div className="flex items-center gap-2">
+                <span className="text-xs font-semibold text-gray-600">Write in Draft</span>
+                <button 
+                    onClick={() => setWriteInDraft(!writeInDraft)}
+                    className={`w-10 h-5 rounded-full transition-colors relative ${writeInDraft ? 'bg-violet-600' : 'bg-gray-300'}`}
+                >
+                    <div className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white transition-transform ${writeInDraft ? 'translate-x-5' : 'translate-x-0'}`} />
+                </button>
+            </div>
         </div>
 
         {quizPassed && (
@@ -204,7 +220,7 @@ export default function Stage1Understanding({
           )}
         </div>
 
-        <div className="flex gap-2">
+        <div className="flex gap-2 relative">
           <textarea
             ref={textareaRef}
             value={userInput}
@@ -216,10 +232,30 @@ export default function Stage1Understanding({
               }
             }}
             placeholder="Type your response..."
-            className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent resize-none min-h-[50px] max-h-[200px] overflow-y-auto"
+            className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent resize-none min-h-[50px] max-h-[200px] overflow-y-auto pr-24"
             rows={1}
             disabled={loading}
           />
+          
+          {/* Insert Button overlay inside textarea area if text exists */}
+          {userInput.trim().length > 0 && onInsertToDraft && (
+             <button
+               onClick={() => {
+                   onInsertToDraft({
+                       source: 'stage',
+                       text: userInput,
+                       mode: 'cursor',
+                       addPrefix: false // User's own text
+                   });
+                   // Optional: Clear input? No, maybe they want to edit it further or send it to Durmah too.
+               }}
+               className="absolute right-24 bottom-3 p-2 text-gray-400 hover:text-violet-600 hover:bg-violet-50 rounded-lg transition"
+               title="Insert into Draft"
+             >
+                 <ArrowUpRight size={18} />
+             </button>
+          )}
+
           <button
             onClick={sendMessage}
             disabled={loading || !userInput.trim()}
@@ -231,18 +267,18 @@ export default function Stage1Understanding({
 
         {/* Action Buttons - Always show Skip option */}
         <div className="mt-4 space-y-2">
-          {quizPassed && (
+          {(quizPassed || writeInDraft) && (
             <button
               onClick={handleComplete}
               className="w-full px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-semibold flex items-center justify-center gap-2"
             >
-              <span>Continue to Research</span>
+              <span>{writeInDraft ? 'Complete Stage' : 'Continue to Research'}</span>
               <ArrowRight size={20} />
             </button>
           )}
           
           {/* Manual Skip Button - Always Available */}
-          {!quizPassed && messages.length > 2 && (
+          {!quizPassed && !writeInDraft && messages.length > 2 && (
             <button
               onClick={() => {
                 toast.success('Skipping to Research');
