@@ -45,25 +45,32 @@ const DEFAULT_OG_HEIGHT = '630';
 /**
  * Generate complete SEO metadata for a page
  */
-export function generateSEOTags(metadata: SEOMetadata): GeneratedSEOTags {
+export function generateSEOTags(metadata: SEOMetadata & { version?: string }): GeneratedSEOTags {
   const {
     title,
     description,
     canonical,
     ogImage = DEFAULT_OG_IMAGE,
     ogType = 'website',
-    keywords
+    keywords,
+    version
   } = metadata;
 
   // Ensure canonical URL is absolute
   const absoluteCanonical = canonical.startsWith('http') 
     ? canonical 
-    : `${SITE_URL}${canonical}`;
+    : `${SITE_URL}${canonical.startsWith('/') ? '' : '/'}${canonical}`;
 
-  // Ensure OG image is absolute
-  const absoluteOgImage = ogImage.startsWith('http')
+  // Ensure OG image is absolute and add versioning if provided
+  let absoluteOgImage = ogImage.startsWith('http')
     ? ogImage
-    : `${SITE_URL}${ogImage}`;
+    : `${SITE_URL}${ogImage.startsWith('/') ? '' : '/'}${ogImage}`;
+  
+  if (version) {
+    absoluteOgImage = absoluteOgImage.includes('?') 
+      ? `${absoluteOgImage}&v=${version}` 
+      : `${absoluteOgImage}?v=${version}`;
+  }
 
   return {
     title,

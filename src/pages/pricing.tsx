@@ -111,11 +111,13 @@ export default function PricingPage() {
         <meta property="og:url" content="https://mydurhamlaw.com/pricing" />
         <meta property="og:type" content="website" />
         <meta property="og:image" content="https://mydurhamlaw.com/og/og-pricing.png" />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
         
         {/* Twitter */}
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="Pricing & Plans | MyDurhamLaw" />
-        <meta name="twitter:description" content="Ethical AI study assistance for Durham Law students." />
+        <meta name="twitter:title" content="Pricing Plans - MyDurhamLaw" />
+        <meta name="twitter:description" content="Choose the perfect AI study plan for your law degree. 14-day free trial." />
         <meta name="twitter:image" content="https://mydurhamlaw.com/og/og-pricing.png" />
       </Head>
 

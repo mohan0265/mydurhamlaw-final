@@ -103,11 +103,13 @@ return (
         <meta name="description" content="24/7 Durham Law support and study assistance. Integrity-first AI platform for Durham University Law students. Get revision help, exam prep, and term-based guidance." />
         <meta property="og:title" content="Durham Law Support & Study Help | MyDurhamLaw" />
         <meta property="og:description" content="Durham Law support, 24/7. Integrity-first AI study assistant built specifically for Durham University Law students." />
-        <meta property="og:image" content="https://mydurhamlaw.com/og/og-home.png" />
+        <meta property="og:image" content="https://mydurhamlaw.com/og/og-home.png?v=2" />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
         <meta property="og:url" content="https://mydurhamlaw.com/" />
         <link rel="canonical" href="https://mydurhamlaw.com/" />
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:image" content="https://mydurhamlaw.com/og/og-home.png" />
+        <meta name="twitter:image" content="https://mydurhamlaw.com/og/og-home.png?v=2" />
       </Head>
 
       {/* 1) HERO SECTION */}
