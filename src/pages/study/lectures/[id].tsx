@@ -9,6 +9,7 @@ import {
   ShieldAlert, AlertTriangle, PlusCircle, CheckCircle, ExternalLink
 } from 'lucide-react';
 // ... imports
+import { QuizMeCard } from '@/components/quiz/QuizMeCard';
 import toast from 'react-hot-toast';
 import { getSupabaseClient } from '@/lib/supabase/client';
 import LectureChatWidget from '@/components/study/LectureChatWidget';
@@ -243,6 +244,13 @@ export default function LectureDetailPage() {
             {/* EXAM PREP TAB */}
             {activeTab === 'exam' && (
                 <div className="space-y-8 animate-fadeIn">
+                    {/* Quiz Me Spotlight Integration */}
+                    <QuizMeCard 
+                        lectureId={lecture.id} 
+                        moduleCode={lecture.module_code} 
+                        className="mb-8" 
+                    />
+
                     {/* Tab Header & Subtitle */}
                     <div className="mb-6 bg-purple-50 p-4 rounded-lg border border-purple-100">
                         <h3 className="text-purple-900 font-bold flex items-center gap-2">
