@@ -13,7 +13,11 @@ import {
   Info,
   ChevronRight,
   Sparkles,
-  Quote
+  Quote,
+  Save,
+  Trash2,
+  Download,
+  MoreVertical
 } from 'lucide-react';
 import { useRouter } from 'next/router';
 import { getSupabaseClient } from '@/lib/supabase/client';
@@ -114,7 +118,7 @@ export const QuizSessionUI: React.FC<QuizSessionUIProps> = ({ sessionId, userId,
     }
   };
 
-  const formatContent = (content: string) => {
+   const formatContent = (content: string) => {
      // Identify sections for rubric styling
      const sections = content.split('\n\n');
      return sections.map((section, idx) => {
@@ -133,6 +137,61 @@ export const QuizSessionUI: React.FC<QuizSessionUIProps> = ({ sessionId, userId,
        }
        return <p key={idx} className="mb-4 leading-relaxed">{section}</p>;
      });
+  };
+
+  // Session actions state
+  const [showActionsMenu, setShowActionsMenu] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+
+  // Save transcript to voice archive
+  const handleSaveTranscript = async () => {
+    setIsSaving(true);
+    try {
+      const transcript = messages.map(m => `[${m.role.toUpperCase()}]: ${m.content}`).join('\n\n');
+      
+      await supabase.from('voice_transcripts').insert({
+        user_id: userId,
+        session_id: sessionId,
+        transcript_text: transcript,
+        source: 'quiz_session',
+        created_at: new Date().toISOString()
+      });
+      
+      toast.success('Saved to Durmah Transcript Archive');
+    } catch (err) {
+      toast.error('Failed to save transcript');
+    } finally {
+      setIsSaving(false);
+      setShowActionsMenu(false);
+    }
+  };
+
+  // Delete session and messages
+  const handleDeleteSession = async () => {
+    if (!confirm('Delete this quiz session and all messages? This cannot be undone.')) return;
+    
+    try {
+      await supabase.from('quiz_messages').delete().eq('session_id', sessionId);
+      await supabase.from('quiz_sessions').delete().eq('id', sessionId);
+      toast.success('Session deleted');
+      router.push('/quiz');
+    } catch (err) {
+      toast.error('Failed to delete session');
+    }
+  };
+
+  // Download transcript as text file
+  const handleDownloadTranscript = () => {
+    const transcript = messages.map(m => `[${m.role.toUpperCase()}]: ${m.content}`).join('\n\n');
+    const blob = new Blob([transcript], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `quiz-session-${sessionId.substring(0, 8)}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+    setShowActionsMenu(false);
+    toast.success('Downloaded transcript');
   };
 
   return (
@@ -174,6 +233,44 @@ export const QuizSessionUI: React.FC<QuizSessionUIProps> = ({ sessionId, userId,
               >
                 <BookOpen className="w-5 h-5" />
               </button>
+              
+              {/* Actions dropdown */}
+              <div className="relative">
+                <button 
+                  onClick={() => setShowActionsMenu(!showActionsMenu)}
+                  className="p-3.5 rounded-2xl border-2 border-gray-100 text-gray-400 hover:border-gray-200 hover:text-gray-600 transition-all"
+                >
+                  <MoreVertical className="w-5 h-5" />
+                </button>
+                
+                {showActionsMenu && (
+                  <div className="absolute right-0 top-full mt-2 w-56 bg-white rounded-2xl shadow-2xl border border-gray-100 z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                    <button 
+                      onClick={handleSaveTranscript}
+                      disabled={isSaving}
+                      className="w-full px-4 py-3 flex items-center gap-3 text-sm font-medium text-gray-700 hover:bg-purple-50 hover:text-purple-700 transition-colors text-left"
+                    >
+                      <Save className="w-4 h-4" />
+                      {isSaving ? 'Saving...' : 'Save to Archive'}
+                    </button>
+                    <button 
+                      onClick={handleDownloadTranscript}
+                      className="w-full px-4 py-3 flex items-center gap-3 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors text-left"
+                    >
+                      <Download className="w-4 h-4" />
+                      Download Transcript
+                    </button>
+                    <div className="border-t border-gray-100" />
+                    <button 
+                      onClick={handleDeleteSession}
+                      className="w-full px-4 py-3 flex items-center gap-3 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors text-left"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                      Delete Session
+                    </button>
+                  </div>
+                )}
+              </div>
           </div>
         </header>
 

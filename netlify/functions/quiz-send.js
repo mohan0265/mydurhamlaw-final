@@ -70,10 +70,20 @@ exports.handler = async (event, context) => {
        }
     }
 
-    // 3. Retrieval Threshold Check
+    // 3. Utility Question Detection (Allow basic app support questions)
+    const utilityPatterns = [
+      /mic|microphone|voice|audio|hear me|speak|talking|recording/i,
+      /how (do|does|can|to)/i,
+      /help|stuck|problem|issue|not working|broken/i,
+      /navigation|button|click|where|find/i,
+      /hello|hi|hey|test/i
+    ];
+    const isUtilityQuestion = utilityPatterns.some(p => p.test(message));
+
+    // 4. Retrieval Threshold Check (Skip for utility questions)
     const minSources = (quiz_style === 'irac' || quiz_style === 'hypo') ? 3 : 1;
     if (!groundingData || sources.length < minSources) {
-      if (!groundingData) {
+      if (!groundingData && !isUtilityQuestion) {
         return {
           statusCode: 200,
           headers: { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json' },
@@ -85,26 +95,38 @@ exports.handler = async (event, context) => {
       }
     }
 
-    // 4. Prepare Prompt
+    // 5. Prepare Prompt
+    const utilityContext = isUtilityQuestion && !groundingData ? `
+NOTE: The student is asking a UTILITY or APP SUPPORT question, not a legal question.
+For utility questions:
+- If about mic/voice: Confirm you can hear them and the voice feature is working. Suggest they try speaking a short legal term to test.
+- If about navigation: Provide helpful guidance on how to use the Quiz Me feature.
+- If a greeting/test: Respond warmly and invite them to start their legal reasoning practice.
+Always be helpful and friendly for these non-academic questions.
+` : '';
+
     const systemPrompt = `
 You are Durmah, an expert law tutor for Durham University law students.
 You are in "QUIZ ME" mode. Your goal is to test the student's understanding of the provided Durham-specific context.
+
+${utilityContext}
 
 CURRENT STYLE: ${quiz_style}
 (Styles: quick = definitions/key facts, irac = Issue/Rule/App/Conclusion, hypo = complex problem solving, counter = debate/rebuttal)
 
 GROUNDING DATA (STRICT SOURCE):
-${groundingData}
+${groundingData || 'No specific grounding data loaded for this session yet.'}
 
 INSTRUCTIONS:
-1. ONLY use facts from the GROUNDING DATA. Do not hallucinate case names or statutes not present in the data.
-2. Structure every evaluation of student answers using this RUBRIC:
+1. ONLY use facts from the GROUNDING DATA for LEGAL questions. Do not hallucinate case names or statutes not present in the data.
+2. For UTILITY questions (mic tests, navigation help, greetings), respond helpfully and warmly.
+3. Structure every evaluation of student legal answers using this RUBRIC:
    - **What you did well**: 1-2 positive points about their logic.
    - **What to improve**: Specific areas of reasoning to tighten.
    - **Model Structure (IRAC)**: A brief bulleted breakdown of the "Ideal" answer.
    - **"Speak Law" Rewrite**: 1-2 sentences of how to say this naturally and authoritatively in a seminar.
-3. Then, ask the NEXT QUESTION to keep the session active.
-4. If the grounding data is insufficient for a detail asked by the student, say: "My records for this specific module detail are limited, but based on the provided brief..."
+4. Then, ask the NEXT QUESTION to keep the session active.
+5. If the grounding data is insufficient for a detail asked by the student, say: "My records for this specific module detail are limited, but based on the provided brief..."
     `;
 
     // 5. history and call...

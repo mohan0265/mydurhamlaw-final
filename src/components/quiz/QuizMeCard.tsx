@@ -1,4 +1,5 @@
 import React from 'react';
+import Image from 'next/image';
 import { Brain, GraduationCap, Mic, ArrowRight, Zap } from 'lucide-react';
 import { useRouter } from 'next/router';
 
@@ -36,11 +37,15 @@ export const QuizMeCard: React.FC<QuizMeCardProps> = ({
     <div className={`overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-indigo-700 via-purple-800 to-indigo-900 shadow-2xl border border-white/10 text-white relative group transition-all hover:shadow-purple-500/20 ${className}`}>
       {/* Quiz Me Mascot */}
       <div className="absolute top-0 right-0 p-4 translate-x-4 -translate-y-4 group-hover:translate-x-2 group-hover:-translate-y-2 transition-transform duration-500">
-        <img 
-          src="/assets/mascots/quiz-me-bunny.png" 
-          alt="Quiz Me Bunny" 
+        <Image 
+          src="/assets/mascots/quiz-me-bunny-160.webp" 
+          alt="" 
+          width={160}
+          height={160}
           className="w-32 h-32 md:w-40 md:h-40 object-contain drop-shadow-[0_10px_10px_rgba(0,0,0,0.3)]"
           loading="lazy"
+          srcSet="/assets/mascots/quiz-me-bunny-96.webp 96w, /assets/mascots/quiz-me-bunny-160.webp 160w, /assets/mascots/quiz-me-bunny-256.webp 256w"
+          sizes="(max-width: 640px) 96px, (max-width: 1024px) 160px, 256px"
         />
       </div>
 

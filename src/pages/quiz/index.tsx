@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import Head from 'next/head';
+import Image from 'next/image';
 import { useRouter } from 'next/router';
 import { useAuth } from '@/lib/supabase/AuthContext';
 import { getSupabaseClient } from '@/lib/supabase/client';
@@ -123,10 +124,15 @@ export default function QuizHub() {
           
           <div className="relative">
             <div className="absolute inset-0 bg-purple-200 blur-[100px] opacity-30 rounded-full"></div>
-            <img 
-              src="/assets/mascots/quiz-me-bunny.png" 
-              alt="Quiz Me Bunny" 
+            <Image 
+              src="/assets/mascots/quiz-me-bunny-256.webp" 
+              alt="" 
+              width={320}
+              height={320}
               className="w-64 h-64 md:w-80 md:h-80 object-contain relative z-10 drop-shadow-2xl animate-float"
+              priority={true}
+              srcSet="/assets/mascots/quiz-me-bunny-160.webp 160w, /assets/mascots/quiz-me-bunny-256.webp 256w"
+              sizes="(max-width: 768px) 160px, 256px"
             />
           </div>
         </div>

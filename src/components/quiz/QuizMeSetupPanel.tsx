@@ -12,7 +12,8 @@ import {
   Lock,
   Zap,
   Loader2,
-  Clock
+  Clock,
+  Brain
 } from 'lucide-react';
 import { getSupabaseClient } from '@/lib/supabase/client';
 import { useAuth } from '@/lib/supabase/AuthContext';
