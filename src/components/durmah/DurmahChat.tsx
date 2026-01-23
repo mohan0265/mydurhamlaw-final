@@ -44,6 +44,7 @@ interface DurmahChatProps {
      label?: string; 
      addPrefix?: boolean; 
   }) => void;
+  cleanSlate?: boolean;
 }
 
 export default function DurmahChat({
@@ -55,7 +56,8 @@ export default function DurmahChat({
   className = "",
   isMinimized = false,
   onToggleMinimize,
-  onInsertToDraft
+  onInsertToDraft,
+  cleanSlate = false
 }: DurmahChatProps) {
   const { user } = useAuth();
   const supabase = useSupabaseClient();
@@ -136,24 +138,40 @@ export default function DurmahChat({
   // Cleanup: Remove consecutive duplicate greetings from history
   useEffect(() => {
       if (!isChatLoading && messages.length > 1) {
-          const duplicates: string[] = [];
-          // Check the first few messages for repeats
-          // We only care about the BEGINNING of the chat
-          const earlyMessages = messages.slice(0, 10);
+          const idsToDelete: string[] = [];
+          const seenGreetings = new Set<string>();
           
-          for (let i = 0; i < earlyMessages.length - 1; i++) {
-              const current = earlyMessages[i];
-              const next = earlyMessages[i+1];
-              
-              if (current && next && current.role === 'assistant' && next.role === 'assistant' && current.content === next.content) {
-                  // Found a duplicate - mark the *next* one for deletion (keep the first one)
-                  duplicates.push(next.id);
+          // Check the first 10 messages for greeting repeats
+          // We assume "Hi I'm Durmah" or similar generic starts are the culprits
+          const earlyMessages = messages.slice(0, 15);
+          
+          earlyMessages.forEach((msg, index) => {
+              if (msg.role === 'assistant') {
+                  const isGreeting = msg.content.trim().startsWith("Hi I'm Durmah") || 
+                                   msg.content.includes("how can I help you today");
+                  
+                  if (isGreeting) {
+                      // Normalize content to detect near-duplicates if needed, or just strict equality
+                      // For now, if we found A greeting, and we see ANOTHER greeting, delete the second one
+                      // regardless of exact content match, to enforce "One Greeting Rule"
+                      if (seenGreetings.size > 0) {
+                          idsToDelete.push(msg.id || msg.created_at);
+                      } else {
+                          seenGreetings.add(msg.content); 
+                      }
+                  } else if (index > 0) {
+                      // Also check for strict consecutive identical messages (generic dedupe)
+                      const prev = earlyMessages[index - 1];
+                      if (prev && prev.role === 'assistant' && prev.content === msg.content) {
+                           idsToDelete.push(msg.id || msg.created_at);
+                      }
+                  }
               }
-          }
+          });
 
-          if (duplicates.length > 0 && deleteMessages) {
-              console.log('[DurmahChat] Cleaning up duplicate greetings:', duplicates);
-              deleteMessages(duplicates);
+          if (idsToDelete.length > 0 && deleteMessages) {
+              console.log('[DurmahChat] Cleaning up duplicate greetings:', idsToDelete);
+              deleteMessages(idsToDelete);
           }
       }
   }, [isChatLoading, messages.length, deleteMessages]);

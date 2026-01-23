@@ -42,22 +42,12 @@ export default function Stage1Understanding({
     workflowKey: 'assignment_workflow',
   });
 
-  useEffect(() => {
-    // Initial Durmah greeting - INCLUDE assignment context
-    const assignmentContext = briefData?.question_text 
-      ? `\n\nThe assignment question is:\n"${briefData.question_text}"`
-      : '';
-    
-    const initialMessage = {
-      role: 'assistant',
-      content: `Hi! Let's make sure you fully understand this assignment before we start working on it. I'll explain it to you and then quiz you to check your understanding.${assignmentContext}\n\nReady to begin?`
-    };
-    setMessages([initialMessage]);
-  }, [briefData]);
+  // REMOVED: Initial Durmah greeting effect. 
+  // We now show this as a static "Assignment Briefing" box at the top.
 
   // AUTO-SAVE: Trigger autosave whenever state changes
   useEffect(() => {
-    if (messages.length > 1) {
+    if (messages.length > 0) {
       saveToAutosave({ messages, quizPassed, quizScore, legalIssues });
     }
   }, [messages, quizPassed, quizScore, legalIssues, saveToAutosave]);
@@ -169,6 +159,35 @@ export default function Stage1Understanding({
 
       {/* Chat Messages */}
       <div className="flex-1 overflow-y-auto p-6 space-y-4">
+        
+        {/* STATIC GUIDE: Initial Instructions (Moved from Chat) */}
+        {!quizPassed && (
+            <div className="p-4 bg-violet-50 border border-violet-100 rounded-xl mb-6">
+                <h3 className="font-bold text-violet-800 text-sm mb-2 flex items-center gap-2">
+                    <Brain size={16} />
+                    Assignment Briefing
+                </h3>
+                <p className="text-sm text-gray-700 leading-relaxed mb-3">
+                    Hi! Let's make sure you fully understand this assignment before we start.
+                    I'll explain the key requirements and then quiz you ensuring you're ready to proceed.
+                </p>
+                {briefData?.question_text && (
+                    <div className="bg-white p-3 rounded-lg border border-violet-100 text-sm text-gray-600 italic">
+                        "{briefData.question_text.substring(0, 150)}{briefData.question_text.length > 150 ? '...' : ''}"
+                    </div>
+                )}
+                <div className="mt-3 text-xs text-violet-600 font-semibold">
+                    Type "Ready" below to start the quiz!
+                </div>
+            </div>
+        )}
+
+        {messages.length === 0 && !quizPassed && (
+             <div className="text-center text-gray-400 text-sm py-8">
+                 Start the conversation to begin your understanding check.
+             </div>
+        )}
+
         {messages.map((msg, idx) => (
           <div
             key={idx}
