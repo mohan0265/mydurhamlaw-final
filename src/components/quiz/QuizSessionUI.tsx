@@ -427,7 +427,7 @@ START: Greet the student warmly and ask what legal topic they'd like to quiz on 
               <textarea
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder={isVoiceActive ? "Tell Durmah your argument..." : "Type your legal analysis..."}
+                placeholder={isListening ? "Speak to Durmah..." : "Type your legal analysis..."}
                 rows={1}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && !e.shiftKey) {
