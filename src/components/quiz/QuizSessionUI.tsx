@@ -48,6 +48,71 @@ export const QuizSessionUI: React.FC<QuizSessionUIProps> = ({ sessionId, userId,
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const supabase = getSupabaseClient();
 
+  // Voice capture state
+  const [isListening, setIsListening] = useState(false);
+  const [voiceTranscript, setVoiceTranscript] = useState('');
+  const recognitionRef = useRef<any>(null);
+
+  // Initialize Web Speech API
+  useEffect(() => {
+    if (typeof window !== 'undefined' && 'webkitSpeechRecognition' in window) {
+      const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
+      recognitionRef.current = new SpeechRecognition();
+      recognitionRef.current.continuous = true;
+      recognitionRef.current.interimResults = true;
+      recognitionRef.current.lang = 'en-GB';
+
+      recognitionRef.current.onresult = (event: any) => {
+        const transcript = Array.from(event.results)
+          .map((result: any) => result[0].transcript)
+          .join('');
+        setVoiceTranscript(transcript);
+        setInput(transcript);
+      };
+
+      recognitionRef.current.onend = () => {
+        setIsListening(false);
+        // If voice mode is still active, auto-send the transcript
+        if (voiceTranscript.trim() && isVoiceActive) {
+          // Auto-submit after speech ends
+        }
+      };
+
+      recognitionRef.current.onerror = (event: any) => {
+        console.error('Speech recognition error:', event.error);
+        setIsListening(false);
+        if (event.error === 'not-allowed') {
+          toast.error('Microphone access denied. Please enable mic permissions.');
+        }
+      };
+    }
+
+    return () => {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+    };
+  }, [isVoiceActive]);
+
+  // Toggle voice listening
+  const toggleVoiceCapture = () => {
+    if (!recognitionRef.current) {
+      toast.error('Speech recognition not supported in this browser. Try Chrome.');
+      return;
+    }
+
+    if (isListening) {
+      recognitionRef.current.stop();
+      setIsListening(false);
+    } else {
+      setVoiceTranscript('');
+      setInput('');
+      recognitionRef.current.start();
+      setIsListening(true);
+      toast.success('Listening... Start speaking!');
+    }
+  };
+
   useEffect(() => {
     // Fetch conversation history if any
     const fetchHistory = async () => {
@@ -221,11 +286,30 @@ export const QuizSessionUI: React.FC<QuizSessionUIProps> = ({ sessionId, userId,
 
           <div className="flex items-center gap-3">
               <button 
-                onClick={() => setIsVoiceActive(!isVoiceActive)}
-                className={`p-3.5 rounded-2xl border-2 transition-all flex items-center gap-3 ${isVoiceActive ? 'bg-purple-50 border-purple-200 text-purple-700 shadow-sm' : 'bg-white border-gray-100 text-gray-400 hover:border-gray-200'}`}
+                onClick={() => {
+                  setIsVoiceActive(!isVoiceActive);
+                  if (!isVoiceActive) {
+                    // Turning voice on - start listening
+                    toggleVoiceCapture();
+                  } else {
+                    // Turning voice off - stop listening
+                    if (recognitionRef.current && isListening) {
+                      recognitionRef.current.stop();
+                      setIsListening(false);
+                    }
+                  }
+                }}
+                className={`p-3.5 rounded-2xl border-2 transition-all flex items-center gap-3 ${isListening ? 'bg-red-50 border-red-300 text-red-600 animate-pulse shadow-lg' : isVoiceActive ? 'bg-purple-50 border-purple-200 text-purple-700 shadow-sm' : 'bg-white border-gray-100 text-gray-400 hover:border-gray-200'}`}
               >
-                {isVoiceActive ? <Mic className="w-5 h-5" /> : <MicOff className="w-5 h-5" />}
-                <span className="text-xs font-black uppercase tracking-widest hidden sm:block">{isVoiceActive ? 'Voice Active' : 'Switch Mode'}</span>
+                {isListening ? (
+                  <div className="relative">
+                    <Mic className="w-5 h-5 text-red-500" />
+                    <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full animate-ping" />
+                  </div>
+                ) : isVoiceActive ? <Mic className="w-5 h-5" /> : <MicOff className="w-5 h-5" />}
+                <span className="text-xs font-black uppercase tracking-widest hidden sm:block">
+                  {isListening ? 'Listening...' : isVoiceActive ? 'Voice Active' : 'Switch Mode'}
+                </span>
               </button>
               <button 
                 onClick={() => setIsSourcesOpen(!isSourcesOpen)}
