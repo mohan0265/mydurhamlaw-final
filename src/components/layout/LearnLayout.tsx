@@ -103,7 +103,7 @@ export const LearnLayout: React.FC<LearnLayoutProps> = ({
                 </>
               ) : (
                 <>
-                  <Link href="/signup?next=/pricing">
+                  <Link href="/eligibility?next=/signup&plan=free">
                     <Button className="bg-white text-blue-600 hover:bg-gray-100 px-8 py-3 text-lg w-full sm:w-auto">
                       Start Free Trial
                       <ArrowRight className="w-5 h-5 ml-2" />

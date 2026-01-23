@@ -29,16 +29,21 @@ export const PricingPlans: React.FC<PricingPlansProps> = ({
       return;
     }
 
-    if (plan === 'free') {
-      router.push(`/signup?plan=${plan}&parent=${parentAddOn}&next=/pricing`);
-      return;
-    }
-
+    // For non-authenticated users, route through eligibility gate
     if (!user) {
-      router.push(`/signup?plan=${plan}&parent=${parentAddOn}&next=/pricing`);
+      const planParam = parentAddOn ? `${plan}&parent=true` : plan;
+      router.push(`/eligibility?next=/signup&plan=${planParam}`);
       return;
     }
 
+    // For authenticated users, handle free vs paid plans
+    if (plan === 'free') {
+      // Already logged in with free plan - redirect to dashboard
+      router.push('/dashboard');
+      return;
+    }
+
+    // Logged-in user selecting paid plan - trigger Stripe checkout
     try {
       setLoadingPlan(plan);
       const res = await fetch('/api/stripe/checkout', {

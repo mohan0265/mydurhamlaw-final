@@ -125,7 +125,7 @@ export default function LearnHub() {
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <h2 className="text-2xl font-bold text-gray-900 mb-6">Ready to apply these methods?</h2>
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-              <Link href="/signup">
+              <Link href="/eligibility?next=/signup&plan=free">
                 <button className="bg-blue-600 text-white font-bold py-3 px-8 rounded-full shadow-lg hover:bg-blue-700 transition transform hover:scale-105">
                   Start Free Trial
                 </button>
