@@ -35,20 +35,22 @@ export default function Document() {
         <meta name="application-name" content="MyDurhamLaw" />
 
         {/* Open Graph for social sharing */}
-        <meta property="og:title" content="MyDurhamLaw – AI Study Assistant" />
-        <meta property="og:description" content="Your intelligent companion for UK law mastery." />
+        <meta property="og:title" content="MyDurhamLaw - Durham Law support, 24/7" />
+        <meta property="og:description" content="Turn lectures into clarity. Turn deadlines into a plan. Integrity-first AI for Durham Law students." />
         <meta property="og:type" content="website" />
         <meta property="og:url" content="https://mydurhamlaw.com/" />
         <meta property="og:site_name" content="MyDurhamLaw" />
-        <meta property="og:image" content="https://mydurhamlaw.com/og-image.png" />
+        <meta property="og:image" content="https://mydurhamlaw.com/og/og-default.png" />
         <meta property="og:image:width" content="1200" />
         <meta property="og:image:height" content="630" />
+        <meta property="og:image:alt" content="MyDurhamLaw - Durham Law support, 24/7" />
 
         {/* Twitter Card */}
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="MyDurhamLaw – AI Study Assistant" />
-        <meta name="twitter:description" content="Your intelligent companion for UK law mastery." />
-        <meta name="twitter:image" content="https://mydurhamlaw.com/og-image.png" />
+        <meta name="twitter:title" content="MyDurhamLaw - Durham Law support, 24/7" />
+        <meta name="twitter:description" content="Turn lectures into clarity. Turn deadlines into a plan." />
+        <meta name="twitter:image" content="https://mydurhamlaw.com/og/og-default.png" />
+        <meta name="twitter:image:alt" content="MyDurhamLaw - Durham Law support" />
       </Head>
       <body>
         <Main />

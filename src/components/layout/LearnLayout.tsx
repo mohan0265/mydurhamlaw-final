@@ -36,11 +36,13 @@ export const LearnLayout: React.FC<LearnLayoutProps> = ({
         <meta property="og:url" content={canonicalUrl} />
         <meta property="og:type" content="article" />
         <meta property="og:site_name" content="MyDurhamLaw" />
+        <meta property="og:image" content="https://mydurhamlaw.com/og/og-default.png" />
         
         {/* Twitter */}
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content={title} />
         <meta name="twitter:description" content={description} />
+        <meta name="twitter:image" content="https://mydurhamlaw.com/og/og-default.png" />
       </Head>
 
       <main className="flex-1">

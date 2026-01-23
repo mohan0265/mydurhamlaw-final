@@ -100,9 +100,13 @@ return (
     <>
       <Head>
         <title>MyDurhamLaw – Durham Law Support, 24/7</title>
-        <meta name="description" content="Stay on top of modules, deadlines, and exams with a study partner built for Durham." />
+        <meta name="description" content="Turn lectures into clarity. Turn deadlines into a plan. Integrity-first AI for Durham Law students." />
         <meta property="og:title" content="MyDurhamLaw - Durham Law support, 24/7" />
-        <meta property="og:image" content="/assets/images/hero-supreme-court-uk.webp" />
+        <meta property="og:description" content="Turn lectures into clarity. Turn deadlines into a plan. Integrity-first AI for Durham Law students." />
+        <meta property="og:image" content="https://mydurhamlaw.com/og/og-home.png" />
+        <meta property="og:url" content="https://mydurhamlaw.com/" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:image" content="https://mydurhamlaw.com/og/og-home.png" />
       </Head>
 
       {/* 1) HERO SECTION */}
