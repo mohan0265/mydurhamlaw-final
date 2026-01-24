@@ -27,7 +27,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       content_text, 
       duration_seconds, 
       started_at, 
-      ended_at 
+      ended_at,
+      source_type,
+      source_id
     } = transcriptPayload;
 
     // 1. Resolve folderId (default to "Unsorted" if missing)
@@ -68,6 +70,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         duration_seconds: duration_seconds || 0,
         started_at: started_at || new Date().toISOString(),
         ended_at: ended_at || new Date().toISOString(),
+        source_type: source_type || null,
+        source_id: source_id || null,
       })
       .select()
       .single();

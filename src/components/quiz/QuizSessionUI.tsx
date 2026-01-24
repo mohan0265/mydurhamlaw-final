@@ -205,7 +205,10 @@ VOICE STYLE:
 - Be encouraging but also challenge weak reasoning.
 - Use clear, articulate language suitable for legal education.
 
-START: Greet the student and immediately start quizzing them on ${sessionContext?.targetTitle || 'the selected topic'}.
+START: 
+1. WARM GREETING: Begin by greeting the student warmly.
+2. ACKNOWLEDGMENT: Explicitly acknowledge their first message (if they already shared thoughts, testing info, or greetings) before diving into the quiz questions.
+3. INITIATE QUIZ: Once a warm opening is established, start quizzing them on ${sessionContext?.targetTitle || 'the selected topic'}.
     `.trim();
   }, [sessionContext]);
 
@@ -253,7 +256,9 @@ START: Greet the student and immediately start quizzing them on ${sessionContext
         content_text: selectedMsgs.map(m => `${m.role === 'user' ? 'you' : 'durmah'}: ${m.content}`).join('\n'),
         duration_seconds: 0,
         started_at: firstMsg?.ts ? new Date(firstMsg.ts).toISOString() : new Date().toISOString(),
-        ended_at: lastMsg?.ts ? new Date(lastMsg.ts).toISOString() : new Date().toISOString()
+        ended_at: lastMsg?.ts ? new Date(lastMsg.ts).toISOString() : new Date().toISOString(),
+        source_type: 'quiz',
+        source_id: sessionId
       };
 
       const resp = await fetch('/api/transcripts/save', {
@@ -455,25 +460,16 @@ START: Greet the student and immediately start quizzing them on ${sessionContext
 
   // Save transcript to voice archive
   const handleSaveTranscript = async () => {
-    setIsSaving(true);
-    try {
-      const transcript = messages.map(m => `[${m.role.toUpperCase()}]: ${m.content}`).join('\n\n');
-      
-      await supabase.from('voice_transcripts').insert({
-        user_id: userId,
-        session_id: sessionId,
-        transcript_text: transcript,
-        source: 'quiz_session',
-        created_at: new Date().toISOString()
-      });
-      
-      toast.success('Saved to Durmah Transcript Archive');
-    } catch (err) {
-      toast.error('Failed to save transcript');
-    } finally {
-      setIsSaving(false);
-      setShowActionsMenu(false);
+    // UNIFIED: Instead of a blind save, select ALL messages and open the folder picker
+    // This allows the user to choose WHERE to archive the session.
+    if (messages.length === 0) {
+      toast.error('No messages to archive');
+      return;
     }
+    
+    selectAllMessages();
+    setIsFolderModalOpen(true);
+    setShowActionsMenu(false);
   };
 
   // Delete session and messages

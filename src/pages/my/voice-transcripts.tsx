@@ -8,7 +8,8 @@ import {
   Filter, Loader2, X, FolderPlus, List, Bookmark,
   MoreHorizontal, Download, Share2, CornerDownRight,
   Home, ChevronLeft, Edit3, Archive, Grid, LayoutList,
-  FolderInput, ChevronUp, ChevronDown as ChevronDownIcon
+  FolderInput, ChevronUp, ChevronDown as ChevronDownIcon,
+  Brain, Headphones, PlayCircle
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
@@ -44,6 +45,8 @@ type VoiceJournalRow = {
   is_pinned?: boolean;
   pinned_at?: string | null;
   archived?: boolean;
+  source_type?: 'quiz' | 'voice_chat' | null;
+  source_id?: string | null;
 };
 
 // --- Helpers ---
@@ -736,7 +739,19 @@ export default withAuthProtection(function VoiceTranscriptsPage() {
                     >
                       <div className="flex items-start justify-between gap-3 mb-3">
                         <div className="min-w-0">
-                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">{formatDate(t.started_at || t.created_at)}</p>
+                          <div className="flex items-center gap-2 mb-1">
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{formatDate(t.started_at || t.created_at)}</p>
+                            {t.source_type === 'quiz' && (
+                              <div className="bg-purple-100 text-purple-600 p-1 rounded-md" title="Quiz Session">
+                                <Brain className="w-3 h-3" />
+                              </div>
+                            )}
+                            {t.source_type === 'voice_chat' && (
+                              <div className="bg-blue-100 text-blue-600 p-1 rounded-md" title="Voice Discussion">
+                                <Headphones className="w-3 h-3" />
+                              </div>
+                            )}
+                          </div>
                           <h3 className="font-bold text-slate-900 leading-tight truncate group-hover:text-violet-600 transition">{t.topic || 'Untitled Session'}</h3>
                         </div>
                         <button 
@@ -783,6 +798,17 @@ export default withAuthProtection(function VoiceTranscriptsPage() {
                          >
                             <Trash2 className="w-4 h-4" />
                          </button>
+                         
+                         {t.source_type === 'quiz' && t.source_id && (
+                           <Link 
+                              href={`/quiz/${t.source_id}`}
+                              className="flex items-center gap-2 px-3 py-2 bg-green-500 text-white text-xs font-bold rounded-xl hover:bg-green-600 transition shadow-lg shadow-green-500/10 ml-2 animate-pulse"
+                           >
+                              <PlayCircle className="w-4 h-4" />
+                              Resume Quiz
+                           </Link>
+                         )}
+
                          <Link 
                             href={`#`} 
                             onClick={(e) => { e.preventDefault(); setExpandedTranscript(t.id); }}

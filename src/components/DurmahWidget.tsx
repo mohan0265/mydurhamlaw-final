@@ -1216,6 +1216,8 @@ Date: ${studentContextData.academic?.now?.nowText || studentContextData.student.
         duration_seconds: durationSeconds,
         started_at: sessionStart.toISOString(),
         ended_at: sessionEnd.toISOString(),
+        source_type: 'voice_chat',
+        source_id: voiceSessionId
       });
       
       setShowFolderPicker(true);
