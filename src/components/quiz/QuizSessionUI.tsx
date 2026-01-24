@@ -396,9 +396,7 @@ START: Greet the student and immediately start quizzing them on ${sessionContext
      });
   };
 
-  // Session actions state
-  const [showActionsMenu, setShowActionsMenu] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
+  // Session actions logic (using state declared at top)
 
   // Save transcript to voice archive
   const handleSaveTranscript = async () => {
@@ -578,6 +576,7 @@ START: Greet the student and immediately start quizzing them on ${sessionContext
                 </button>
                 
                 {showActionsMenu && (
+                  <div className="absolute right-0 top-full mt-2 w-56 bg-white rounded-2xl shadow-2xl border border-gray-100 z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
                     <button 
                       onClick={() => {
                         setIsSelectionMode(true);
