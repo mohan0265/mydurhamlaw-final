@@ -52,32 +52,109 @@ export const QuizSessionUI: React.FC<QuizSessionUIProps> = ({ sessionId, userId,
   // Audio element ref for OpenAI Realtime voice playback
   const audioRef = useRef<HTMLAudioElement>(null);
 
-  // Quiz-specific guardrailed system prompt for OpenAI Realtime
-  const quizSystemPrompt = useMemo(() => `
+  // Session context state for grounding
+  const [sessionContext, setSessionContext] = useState<{
+    quizType: string;
+    targetTitle: string;
+    moduleCode: string;
+    quizStyle: string;
+    groundingData: string;
+  } | null>(null);
+
+  // Fetch session context and grounding data
+  useEffect(() => {
+    const fetchSessionContext = async () => {
+      try {
+        // 1. Fetch session data
+        const { data: session } = await supabase
+          .from('quiz_sessions')
+          .select('quiz_type, target_id, module_code, performance_metadata')
+          .eq('id', sessionId)
+          .single();
+
+        if (!session) return;
+
+        const metadata = session.performance_metadata || {};
+        let groundingData = '';
+        let targetTitle = metadata.target_title || session.module_code || 'General Quiz';
+
+        // 2. Fetch grounding content based on quiz type
+        if (session.quiz_type === 'lecture' && session.target_id) {
+          const { data: transcript } = await supabase
+            .from('lecture_transcripts')
+            .select('transcript_text')
+            .eq('lecture_id', session.target_id)
+            .single();
+          if (transcript?.transcript_text) {
+            groundingData = transcript.transcript_text.substring(0, 4000); // Limit for prompt
+          }
+        } else if (session.quiz_type === 'module' && session.module_code) {
+          const { data: academic } = await supabase
+            .from('durham_academic_content')
+            .select('content')
+            .eq('module_code', session.module_code)
+            .limit(5);
+          if (academic) {
+            groundingData = academic.map(a => a.content).join('\n\n').substring(0, 4000);
+          }
+        }
+
+        setSessionContext({
+          quizType: session.quiz_type,
+          targetTitle,
+          moduleCode: session.module_code || '',
+          quizStyle: metadata.quiz_style || 'quick',
+          groundingData
+        });
+      } catch (err) {
+        console.error('Failed to fetch session context:', err);
+      }
+    };
+
+    fetchSessionContext();
+  }, [sessionId]);
+
+  // Quiz-specific guardrailed system prompt with dynamic context
+  const quizSystemPrompt = useMemo(() => {
+    const contextInfo = sessionContext 
+      ? `
+QUIZ CONTEXT:
+- Topic: ${sessionContext.targetTitle}
+- Module: ${sessionContext.moduleCode || 'Not specified'}
+- Quiz Style: ${sessionContext.quizStyle} (quick = definitions, irac = structured reasoning, hypo = problem scenarios)
+- Quiz Type: ${sessionContext.quizType}
+
+${sessionContext.groundingData ? `GROUNDING DATA (USE THIS FOR QUESTIONS):
+${sessionContext.groundingData}
+
+IMPORTANT: Only quiz on content from the grounding data above. Do not hallucinate cases or statutes not present.` : 'No specific grounding data loaded. Use general English Law principles.'}
+`
+      : 'No session context loaded yet.';
+
+    return `
 You are Durmah in QUIZ ME mode for Durham University Law students.
 You are conducting a spoken quiz session to test the student's legal reasoning and articulation skills.
+
+${contextInfo}
 
 MODE: Real-time voice conversation (speak concisely, listen actively)
 
 CORE RULES:
-1. Stay focused on testing legal knowledge and reasoning
+1. Quiz ONLY on the topic/lecture specified above
 2. Ask one question at a time, wait for the student's answer
 3. After the student responds, give brief feedback and ask a follow-up
 4. Keep responses short (1-2 sentences) for natural voice conversation
-5. If the student goes off-topic, gently redirect: "Let's focus on the legal principle..."
-6. Use IRAC structure when evaluating answers (Issue, Rule, Application, Conclusion)
+5. If the student goes off-topic, redirect: "Let's stay focused on ${sessionContext?.targetTitle || 'your selected topic'}..."
+6. Use IRAC structure when evaluating answers
 
 VOICE STYLE:
 - Speak like a supportive but rigorous law tutor
 - Be encouraging but also challenge weak reasoning
 - Use clear, articulate language suitable for legal education
 
-GROUNDING:
-- If you don't have specific Durham content, use general English Law principles
-- Be transparent: "Based on general legal principles..." when not grounded
-
-START: Greet the student warmly and ask what legal topic they'd like to quiz on today.
-  `.trim(), []);
+START: Greet the student and immediately start quizzing them on ${sessionContext?.targetTitle || 'the selected topic'}.
+    `.trim();
+  }, [sessionContext]);
 
   // OpenAI Realtime Voice Hook (NOT Gemini)
   const {
