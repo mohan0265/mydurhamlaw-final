@@ -452,7 +452,8 @@ START: Greet the student warmly and ask what legal topic they'd like to quiz on 
                     <div className="w-1.5 h-1.5 rounded-full bg-purple-600 shadow-[0_0_8px_rgba(147,51,234,0.5)]" />
                     Strict Grounding
                   </div>
-                  {isVoiceActive && <div className="text-purple-600">Voice-to-Text Enabled</div>}
+                  {isListening && <div className="text-red-500 flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-ping" />Voice Active</div>}
+                  {speaking && <div className="text-green-600 flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />Durmah Speaking</div>}
                </div>
                <div className="text-[10px] font-bold text-gray-300 uppercase tracking-widest">
                   IRAC Rubric Active
