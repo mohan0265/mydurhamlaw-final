@@ -60,9 +60,10 @@ const GoogleSignInButton = ({ agree, displayName, yearGroup, plan }: GoogleSignI
         yg: yearGroup,
         dn: displayName.trim(),
         at: true,
-        src: 'signup'
+        src: 'signup',
+        role: 'student' // Explicit role for gating
       }))
-      const redirectUrl = `${baseRedirectUrl}?signup_data=${metadataParam}`
+      const redirectUrl = `${baseRedirectUrl}?role=student&signup_data=${metadataParam}`
 
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',

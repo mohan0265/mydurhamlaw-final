@@ -27,7 +27,7 @@ export default function LovedOneLoginPage() {
     }
 
     try {
-      const redirectTo = `${window.location.origin}/auth/callback`;
+      const redirectTo = `${window.location.origin}/auth/callback?role=lovedone`;
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {

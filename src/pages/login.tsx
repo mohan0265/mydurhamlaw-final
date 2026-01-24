@@ -55,10 +55,10 @@ export default function LoginPage() {
         return;
       }
 
-      // FIXED: Use proper callback URL that matches your existing callback.tsx
-      const redirectTo = `${window.location.origin}/auth/callback`;
+      // FIXED: Use proper callback URL with role gating
+      const redirectTo = `${window.location.origin}/auth/callback?role=student`;
       
-      console.log('🔄 Initiating Google OAuth with redirect:', redirectTo);
+      console.log('🔄 Initiating Google OAuth (Student) with redirect:', redirectTo);
       
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
