@@ -1,9 +1,13 @@
 export type DurmahVoiceId =
   | "warm_female"
   | "calm_male"
-  | "empathetic_female"
+  | "empathetic_ally"
   | "witty_buddy"
-  | "intense_coach";
+  | "intense_coach"
+  | "wise_sage"
+  | "vibrant_senior"
+  | "sophisticated_guide"
+  | "quick_peer";
 
 export interface DurmahVoicePreset {
   id: DurmahVoiceId;
@@ -47,43 +51,95 @@ export const DURMAH_VOICE_PRESETS: DurmahVoicePreset[] = [
       "Let's stick to the facts and build a solid argument. What topic are we analysing right now?"
   },
   {
-    id: "empathetic_female",
-    openaiVoice: "echo", 
-    geminiVoice: "Aoede", // Expressive, confident female
-    label: "Empathetic Friend",
-    subtitle: "Emotionally responsive and understanding.",
-    colorClass: "from-teal-400 to-cyan-500",
+    id: "empathetic_ally",
+    openaiVoice: "coral", 
+    geminiVoice: "Aoede", // Expressive female
+    label: "Empathetic Ally",
+    subtitle: "Understanding and deeply supportive.",
+    colorClass: "from-pink-400/80 to-rose-500/80",
     icon: "feather",
     previewText:
-      "Hi! I'm here to be a real friend in your studies. I understand law school is stressful, but we've got this.",
+      "I know the pressure is high, but you're doing amazing. I'm here to listen and help you through the tough spots.",
     welcomeMessage:
-      "Hey! How are you actually feeling about your workload? I'm here to chat, vent, or study — whatever you need."
+      "Hey. Just checking in. Remember, you're not alone in this journey. What's on your mind?"
   },
   {
     id: "witty_buddy",
     openaiVoice: "verse", 
-    geminiVoice: "Puck", // Playful, witty
+    geminiVoice: "Puck", 
     label: "Witty Study Buddy",
-    subtitle: "Humorous, light-hearted, and fun.",
+    subtitle: "Humorous and high-energy.",
     colorClass: "from-orange-400 to-amber-500",
+    icon: "smile",
+    previewText:
+      "Ready to crush some torts? I promise to keep things interesting and maybe crack a bad joke or two.",
+    welcomeMessage:
+      "Ready to roll? Let's make this study session bearable. What's the damage for today?"
+  },
+  {
+    id: "wise_sage",
+    openaiVoice: "sage", 
+    geminiVoice: "Kore",
+    label: "Wise Professor",
+    subtitle: "Measured, experienced, and guiding.",
+    colorClass: "from-emerald-500 to-teal-600",
+    icon: "owl",
+    previewText:
+      "Knowledge is a journey, not a race. Let us examine the principles with a clear and focused mind.",
+    welcomeMessage:
+      "Greetings. I am here to help you synthesize these complex concepts. Where shall we begin our analysis?"
+  },
+  {
+    id: "vibrant_senior",
+    openaiVoice: "shimmer", 
+    geminiVoice: "Aoede",
+    label: "Vibrant Senior",
+    subtitle: "Motivating, bright, and encouraging.",
+    colorClass: "from-yellow-400 to-orange-500",
     icon: "spark",
     previewText:
-      "Hey! Ready to crush some torts? I promise to keep things interesting and maybe crack a bad joke or two.",
+      "You've totally got this! Law is tough, but you're tougher. Let's power through this together!",
     welcomeMessage:
-      "Ready to roll? Let's make this study session actually bearable. What's the damage for today?"
+      "Hey! Ready to smash this? I'm feeling great about your progress today. What are we tackling?"
+  },
+  {
+    id: "sophisticated_guide",
+    openaiVoice: "ballad", 
+    geminiVoice: "Charon",
+    label: "Sophisticated Guide",
+    subtitle: "Elegant, precise, and professional.",
+    colorClass: "from-slate-700 to-slate-900",
+    icon: "mentor",
+    previewText:
+      "Precision in language is the hallmark of a great lawyer. Allow me to assist you in refining your understanding.",
+    welcomeMessage:
+      "Good day. Let us approach this topic with the professional rigor it demands. What is our focus?"
+  },
+  {
+    id: "quick_peer",
+    openaiVoice: "ash", 
+    geminiVoice: "Fenrir",
+    label: "Quick-Witted Peer",
+    subtitle: "Direct, fast-paced, and sharp.",
+    colorClass: "from-blue-600 to-indigo-700",
+    icon: "smile",
+    previewText:
+      "Let's get straight to the point. No fluff, just the core facts and key arguments you need to win.",
+    welcomeMessage:
+      "Yo! Let's hit it. What's the core issue we're breaking down right now? I'm ready when you are."
   },
   {
     id: "intense_coach",
-    openaiVoice: "coral", 
-    geminiVoice: "Fenrir", // Intense, deep male
+    openaiVoice: "echo", 
+    geminiVoice: "Fenrir",
     label: "Intense Coach",
-    subtitle: "High-energy focus and motivation.",
-    colorClass: "from-red-500 to-rose-600",
+    subtitle: "Demanding high-performance and focus.",
+    colorClass: "from-red-600 to-rose-700",
     icon: "spark",
     previewText:
-      "Let's go! Focus time. I'm here to push you to your best performance. No excuses.",
+      "Focus. Eyes on the prize. We are here to achieve mastery. No distractions allowed. Give me 100%.",
     welcomeMessage:
-      "Eyes on the prize. We have goals to hit. What is the single most important task right now?"
+      "Time to work. No excuses. We have goals to hit. What is the single most important task right now?"
   }
 ];
 
