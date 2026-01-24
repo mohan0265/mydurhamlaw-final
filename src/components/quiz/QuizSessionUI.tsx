@@ -327,12 +327,15 @@ START: Greet the student and immediately start quizzing them on ${sessionContext
   const chatContainerRef = useRef<HTMLDivElement>(null);
   
   useEffect(() => {
-    // Always scroll to bottom when messages change (for voice sessions especially)
-    // Small delay to ensure DOM has updated
-    const timer = setTimeout(() => {
-      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, 100);
-    return () => clearTimeout(timer);
+    if (!chatContainerRef.current) return;
+    
+    const container = chatContainerRef.current;
+    // Check if user is near bottom (within 150px)
+    const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 150;
+    
+    if (isNearBottom) {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'auto' });
+    }
   }, [messages]);
 
   const handleSendMessage = async (e?: React.FormEvent) => {
@@ -450,7 +453,7 @@ START: Greet the student and immediately start quizzing them on ${sessionContext
   };
 
   return (
-    <div className="flex-1 flex h-screen max-h-screen overflow-hidden bg-white">
+    <div className="flex-1 flex h-[calc(100vh-72px)] md:h-[calc(100vh-110px)] overflow-hidden bg-white">
       {/* Hidden audio element for OpenAI Realtime voice playback */}
       <audio ref={audioRef} autoPlay />
       

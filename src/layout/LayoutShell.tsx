@@ -17,14 +17,7 @@ export default function LayoutShell({ children }: Props) {
   const router = useRouter()
   const { user } = useAuth() || { user: null }
 
-  // Only the home page is full-bleed; everything else is constrained
-  const fullBleedPrefixes = ['/']
-
-  const isFullBleed = fullBleedPrefixes.some(
-    (p) => router.pathname === p || router.pathname.startsWith(p + '/')
-  )
-
-  const isAuthPage = ['/login', '/signup', '/auth/redirect'].includes(router.pathname);
+  const isFullScreenPage = router.pathname.startsWith('/quiz/') || router.pathname.startsWith('/assignments/')
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-white to-gray-50">
@@ -40,8 +33,8 @@ export default function LayoutShell({ children }: Props) {
 
       {/* Calendar state available to all pages */}
       <CalendarProvider>
-        <main id="main-content" className="flex-1">
-          {isFullBleed ? (
+        <main id="main-content" className="flex-1 flex flex-col min-h-0">
+          {isFullBleed || isFullScreenPage ? (
             children
           ) : (
             <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -51,10 +44,8 @@ export default function LayoutShell({ children }: Props) {
         </main>
       </CalendarProvider>
 
-
-
-      {/* Unified Footer */}
-      <AppFooter isAuthed={!!user} />
+      {/* Unified Footer - Hidden for full-screen tools like Quiz/Assignments */}
+      {!isFullScreenPage && <AppFooter isAuthed={!!user} />}
       
       {/* Global Floating Widgets - Show on all pages except auth pages */}
       {!isAuthPage && (
