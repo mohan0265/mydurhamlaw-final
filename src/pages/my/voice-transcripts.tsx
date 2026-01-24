@@ -742,8 +742,8 @@ export default withAuthProtection(function VoiceTranscriptsPage() {
                           <div className="flex items-center gap-2 mb-1">
                             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{formatDate(t.started_at || t.created_at)}</p>
                             {t.source_type === 'quiz' && (
-                              <div className="bg-purple-100 text-purple-600 p-1 rounded-md" title="Quiz Session">
-                                <Brain className="w-3 h-3" />
+                              <div className="bg-purple-100 p-0.5 rounded-md" title="Quiz Session">
+                                <img src="/assets/mascots/quiz-me-bunny-96.webp" alt="Quiz Me Bunny" className="w-5 h-5 object-contain" />
                               </div>
                             )}
                             {t.source_type === 'voice_chat' && (
