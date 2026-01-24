@@ -330,11 +330,11 @@ START: Greet the student and immediately start quizzing them on ${sessionContext
     if (!chatContainerRef.current) return;
     
     const container = chatContainerRef.current;
-    // Check if user is near bottom (within 150px)
-    const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 150;
+    // Check if user is near bottom (within 200px to be more permissive)
+    const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 200;
     
     if (isNearBottom) {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'auto' });
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }
   }, [messages]);
 
@@ -618,7 +618,11 @@ START: Greet the student and immediately start quizzing them on ${sessionContext
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto p-8 space-y-12 bg-[#FDFCFE] glb-scroll" ref={chatContainerRef}>
+        <main 
+          className="flex-1 overflow-y-auto p-8 space-y-12 bg-[#FDFCFE] glb-scroll" 
+          ref={chatContainerRef}
+          style={{ scrollBehavior: 'smooth' }}
+        >
           <div className="max-w-3xl mx-auto w-full">
             {messages.map((m) => (
               <div 

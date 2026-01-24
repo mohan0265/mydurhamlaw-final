@@ -1990,7 +1990,10 @@ User question: ${userText}`;
 
       {/* --------------- VOICE TRANSCRIPT (MODAL STYLE OVERLAY) ---------------- */}
       {showVoiceTranscript && !showSettings && (
-        <div className="flex-none p-4 bg-white border-b border-violet-200 z-[42] shadow-xl max-h-[50%] overflow-y-auto custom-scrollbar animate-in slide-in-from-top-4 duration-300">
+        <div 
+          className="flex-none p-4 bg-white border-b border-violet-200 z-[42] shadow-xl max-h-[50%] overflow-y-auto custom-scrollbar animate-in slide-in-from-top-4 duration-300"
+          style={{ scrollBehavior: 'smooth' }}
+        >
           <div className="text-xs font-black uppercase tracking-[0.2em] text-violet-600 mb-4 flex items-center justify-between sticky top-0 bg-white py-1">
             <div className="flex items-center gap-2">
               <span className={`w-2 h-2 rounded-full ${isVoiceActive ? 'bg-red-500 animate-pulse' : 'bg-gray-300'}`}></span>
