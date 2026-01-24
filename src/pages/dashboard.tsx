@@ -75,7 +75,7 @@ export default function Dashboard() {
            
            <div className="flex items-center gap-3">
               <div className="hidden sm:flex flex-col items-end mr-2">
-                 <span className="text-xs font-semibold text-gray-900">Pro Trial Active</span>
+                 <span className="text-xs font-semibold text-gray-900">Full Access Trial</span>
                  <span className="text-xs text-gray-500">14 days remaining</span>
               </div>
               <button onClick={() => router.push('/study/lectures')} className="inline-flex items-center gap-2 rounded-full bg-white border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 transition">

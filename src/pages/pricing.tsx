@@ -123,34 +123,35 @@ export default function PricingPage() {
 
       <div className="min-h-screen bg-white">
         {/* Hero Section */}
-        <div className="bg-gradient-to-br from-blue-50 to-purple-50 pt-8 pb-10">
+        <div className="bg-gradient-to-br from-indigo-50 to-white pt-16 pb-20 border-b border-gray-100">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              Choose Your Perfect Study Plan
+            <div className="inline-flex items-center gap-2 bg-indigo-600 text-white text-[11px] font-black px-4 py-1.5 rounded-full uppercase tracking-[0.2em] mb-8 shadow-lg shadow-indigo-200 animate-in fade-in slide-in-from-bottom-4 duration-700">
+               Everything Included
+            </div>
+            <h1 className="text-4xl md:text-6xl font-black text-gray-900 mb-6 tracking-tight">
+              One Plan. <span className="text-indigo-600">Full Access.</span>
             </h1>
-            <p className="text-lg text-gray-600 mb-6 max-w-3xl mx-auto">
-              Start with a free 14-day trial and discover how MyDurhamLaw can transform 
-              your legal education experience at Durham University.
+            <p className="text-xl md:text-2xl font-bold text-gray-600 mb-8 max-w-3xl mx-auto leading-relaxed">
+              Your tutor-like Durham Law companion — on standby 24/7.
             </p>
-            <div className="flex items-center justify-center gap-4 text-xs text-gray-600">
-              <div className="flex items-center gap-2">
-                <CheckCircle className="w-3.5 h-3.5 text-green-500" />
-                <span>14-day free trial</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle className="w-3.5 h-3.5 text-green-500" />
-                <span>No credit card required</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle className="w-3.5 h-3.5 text-green-500" />
-                <span>Cancel anytime</span>
-              </div>
+            <p className="text-lg text-gray-500 mb-10 max-w-2xl mx-auto">
+               Study smarter with voice + text support, year planning (YAAG), deadlines, assignments and exam practice — built for Durham Law students.
+            </p>
+            
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
+               <button 
+                 onClick={() => window.location.href='/signup'}
+                 className="w-full sm:w-auto bg-gray-900 text-white font-black py-4 px-10 rounded-2xl text-lg hover:bg-black transition-all shadow-xl shadow-gray-200"
+               >
+                 Start Free Trial
+               </button>
+               <Link href="#fair-use" className="text-indigo-600 font-bold hover:underline">
+                 See Fair-Use Promise
+               </Link>
             </div>
-            {/* Parent Payment Badge */}
-            <div className="mt-4 inline-flex items-center gap-2 bg-pink-50 border border-pink-200 text-pink-700 px-4 py-2 rounded-full text-xs font-medium">
-              <span>💳</span>
-              <span>Don't have a card? Your parent can pay for you!</span>
-            </div>
+            <p className="mt-6 text-[12px] font-bold text-gray-400 uppercase tracking-widest">
+              14 days full access. Cancel anytime.
+            </p>
           </div>
         </div>
 
@@ -164,42 +165,68 @@ export default function PricingPage() {
           </div>
         </div>
 
-        {/* Features Section */}
-        <div className="py-10 bg-gray-50">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-10">
-              <h2 className="text-2xl font-bold text-gray-900 mb-3">
-                Everything You Need to Succeed
-              </h2>
-              <p className="text-lg text-gray-600 max-w-3xl mx-auto">
-                MyDurhamLaw combines cutting-edge AI technology with thoughtful design 
-                to support every aspect of your legal education journey.
-              </p>
-            </div>
+        {/* Fair-Use & Trial Explanation */}
+        <div id="fair-use" className="py-20 bg-gray-50 border-y border-gray-100">
+           <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+                 {/* Fair Use Promise */}
+                 <div className="bg-white rounded-3xl p-8 border border-gray-200 shadow-sm flex flex-col">
+                    <div className="w-12 h-12 bg-indigo-100 rounded-2xl flex items-center justify-center mb-6 text-indigo-600">
+                       <Shield className="w-6 h-6" />
+                    </div>
+                    <h2 className="text-2xl font-black text-gray-900 mb-4 tracking-tight">Our Fair-Use Promise</h2>
+                    <p className="text-[10px] font-black text-indigo-500 uppercase tracking-widest mb-4">Protecting Performance for Everyone</p>
+                    <div className="space-y-4 text-gray-600 leading-relaxed text-sm flex-1">
+                       <p>We treat all students equally — Full Access unlocks the same features for everyone.</p>
+                       <p>To keep the service fast, stable, and affordable, we apply fair-use on high-cost resources like realtime voice. Normal study use is always fine.</p>
+                       <p className="bg-indigo-50 p-4 rounded-xl border border-indigo-100 font-medium italic">
+                          If someone uses voice for hours every day (like a call-centre), we’ll gently prompt them to add Voice Boost so performance stays great for everyone.
+                       </p>
+                    </div>
+                    <div className="mt-8 pt-6 border-t border-gray-100">
+                       <Link href="/legal/voice-efficiency-tips" className="text-indigo-600 font-bold text-sm hover:underline flex items-center gap-1">
+                          See Voice Boost options & efficiency tips <ArrowRight className="w-4 h-4" />
+                       </Link>
+                    </div>
+                 </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {features.map((feature, index) => {
-                const Icon = feature.icon;
-                return (
-                  <Link key={index} href={feature.link}>
-                    <Card className="p-6 text-center hover:shadow-lg transition-all hover:border-blue-300 group cursor-pointer h-full">
-                      <Icon className="w-12 h-12 text-blue-600 mx-auto mb-4 group-hover:scale-110 transition-transform" />
-                      <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                        {feature.title}
-                      </h3>
-                      <p className="text-gray-600 mb-4">
-                        {feature.description}
-                      </p>
-                      <div className="mt-auto text-blue-600 font-medium text-sm flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        Learn more <ArrowRight className="w-4 h-4" />
-                      </div>
-                    </Card>
-                  </Link>
-                );
-              })}
-            </div>
-          </div>
+                 {/* Trial Explanation */}
+                 <div className="bg-white rounded-3xl p-8 border border-gray-200 shadow-sm flex flex-col">
+                    <div className="w-12 h-12 bg-green-100 rounded-2xl flex items-center justify-center mb-6 text-green-600">
+                       <Star className="w-6 h-6" />
+                    </div>
+                    <h2 className="text-2xl font-black text-gray-900 mb-4 tracking-tight">What&apos;s included in the Free Trial?</h2>
+                    <p className="text-[10px] font-black text-green-600 uppercase tracking-widest mb-4">Experience the Real Workflow</p>
+                    <div className="space-y-4 text-gray-600 leading-relaxed text-sm flex-1">
+                       <p>Your 14-day trial includes <strong>Full Access</strong> so you can experience the real Durham study workflow.</p>
+                       <p>Voice and uploads are generous during trial, with fair-use protections to prevent abuse and keep the platform smooth for everyone.</p>
+                       <ul className="space-y-2 pt-4">
+                          {[
+                             "Full Year-at-a-Glance access",
+                             "Unlimited Text study chat",
+                             "Voice coaching sessions",
+                             "All lecture & assignment tools"
+                          ].map(b => (
+                             <li key={b} className="flex items-center gap-2">
+                                <CheckCircle className="w-4 h-4 text-green-500" />
+                                <span className="font-bold text-gray-700">{b}</span>
+                             </li>
+                          ))}
+                       </ul>
+                    </div>
+                    <button 
+                       onClick={() => window.location.href='/signup'}
+                       className="mt-8 w-full py-4 bg-gray-900 text-white rounded-2xl font-black text-sm hover:bg-black transition-all"
+                    >
+                       Start your 14-day trial
+                    </button>
+                 </div>
+              </div>
+           </div>
         </div>
+
+        {/* Community & Trust (repositioned/updated) */}
+        <div className="py-20">
 
         {/* Upcoming Reviews & Integrity */}
         <div className="py-10">

@@ -82,7 +82,7 @@ export default function RedeemPage() {
                          </div>
                          <h1 className="text-2xl font-bold text-gray-900 mb-2">Invite Accepted!</h1>
                          <p className="text-gray-600 mb-8">
-                             Your <strong>14-day Pro Trial</strong> has been activated. Welcome to the full MyDurhamLaw experience.
+                             Your <strong>14-day Full Access Trial</strong> has been activated. Welcome to the full MyDurhamLaw experience.
                          </p>
                          <Link href="/dashboard" className="inline-flex items-center justify-center w-full py-3 px-6 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl transition-all">
                              Go to Dashboard <ArrowRight className="ml-2 w-4 h-4"/>

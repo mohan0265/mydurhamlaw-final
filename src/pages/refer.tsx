@@ -132,7 +132,7 @@ export default function ReferPage() {
             <main className="max-w-4xl mx-auto py-12 px-4 sm:px-6">
                 <div className="mb-10 text-center">
                     <h1 className="text-3xl font-bold text-gray-900">Invite Friends & Unlock Rewards</h1>
-                    <p className="mt-2 text-lg text-gray-600">Give your friends a <strong>14-day Pro Trial</strong>. Build your study circle.</p>
+                    <p className="mt-2 text-lg text-gray-600">Give your friends a <strong>14-day Full Access Trial</strong>. Build your study circle.</p>
                 </div>
 
                 {/* INVITE CARD */}

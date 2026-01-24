@@ -40,13 +40,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     
     // Map plan keys to Environment Variables
     const priceMap: Record<string, string | undefined> = {
+       'full_access_monthly': process.env.STRIPE_PRICE_FULL_ACCESS_MONTHLY || process.env.STRIPE_PRICE_PRO_MONTHLY,
+       'full_access_annual': process.env.STRIPE_PRICE_FULL_ACCESS_ANNUAL || process.env.STRIPE_PRICE_PRO_ANNUAL,
        'core_monthly': process.env.STRIPE_PRICE_CORE_MONTHLY,
        'core_annual': process.env.STRIPE_PRICE_CORE_ANNUAL,
        'pro_monthly': process.env.STRIPE_PRICE_PRO_MONTHLY,
        'pro_annual': process.env.STRIPE_PRICE_PRO_ANNUAL,
-       // Legacy fallback
-       'monthly': process.env.STRIPE_PRICE_MONTHLY, 
-       'annual': process.env.STRIPE_PRICE_ANNUAL
+       // Legacy aliases for continuity
+       'monthly': process.env.STRIPE_PRICE_PRO_MONTHLY || process.env.STRIPE_PRICE_MONTHLY, 
+       'annual': process.env.STRIPE_PRICE_PRO_ANNUAL || process.env.STRIPE_PRICE_ANNUAL
     };
 
     const priceId = plan ? priceMap[plan] : undefined;

@@ -755,18 +755,54 @@ return (
         </div>
       </section>
 
+      {/* FAQ Section (Add new FAQ here or replace existing) */}
+      <section id="faq" className="py-20 bg-gray-50 border-t border-gray-100">
+         <div className="max-w-4xl mx-auto px-6">
+            <h2 className="text-3xl font-black text-gray-900 mb-12 text-center tracking-tight">Common Questions</h2>
+            <div className="grid gap-8">
+               {[
+                  {
+                    q: "Is MyDurhamLaw part of Durham University?",
+                    a: "No. MyDurhamLaw is an independent educational technology platform. It is not affiliated with or endorsed by Durham University. We provide expert AI-powered assistance designed to support Durham Law students in building real legal skills."
+                  },
+                  {
+                    q: "What is the One Plan?",
+                    a: "We believe in treating all students equally. Unlike other tools with complex tiers, we offer one 'Full Access' plan. Every subscriber gets the same high-quality voice coaching, ethical assignment planning, and legal news updates."
+                  },
+                  {
+                    q: "How does the 14-day trial work?",
+                    a: "Your trial includes Full Access so you can experience the real workflow. After 14 days, Full Access is £24.99/month (or save up to 33% with an annual plan). You can cancel anytime during or after the trial."
+                  },
+                  {
+                    q: "What is Durmah Voice?",
+                    a: "It's your 24/7 tutor-like companion. Use it for seminar rehearsals, viva-style practice, or rapid clarification of complex principles. We apply a 'fair-use' promise to keep it high-performance for everyone."
+                  },
+                  {
+                    q: "Will this do my assignments for me?",
+                    a: "Absolutely not. We are an integrity-first platform. Durmah helps you plan, structure, and understand the Law, but you always do the final writing. It's a support tool, not a shortcut."
+                  }
+               ].map((item, i) => (
+                  <div key={i} className="bg-white p-6 rounded-2xl border border-gray-200">
+                     <h3 className="text-lg font-bold text-gray-900 mb-3">{item.q}</h3>
+                     <p className="text-gray-600 leading-relaxed text-sm">{item.a}</p>
+                  </div>
+               ))}
+            </div>
+         </div>
+      </section>
+
       {/* 5) CTA Footer */}
       <section className="py-24 bg-gray-900 text-center relative overflow-hidden">
          <div className="absolute inset-0 bg-[url('/assets/images/hero-supreme-court-uk.webp')] opacity-10 bg-cover bg-center"></div>
-         <div className="relative z-10 max-w-3xl mx-auto px-6">
-            <h2 className="text-3xl sm:text-5xl font-bold text-white mb-6 tracking-tight">Ready to feel confident?</h2>
-            <p className="text-xl text-gray-400 mb-10">Join students from every Durham college.</p>
+         <div className="relative z-10 max-w-3xl mx-auto px-6 text-white text-balance">
+            <h2 className="text-3xl sm:text-5xl font-black mb-6 tracking-tight">Ready to build real legal confidence?</h2>
+            <p className="text-xl text-gray-400 mb-10">One plan. Everything included. Fair-use keeps it affordable for everyone.</p>
             <div className="mt-4 text-center">
-               <div className="text-sm font-semibold text-white/90">£24.99 / month • £199 / year (save ~33%)</div>
-               <div className="mt-1 text-xs text-white/70">14-day trial • cancel anytime • no commitment</div>
+               <div className="text-sm font-bold text-white/90">Start free. Full Access is £24.99/month after your trial.</div>
+               <div className="mt-1 text-xs text-white/50 uppercase tracking-widest font-bold">14-day trial • cancel anytime • no commitment</div>
             </div>
             <Link href="/signup">
-               <button className="mt-6 bg-white text-purple-950 font-bold py-4 px-12 rounded-full text-lg shadow-2xl hover:shadow-white/20 hover:scale-105 transition-all transform">
+               <button className="mt-8 bg-white text-indigo-950 font-black py-4 px-12 rounded-2xl text-lg shadow-2xl hover:scale-105 transition-all transform">
                   Start your 14-day trial
                </button>
             </Link>
