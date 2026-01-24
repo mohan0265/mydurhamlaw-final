@@ -102,14 +102,16 @@ export default function Dashboard() {
                   <h2 className="text-2xl md:text-3xl font-bold leading-tight">
                      {focusItem ? `Continue working on ${focusItem.title}` : "Start your Contract Law revision"}
                   </h2>
-                  <div className="text-indigo-100 text-base md:text-lg max-w-xl">
+                   <div className="text-indigo-100 text-base md:text-lg max-w-xl">
                      {focusItem ? (
                         <div className="flex flex-col gap-1">
                            <span>You have a deadline approaching.</span>
                            {focusItem.due_date && (
                               <div className="flex items-center gap-2 mt-1">
-                                 <span className="text-sm opacity-80">Time Remaining:</span>
-                                 <CountdownTimer dueDate={focusItem.due_date} style="banner" showSeconds={true} />
+                                 <Clock className="w-4 h-4 text-indigo-300" />
+                                 <span className="text-sm font-semibold">
+                                    Due in {Math.ceil((new Date(focusItem.due_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))} days
+                                 </span>
                               </div>
                            )}
                         </div>
@@ -246,8 +248,8 @@ export default function Dashboard() {
                  </div>
               </div>
 
-              {/* USP Spotlight Row */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+               {/* USP Spotlight Row */}
+               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                  {/* Lecturer Emphasis Feature */}
                  <div className="bg-gradient-to-br from-purple-50 to-white rounded-2xl border border-purple-100 p-5 shadow-sm hover:shadow-md transition cursor-pointer" onClick={() => router.push('/study/lectures')}>
                     <div className="flex items-start justify-between mb-3">
@@ -256,31 +258,47 @@ export default function Dashboard() {
                        </div>
                        <span className="bg-purple-600 text-white text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wide">New</span>
                     </div>
-                    <h4 className="font-bold text-gray-900 mb-1">Lecturer Emphasis</h4>
-                    <p className="text-xs text-gray-600 mb-3 line-clamp-2">
-                       We spotted 3 key concepts emphasized in your last lecture.
-                    </p>
+                     <h4 className="font-bold text-gray-900 mb-1">Lecturer Emphasis</h4>
+                     <p className="text-xs text-gray-600 mb-3 line-clamp-2">
+                        Key concepts emphasized in your recent lectures.
+                     </p>
                     <div className="text-xs font-semibold text-purple-700 flex items-center gap-1 group">
                        Review Signals <ArrowRight className="w-3 h-3 group-hover:translate-x-1 transition" />
                     </div>
                  </div>
 
-                 {/* Wellbeing Feature */}
-                 <div className="bg-gradient-to-br from-pink-50 to-white rounded-2xl border border-pink-100 p-5 shadow-sm hover:shadow-md transition cursor-pointer" onClick={() => router.push('/wellbeing')}>
+                  {/* Wellbeing Feature */}
+                  <div className="bg-gradient-to-br from-pink-50 to-white rounded-2xl border border-pink-100 p-5 shadow-sm hover:shadow-md transition cursor-pointer" onClick={() => router.push('/wellbeing')}>
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="p-2 bg-pink-100 rounded-lg text-pink-600">
+                           <Heart className="w-5 h-5" />
+                        </div>
+                     </div>
+                     <h4 className="font-bold text-gray-900 mb-1">Wellbeing Hub</h4>
+                     <p className="text-xs text-gray-600 mb-3">
+                        Daily check-in incomplete. Track your trends.
+                     </p>
+                     <div className="text-xs font-semibold text-pink-700 flex items-center gap-1 group">
+                        Check In <ArrowRight className="w-3 h-3 group-hover:translate-x-1 transition" />
+                     </div>
+                  </div>
+
+                  {/* Live Legal News reinforcement card */}
+                  <div className="bg-gradient-to-br from-red-50 to-white rounded-2xl border border-red-100 p-5 shadow-sm hover:shadow-md transition cursor-pointer md:col-span-2 lg:col-span-1" onClick={() => router.push('/legal/tools/legal-news-feed')}>
                      <div className="flex items-start justify-between mb-3">
-                       <div className="p-2 bg-pink-100 rounded-lg text-pink-600">
-                          <Heart className="w-5 h-5" />
-                       </div>
-                    </div>
-                    <h4 className="font-bold text-gray-900 mb-1">Wellbeing Hub</h4>
-                    <p className="text-xs text-gray-600 mb-3">
-                       Daily check-in incomplete. Track your trends.
-                    </p>
-                    <div className="text-xs font-semibold text-pink-700 flex items-center gap-1 group">
-                       Check In <ArrowRight className="w-3 h-3 group-hover:translate-x-1 transition" />
-                    </div>
-                 </div>
-              </div>
+                        <div className="p-2 bg-red-100 rounded-lg text-red-600">
+                           <TrendingUp className="w-5 h-5" />
+                        </div>
+                     </div>
+                     <h4 className="font-bold text-gray-900 mb-1">Live Legal News</h4>
+                     <p className="text-xs text-gray-600 mb-3">
+                        Key legal developments to help you connect doctrine with real-world cases.
+                     </p>
+                     <div className="text-xs font-semibold text-red-700 flex items-center gap-1 group">
+                        View Legal News <ArrowRight className="w-3 h-3 group-hover:translate-x-1 transition" />
+                     </div>
+                  </div>
+               </div>
            </div>
 
            {/* Right Col: Widgets */}

@@ -291,40 +291,44 @@ export default function GlobalHeader() {
 
             {/* Desktop nav */}
             <div className="hidden md:flex items-center gap-1">
-              <ActiveLink href={dashboardHref} className="font-semibold">{dashboardLabel}</ActiveLink>
-              <HoverMenu label={studyMenu.label} items={studyMenu.items} />
-              {communityMenu && <HoverMenu label={communityMenu.label} items={communityMenu.items} />}
-              <HoverMenu label={infoMenu.label} items={infoMenu.items} />
-              
-              {/* NEW: Prominent Live Legal News Link */}
-              {/* Live Legal News Menu */}
-              {/* Live Legal News Menu */}
-              <HoverMenu 
-                items={[
-                  { label: "🔴 Live Feed", href: "/legal/tools/legal-news-feed" },
-                  { label: "📂 My Archive", href: "/legal/tools/my-news-archive" }
-                ]}
-                trigger={
-                  <div className="px-3 py-2 rounded-md text-sm font-bold text-pink-200 hover:text-white transition-all flex items-center gap-1.5 animate-pulse hover:animate-none group">
-                    <span className="w-2 h-2 rounded-full bg-red-500 box-shadow-glow"></span>
-                    Live News!
-                  </div>
-                }
-              />
+              {user ? (
+                <>
+                  <ActiveLink href={dashboardHref} className="font-semibold">{dashboardLabel}</ActiveLink>
+                  <HoverMenu label={studyMenu.label} items={studyMenu.items} />
+                  {communityMenu && <HoverMenu label={communityMenu.label} items={communityMenu.items} />}
+                  <HoverMenu label={infoMenu.label} items={infoMenu.items} />
+                  
+                  <HoverMenu 
+                    items={[
+                      { label: "🔴 Live Feed", href: "/legal/tools/legal-news-feed" },
+                      { label: "📂 My Archive", href: "/legal/tools/my-news-archive" }
+                    ]}
+                    trigger={
+                      <div className="px-3 py-2 rounded-md text-sm font-bold text-pink-200 hover:text-white transition-all flex items-center gap-1.5 animate-pulse hover:animate-none group">
+                        <span className="w-2 h-2 rounded-full bg-red-500 box-shadow-glow"></span>
+                        Live News!
+                      </div>
+                    }
+                  />
+                </>
+              ) : (
+                <>
+                  <Link href="/#how-it-works" className="px-3 py-2 rounded-md text-sm font-medium text-white/90 hover:text-white">How It Works</Link>
+                  <Link href="/pricing" className="px-3 py-2 rounded-md text-sm font-medium text-white/90 hover:text-white">Pricing</Link>
+                  <Link href="/learn/academic-integrity" className="px-3 py-2 rounded-md text-sm font-medium text-white/90 hover:text-white">Academic Integrity</Link>
+                </>
+              )}
             </div>
 
 {/* Right (desktop) */}
             <div className="hidden md:flex items-center gap-3">
-              {/* PresenceBadge removed as per user request */}
               {user ? (
                 <>
                   <span className="text-white/90 text-sm">Hi, {displayName}</span>
-                  {/* Hide billing for loved ones */}
                   {!isLovedOne && (
                     <Link
                       href="/billing"
                       className="px-3 py-2 rounded-md text-sm font-semibold bg-white text-indigo-700 hover:bg-indigo-50 transition"
-                      title="Manage subscription & invoices"
                     >
                       Manage Billing
                     </Link>
@@ -333,15 +337,14 @@ export default function GlobalHeader() {
                 </>
               ) : (
                 <>
-                  <Link href="/pricing" className="text-white/90 hover:text-white text-sm">Pricing</Link>
-                  <Link href="/request-access" className="px-3 py-2 rounded-md text-sm font-semibold bg-white text-indigo-700 hover:bg-indigo-50 transition">
-                    Start Free Trial
-                  </Link>
                   <Link 
                     href="/login"
                     className="px-3 py-2 rounded-md text-sm font-medium text-white hover:bg-white/10 transition border border-white/30"
                   >
-                    Member Login
+                    Sign In
+                  </Link>
+                  <Link href="/signup" className="px-3 py-2 rounded-md text-sm font-semibold bg-white text-indigo-700 hover:bg-indigo-50 transition">
+                    Start Free
                   </Link>
                 </>
               )}

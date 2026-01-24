@@ -88,9 +88,9 @@ export default function RequestAccessPage() {
              <div className="mx-auto mb-4 w-14 h-14 bg-purple-100 rounded-xl flex items-center justify-center">
                <Brain className="w-8 h-8 text-purple-600" />
              </div>
-             <h1 className="text-2xl font-bold text-slate-900">Request Trial Access</h1>
-             <p className="text-slate-500 mt-2 text-sm">
-               For incoming students, alumni, or special foundation access.
+             <h1 className="text-2xl font-bold text-slate-900">Request Early Access</h1>
+             <p className="text-slate-500 mt-2 text-sm text-balance">
+               For non-Durham email users, foundation, alumni, or special academic access.
              </p>
           </div>
 

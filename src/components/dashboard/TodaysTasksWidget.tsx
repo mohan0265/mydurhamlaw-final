@@ -102,8 +102,9 @@ const TodaysTasksWidget = () => {
         {loading ? (
            <div className="flex justify-center p-4"><Loader2 className="animate-spin text-gray-400" /></div>
         ) : tasks.length === 0 ? (
-           <div className="text-center py-6 text-gray-400 text-sm">
-              No tasks yet. Click + to add one.
+           <div className="text-center py-6 px-4">
+              <p className="text-gray-500 text-sm font-medium mb-1">Tasks are optional.</p>
+              <p className="text-gray-400 text-xs">Use this space to track your own study goals. Tasks are not auto-generated.</p>
            </div>
         ) : (
           <ul className="space-y-3">

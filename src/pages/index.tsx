@@ -3,7 +3,11 @@ import Head from 'next/head'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter } from 'next/router'
-import { Brain, Heart, Calendar, Shield, CheckCircle, Target, ArrowRight, ChevronDown, ChevronLeft, ChevronRight, BookOpen } from 'lucide-react'
+import { 
+   Brain, Heart, Calendar, Shield, CheckCircle, Target, 
+   ArrowRight, ChevronDown, ChevronLeft, ChevronRight, 
+   BookOpen, TrendingUp, FileText 
+} from 'lucide-react'
 import { useAuth } from '@/lib/supabase/AuthContext'
 import { isRouteAbortError } from '@/lib/navigation/safeNavigate'
 
@@ -99,10 +103,10 @@ const FeatureCarousel = ({ images }: { images: { src: string, caption: string }[
 return (
     <>
       <Head>
-        <title>Durham Law Support & Study Help | MyDurhamLaw</title>
-        <meta name="description" content="24/7 Durham Law support and study assistance. Integrity-first AI platform for Durham University Law students. Get revision help, exam prep, and term-based guidance." />
-        <meta property="og:title" content="Durham Law Support & Study Help | MyDurhamLaw" />
-        <meta property="og:description" content="Durham Law support, 24/7. Integrity-first AI study assistant built specifically for Durham University Law students." />
+        <title>Learn Law. Write Law. Speak Law. | MyDurhamLaw</title>
+        <meta name="description" content="A complete Durham Law study system — from understanding doctrine, to writing with precision, to speaking with confidence, and staying connected to real-world legal developments." />
+        <meta property="og:title" content="Learn Law. Write Law. Speak Law. | MyDurhamLaw" />
+        <meta property="og:description" content="A complete Durham Law study system built specifically for Durham University Law students." />
         <meta property="og:image" content="https://mydurhamlaw.com/og/og-home.png?v=2" />
         <meta property="og:image:width" content="1200" />
         <meta property="og:image:height" content="630" />
@@ -131,14 +135,14 @@ return (
 
                 <h1 className="text-4xl sm:text-5xl lg:text-7xl font-extrabold mb-6 tracking-tight leading-[1.05] text-white">
                   Learn law. Write law. <br className="hidden sm:block" />
-                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-300 to-indigo-300">Speak law.</span>
+                  Speak law. <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-300 to-indigo-300 whitespace-nowrap">Stay current.</span>
                 </h1>
                 
                 <div className="mt-4 text-xl sm:text-2xl text-white/90 max-w-xl leading-relaxed font-light">
-                  Expert Durham Law support — we help you turn knowledge into real-world legal reasoning, out loud.
+                  A complete Durham Law study system — from understanding doctrine, to writing with precision, to speaking with confidence, and staying connected to real-world legal developments.
                 </div>
                 <div className="mt-4 text-sm text-white/60 font-medium tracking-wide uppercase">
-                  Durham-specific • Integrity-first • Quiz Me (Text & Voice)
+                  Durham-specific • Integrity-first • Professional Legal Awareness
                 </div>
                 
                 <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center lg:justify-start items-center">
@@ -198,12 +202,64 @@ return (
         </div>
       </div>
 
-      {/* 2) WIDGET GALLERY (Feature Grid) */}
-      <section id="features" className="py-20 bg-gradient-to-b from-white to-gray-50">
+      {/* 2) SKILL PILLARS SECTION */}
+      <section className="py-20 bg-white relative z-20 -mt-8 border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-6">
            <div className="text-center mb-16">
-              <h2 className="text-3xl font-bold text-gray-900 mb-4">Complete Durham Law revision support</h2>
-              <p className="text-lg text-gray-600 max-w-2xl mx-auto">Not just generic tools. A suite built specifically for the Durham University Law syllabus.</p>
+              <h2 className="text-3xl font-black text-gray-900 mb-4 tracking-tight">The Core Skills Every Law Student Must Build</h2>
+              <p className="text-lg text-gray-600 max-w-2xl mx-auto">Philosophy-led, tool-supported. Built specifically for the Durham University Law syllabus.</p>
+           </div>
+
+           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+              {[
+                {
+                  title: "Learn Law",
+                  desc: "Structured lectures, key principles, and lecturer emphasis — built around Durham’s Michaelmas → Epiphany → Easter terms.",
+                  link: "/learn",
+                  icon: <BookOpen className="w-6 h-6 text-purple-600" />
+                },
+                {
+                  title: "Write Law",
+                  desc: "Integrity-first assignment planning that helps students think, structure, and argue — without generating submissions.",
+                  link: "/assignments",
+                  icon: <FileText className="w-6 h-6 text-orange-600" />
+                },
+                {
+                  title: "Speak Law",
+                  desc: "Oral practice through guided questioning, quizzes, and viva-style revision to build legal confidence.",
+                  link: "/quiz",
+                  icon: <Brain className="w-6 h-6 text-indigo-600" />
+                },
+                {
+                  title: "Stay Current",
+                  desc: "Continuously updated curated legal news — helping students connect doctrine with the evolving common law.",
+                  link: "/legal/tools/legal-news-feed",
+                  icon: <TrendingUp className="w-6 h-6 text-red-600" />
+                }
+              ].map((pillar, i) => (
+                <Link key={pillar.title} href={pillar.link}>
+                  <div className="h-full rounded-[2rem] border border-gray-100 bg-white p-8 shadow-sm hover:shadow-xl hover:border-purple-200 transition-all duration-300 flex flex-col group">
+                    <div className="w-12 h-12 rounded-2xl bg-gray-50 flex items-center justify-center mb-6 group-hover:bg-purple-50 transition-colors">
+                      {pillar.icon}
+                    </div>
+                    <h3 className="text-xl font-bold text-gray-900 mb-3 group-hover:text-purple-700 transition-colors">{pillar.title}</h3>
+                    <p className="text-sm text-gray-500 leading-relaxed group-hover:text-gray-600 transition-colors">{pillar.desc}</p>
+                    <div className="mt-8 pt-6 border-t border-gray-50 flex items-center gap-2 text-sm font-bold text-purple-600">
+                      Explore {pillar.title} <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                    </div>
+                  </div>
+                </Link>
+              ))}
+           </div>
+        </div>
+      </section>
+
+      {/* 3) TOOL GALLERY (Visual Demotion) */}
+      <section id="features" className="py-20 bg-gray-50/50">
+        <div className="max-w-7xl mx-auto px-6">
+           <div className="text-center mb-12">
+              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 mb-2 block">Our Workbench</span>
+              <h2 className="text-2xl font-bold text-gray-700 mb-4">Complete Durham Law Study Tools</h2>
            </div>
 
            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
@@ -474,6 +530,68 @@ return (
                ))}
             </div>
          </div>
+      </section>
+
+      {/* 5) LIVE NEWS USP SECTION */}
+      <section className="py-24 bg-gray-900 text-white relative overflow-hidden">
+        <div className="absolute top-0 left-0 w-full h-full bg-[url('/assets/images/hero-supreme-court-uk.webp')] opacity-5 scale-110 grayscale" />
+        <div className="max-w-6xl mx-auto px-6 relative z-10">
+           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+              <div>
+                 <h2 className="text-3xl sm:text-4xl font-black mb-8 leading-tight tracking-tight">
+                    Why Law Students Must <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-400 to-pink-300">Stay Current</span>
+                 </h2>
+                 <p className="text-lg text-gray-300 leading-relaxed mb-8 font-light">
+                    Law does not evolve in isolation. Every new judgment, regulatory shift, and public controversy shapes the development of the common law.
+                 </p>
+                 <p className="text-lg text-gray-300 leading-relaxed mb-10 font-light">
+                    MyDurhamLaw includes a regularly refreshed legal news feed to help students build the habit of engaging with real-world legal developments — not just lecture notes and textbooks.
+                 </p>
+                 
+                 <div className="space-y-6">
+                    {[
+                       "Connect cases studied in class to real judgments and disputes",
+                       "Develop commercial and legal awareness early",
+                       "Build the habit expected of future practitioners"
+                    ].map((benefit, i) => (
+                       <div key={i} className="flex items-center gap-4">
+                          <div className="w-6 h-6 rounded-full bg-red-500/20 flex items-center justify-center text-red-500 shrink-0">
+                             <CheckCircle className="w-4 h-4" />
+                          </div>
+                          <span className="text-gray-200 font-medium">{benefit}</span>
+                       </div>
+                    ))}
+                 </div>
+
+                 <Link href="/legal/tools/legal-news-feed" className="inline-block mt-12">
+                   <button className="bg-red-600 hover:bg-red-700 text-white font-bold py-4 px-10 rounded-full transition-all shadow-xl shadow-red-600/10 flex items-center gap-2">
+                     Explore Live Legal News <ArrowRight className="w-5 h-5 child:mask-image" />
+                   </button>
+                 </Link>
+              </div>
+              
+              <div className="relative group">
+                 <div className="relative rounded-3xl border border-white/10 bg-white/5 p-3 shadow-2xl backdrop-blur-sm overflow-hidden">
+                    <div className="aspect-[16/10] bg-gray-800 rounded-2xl overflow-hidden relative">
+                       <Image 
+                          src="/images/dashboard.png" 
+                          alt="Live Legal News Feed" 
+                          fill 
+                          className="object-cover opacity-50 group-hover:scale-105 transition-transform duration-1000"
+                       />
+                       <div className="absolute inset-0 bg-gradient-to-t from-gray-900 to-transparent" />
+                       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center w-full px-8">
+                          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-600 mb-4 shadow-lg shadow-red-600/40">
+                             <TrendingUp className="w-8 h-8 text-white" />
+                          </div>
+                          <p className="text-white font-black text-xl tracking-tight mb-2">Continuously Updated</p>
+                          <p className="text-gray-400 text-sm">Professional legal awareness for future practitioners.</p>
+                       </div>
+                    </div>
+                 </div>
+              </div>
+           </div>
+        </div>
       </section>
 
       {/* 4) LECTURER EMPHASIS & INTEGRITY */}

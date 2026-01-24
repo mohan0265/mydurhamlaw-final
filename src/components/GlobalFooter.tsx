@@ -52,8 +52,8 @@ export default function GlobalFooter() {
       <div className="border-t bg-gray-50">
         <div className="mx-auto max-w-7xl px-4 py-6 text-xs text-gray-600">
           <p className="mb-2">
-            Important: MyDurhamLaw is not affiliated with Durham University. This platform provides
-            AI-powered academic assistance for educational enrichment only.
+            MyDurhamLaw is an independent educational technology platform designed to support Durham Law students. 
+            It is not affiliated with or endorsed by Durham University.
           </p>
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
             <span>© {year} MyDurhamLaw. All rights reserved.</span>
