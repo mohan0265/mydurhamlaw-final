@@ -52,27 +52,52 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(403).json({ error: 'Cannot delete non-test account. Safety check failed.' });
     }
 
-    // Delete AWY connections (both as student and loved one)
-    await adminClient
-      .from('awy_connections')
-      .delete()
-      .or(`student_user_id.eq.${userId},loved_user_id.eq.${userId}`);
+    // --- MISSION CRITICAL: PRE-DELETE DEEP CLEAN ---
+    // We explicitly wipe all public data for this user ID to ensure no FKs block auth deletion.
+    
+    // 1. Social & Presence
+    await adminClient.from('awy_connections').delete().or(`student_user_id.eq.${userId},loved_user_id.eq.${userId},student_id.eq.${userId},loved_one_id.eq.${userId}`);
+    await adminClient.from('awy_presence').delete().eq('user_id', userId);
+    await adminClient.from('awy_calls').delete().or(`student_id.eq.${userId},loved_one_id.eq.${userId}`);
 
-    // Delete profile
-    await adminClient
-      .from('profiles')
-      .delete()
-      .eq('id', userId); // Fix: Profiles table uses 'id' as PK
+    // 2. Academic Support (Durmah & Quizzes)
+    // Note: Most of these have CASCADE in migrations, but explicit deletion is safer for blocking FKs.
+    await adminClient.from('durmah_sessions').delete().eq('user_id', userId);
+    await adminClient.from('quiz_sessions').delete().eq('user_id', userId);
+    await adminClient.from('durmah_interest_events').delete().eq('user_id', userId);
+    await adminClient.from('durmah_nudges').delete().eq('user_id', userId);
+    await adminClient.from('durmah_user_memory').delete().eq('user_id', userId);
 
-    // Delete auth user
+    // 3. Assignments & Calendar
+    await adminClient.from('assignments').delete().eq('user_id', userId);
+    await adminClient.from('assignment_progress').delete().eq('user_id', userId);
+    await adminClient.from('exam_preparation').delete().eq('user_id', userId);
+    await adminClient.from('exam_signals').delete().eq('user_id', userId);
+    await adminClient.from('personal_items').delete().eq('user_id', userId);
+    await adminClient.from('timetable_events').delete().eq('user_id', userId);
+
+    // 4. History & Metadata
+    await adminClient.from('user_onboarding').delete().eq('user_id', userId);
+    await adminClient.from('memory_logs').delete().eq('user_id', userId);
+    await adminClient.from('memory_notes').delete().eq('user_id', userId);
+    await adminClient.from('ai_history').delete().eq('user_id', userId);
+    await adminClient.from('support_user_issue_summaries').delete().eq('user_id', userId);
+    await adminClient.from('lectures').delete().eq('user_id', userId);
+
+    // 5. Final Profile Delete
+    await adminClient.from('profiles').delete().eq('id', userId);
+
+    // FINAL: Delete auth user
     const { error: authDeleteError } = await adminClient.auth.admin.deleteUser(userId);
 
     if (authDeleteError) {
-      return res.status(400).json({ error: authDeleteError.message });
+      console.error('Final Auth Delete Error:', authDeleteError);
+      return res.status(400).json({ error: `User profile cleared, but Auth deletion failed: ${authDeleteError.message}. This usually happens if there are ancora references in non-standard schemas.` });
     }
 
     return res.status(200).json({ success: true, deletedUserId: userId });
   } catch (error: any) {
+    console.error('Delete handler crash:', error);
     return res.status(500).json({ error: error.message || 'Internal server error' });
   }
 }
