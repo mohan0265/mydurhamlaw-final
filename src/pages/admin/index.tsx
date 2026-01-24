@@ -2,7 +2,7 @@
 import { parse } from "cookie"
 import { createHmac } from "crypto"
 import { getSupabaseAdmin } from "@/lib/server/supabaseAdmin"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 
 type AdminRow = {
   id: string
@@ -153,39 +153,39 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
       .from('awy_connections')
       .select(`
         id,
-        student_id,
         student_user_id,
-        loved_one_id,
         loved_user_id,
         loved_email,
-        email,
         relationship,
         nickname,
         status,
-        created_at
+        created_at,
+        student:profiles!awy_connections_student_user_id_fkey(email, display_name),
+        loved:profiles!awy_connections_loved_user_id_fkey(email, display_name)
       `)
       .order('created_at', { ascending: false })
-      .limit(100)
+      .limit(200)
 
     if (conns && !connsError) {
       connections = conns.map((c: any) => {
-        // Use student_id or student_user_id
-        const studentId = c.student_id || c.student_user_id
-        const lovedId = c.loved_one_id || c.loved_user_id
+        const studentId = c.student_user_id || c.student_id;
+        const lovedId = c.loved_user_id || c.loved_one_id;
         
-        const studentEmail = users.find(u => u.id === studentId)?.email || '-'
-        const lovedEmail = c.loved_email || c.email || users.find(u => u.id === lovedId)?.email || '-'
+        // Ensure we find the email from either the join OR the profiles/users lists
+        const studentEmail = c.student?.email || users.find((u: any) => u.id === studentId)?.email || profilesWithNewFields.find((r: any) => r.id === studentId)?.email || '-';
+        const lovedEmail = c.loved_email || c.email || c.loved?.email || users.find((u: any) => u.id === lovedId)?.email || profilesWithNewFields.find((r: any) => r.id === lovedId)?.email || '-';
+        
         return {
           id: c.id,
-          studentId: studentId,
+          studentId,
           lovedOneId: lovedId,
           studentEmail,
           lovedEmail,
           relationship: c.nickname || c.relationship || '-',
           status: c.status || '-',
           createdAt: c.created_at || '-'
-        }
-      })
+        };
+      });
     }
   } catch (e: any) {
     errMsg = e?.message || "Failed to load auth users"
@@ -263,6 +263,11 @@ export default function AdminDashboard({ authorized, rows, users, connections, r
   const [showCreateLovedOne, setShowCreateLovedOne] = useState(false)
   const [activeTab, setActiveTab] = useState<'profiles' | 'requests'>('profiles')
   const [filter, setFilter] = useState<'all' | 'test' | 'real'>('all')
+  const [isMounted, setIsMounted] = useState(false)
+
+  useEffect(() => {
+    setIsMounted(true)
+  }, [])
   const [inviteResult, setInviteResult] = useState<any>(null)
   const [selectedStudent, setSelectedStudent] = useState<AdminRow | null>(null)
   // Date picker modal state
@@ -344,6 +349,17 @@ export default function AdminDashboard({ authorized, rows, users, connections, r
       alert(`Loved one created and linked!\n\nLogin Email: ${data.email}\nPassword: TestPass123!\n\nShare these credentials with the loved one.`)
       window.location.reload()
     }
+  }
+
+  const deleteInvitation = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this invitation?')) return;
+    const res = await fetch("/api/admin/delete-invitation", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: id.replace('invite_', '') })
+    })
+    if (res.ok) window.location.reload();
+    else alert("Failed to delete invitation");
   }
 
   const extendTrial = async (userId: string, days: number) => {
@@ -847,7 +863,7 @@ export default function AdminDashboard({ authorized, rows, users, connections, r
               </tr>
             </thead>
             <tbody>
-              {filteredRows.map((r, index) => {
+              {isMounted && filteredRows.map((r, index) => {
                 const daysLeft = getDaysLeft(r.trial_ends_at);
                 const isSelected = selectedIds.has(r.id);
                 
@@ -909,9 +925,11 @@ export default function AdminDashboard({ authorized, rows, users, connections, r
                          </div>
                        )}
                     </td>
-                    <td className="px-3 py-2">{r.trial_ends_at ? new Date(r.trial_ends_at).toLocaleDateString() : '-'}</td>
                     <td className="px-3 py-2">
-                      {daysLeft !== null ? (
+                      {isMounted && r.trial_ends_at ? new Date(r.trial_ends_at).toLocaleDateString() : '-'}
+                    </td>
+                    <td className="px-3 py-2">
+                      {isMounted && daysLeft !== null ? (
                         <span className={`px-2 py-0.5 rounded text-xs font-semibold ${
                           daysLeft > 7 ? 'bg-green-100 text-green-800' :
                           daysLeft >= 3 ? 'bg-yellow-100 text-yellow-800' :
@@ -1190,14 +1208,6 @@ export default function AdminDashboard({ authorized, rows, users, connections, r
                 <option value="friend">Friend</option>
               </select>
               <input name="nickname" placeholder="Nickname (e.g., Mum, Dad)" className="w-full border rounded px-3 py-2" />
-              <div className="flex items-center gap-2 px-1">
-                <input type="checkbox" name="isTest" id="isTestLO" defaultChecked className="rounded border-gray-300 text-purple-600 focus:ring-purple-500" />
-                <label htmlFor="isTestLO" className="text-sm font-medium text-slate-700">Mark as Test Account (Enable direct delete)</label>
-              </div>
-              <div className="flex items-center gap-2 px-1">
-                <input type="checkbox" name="isTest" id="isTestLO" defaultChecked className="rounded border-gray-300 text-purple-600 focus:ring-purple-500" />
-                <label htmlFor="isTestLO" className="text-sm font-medium text-slate-700">Mark as Test Account (Enable direct delete)</label>
-              </div>
               <div className="flex items-center gap-2 px-1">
                 <input type="checkbox" name="isTest" id="isTestLO" defaultChecked className="rounded border-gray-300 text-purple-600 focus:ring-purple-500" />
                 <label htmlFor="isTestLO" className="text-sm font-medium text-slate-700">Mark as Test Account (Enable direct delete)</label>

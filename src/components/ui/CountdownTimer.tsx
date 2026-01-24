@@ -9,13 +9,15 @@ interface CountdownTimerProps {
   showSeconds?: boolean;
   className?: string; // Additional classes for the container
   style?: 'minimal' | 'banner'; // Style variant
+  suppressTimer?: boolean; // If true, show simple days even if urgent
 }
 
 export default function CountdownTimer({ 
   dueDate, 
   showSeconds = false,
   className = "",
-  style = 'minimal'
+  style = 'minimal',
+  suppressTimer = false
 }: CountdownTimerProps) {
   const [timeLeft, setTimeLeft] = useState<{
     days: number;
@@ -62,12 +64,12 @@ export default function CountdownTimer({
     );
   }
 
-  // Not urgent: Show Days
-  if (!timeLeft.isUrgent) {
+  // Not urgent OR suppressed: Show Days
+  if (!timeLeft.isUrgent || suppressTimer) {
     return (
       <div className={`inline-flex items-center gap-1.5 font-bold ${className}`}>
         {style === 'banner' && <Clock size={16} className="opacity-80" />}
-        <span>{timeLeft.days} days left</span>
+        <span>{timeLeft.days} {timeLeft.days === 1 ? 'day' : 'days'} left</span>
       </div>
     );
   }

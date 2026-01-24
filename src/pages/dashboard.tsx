@@ -26,26 +26,56 @@ export default function Dashboard() {
   const { displayName } = useUserDisplayName();
   const [focusItem, setFocusItem] = useState<{title: string, type: string, link: string, due_date?: string} | null>(null);
   const [nextAssignment, setNextAssignment] = useState<any>(null);
+  const [upcomingAssignments, setUpcomingAssignments] = useState<any[]>([]);
   const [supportExpanded, setSupportExpanded] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
+  const [showAllDeadlines, setShowAllDeadlines] = useState(false);
+  const [showCountdown, setShowCountdown] = useState(false);
+  const [preferencesLoading, setPreferencesLoading] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   useEffect(() => {
     if (!loading && user) {
        fetch('/api/dashboard/overview').then(res => {
         if(res.ok) return res.json();
       }).then(data => {
+        if (data?.preferences) {
+          setShowCountdown(data.preferences.show_deadline_countdown);
+        }
         if(data?.upcomingAssignments?.length > 0) {
            const next = data.upcomingAssignments[0];
            setNextAssignment(next);
+           setUpcomingAssignments(data.upcomingAssignments);
            setFocusItem({
              title: next.title,
-             type: 'Assignment Due',
-             link: `/assignments?assignmentId=${next.id}`,
+             type: next.source === 'assignment' ? 'Assignment Due' : 'Deadline',
+             link: next.source === 'assignment' ? `/assignments?assignmentId=${next.id}` : '/year-at-a-glance',
              due_date: next.due_date // Pass due date for timer
            });
         }
       }).catch(err => console.error('Focus fetch error', err));
     }
   }, [user, loading]);
+
+  const toggleCountdownPreference = async () => {
+    const newValue = !showCountdown;
+    setShowCountdown(newValue);
+    setPreferencesLoading(true);
+    try {
+      await fetch('/api/user/update-preferences', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ show_deadline_countdown: newValue })
+      });
+    } catch (err) {
+      console.error('Failed to update preferences', err);
+    } finally {
+      setPreferencesLoading(false);
+    }
+  };
 
   if (loading) return <div className="min-h-screen flex items-center justify-center bg-gray-50 text-indigo-600 font-medium">Loading...</div>;
   if (!user) { router.replace('/login'); return null; }
@@ -106,19 +136,59 @@ export default function Dashboard() {
                      {focusItem ? (
                         <div className="flex flex-col gap-1">
                            <span>You have a deadline approaching.</span>
-                           {focusItem.due_date && (
-                              <div className="flex items-center gap-2 mt-1">
-                                 <Clock className="w-4 h-4 text-indigo-300" />
-                                 <span className="text-sm font-semibold">
-                                    Due in {Math.ceil((new Date(focusItem.due_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))} days
-                                 </span>
+                           {isMounted && focusItem.due_date && (
+                              <div className="flex items-center gap-4 mt-2">
+                                 <CountdownTimer 
+                                    dueDate={focusItem.due_date} 
+                                    style="banner" 
+                                    suppressTimer={!showCountdown}
+                                    className="text-white bg-white/20 px-4 py-2 rounded-xl backdrop-blur-md border border-white/20"
+                                 />
+                                 
+                                 <button 
+                                    onClick={toggleCountdownPreference}
+                                    disabled={preferencesLoading}
+                                    className="text-xs font-bold text-indigo-300 hover:text-white transition flex items-center gap-1.5 disabled:opacity-50"
+                                 >
+                                    <Clock className="w-3 h-3" />
+                                    {showCountdown ? "Hide Timer" : "Show Timer"}
+                                 </button>
                               </div>
+                           )}
+                           
+                           {/* 14-Day View Trigger */}
+                           {upcomingAssignments.length > 1 && (
+                              <button 
+                                 onClick={() => setShowAllDeadlines(!showAllDeadlines)}
+                                 className="mt-4 text-sm font-semibold text-indigo-300 hover:text-white transition flex items-center gap-1 w-fit border-b border-indigo-500/30 pb-0.5"
+                              >
+                                 {showAllDeadlines ? "Hide other deadlines" : `See ${upcomingAssignments.length - 1} more deadlines in next 14 days`}
+                                 <ArrowRight className={`w-3 h-3 transition-transform ${showAllDeadlines ? 'rotate-90' : ''}`} />
+                              </button>
                            )}
                         </div>
                      ) : (
                         "Based on your recent lectures, this is the highest-impact focus area."
                      )}
                   </div>
+
+                  {/* Expanded Deadlines List */}
+                  {showAllDeadlines && upcomingAssignments.length > 1 && (
+                     <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-3 animate-in fade-in slide-in-from-top-4 duration-300">
+                        {upcomingAssignments.slice(1).map((a, idx) => (
+                           <Link href={a.source === 'assignment' ? `/assignments?assignmentId=${a.id}` : '/year-at-a-glance'} key={a.id} className="bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl p-3 transition flex items-center justify-between group">
+                              <div className="flex flex-col">
+                                 <span className="text-xs font-bold text-indigo-200">{a.module_name || a.module_code || "Law Module"}</span>
+                                 <span className="text-sm font-semibold text-white truncate max-w-[150px]">{a.title}</span>
+                              </div>
+                              <div className="text-right flex flex-col items-end">
+                                 <span className="text-[10px] uppercase font-bold text-indigo-400">Due in</span>
+                                 <span className="text-xs font-bold text-white">{a.daysLeft}d</span>
+                              </div>
+                           </Link>
+                        ))}
+                     </div>
+                  )}
                </div>
               
               <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
@@ -128,7 +198,6 @@ export default function Dashboard() {
                  <button className="inline-flex items-center justify-center gap-2 rounded-xl bg-white/10 text-white font-semibold px-4 py-3.5 hover:bg-white/20 transition border border-white/10 backdrop-blur-sm whitespace-nowrap group">
                     <HelpCircle className="w-4 h-4 text-indigo-200" />
                     <span className="text-sm">Why this?</span>
-                    {/* Tooltip hint */}
                     <span className="absolute bottom-full mb-2 bg-black text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition whitespace-nowrap pointer-events-none">Highest impact / nearest due date</span>
                  </button>
               </div>

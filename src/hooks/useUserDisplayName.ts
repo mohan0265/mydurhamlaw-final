@@ -21,12 +21,11 @@ export const useUserDisplayName = () => {
           return
         }
 
-        // Try to get display name from user profile first
         const { data: userProfile } = await supabase
           .from('profiles')
           .select('display_name')
           .eq('id', user.id)
-          .single()
+          .maybeSingle()
 
         if (userProfile?.display_name) {
           setDisplayName(userProfile.display_name)
