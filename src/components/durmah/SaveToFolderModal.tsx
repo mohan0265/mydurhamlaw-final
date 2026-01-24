@@ -20,6 +20,7 @@ interface SaveToFolderModalProps {
   isSaving: boolean;
   title?: string;
   buttonText?: string;
+  initialFolderId?: string | null;
 }
 
 const FolderPickerItem = ({ 
@@ -79,7 +80,7 @@ const FolderPickerItem = ({
   );
 };
 
-export default function SaveToFolderModal({ isOpen, onClose, onSave, isSaving, title, buttonText }: SaveToFolderModalProps) {
+export default function SaveToFolderModal({ isOpen, onClose, onSave, isSaving, title, buttonText, initialFolderId }: SaveToFolderModalProps) {
   const [folders, setFolders] = useState<FolderNode[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null);
@@ -93,13 +94,18 @@ export default function SaveToFolderModal({ isOpen, onClose, onSave, isSaving, t
       const json = await resp.json();
       if (json.ok) {
         setFolders(json.tree);
-        // Default selection from localStorage or "Unsorted"
-        const lastId = localStorage.getItem('durmah:lastFolderId');
-        if (lastId) setSelectedFolderId(lastId);
-        else {
-           // Find "Unsorted" in root
-           const unsorted = json.tree.find((f: any) => f.name === 'Unsorted');
-           if (unsorted) setSelectedFolderId(unsorted.id);
+        // Priority selection: prop > localStorage > "Unsorted" fallback
+        if (initialFolderId) {
+          setSelectedFolderId(initialFolderId);
+          // Auto-expand parents if needed (simple check for now)
+          setExpandedIds(prev => new Set(prev).add(initialFolderId));
+        } else {
+          const lastId = localStorage.getItem('durmah:lastFolderId');
+          if (lastId) setSelectedFolderId(lastId);
+          else {
+             const unsorted = json.tree.find((f: any) => f.name === 'Unsorted');
+             if (unsorted) setSelectedFolderId(unsorted.id);
+          }
         }
       }
     } catch (err) {

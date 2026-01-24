@@ -59,6 +59,7 @@ export const QuizSessionUI: React.FC<QuizSessionUIProps> = ({ sessionId, userId,
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isFolderModalOpen, setIsFolderModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [quizFolderId, setQuizFolderId] = useState<string | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const supabase = getSupabaseClient();
@@ -127,6 +128,40 @@ export const QuizSessionUI: React.FC<QuizSessionUIProps> = ({ sessionId, userId,
 
     fetchSessionContext();
   }, [sessionId]);
+
+  // Ensure "Quiz Session" folder exists in student's library
+  useEffect(() => {
+    if (!userId) return;
+
+    const ensureQuizFolder = async () => {
+      try {
+        const resp = await fetch('/api/transcripts/folders/tree');
+        const json = await resp.json();
+        
+        if (json.ok) {
+          const quizFolder = json.tree.find((f: any) => f.name === 'Quiz Session');
+          if (quizFolder) {
+             setQuizFolderId(quizFolder.id);
+          } else {
+             // Create if not found
+             const createResp = await fetch('/api/transcripts/folders/create', {
+               method: 'POST',
+               headers: { 'Content-Type': 'application/json' },
+               body: JSON.stringify({ name: 'Quiz Session', parentId: null })
+             });
+             const createJson = await createResp.json();
+             if (createJson.ok) {
+               setQuizFolderId(createJson.folder.id);
+             }
+          }
+        }
+      } catch (err) {
+        console.error('Failed to ensure Quiz Session folder:', err);
+      }
+    };
+
+    ensureQuizFolder();
+  }, [userId]);
 
   // Quiz-specific guardrailed system prompt with dynamic context
   const quizSystemPrompt = useMemo(() => {
@@ -728,6 +763,7 @@ START: Greet the student and immediately start quizzing them on ${sessionContext
         onSave={handleSaveToFolder}
         isSaving={isSaving}
         title="Save Quiz Insights"
+        initialFolderId={quizFolderId}
       />
     </div>
   );
