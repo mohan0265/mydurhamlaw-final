@@ -230,7 +230,7 @@ START: Greet the student and immediately start quizzing them on ${sessionContext
       // Find and sort selected messages by timestamp
       const selectedMsgs = messages
         .filter(m => selectedIds.has(m.id))
-        .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+        .sort((a, b) => (a.ts || 0) - (b.ts || 0));
       
       if (selectedMsgs.length === 0) throw new Error("No messages selected");
 
@@ -241,12 +241,12 @@ START: Greet the student and immediately start quizzing them on ${sessionContext
         transcript: selectedMsgs.map(m => ({
             role: m.role === 'user' ? 'you' : 'durmah',
             text: m.content,
-            timestamp: new Date(m.created_at).getTime()
+            timestamp: m.ts || Date.now()
         })),
         content_text: selectedMsgs.map(m => `${m.role === 'user' ? 'you' : 'durmah'}: ${m.content}`).join('\n'),
         duration_seconds: 0,
-        started_at: selectedMsgs[0]?.created_at || new Date().toISOString(),
-        ended_at: selectedMsgs[selectedMsgs.length - 1]?.created_at || new Date().toISOString()
+        started_at: selectedMsgs[0]?.ts ? new Date(selectedMsgs[0].ts).toISOString() : new Date().toISOString(),
+        ended_at: selectedMsgs[selectedMsgs.length - 1]?.ts ? new Date(selectedMsgs[selectedMsgs.length - 1].ts).toISOString() : new Date().toISOString()
       };
 
       const resp = await fetch('/api/transcripts/save', {
