@@ -42,7 +42,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(500).json({ error: 'Server misconfigured' });
   }
 
-  const { email: inputIdentifier, displayName, yearGroup, password }: CreateTestStudentRequest = req.body;
+  const { email: inputIdentifier, displayName, yearGroup, password, isTest }: CreateTestStudentRequest = req.body;
 
   if (!inputIdentifier || !displayName || !yearGroup) {
     return res.status(400).json({ error: 'Missing required fields' });
@@ -61,7 +61,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       email_confirm: true,
       user_metadata: {
         display_name: actualDisplayName,
-        is_test_account: true,
+        is_test_account: isTest !== undefined ? isTest : true,
         original_identifier: inputIdentifier,
       },
     });
@@ -86,7 +86,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         user_role: 'student',
         year_group: yearGroup,
         year_of_study: yearGroup,
-        is_test_account: true,
+        is_test_account: isTest !== undefined ? isTest : true,
         trial_started_at: now.toISOString(),
         trial_ends_at: trialEnds.toISOString(),
         trial_ever_used: true,

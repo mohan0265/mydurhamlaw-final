@@ -42,6 +42,8 @@ export function useDurmahSettings() {
           setSpeed(data.speed || 1.0);
         }
       } catch (err: any) {
+        // Silently fail for known non-critical error codes (like table not created yet)
+        if (err.code === '42P01') return; 
         console.error('[DurmahSettings] Failed to fetch voice settings:', err);
       } finally {
         setLoading(false);

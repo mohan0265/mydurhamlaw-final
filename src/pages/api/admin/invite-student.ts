@@ -29,7 +29,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(500).json({ error: 'Server misconfigured' });
   }
 
-  const { email, displayName, yearGroup, trialDays = 14 } = req.body;
+  const { email, displayName, yearGroup, trialDays = 14, isTest } = req.body;
 
   if (!email || !displayName || !yearGroup) {
     return res.status(400).json({ error: 'Missing required fields' });
@@ -81,6 +81,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         invite_token: inviteToken,
         status: 'pending',
         trial_days: trialDays,
+        is_test_account: isTest !== undefined ? isTest : true,
         expires_at: expiresAt.toISOString(),
       })
       .select()

@@ -268,6 +268,7 @@ export default function AdminDashboard({ authorized, rows, users, connections, r
   // Date picker modal state
   const [editingTrialUser, setEditingTrialUser] = useState<{id: string, name: string, currentDate: string} | null>(null)
   const [newTrialDate, setNewTrialDate] = useState('')
+  const [searchQuery, setSearchQuery] = useState('')
 
   const onInviteStudent = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -277,10 +278,12 @@ export default function AdminDashboard({ authorized, rows, users, connections, r
     const yearGroup = (form.elements.namedItem("yearGroup") as HTMLSelectElement).value
     const trialDays = parseInt((form.elements.namedItem("trialDays") as HTMLInputElement).value) || 14
     
+    const isTest = (form.elements.namedItem("isTest") as HTMLInputElement)?.checked ?? true
+    
     const res = await fetch("/api/admin/invite-student", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, displayName, yearGroup, trialDays })
+      body: JSON.stringify({ email, displayName, yearGroup, trialDays, isTest })
     })
     
     if (!res.ok) {
@@ -299,11 +302,12 @@ export default function AdminDashboard({ authorized, rows, users, connections, r
     const displayName = (form.elements.namedItem("displayName") as HTMLInputElement).value
     const yearGroup = (form.elements.namedItem("yearGroup") as HTMLSelectElement).value
     const password = (form.elements.namedItem("password") as HTMLInputElement).value || undefined
+    const isTest = (form.elements.namedItem("isTest") as HTMLInputElement)?.checked ?? true
     
     const res = await fetch("/api/admin/create-test-student", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, displayName, yearGroup, password })
+      body: JSON.stringify({ email, displayName, yearGroup, password, isTest })
     })
     
     if (!res.ok) {
@@ -324,11 +328,12 @@ export default function AdminDashboard({ authorized, rows, users, connections, r
     const studentUserId = (form.elements.namedItem("studentUserId") as HTMLSelectElement).value
     const relationship = (form.elements.namedItem("relationship") as HTMLSelectElement).value
     const nickname = (form.elements.namedItem("nickname") as HTMLInputElement).value
+    const isTest = (form.elements.namedItem("isTest") as HTMLInputElement)?.checked ?? true
     
     const res = await fetch("/api/admin/create-test-loved-one", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, displayName, studentUserId, relationship, nickname })
+      body: JSON.stringify({ email, displayName, studentUserId, relationship, nickname, isTest })
     })
     
     if (!res.ok) {
@@ -601,12 +606,21 @@ export default function AdminDashboard({ authorized, rows, users, connections, r
   }
 
   const students = rows.filter(r => r.user_role === 'student')
-  const filteredRows = 
-    filter === 'all' 
-      ? rows 
-      : filter === 'test' 
-        ? rows.filter(r => r.is_test_account) 
-        : rows.filter(r => !r.is_test_account);
+  
+  // Filter by query and type
+  const filteredRows = rows.filter(r => {
+    // 1. Filter by Search Query (Email or Name)
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase()
+      const match = (r.email?.toLowerCase().includes(q)) || (r.display_name?.toLowerCase().includes(q))
+      if (!match) return false
+    }
+    
+    // 2. Filter by Type
+    if (filter === 'test') return r.is_test_account
+    if (filter === 'real') return !r.is_test_account
+    return true
+  })
 
   return (
     <div className="min-h-screen bg-slate-50 px-6 py-10">
@@ -783,11 +797,22 @@ export default function AdminDashboard({ authorized, rows, users, connections, r
         ) : (
           /* PROFILES CONTENT (Original) */
           <>
-        {/* Filter */}
-        <div className="mb-4 flex gap-2">
-          <button onClick={() => setFilter('all')} className={`px-3 py-1 rounded text-sm ${filter === 'all' ? 'bg-slate-800 text-white' : 'bg-slate-100'}`}>All</button>
-          <button onClick={() => setFilter('test')} className={`px-3 py-1 rounded text-sm ${filter === 'test' ? 'bg-slate-800 text-white' : 'bg-slate-100'}`}>Test Only</button>
-          <button onClick={() => setFilter('real')} className={`px-3 py-1 rounded text-sm ${filter === 'real' ? 'bg-slate-800 text-white' : 'bg-slate-100'}`}>Real Only</button>
+        {/* Filter & Search */}
+        <div className="mb-6 flex flex-col md:flex-row gap-4 items-center">
+          <div className="relative flex-1 w-full">
+            <input 
+              type="text"
+              placeholder="Search by email or name..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-4 pr-4 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 outline-none transition-all"
+            />
+          </div>
+          <div className="flex gap-2 bg-slate-100 p-1 rounded-lg">
+            <button onClick={() => setFilter('all')} className={`px-4 py-1.5 rounded-md text-sm font-medium transition ${filter === 'all' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>All</button>
+            <button onClick={() => setFilter('test')} className={`px-4 py-1.5 rounded-md text-sm font-medium transition ${filter === 'test' ? 'bg-amber-500 text-white shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>Test Only</button>
+            <button onClick={() => setFilter('real')} className={`px-4 py-1.5 rounded-md text-sm font-medium transition ${filter === 'real' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>Real Only</button>
+          </div>
         </div>
 
         {/* Profiles Table */}
@@ -815,8 +840,7 @@ export default function AdminDashboard({ authorized, rows, users, connections, r
                 <th className="text-left px-3 py-2">Email</th>
                 <th className="text-left px-3 py-2">Name</th>
                 <th className="text-left px-3 py-2">Role</th>
-                <th className="text-left px-3 py-2">Year</th>
-                <th className="text-left px-3 py-2">Subscription</th>
+                <th className="text-left px-3 py-2">Connections</th>
                 <th className="text-left px-3 py-2">Trial Ends</th>
                 <th className="text-left px-3 py-2">Days Left</th>
                 <th className="text-left px-3 py-2">Actions</th>
@@ -865,8 +889,26 @@ export default function AdminDashboard({ authorized, rows, users, connections, r
                     </td>
                     <td className="px-3 py-2">{r.display_name || '-'}</td>
                     <td className="px-3 py-2">{r.user_role || '-'}</td>
-                    <td className="px-3 py-2">{r.year_group || '-'}</td>
-                    <td className="px-3 py-2">{r.subscription_status || 'trial'}</td>
+                    <td className="px-3 py-2">
+                       {r.user_role === 'student' ? (
+                         <div className="flex flex-col">
+                            <span className="text-xs font-semibold text-purple-600">
+                              LO: {connections.filter(c => c.studentId === r.id || c.studentEmail === r.email).length}
+                            </span>
+                            <div className="text-[10px] text-gray-400 truncate max-w-[120px]">
+                              {connections.filter(c => c.studentId === r.id || c.studentEmail === r.email)
+                                .map(c => c.lovedEmail).join(', ') || 'No connections'}
+                            </div>
+                         </div>
+                       ) : (
+                         <div className="flex flex-col">
+                            <span className="text-xs font-semibold text-blue-600">Linked to:</span>
+                            <span className="text-[10px] text-gray-400 truncate max-w-[120px]">
+                              {connections.find(c => c.lovedOneId === r.id || c.lovedEmail === r.email)?.studentEmail || '-'}
+                            </span>
+                         </div>
+                       )}
+                    </td>
                     <td className="px-3 py-2">{r.trial_ends_at ? new Date(r.trial_ends_at).toLocaleDateString() : '-'}</td>
                     <td className="px-3 py-2">
                       {daysLeft !== null ? (
@@ -1032,6 +1074,10 @@ export default function AdminDashboard({ authorized, rows, users, connections, r
                     <option value="year3">Year 3</option>
                   </select>
                   <input name="trialDays" type="number" placeholder="Trial days (default: 14)" className="w-full border rounded px-3 py-2" defaultValue="14" />
+                  <div className="flex items-center gap-2 px-1">
+                    <input type="checkbox" name="isTest" id="isTestInvite" defaultChecked className="rounded border-gray-300 text-purple-600 focus:ring-purple-500" />
+                    <label htmlFor="isTestInvite" className="text-sm font-medium text-slate-700">Mark as Test Account (Enable direct delete)</label>
+                  </div>
                   <div className="flex gap-2">
                     <button type="submit" className="flex-1 py-2 bg-blue-600 text-white rounded font-semibold">Send Invite</button>
                     <button type="button" onClick={() => setShowInviteStudent(false)} className="px-4 py-2 bg-slate-200 rounded">Cancel</button>
@@ -1104,6 +1150,10 @@ export default function AdminDashboard({ authorized, rows, users, connections, r
                 className="w-full border rounded px-3 py-2 text-sm"
               />
               <p className="text-xs text-gray-500">Leave blank for default password: TestPass123!</p>
+              <div className="flex items-center gap-2 px-1">
+                <input type="checkbox" name="isTest" id="isTestStudent" defaultChecked className="rounded border-gray-300 text-purple-600 focus:ring-purple-500" />
+                <label htmlFor="isTestStudent" className="text-sm font-medium text-slate-700">Mark as Test Account (Enable direct delete)</label>
+              </div>
               <div className="flex gap-2">
                 <button type="submit" className="flex-1 py-2 bg-green-600 text-white rounded font-semibold">Create</button>
                 <button type="button" onClick={() => setShowCreateStudent(false)} className="px-4 py-2 bg-slate-200 rounded">Cancel</button>
@@ -1140,6 +1190,18 @@ export default function AdminDashboard({ authorized, rows, users, connections, r
                 <option value="friend">Friend</option>
               </select>
               <input name="nickname" placeholder="Nickname (e.g., Mum, Dad)" className="w-full border rounded px-3 py-2" />
+              <div className="flex items-center gap-2 px-1">
+                <input type="checkbox" name="isTest" id="isTestLO" defaultChecked className="rounded border-gray-300 text-purple-600 focus:ring-purple-500" />
+                <label htmlFor="isTestLO" className="text-sm font-medium text-slate-700">Mark as Test Account (Enable direct delete)</label>
+              </div>
+              <div className="flex items-center gap-2 px-1">
+                <input type="checkbox" name="isTest" id="isTestLO" defaultChecked className="rounded border-gray-300 text-purple-600 focus:ring-purple-500" />
+                <label htmlFor="isTestLO" className="text-sm font-medium text-slate-700">Mark as Test Account (Enable direct delete)</label>
+              </div>
+              <div className="flex items-center gap-2 px-1">
+                <input type="checkbox" name="isTest" id="isTestLO" defaultChecked className="rounded border-gray-300 text-purple-600 focus:ring-purple-500" />
+                <label htmlFor="isTestLO" className="text-sm font-medium text-slate-700">Mark as Test Account (Enable direct delete)</label>
+              </div>
               <div className="flex gap-2">
                 <button type="submit" className="flex-1 py-2 bg-purple-600 text-white rounded font-semibold">Create</button>
                 <button type="button" onClick={() => setShowCreateLovedOne(false)} className="px-4 py-2 bg-slate-200 rounded">Cancel</button>

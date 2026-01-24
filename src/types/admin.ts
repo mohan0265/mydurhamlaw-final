@@ -32,6 +32,7 @@ export type CreateTestStudentRequest = {
   displayName: string;
   yearGroup: 'foundation' | 'year1' | 'year2' | 'year3';
   password?: string;
+  isTest?: boolean;
 };
 
 export type CreateTestStudentResponse = {
@@ -48,6 +49,7 @@ export type CreateTestLovedOneRequest = {
   relationship: 'parent' | 'guardian' | 'sibling' | 'partner' | 'friend';
   nickname?: string;
   password?: string;
+  isTest?: boolean;
 };
 
 export type CreateTestLovedOneResponse = {

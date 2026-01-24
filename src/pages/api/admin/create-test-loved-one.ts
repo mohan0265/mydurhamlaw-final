@@ -41,7 +41,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(500).json({ error: 'Server misconfigured' });
   }
 
-  const { email: inputIdentifier, displayName, studentUserId, relationship, nickname, password }: CreateTestLovedOneRequest = req.body;
+  const { email: inputIdentifier, displayName, studentUserId, relationship, nickname, password, isTest }: CreateTestLovedOneRequest = req.body;
 
   if (!inputIdentifier || !displayName || !studentUserId || !relationship) {
     return res.status(400).json({ error: 'Missing required fields' });
@@ -75,7 +75,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           id: lovedUserId,
           display_name: actualDisplayName,
           user_role: 'loved_one',
-          is_test_account: true, // Ensure it's marked as test so admin can delete later
+          is_test_account: isTest !== undefined ? isTest : true, // Ensure it's marked as test so admin can delete later
         }, { onConflict: 'id', ignoreDuplicates: false });
     } else {
       // User doesn't exist - create new auth user
@@ -87,7 +87,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         email_confirm: true,
         user_metadata: {
           display_name: actualDisplayName,
-          is_test_account: true,
+          is_test_account: isTest !== undefined ? isTest : true,
           original_identifier: inputIdentifier,
         },
       });
@@ -108,7 +108,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           id: lovedUserId,
           display_name: actualDisplayName,
           user_role: 'loved_one',
-          is_test_account: true,
+          is_test_account: isTest !== undefined ? isTest : true,
         });
 
       if (profileError) {
