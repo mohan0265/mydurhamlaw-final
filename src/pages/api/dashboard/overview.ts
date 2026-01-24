@@ -52,27 +52,45 @@ export default async function handler(
       return res.status(401).json({ upcomingAssignments: [], preferences: { show_deadline_countdown: false }, error: 'Unauthorized' })
     }
 
-    // 1. Fetch User Preferences
-    const { data: prefData } = await supabase
-      .from('user_preferences')
-      .select('show_deadline_countdown')
-      .eq('user_id', user.id)
+    // 0. Get User Profile for Year Group
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('year_group')
+      .eq('id', user.id)
       .maybeSingle();
+    
+    const yearKey = profile?.year_group || 'year1';
 
-    const preferences: UserPreferences = {
-      show_deadline_countdown: prefData?.show_deadline_countdown ?? false
-    };
+    // 1. Fetch User Preferences (Resilient)
+    const preferences: UserPreferences = { show_deadline_countdown: false };
+    try {
+      const { data: prefData } = await supabase
+        .from('user_preferences')
+        .select('show_deadline_countdown')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (prefData) {
+        preferences.show_deadline_countdown = prefData.show_deadline_countdown;
+      }
+    } catch (e) {
+      console.warn('[dashboard/overview] user_preferences table likely missing. Defaulting to false.');
+    }
 
     // 2. Fetch Assignments
-    const { data: assignments, error } = await supabase
-      .from('assignments')
-      .select('id, title, module_name, module_code, due_date, status, current_stage, estimated_effort_hours, module_id')
-      .eq('user_id', user.id)
-      .not('status', 'in', '(submitted,completed)')
-      .order('due_date', { ascending: true })
-      .limit(20);
+    let assignments: any[] = [];
+    try {
+      const { data, error } = await supabase
+        .from('assignments')
+        .select('id, title, module_name, module_code, due_date, status, current_stage, estimated_effort_hours, module_id')
+        .eq('user_id', user.id)
+        .not('status', 'in', '(submitted,completed)')
+        .order('due_date', { ascending: true })
+        .limit(20);
 
-    if (error) {
+      if (error) throw error;
+      assignments = data || [];
+    } catch (error) {
       console.error('[dashboard/overview] Error fetching assignments:', error);
     }
 
@@ -81,22 +99,29 @@ export default async function handler(
     const fromDate = now.toISOString().split('T')[0] || '';
     const toDate = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] || '';
 
-    const yaagEvents = await buildYAAGEvents({
-      req,
-      res,
-      fromDate,
-      toDate,
-      userId: user.id
-    });
-
-    // Filter only assessments/deadlines from YAAG
-    const yaagDeadlines = yaagEvents.filter(e => e.kind === 'assessment' && e.meta?.source !== 'assignment');
+    let yaagDeadlines: any[] = [];
+    try {
+      // Pass the existing supabase client to buildYAAGEvents to avoid re-initializing and potentially causing 406 errors
+      const yaagEvents = await buildYAAGEvents({
+        req,
+        res,
+        yearKey,
+        fromDate,
+        toDate,
+        userId: user.id,
+        supabase // Use existing client
+      } as any);
+      // Filter only assessments/deadlines from YAAG, skipping duplicates already retrieved via 'assignments' table
+      yaagDeadlines = (yaagEvents || []).filter(e => e.kind === 'assessment' && e.meta?.source !== 'assignment');
+    } catch (error) {
+      console.error('[dashboard/overview] Error fetching YAAG events:', error);
+    }
 
     // 4. Merge and Enforce Sorting
     const mergedList: AssignmentSummary[] = [];
 
     // Add Assignments
-    (assignments || []).forEach(a => {
+    assignments.forEach(a => {
       const dueDate = new Date(a.due_date);
       const diffMs = dueDate.getTime() - now.getTime();
       const daysLeft = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
@@ -125,8 +150,8 @@ export default async function handler(
       mergedList.push({
         id: e.id,
         title: e.title,
-        module_name: e.moduleCode || null,
-        module_code: e.moduleCode || null,
+        module_name: (e as any).moduleCode || null,
+        module_code: (e as any).moduleCode || null,
         due_date: e.date,
         daysLeft,
         status: e.meta?.status || 'upcoming',
@@ -139,8 +164,11 @@ export default async function handler(
 
     // Final Sort: Soonest first, then priority to assignments
     mergedList.sort((a, b) => {
-      const timeA = new Date(a.due_date).getTime();
-      const timeB = new Date(b.due_date).getTime();
+      const dateA = new Date(a.due_date);
+      const dateB = new Date(b.due_date);
+      const timeA = isNaN(dateA.getTime()) ? Infinity : dateA.getTime();
+      const timeB = isNaN(dateB.getTime()) ? Infinity : dateB.getTime();
+      
       if (timeA !== timeB) return timeA - timeB;
       if (a.source !== b.source) return a.source === 'assignment' ? -1 : 1;
       return 0;

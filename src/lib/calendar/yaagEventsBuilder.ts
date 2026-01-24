@@ -23,12 +23,13 @@ interface YAAGEventsOptions {
   fromDate: string;  // YYYY-MM-DD
   toDate: string;    // YYYY-MM-DD
   userId: string;
+  supabase?: any; // Pre-initialized client
 }
 
 export async function buildYAAGEvents(options: YAAGEventsOptions): Promise<NormalizedEvent[]> {
-  const { req, res, yearKey = 'year1', fromDate, toDate, userId } = options;
+  const { req, res, yearKey = 'year1', fromDate, toDate, userId, supabase: providedSupabase } = options;
   
-  const supabase = createPagesServerClient({ req, res });
+  const supabase = providedSupabase || createPagesServerClient({ req, res });
   const from = fromDate;
   const to = toDate;
 
@@ -60,8 +61,8 @@ export async function buildYAAGEvents(options: YAAGEventsOptions): Promise<Norma
     .lte('start_at', `${to}T23:59:59Z`);
 
   // Merge overrides into plan events
-  const mergedPlanEvents = planEventsWithMeta.map(planEvent => {
-    const override = (planOverrides || []).find(o => o.original_plan_id === planEvent.id);
+  const mergedPlanEvents = planEventsWithMeta.map((planEvent: NormalizedEvent) => {
+    const override = (planOverrides || []).find((o: any) => o.original_plan_id === planEvent.id);
     if (!override) return planEvent;
 
     return {
@@ -90,7 +91,7 @@ export async function buildYAAGEvents(options: YAAGEventsOptions): Promise<Norma
     .lte('start_at', `${to}T23:59:59Z`)
     .order('start_at', { ascending: true });
 
-  const personalEvents: NormalizedEvent[] = (personalItems || []).map(item => {
+  const personalEvents: NormalizedEvent[] = (personalItems || []).map((item: any) => {
     const startDate = new Date(item.start_at);
     const endDate = item.end_at ? new Date(item.end_at) : null;
 
@@ -147,7 +148,7 @@ export async function buildYAAGEvents(options: YAAGEventsOptions): Promise<Norma
     .lte('due_date', to)
     .order('due_date', { ascending: true });
 
-  const assignmentEvents: NormalizedEvent[] = (assignments || []).map(assignment => {
+  const assignmentEvents: NormalizedEvent[] = (assignments || []).map((assignment: any) => {
     const dateOnly = typeof assignment.due_date === 'string' 
       ? assignment.due_date.substring(0, 10)
       : assignment.due_date;
@@ -179,7 +180,7 @@ export async function buildYAAGEvents(options: YAAGEventsOptions): Promise<Norma
     .lte('start_time', `${to}T23:59:59Z`)
     .order('start_time', { ascending: true });
 
-  const timetableEventsNormalized: NormalizedEvent[] = (timetableEvents || []).map(evt => {
+  const timetableEventsNormalized: NormalizedEvent[] = (timetableEvents || []).map((evt: any) => {
     const start = new Date(evt.start_time);
     const end = evt.end_time ? new Date(evt.end_time) : null;
 
@@ -213,7 +214,7 @@ export async function buildYAAGEvents(options: YAAGEventsOptions): Promise<Norma
 
   // 6. DEDUPE by stable key
   const seenKeys = new Set<string>();
-  const dedupedEvents = allEvents.filter(e => {
+  const dedupedEvents = allEvents.filter((e: NormalizedEvent) => {
     const key = `${e.meta?.source || 'unknown'}-${e.id}-${e.date}`;
     if (seenKeys.has(key)) return false;
     seenKeys.add(key);
