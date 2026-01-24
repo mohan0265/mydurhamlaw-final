@@ -251,18 +251,16 @@ START: Greet the student and immediately start quizzing them on ${sessionContext
     fetchHistory();
   }, [sessionId]);
 
-  // Scroll to bottom only when new messages arrive and user is near bottom
+  // Scroll to bottom when new messages arrive
   const chatContainerRef = useRef<HTMLDivElement>(null);
   
   useEffect(() => {
-    // Only scroll if user is already near the bottom (within 100px)
-    if (chatContainerRef.current) {
-      const container = chatContainerRef.current;
-      const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 150;
-      if (isNearBottom) {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-      }
-    }
+    // Always scroll to bottom when messages change (for voice sessions especially)
+    // Small delay to ensure DOM has updated
+    const timer = setTimeout(() => {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, 100);
+    return () => clearTimeout(timer);
   }, [messages]);
 
   const handleSendMessage = async (e?: React.FormEvent) => {
