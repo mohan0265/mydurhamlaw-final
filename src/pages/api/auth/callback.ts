@@ -28,30 +28,32 @@ export default async function handler(
     return res.redirect('/login?error=no_user')
   }
 
-  // If this is an eligibility check, validate Durham domain
-  if (checkEligibility) {
-    const email = user.email
+  const email = user.email
+  const isDurham = email?.endsWith('@durham.ac.uk')
+
+  // ✅ STRICT DOMAIN ENFORCEMENT for ALL signups
+  if (!isDurham) {
+    // Destroy the session for non-Durham users
+    await supabase.auth.signOut()
     
-    if (!email?.endsWith('@durham.ac.uk')) {
-      // Destroy the session for non-Durham users
-      await supabase.auth.signOut()
-      
-      // Redirect back to eligibility with error
-      return res.redirect('/eligibility?error=not_durham&email=' + encodeURIComponent(email || ''))
-    }
+    // Redirect to unified restricted page
+    return res.redirect(`/restricted?reason=domain_not_allowed&email=${encodeURIComponent(email || '')}`)
+  }
 
-    // Durham email confirmed - set eligibility cookie and redirect to signup
-    res.setHeader('Set-Cookie', [
-      `__eligibility_verified=true; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=3600`
-    ])
+  // ✅ Eligible (Durham account)
+  
+  // Set eligibility verification cookie
+  res.setHeader('Set-Cookie', [
+    `__eligibility_verified=true; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=3600`
+  ])
 
-    // Get stored intent from eligibility page
+  // If this was an explicit check_eligibility=true, ensure we go to the right next step
+  if (checkEligibility || req.url?.includes('signup_data')) {
     const { next = '/signup', plan } = req.query
     const redirectUrl = plan ? `${next}?plan=${plan}` : next as string
-    
     return res.redirect(redirectUrl)
   }
 
-  // Regular auth callback (not from eligibility)
+  // Regular login/already verified
   return res.redirect('/dashboard')
 }

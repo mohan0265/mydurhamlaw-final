@@ -289,7 +289,7 @@ export default function PricingPage() {
                 </Link>
               ) : (
                 <>
-                  <Link href="/eligibility?next=/signup&plan=free">
+                  <Link href="/signup">
                     <Button className="bg-white text-blue-600 hover:bg-gray-100 px-8 py-3 text-lg w-full sm:w-auto">
                       Start Free Trial
                       <ArrowRight className="w-5 h-5 ml-2" />

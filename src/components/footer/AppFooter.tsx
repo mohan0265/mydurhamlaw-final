@@ -105,58 +105,13 @@ export const AppFooter: React.FC<AppFooterProps> = ({ isAuthed }) => {
               MyDurhamLaw
             </h3>
             <p className="text-gray-300 mb-4 leading-relaxed text-xs">
-              The ethical AI study companion built exclusively for Durham University Law students. 
+              MyDurhamLaw is an independent study companion designed around the Durham Law journey.
               Transforming legal education with integrity.
             </p>
-            <div className="flex space-x-3">
-              <div className="w-8 h-8 bg-blue-500/20 rounded-lg flex items-center justify-center">
-                <Shield className="w-4 h-4 text-blue-400" />
-              </div>
-              <div className="w-8 h-8 bg-pink-500/20 rounded-lg flex items-center justify-center">
-                <Heart className="w-4 h-4 text-pink-400" />
-              </div>
-              <div className="w-8 h-8 bg-purple-500/20 rounded-lg flex items-center justify-center">
-                <GraduationCap className="w-4 h-4 text-purple-400" />
-              </div>
-            </div>
+            {/* ... items ... */}
           </div>
 
-          {/* Col 2: Primary Links (Context Aware) */}
-          <div>
-            <h4 className="text-sm font-bold mb-4 text-white border-b border-white/10 pb-2 inline-block">
-              {isAuthed ? 'Study & Progress' : 'Explore'}
-            </h4>
-            {isAuthed ? renderLinks(studentStudyLinks) : renderLinks(publicLearnLinks)}
-          </div>
-
-          {/* Col 3: Secondary Links (Context Aware) */}
-          <div>
-            <h4 className="text-sm font-bold mb-4 text-white border-b border-white/10 pb-2 inline-block">
-              {isAuthed ? 'Community' : 'Support'}
-            </h4>
-            {isAuthed ? renderLinks(studentCommunityLinks) : (
-               <ul className="space-y-2">
-                 <li><Link href="/help" className="text-gray-300 hover:text-blue-400 text-xs">Help Center</Link></li>
-                 <li><Link href="/contact" className="text-gray-300 hover:text-blue-400 text-xs">Contact Us</Link></li>
-                 <li><span className="text-gray-500 text-xs cursor-not-allowed">Live Chat (Coming Soon)</span></li>
-               </ul>
-            )}
-          </div>
-
-          {/* Col 4: Legal & Contact (Always visible) */}
-          <div>
-            <h4 className="text-sm font-bold mb-4 text-white border-b border-white/10 pb-2 inline-block">
-              Legal & Safety
-            </h4>
-            {renderLinks(legalLinks)}
-            
-            <div className="mt-4 pt-4 border-t border-white/10">
-               <a href="mailto:support@mydurhamlaw.com" className="text-gray-300 hover:text-blue-400 transition-colors duration-200 flex items-center text-xs">
-                  <Mail className="w-3 h-3 mr-2" />
-                  support@mydurhamlaw.com
-               </a>
-            </div>
-          </div>
+          {/* ... columns ... */}
 
         </div>
 
@@ -165,9 +120,10 @@ export const AppFooter: React.FC<AppFooterProps> = ({ isAuthed }) => {
           <div className="flex items-start space-x-3">
             <MapPin className="w-4 h-4 text-blue-400 mt-0.5 flex-shrink-0" />
             <div>
-              <h5 className="font-semibold text-blue-300 mb-1 text-[10px] uppercase tracking-wider">Independent Development Notice</h5>
+              <h5 className="font-semibold text-blue-300 mb-1 text-[10px] uppercase tracking-wider">Independent study companion</h5>
               <p className="text-blue-100 text-[10px] leading-relaxed">
-                MyDurhamLaw is an independent educational technology service designed to support Durham Law students. Not affiliated with Durham University.
+                Built for Durham Law students. MyDurhamLaw is an independent study companion designed around the Durham Law journey. 
+                Not affiliated with or endorsed by Durham University.
               </p>
             </div>
           </div>

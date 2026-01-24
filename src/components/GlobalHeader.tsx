@@ -326,12 +326,11 @@ export default function GlobalHeader() {
                 <>
                   <span className="text-white/90 text-sm">Hi, {displayName}</span>
                   {!isLovedOne && (
-                    <Link
-                      href="/billing"
-                      className="px-3 py-2 rounded-md text-sm font-semibold bg-white text-indigo-700 hover:bg-indigo-50 transition"
-                    >
-                      Manage Billing
-                    </Link>
+                    <Link href="/signup">
+                    <button className="px-5 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl text-sm font-bold shadow-lg shadow-purple-200 hover:shadow-xl hover:scale-105 transition-all">
+                      Start Free Trial
+                    </button>
+                  </Link>
                   )}
                   <LogoutButton className="px-3 py-2 rounded-md border hover:bg-white/10 text-white text-sm" />
                 </>

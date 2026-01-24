@@ -800,12 +800,13 @@ return (
             <div className="mt-4 text-center">
                <div className="text-sm font-bold text-white/90">Start free. Full Access is £24.99/month after your trial.</div>
                <div className="mt-1 text-xs text-white/50 uppercase tracking-widest font-bold">14-day trial • cancel anytime • no commitment</div>
+            <div className="mt-4 text-center">
+               <Link href="/signup">
+                  <button className="bg-white text-gray-900 font-black py-4 px-12 rounded-full text-lg shadow-xl hover:scale-105 transition-all">
+                     Start Your Free Trial &rarr;
+                  </button>
+               </Link>
             </div>
-            <Link href="/signup">
-               <button className="mt-8 bg-white text-indigo-950 font-black py-4 px-12 rounded-2xl text-lg shadow-2xl hover:scale-105 transition-all transform">
-                  Start your 14-day trial
-               </button>
-            </Link>
          </div>
       </section>
     </>

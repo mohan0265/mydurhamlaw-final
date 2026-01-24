@@ -27,6 +27,7 @@ export default function SignUpPage() {
     if (!supabase) return
     supabase.auth.getSession().then(({ data }) => {
       if (data.session) {
+        // Logged-in guard: redirect to dashboard
         router.replace('/dashboard').catch((err) => {
           if (!isRouteAbortError(err)) console.error('Nav error:', err);
         });
@@ -53,7 +54,9 @@ export default function SignUpPage() {
             <h2 className="text-4xl font-bold text-gray-900 mb-3">
               Welcome to <BrandTitle variant="light" size="4xl" as="span" />
             </h2>
-            <p className="text-xl text-gray-600">Your AI-powered study companion for MyDurhamLaw students</p>
+            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+              Built for Durham Law students. MyDurhamLaw is an independent study companion designed around the Durham Law journey.
+            </p>
           </div>
 
           {/* Features (kept) */}
