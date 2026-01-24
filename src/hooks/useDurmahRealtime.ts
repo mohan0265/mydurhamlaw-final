@@ -445,6 +445,8 @@ export function useDurmahRealtime({
                 min_speech_duration_ms: 200,
                 silence_duration_ms: 2000, 
               },
+              temperature: 0.7, // Balanced for tutor persona
+              max_response_output_tokens: 300, // Enforce conciseness (approx 1-3 sentences)
             },
           })
         );
