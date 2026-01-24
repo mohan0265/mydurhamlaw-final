@@ -797,15 +797,18 @@ return (
          <div className="relative z-10 max-w-3xl mx-auto px-6 text-white text-balance">
             <h2 className="text-3xl sm:text-5xl font-black mb-6 tracking-tight">Ready to build real legal confidence?</h2>
             <p className="text-xl text-gray-400 mb-10">One plan. Everything included. Fair-use keeps it affordable for everyone.</p>
-            <div className="mt-4 text-center">
-               <div className="text-sm font-bold text-white/90">Start free. Full Access is £24.99/month after your trial.</div>
-               <div className="mt-1 text-xs text-white/50 uppercase tracking-widest font-bold">14-day trial • cancel anytime • no commitment</div>
-            <div className="mt-4 text-center">
-               <Link href="/signup">
-                  <button className="bg-white text-gray-900 font-black py-4 px-12 rounded-full text-lg shadow-xl hover:scale-105 transition-all">
-                     Start Your Free Trial &rarr;
-                  </button>
-               </Link>
+            <div className="space-y-6">
+               <div className="space-y-1">
+                  <div className="text-sm font-bold text-white/90">Start free. Full Access is £24.99/month after your trial.</div>
+                  <div className="text-xs text-white/50 uppercase tracking-widest font-bold">14-day trial • cancel anytime • no commitment</div>
+               </div>
+               <div>
+                  <Link href="/signup">
+                     <button className="bg-white text-gray-900 font-black py-4 px-12 rounded-full text-lg shadow-xl hover:scale-105 transition-all">
+                        Start Your Free Trial &rarr;
+                     </button>
+                  </Link>
+               </div>
             </div>
          </div>
       </section>
