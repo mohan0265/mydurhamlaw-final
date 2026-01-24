@@ -39,16 +39,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const { plan, parentAddOn } = (req.body || {}) as { plan?: string; parentAddOn?: boolean };
     
     // Map plan keys to Environment Variables
+    const monthlyPrice = process.env.STRIPE_PRICE_FULL_ACCESS_MONTHLY ?? process.env.STRIPE_PRICE_PRO_MONTHLY;
+    const annualPrice = process.env.STRIPE_PRICE_FULL_ACCESS_ANNUAL ?? process.env.STRIPE_PRICE_PRO_ANNUAL;
+
     const priceMap: Record<string, string | undefined> = {
-       'full_access_monthly': process.env.STRIPE_PRICE_FULL_ACCESS_MONTHLY || process.env.STRIPE_PRICE_PRO_MONTHLY,
-       'full_access_annual': process.env.STRIPE_PRICE_FULL_ACCESS_ANNUAL || process.env.STRIPE_PRICE_PRO_ANNUAL,
+       'full_access_monthly': monthlyPrice,
+       'full_access_annual': annualPrice,
        'core_monthly': process.env.STRIPE_PRICE_CORE_MONTHLY,
        'core_annual': process.env.STRIPE_PRICE_CORE_ANNUAL,
        'pro_monthly': process.env.STRIPE_PRICE_PRO_MONTHLY,
        'pro_annual': process.env.STRIPE_PRICE_PRO_ANNUAL,
        // Legacy aliases for continuity
-       'monthly': process.env.STRIPE_PRICE_PRO_MONTHLY || process.env.STRIPE_PRICE_MONTHLY, 
-       'annual': process.env.STRIPE_PRICE_PRO_ANNUAL || process.env.STRIPE_PRICE_ANNUAL
+       'monthly': monthlyPrice, 
+       'annual': annualPrice
     };
 
     const priceId = plan ? priceMap[plan] : undefined;

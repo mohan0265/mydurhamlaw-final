@@ -227,6 +227,7 @@ export default function PricingPage() {
 
         {/* Community & Trust (repositioned/updated) */}
         <div className="py-20">
+        </div>
 
         {/* Upcoming Reviews & Integrity */}
         <div className="py-10">
