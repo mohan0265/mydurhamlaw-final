@@ -482,23 +482,20 @@ export function useDurmahRealtime({
               flushUserText(payload.transcript ?? payload.text ?? "");
               debugLog(`[FINALIZE USER] via ${type}`);
             }
-            // Assistant deltas: ONLY use response.output_text.delta (P0 FIX)
-            // DO NOT use response.text.delta or response.audio_transcript.delta (causes duplicates)
-            else if (type === "response.output_text.delta") {
+            // Assistant deltas: Use BOTH output_text.delta AND audio_transcript.delta
+            // audio_transcript.delta is what OpenAI Realtime uses for voice transcriptions
+            else if (type === "response.output_text.delta" || type === "response.audio_transcript.delta") {
               const delta = payload.delta ?? payload.text ?? "";
               if (delta) {
                 appendAssistantText(delta);
-                debugLog(`[ASSISTANT DELTA] "${delta.slice(0, 30)}..."`);
+                debugLog(`[ASSISTANT DELTA] (${type}) "${delta.slice(0, 30)}..."`);
               }
             }
-            // SKIP these to avoid duplication (use output_text.delta only)
-            else if (
-              type === "response.text.delta" ||
-              type === "response.audio_transcript.delta"
-            ) {
-              debugLog(`[SKIP DUPLICATE] ${type} - using output_text.delta only`);
+            // SKIP only response.text.delta (old format, causes duplicates)
+            else if (type === "response.text.delta") {
+              debugLog(`[SKIP DUPLICATE] ${type}`);
             }
-            // Assistant finalization: conversation.item.created + response.completed
+            // Assistant finalization: conversation.item.created + response.completed + audio_transcript.done
             else if (type === "conversation.item.created") {
               handleConversationItem(payload);
               debugLog(`[FINALIZE ASSISTANT] via conversation.item.created`);
@@ -508,9 +505,16 @@ export function useDurmahRealtime({
               flushAssistantText();
               debugLog(`[FINALIZE ASSISTANT] via response.completed`);
             }
+            else if (type === "response.audio_transcript.done") {
+              // Audio transcript finished - flush it
+              const transcript = payload.transcript ?? "";
+              if (transcript) {
+                flushAssistantText(transcript);
+                debugLog(`[FINALIZE ASSISTANT] via response.audio_transcript.done: "${transcript.slice(0, 50)}..."`);
+              }
+            }
             // Still skip these specific duplicates
             else if (
-              type === "response.audio_transcript.done" ||
               type === "response.output_text.done" ||
               type === "response.text.done" ||
               type === "conversation.item.output_audio_transcription.completed"
