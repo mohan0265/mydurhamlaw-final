@@ -905,7 +905,7 @@ export default function AdminDashboard({ authorized, rows, users, connections, r
                             {r.email && (
                               <button onClick={() => resetPassword(r.user_id || r.id, r.email!)} className="text-purple-600 hover:underline text-xs">🔑Reset</button>
                             )}
-                            {r.is_test_account && (
+                            {(r.is_test_account || r.user_role === 'loved_one') && (
                               <button onClick={() => deleteAccount(r.user_id || r.id)} className="text-red-600 hover:underline text-xs">Del</button>
                             )}
                           </>

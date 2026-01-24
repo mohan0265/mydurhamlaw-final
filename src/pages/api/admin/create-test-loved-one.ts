@@ -68,13 +68,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       lovedUserId = existingUserId as string;
       console.log(`[create-loved-one] Found existing user: ${lovedUserId}`);
       
-      // Update their profile to ensure loved_one role is set
+      // Update their profile to ensure loved_one role is set AND mark as test account
       await adminClient
         .from('profiles')
         .upsert({
           id: lovedUserId,
           display_name: actualDisplayName,
           user_role: 'loved_one',
+          is_test_account: true, // Ensure it's marked as test so admin can delete later
         }, { onConflict: 'id', ignoreDuplicates: false });
     } else {
       // User doesn't exist - create new auth user
