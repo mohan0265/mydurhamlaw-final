@@ -239,6 +239,9 @@ START: Greet the student and immediately start quizzing them on ${sessionContext
       if (selectedMsgs.length === 0) throw new Error("No messages selected");
 
       // Prepare payload similar to DurmahWidget voice sessions
+      const firstMsg = selectedMsgs[0];
+      const lastMsg = selectedMsgs[selectedMsgs.length - 1];
+
       const transcriptPayload = {
         topic: (sessionContext?.targetTitle || 'Quiz Insight').substring(0, 100),
         summary: `Saved insight from quiz session on ${sessionContext?.targetTitle || 'legal topic'}.`,
@@ -249,8 +252,8 @@ START: Greet the student and immediately start quizzing them on ${sessionContext
         })),
         content_text: selectedMsgs.map(m => `${m.role === 'user' ? 'you' : 'durmah'}: ${m.content}`).join('\n'),
         duration_seconds: 0,
-        started_at: selectedMsgs[0]?.ts ? new Date(selectedMsgs[0].ts as number).toISOString() : new Date().toISOString(),
-        ended_at: selectedMsgs[selectedMsgs.length - 1]?.ts ? new Date(selectedMsgs[selectedMsgs.length - 1].ts as number).toISOString() : new Date().toISOString()
+        started_at: firstMsg?.ts ? new Date(firstMsg.ts).toISOString() : new Date().toISOString(),
+        ended_at: lastMsg?.ts ? new Date(lastMsg.ts).toISOString() : new Date().toISOString()
       };
 
       const resp = await fetch('/api/transcripts/save', {
