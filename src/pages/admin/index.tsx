@@ -525,49 +525,58 @@ export default function AdminDashboard({ authorized, rows, users, connections, r
 
   // Bulk Delete
   const handleBulkDelete = async () => {
-    if (!confirm(`Delete ${selectedIds.size} selected accounts? This cannot be undone.`)) return
+    if (!confirm(`Delete ${selectedIds.size} selected items? This cannot be undone.`)) return
 
     let successCount = 0
     let failCount = 0
+    let errors: string[] = []
 
     const idsToDelete = Array.from(selectedIds)
     
-    // Process sequentially to avoid overwhelming server/db
     for (const id of idsToDelete) {
-      // Check if it's an invite Row (starts with invite_) or actual user
-      // Current delete API expects userId. invites don't have userId yet usually?
-      // But my invite logic assigned id=`invite_${inv.id}`. The delete API takes userId.
-      // Invites are in 'student_invitations' table, so we need a separate delete invite API ideally.
-      // But for now, let's just handle test accounts.
-      
       const row = rows.find(r => r.id === id)
       if (!row) continue
 
+      let res: Response;
+      
       if (id.startsWith('invite_')) {
-        // Invite deletion not yet implemented in API, skip/alert
-        console.warn('Cannot delete invite via bulk yet', id)
-        continue
+        const cleanId = id.replace('invite_', '');
+        res = await fetch("/api/admin/delete-invitation", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ invitationId: cleanId })
+        })
+      } else {
+        if (!row.is_test_account) {
+            failCount++
+            errors.push(`${row.email}: Skip (Not TEST account)`)
+            continue
+        }
+        res = await fetch("/api/admin/delete-test-account", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId: row.user_id || row.id })
+        })
       }
-
-      if (!row.is_test_account) {
-        // Skip real accounts for safety
-        continue 
-      }
-
-      const res = await fetch("/api/admin/delete-test-account", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: row.user_id || row.id })
-      })
 
       if (res.ok) {
         successCount++
       } else {
         failCount++
+        try {
+            const errData = await res.json();
+            errors.push(`${row.email || id}: ${errData.error || 'Unknown error'}`);
+        } catch {
+            errors.push(`${row.email || id}: HTTP ${res.status}`);
+        }
       }
     }
 
-    alert(`Deleted ${successCount} accounts. ${failCount > 0 ? `Failed: ${failCount}` : ''}`)
+    if (errors.length > 0) {
+        alert(`Bulk Delete Results:\nDeleted: ${successCount}\nFailed: ${failCount}\n\nErrors:\n${errors.join('\n')}`)
+    } else {
+        alert(`Successfully deleted ${successCount} items.`)
+    }
     window.location.reload()
   }
 
@@ -874,12 +883,20 @@ export default function AdminDashboard({ authorized, rows, users, connections, r
                     <td className="px-3 py-2">
                       <div className="flex flex-wrap gap-1">
                         {r.subscription_status === 'invited' ? (
-                           <div className="flex flex-col">
-                             <span className="text-orange-600 text-xs font-semibold flex items-center gap-1">
-                               <span className="w-2 h-2 rounded-full bg-orange-500 animate-pulse"></span>
-                               Pending
-                             </span>
-                             <span className="text-[10px] text-gray-400">Wait for signup</span>
+                           <div className="flex items-center gap-2">
+                             <div className="flex flex-col">
+                               <span className="text-orange-600 text-xs font-semibold flex items-center gap-1">
+                                 <span className="w-2 h-2 rounded-full bg-orange-500 animate-pulse"></span>
+                                 Pending
+                               </span>
+                               <span className="text-[10px] text-gray-400">Wait for signup</span>
+                             </div>
+                             <button 
+                               onClick={(e) => { e.stopPropagation(); deleteInvitation(r.id); }} 
+                               className="text-red-600 hover:underline text-xs bg-red-50 px-1.5 py-0.5 rounded border border-red-100"
+                             >
+                               Del
+                             </button>
                            </div>
                         ) : (
                           <>

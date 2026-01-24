@@ -40,11 +40,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const { data: profile, error: fetchError } = await adminClient
       .from('profiles')
       .select('is_test_account, user_role')
-      .eq('user_id', userId)
+      .eq('id', userId) // Fix: Profiles table uses 'id' as PK
       .single();
 
     if (fetchError || !profile) {
-      return res.status(404).json({ error: 'Profile not found' });
+      console.error('Profile fetch error:', fetchError);
+      return res.status(404).json({ error: `Profile ${userId} not found in database.` });
     }
 
     if (!profile.is_test_account) {
@@ -61,7 +62,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     await adminClient
       .from('profiles')
       .delete()
-      .eq('user_id', userId);
+      .eq('id', userId); // Fix: Profiles table uses 'id' as PK
 
     // Delete auth user
     const { error: authDeleteError } = await adminClient.auth.admin.deleteUser(userId);
