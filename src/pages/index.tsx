@@ -14,7 +14,6 @@ import { isRouteAbortError } from '@/lib/navigation/safeNavigate'
 export default function DurhamLanding() {
   const router = useRouter()
   const { user } = useAuth()
-  const [activePanel, setActivePanel] = React.useState<string | null>('dashboard')
 
   // Redirect logged-in users
   React.useEffect(() => {
@@ -24,21 +23,6 @@ export default function DurhamLanding() {
       });
     }
   }, [user, router])
-
-  // Handle deep linking to features
-  React.useEffect(() => {
-    if (router.isReady && router.query.feature) {
-       const feat = router.query.feature as string;
-       const validFeatures = ['my-lectures', 'my-assignments', 'exam-prep', 'durmah', 'yaag'];
-       if (validFeatures.includes(feat)) {
-          setActivePanel(feat);
-          // Small delay to allow render
-          setTimeout(() => {
-             document.getElementById('feature-spotlight')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-          }, 300);
-       }
-    }
-  }, [router.isReady, router.query]);
 
 
 
