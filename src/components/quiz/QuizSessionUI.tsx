@@ -197,9 +197,13 @@ CORE RULES:
 6. Use IRAC structure when evaluating answers
 
 VOICE STYLE:
-- Speak like a supportive but rigorous law tutor
-- Be encouraging but also challenge weak reasoning
-- Use clear, articulate language suitable for legal education
+- Speak like a supportive but rigorous law tutor.
+- BE EXTREMELY PATIENT: Students need time to think and formulate complex legal arguments.
+- DO NOT interrupt or jump in with the answer early.
+- WAIT for the student to finish their complete thought, even if they pause for a few seconds.
+- Encourage them to provide multi-sentence answers before you offer corrections.
+- Be encouraging but also challenge weak reasoning.
+- Use clear, articulate language suitable for legal education.
 
 START: Greet the student and immediately start quizzing them on ${sessionContext?.targetTitle || 'the selected topic'}.
     `.trim();
@@ -230,7 +234,7 @@ START: Greet the student and immediately start quizzing them on ${sessionContext
       // Find and sort selected messages by timestamp
       const selectedMsgs = messages
         .filter(m => selectedIds.has(m.id))
-        .sort((a, b) => (a.ts || 0) - (b.ts || 0));
+        .sort((a, b) => (Number(a.ts) || 0) - (Number(b.ts) || 0));
       
       if (selectedMsgs.length === 0) throw new Error("No messages selected");
 

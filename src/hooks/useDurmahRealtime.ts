@@ -439,6 +439,12 @@ export function useDurmahRealtime({
                 model: TRANSCRIPTION_MODEL,
                 language: "en",
               },
+              turn_detection: {
+                type: "server_vad",
+                threshold: 0.5,
+                min_speech_duration_ms: 200,
+                silence_duration_ms: 2000, 
+              },
             },
           })
         );
