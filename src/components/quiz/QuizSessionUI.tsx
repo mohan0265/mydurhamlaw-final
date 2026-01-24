@@ -156,6 +156,36 @@ START: Greet the student and immediately start quizzing them on ${sessionContext
     `.trim();
   }, [sessionContext]);
 
+  // Debug: Log when session context is loaded
+  useEffect(() => {
+    if (sessionContext) {
+      console.log('[QuizSession] Context loaded:', sessionContext.targetTitle, 'Grounding:', sessionContext.groundingData?.length || 0, 'chars');
+    }
+  }, [sessionContext]);
+
+  // Callback for handling voice turns (both user and Durmah)
+  const handleVoiceTurn = useCallback((turn: { speaker: 'user' | 'durmah'; text: string }) => {
+    console.log(`[QuizSession] onTurn received: ${turn.speaker} said: "${turn.text.substring(0, 50)}..."`);
+    
+    // Append turns to the message transcript
+    const newMsg: Message = {
+      id: `voice-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      role: turn.speaker === 'user' ? 'user' : 'assistant',
+      content: turn.text
+    };
+    setMessages(prev => [...prev, newMsg]);
+    
+    // Also save to database for persistence
+    supabase.from('quiz_messages').insert({
+      session_id: sessionId,
+      user_id: userId,
+      role: turn.speaker === 'user' ? 'user' : 'assistant',
+      content: turn.text
+    }).then(({ error }) => {
+      if (error) console.error('[QuizSession] Failed to save voice turn:', error);
+    });
+  }, [sessionId, userId, supabase]);
+
   // OpenAI Realtime Voice Hook (NOT Gemini)
   const {
     startListening,
@@ -168,15 +198,7 @@ START: Greet the student and immediately start quizzing them on ${sessionContext
     systemPrompt: quizSystemPrompt,
     voice: 'alloy', // OpenAI voice
     audioRef,
-    onTurn: (turn) => {
-      // Append turns to the message transcript
-      const newMsg: Message = {
-        id: Date.now().toString(),
-        role: turn.speaker === 'user' ? 'user' : 'assistant',
-        content: turn.text
-      };
-      setMessages(prev => [...prev, newMsg]);
-    }
+    onTurn: handleVoiceTurn
   });
 
   // Voice status helpers
