@@ -17,6 +17,12 @@ export default function LayoutShell({ children }: Props) {
   const router = useRouter()
   const { user } = useAuth() || { user: null }
 
+  // Only the home page is full-bleed; everything else is constrained
+  const fullBleedPrefixes = ['/']
+  const isFullBleed = fullBleedPrefixes.some(
+    (p) => router.pathname === p || router.pathname.startsWith(p + '/')
+  )
+  const isAuthPage = ['/login', '/signup', '/auth/redirect'].includes(router.pathname);
   const isFullScreenPage = router.pathname.startsWith('/quiz/') || router.pathname.startsWith('/assignments/')
 
   return (
