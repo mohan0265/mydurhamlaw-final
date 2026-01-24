@@ -3,19 +3,18 @@ import { useAuth } from '@/lib/supabase/AuthContext';
 import { getSupabaseClient } from '@/lib/supabase/client';
 import { 
   DURMAH_VOICE_PRESETS, 
-  DurmahVoiceId,
+  getDurmahPresetById,
   getDefaultDurmahVoiceId 
 } from '@/config/durmahVoicePresets';
+import { DELIVERY_STYLES } from '@/lib/voiceCatalog';
 import toast from 'react-hot-toast';
 
 export function useDurmahSettings() {
   const { user } = useAuth();
-  const [voiceId, setVoiceId] = useState<DurmahVoiceId>(getDefaultDurmahVoiceId());
+  const [voiceId, setVoiceId] = useState<string>(getDefaultDurmahVoiceId());
+  const [deliveryStyleId, setDeliveryStyleId] = useState<string>('friendly_buddy');
+  const [speed, setSpeed] = useState<number>(1.0);
   const [loading, setLoading] = useState(true);
-
-  // Helper to find preset by ID
-  const getDurmahVoicePreset = (id: string) => 
-    DURMAH_VOICE_PRESETS.find(p => p.id === id) || DURMAH_VOICE_PRESETS[0];
 
   // Fetch initial setting
   useEffect(() => {
@@ -30,25 +29,20 @@ export function useDurmahSettings() {
         if (!supabase) return;
 
         const { data, error } = await supabase
-          .from('profiles')
-          .select('durmah_voice_id')
-          .eq('id', user!.id)
+          .from('user_voice_settings')
+          .select('*')
+          .eq('user_id', user.id)
           .single();
 
-        if (error) throw error;
+        if (error && error.code !== 'PGRST116') throw error;
 
-        if (data?.durmah_voice_id) {
-          // Validate that the ID exists in our presets
-          const preset = getDurmahVoicePreset(data.durmah_voice_id);
-          setVoiceId(preset!.id as DurmahVoiceId);
+        if (data) {
+          setVoiceId(data.voice_id || getDefaultDurmahVoiceId());
+          setDeliveryStyleId(data.delivery_style || 'friendly_buddy');
+          setSpeed(data.speed || 1.0);
         }
       } catch (err: any) {
-        // If the column doesn't exist yet (migration not run), just ignore and use default
-        if (err?.code === 'PGRST204' || err?.message?.includes('column')) {
-           console.warn('[DurmahSettings] Voice setting column missing, using default.');
-        } else {
-           // console.error('[DurmahSettings] Failed to fetch voice setting:', err);
-        }
+        console.error('[DurmahSettings] Failed to fetch voice settings:', err);
       } finally {
         setLoading(false);
       }
@@ -57,9 +51,11 @@ export function useDurmahSettings() {
     fetchSettings();
   }, [user?.id]);
 
-  const updateVoice = useCallback(async (newVoiceId: DurmahVoiceId) => {
+  const updateSettings = useCallback(async (updates: { voiceId?: string; deliveryStyleId?: string; speed?: number }) => {
     // Optimistic update
-    setVoiceId(newVoiceId);
+    if (updates.voiceId) setVoiceId(updates.voiceId);
+    if (updates.deliveryStyleId) setDeliveryStyleId(updates.deliveryStyleId);
+    if (updates.speed !== undefined) setSpeed(updates.speed);
 
     if (!user?.id) return;
 
@@ -68,22 +64,31 @@ export function useDurmahSettings() {
       if (!supabase) throw new Error("Supabase not initialized");
 
       const { error } = await supabase
-        .from('profiles')
-        .update({ durmah_voice_id: newVoiceId })
-        .eq('id', user.id);
+        .from('user_voice_settings')
+        .upsert({ 
+          user_id: user.id,
+          voice_id: updates.voiceId || voiceId,
+          delivery_style: updates.deliveryStyleId || deliveryStyleId,
+          speed: updates.speed !== undefined ? updates.speed : speed
+        });
 
       if (error) throw error;
-      toast.success('Voice updated');
+      // toast.success('Settings updated'); // Optional, might be too noisy
     } catch (err) {
-      console.error('[DurmahSettings] Failed to update voice:', err);
-      toast.error('Failed to save voice preference');
+      console.error('[DurmahSettings] Failed to update settings:', err);
+      toast.error('Failed to save preferences');
     }
-  }, [user?.id]);
+  }, [user?.id, voiceId, deliveryStyleId, speed]);
+
+  const deliveryStyle = DELIVERY_STYLES.find(s => s.id === deliveryStyleId) || DELIVERY_STYLES[0];
 
   return {
     voiceId,
-    preset: getDurmahVoicePreset(voiceId),
-    updateVoice,
+    preset: getDurmahPresetById(voiceId),
+    deliveryStyleId,
+    deliveryStyle,
+    speed,
+    updateSettings,
     loading,
     availablePresets: DURMAH_VOICE_PRESETS
   };

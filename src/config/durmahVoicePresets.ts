@@ -1,155 +1,114 @@
-export type DurmahVoiceId =
-  | "warm_female"
-  | "calm_male"
-  | "empathetic_ally"
-  | "witty_buddy"
-  | "intense_coach"
-  | "wise_sage"
-  | "vibrant_senior"
-  | "sophisticated_guide"
-  | "quick_peer";
+import { OPENAI_VOICES } from '@/lib/voiceCatalog';
 
 export interface DurmahVoicePreset {
-  id: DurmahVoiceId;
-  openaiVoice: string; // OpenAI realtime voice identifier (e.g. "alloy")
-  geminiVoice: string; // Gemini Live voice identifier (e.g. "Puck")
+  id: string;
+  openaiVoice: string; // OpenAI realtime voice identifier
   label: string;
   subtitle: string;
-  colorClass: string; // Tailwind classes for cards
+  colorClass: string;
   icon: "mentor" | "owl" | "feather" | "spark" | "smile";
   previewText: string;
   welcomeMessage: string;
+  gender: 'male' | 'female' | 'neutral';
 }
 
-// Valid OpenAI Realtime voices: alloy, ash, ballad, coral, echo, sage, shimmer, verse
-// Valid Gemini Live voices: Aoede, Charon, Fenrir, Kore, Puck
 export const DURMAH_VOICE_PRESETS: DurmahVoicePreset[] = [
   {
-    id: "warm_female",
-    openaiVoice: "shimmer", 
-    geminiVoice: "Kore", // Swapped to Kore (Calm/Warm Female) for more "real female" feel
+    id: "shimmer",
+    openaiVoice: "shimmer",
     label: "Warm Female Mentor",
     subtitle: "Gentle, soothing, and supportive.",
     colorClass: "from-purple-500 to-pink-500",
     icon: "mentor",
-    previewText:
-      "Hi there. I'm your warm Legal Eagle mentor. I'm here to listen and help you navigate your studies with a calm mind.",
-    welcomeMessage:
-      "Good to see you. I'm here to support you. Let's take a deep breath and look at what you need to do today."
+    previewText: "Hi there. I'm your warm Legal Eagle mentor. I'm here to listen and help you navigate your studies with a calm mind.",
+    welcomeMessage: "Good to see you. I'm here to support you. Let's take a deep breath and look at what you need to do today.",
+    gender: 'female'
   },
   {
-    id: "calm_male",
-    openaiVoice: "ballad", 
-    geminiVoice: "Charon", // Deep, authoritative male
-    label: "Calm Male Mentor",
-    subtitle: "Steady, reassuring, and clear.",
+    id: "alloy",
+    openaiVoice: "alloy",
+    label: "Balanced Study Guide",
+    subtitle: "Neutral, steady, and approachable.",
+    colorClass: "from-blue-500 to-cyan-500",
+    icon: "owl",
+    previewText: "Hello. I'm your balanced study guide. I'll help you organize your thoughts and legal research efficiently.",
+    welcomeMessage: "Ready to get organized? Let's dive into your modules and see what we can accomplish.",
+    gender: 'neutral'
+  },
+  {
+    id: "ash",
+    openaiVoice: "ash",
+    label: "Energetic Peer",
+    subtitle: "Bright, fast-paced, and motivating.",
+    colorClass: "from-orange-400 to-amber-500",
+    icon: "spark",
+    previewText: "Hey! Ready to crush some law? Let's power through these notes and get you exam-ready!",
+    welcomeMessage: "Yo! Let's get moving. What's the biggest challenge on your plate right now?",
+    gender: 'male'
+  },
+  {
+    id: "ballad",
+    openaiVoice: "ballad",
+    label: "Crisp Lecturer",
+    subtitle: "Professional, clear, and focused.",
     colorClass: "from-indigo-500 to-blue-600",
     icon: "owl",
-    previewText:
-      "Hello. I'm your calm study mentor. I'll help you break down complex cases into clear, manageable parts.",
-    welcomeMessage:
-      "Let's stick to the facts and build a solid argument. What topic are we analysing right now?"
+    previewText: "Good day. I'll assist you in refining your legal arguments with precision and clarity.",
+    welcomeMessage: "Greetings. Let us approach our analysis with professional rigor. What topic shall we examine?",
+    gender: 'male'
   },
   {
-    id: "empathetic_ally",
-    openaiVoice: "coral", 
-    geminiVoice: "Aoede", // Expressive female
-    label: "Empathetic Ally",
-    subtitle: "Understanding and deeply supportive.",
+    id: "coral",
+    openaiVoice: "coral",
+    label: "Friendly Buddy",
+    subtitle: "Warm, expressive, and conversational.",
     colorClass: "from-pink-400/80 to-rose-500/80",
-    icon: "feather",
-    previewText:
-      "I know the pressure is high, but you're doing amazing. I'm here to listen and help you through the tough spots.",
-    welcomeMessage:
-      "Hey. Just checking in. Remember, you're not alone in this journey. What's on your mind?"
-  },
-  {
-    id: "witty_buddy",
-    openaiVoice: "verse", 
-    geminiVoice: "Puck", 
-    label: "Witty Study Buddy",
-    subtitle: "Humorous and high-energy.",
-    colorClass: "from-orange-400 to-amber-500",
     icon: "smile",
-    previewText:
-      "Ready to crush some torts? I promise to keep things interesting and maybe crack a bad joke or two.",
-    welcomeMessage:
-      "Ready to roll? Let's make this study session bearable. What's the damage for today?"
+    previewText: "Hi! I know law is tough, but you've totally got this. I'm here to practice together.",
+    welcomeMessage: "Hey! Just checking in. Remember, you're doing great. What's on your mind today?",
+    gender: 'female'
   },
   {
-    id: "wise_sage",
-    openaiVoice: "sage", 
-    geminiVoice: "Kore",
-    label: "Wise Professor",
+    id: "echo",
+    openaiVoice: "echo",
+    label: "Intense Coach",
+    subtitle: "Direct, demanding, and high-performance.",
+    colorClass: "from-red-600 to-rose-700",
+    icon: "spark",
+    previewText: "Focus. Eyes on the prize. We are here to achieve mastery. No distractions.",
+    welcomeMessage: "Time to work. No excuses. What is the single most important task right now?",
+    gender: 'male'
+  },
+  {
+    id: "sage",
+    openaiVoice: "sage",
+    label: "Wise Counselor",
     subtitle: "Measured, experienced, and guiding.",
     colorClass: "from-emerald-500 to-teal-600",
     icon: "owl",
-    previewText:
-      "Knowledge is a journey, not a race. Let us examine the principles with a clear and focused mind.",
-    welcomeMessage:
-      "Greetings. I am here to help you synthesize these complex concepts. Where shall we begin our analysis?"
+    previewText: "Knowledge is a journey. Let us examine the principles with a clear and focused mind.",
+    welcomeMessage: "Greetings. I am here to help you synthesize these complex concepts. Where shall we begin?",
+    gender: 'neutral'
   },
   {
-    id: "vibrant_senior",
-    openaiVoice: "shimmer", 
-    geminiVoice: "Aoede",
+    id: "verse",
+    openaiVoice: "verse",
     label: "Vibrant Senior",
-    subtitle: "Motivating, bright, and encouraging.",
+    subtitle: "Inspiring, creative, and lively.",
     colorClass: "from-yellow-400 to-orange-500",
     icon: "spark",
-    previewText:
-      "You've totally got this! Law is tough, but you're tougher. Let's power through this together!",
-    welcomeMessage:
-      "Hey! Ready to smash this? I'm feeling great about your progress today. What are we tackling?"
-  },
-  {
-    id: "sophisticated_guide",
-    openaiVoice: "ballad", 
-    geminiVoice: "Charon",
-    label: "Sophisticated Guide",
-    subtitle: "Elegant, precise, and professional.",
-    colorClass: "from-slate-700 to-slate-900",
-    icon: "mentor",
-    previewText:
-      "Precision in language is the hallmark of a great lawyer. Allow me to assist you in refining your understanding.",
-    welcomeMessage:
-      "Good day. Let us approach this topic with the professional rigor it demands. What is our focus?"
-  },
-  {
-    id: "quick_peer",
-    openaiVoice: "ash", 
-    geminiVoice: "Fenrir",
-    label: "Quick-Witted Peer",
-    subtitle: "Direct, fast-paced, and sharp.",
-    colorClass: "from-blue-600 to-indigo-700",
-    icon: "smile",
-    previewText:
-      "Let's get straight to the point. No fluff, just the core facts and key arguments you need to win.",
-    welcomeMessage:
-      "Yo! Let's hit it. What's the core issue we're breaking down right now? I'm ready when you are."
-  },
-  {
-    id: "intense_coach",
-    openaiVoice: "echo", 
-    geminiVoice: "Fenrir",
-    label: "Intense Coach",
-    subtitle: "Demanding high-performance and focus.",
-    colorClass: "from-red-600 to-rose-700",
-    icon: "spark",
-    previewText:
-      "Focus. Eyes on the prize. We are here to achieve mastery. No distractions allowed. Give me 100%.",
-    welcomeMessage:
-      "Time to work. No excuses. We have goals to hit. What is the single most important task right now?"
+    previewText: "You've totally got this! Law is an art form. Let's make your arguments shine.",
+    welcomeMessage: "Hey! Ready to make some magic? I'm feeling great about your progress. What are we tackling?",
+    gender: 'neutral'
   }
 ];
 
-export const getDefaultDurmahVoiceId = (): DurmahVoiceId => "warm_female";
+export const getDefaultDurmahVoiceId = (): string => "shimmer";
 
 export const getDurmahPresetById = (
-  id: DurmahVoiceId | null | undefined | string
+  id: string | null | undefined
 ): DurmahVoicePreset => {
-  // Safe cast or find
   return (
-    (DURMAH_VOICE_PRESETS.find((p) => p.id === (id as any)) ?? DURMAH_VOICE_PRESETS[0])!
+    DURMAH_VOICE_PRESETS.find((p) => p.id === id) ?? DURMAH_VOICE_PRESETS[0]
   );
 };

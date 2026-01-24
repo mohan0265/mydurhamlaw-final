@@ -13,6 +13,7 @@ import {
   buildDurmahContextBlock,
   generateProactiveGreeting
 } from "@/lib/durmah/systemPrompt";
+import { DELIVERY_STYLES, SPEEDS } from "@/lib/voiceCatalog";
 import type { StudentContext } from "@/types/durmahContext";
 import type { DurmahContextPacket } from "@/types/durmah";
 import { formatTodayForDisplay } from "@/lib/durmah/phase";
@@ -26,23 +27,11 @@ import SaveConversationModal from '@/components/SaveConversationModal'; // NEW: 
 import SaveToFolderModal from '@/components/durmah/SaveToFolderModal';
 
 
-// Voice Provider Selection - checks localStorage override first, then environment variable
-// This allows runtime switching without redeployment (e.g., if Gemini fails)
-function getVoiceProvider(): 'openai' | 'gemini' {
-  if (typeof window !== 'undefined') {
-    const override = localStorage.getItem('durmah_voice_override');
-    if (override === 'openai' || override === 'gemini') {
-      console.log('[DurmahWidget] Using voice provider override:', override);
-      return override;
-    }
-  }
-  const envProvider = (process.env.NEXT_PUBLIC_DURMAH_VOICE_PROVIDER || 'openai').toLowerCase();
-  return envProvider === 'gemini' ? 'gemini' : 'openai';
-}
-
-const VOICE_PROVIDER = getVoiceProvider();
-const useVoiceHook = VOICE_PROVIDER === 'gemini' ? useDurmahGeminiLive : useDurmahRealtime;
-console.log('[DurmahWidget] Using voice provider:', VOICE_PROVIDER);
+// Voice Provider Selection - Forced to OpenAI for production quality and feature support
+// Gemini provider logic is kept in hooks but disabled in UI to avoid confusion.
+const VOICE_PROVIDER = 'openai';
+const useVoiceHook = useDurmahRealtime;
+console.log('[DurmahWidget] Voice provider locked to:', VOICE_PROVIDER);
 
 type Msg = { 
   id?: string;
@@ -221,7 +210,7 @@ export default function DurmahWidget() {
   // 1. Source Context
   const durmahCtx = useDurmah();
   const { upcomingTasks, todaysEvents, authError } = useDurmahDynamicContext();
-  const { preset, updateVoice, availablePresets, voiceId } = useDurmahSettings();
+  const { preset, deliveryStyleId, deliveryStyle, speed, updateSettings, availablePresets, voiceId } = useDurmahSettings();
   
   // Construct the unified context object
   const studentContext: {
@@ -968,10 +957,8 @@ Date: ${studentContextData.academic?.now?.nowText || studentContextData.student.
     setVoiceSessionHadTurns(true);
   }, [logMessage]);
 
-  // Choose voice name based on provider
-  const voiceName = VOICE_PROVIDER === 'gemini' 
-    ? (preset?.geminiVoice || 'Puck') 
-    : (preset?.openaiVoice || 'alloy');
+  // Choose voice name (OpenAI Realtime)
+  const voiceName = preset?.openaiVoice || 'alloy';
 
   // Pass selected realtime voice from the preset
   const {
@@ -985,6 +972,8 @@ Date: ${studentContextData.academic?.now?.nowText || studentContextData.student.
   } = useVoiceHook({
     systemPrompt,
     voice: voiceName, // Use provider-specific voice
+    deliveryStyle: deliveryStyle?.instruction, // Pass delivery style instruction
+    speed: speed, // Pass speech speed
     audioRef,
     onTurn: (turn) => {
       appendTranscriptTurn(
@@ -1158,16 +1147,26 @@ Date: ${studentContextData.academic?.now?.nowText || studentContextData.student.
   }
 
   const handlePreview = async (
-    preset: { id: string; openaiVoice: string; previewText: string },
+    voice_id: string,
     e: React.MouseEvent
   ) => {
     e.stopPropagation();
-    if (isVoiceActive || previewingVoiceId === preset.id) return;
+    if (isVoiceActive || previewingVoiceId === voice_id) return;
 
-    setPreviewingVoiceId(preset.id);
+    setPreviewingVoiceId(voice_id);
     try {
-      if (playVoicePreview) {
-        await playVoicePreview(preset);
+      // Use the new Netlify function for preview
+      const response = await fetch('/.netlify/functions/voice-preview', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ voice_id, text: "Hi, I'm Durmah. Ready to study together?" })
+      });
+      
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        const audio = new Audio(url);
+        audio.play();
       }
     } catch (err) {
       console.error("[DurmahVoice] Preview failed:", err);
@@ -1905,8 +1904,8 @@ User question: ${userText}`;
         <div className="absolute inset-0 z-40 bg-gray-50/95 backdrop-blur-xl flex flex-col animate-in fade-in slide-in-from-bottom-4">
           <div className="flex justify-between items-center px-6 py-4 border-b border-gray-200 bg-white/50">
              <div>
-                <h3 className="font-bold text-lg text-gray-800">Durmah's Voice</h3>
-                <p className="text-xs text-gray-500">Select a personality for your mentor</p>
+                <h3 className="font-bold text-lg text-gray-800">Voice Settings</h3>
+                <p className="text-xs text-gray-500">Customize your Durmah experience</p>
              </div>
             <button onClick={() => setShowSettings(false)} className="p-2 rounded-full hover:bg-gray-200 text-gray-500">
               <X size={20} />
@@ -1914,6 +1913,53 @@ User question: ${userText}`;
           </div>
           
           <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
+              {/* 1. Delivery Style Section */}
+              <div className="mb-6">
+                 <h4 className="text-xs font-black uppercase tracking-widest text-gray-400 mb-3 px-1">Delivery Style</h4>
+                 <div className="grid grid-cols-2 gap-2">
+                    {DELIVERY_STYLES.map((style) => (
+                      <button
+                        key={style.id}
+                        onClick={() => updateSettings({ deliveryStyleId: style.id })}
+                        className={`px-3 py-2 rounded-xl text-xs font-semibold border transition-all ${
+                          deliveryStyleId === style.id 
+                            ? "bg-violet-600 border-violet-600 text-white shadow-md"
+                            : "bg-white border-gray-200 text-gray-600 hover:border-violet-300"
+                        }`}
+                      >
+                        {style.label}
+                      </button>
+                    ))}
+                 </div>
+              </div>
+
+              {/* 2. Speed Control Section */}
+              <div className="mb-8">
+                 <div className="flex items-center justify-between mb-3 px-1">
+                    <h4 className="text-xs font-black uppercase tracking-widest text-gray-400">Speech Speed</h4>
+                    <span className="text-xs font-bold text-violet-600 bg-violet-50 px-2 py-0.5 rounded-full">
+                      {SPEEDS.find(s => s.value === speed)?.label || 'Normal'} ({speed}x)
+                    </span>
+                 </div>
+                 <div className="flex gap-2">
+                    {SPEEDS.map((s) => (
+                      <button
+                        key={s.value}
+                        onClick={() => updateSettings({ speed: s.value })}
+                        className={`flex-1 py-2 rounded-lg text-xs font-bold border transition-all ${
+                          speed === s.value
+                            ? "bg-violet-100 border-violet-500 text-violet-700"
+                            : "bg-white border-gray-200 text-gray-500 hover:border-violet-200"
+                        }`}
+                      >
+                        {s.value}x
+                      </button>
+                    ))}
+                 </div>
+              </div>
+
+              {/* 3. Voice Selection Section */}
+              <h4 className="text-xs font-black uppercase tracking-widest text-gray-400 mb-3 px-1">Voice Catalog</h4>
               <div className="grid grid-cols-1 gap-4 pb-4">
                 {availablePresets.map((p) => {
                   const isSelected = voiceId === p.id;
@@ -1922,7 +1968,7 @@ User question: ${userText}`;
                   return (
                     <div 
                       key={p.id}
-                      onClick={() => updateVoice(p.id)}
+                      onClick={() => updateSettings({ voiceId: p.id })}
                       className={`relative group rounded-2xl border transition-all duration-300 cursor-pointer overflow-hidden ${
                         isSelected 
                           ? "bg-white border-violet-500 shadow-lg ring-1 ring-violet-500 scale-[1.02]" 
@@ -1933,7 +1979,7 @@ User question: ${userText}`;
                       <div className={`h-2 w-full bg-gradient-to-r ${p.colorClass}`}></div>
                       
                       {isSelected && (
-                        <div className="absolute top-4 right-4 bg-violet-600 text-white text-[10px] font-bold px-2 py-1 rounded-full flex items-center gap-1 shadow-sm">
+                        <div className="absolute top-4 right-4 bg-violet-600 text-white text-[10px] font-bold px-2 py-1 rounded-full flex items-center gap-1 shadow-sm transition-all animate-in zoom-in-75">
                           <Check size={10} /> Selected
                         </div>
                       )}
@@ -1949,22 +1995,27 @@ User question: ${userText}`;
                              </div>
                           </div>
                           
-                          <h4 className="font-bold text-gray-900 mb-1">{p.label}</h4>
+                          <div className="flex items-center gap-2 mb-1">
+                             <h4 className="font-bold text-gray-900">{p.label}</h4>
+                             <span className="text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded capitalize font-medium">{p.gender}</span>
+                          </div>
                           <p className="text-xs text-gray-500 mb-4 h-8">{p.subtitle}</p>
                           
                           <button
-                             onClick={(e) => handlePreview(p, e)}
+                             onClick={(e) => handlePreview(p.id, e)}
                              disabled={Boolean(isPreviewing) || isVoiceActive}
                              className={`w-full py-2.5 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition-all ${
-                               isPreviewing || isVoiceActive 
-                                 ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                                 : "bg-gray-100 text-gray-600 hover:bg-violet-100 hover:text-violet-700"
+                                isPreviewing 
+                                 ? "bg-violet-600 text-white shadow-lg animate-pulse"
+                                 : isVoiceActive 
+                                   ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                                   : "bg-gray-100 text-gray-600 hover:bg-violet-100 hover:text-violet-700"
                              }`}
                           >
                              {isPreviewing ? (
                                <>
-                                 <span className="w-2 h-2 bg-violet-500 rounded-full animate-pulse"></span>
-                                 Playing...
+                                 <span className="w-2 h-2 bg-white rounded-full animate-ping"></span>
+                                 Playing Preview...
                                </>
                              ) : isVoiceActive ? (
                                <>
@@ -1985,7 +2036,7 @@ User question: ${userText}`;
           
           <div className="p-4 border-t border-gray-200 bg-white/50 text-center">
             <div className="text-[10px] text-gray-400 uppercase tracking-widest font-semibold">
-               Powered by Gemini Realtime
+               Powered by OpenAI Realtime
             </div>
           </div>
         </div>

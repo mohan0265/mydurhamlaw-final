@@ -108,10 +108,45 @@ export const AppFooter: React.FC<AppFooterProps> = ({ isAuthed }) => {
               MyDurhamLaw is an independent study companion designed around the Durham Law journey.
               Transforming legal education with integrity.
             </p>
-            {/* ... items ... */}
+            <div className="flex space-x-3">
+               <a href="mailto:support@mydurhamlaw.com" className="p-2 bg-white/5 rounded-lg hover:bg-white/10 transition-colors">
+                  <Mail className="w-4 h-4 text-gray-400" />
+               </a>
+            </div>
           </div>
 
-          {/* ... columns ... */}
+          {/* Col 2: Study / Learn */}
+          <div>
+            <h4 className="text-xs font-black uppercase tracking-widest text-gray-400 mb-4">Study & Progress</h4>
+            {isAuthed ? renderLinks(studentStudyLinks) : renderLinks(publicLearnLinks)}
+          </div>
+
+          {/* Col 3: Community */}
+          <div>
+            <h4 className="text-xs font-black uppercase tracking-widest text-gray-400 mb-4">Community & Wellbeing</h4>
+            {renderLinks(studentCommunityLinks)}
+          </div>
+
+          {/* Col 4: Legal & Admin */}
+          <div>
+            <h4 className="text-xs font-black uppercase tracking-widest text-gray-400 mb-4">Legal & Support</h4>
+            <ul className="space-y-2">
+              {legalLinks.map((link, idx) => (
+                <li key={idx}>
+                  <Link href={link.href} className="text-gray-300 hover:text-blue-400 transition-colors duration-200 flex items-center text-xs group">
+                    {link.icon || null}
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
+              <li className="pt-2">
+                <Link href="/admin/login" className="text-gray-500 hover:text-white transition-colors text-xs flex items-center gap-2 mt-2 pt-2 border-t border-gray-800">
+                  <Lock className="w-3 h-3" />
+                  Admin Login
+                </Link>
+              </li>
+            </ul>
+          </div>
 
         </div>
 

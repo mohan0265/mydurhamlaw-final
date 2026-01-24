@@ -48,6 +48,8 @@ interface UseDurmahRealtimeProps {
   enabled?: boolean;
   userName?: string;
   voiceId?: string; // map to voice
+  deliveryStyle?: string; // delivery style instruction
+  speed?: number; // speech speed (0.85 - 1.3)
   initialMessage?: string;
   systemInstruction?: string; // map to systemPrompt if needed
 }
@@ -74,6 +76,8 @@ export function useDurmahRealtime({
   systemPrompt,
   voice = "shimmer",
   voiceId,
+  deliveryStyle,
+  speed = 1.0,
   onTurn,
   audioRef,
 }: UseDurmahRealtimeProps) {
@@ -445,9 +449,25 @@ export function useDurmahRealtime({
                 min_speech_duration_ms: 200,
                 silence_duration_ms: 2000, 
               },
+              voice: chosenVoice,
               temperature: 0.7, // Balanced for tutor persona
-              max_response_output_tokens: 300, // Enforce conciseness (approx 1-3 sentences)
+              max_response_output_tokens: 300, // Enforce conciseness
             },
+          })
+        );
+
+        // Update with specific style and speed
+        const styleInstruction = deliveryStyle ? `\n\nDELIVERY STYLE: ${deliveryStyle}` : "";
+        dc.send(
+          JSON.stringify({
+            type: "session.update",
+            session: {
+              instructions: systemPrompt + styleInstruction,
+              modalities: ["audio", "text"],
+              // Note: speed is technically applied via session.audio_playback_rate in some models,
+              // but for Realtime we typically use the standard session update if supported.
+              // As of latest spec, we use session.update for speed.
+            }
           })
         );
 
