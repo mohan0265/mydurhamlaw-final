@@ -227,31 +227,41 @@ START: Greet the student and immediately start quizzing them on ${sessionContext
     const toastId = toast.loading('Saving selected messages...');
 
     try {
-      // Find selected messages
-      const selectedMsgs = messages.filter(m => selectedIds.has(m.id));
+      // Find and sort selected messages by timestamp
+      const selectedMsgs = messages
+        .filter(m => selectedIds.has(m.id))
+        .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
       
-      // Batch save to 'durmah_knowledge_base' or similar? 
-      // Main widget uses 'toggleSaveMetadata' which updates `messages` table 'saved_at' and 'folder_id'.
-      // Here in Quiz, we should probably follow the same pattern if we want them in same library.
-      
-      for (const msg of selectedMsgs) {
-        // Since quiz messages are in 'quiz_messages' table, we might need a unified way to save.
-        // But for parity, let's use the standard folder-saving API if available or direct insert.
-        
-        const { error } = await supabase.from('durmah_knowledge_base').insert({
-          user_id: userId,
-          content: msg.content,
-          role: msg.role,
-          folder_id: folderId,
-          source_type: 'quiz_session',
-          source_id: sessionId,
-          title: (sessionContext?.targetTitle || 'Quiz Message').substring(0, 100)
-        });
-        
-        if (error) throw error;
-      }
+      if (selectedMsgs.length === 0) throw new Error("No messages selected");
 
-      toast.success(`${selectedMsgs.length} messages saved to folder`, { id: toastId });
+      // Prepare payload similar to DurmahWidget voice sessions
+      const transcriptPayload = {
+        topic: (sessionContext?.targetTitle || 'Quiz Insight').substring(0, 100),
+        summary: `Saved insight from quiz session on ${sessionContext?.targetTitle || 'legal topic'}.`,
+        transcript: selectedMsgs.map(m => ({
+            role: m.role === 'user' ? 'you' : 'durmah',
+            text: m.content,
+            timestamp: new Date(m.created_at).getTime()
+        })),
+        content_text: selectedMsgs.map(m => `${m.role === 'user' ? 'you' : 'durmah'}: ${m.content}`).join('\n'),
+        duration_seconds: 0,
+        started_at: selectedMsgs[0]?.created_at || new Date().toISOString(),
+        ended_at: selectedMsgs[selectedMsgs.length - 1]?.created_at || new Date().toISOString()
+      };
+
+      const resp = await fetch('/api/transcripts/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          transcriptPayload,
+          folderId
+        })
+      });
+
+      const json = await resp.json();
+      if (!json.ok) throw new Error(json.error || "Failed to archive");
+
+      toast.success(`${selectedMsgs.length} items archived successfully`, { id: toastId });
       setIsFolderModalOpen(false);
       setIsSelectionMode(false);
       setSelectedIds(new Set());
