@@ -551,6 +551,14 @@ export default function DurmahWidget() {
     }
   }, [messages, ready, isOpen]);
 
+  // Voice transcript auto-scroll
+  useEffect(() => {
+    if (showVoiceTranscript) {
+      const anchor = document.getElementById('voice-scroll-anchor');
+      anchor?.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [callTranscript, showVoiceTranscript]);
+
   useEffect(() => {
     if (!signedIn) {
       setContextPacket(null);
@@ -1109,7 +1117,7 @@ Date: ${studentContextData.academic?.now?.nowText || studentContextData.student.
     console.log("[DurmahVoice] Mic button clicked");
     if (!isVoiceActive) {
       setCallTranscript([]);
-      setShowVoiceTranscript(false);
+      setShowVoiceTranscript(true); // ENABLE REAL-TIME VISIBILITY IMMEDIATELY
       setVoiceSessionActive(true);
       setVoiceSessionHadTurns(false);
       setVoiceSessionEndedAt(null);
@@ -1980,24 +1988,29 @@ User question: ${userText}`;
         </div>
       )}
 
-      {/* --------------- VOICE TRANSCRIPT ---------------- */}
+      {/* --------------- VOICE TRANSCRIPT (MODAL STYLE OVERLAY) ---------------- */}
       {showVoiceTranscript && !showSettings && (
-        <div className="flex-none p-4 bg-violet-50/80 backdrop-blur-sm border-b border-violet-100 z-10 shadow-sm max-h-[40%] overflow-y-auto custom-scrollbar">
-          <div className="text-xs font-bold uppercase tracking-wider text-violet-600 mb-3 flex items-center gap-2 sticky top-0 bg-violet-50/0">
-            <span className="w-2 h-2 rounded-full bg-violet-500 animate-pulse"></span>
-            Live Transcript
+        <div className="flex-none p-4 bg-white border-b border-violet-200 z-[42] shadow-xl max-h-[50%] overflow-y-auto custom-scrollbar animate-in slide-in-from-top-4 duration-300">
+          <div className="text-xs font-black uppercase tracking-[0.2em] text-violet-600 mb-4 flex items-center justify-between sticky top-0 bg-white py-1">
+            <div className="flex items-center gap-2">
+              <span className={`w-2 h-2 rounded-full ${isVoiceActive ? 'bg-red-500 animate-pulse' : 'bg-gray-300'}`}></span>
+              {isVoiceActive ? 'Real-time Transcript' : 'Last Session Transcript'}
+            </div>
+            {!isVoiceActive && (
+              <button onClick={() => setShowVoiceTranscript(false)} className="text-gray-400 hover:text-gray-600">
+                <X size={14} />
+              </button>
+            )}
           </div>
 
           {callTranscript.length === 0 ? (
-            <div className="text-sm text-violet-900/80 bg-white/80 border border-violet-100 rounded-2xl px-4 py-3 shadow-sm">
-              No transcript captured for this session.
+            <div className="text-sm text-gray-500 italic bg-slate-50 border border-slate-100 rounded-2xl px-4 py-6 text-center">
+              {isVoiceActive ? 'Listening... say something to Durmah!' : 'No transcript recorded.'}
             </div>
           ) : (
-            <div className="space-y-3 pr-2">
+            <div className="space-y-4 pr-2 pb-4">
               {callTranscript.map((m) => (
-                <div key={m.ts} className={`flex ${m.role === "you" ? "justify-end" : "justify-start"} items-end gap-2`}>
-                   
-                   {/* Selection Checkbox for Live Transcript */}
+                <div key={m.ts} className={`flex ${m.role === "you" ? "justify-end" : "justify-start"} items-start gap-3`}>
                    {isSelectionMode && (
                         <div className={`flex items-center ${m.role === "you" ? "order-last" : "order-first"}`}>
                             <button onClick={() => toggleSelection(getMessageKey(m as any))} className="p-1 hover:bg-gray-100 rounded transition-colors">
@@ -2010,36 +2023,38 @@ User question: ${userText}`;
                     )}
 
                   <div
-                    className={`px-3 py-2 rounded-2xl text-sm shadow-sm ${
+                    className={`max-w-[85%] px-4 py-3 rounded-2xl text-sm leading-relaxed ${
                       m.role === "you"
-                        ? "bg-violet-600 text-white rounded-tr-none"
-                        : "bg-white text-slate-800 border border-violet-100 rounded-tl-none"
+                        ? "bg-violet-600 text-white rounded-tr-none shadow-md shadow-violet-600/10"
+                        : "bg-slate-50 text-slate-800 border border-slate-200 rounded-tl-none"
                     } ${isSelectionMode && selectedIds.has(getMessageKey(m as any)) ? 'ring-2 ring-violet-400 ring-offset-2' : ''}`}
                   >
                     {m.text}
                   </div>
                 </div>
               ))}
+              {/* Voice auto-scroll anchor */}
+              <div id="voice-scroll-anchor" />
             </div>
           )}
 
-          <div className="flex justify-between gap-3 pt-4 mt-3 border-t border-violet-200 sticky bottom-0 bg-violet-50/95 backdrop-blur-sm">
-            <button
-              onClick={discardVoiceTranscript}
-              className="flex-1 text-sm font-medium px-4 py-2.5 rounded-xl text-gray-600 hover:bg-white/80 transition-colors border border-gray-300 bg-white/60"
-              title="Close without saving transcript"
-            >
-              Close
-            </button>
-            <button
-              onClick={saveVoiceTranscript}
-              className="flex-1 text-sm font-bold px-6 py-2.5 rounded-xl bg-green-500 hover:bg-green-600 text-white transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2"
-              title="Save this voice transcript to your library"
-            >
-              <Save size={16} />
-              Save Transcript
-            </button>
-          </div>
+          {!isVoiceActive && callTranscript.length > 0 && (
+            <div className="flex justify-between gap-3 pt-4 mt-2 border-t border-slate-100 sticky bottom-0 bg-white">
+              <button
+                onClick={discardVoiceTranscript}
+                className="flex-1 text-xs font-bold px-4 py-2.5 rounded-xl text-gray-500 hover:bg-slate-50 transition-colors border border-slate-200"
+              >
+                Close & Discard
+              </button>
+              <button
+                onClick={saveVoiceTranscript}
+                className="flex-1 text-xs font-black px-6 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-700 text-white transition-all shadow-lg shadow-violet-600/20 flex items-center justify-center gap-2 uppercase tracking-widest"
+              >
+                <Save size={14} />
+                Save To Library
+              </button>
+            </div>
+          )}
         </div>
       )}
 

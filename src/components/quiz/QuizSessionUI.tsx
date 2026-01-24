@@ -18,18 +18,24 @@ import {
   Trash2,
   Download,
   MoreVertical,
-  Volume2
+  Volume2,
+  CheckSquare,
+  Square,
+  BookmarkX,
+  Plus
 } from 'lucide-react';
 import { useRouter } from 'next/router';
 import { getSupabaseClient } from '@/lib/supabase/client';
 import { QuizSourcesPanel } from './QuizSourcesPanel';
 import { useDurmahRealtime } from '@/hooks/useDurmahRealtime'; // OpenAI ONLY - no Gemini
+import SaveToFolderModal from '@/components/durmah/SaveToFolderModal';
 import toast from 'react-hot-toast';
 
 interface Message {
   id: string;
   role: 'user' | 'assistant';
   content: string;
+  ts?: number;
   sources?: any[];
 }
 
@@ -46,6 +52,14 @@ export const QuizSessionUI: React.FC<QuizSessionUIProps> = ({ sessionId, userId,
   const [isLoading, setIsLoading] = useState(false);
   const [isSourcesOpen, setIsSourcesOpen] = useState(false);
   const [currentSources, setCurrentSources] = useState<any[]>([]);
+  const [showActionsMenu, setShowActionsMenu] = useState(false);
+
+  // Selection & Folder States
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [isFolderModalOpen, setIsFolderModalOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const supabase = getSupabaseClient();
 
@@ -155,6 +169,64 @@ VOICE STYLE:
 START: Greet the student and immediately start quizzing them on ${sessionContext?.targetTitle || 'the selected topic'}.
     `.trim();
   }, [sessionContext]);
+
+  // Handle message selection logic
+  const toggleSelection = (id: string) => {
+    const next = new Set(selectedIds);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    setSelectedIds(next);
+  };
+
+  const selectAllMessages = () => {
+    setSelectedIds(new Set(messages.map(m => m.id)));
+  };
+
+  const deselectAllMessages = () => {
+    setSelectedIds(new Set());
+  };
+
+  const handleSaveToFolder = async (folderId: string) => {
+    if (selectedIds.size === 0) return;
+    setIsSaving(true);
+    const toastId = toast.loading('Saving selected messages...');
+
+    try {
+      // Find selected messages
+      const selectedMsgs = messages.filter(m => selectedIds.has(m.id));
+      
+      // Batch save to 'durmah_knowledge_base' or similar? 
+      // Main widget uses 'toggleSaveMetadata' which updates `messages` table 'saved_at' and 'folder_id'.
+      // Here in Quiz, we should probably follow the same pattern if we want them in same library.
+      
+      for (const msg of selectedMsgs) {
+        // Since quiz messages are in 'quiz_messages' table, we might need a unified way to save.
+        // But for parity, let's use the standard folder-saving API if available or direct insert.
+        
+        const { error } = await supabase.from('durmah_knowledge_base').insert({
+          user_id: userId,
+          content: msg.content,
+          role: msg.role,
+          folder_id: folderId,
+          source_type: 'quiz_session',
+          source_id: sessionId,
+          title: (sessionContext?.targetTitle || 'Quiz Message').substring(0, 100)
+        });
+        
+        if (error) throw error;
+      }
+
+      toast.success(`${selectedMsgs.length} messages saved to folder`, { id: toastId });
+      setIsFolderModalOpen(false);
+      setIsSelectionMode(false);
+      setSelectedIds(new Set());
+    } catch (err: any) {
+      console.error('Failed to save to folder:', err);
+      toast.error('Failed to save: ' + err.message, { id: toastId });
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   // Debug: Log when session context is loaded
   useEffect(() => {
@@ -384,7 +456,58 @@ START: Greet the student and immediately start quizzing them on ${sessionContext
       {/* Hidden audio element for OpenAI Realtime voice playback */}
       <audio ref={audioRef} autoPlay />
       
-      <div className="flex-1 flex flex-col h-full border-r border-gray-50">
+      <div className="flex-1 flex flex-col h-full border-r border-gray-50 relative">
+        {/* Selection Bar for Parity with Main Widget */}
+        {isSelectionMode && (
+          <div className="absolute top-0 left-0 right-0 z-[100] bg-gray-900 text-white px-8 py-3 flex items-center justify-between shadow-lg animate-in slide-in-from-top duration-300">
+            <div className="flex items-center gap-4">
+              <button 
+                onClick={() => { setIsSelectionMode(false); setSelectedIds(new Set()); }}
+                className="hover:bg-white/10 p-1.5 rounded-lg transition-colors"
+                title="Cancel selection"
+              >
+                <X className="w-5 h-5" />
+              </button>
+              
+              <button 
+                onClick={() => {
+                  if (selectedIds.size === messages.length && messages.length > 0) deselectAllMessages();
+                  else selectAllMessages();
+                }}
+                className="flex items-center gap-2 px-3 py-1.5 hover:bg-white/10 rounded-lg transition-colors"
+              >
+                {selectedIds.size === messages.length && messages.length > 0 ? (
+                  <CheckSquare className="w-5 h-5 text-green-400" />
+                ) : (
+                  <Square className="w-5 h-5 text-gray-400" />
+                )}
+                <span className="text-sm font-bold">{selectedIds.size} Selected</span>
+              </button>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <button 
+                onClick={() => setIsFolderModalOpen(true)}
+                disabled={selectedIds.size === 0}
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all shadow-sm ${
+                  selectedIds.size === 0 ? 'bg-gray-700 text-gray-400 cursor-not-allowed' : 'bg-green-500 hover:bg-green-600 text-white active:scale-95'
+                }`}
+              >
+                <Save className="w-4 h-4" /> Save to Folder
+              </button>
+              
+              <button 
+                onClick={() => {
+                   setSelectedIds(new Set());
+                   setIsSelectionMode(false);
+                }}
+                className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-red-500/20 hover:text-red-400 rounded-xl text-sm font-bold border border-white/10 transition-all font-mono"
+              >
+                <Trash2 className="w-4 h-4" /> Cancel
+              </button>
+            </div>
+          </div>
+        )}
         <header className="px-8 py-6 border-b border-gray-100 flex items-center justify-between bg-white/80 backdrop-blur-xl z-20">
           <div className="flex items-center gap-6">
             <button 
@@ -455,26 +578,34 @@ START: Greet the student and immediately start quizzing them on ${sessionContext
                 </button>
                 
                 {showActionsMenu && (
-                  <div className="absolute right-0 top-full mt-2 w-56 bg-white rounded-2xl shadow-2xl border border-gray-100 z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                    <button 
+                      onClick={() => {
+                        setIsSelectionMode(true);
+                        setShowActionsMenu(false);
+                      }}
+                      className="w-full px-4 py-3 flex items-center gap-3 text-sm font-medium text-gray-700 hover:bg-purple-50 hover:text-purple-700 transition-colors text-left"
+                    >
+                      <CheckSquare className="w-4 h-4" />
+                      Select messages
+                    </button>
                     <button 
                       onClick={handleSaveTranscript}
                       disabled={isSaving}
-                      className="w-full px-4 py-3 flex items-center gap-3 text-sm font-medium text-gray-700 hover:bg-purple-50 hover:text-purple-700 transition-colors text-left"
+                      className="w-full px-4 py-3 flex items-center gap-3 text-sm font-medium text-gray-700 hover:bg-purple-50 hover:text-purple-700 transition-colors text-left border-t border-gray-50"
                     >
                       <Save className="w-4 h-4" />
                       {isSaving ? 'Saving...' : 'Save to Archive'}
                     </button>
                     <button 
                       onClick={handleDownloadTranscript}
-                      className="w-full px-4 py-3 flex items-center gap-3 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors text-left"
+                      className="w-full px-4 py-3 flex items-center gap-3 text-sm font-medium text-gray-700 hover:bg-purple-50 hover:text-purple-700 transition-colors text-left border-t border-gray-50"
                     >
                       <Download className="w-4 h-4" />
                       Download Transcript
                     </button>
-                    <div className="border-t border-gray-100" />
                     <button 
                       onClick={handleDeleteSession}
-                      className="w-full px-4 py-3 flex items-center gap-3 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors text-left"
+                      className="w-full px-4 py-3 flex items-center gap-3 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors text-left border-t border-gray-50"
                     >
                       <Trash2 className="w-4 h-4" />
                       Delete Session
@@ -485,23 +616,41 @@ START: Greet the student and immediately start quizzing them on ${sessionContext
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto p-8 space-y-12 bg-[#FDFCFE]">
+        <main className="flex-1 overflow-y-auto p-8 space-y-12 bg-[#FDFCFE] glb-scroll" ref={chatContainerRef}>
           <div className="max-w-3xl mx-auto w-full">
             {messages.map((m) => (
-              <div key={m.id} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'} mb-12 animate-in fade-in slide-in-from-bottom-4 duration-500`}>
-                <div className={`max-w-[90%] md:max-w-[85%] ${m.role === 'user' ? 'bg-gray-900 text-white rounded-[2rem] rounded-tr-none px-8 py-6 shadow-2xl' : 'bg-white text-gray-900 rounded-[2.5rem] rounded-tl-none px-10 py-8 shadow-sm border border-gray-100'}`}>
-                  
-                  {m.role === 'assistant' && (
-                    <div className="flex items-center gap-3 mb-6">
-                      <div className="p-2 bg-purple-50 rounded-xl">
-                        <GraduationCap className="w-4 h-4 text-purple-600" />
+              <div 
+                key={m.id} 
+                className={`flex gap-4 items-start mb-12 animate-in fade-in slide-in-from-bottom-4 duration-500 ${isSelectionMode ? 'cursor-pointer p-4 -m-4 rounded-3xl transition-colors hover:bg-gray-50' : ''}`}
+                onClick={() => isSelectionMode && toggleSelection(m.id)}
+              >
+                {isSelectionMode && (
+                   <div className="pt-8">
+                      <div className={`p-1 rounded-lg transition-colors ${selectedIds.has(m.id) ? 'bg-purple-100' : 'hover:bg-gray-100'}`}>
+                         {selectedIds.has(m.id) ? (
+                           <CheckSquare className="w-6 h-6 text-purple-600" />
+                         ) : (
+                           <Square className="w-6 h-6 text-gray-300" />
+                         )}
                       </div>
-                      <span className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Tutorial Reasoning</span>
+                   </div>
+                )}
+                
+                <div className={`flex-1 flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                  <div className={`max-w-[90%] md:max-w-[85%] ${m.role === 'user' ? 'bg-gray-900 text-white rounded-[2rem] rounded-tr-none px-8 py-6 shadow-2xl' : 'bg-white text-gray-900 rounded-[2.5rem] rounded-tl-none px-10 py-8 shadow-sm border border-gray-100'} ${isSelectionMode && selectedIds.has(m.id) ? 'ring-2 ring-purple-500 ring-offset-4' : ''}`}>
+                    
+                    {m.role === 'assistant' && (
+                      <div className="flex items-center gap-3 mb-6">
+                        <div className="p-2 bg-purple-50 rounded-xl">
+                          <GraduationCap className="w-4 h-4 text-purple-600" />
+                        </div>
+                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Tutorial Reasoning</span>
+                      </div>
+                    )}
+                    
+                    <div className={`text-base font-medium leading-relaxed ${m.role === 'user' ? 'text-gray-100' : 'text-gray-800'}`}>
+                      {m.role === 'assistant' ? formatContent(m.content) : m.content}
                     </div>
-                  )}
-                  
-                  <div className={`text-base font-medium leading-relaxed ${m.role === 'user' ? 'text-gray-100' : 'text-gray-800'}`}>
-                    {m.role === 'assistant' ? formatContent(m.content) : m.content}
                   </div>
                 </div>
               </div>
@@ -514,48 +663,49 @@ START: Greet the student and immediately start quizzing them on ${sessionContext
                 </div>
               </div>
             )}
-            <div ref={messagesEndRef} />
+            <div ref={messagesEndRef} className="h-10" />
           </div>
         </main>
 
         <footer className="p-8 bg-white border-t border-gray-50">
+          {/* Form and info as before */}
           <div className="max-w-3xl mx-auto">
-            <form onSubmit={handleSendMessage} className="relative group">
-              <textarea
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                placeholder={isListening ? "Speak to Durmah..." : "Type your legal analysis..."}
-                rows={1}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    handleSendMessage();
-                  }
-                }}
-                className="w-full bg-gray-50/50 border-2 border-transparent rounded-[2rem] pl-8 pr-16 py-6 focus:bg-white focus:border-purple-600/20 focus:ring-4 focus:ring-purple-500/5 outline-none transition-all resize-none text-gray-900 text-lg font-medium shadow-inner"
-              />
-              <button 
-                type="submit"
-                disabled={!input.trim() || isLoading}
-                className={`absolute right-3 top-1/2 -translate-y-1/2 p-4 rounded-[1.25rem] transition-all shadow-xl ${input.trim() ? 'bg-purple-600 text-white hover:bg-purple-700' : 'bg-gray-100 text-gray-300'}`}
-              >
-                {isLoading ? <Loader2 className="w-6 h-6 animate-spin" /> : <Send className="w-6 h-6" />}
-              </button>
-            </form>
-            
-            <div className="mt-6 flex items-center justify-between">
-               <div className="flex items-center gap-6 text-[10px] font-black uppercase tracking-widest text-gray-400">
-                  <div className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 rounded-full bg-purple-600 shadow-[0_0_8px_rgba(147,51,234,0.5)]" />
-                    Strict Grounding
-                  </div>
-                  {isListening && <div className="text-red-500 flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-ping" />Voice Active</div>}
-                  {speaking && <div className="text-green-600 flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />Durmah Speaking</div>}
-               </div>
-               <div className="text-[10px] font-bold text-gray-300 uppercase tracking-widest">
-                  IRAC Rubric Active
-               </div>
-            </div>
+             <form onSubmit={handleSendMessage} className="relative group">
+                <textarea
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  placeholder={isListening ? "Speak to Durmah..." : "Type your legal analysis..."}
+                  rows={1}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      handleSendMessage();
+                    }
+                  }}
+                  className="w-full bg-gray-50/50 border-2 border-transparent rounded-[2rem] pl-8 pr-16 py-6 focus:bg-white focus:border-purple-600/20 focus:ring-4 focus:ring-purple-500/5 outline-none transition-all resize-none text-gray-900 text-lg font-medium shadow-inner"
+                />
+                <button 
+                  type="submit"
+                  disabled={!input.trim() || isLoading}
+                  className={`absolute right-3 top-1/2 -translate-y-1/2 p-4 rounded-[1.25rem] transition-all shadow-xl ${input.trim() ? 'bg-purple-600 text-white hover:bg-purple-700' : 'bg-gray-100 text-gray-300'}`}
+                >
+                  {isLoading ? <Loader2 className="w-6 h-6 animate-spin" /> : <Send className="w-6 h-6" />}
+                </button>
+              </form>
+              
+              <div className="mt-6 flex items-center justify-between">
+                 <div className="flex items-center gap-6 text-[10px] font-black uppercase tracking-widest text-gray-400">
+                    <div className="flex items-center gap-2">
+                      <div className="w-1.5 h-1.5 rounded-full bg-purple-600 shadow-[0_0_8px_rgba(147,51,234,0.5)]" />
+                      Strict Grounding
+                    </div>
+                    {isListening && <div className="text-red-500 flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-ping" />Voice Active</div>}
+                    {speaking && <div className="text-green-600 flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />Durmah Speaking</div>}
+                 </div>
+                 <div className="text-[10px] font-bold text-gray-300 uppercase tracking-widest">
+                    IRAC Rubric Active
+                 </div>
+              </div>
           </div>
         </footer>
       </div>
@@ -564,6 +714,14 @@ START: Greet the student and immediately start quizzing them on ${sessionContext
         sources={currentSources} 
         isOpen={isSourcesOpen} 
         onClose={() => setIsSourcesOpen(false)} 
+      />
+
+      <SaveToFolderModal 
+        isOpen={isFolderModalOpen}
+        onClose={() => setIsFolderModalOpen(false)}
+        onSave={handleSaveToFolder}
+        isSaving={isSaving}
+        title="Save Quiz Insights"
       />
     </div>
   );
