@@ -39,7 +39,7 @@ export interface GeneratedSEOTags {
 
 const SITE_URL = 'https://mydurhamlaw.com';
 const SITE_NAME = 'MyDurhamLaw';
-const SITE_TAGLINE = 'Learn law. Write law. Speak law.';
+const SITE_TAGLINE = 'Learn Law | Write Law | Speak Law';
 const DEFAULT_OG_IMAGE = `${SITE_URL}/og/og-default.png`;
 const DEFAULT_OG_WIDTH = '1200';
 const DEFAULT_OG_HEIGHT = '630';

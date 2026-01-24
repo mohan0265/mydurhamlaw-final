@@ -103,16 +103,19 @@ const FeatureCarousel = ({ images }: { images: { src: string, caption: string }[
 return (
     <>
       <Head>
-        <title>Learn Law. Write Law. Speak Law. | MyDurhamLaw</title>
-        <meta name="description" content="A complete Durham Law study system — from understanding doctrine, to writing with precision, to speaking with confidence, and staying connected to real-world legal developments." />
-        <meta property="og:title" content="Learn Law. Write Law. Speak Law. | MyDurhamLaw" />
-        <meta property="og:description" content="A complete Durham Law study system built specifically for Durham University Law students." />
+        <title>MyDurhamLaw — Learn Law | Write Law | Speak Law</title>
+        <meta name="description" content="An independent AI-powered study companion built exclusively for Durham Law students." />
+        <meta property="og:title" content="Learn Law | Write Law | Speak Law" />
+        <meta property="og:description" content="An independent AI-powered study companion built exclusively for Durham Law students." />
         <meta property="og:image" content="https://mydurhamlaw.com/og/og-home.png?v=2" />
+        <meta property="og:site_name" content="MyDurhamLaw" />
         <meta property="og:image:width" content="1200" />
         <meta property="og:image:height" content="630" />
         <meta property="og:url" content="https://mydurhamlaw.com/" />
         <link rel="canonical" href="https://mydurhamlaw.com/" />
         <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Learn Law | Write Law | Speak Law" />
+        <meta name="twitter:description" content="AI-powered Durham Law study companion, built with academic integrity." />
         <meta name="twitter:image" content="https://mydurhamlaw.com/og/og-home.png?v=2" />
       </Head>
 
@@ -134,8 +137,7 @@ return (
                 </div>
 
                 <h1 className="text-4xl sm:text-5xl lg:text-7xl font-extrabold mb-6 tracking-tight leading-[1.05] text-white">
-                  Learn law. Write law. <br className="hidden sm:block" />
-                  Speak law. <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-300 to-indigo-300 whitespace-nowrap">Stay current.</span>
+                  Learn Law | Write Law | Speak Law
                 </h1>
                 
                 <div className="mt-4 text-xl sm:text-2xl text-white/90 max-w-xl leading-relaxed font-light">

@@ -111,7 +111,7 @@ export default function LearnHub() {
               Educational Resources
             </span>
             <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 mb-6 tracking-tight">
-              Learn law. Write law. <span className="text-blue-600">Speak law.</span>
+              Learn Law | Write Law | Speak Law
             </h1>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
               Step-by-step guides helping you master legal study, maintain integrity, 

@@ -60,7 +60,7 @@ export default function LearnWriteSpeakLaw() {
               </div>
               <div className="text-center md:text-left">
                 <h1 className="text-4xl md:text-5xl font-extrabold mb-4 text-white leading-tight">
-                  Learn law. Write law. <span className="text-purple-300">Speak law.</span>
+                  Learn Law | Write Law | Speak Law
                 </h1>
                 <p className="text-xl text-purple-100/90 mb-0 font-light">
                   Why legal understanding is incomplete until it is articulated.
