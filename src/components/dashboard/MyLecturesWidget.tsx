@@ -36,7 +36,7 @@ export default function MyLecturesWidget() {
 
   const formatDate = (dateStr?: string) => {
     if (!dateStr) return '';
-    return new Date(dateStr).toLocaleDateString('en-GB', {
+    return new Date(dateStr).toLocaleDateString('en-GB', { timeZone: 'Europe/London', 
       day: 'numeric',
       month: 'short',
     });

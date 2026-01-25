@@ -318,7 +318,7 @@ export default function AdminAccessControl({ authorized, adminEmail }: Props) {
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {new Date(entry.created_at).toLocaleDateString()}
+                        {new Date(entry.created_at).toLocaleDateString('en-GB', { timeZone: 'Europe/London' })}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <div className="flex items-center justify-end gap-2">

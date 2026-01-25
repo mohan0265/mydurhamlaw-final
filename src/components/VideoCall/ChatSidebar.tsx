@@ -53,7 +53,7 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({ lovedOneName, onClose 
             }`}>
               <p className="text-sm">{msg.text}</p>
               <p className="text-xs opacity-70 mt-1">
-                {msg.timestamp.toLocaleTimeString()}
+                {msg.timestamp.toLocaleTimeString('en-GB', { timeZone: 'Europe/London' })}
               </p>
             </div>
           </div>

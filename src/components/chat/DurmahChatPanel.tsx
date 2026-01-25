@@ -216,7 +216,7 @@ export default function DurmahChatPanel({
                         <div className={`text-xs mt-1 opacity-70 ${
                           message.role === 'user' ? 'text-blue-100' : 'text-gray-500'
                         }`}>
-                          {message.timestamp.toLocaleTimeString()}
+                          {message.timestamp.toLocaleTimeString('en-GB', { timeZone: 'Europe/London' })}
                         </div>
                       </div>
                     </div>

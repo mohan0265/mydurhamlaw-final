@@ -337,7 +337,7 @@ export function useDurmahChat({
                  id: conversationId,
                  assignment_id: context.assignmentId,
                  user_id: user.id,
-                 title: `Session ${new Date().toLocaleDateString()}`
+                 title: `Session ${new Date().toLocaleDateString('en-GB', { timeZone: 'Europe/London' })}`
              }, { onConflict: 'id' });
 
              // 1.5. Deduplicate (Refined)

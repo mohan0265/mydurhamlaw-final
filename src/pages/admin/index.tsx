@@ -320,7 +320,7 @@ export default function AdminDashboard({ authorized, rows, users, connections, r
       alert(`Failed: ${err.error}`)
     } else {
       const data = await res.json()
-      alert(`Student created!\n\nLogin Email: ${data.email}\nPassword: ${password || 'TestPass123!'}\nTrial ends: ${new Date(data.trialEndsAt).toLocaleDateString()}\n\nShare these credentials with the test user.`)
+      alert(`Student created!\n\nLogin Email: ${data.email}\nPassword: ${password || 'TestPass123!'}\nTrial ends: ${new Date(data.trialEndsAt).toLocaleDateString('en-GB', { timeZone: 'Europe/London' })}\n\nShare these credentials with the test user.`)
       window.location.reload()
     }
   }
@@ -767,7 +767,7 @@ export default function AdminDashboard({ authorized, rows, users, connections, r
                    requests.map((req) => (
                      <tr key={req.id} className="hover:bg-slate-50 transition">
                        <td className="px-4 py-3 whitespace-nowrap text-slate-500">
-                         {new Date(req.created_at).toLocaleDateString()}
+                         {new Date(req.created_at).toLocaleDateString('en-GB', { timeZone: 'Europe/London' })}
                        </td>
                        <td className="px-4 py-3">
                          <div className="font-medium text-slate-900">{req.name}</div>
@@ -926,7 +926,7 @@ export default function AdminDashboard({ authorized, rows, users, connections, r
                        )}
                     </td>
                     <td className="px-3 py-2">
-                      {isMounted && r.trial_ends_at ? new Date(r.trial_ends_at).toLocaleDateString() : '-'}
+                      {isMounted && r.trial_ends_at ? new Date(r.trial_ends_at).toLocaleDateString('en-GB', { timeZone: 'Europe/London' }) : '-'}
                     </td>
                     <td className="px-3 py-2">
                       {isMounted && daysLeft !== null ? (
@@ -1050,7 +1050,7 @@ export default function AdminDashboard({ authorized, rows, users, connections, r
                         {c.status}
                       </span>
                     </td>
-                    <td className="px-3 py-2">{new Date(c.createdAt).toLocaleDateString()}</td>
+                    <td className="px-3 py-2">{new Date(c.createdAt).toLocaleDateString('en-GB', { timeZone: 'Europe/London' })}</td>
                     <td className="px-3 py-2">
                       <button 
                         onClick={(e) => {
@@ -1108,7 +1108,7 @@ export default function AdminDashboard({ authorized, rows, users, connections, r
                 <div className="space-y-3">
                   <div className="bg-green-50 border border-green-200 rounded p-3">
                     <p className="text-sm text-gray-700 mb-1"><strong>Email:</strong> {inviteResult.email}</p>
-                    <p className="text-sm text-gray-700 mb-1"><strong>Expires:</strong> {new Date(inviteResult.expiresAt).toLocaleDateString()}</p>
+                    <p className="text-sm text-gray-700 mb-1"><strong>Expires:</strong> {new Date(inviteResult.expiresAt).toLocaleDateString('en-GB', { timeZone: 'Europe/London' })}</p>
                     <p className="text-sm text-gray-700"><strong>Email sent:</strong> {inviteResult.emailSent ? 'Yes ✓' : 'No (configure RESEND_API_KEY)'}</p>
                   </div>
                   <div className="bg-blue-50 border border-blue-200 rounded p-3">

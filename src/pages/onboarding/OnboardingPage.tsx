@@ -586,7 +586,7 @@ const OnboardingPage = () => {
                               <div>
                                 <p className="font-medium text-green-800">{uploadedFile?.name}</p>
                                 <p className="text-sm text-green-600">
-                                  Uploaded {new Date(uploadedFile?.uploadedAt || '').toLocaleDateString()}
+                                  Uploaded {new Date(uploadedFile?.uploadedAt || '').toLocaleDateString('en-GB', { timeZone: 'Europe/London' })}
                                 </p>
                               </div>
                             </div>

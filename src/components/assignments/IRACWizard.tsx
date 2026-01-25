@@ -148,7 +148,7 @@ export default function IRACWizard({ assignmentId, initialData, onSave }: Props)
     const content = `
 # ${assignment.title}
 ${assignment.module ? `**Module:** ${assignment.module}` : ''}
-${assignment.due_date ? `**Due Date:** ${new Date(assignment.due_date).toLocaleDateString()}` : ''}
+${assignment.due_date ? `**Due Date:** ${new Date(assignment.due_date).toLocaleDateString('en-GB', { timeZone: 'Europe/London' })}` : ''}
 
 ## Issue
 ${assignment.issue}

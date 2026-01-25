@@ -501,7 +501,7 @@ Focus on helping the student reflect on their week, their challenges, successes,
                             <span>Mood:</span>
                             <span className="text-lg">{m.mood}</span>
                           </span>
-                          <span>{new Date(m.created_at).toLocaleDateString()}</span>
+                          <span>{new Date(m.created_at).toLocaleDateString('en-GB', { timeZone: 'Europe/London' })}</span>
                         </div>
                       </div>
                     ))}

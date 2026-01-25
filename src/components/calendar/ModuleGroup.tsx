@@ -171,7 +171,7 @@ export const ModuleGroup: React.FC<ModuleGroupProps> = ({
                   <div key={index} className="flex items-center justify-between p-2 bg-orange-50 rounded-lg border border-orange-200">
                     <span className="text-sm font-medium text-orange-900">{deadline.title}</span>
                     <span className="text-xs text-orange-700">
-                      {new Date((deadline as any).due_at || (deadline as any).date).toLocaleDateString()}
+                      {new Date((deadline as any).due_at || (deadline as any).date).toLocaleDateString('en-GB', { timeZone: 'Europe/London' })}
                     </span>
                   </div>
                 ))}

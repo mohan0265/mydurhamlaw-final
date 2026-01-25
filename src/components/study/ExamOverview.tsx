@@ -147,7 +147,7 @@ export default function ExamOverview({ userId, onSelectModule }: ExamOverviewPro
                          <div className="text-xs text-gray-500 font-mono">{exam.module_code}</div>
                       </td>
                       <td className="py-3 text-gray-600">
-                         {new Date(exam.exam_date).toLocaleDateString()}
+                         {new Date(exam.exam_date).toLocaleDateString('en-GB', { timeZone: 'Europe/London' })}
                       </td>
                       <td className="py-3">
                          <div className="flex items-center gap-2">
@@ -174,7 +174,7 @@ export default function ExamOverview({ userId, onSelectModule }: ExamOverviewPro
                       <td className="py-3 text-right">
                          <div className="flex items-center justify-end gap-2 text-gray-400">
                             <button 
-                               onClick={() => onSelectModule(exam.module_name || 'Exam', new Date(exam.exam_date).toLocaleDateString())}
+                               onClick={() => onSelectModule(exam.module_name || 'Exam', new Date(exam.exam_date).toLocaleDateString('en-GB', { timeZone: 'Europe/London' }))}
                                className="hover:text-violet-600 p-1" title="Plan Revision"
                             >
                                <BookOpen size={16} />

@@ -417,7 +417,7 @@ const SuperAdminDashboard: React.FC = () => {
                       {message.message.substring(0, 120)}...
                     </p>
                     <p className="text-xs text-gray-500">
-                      {new Date(message.created_at).toLocaleDateString()}
+                      {new Date(message.created_at).toLocaleDateString('en-GB', { timeZone: 'Europe/London' })}
                     </p>
                   </div>
                   <div className="flex gap-2">
@@ -513,7 +513,7 @@ const SuperAdminDashboard: React.FC = () => {
                       {lead.user_type.toUpperCase()}
                     </span>
                     <p className="text-xs text-gray-500 mt-1">
-                      {new Date(lead.created_at).toLocaleDateString()}
+                      {new Date(lead.created_at).toLocaleDateString('en-GB', { timeZone: 'Europe/London' })}
                     </p>
                   </div>
                 </div>
@@ -687,7 +687,7 @@ const SuperAdminDashboard: React.FC = () => {
                       </span>
                     </td>
                     <td className="border border-gray-200 p-3">
-                      {new Date(user.created_at).toLocaleDateString()}
+                      {new Date(user.created_at).toLocaleDateString('en-GB', { timeZone: 'Europe/London' })}
                     </td>
                   </tr>
                 ))}
@@ -715,7 +715,7 @@ const SuperAdminDashboard: React.FC = () => {
                 <div>
                   <h4 className="font-medium">{content.title}</h4>
                   <p className="text-sm text-gray-600">
-                    Published: {new Date(content.published_at).toLocaleDateString()}
+                    Published: {new Date(content.published_at).toLocaleDateString('en-GB', { timeZone: 'Europe/London' })}
                   </p>
                 </div>
                 <div className="flex items-center gap-3">
@@ -752,7 +752,7 @@ const SuperAdminDashboard: React.FC = () => {
           </div>
           <div className="flex items-center gap-4">
             <span className="text-sm text-gray-500">
-              Last synced: {lastSynced.toLocaleTimeString()}
+              Last synced: {lastSynced.toLocaleTimeString('en-GB', { timeZone: 'Europe/London' })}
             </span>
             <Button 
               onClick={() => {

@@ -161,7 +161,7 @@ const TermsOfUsePage = () => {
 
       <hr className="my-6 border-gray-300" />
       <p className="text-sm text-gray-600">
-        Last updated: {new Date().toLocaleDateString('en-GB')}
+        Last updated: {new Date().toLocaleDateString('en-GB', { timeZone: 'Europe/London' })}
       </p>
     </main>
   );

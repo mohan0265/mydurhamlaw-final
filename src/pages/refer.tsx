@@ -228,7 +228,7 @@ export default function ReferPage() {
                                                 </span>
                                             </td>
                                             <td className="py-3 text-gray-500">
-                                                {new Date(log.invited_at).toLocaleDateString()}
+                                                {new Date(log.invited_at).toLocaleDateString('en-GB', { timeZone: 'Europe/London' })}
                                             </td>
                                         </tr>
                                     ))}

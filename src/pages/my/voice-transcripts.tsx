@@ -59,7 +59,7 @@ function formatDuration(seconds: number) {
 
 function formatDate(value: string | null) {
   if (!value) return "Unknown date";
-  return new Date(value).toLocaleDateString(undefined, {
+  return new Date(value).toLocaleDateString(undefined, { timeZone: 'Europe/London', 
     month: 'short', day: 'numeric', year: 'numeric'
   });
 }

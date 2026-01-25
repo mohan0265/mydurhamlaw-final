@@ -194,7 +194,7 @@ const AssignmentGenerator = ({ userId }: AssignmentGeneratorProps) => {
         },
         body: JSON.stringify({
           content: editedContent.trim(),
-          title: `${assignmentType} - ${new Date().toLocaleDateString()}`,
+          title: `${assignmentType} - ${new Date().toLocaleDateString('en-GB', { timeZone: 'Europe/London' })}`,
           context: {
             source: 'assignment_generator',
             original_prompt: prompt,

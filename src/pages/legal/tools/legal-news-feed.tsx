@@ -558,7 +558,7 @@ Tell me:
     if (diffWeeks === 1) return '1 week ago'
     if (diffWeeks < 4) return `${diffWeeks} weeks ago`
     
-    return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+    return date.toLocaleDateString('en-GB', { timeZone: 'Europe/London',  day: 'numeric', month: 'short', year: 'numeric' })
   }
 
   const getTagColor = (tag: string, sourceType: string = 'uk-legal') => {
@@ -805,7 +805,7 @@ Tell me:
                 <div>Current Filter: {SOURCE_FILTERS.find(f => f.value === sourceFilter)?.label}</div>
                 <div>Filtered Articles: {filteredArticles.length}</div>
                 <div>Loading State: {loading ? 'Loading...' : 'Complete'}</div>
-                <div>Last Refresh: {lastRefresh?.toLocaleTimeString() || 'Never'}</div>
+                <div>Last Refresh: {lastRefresh?.toLocaleTimeString('en-GB', { timeZone: 'Europe/London' }) || 'Never'}</div>
                 <div>Error State: {error || 'None'}</div>
                 <div className="flex gap-2 mt-2">
                   <button 

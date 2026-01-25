@@ -35,7 +35,7 @@ function computeAcademicContext() {
     term: term as any, 
     weekOfTerm, 
     dayOfTerm: 1, 
-    dayLabel: now.toLocaleDateString('en-GB', { weekday: 'long' }),
+    dayLabel: now.toLocaleDateString('en-GB', { timeZone: 'Europe/London',  weekday: 'long' }),
     timezone: 'Europe/London',
     localTimeISO,
     timeOfDay: now.getHours() < 12 ? 'morning' : now.getHours() < 17 ? 'afternoon' : 'evening',

@@ -74,7 +74,7 @@ export const TrialBanner: React.FC<Props> = ({ onUpgrade }) => {
             <div className="font-semibold">Your free trial is active</div>
             {info.trialEndsAt && (
               <div className="text-sm">
-                Ends on <strong>{new Date(info.trialEndsAt).toLocaleDateString()}</strong>
+                Ends on <strong>{new Date(info.trialEndsAt).toLocaleDateString('en-GB', { timeZone: 'Europe/London' })}</strong>
               </div>
             )}
           </div>

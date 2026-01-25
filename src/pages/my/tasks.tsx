@@ -32,7 +32,7 @@ function formatDateShort(value: string | null) {
   if (!value) return '—';
   try {
     const d = new Date(value);
-    return d.toLocaleDateString();
+    return d.toLocaleDateString('en-GB', { timeZone: 'Europe/London' });
   } catch {
     return value;
   }

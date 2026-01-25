@@ -461,7 +461,7 @@ export default function StudySchedulePage() {
                       <ChevronLeft className="w-4 h-4" />
                     </button>
                     <span className="text-sm font-medium px-3">
-                      {currentDate.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })}
+                      {currentDate.toLocaleDateString('en-GB', { timeZone: 'Europe/London',  month: 'long', year: 'numeric' })}
                     </span>
                     <button
                       onClick={() => setCurrentDate(new Date(currentDate.setMonth(currentDate.getMonth() + 1)))}

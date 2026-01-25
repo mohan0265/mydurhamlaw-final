@@ -145,7 +145,7 @@ export default function UserProfilePage() {
   if (!profile) return null;
 
   const displayName = profile.display_name || "Student";
-  const joinDate = new Date(stats?.joinedDate || profile.created_at).toLocaleDateString("en-US", {
+  const joinDate = new Date(stats?.joinedDate || profile.created_at).toLocaleDateString("en-US", { timeZone: 'Europe/London', 
     year: 'numeric',
     month: 'long'
   });

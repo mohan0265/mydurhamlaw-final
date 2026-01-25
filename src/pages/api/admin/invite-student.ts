@@ -199,7 +199,7 @@ async function sendInviteEmail(
     </div>
     
     <p style="color: #6b7280; font-size: 14px; text-align: center; margin: 30px 0 0 0;">
-      This exclusive invite link expires on ${expiresAt.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}.
+      This exclusive invite link expires on ${expiresAt.toLocaleDateString('en-GB', { timeZone: 'Europe/London',  day: 'numeric', month: 'long', year: 'numeric' })}.
     </p>
     
     <hr style="border: none; border-top: 1px solid #f3f4f6; margin: 30px 0;">
@@ -228,7 +228,7 @@ Your ${trialDays}-Day Access Includes:
 Accept your invite here:
 ${inviteUrl}
 
-This invite expires on ${expiresAt.toLocaleDateString('en-GB')}.
+This invite expires on ${expiresAt.toLocaleDateString('en-GB', { timeZone: 'Europe/London' })}.
 
 ---
 MyDurhamLaw • Excellence in Legal Education

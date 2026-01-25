@@ -71,7 +71,7 @@ All substantive content and analysis is the student's original work. AI tools we
               spacing: { after: 200 },
             }),
             new Paragraph({
-              text: `Deadline: ${briefData?.due_date ? new Date(briefData.due_date).toLocaleDateString('en-GB') : 'Not specified'}`,
+              text: `Deadline: ${briefData?.due_date ? new Date(briefData.due_date).toLocaleDateString('en-GB', { timeZone: 'Europe/London' }) : 'Not specified'}`,
               alignment: AlignmentType.CENTER,
               spacing: { after: 400 },
             }),
@@ -162,7 +162,7 @@ All substantive content and analysis is the student's original work. AI tools we
         <h3 className="font-semibold mb-2">Assignment Details</h3>
         <div className="space-y-1 text-sm">
           <p><strong>Module:</strong> {briefData?.module_code || 'Not specified'} {briefData?.module_name || ''}</p>
-          <p><strong>Deadline:</strong> {briefData?.due_date ? new Date(briefData.due_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Not specified'}</p>
+          <p><strong>Deadline:</strong> {briefData?.due_date ? new Date(briefData.due_date).toLocaleDateString('en-GB', { timeZone: 'Europe/London',  day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Not specified'}</p>
           <p><strong>Word Limit:</strong> {briefData?.word_limit || 'Not specified'} words</p>
           <p><strong>Citation Style:</strong> OSCOLA</p>
         </div>

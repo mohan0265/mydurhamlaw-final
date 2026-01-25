@@ -179,7 +179,7 @@ export default function UpcomingDeadlines({ embedded }: { embedded?: boolean }) 
                 </p>
                 <div className="flex items-center gap-2 mt-2">
                   <span className="text-xs text-slate-500">
-                    Due {new Date(assignment.due_date).toLocaleDateString('en-GB', { 
+                    Due {new Date(assignment.due_date).toLocaleDateString('en-GB', { timeZone: 'Europe/London',  
                       weekday: 'short', 
                       month: 'short', 
                       day: 'numeric' 

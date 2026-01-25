@@ -97,7 +97,7 @@ const MemoryJournalWidget = () => {
              ) : lastEntry ? (
                <div className="mb-4">
                  <p className="text-xs text-gray-500 mb-1">
-                   {new Date(lastEntry.created_at).toLocaleDateString()}
+                   {new Date(lastEntry.created_at).toLocaleDateString('en-GB', { timeZone: 'Europe/London' })}
                  </p>
                  <p className="text-sm text-gray-700 italic border-l-2 border-indigo-200 pl-3 line-clamp-3">
                    &quot;{lastEntry.content}&quot;

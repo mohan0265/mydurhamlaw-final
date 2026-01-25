@@ -144,7 +144,7 @@ export default function MyNewsArchivePage() {
                    <div className="flex items-center gap-3 text-xs text-gray-500 mb-4">
                       <span className="flex items-center gap-1">
                         <Clock className="w-3 h-3" />
-                        {new Date(item.created_at).toLocaleDateString()}
+                        {new Date(item.created_at).toLocaleDateString('en-GB', { timeZone: 'Europe/London' })}
                       </span>
                       {item.article_source && (
                         <span className="bg-gray-100 px-2 py-0.5 rounded-full">

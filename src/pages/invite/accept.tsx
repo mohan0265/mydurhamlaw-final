@@ -185,7 +185,7 @@ export default function InviteAcceptPage() {
 
           <div className="mt-6 pt-6 border-t border-gray-200">
             <p className="text-xs text-gray-500 text-center">
-              Invite expires: {new Date(inviteData.expiresAt).toLocaleDateString('en-GB', {
+              Invite expires: {new Date(inviteData.expiresAt).toLocaleDateString('en-GB', { timeZone: 'Europe/London', 
                 day: 'numeric',
                 month: 'long',
                 year: 'numeric'

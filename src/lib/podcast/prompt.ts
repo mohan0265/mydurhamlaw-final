@@ -136,7 +136,7 @@ Write the complete script now, keeping it between 90-120 seconds of natural spee
 
 export function generatePodcastTitle(slot: 'pre' | 'post', userName: string, date: string): string {
   const timeLabel = slot === 'pre' ? 'Morning' : 'Evening'
-  const dateFormatted = new Date(date).toLocaleDateString('en-GB', { 
+  const dateFormatted = new Date(date).toLocaleDateString('en-GB', { timeZone: 'Europe/London',  
     weekday: 'long', 
     month: 'long', 
     day: 'numeric' 

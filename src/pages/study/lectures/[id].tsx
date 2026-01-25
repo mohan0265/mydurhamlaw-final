@@ -107,7 +107,7 @@ export default function LectureDetailPage() {
 
   const formatDate = (dateStr?: string) => {
     if (!dateStr) return '';
-    return new Date(dateStr).toLocaleDateString('en-GB', {
+    return new Date(dateStr).toLocaleDateString('en-GB', { timeZone: 'Europe/London', 
       weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
     });
   };

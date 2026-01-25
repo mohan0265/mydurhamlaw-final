@@ -46,7 +46,7 @@ function asDate(iso: string) {
   return new Date(iso + (iso.length <= 10 ? 'T00:00:00Z' : ''))
 }
 function formatDMmm(d: Date) {
-  return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
+  return d.toLocaleDateString('en-GB', { timeZone: 'Europe/London',  day: 'numeric', month: 'short' })
 }
 function betweenInclusive(d: Date, a: Date, b: Date) {
   const x = d.getTime(), s = a.getTime(), e = b.getTime()

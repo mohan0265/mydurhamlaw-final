@@ -304,7 +304,7 @@ export default async function handler(
       schedule: {
         todaysClasses: (todaysEvents || []).map((e: any) => ({
           module_name: e.title,
-          time: `${new Date(e.start_time).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone })} - ${e.end_time ? new Date(e.end_time).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone }) : ''}`,
+          time: `${new Date(e.start_time).toLocaleTimeString('en-GB', { timeZone: 'Europe/London',  hour: '2-digit', minute: '2-digit', timeZone })} - ${e.end_time ? new Date(e.end_time).toLocaleTimeString('en-GB', { timeZone: 'Europe/London',  hour: '2-digit', minute: '2-digit', timeZone }) : ''}`,
         })),
       },
       yaag: {

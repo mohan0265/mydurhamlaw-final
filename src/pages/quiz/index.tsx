@@ -204,7 +204,7 @@ export default function QuizHub() {
                       
                       <div className="flex items-center gap-4 ml-auto md:ml-0">
                         <span className="text-xs font-medium text-gray-400">
-                           {new Date(session.created_at).toLocaleDateString()}
+                           {new Date(session.created_at).toLocaleDateString('en-GB', { timeZone: 'Europe/London' })}
                         </span>
                         <button 
                           onClick={(e) => {

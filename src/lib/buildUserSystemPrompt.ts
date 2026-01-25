@@ -49,7 +49,7 @@ export async function buildUserSystemPrompt(userId: string): Promise<string> {
 
   const { display_name, year_group } = profile;
   const { term, week } = getCurrentTermAndWeek();
-  const today = new Date().toLocaleDateString('en-GB', {
+  const today = new Date().toLocaleDateString('en-GB', { timeZone: 'Europe/London', 
     weekday: 'long',
     year: 'numeric',
     month: 'long',
@@ -138,7 +138,7 @@ ${
 🎯 Study Priorities:
 ${
   studyTasks && studyTasks.length > 0
-    ? studyTasks.map((t: { title: string; due_date: string }) => `- ${t.title} (due ${new Date(t.due_date).toLocaleDateString()})`).join('\n')
+    ? studyTasks.map((t: { title: string; due_date: string }) => `- ${t.title} (due ${new Date(t.due_date).toLocaleDateString('en-GB', { timeZone: 'Europe/London' })})`).join('\n')
     : '- All tasks up to date'
 }
 

@@ -70,7 +70,7 @@ export function WelcomeWidget({ userName = 'Student', studentProfile }: WelcomeW
   }, [calendar, studentProfile])
 
   const formatTime = (date: Date) => {
-    return date.toLocaleTimeString('en-GB', { 
+    return date.toLocaleTimeString('en-GB', { timeZone: 'Europe/London',  
       hour: '2-digit', 
       minute: '2-digit',
       hour12: false 
@@ -78,7 +78,7 @@ export function WelcomeWidget({ userName = 'Student', studentProfile }: WelcomeW
   }
 
   const formatDate = (date: Date) => {
-    return date.toLocaleDateString('en-GB', { 
+    return date.toLocaleDateString('en-GB', { timeZone: 'Europe/London',  
       weekday: 'long',
       year: 'numeric',
       month: 'long',

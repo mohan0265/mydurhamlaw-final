@@ -201,7 +201,7 @@ export class DurhamAcademicCalendar {
   }
 
   static formatDate(date: Date): string {
-    return date.toLocaleDateString('en-GB', {
+    return date.toLocaleDateString('en-GB', { timeZone: 'Europe/London', 
       weekday: 'long',
       year: 'numeric',
       month: 'long',
@@ -210,8 +210,8 @@ export class DurhamAcademicCalendar {
   }
 
   static formatWeekRange(startDate: Date, endDate: Date): string {
-    const start = startDate.toLocaleDateString('en-GB', { month: 'short', day: 'numeric' })
-    const end = endDate.toLocaleDateString('en-GB', { month: 'short', day: 'numeric' })
+    const start = startDate.toLocaleDateString('en-GB', { timeZone: 'Europe/London',  month: 'short', day: 'numeric' })
+    const end = endDate.toLocaleDateString('en-GB', { timeZone: 'Europe/London',  month: 'short', day: 'numeric' })
     return `${start} - ${end}`
   }
 }

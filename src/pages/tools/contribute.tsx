@@ -118,7 +118,7 @@ export default function ContributeTool() {
         term: form.term,
         week: form.week,
         module_code: safeModuleCode, // <-- string enforced
-        day: new Date(form.date).toLocaleDateString('en-GB', { weekday: 'short' }) as any,
+        day: new Date(form.date).toLocaleDateString('en-GB', { timeZone: 'Europe/London',  weekday: 'short' }) as any,
         title: form.title || `${form.kind.toUpperCase()} · ${(form.module_title || safeModuleCode)}`,
         notes: [
           form.notes,

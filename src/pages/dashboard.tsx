@@ -24,7 +24,7 @@ export default function Dashboard() {
   const router = useRouter();
   const { user, loading } = useAuth() || { user: null, loading: true };
   const { displayName } = useUserDisplayName();
-  const [focusItem, setFocusItem] = useState<{title: string, type: string, link: string, due_date?: string, source?: string, id?: string, reasonCodes?: string[], module_name?: string, priorityScore?: number, typeLabel?: string, yaagLink?: string} | null>(null);
+  const [focusItem, setFocusItem] = useState<{title: string, type: string, link: string, due_date?: string, source?: string, id?: string, reasonCodes?: string[], module_name?: string, priorityScore?: number, typeLabel?: string, yaagLink?: string, eventDay?: string} | null>(null);
   const [isWhyModalOpen, setIsWhyModalOpen] = useState(false);
   const [nextAssignment, setNextAssignment] = useState<any>(null);
   const [upcomingAssignments, setUpcomingAssignments] = useState<any[]>([]);
@@ -78,7 +78,8 @@ export default function Dashboard() {
              source: next.source,
              reasonCodes: next.reasonCodes,
              module_name: next.module_name,
-             priorityScore: next.priorityScore
+             priorityScore: next.priorityScore,
+             eventDay: next.eventDay
            });
         }
       }).catch(err => console.error('Focus fetch error', err));
@@ -185,7 +186,7 @@ export default function Dashboard() {
                                  />
                                  {/* Brief Date Display */}
                                  <span className="text-sm font-semibold text-indigo-200 uppercase tracking-wide">
-                                    {(focusItem.eventDay ? new Date(focusItem.eventDay) : new Date(focusItem.due_date)).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })}
+                                    {(focusItem.eventDay ? new Date(focusItem.eventDay) : new Date(focusItem.due_date)).toLocaleDateString('en-GB', { timeZone: 'Europe/London',  weekday: 'short', day: 'numeric', month: 'short' })}
                                  </span>
                               </div>
                            )}
@@ -255,7 +256,7 @@ export default function Dashboard() {
                                       </div>
                                       <div className="flex flex-col items-end">
                                          <span className="text-xs font-bold text-white">{a.daysLeft <= 0 ? 'Due Today' : `${a.daysLeft}d left`}</span>
-                                         <span className="text-[10px] text-white/50">{(a.eventDay ? new Date(a.eventDay) : new Date(a.due_date)).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}</span>
+                                         <span className="text-[10px] text-white/50">{(a.eventDay ? new Date(a.eventDay) : new Date(a.due_date)).toLocaleDateString('en-GB', { timeZone: 'Europe/London',  day: 'numeric', month: 'short' })}</span>
                                       </div>
                                    </div>
                                 </Link>
@@ -529,7 +530,7 @@ function WhyThisModal({ isOpen, onClose, item }: { isOpen: boolean; onClose: () 
                   </div>
                   <div className="text-xs text-gray-400 pt-4 border-t border-gray-100 flex justify-between items-center">
                      <span>Source: {item.source === 'assignment' ? 'Assignments' : 'YAAG Calendar'}</span>
-                     {item.due_date && <span>Due: {new Date(item.due_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'})}</span>}
+                     {item.due_date && <span>Due: {new Date(item.due_date).toLocaleDateString('en-GB', { timeZone: 'Europe/London',  day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'})}</span>}
                   </div>
                </>
             ) : (

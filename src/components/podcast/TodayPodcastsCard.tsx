@@ -181,7 +181,7 @@ export const TodayPodcastsCard: React.FC<TodayPodcastsCardProps> = ({ className 
   const postPodcast = podcasts.find(p => p.slot === 'post')
 
   const formatTime = (dateString: string) => {
-    return new Date(dateString).toLocaleTimeString('en-GB', {
+    return new Date(dateString).toLocaleTimeString('en-GB', { timeZone: 'Europe/London', 
       hour: '2-digit',
       minute: '2-digit'
     })

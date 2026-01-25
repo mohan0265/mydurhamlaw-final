@@ -126,7 +126,7 @@ export default function WellbeingTrends({ userId, period = 14 }: Props) {
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-GB', { 
+    return date.toLocaleDateString('en-GB', { timeZone: 'Europe/London',  
       day: 'numeric', 
       month: 'short' 
     });

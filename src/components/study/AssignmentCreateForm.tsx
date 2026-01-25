@@ -29,7 +29,7 @@ export default function AssignmentCreateForm({ onCancel, onSave, initialDate, in
       ? new Date(initialData.due_date).toISOString().split('T')[0] 
       : (initialDate ? initialDate.toISOString().split('T')[0] : ''),
     due_time: initialData?.due_date 
-      ? new Date(initialData.due_date).toLocaleTimeString('en-GB', {hour: '2-digit', minute:'2-digit'})
+      ? new Date(initialData.due_date).toLocaleTimeString('en-GB', { timeZone: 'Europe/London', hour: '2-digit', minute:'2-digit'})
       : '12:00',
     question_text: initialData?.question_text || '',
     estimated_effort_hours: initialData?.estimated_effort_hours?.toString() || '',
