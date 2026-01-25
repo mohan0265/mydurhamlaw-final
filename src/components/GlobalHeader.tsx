@@ -395,7 +395,7 @@ export default function GlobalHeader() {
                   <Link href="/signup" className="px-3 py-2 rounded-md text-sm font-semibold bg-white text-indigo-700 hover:bg-indigo-50 transition">
                     Start Free
                   </Link>
-                  <Link href="/lnat/signup" className="px-3 py-2 rounded-md text-sm font-medium text-purple-200 hover:text-white transition">
+                  <Link href={isLnatLaunchEnabled ? "/lnat/signup" : "/lnat-preparation"} className="px-3 py-2 rounded-md text-sm font-medium text-purple-200 hover:text-white transition">
                     {lnatLabel}
                   </Link>
                 </>
