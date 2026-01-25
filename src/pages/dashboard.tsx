@@ -51,8 +51,10 @@ export default function Dashboard() {
            setUpcomingAssignments(data.upcomingAssignments);
            setFocusItem({
              title: next.title,
-             type: next.source === 'assignment' ? 'Assignment Due' : 'Deadline',
-             link: next.source === 'assignment' ? `/assignments?assignmentId=${next.id}` : '/year-at-a-glance',
+             type: next.typeLabel || (next.source === 'assignment' ? 'Assignment' : 'Deadline'),
+             link: next.yaagLink || (next.source === 'assignment' ? `/assignments?assignmentId=${next.id}` : '/year-at-a-glance'),
+             yaagLink: next.yaagLink,
+             typeLabel: next.typeLabel,
              due_date: next.due_date // Pass due date for timer
            });
         }
@@ -130,12 +132,17 @@ export default function Dashboard() {
                     <span className="text-xs font-bold uppercase tracking-wider text-yellow-100">Next Best Action</span>
                  </div>
                   <h2 className="text-2xl md:text-3xl font-bold leading-tight">
-                     {focusItem ? `Continue working on ${focusItem.title}` : "Start your Contract Law revision"}
+                     {focusItem ? `Next deadline: ${focusItem.title}` : "Start your Contract Law revision"}
                   </h2>
                    <div className="text-indigo-100 text-base md:text-lg max-w-xl">
                      {focusItem ? (
                         <div className="flex flex-col gap-1">
-                           <span>You have a deadline approaching.</span>
+                           <span className="flex items-center gap-2">
+                             <span className="bg-yellow-400 text-black text-[10px] font-black px-1.5 py-0.5 rounded uppercase tracking-tighter">
+                                {focusItem.typeLabel || 'Deadline'}
+                             </span>
+                             You have a deadline approaching.
+                           </span>
                            {isMounted && focusItem.due_date && (
                               <div className="flex items-center gap-4 mt-2">
                                  <CountdownTimer 
@@ -176,14 +183,17 @@ export default function Dashboard() {
                   {showAllDeadlines && upcomingAssignments.length > 1 && (
                      <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-3 animate-in fade-in slide-in-from-top-4 duration-300">
                         {upcomingAssignments.slice(1).map((a, idx) => (
-                           <Link href={a.source === 'assignment' ? `/assignments?assignmentId=${a.id}` : '/year-at-a-glance'} key={a.id} className="bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl p-3 transition flex items-center justify-between group">
+                           <Link href={a.yaagLink || '/year-at-a-glance'} key={a.id} className="bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl p-3 transition flex items-center justify-between group">
                               <div className="flex flex-col">
-                                 <span className="text-xs font-bold text-indigo-200">{a.module_name || a.module_code || "Law Module"}</span>
+                                 <div className="flex items-center gap-2 mb-0.5">
+                                   <span className="text-[10px] font-black text-indigo-200 uppercase bg-white/10 px-1 rounded-sm">{a.typeLabel}</span>
+                                   <span className="text-xs font-bold text-indigo-200">{a.module_name || a.module_code || "Law Module"}</span>
+                                 </div>
                                  <span className="text-sm font-semibold text-white truncate max-w-[150px]">{a.title}</span>
                               </div>
                               <div className="text-right flex flex-col items-end">
                                  <span className="text-[10px] uppercase font-bold text-indigo-400">Due in</span>
-                                 <span className="text-xs font-bold text-white">{a.daysLeft}d</span>
+                                 <span className="text-xs font-bold text-white">{a.daysLeft <= 0 ? 'Today' : `${a.daysLeft}d`}</span>
                               </div>
                            </Link>
                         ))}
@@ -192,8 +202,8 @@ export default function Dashboard() {
                </div>
               
               <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-                 <button onClick={() => router.push(focusItem?.link || '/study/lectures')} className="inline-flex items-center justify-center gap-2 rounded-xl bg-white text-indigo-900 font-bold px-6 py-3.5 hover:bg-indigo-50 transition shadow-lg whitespace-nowrap">
-                    {focusItem ? "Continue Assignment" : "Start Revision"} <ArrowRight className="w-4 h-4" />
+                 <button onClick={() => router.push(focusItem?.yaagLink || '/year-at-a-glance')} className="inline-flex items-center justify-center gap-2 rounded-xl bg-white text-indigo-900 font-bold px-6 py-3.5 hover:bg-indigo-50 transition shadow-lg whitespace-nowrap">
+                    View in YAAG <ArrowRight className="w-4 h-4" />
                  </button>
                  <button className="inline-flex items-center justify-center gap-2 rounded-xl bg-white/10 text-white font-semibold px-4 py-3.5 hover:bg-white/20 transition border border-white/10 backdrop-blur-sm whitespace-nowrap group">
                     <HelpCircle className="w-4 h-4 text-indigo-200" />

@@ -94,14 +94,13 @@ export default async function handler(
       console.error('[dashboard/overview] Error fetching assignments:', error);
     }
 
-    // 3. Fetch YAAG Assessments (Next 14 days)
+    // 3. Fetch YAAG Events (Next 14 days)
     const now = new Date();
     const fromDate = now.toISOString().split('T')[0] || '';
     const toDate = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] || '';
 
     let yaagDeadlines: any[] = [];
     try {
-      // Pass the existing supabase client to buildYAAGEvents to avoid re-initializing and potentially causing 406 errors
       const yaagEvents = await buildYAAGEvents({
         req,
         res,
@@ -109,22 +108,28 @@ export default async function handler(
         fromDate,
         toDate,
         userId: user.id,
-        supabase // Use existing client
+        supabase
       } as any);
-      // Filter only assessments/deadlines from YAAG, skipping duplicates already retrieved via 'assignments' table
-      yaagDeadlines = (yaagEvents || []).filter(e => e.kind === 'assessment' && e.meta?.source !== 'assignment');
+      
+      // STRICT FILTERING: Only Assessments and Exams. No topics, no generic reminders.
+      yaagDeadlines = (yaagEvents || []).filter(e => 
+        (e.kind === 'assessment' || e.kind === 'exam') && 
+        e.meta?.source !== 'assignment' // Skip duplicates already in 'assignments' table
+      );
     } catch (error) {
       console.error('[dashboard/overview] Error fetching YAAG events:', error);
     }
 
     // 4. Merge and Enforce Sorting
-    const mergedList: AssignmentSummary[] = [];
+    const mergedList: any[] = [];
 
-    // Add Assignments
+    // Process table-based assignments
     assignments.forEach(a => {
       const dueDate = new Date(a.due_date);
       const diffMs = dueDate.getTime() - now.getTime();
-      const daysLeft = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+      // If due today (within 24h), daysLeft is 0. Else floor of the day difference.
+      const daysLeft = diffMs > 0 ? Math.floor(diffMs / (1000 * 60 * 60 * 24)) : 0;
+      const eventDay = a.due_date.split('T')[0];
 
       mergedList.push({
         id: a.id,
@@ -135,49 +140,49 @@ export default async function handler(
         daysLeft,
         status: a.status || 'not_started',
         current_stage: a.current_stage || 0,
-        estimated_effort_hours: a.estimated_effort_hours,
-        nextAction: (a.current_stage || 0) === 0 ? 'start' : 'continue',
-        source: 'assignment'
+        source: 'assignment',
+        eventDay,
+        yaagLink: `/year-at-a-glance/day?y=${yearKey}&d=${eventDay}`,
+        typeLabel: 'Assignment'
       });
     });
 
-    // Add YAAG Deadlines
+    // Process YAAG-based deadlines (exams/assessments from plan or personal)
     yaagDeadlines.forEach(e => {
-      const dueDate = new Date(e.date + 'T23:59:59Z'); // All-day deadlines end of day
+      const isoString = e.start_at || `${e.date}T23:59:59Z`;
+      const dueDate = new Date(isoString);
       const diffMs = dueDate.getTime() - now.getTime();
-      const daysLeft = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+      const daysLeft = diffMs > 0 ? Math.floor(diffMs / (1000 * 60 * 60 * 24)) : 0;
 
       mergedList.push({
         id: e.id,
         title: e.title,
-        module_name: (e as any).moduleCode || null,
-        module_code: (e as any).moduleCode || null,
-        due_date: e.date,
+        module_name: e.moduleCode || null,
+        module_code: e.moduleCode || null,
+        due_date: isoString,
         daysLeft,
         status: e.meta?.status || 'upcoming',
         current_stage: 0,
-        estimated_effort_hours: null,
-        nextAction: 'start',
-        source: 'yaag'
+        source: 'yaag',
+        eventDay: e.date,
+        yaagLink: `/year-at-a-glance/day?y=${yearKey}&d=${e.date}`,
+        typeLabel: e.kind === 'exam' ? 'Exam' : 'Assessment'
       });
     });
 
     // Final Sort: Soonest first, then priority to assignments
     mergedList.sort((a, b) => {
-      const dateA = new Date(a.due_date);
-      const dateB = new Date(b.due_date);
-      const timeA = isNaN(dateA.getTime()) ? Infinity : dateA.getTime();
-      const timeB = isNaN(dateB.getTime()) ? Infinity : dateB.getTime();
-      
+      const timeA = new Date(a.due_date).getTime();
+      const timeB = new Date(b.due_date).getTime();
       if (timeA !== timeB) return timeA - timeB;
-      if (a.source !== b.source) return a.source === 'assignment' ? -1 : 1;
-      return 0;
+      return a.source === 'assignment' ? -1 : 1;
     });
 
     return res.status(200).json({ 
       upcomingAssignments: mergedList.slice(0, 10),
-      preferences 
-    });
+      preferences,
+      yearKey
+    } as any);
 
   } catch (err: any) {
     console.error('[dashboard/overview] Unexpected error:', err)

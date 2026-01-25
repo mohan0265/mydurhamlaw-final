@@ -57,6 +57,8 @@ export default function AssignmentWorkflow({
   const [briefData, setBriefData] = useState<any>(null);
   const [stageData, setStageData] = useState<any>({});
   const [uploadMode, setUploadMode] = useState(false); // Start with false - students already uploaded during creation
+  const [showCountdownPref, setShowCountdownPref] = useState(false);
+  const [yearGroup, setYearGroup] = useState('year1');
   
   // Persistent Editor State (Hoisted)
   const [draftHtml, setDraftHtml] = useState('');
@@ -230,6 +232,16 @@ export default function AssignmentWorkflow({
       } else {
         console.log('[RESUME DEBUG] No saved progress found or current_stage is 0');
       }
+
+      // Load user preferences for countdown and year group
+      fetch('/api/dashboard/overview').then(res => res.json()).then(data => {
+        if (data?.preferences) {
+          setShowCountdownPref(data.preferences.show_deadline_countdown);
+        }
+        if (data?.yearKey) {
+          setYearGroup(data.yearKey);
+        }
+      }).catch(e => console.warn('Preference fetch error in AW:', e));
 
     } catch (error) {
       console.error('Load progress error:', error);
@@ -580,6 +592,29 @@ INSTRUCTION: Help them with this specific stage.`}
                     </button>
                 </div>
              </div>
+        </div>
+      )}
+      {/* Floating Countdown Pill */}
+      {safeAssignmentData.due_date && (
+        <div className="fixed bottom-20 left-6 z-[80] animate-in slide-in-from-left-4 duration-500">
+           <Link 
+              href={`/year-at-a-glance/day?y=${yearGroup || 'year1'}&d=${safeAssignmentData.due_date.split('T')[0]}`}
+              className="flex items-center gap-3 bg-gray-900 border border-white/20 text-white px-4 py-2.5 rounded-full shadow-2xl hover:scale-105 transition-transform group"
+           >
+              <div className="flex flex-col">
+                 <span className="text-[10px] uppercase font-black text-indigo-400 leading-none">Deadline</span>
+                 <CountdownTimer 
+                   dueDate={safeAssignmentData.due_date} 
+                   style="minimal" 
+                   showSeconds={true}
+                   suppressTimer={!showCountdownPref}
+                   className="text-sm font-bold mt-0.5"
+                 />
+              </div>
+              <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center group-hover:bg-indigo-500 transition-colors">
+                 <ArrowLeft className="w-4 h-4 rotate-180" />
+              </div>
+           </Link>
         </div>
       )}
     </div>
