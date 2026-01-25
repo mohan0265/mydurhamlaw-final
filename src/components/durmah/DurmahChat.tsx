@@ -28,7 +28,7 @@ function getVoiceProvider(): 'openai' | 'gemini' {
 const VOICE_PROVIDER = getVoiceProvider();
 
 interface DurmahChatProps {
-  contextType: "assignment" | "exam" | "general";
+  contextType: "assignment" | "exam" | "general" | "module_exam";
   contextTitle: string;
   contextId?: string; // Assignment ID or Module Code
   systemHint?: string;

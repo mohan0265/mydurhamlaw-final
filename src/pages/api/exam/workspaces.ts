@@ -1,6 +1,5 @@
 import { createPagesServerClient } from '@supabase/auth-helpers-nextjs';
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { buildModuleContext } from '@/lib/durmah/context';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const supabase = createPagesServerClient({ req, res });
@@ -11,18 +10,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   if (req.method === 'GET') {
-      const { module_id } = req.query;
-      if (!module_id || typeof module_id !== 'string') {
-          return res.status(400).json({ error: 'module_id required' });
-      }
+    // List active workspaces with module details
+    const { data, error } = await supabase
+        .from('exam_workspaces')
+        .select(`
+            *,
+            module:modules(id, title, code, term),
+            lecture_set:module_lecture_sets!left(uploaded_count, expected_count, is_complete)
+        `)
+        .eq('user_id', session.user.id)
+        .eq('status', 'active')
+        .order('updated_at', { ascending: false });
 
-      try {
-          const context = await buildModuleContext(supabase, session.user.id, module_id);
-          return res.status(200).json(context);
-      } catch (err: any) {
-          console.error(err);
-          return res.status(500).json({ error: err.message });
-      }
+    if (error) return res.status(500).json({ error: error.message });
+    return res.status(200).json(data);
   }
 
   res.setHeader('Allow', ['GET']);

@@ -9,6 +9,7 @@ interface LectureUploadModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
+  preSelectedModuleId?: string;
 }
 
 const MAX_FILE_SIZE_MB = 50;
@@ -16,10 +17,12 @@ const ALLOWED_TYPES = ['audio/mpeg', 'audio/mp4', 'audio/wav', 'audio/webm', 'au
 
 type ImportMode = 'audio' | 'panopto';
 
-export default function LectureUploadModal({ isOpen, onClose, onSuccess }: LectureUploadModalProps) {
+export default function LectureUploadModal({ isOpen, onClose, onSuccess, preSelectedModuleId }: LectureUploadModalProps) {
   // Shared fields
   const [mode, setMode] = useState<ImportMode>('audio');
   const [title, setTitle] = useState('');
+  // If we have a module ID, we might ideally store it directly, but current logic uses code/name.
+  // For now, let's keep it matching the legacy form fields or just use it in the POST
   const [moduleCode, setModuleCode] = useState('');
   const [moduleName, setModuleName] = useState('');
   const [lecturerName, setLecturerName] = useState('');
@@ -76,6 +79,7 @@ export default function LectureUploadModal({ isOpen, onClose, onSuccess }: Lectu
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           title,
+          module_id: preSelectedModuleId || null,
           module_code: moduleCode || null,
           module_name: moduleName || null,
           lecturer_name: lecturerName || null,
@@ -163,6 +167,7 @@ export default function LectureUploadModal({ isOpen, onClose, onSuccess }: Lectu
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           title,
+          module_id: preSelectedModuleId || null,
           module_code: moduleCode || null,
           module_name: moduleName || null,
           lecturer_name: lecturerName || null,

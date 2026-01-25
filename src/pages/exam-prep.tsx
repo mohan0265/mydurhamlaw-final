@@ -8,7 +8,7 @@ import BackToHomeButton from '@/components/ui/BackToHomeButton'
 import { useScrollToTop } from '@/hooks/useScrollToTop'
 import ExamOverview from '@/components/study/ExamOverview'
 import DurmahChat from '@/components/durmah/DurmahChat'
-import { Calendar, Play } from 'lucide-react'
+import { Calendar, Play, Clock } from 'lucide-react'
 import { addWeeks, format } from 'date-fns'
 
 export default function ExamPrepPage() {
@@ -25,6 +25,20 @@ export default function ExamPrepPage() {
   
   // Durmah Context
   const [chatContext, setChatContext] = useState({ title: 'Exam Revision', hint: '' });
+  
+  // Active Workspaces
+  const [activeWorkspaces, setActiveWorkspaces] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch('/api/exam/workspaces')
+        .then(res => res.json())
+        .then(data => {
+            setActiveWorkspaces(data);
+            setLoading(false);
+        })
+        .catch(err => console.error(err));
+  }, []);
 
   // Deep Linking from Dashboard
   useEffect(() => {
@@ -80,10 +94,51 @@ export default function ExamPrepPage() {
              {/* LEFT/CENTER: Overview & Planner (7 cols) */}
              <div className="lg:col-span-7 space-y-6">
                 {/* 1. Overview Table */}
-                <ExamOverview 
-                   userId={user.id} 
-                   onSelectModule={handleSelectModuleForRevision} 
-                />
+                 <ExamOverview 
+                    userId={user.id} 
+                    onSelectModule={handleSelectModuleForRevision} 
+                 />
+
+                 {/* 2. Active Exam Workspaces (Unlocked) */}
+                 <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                    <h2 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                       <Play className="text-violet-600" size={20} /> Active Workspaces
+                    </h2>
+                    
+                    {loading ? (
+                        <p className="text-sm text-gray-400">Loading workspaces...</p>
+                    ) : activeWorkspaces.length > 0 ? (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {activeWorkspaces.map(ws => (
+                                <div 
+                                    key={ws.id}
+                                    onClick={() => router.push(`/exam-prep/${ws.module_id}`)}
+                                    className="border rounded-lg p-4 hover:border-violet-500 hover:bg-violet-50 transition cursor-pointer group"
+                                >
+                                    <div className="flex justify-between items-start mb-2">
+                                        <h3 className="font-bold text-gray-900 group-hover:text-violet-700">{ws.module.title}</h3>
+                                        <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-bold">Active</span>
+                                    </div>
+                                    <p className="text-xs text-gray-500 mb-3">Code: {ws.module.code}</p>
+                                    <div className="flex items-center gap-2 text-xs text-gray-400">
+                                        <Clock size={12} /> Last active: {new Date(ws.updated_at).toLocaleDateString()}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="text-center py-8 bg-gray-50 rounded-lg border border-dashed border-gray-300">
+                            <p className="text-sm text-gray-500 mb-2">No active exam workspaces yet.</p>
+                            <p className="text-xs text-gray-400 mb-4">Complete your lecture uploads in My Lectures to unlock.</p>
+                            <button 
+                                onClick={() => router.push('/study/lectures')}
+                                className="text-sm font-bold text-violet-600 hover:underline"
+                            >
+                                Go to My Lectures
+                            </button>
+                        </div>
+                    )}
+                 </div>
 
                 {/* 2. Revision Planner */}
                 <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">

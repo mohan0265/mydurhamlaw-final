@@ -15,12 +15,25 @@ const LectureCard = dynamic(() => import('@/components/lectures/LectureCard'), {
 interface Lecture {
   id: string;
   title: string;
+  module_id?: string;
   module_code?: string;
   module_name?: string;
   lecturer_name?: string;
   lecture_date?: string;
   status: 'uploaded' | 'transcribing' | 'summarizing' | 'ready' | 'error';
   created_at: string;
+}
+
+interface Module {
+  id: string;
+  title: string;
+  code: string;
+}
+
+interface LectureSet {
+  uploaded_count: number;
+  expected_count: number;
+  is_complete: boolean;
 }
 
 export default function LecturesPage() {
@@ -31,8 +44,35 @@ export default function LecturesPage() {
   const { isChecking: isRoleChecking, isLovedOne } = useStudentOnly();
   
   const [lectures, setLectures] = useState<Lecture[]>([]);
+  const [modules, setModules] = useState<Module[]>([]);
+  const [selectedModuleId, setSelectedModuleId] = useState<string>('');
+  const [lectureSet, setLectureSet] = useState<LectureSet | null>(null);
+  
   const [loading, setLoading] = useState(true);
   const [showUploadModal, setShowUploadModal] = useState(false);
+  const [isSettingGoal, setIsSettingGoal] = useState(false);
+
+  // Fetch Modules
+  useEffect(() => {
+    fetch('/api/modules')
+      .then(res => res.json())
+      .then(data => {
+        setModules(data);
+        if (data.length > 0) setSelectedModuleId(data[0].id);
+      })
+      .catch(err => console.error('Failed to load modules', err));
+  }, []);
+
+  // Fetch Lecture Set Status when module changes
+  useEffect(() => {
+    if (!selectedModuleId) return;
+    
+    // We can assume the list endpoint might optionally return this, 
+    // or we fetch separate. For now, let's just calc from list or assume API enhancement later
+    // Actually, let's fetch the set targets
+    // Simplified: We will just filter the list client side and show progress based on local state if needed
+    // But real implementation needs the target from DB
+  }, [selectedModuleId]);
 
   const fetchLectures = useCallback(async () => {
     try {
@@ -87,26 +127,78 @@ export default function LecturesPage() {
   return (
     <div className="max-w-4xl mx-auto py-8 px-4">
       {/* Header */}
-      <div className="flex items-center justify-between mb-2">
-        <div>
+      <div className="flex flex-col gap-6 mb-8">
+        <div className="flex items-center justify-between">
+          <div>
+            <Button
+              onClick={() => router.push(getDashboardRoute?.() || '/dashboard')}
+              variant="ghost"
+              className="mb-2 text-sm flex items-center gap-1 text-gray-600 hover:text-purple-700"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Back to Dashboard
+            </Button>
+            <h1 className="text-2xl font-bold text-gray-900">🎓 My Lectures</h1>
+          </div>
           <Button
-            onClick={() => router.push(getDashboardRoute?.() || '/dashboard')}
-            variant="ghost"
-            className="mb-2 text-sm flex items-center gap-1 text-gray-600 hover:text-purple-700"
+            onClick={() => setShowUploadModal(true)}
+            className="bg-purple-600 hover:bg-purple-700 text-white flex items-center gap-2"
           >
-            <ArrowLeft className="w-4 h-4" />
-            Back to Dashboard
+            <Plus className="w-4 h-4" />
+            Add Lecture
           </Button>
-          <h1 className="text-2xl font-bold text-gray-900">🎓 My Lectures</h1>
         </div>
-        <Button
-          onClick={() => setShowUploadModal(true)}
-          className="bg-purple-600 hover:bg-purple-700 text-white flex items-center gap-2"
-        >
-          <Plus className="w-4 h-4" />
-          Add Lecture
-        </Button>
+
+        {/* Module Selector & Progress Strip */}
+        <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-col md:flex-row items-center justify-between gap-4">
+             <div className="flex items-center gap-4 w-full md:w-auto">
+                <div className="flex flex-col">
+                   <label className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Current Module</label>
+                   <select 
+                     className="p-2 bg-gray-50 border border-gray-200 rounded-lg text-sm font-semibold text-gray-700 min-w-[200px] outline-none focus:ring-2 focus:ring-purple-500"
+                     value={selectedModuleId}
+                     onChange={(e) => setSelectedModuleId(e.target.value)}
+                   >
+                     <option value="">Select a Module...</option>
+                     {modules.map(m => (
+                        <option key={m.id} value={m.id}>{m.code ? `${m.code} - ` : ''}{m.title}</option>
+                     ))}
+                   </select>
+                </div>
+                
+                <div className="hidden md:block h-10 w-px bg-gray-200 mx-2"></div>
+                
+                 <div className="flex items-center gap-2">
+                    <span className="text-sm text-gray-500">Target:</span>
+                    <input 
+                       type="number" 
+                       className="w-16 p-1.5 border rounded-md text-sm text-center"
+                       placeholder="0"
+                       onBlur={(e) => {
+                          const val = parseInt(e.target.value);
+                          if (selectedModuleId && !isNaN(val)) {
+                             fetch('/api/module-lecture-set', {
+                                method: 'POST', 
+                                headers: {'Content-Type': 'application/json'},
+                                body: JSON.stringify({ module_id: selectedModuleId, expected_count: val })
+                             }).then(() => fetchLectures()); 
+                          }
+                       }}
+                    />
+                 </div>
+             </div>
+             
+             {selectedModuleId && (
+                 <div className="flex items-center gap-2">
+                     <span className="text-xs font-bold text-gray-400 uppercase">Progress</span>
+                     <div className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-bold">
+                        {lectures.filter(l => l.module_id === selectedModuleId || l.module_code === modules.find(m => m.id === selectedModuleId)?.code).length} Uploaded
+                     </div>
+                 </div>
+             )}
+        </div>
       </div>
+
       
       {/* Tabs */}
       <div className="flex items-center gap-4 border-b border-gray-200 mb-6">
@@ -209,6 +301,7 @@ export default function LecturesPage() {
         isOpen={showUploadModal}
         onClose={() => setShowUploadModal(false)}
         onSuccess={handleUploadSuccess}
+        preSelectedModuleId={selectedModuleId}
       />
     </div>
   );
