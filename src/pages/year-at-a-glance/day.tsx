@@ -1,5 +1,5 @@
 "use client";
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import { isValid, startOfDay, format, addDays } from 'date-fns';
@@ -151,10 +151,41 @@ export default function DayPage() {
     router.push(`/year-at-a-glance?y=${yearKey}`);
   }, [router, yearKey]);
 
+  // Auto-scroll and highlight event when coming from Dashboard
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.location.hash) {
+      const eventId = window.location.hash.substring(1); // e.g., "event-123"
+      
+      // Wait for DOM to fully render
+      setTimeout(() => {
+        const element = document.getElementById(eventId);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          element.classList.add('highlight-flash');
+          
+          // Remove highlight after animation
+          setTimeout(() => {
+            element.classList.remove('highlight-flash');
+          }, 2000);
+        }
+      }, 100);
+    }
+  }, []);
+
+
   return (
     <>
       <Head>
         <title>Day • {format(targetDate, 'MMM d, yyyy')} • MyDurhamLaw</title>
+        <style jsx global>{`
+          .highlight-flash {
+            animation: highlight-flash 2s ease-in-out;
+          }
+          @keyframes highlight-flash {
+            0%, 100% { background-color: transparent; }
+            50% { background-color: rgba(255, 215, 0, 0.4); box-shadow: 0 0 20px rgba(255, 215, 0, 0.5); }
+          }
+        `}</style>
         <meta name="description" content={`Daily schedule and upcoming deadlines for ${YEAR_LABEL[yearKey]}`} />
       </Head>
 
@@ -209,7 +240,8 @@ export default function DayPage() {
                   return (
                     <div
                       key={event.id}
-                      className={`p-3 rounded border ${getEventStyle(event.kind)}`}
+                      id={`event-${event.id}`}
+                      className={`p-3 rounded border ${getEventStyle(event.kind)} transition-all duration-300`}
                     >
                       <div className="flex items-start gap-3">
                         {getEventIcon(event.kind)}
@@ -251,7 +283,8 @@ export default function DayPage() {
                   .map(event => (
                     <div
                       key={event.id}
-                      className={`p-3 rounded border ${getEventStyle(event.kind)}`}
+                      id={`event-${event.id}`}
+                      className={`p-3 rounded border ${getEventStyle(event.kind)} transition-all duration-300`}
                     >
                       <div className="flex items-start gap-3">
                         {getEventIcon(event.kind)}

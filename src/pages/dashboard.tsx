@@ -49,11 +49,17 @@ export default function Dashboard() {
            const next = data.upcomingAssignments[0];
            setNextAssignment(next);
            setUpcomingAssignments(data.upcomingAssignments);
+           
+           // Build YAAG link with event hash for auto-scroll
+           const yaagLink = next.yaagLink || (next.source === 'assignment' ? `/assignments?assignmentId=${next.id}` : '/year-at-a-glance');
+           const yaagLinkWithHash = yaagLink + `#event-${next.id}`;
+           
            setFocusItem({
+             id: next.id,
              title: next.title,
              type: next.typeLabel || (next.source === 'assignment' ? 'Assignment' : 'Deadline'),
-             link: next.yaagLink || (next.source === 'assignment' ? `/assignments?assignmentId=${next.id}` : '/year-at-a-glance'),
-             yaagLink: next.yaagLink,
+             link: yaagLinkWithHash,
+             yaagLink: yaagLinkWithHash,
              typeLabel: next.typeLabel,
              due_date: next.due_date // Pass due date for timer
            });
@@ -141,7 +147,7 @@ export default function Dashboard() {
                     <span className="text-xs font-black uppercase tracking-[0.1em] text-yellow-200">Next Best Action</span>
                   </div>
                   <h2 className="text-2xl md:text-3xl font-bold leading-tight">
-                     {focusItem ? `Next deadline: ${focusItem.title}` : "Start your Contract Law revision"}
+                     {focusItem ? `Next deadline: ${focusItem.title}` : "You're on track"}
                   </h2>
                    <div className="text-indigo-100 text-base md:text-lg max-w-xl">
                      {focusItem ? (
@@ -184,7 +190,7 @@ export default function Dashboard() {
                            )}
                         </div>
                      ) : (
-                        "Based on your recent lectures, this is the highest-impact focus area."
+                        "No upcoming academic deadlines in the next 14 days. Great work staying ahead!"
                      )}
                   </div>
 

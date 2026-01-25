@@ -174,12 +174,28 @@ export default async function handler(
       });
     });
 
-    // Final Sort: Soonest first, then priority to assignments
+    // Priority scoring helper
+    function getPriorityScore(item: any): number {
+      // Exam = highest priority
+      if (item.kind === 'exam' || item.typeLabel === 'Exam') return 300;
+      
+      // Assignment from DB
+      if (item.source === 'assignment') return 200;
+      
+      // YAAG assessment/coursework
+      if (item.kind === 'assessment') return 100;
+      
+      return 0;
+    }
+
+    // Final Sort: Soonest first, then by priority type
     mergedList.sort((a, b) => {
       const timeA = new Date(a.due_date).getTime();
       const timeB = new Date(b.due_date).getTime();
       if (timeA !== timeB) return timeA - timeB;
-      return a.source === 'assignment' ? -1 : 1;
+      
+      // Sort by priority type (Exams > Assignments > Coursework)
+      return getPriorityScore(b) - getPriorityScore(a);
     });
 
     return res.status(200).json({ 
