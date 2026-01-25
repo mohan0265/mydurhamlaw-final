@@ -148,6 +148,15 @@ export default async function handler(
 
 
       console.log(`[dashboard/overview] Found ${yaagEvents.length} total events, ${yaagDeadlines.length} high-priority/assessment filtered.`);
+
+      // DEDUP: Remove YAAG events that shadow real assignments
+      // This ensures items like "MyDurhamLawTest 1" are treated as source='assignment' (linking to AW)
+      const assignmentTitles = new Set(assignments.map(a => a.title.toLowerCase().trim()));
+      yaagDeadlines = yaagDeadlines.filter(e => {
+         // Normalize title
+         return !assignmentTitles.has(e.title.toLowerCase().trim());
+      });
+
     } catch (error) {
       console.error('[dashboard/overview] Error fetching YAAG events:', error);
     }

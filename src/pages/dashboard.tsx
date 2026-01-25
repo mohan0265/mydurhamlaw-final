@@ -185,38 +185,7 @@ export default function Dashboard() {
                               </div>
                            )}
 
-                           <div className="flex flex-wrap items-center gap-3 mt-6">
-                              {/* 
-                                GUARDRAIL: DASHBOARD BANNER LINK
-                                - Assignments: Link to Assignment Widget (Resume/Plan)
-                                - Others: Link to YAAG Day View (#event-{id})
-                              */}
-                              {focusItem.id ? (
-                                <Link 
-                                   href={focusItem.link}
-                                   className="px-5 py-2.5 bg-white text-indigo-900 rounded-xl font-bold hover:bg-indigo-50 transition flex items-center gap-2 shadow-lg"
-                                >
-                                   {focusItem.source === 'assignment' ? 'Continue Assignment' : 'View in YAAG'}
-                                   <ArrowRight className="w-4 h-4" />
-                                </Link>
-                              ) : (
-                                <Link 
-                                   href={`/year-at-a-glance?y=${currentYearKey}`}
-                                   className="px-5 py-2.5 bg-white text-indigo-900 rounded-xl font-bold hover:bg-indigo-50 transition flex items-center gap-2 shadow-lg"
-                                >
-                                   View in YAAG
-                                   <ArrowRight className="w-4 h-4" />
-                                </Link>
-                              )}
-                              
-                              <button 
-                                 onClick={() => setIsWhyModalOpen(true)}
-                                 className="px-5 py-2.5 bg-indigo-800/50 text-white rounded-xl font-medium hover:bg-indigo-800/70 transition flex items-center gap-2 border border-indigo-500/30"
-                              >
-                                 <HelpCircle className="w-4 h-4" />
-                                 Why this?
-                              </button>
-                           </div>
+
                         </div>
                       ) : (
                         <div className="flex flex-col gap-2">
@@ -252,6 +221,37 @@ export default function Dashboard() {
                          {showAllDeadlines ? "Hide other deadlines" : `See ${upcomingAssignments.length - 1} more deadlines in next 14 days`}
                          <ArrowRight className={`w-3 h-3 transition-transform ${showAllDeadlines ? 'rotate-90' : ''}`} />
                       </button>
+                   )}
+                   
+                   {/* Expanded Banner List */}
+                   {showAllDeadlines && upcomingAssignments.length > 1 && (
+                      <div className="mt-4 space-y-2 animate-in fade-in slide-in-from-top-2 relative z-20">
+                          {upcomingAssignments.slice(1).map((a) => {
+                             const actionLink = a.source === 'assignment' 
+                                ? `/assignments?assignmentId=${a.id}` 
+                                : (a.yaagLink || '/year-at-a-glance');
+                             
+                             return (
+                                <Link href={actionLink} key={a.id} className="block group">
+                                   <div className="bg-white/10 hover:bg-white/20 border border-white/10 rounded-xl p-3 flex items-center justify-between transition backdrop-blur-sm">
+                                      <div className="flex items-center gap-3">
+                                         <div className="flex flex-col">
+                                            <div className="flex items-center gap-2">
+                                               <span className="text-[10px] font-black text-white/70 uppercase bg-white/10 px-1.5 rounded-sm">{a.typeLabel}</span>
+                                               <span className="text-xs text-white/60">{a.module_name || "Law Module"}</span>
+                                            </div>
+                                            <span className="text-sm font-semibold text-white">{a.title}</span>
+                                         </div>
+                                      </div>
+                                      <div className="flex flex-col items-end">
+                                         <span className="text-xs font-bold text-white">{a.daysLeft <= 0 ? 'Due Today' : `${a.daysLeft}d left`}</span>
+                                         <span className="text-[10px] text-white/50">{new Date(a.due_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}</span>
+                                      </div>
+                                   </div>
+                                </Link>
+                             );
+                          })}
+                      </div>
                    )}
                 </div>
                
