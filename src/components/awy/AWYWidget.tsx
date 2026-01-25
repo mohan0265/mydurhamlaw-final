@@ -604,8 +604,12 @@ export default function AWYWidget() {
              <div className="w-16 h-16 bg-pink-50 rounded-full flex items-center justify-center mb-4">
                 <Heart className="w-8 h-8 text-pink-500 fill-pink-500" />
              </div>
-             <p className="text-gray-600 mb-8 leading-relaxed">
-               Log in or start a free trial to use the ‘Always With You’ widget and see when your loved ones are online – even from thousands of miles away.
+             <div className="mb-8">
+               <p className="text-gray-800 font-bold leading-snug">See when your loved ones are online</p>
+               <p className="text-gray-800 font-bold leading-snug">and stay connected - even across continents.</p>
+             </div>
+             <p className="text-[11px] text-gray-400 mb-4 font-medium uppercase tracking-wider">
+               Log in or start a free trial to enable Always With You.
              </p>
              <div className="flex flex-col gap-3 w-full">
                <Link href="/login" className="w-full py-3 bg-pink-500 text-white rounded-xl font-bold hover:bg-pink-600 transition-colors flex items-center justify-center gap-2">

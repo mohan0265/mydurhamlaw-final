@@ -1596,11 +1596,22 @@ User question: ${userText}`;
          </div>
          
          <div className="p-8 text-center flex flex-col items-center">
-             <div className="w-16 h-16 bg-violet-50 rounded-full flex items-center justify-center mb-4">
-                <Brain className="w-8 h-8 text-violet-600" />
+             <div className="w-20 h-20 mb-6 flex items-center justify-center animate-in fade-in zoom-in duration-700">
+                <Image 
+                  src="/assets/mascots/quiz-me-bunny-96.webp"
+                  alt="Durmah Mascot"
+                  width={80}
+                  height={80}
+                  className="object-contain"
+                />
              </div>
-             <p className="text-gray-600 mb-8 leading-relaxed">
-               Please log in or start your free trial to talk to Durmah, your personal Durham Law study mentor.
+             <div className="space-y-1 mb-8">
+               <p className="text-gray-800 font-bold">Talk through legal concepts.</p>
+               <p className="text-gray-800 font-bold">Practice arguments out loud.</p>
+               <p className="text-gray-800 font-bold">Think like a Durham lawyer - with guidance.</p>
+             </div>
+             <p className="text-[11px] text-gray-400 mb-4 font-medium uppercase tracking-wider">
+               Log in or start a free trial to speak with Durmah, your personal Durham Law study mentor.
              </p>
              <div className="flex flex-col gap-3 w-full">
                 <Link href="/login" className="w-full py-3 bg-violet-600 text-white rounded-xl font-bold hover:bg-violet-700 transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2">

@@ -276,17 +276,20 @@ export default function GlobalHeader() {
             {/* Brand */}
             <Link
               href="/"
-              className="flex items-center rounded-xl px-2 py-2 group focus:outline-none focus:ring-2 focus:ring-white/50"
+              className="flex items-center gap-3 rounded-xl px-2 py-2 group focus:outline-none focus:ring-2 focus:ring-white/50"
               aria-label="MyDurhamLaw Home"
             >
               <Image 
-                src="/brand/mydurhamlaw-header-lockup.png"
-                alt="MyDurhamLaw"
-                width={200}
-                height={40}
+                src="/brand/logo-icon-128.png"
+                alt="MyDurhamLaw Logo"
+                width={48}
+                height={48}
                 priority
-                className="h-[28px] md:h-[34px] w-auto object-contain transition-transform group-hover:scale-105 duration-300"
+                className="h-[32px] md:h-[44px] w-auto object-contain transition-transform group-hover:scale-105 duration-300 drop-shadow-[0_0_10px_rgba(255,215,0,0.3)]"
               />
+              <span className="text-xl md:text-2xl font-black text-white tracking-tight group-hover:text-amber-200 transition-colors">
+                MyDurhamLaw
+              </span>
             </Link>
 
             {/* Desktop nav */}
