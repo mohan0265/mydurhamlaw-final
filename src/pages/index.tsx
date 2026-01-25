@@ -225,34 +225,24 @@ return (
          <div className="max-w-6xl mx-auto px-6 relative z-10">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
                <div>
-                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-100 text-indigo-700 text-xs font-bold uppercase tracking-wider mb-6">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-100 text-purple-700 text-xs font-bold uppercase tracking-wider mb-6">
                      <Brain className="w-3.5 h-3.5" />
-                     New: Second Door Access
+                     {process.env.NEXT_PUBLIC_LNAT_LAUNCH_ENABLED === 'true' ? 'New: Second Door Access' : 'Upcoming · Early Access Opening Soon'}
                   </div>
                   <h2 className="text-4xl font-black text-gray-900 mb-6 tracking-tight">
-                     Applying to Law? <br/>
-                     <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600">Meet LNAT Mentor.</span>
+                     LNAT Mentor<br/>
+                     <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600">
+                        {process.env.NEXT_PUBLIC_LNAT_LAUNCH_ENABLED === 'true' ? 'Master the logic.' : 'A focused prep track for international & Foundation students — launching soon.'}
+                     </span>
                   </h2>
                   <p className="text-lg text-gray-600 mb-6 leading-relaxed">
-                     For international and Foundation students, the LNAT can be the deciding factor. It looks intimidating—until you learn the logic.
+                     The LNAT is a high-stakes admissions test used by leading UK law schools — and you may only sit it once per admissions cycle.
                   </p>
-                  
-                  <ul className="space-y-4 mb-8">
-                     {[
-                        "Deconstruct dense arguments",
-                        "Identify unstated assumptions",
-                        "Structure your essay under pressure",
-                        "Practice with realistic time limits"
-                     ].map((item, i) => (
-                        <li key={i} className="flex items-center gap-3">
-                           <CheckCircle className="w-5 h-5 text-green-500 shrink-0" />
-                           <span className="text-gray-700 font-medium">{item}</span>
-                        </li>
-                     ))}
-                  </ul>
+                  <p className="text-lg text-gray-600 mb-8 leading-relaxed">
+                     LNAT Mentor is being built to train the core skills the LNAT is designed to assess: reading precision, logical reasoning, and structured argumentation under time pressure.
+                  </p>
 
-                  <div className="flex flex-col sm:flex-row gap-4">
-                     {/* Dynamic Button Text based on Launch Status - assumed checked via build time or hydration, but here hardcoding 'Join Waitlist' as default since env is unlikely to change at runtime without rebuild */}
+                  <div className="flex flex-col sm:flex-row gap-4 mb-4">
                      <Link href="/lnat/signup">
                         <button className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 px-8 rounded-full transition-all shadow-lg shadow-indigo-200">
                            {process.env.NEXT_PUBLIC_LNAT_LAUNCH_ENABLED === 'true' ? 'Start Free LNAT Trial' : 'Join LNAT Waitlist'}
@@ -260,10 +250,16 @@ return (
                      </Link>
                      <Link href="/lnat-preparation">
                         <button className="bg-white border-2 border-indigo-100 hover:border-indigo-200 text-indigo-700 font-bold py-3.5 px-8 rounded-full transition-all">
-                           Learn More
+                           {process.env.NEXT_PUBLIC_LNAT_LAUNCH_ENABLED === 'true' ? 'Learn More' : 'Read the LNAT preparation guide'}
                         </button>
                      </Link>
                   </div>
+                  
+                  {process.env.NEXT_PUBLIC_LNAT_LAUNCH_ENABLED !== 'true' && (
+                     <p className="text-xs text-gray-400">
+                        Early access is limited while we finalise the LNAT MVP.
+                     </p>
+                  )}
                </div>
                
                {/* Visual Card */}
