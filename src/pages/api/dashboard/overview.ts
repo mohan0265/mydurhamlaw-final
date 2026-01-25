@@ -1,5 +1,29 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { createPagesServerClient } from '@supabase/auth-helpers-nextjs'
+
+/**
+ * GUARDRAIL: NEXT BEST ACTION LOGIC
+ * ==============================================================================
+ * This API endpoint is the SOURCE OF TRUTH for the Dashboard's "Next Best Action".
+ *
+ * CRITICAL RULES - DO NOT CHANGE WITHOUT PRODUCT APPROVAL:
+ * 1. Data Source: Must merge REAL assignments from DB + YAAG calendar events.
+ *    - DO NOT replace with LLM-generated generic advice.
+ *    - REAL deadlines must always take precedence.
+ *
+ * 2. Priority Scoring:
+ *    - Exams (300) > Assignments (200) > Coursework/Assessments (100) > Others (50)
+ *    - This ensures high-stakes items appear first.
+ *
+ * 3. Sorting:
+ *    - Primary: Due Date (soonest first)
+ *    - Secondary: Priority Score (highest first)
+ *
+ * 4. Empty State:
+ *    - If no items in 14 days, return empty list.
+ *    - Front-end handles "You're on track" messaging.
+ * ==============================================================================
+ */
 import { buildYAAGEvents } from '@/lib/calendar/yaagEventsBuilder'
 
 /**

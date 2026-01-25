@@ -162,13 +162,20 @@ export default function DayPage() {
     router.push(`/year-at-a-glance?y=${yearKey}`);
   }, [router, yearKey]);
 
-  // Auto-scroll and highlight event when coming from Dashboard
+  // GUARDAIL: HASH NAVIGATION & AUTO-HIGHLIGHT
+  // ============================================
+  // Critical for Dashboard alignment:
+  // 1. Reads #event-{id} from URL
+  // 2. Auto-scrolls to element
+  // 3. Applies golden highlight flash
+  // 4. Fallback: If element not found, do nothing (prevent crash)
   useEffect(() => {
     if (typeof window !== 'undefined' && window.location.hash) {
       const eventId = window.location.hash.substring(1); // e.g., "event-123"
       
       // Wait for DOM to fully render
       setTimeout(() => {
+        // SAFETY CHECK: Ensure element exists before accessing classList
         const element = document.getElementById(eventId);
         if (element) {
           element.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -178,6 +185,8 @@ export default function DayPage() {
           setTimeout(() => {
             element.classList.remove('highlight-flash');
           }, 2000);
+        } else {
+             console.warn('[DayPage] Auto-scroll target not found:', eventId);
         }
       }, 100);
     }

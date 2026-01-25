@@ -166,68 +166,85 @@ export default function Dashboard() {
                                     suppressTimer={!showCountdown}
                                     className="text-white bg-white/20 px-4 py-2 rounded-xl backdrop-blur-md border border-white/20"
                                  />
-                                 
-                                 <button 
-                                    onClick={toggleCountdownPreference}
-                                    disabled={preferencesLoading}
-                                    className="text-xs font-bold text-indigo-300 hover:text-white transition flex items-center gap-1.5 disabled:opacity-50"
-                                 >
-                                    <Clock className="w-3 h-3" />
-                                    {showCountdown ? "Hide Timer" : "Show Timer"}
-                                 </button>
                               </div>
                            )}
-                           
-                           {/* 14-Day View Trigger */}
-                           {upcomingAssignments.length > 1 && (
-                              <button 
-                                 onClick={() => setShowAllDeadlines(!showAllDeadlines)}
-                                 className="mt-4 text-sm font-semibold text-indigo-300 hover:text-white transition flex items-center gap-1 w-fit border-b border-indigo-500/30 pb-0.5"
-                              >
-                                 {showAllDeadlines ? "Hide other deadlines" : `See ${upcomingAssignments.length - 1} more deadlines in next 14 days`}
-                                 <ArrowRight className={`w-3 h-3 transition-transform ${showAllDeadlines ? 'rotate-90' : ''}`} />
-                              </button>
-                           )}
-                        </div>
-                     ) : (
-                        "No upcoming academic deadlines in the next 14 days. Great work staying ahead!"
-                     )}
-                  </div>
 
-                  {/* Expanded Deadlines List */}
-                  {showAllDeadlines && upcomingAssignments.length > 1 && (
-                     <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-3 animate-in fade-in slide-in-from-top-4 duration-300">
-                        {upcomingAssignments.slice(1).map((a, idx) => (
-                           <Link href={a.yaagLink || '/year-at-a-glance'} key={a.id} className="bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl p-3 transition flex items-center justify-between group">
-                              <div className="flex flex-col">
-                                 <div className="flex items-center gap-2 mb-0.5">
-                                   <span className="text-[10px] font-black text-indigo-200 uppercase bg-white/10 px-1 rounded-sm">{a.typeLabel}</span>
-                                   <span className="text-xs font-bold text-indigo-200">{a.module_name || a.module_code || "Law Module"}</span>
-                                 </div>
-                                 <span className="text-sm font-semibold text-white truncate max-w-[150px]">{a.title}</span>
-                              </div>
-                              <div className="text-right flex flex-col items-end">
-                                 <span className="text-[10px] uppercase font-bold text-indigo-400">Due in</span>
-                                 <span className="text-xs font-bold text-white">{a.daysLeft <= 0 ? 'Today' : `${a.daysLeft}d`}</span>
-                              </div>
-                           </Link>
-                        ))}
-                     </div>
-                  )}
+                           <div className="flex flex-wrap items-center gap-3 mt-6">
+                               {/* 
+                                 GUARDRAIL: DASHBOARD BANNER LINK
+                                 Must navigate to YAAG Day View with #event-{id} hash for auto-scroll.
+                                 Fallback to simple YAAG URL if no event ID exists.
+                               */}
+                               {focusItem.id ? (
+                                 <Link 
+                                    href={`/year-at-a-glance/day?y=${currentYearKey}&d=${focusItem.date}#event-${focusItem.id.replace(/^(assignment-|personal-|plan-)/, '')}`}
+                                    className="px-5 py-2.5 bg-white text-indigo-900 rounded-xl font-bold hover:bg-indigo-50 transition flex items-center gap-2 shadow-lg"
+                                 >
+                                    View in YAAG
+                                    <ArrowRight className="w-4 h-4" />
+                                 </Link>
+                               ) : (
+                                 <Link 
+                                    href={`/year-at-a-glance/day?y=${currentYearKey}&d=${focusItem.date}`}
+                                    className="px-5 py-2.5 bg-white text-indigo-900 rounded-xl font-bold hover:bg-indigo-50 transition flex items-center gap-2 shadow-lg"
+                                 >
+                                    View in YAAG
+                                    <ArrowRight className="w-4 h-4" />
+                                 </Link>
+                               )}
+                               
+                               <button className="px-5 py-2.5 bg-indigo-800/50 text-white rounded-xl font-medium hover:bg-indigo-800/70 transition flex items-center gap-2 border border-indigo-500/30">
+                                  <HelpCircle className="w-4 h-4" />
+                                 Why this?
+                              </button>
+                           </div>
+                        </div>
+                      ) : (
+                        <div className="flex flex-col gap-2">
+                           <p className="font-medium text-indigo-100 mb-4 leading-relaxed">
+                              No upcoming academic deadlines in the next 14 days. Great work staying ahead!
+                           </p>
+                           <div className="flex items-center gap-3">
+                              <Link 
+                                 href={`/year-at-a-glance?y=${currentYearKey}`}
+                                 className="px-5 py-2 bg-white text-indigo-900 rounded-lg font-semibold hover:bg-indigo-50 transition flex items-center gap-2"
+                              >
+                                 View in YAAG
+                                 <ArrowRight className="w-4 h-4" />
+                              </Link>
+                              
+                              <button className="px-4 py-2 bg-indigo-800/50 text-white rounded-lg font-medium hover:bg-indigo-800/70 transition border border-indigo-500/30">
+                                 Why this?
+                              </button>
+                           </div>
+                        </div>
+                      )}
+                   </div>
+                  
+                   {/* 14-Day View Trigger */}
+                   {upcomingAssignments.length > 1 && (
+                      <button 
+                         onClick={() => setShowAllDeadlines(!showAllDeadlines)}
+                         className="mt-4 text-sm font-semibold text-indigo-300 hover:text-white transition flex items-center gap-1 w-fit border-b border-indigo-500/30 pb-0.5"
+                      >
+                         {showAllDeadlines ? "Hide other deadlines" : `See ${upcomingAssignments.length - 1} more deadlines in next 14 days`}
+                         <ArrowRight className={`w-3 h-3 transition-transform ${showAllDeadlines ? 'rotate-90' : ''}`} />
+                      </button>
+                   )}
+                </div>
+               
+               <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+                  <button onClick={() => router.push(focusItem?.yaagLink || '/year-at-a-glance')} className="inline-flex items-center justify-center gap-2 rounded-xl bg-white text-indigo-900 font-bold px-6 py-3.5 hover:bg-indigo-50 transition shadow-lg whitespace-nowrap">
+                     View in YAAG <ArrowRight className="w-4 h-4" />
+                  </button>
+                  <button className="inline-flex items-center justify-center gap-2 rounded-xl bg-white/10 text-white font-semibold px-4 py-3.5 hover:bg-white/20 transition border border-white/10 backdrop-blur-sm whitespace-nowrap group">
+                     <HelpCircle className="w-4 h-4 text-indigo-200" />
+                     <span className="text-sm">Why this?</span>
+                     <span className="absolute bottom-full mb-2 bg-black text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition whitespace-nowrap pointer-events-none">Highest impact / nearest due date</span>
+                  </button>
                </div>
-              
-              <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-                 <button onClick={() => router.push(focusItem?.yaagLink || '/year-at-a-glance')} className="inline-flex items-center justify-center gap-2 rounded-xl bg-white text-indigo-900 font-bold px-6 py-3.5 hover:bg-indigo-50 transition shadow-lg whitespace-nowrap">
-                    View in YAAG <ArrowRight className="w-4 h-4" />
-                 </button>
-                 <button className="inline-flex items-center justify-center gap-2 rounded-xl bg-white/10 text-white font-semibold px-4 py-3.5 hover:bg-white/20 transition border border-white/10 backdrop-blur-sm whitespace-nowrap group">
-                    <HelpCircle className="w-4 h-4 text-indigo-200" />
-                    <span className="text-sm">Why this?</span>
-                    <span className="absolute bottom-full mb-2 bg-black text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition whitespace-nowrap pointer-events-none">Highest impact / nearest due date</span>
-                 </button>
-              </div>
-           </div>
-        </div>
+            </div>
+         </div>
 
         {/* 3) CORE PROOF CARDS (Premium Grid) */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
@@ -417,7 +434,6 @@ export default function Dashboard() {
         </div>
 
       </main>
-
 
     </>
   );
