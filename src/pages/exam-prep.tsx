@@ -13,6 +13,7 @@ import { addWeeks, format } from 'date-fns'
 
 export default function ExamPrepPage() {
   useScrollToTop()
+  const router = useRouter()
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const { user } = useContext(AuthContext)
   
