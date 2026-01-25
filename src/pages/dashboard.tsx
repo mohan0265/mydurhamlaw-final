@@ -375,43 +375,7 @@ export default function Dashboard() {
            {/* Left Col: Deadlines + USP */}
            <div className="lg:col-span-2 space-y-6">
               
-              {/* Upcoming Deadlines (Existing) */}
-              <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-1">
-                 <div className="p-4 border-b border-gray-50 flex items-center justify-between">
-                    <h3 className="font-bold text-gray-900 flex items-center gap-2">
-                       <Clock className="w-4 h-4 text-gray-500" /> Upcoming Deadlines
-                    </h3>
-                    <Link href="/assignments" className="text-xs font-semibold text-indigo-600 hover:text-indigo-800">View Calendar</Link>
-                 </div>
-                 <div className="p-2">
-                    {/* Expanded Deadlines List */}
-                     {upcomingAssignments.slice(1).map((a, idx) => {
-                        const actionLink = a.source === 'assignment' 
-                           ? `/assignments?assignmentId=${a.id}` 
-                           : (a.typeLabel === 'Exam' || a.priorityScore === 300)
-                              ? `/exam-prep?module=${encodeURIComponent(a.module_name || a.title)}`
-                              : (a.yaagLink || '/year-at-a-glance');
-                        
-                        return (
-                           <Link href={actionLink} key={a.id} className="bg-white hover:bg-gray-50 border-b border-gray-50 last:border-0 rounded-lg p-3 transition flex items-center justify-between group mb-2">
-                              <div className="flex flex-col">
-                                 <div className="flex items-center gap-2 mb-0.5">
-                                   <span className="text-[10px] font-black text-indigo-500 uppercase bg-indigo-50 px-1 rounded-sm">{a.typeLabel}</span>
-                                   <span className="text-xs font-bold text-gray-600">{a.module_name || a.module_code || "Law Module"}</span>
-                                 </div>
-                                 <span className="text-sm font-semibold text-gray-900 truncate max-w-[200px]">{a.title}</span>
-                              </div>
-                              <div className="text-right flex flex-col items-end">
-                                 <span className="text-xs font-bold text-indigo-600">{a.daysLeft <= 0 ? 'Today' : `${a.daysLeft}d`}</span>
-                                 <span className="text-[10px] text-gray-400">
-                                     {new Date(a.due_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
-                                 </span>
-                              </div>
-                           </Link>
-                        );
-                     })}
-                 </div>
-              </div>
+
 
                {/* USP Spotlight Row */}
                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
