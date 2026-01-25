@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useContext } from 'react'
+import { useState, useContext, useEffect } from 'react'
 import { useRouter } from 'next/router'
 import { AuthContext } from '@/lib/supabase/AuthContext'
 import ModernSidebar from '@/components/layout/ModernSidebar'
@@ -24,6 +24,18 @@ export default function ExamPrepPage() {
   
   // Durmah Context
   const [chatContext, setChatContext] = useState({ title: 'Exam Revision', hint: '' });
+
+  // Deep Linking from Dashboard
+  useEffect(() => {
+    if (router.query.module) {
+       const mod = decodeURIComponent(router.query.module as string);
+       setSelectedModule(mod);
+       setChatContext({
+          title: `Revision: ${mod}`,
+          hint: `The student is revising for ${mod} exam. Help them create a detailed study schedule.`
+       });
+    }
+  }, [router.query]);
 
   const handleSelectModuleForRevision = (moduleName: string, date: string) => {
      setSelectedModule(moduleName);

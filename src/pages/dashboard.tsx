@@ -60,7 +60,9 @@ export default function Dashboard() {
            // For Others: Link to YAAG Day View
            const actionLink = next.source === 'assignment' 
               ? `/assignments?assignmentId=${next.id}`
-              : (next.yaagLink ? next.yaagLink + `#event-${next.id}` : '/year-at-a-glance');
+              : (next.typeLabel === 'Exam' || next.priorityScore === 300)
+                 ? `/exam-prep?module=${encodeURIComponent(next.module_name || next.title)}`
+                 : (next.yaagLink ? next.yaagLink + `#event-${next.id}` : '/year-at-a-glance');
            
            setFocusItem({
              id: next.id,
@@ -229,7 +231,9 @@ export default function Dashboard() {
                           {upcomingAssignments.slice(1).map((a) => {
                              const actionLink = a.source === 'assignment' 
                                 ? `/assignments?assignmentId=${a.id}` 
-                                : (a.yaagLink || '/year-at-a-glance');
+                                : (a.typeLabel === 'Exam' || a.priorityScore === 300)
+                                   ? `/exam-prep?module=${encodeURIComponent(a.module_name || a.title)}`
+                                   : (a.yaagLink || '/year-at-a-glance');
                              
                              return (
                                 <Link href={actionLink} key={a.id} className="block group">
@@ -384,7 +388,9 @@ export default function Dashboard() {
                      {upcomingAssignments.slice(1).map((a, idx) => {
                         const actionLink = a.source === 'assignment' 
                            ? `/assignments?assignmentId=${a.id}` 
-                           : (a.yaagLink || '/year-at-a-glance');
+                           : (a.typeLabel === 'Exam' || a.priorityScore === 300)
+                              ? `/exam-prep?module=${encodeURIComponent(a.module_name || a.title)}`
+                              : (a.yaagLink || '/year-at-a-glance');
                         
                         return (
                            <Link href={actionLink} key={a.id} className="bg-white hover:bg-gray-50 border-b border-gray-50 last:border-0 rounded-lg p-3 transition flex items-center justify-between group mb-2">
