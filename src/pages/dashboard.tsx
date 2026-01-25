@@ -57,58 +57,59 @@ export default function Dashboard() {
            
            // Build YAAG link with event hash for auto-scroll
            // For Assignments: Link to Assignment Widget
-           // For Others: Link to YAAG Day View
-           const isAssignment = next.source === 'assignment' || (typeof next.id === 'string' && next.id.startsWith('assignment-'));
-           const cleanId = (typeof next.id === 'string' && next.id.startsWith('assignment-')) ? next.id.replace('assignment-', '') : next.id;
+            // Determine Primary Link (Assignment/Exam) 
+            // AND Calendar Link (YAAG) separately
+            const isAssignment = next.source === 'assignment' || (typeof next.id === 'string' && next.id.startsWith('assignment-'));
+            const cleanId = (typeof next.id === 'string' && next.id.startsWith('assignment-')) ? next.id.replace('assignment-', '') : next.id;
+ 
+            const primaryLink = isAssignment
+               ? `/assignments?assignmentId=${cleanId}`
+               : (next.typeLabel === 'Exam' || next.priorityScore === 300)
+                  ? `/exam-prep?module=${encodeURIComponent(next.module_name || next.title)}`
+                  : (next.yaagLink ? next.yaagLink + `#event-${next.id}` : '/year-at-a-glance');
+            
+            const calendarLink = next.yaagLink ? next.yaagLink + `#event-${next.id}` : '/year-at-a-glance';
 
-           const actionLink = isAssignment
-              ? `/assignments?assignmentId=${cleanId}`
-              : (next.typeLabel === 'Exam' || next.priorityScore === 300)
-                 ? `/exam-prep?module=${encodeURIComponent(next.module_name || next.title)}`
-                 : (next.yaagLink ? next.yaagLink + `#event-${next.id}` : '/year-at-a-glance');
-           
-           const initialFocusItem = {
-             id: next.id,
-             title: next.title,
-             type: next.typeLabel || (next.source === 'assignment' ? 'Assignment' : 'Deadline'),
-             link: actionLink,
-             yaagLink: actionLink,
-             typeLabel: next.typeLabel,
-             due_date: next.due_date, 
-             source: next.source,
-             reasonCodes: next.reasonCodes,
-             module_name: next.module_name,
-             priorityScore: next.priorityScore,
-             eventDay: next.eventDay
-           };
+            const initialFocusItem = {
+              id: next.id,
+              title: next.title,
+              type: next.typeLabel || (next.source === 'assignment' ? 'Assignment' : 'Deadline'),
+              link: primaryLink,       // Yellow Pill -> Work
+              yaagLink: calendarLink,  // White Button -> Calendar
+              typeLabel: next.typeLabel,
+              due_date: next.due_date, 
+              source: next.source,
+              reasonCodes: next.reasonCodes,
+              module_name: next.module_name,
+              priorityScore: next.priorityScore,
+              eventDay: next.eventDay
+            };
 
-           setFocusItem(initialFocusItem);
+            setFocusItem(initialFocusItem);
 
-           // CLIENT-SIDE ENRICHMENT: Verify Assignment ID if source is YAAG
-           // This fixes the case where backend dedup fails but assignment exists
-           if (next.source !== 'assignment' && next.title) {
-               const supabase = getSupabaseClient();
-               supabase
-                   .from('assignments')
-                   .select('id, due_date, status')
-                   .ilike('title', next.title)
-                   .eq('user_id', user.id)
-                   .maybeSingle()
-                   .then(({ data: realAssignment }) => {
-                       if (realAssignment) {
-                           const enrichedLink = `/assignments?assignmentId=${realAssignment.id}`;
-                           setFocusItem(prev => ({
-                               ...prev!,
-                               id: realAssignment.id,
-                               link: enrichedLink,
-                               source: 'assignment',
-                               due_date: realAssignment.due_date,
-                               // Enforce Assignment type label if found
-                               typeLabel: 'Assignment'
-                           }));
-                       }
-                   });
-           }
+            // CLIENT-SIDE ENRICHMENT: Verify Assignment ID if source is YAAG
+            if (next.source !== 'assignment' && next.title) {
+                const supabase = getSupabaseClient();
+                supabase
+                    .from('assignments')
+                    .select('id, due_date, status')
+                    .ilike('title', next.title)
+                    .eq('user_id', user.id)
+                    .maybeSingle()
+                    .then(({ data: realAssignment }) => {
+                        if (realAssignment) {
+                            const enrichedLink = `/assignments?assignmentId=${realAssignment.id}`;
+                            setFocusItem(prev => ({
+                                ...prev!,
+                                id: realAssignment.id,
+                                link: enrichedLink, // Updates Primary Link
+                                source: 'assignment',
+                                due_date: realAssignment.due_date,
+                                typeLabel: 'Assignment'
+                            }));
+                        }
+                    });
+            }
         }
       }).catch(err => console.error('Focus fetch error', err));
     }
@@ -296,9 +297,9 @@ export default function Dashboard() {
                    )}
                 </div>
                
-               <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-                  <button onClick={() => router.push(focusItem?.link || '/year-at-a-glance')} className="inline-flex items-center justify-center gap-2 rounded-xl bg-white text-indigo-900 font-bold px-6 py-3.5 hover:bg-indigo-50 transition shadow-lg whitespace-nowrap">
-                     {focusItem?.source === 'assignment' ? 'Open Assignment' : 'View in YAAG'} <ArrowRight className="w-4 h-4" />
+                <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+                   <button onClick={() => router.push(focusItem?.yaagLink || '/year-at-a-glance')} className="inline-flex items-center justify-center gap-2 rounded-xl bg-white text-indigo-900 font-bold px-6 py-3.5 hover:bg-indigo-50 transition shadow-lg whitespace-nowrap">
+                      View in YAAG <ArrowRight className="w-4 h-4" />
                   </button>
                   <button 
                      onClick={() => setIsWhyModalOpen(true)}
