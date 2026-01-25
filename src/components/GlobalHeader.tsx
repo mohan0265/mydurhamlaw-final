@@ -279,15 +279,20 @@ export default function GlobalHeader() {
               className="flex items-center gap-3 rounded-xl px-2 py-2 group focus:outline-none focus:ring-2 focus:ring-white/50"
               aria-label="MyDurhamLaw Home"
             >
-              <Image 
-                src="/brand/logo-icon-128.png"
-                alt="MyDurhamLaw Logo"
-                width={48}
-                height={48}
-                priority
-                className="h-[32px] md:h-[44px] w-auto object-contain transition-transform group-hover:scale-105 duration-300 drop-shadow-[0_0_10px_rgba(255,215,0,0.3)]"
-              />
-              <span className="text-xl md:text-2xl font-black text-white tracking-tight group-hover:text-amber-200 transition-colors">
+              <div className="relative">
+                <Image 
+                  src="/brand/logo-icon-128.png"
+                  alt="MyDurhamLaw Logo"
+                  width={56}
+                  height={56}
+                  priority
+                  className="h-[40px] md:h-[56px] w-auto object-contain transition-transform group-hover:scale-110 duration-500 drop-shadow-[0_0_15px_rgba(255,215,0,0.4)]"
+                />
+                <div className="absolute -top-1 -right-1 bg-white rounded-full p-0.5 shadow-sm border border-violet-100 hidden md:block">
+                   <Image src="/brand/durmah-mascot.png" alt="Durmah" width={20} height={20} className="rounded-full" />
+                </div>
+              </div>
+              <span className="text-xl md:text-3xl font-black text-white tracking-tight group-hover:text-amber-200 transition-colors drop-shadow-sm">
                 MyDurhamLaw
               </span>
             </Link>

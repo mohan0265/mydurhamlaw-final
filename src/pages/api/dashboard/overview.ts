@@ -111,11 +111,15 @@ export default async function handler(
         supabase
       } as any);
       
-      // STRICT FILTERING: Only Assessments and Exams. No topics, no generic reminders.
-      yaagDeadlines = (yaagEvents || []).filter(e => 
-        (e.kind === 'assessment' || e.kind === 'exam') && 
-        e.meta?.source !== 'assignment' // Skip duplicates already in 'assignments' table
-      );
+      // RELAXED FILTERING: Assessments, Exams, OR high-priority topics/personal items.
+      yaagDeadlines = (yaagEvents || []).filter(e => {
+        const isAssessment = e.kind === 'assessment' || e.kind === 'exam';
+        const isHighPriorityTopic = e.kind === 'topic' && (e.meta?.priority === 'high' || e.meta?.source === 'personal');
+        
+        return (isAssessment || isHighPriorityTopic) && e.meta?.source !== 'assignment';
+      });
+
+      console.log(`[dashboard/overview] Found ${yaagEvents.length} total events, ${yaagDeadlines.length} high-priority/assessment filtered.`);
     } catch (error) {
       console.error('[dashboard/overview] Error fetching YAAG events:', error);
     }

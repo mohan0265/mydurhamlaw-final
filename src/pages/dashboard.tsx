@@ -125,12 +125,21 @@ export default function Dashboard() {
         <div className="bg-gradient-to-r from-gray-900 to-indigo-900 rounded-2xl p-6 md:p-8 relative overflow-hidden shadow-xl text-white">
            <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none"></div>
            
-           <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-              <div className="space-y-2 max-w-2xl">
-                 <div className="inline-flex items-center gap-2 bg-white/10 border border-white/20 rounded-full px-3 py-1 mb-2">
-                    <Zap className="w-3 h-3 text-yellow-300" />
-                    <span className="text-xs font-bold uppercase tracking-wider text-yellow-100">Next Best Action</span>
-                 </div>
+            {/* Premium Mesh Gradient Backdrop */}
+            <div className="absolute inset-0 bg-indigo-900 overflow-hidden">
+               <div className="absolute -top-[20%] -left-[10%] w-[60%] h-[60%] bg-violet-600/30 rounded-full blur-[120px] animate-pulse"></div>
+               <div className="absolute -bottom-[20%] -right-[10%] w-[50%] h-[50%] bg-indigo-500/20 rounded-full blur-[100px]"></div>
+               <div className="absolute top-[20%] right-[10%] w-[30%] h-[30%] bg-fuchsia-500/10 rounded-full blur-[80px]"></div>
+            </div>
+
+            <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8">
+               <div className="flex-1 space-y-4">
+                  <div className="flex items-center gap-2">
+                    <div className="bg-yellow-400 p-1.5 rounded-lg shadow-inner">
+                       <Zap className="w-3.5 h-3.5 text-indigo-900 fill-indigo-900" />
+                    </div>
+                    <span className="text-xs font-black uppercase tracking-[0.1em] text-yellow-200">Next Best Action</span>
+                  </div>
                   <h2 className="text-2xl md:text-3xl font-bold leading-tight">
                      {focusItem ? `Next deadline: ${focusItem.title}` : "Start your Contract Law revision"}
                   </h2>
