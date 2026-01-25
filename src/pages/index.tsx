@@ -217,6 +217,90 @@ return (
          </div>
       </section>
 
+      {/* 4) LNAT MENTOR TEASER (New Placement) */}
+      <section className="py-24 bg-gray-50 border-b border-gray-100 relative overflow-hidden">
+         {/* Background pattern */}
+         <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/grid-me.png')] opacity-5"></div>
+         
+         <div className="max-w-6xl mx-auto px-6 relative z-10">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+               <div>
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-100 text-indigo-700 text-xs font-bold uppercase tracking-wider mb-6">
+                     <Brain className="w-3.5 h-3.5" />
+                     New: Second Door Access
+                  </div>
+                  <h2 className="text-4xl font-black text-gray-900 mb-6 tracking-tight">
+                     Applying to Law? <br/>
+                     <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600">Meet LNAT Mentor.</span>
+                  </h2>
+                  <p className="text-lg text-gray-600 mb-6 leading-relaxed">
+                     For international and Foundation students, the LNAT can be the deciding factor. It looks intimidating—until you learn the logic.
+                  </p>
+                  
+                  <ul className="space-y-4 mb-8">
+                     {[
+                        "Deconstruct dense arguments",
+                        "Identify unstated assumptions",
+                        "Structure your essay under pressure",
+                        "Practice with realistic time limits"
+                     ].map((item, i) => (
+                        <li key={i} className="flex items-center gap-3">
+                           <CheckCircle className="w-5 h-5 text-green-500 shrink-0" />
+                           <span className="text-gray-700 font-medium">{item}</span>
+                        </li>
+                     ))}
+                  </ul>
+
+                  <div className="flex flex-col sm:flex-row gap-4">
+                     <Link href="/lnat/signup">
+                        <button className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 px-8 rounded-full transition-all shadow-lg shadow-indigo-200">
+                           Start Free LNAT Trial
+                        </button>
+                     </Link>
+                     <Link href="/lnat-preparation">
+                        <button className="bg-white border-2 border-indigo-100 hover:border-indigo-200 text-indigo-700 font-bold py-3.5 px-8 rounded-full transition-all">
+                           Learn More
+                        </button>
+                     </Link>
+                  </div>
+               </div>
+               
+               {/* Visual Card */}
+               <div className="relative">
+                  <div className="absolute -inset-4 bg-gradient-to-r from-purple-200 to-indigo-200 rounded-[2rem] blur-2xl opacity-50"></div>
+                  <div className="relative bg-white border border-gray-200 rounded-2xl p-8 shadow-xl">
+                      <div className="flex items-center justify-between mb-8 border-b border-gray-100 pb-4">
+                         <div className="font-bold text-gray-900">Practice Session</div>
+                         <div className="text-xs font-bold text-red-500 bg-red-50 px-2 py-1 rounded animate-pulse">LIVE TIMER: 14:02</div>
+                      </div>
+                      <div className="space-y-6">
+                         <div className="space-y-2">
+                            <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
+                               <div className="h-full w-2/3 bg-indigo-500"></div>
+                            </div>
+                            <div className="flex justify-between text-xs text-gray-400 font-mono">
+                               <span>Section A: Reading</span>
+                               <span>8/12 Completed</span>
+                            </div>
+                         </div>
+                         
+                         <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 text-sm text-gray-600 italic">
+                            "The author implies that legislative intent is irrelevant when..."
+                         </div>
+
+                         <div className="grid grid-cols-2 gap-3">
+                            <div className="h-10 border border-gray-200 rounded-lg"></div>
+                            <div className="h-10 bg-indigo-50 border border-indigo-200 rounded-lg flex items-center justify-center text-indigo-700 font-bold text-sm">Option B</div>
+                            <div className="h-10 border border-gray-200 rounded-lg"></div>
+                            <div className="h-10 border border-gray-200 rounded-lg"></div>
+                         </div>
+                      </div>
+                  </div>
+               </div>
+            </div>
+         </div>
+      </section>
+
       {/* 5) LIVE NEWS USP SECTION */}
       <section className="py-24 bg-gray-950 text-white relative overflow-hidden border-t border-white/5">
         <div className="max-w-6xl mx-auto px-6 relative z-10">
