@@ -111,13 +111,17 @@ export default async function handler(
         supabase
       } as any);
       
+      
       // RELAXED FILTERING: Assessments, Exams, OR high-priority topics/personal items.
+      // NOTE: buildYAAGEvents already includes assignments, so we DON'T filter them out here
       yaagDeadlines = (yaagEvents || []).filter(e => {
         const isAssessment = e.kind === 'assessment' || e.kind === 'exam';
         const isHighPriorityTopic = e.kind === 'topic' && (e.meta?.priority === 'high' || e.meta?.source === 'personal');
+        const isAssignment = e.meta?.source === 'assignment';
         
-        return (isAssessment || isHighPriorityTopic) && e.meta?.source !== 'assignment';
+        return isAssessment || isHighPriorityTopic || isAssignment;
       });
+
 
       console.log(`[dashboard/overview] Found ${yaagEvents.length} total events, ${yaagDeadlines.length} high-priority/assessment filtered.`);
     } catch (error) {
