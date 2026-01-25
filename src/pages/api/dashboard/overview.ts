@@ -113,8 +113,11 @@ export default async function handler(
 
       if (error) throw error;
       
-      // JS Filter to safely handle NULL status (which DB 'not.in' might drop)
-      assignments = (data || []).filter(a => !['submitted', 'completed'].includes(a.status));
+      // JS Filter to safely handle NULL status and Case-Insensitivity
+      assignments = (data || []).filter(a => {
+         const s = (a.status || '').toLowerCase();
+         return !['submitted', 'completed'].includes(s);
+      });
     } catch (error) {
       console.error('[dashboard/overview] Error fetching assignments:', error);
     }
@@ -151,11 +154,12 @@ export default async function handler(
       console.log(`[dashboard/overview] Found ${yaagEvents.length} total events, ${yaagDeadlines.length} high-priority/assessment filtered.`);
 
       // DEDUP: Remove YAAG events that shadow real assignments
-      // This ensures items like "MyDurhamLawTest 1" are treated as source='assignment' (linking to AW)
-      const assignmentTitles = new Set(assignments.map(a => a.title.toLowerCase().trim()));
+      // Aggressive normalization: lowercase + remove all non-alphanumeric chars
+      const normalize = (str: string) => (str || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+      const assignmentTitles = new Set(assignments.map(a => normalize(a.title)));
+      
       yaagDeadlines = yaagDeadlines.filter(e => {
-         // Normalize title
-         return !assignmentTitles.has(e.title.toLowerCase().trim());
+         return !assignmentTitles.has(normalize(e.title));
       });
 
     } catch (error) {
