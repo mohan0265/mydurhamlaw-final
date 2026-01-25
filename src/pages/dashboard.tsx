@@ -24,7 +24,7 @@ export default function Dashboard() {
   const router = useRouter();
   const { user, loading } = useAuth() || { user: null, loading: true };
   const { displayName } = useUserDisplayName();
-  const [focusItem, setFocusItem] = useState<{title: string, type: string, link: string, due_date?: string, source?: string, id?: string, reasonCodes?: string[], module_name?: string, priorityScore?: number} | null>(null);
+  const [focusItem, setFocusItem] = useState<{title: string, type: string, link: string, due_date?: string, source?: string, id?: string, reasonCodes?: string[], module_name?: string, priorityScore?: number, typeLabel?: string, yaagLink?: string} | null>(null);
   const [isWhyModalOpen, setIsWhyModalOpen] = useState(false);
   const [nextAssignment, setNextAssignment] = useState<any>(null);
   const [upcomingAssignments, setUpcomingAssignments] = useState<any[]>([]);
@@ -69,7 +69,6 @@ export default function Dashboard() {
              link: actionLink,
              yaagLink: actionLink,
              typeLabel: next.typeLabel,
-             due_date: next.due_date, // Pass due date for timer
              due_date: next.due_date, // Pass due date for timer
              source: next.source,
              reasonCodes: next.reasonCodes,
@@ -181,7 +180,7 @@ export default function Dashboard() {
                                  />
                                  {/* Brief Date Display */}
                                  <span className="text-sm font-semibold text-indigo-200 uppercase tracking-wide">
-                                    {new Date(focusItem.due_date).toLocaleDateString('en-GB', { wildcard: undefined, weekday: 'short', day: 'numeric', month: 'short' })}
+                                    {new Date(focusItem.due_date).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })}
                                  </span>
                               </div>
                            )}
