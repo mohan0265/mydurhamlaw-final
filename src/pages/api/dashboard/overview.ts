@@ -108,12 +108,13 @@ export default async function handler(
         .from('assignments')
         .select('id, title, module_name, module_code, due_date, status, current_stage, estimated_effort_hours, module_id')
         .eq('user_id', user.id)
-        .not('status', 'in', '(submitted,completed)')
         .order('due_date', { ascending: true })
-        .limit(20);
+        .limit(50);
 
       if (error) throw error;
-      assignments = data || [];
+      
+      // JS Filter to safely handle NULL status (which DB 'not.in' might drop)
+      assignments = (data || []).filter(a => !['submitted', 'completed'].includes(a.status));
     } catch (error) {
       console.error('[dashboard/overview] Error fetching assignments:', error);
     }
