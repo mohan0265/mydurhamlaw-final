@@ -32,6 +32,7 @@ export default function Dashboard() {
   const [showAllDeadlines, setShowAllDeadlines] = useState(false);
   const [showCountdown, setShowCountdown] = useState(false);
   const [preferencesLoading, setPreferencesLoading] = useState(false);
+  const [currentYearKey, setCurrentYearKey] = useState<string>('year1');
 
   useEffect(() => {
     setIsMounted(true);
@@ -44,6 +45,9 @@ export default function Dashboard() {
       }).then(data => {
         if (data?.preferences) {
           setShowCountdown(data.preferences.show_deadline_countdown);
+        }
+        if (data?.yearKey) {
+          setCurrentYearKey(data.yearKey);
         }
         if(data?.upcomingAssignments?.length > 0) {
            const next = data.upcomingAssignments[0];
