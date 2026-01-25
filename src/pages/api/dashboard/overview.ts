@@ -226,8 +226,26 @@ export default async function handler(
       return getPriorityScore(b) - getPriorityScore(a);
     });
 
+    // Post-process to add Reasoning Codes for "Why this?" explanation
+    const enrichedList = mergedList.map(item => {
+      const codes: string[] = [];
+      const score = getPriorityScore(item);
+      
+      if (item.daysLeft <= 3) codes.push('DEADLINE_SOON');
+      else if (item.daysLeft <= 14) codes.push('WITHIN_14_DAYS');
+      
+      if (score === 300) codes.push('HIGH_PRIORITY_EXAM');
+      if (score === 200) codes.push('ASSIGNMENT_WORK');
+      
+      return {
+        ...item,
+        priorityScore: score,
+        reasonCodes: codes
+      };
+    });
+
     return res.status(200).json({ 
-      upcomingAssignments: mergedList.slice(0, 10),
+      upcomingAssignments: enrichedList.slice(0, 10),
       preferences,
       yearKey
     } as any);

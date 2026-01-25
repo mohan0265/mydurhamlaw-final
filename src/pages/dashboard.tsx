@@ -24,7 +24,8 @@ export default function Dashboard() {
   const router = useRouter();
   const { user, loading } = useAuth() || { user: null, loading: true };
   const { displayName } = useUserDisplayName();
-  const [focusItem, setFocusItem] = useState<{title: string, type: string, link: string, due_date?: string, source?: string, id?: string} | null>(null);
+  const [focusItem, setFocusItem] = useState<{title: string, type: string, link: string, due_date?: string, source?: string, id?: string, reasonCodes?: string[], module_name?: string, priorityScore?: number} | null>(null);
+  const [isWhyModalOpen, setIsWhyModalOpen] = useState(false);
   const [nextAssignment, setNextAssignment] = useState<any>(null);
   const [upcomingAssignments, setUpcomingAssignments] = useState<any[]>([]);
   const [supportExpanded, setSupportExpanded] = useState(false);
@@ -69,7 +70,11 @@ export default function Dashboard() {
              yaagLink: actionLink,
              typeLabel: next.typeLabel,
              due_date: next.due_date, // Pass due date for timer
-             source: next.source
+             due_date: next.due_date, // Pass due date for timer
+             source: next.source,
+             reasonCodes: next.reasonCodes,
+             module_name: next.module_name,
+             priorityScore: next.priorityScore
            });
         }
       }).catch(err => console.error('Focus fetch error', err));
@@ -205,7 +210,10 @@ export default function Dashboard() {
                                 </Link>
                               )}
                               
-                              <button className="px-5 py-2.5 bg-indigo-800/50 text-white rounded-xl font-medium hover:bg-indigo-800/70 transition flex items-center gap-2 border border-indigo-500/30">
+                              <button 
+                                 onClick={() => setIsWhyModalOpen(true)}
+                                 className="px-5 py-2.5 bg-indigo-800/50 text-white rounded-xl font-medium hover:bg-indigo-800/70 transition flex items-center gap-2 border border-indigo-500/30"
+                              >
                                  <HelpCircle className="w-4 h-4" />
                                  Why this?
                               </button>
@@ -225,7 +233,10 @@ export default function Dashboard() {
                                  <ArrowRight className="w-4 h-4" />
                               </Link>
                               
-                              <button className="px-4 py-2 bg-indigo-800/50 text-white rounded-lg font-medium hover:bg-indigo-800/70 transition border border-indigo-500/30">
+                              <button 
+                                 onClick={() => setIsWhyModalOpen(true)}
+                                 className="px-4 py-2 bg-indigo-800/50 text-white rounded-lg font-medium hover:bg-indigo-800/70 transition border border-indigo-500/30"
+                              >
                                  Why this?
                               </button>
                            </div>
@@ -249,7 +260,10 @@ export default function Dashboard() {
                   <button onClick={() => router.push(focusItem?.link || '/year-at-a-glance')} className="inline-flex items-center justify-center gap-2 rounded-xl bg-white text-indigo-900 font-bold px-6 py-3.5 hover:bg-indigo-50 transition shadow-lg whitespace-nowrap">
                      {focusItem?.source === 'assignment' ? 'Open Assignment' : 'View in YAAG'} <ArrowRight className="w-4 h-4" />
                   </button>
-                  <button className="inline-flex items-center justify-center gap-2 rounded-xl bg-white/10 text-white font-semibold px-4 py-3.5 hover:bg-white/20 transition border border-white/10 backdrop-blur-sm whitespace-nowrap group">
+                  <button 
+                     onClick={() => setIsWhyModalOpen(true)}
+                     className="inline-flex items-center justify-center gap-2 rounded-xl bg-white/10 text-white font-semibold px-4 py-3.5 hover:bg-white/20 transition border border-white/10 backdrop-blur-sm whitespace-nowrap group"
+                  >
                      <HelpCircle className="w-4 h-4 text-indigo-200" />
                      <span className="text-sm">Why this?</span>
                      <span className="absolute bottom-full mb-2 bg-black text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition whitespace-nowrap pointer-events-none">Highest impact / nearest due date</span>
@@ -470,7 +484,103 @@ export default function Dashboard() {
 
       </main>
 
+      <WhyThisModal isOpen={isWhyModalOpen} onClose={() => setIsWhyModalOpen(false)} item={focusItem} />
     </>
+  );
+}
+
+// Minimal WhyThisModal Component
+function WhyThisModal({ isOpen, onClose, item }: { isOpen: boolean; onClose: () => void; item: any }) {
+  // Handle ESC key
+  useEffect(() => {
+    const handleEsc = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    if (isOpen) window.addEventListener('keydown', handleEsc);
+    return () => window.removeEventListener('keydown', handleEsc);
+  }, [isOpen, onClose]);
+
+  if (!isOpen) return null;
+
+  // Reasoning Logic
+  const isExam = item?.reasonCodes?.includes('HIGH_PRIORITY_EXAM') || item?.typeLabel === 'Exam';
+  const isAssignment = item?.reasonCodes?.includes('ASSIGNMENT_WORK') || item?.source === 'assignment';
+  const isSoon = item?.reasonCodes?.includes('DEADLINE_SOON');
+  const hasModule = !!item?.module_name;
+
+  let reasonText = "This item has been flagged as your highest priority.";
+  let strategyText = "Review the requirements and start planning immediately.";
+
+  if (isExam) {
+     reasonText = "Exams are prioritised highest because performance is time-bound and revision compounds. Early preparation allows for spaced repetition.";
+     strategyText = "Next step: Review your revision timetable and identify one weak topic to address today.";
+  } else if (isAssignment) {
+     reasonText = "Assignments are prioritised because drafting, legal research, and referencing require significant lead time.";
+     strategyText = "Next step: Open the assignment brief and ensure you have a valid 3-part plan (issues, authorities, structure).";
+  } else if (isSoon) {
+     reasonText = "This deadline is imminent (within 3 days). Immediate action is required to avoid penalty or stress.";
+     strategyText = "Next step: Switch to execution mode. Focus on completion over perfection if time is tight.";
+  }
+
+  // Fallback for empty state or generic
+  if (!item) {
+     reasonText = "No immediate academic deadlines were detected in the next 14 days.";
+     strategyText = "Use this time to read ahead or consolidate notes.";
+  }
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity" onClick={onClose} />
+      <div className="relative bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6 md:p-8 animate-in fade-in zoom-in duration-200">
+         <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition">
+            <span className="sr-only">Close</span>
+            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+         </button>
+         
+         <div className="mb-6">
+            <div className="bg-indigo-50 w-12 h-12 rounded-full flex items-center justify-center mb-4">
+               <Zap className="w-6 h-6 text-indigo-600" />
+            </div>
+            <h3 className="text-xl font-bold text-gray-900">Why this is your next best action</h3>
+         </div>
+
+         <div className="space-y-4 text-gray-700 leading-relaxed">
+            {item ? (
+               <>
+                  <p className="font-semibold text-indigo-900">
+                     {item.title} {hasModule && <span className="text-gray-500 font-normal">({item.module_name})</span>}
+                  </p>
+                  <p>{reasonText}</p>
+                  <div className="bg-indigo-50 border-l-4 border-indigo-500 p-4 rounded-r-lg">
+                     <p className="text-sm font-medium text-indigo-900">{strategyText}</p>
+                  </div>
+                  <div className="text-xs text-gray-400 pt-4 border-t border-gray-100 flex justify-between items-center">
+                     <span>Source: {item.source === 'assignment' ? 'Assignments' : 'YAAG Calendar'}</span>
+                     {item.due_date && <span>Due: {new Date(item.due_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'})}</span>}
+                  </div>
+               </>
+            ) : (
+               <>
+                  <p>{reasonText}</p>
+                  <p className="text-sm font-medium text-indigo-900">{strategyText}</p>
+               </>
+            )}
+         </div>
+
+         <div className="mt-8 flex justify-end gap-3">
+            <button onClick={onClose} className="px-5 py-2.5 text-gray-600 font-semibold hover:bg-gray-100 rounded-lg transition">
+               Close
+            </button>
+            {item && item.id && (
+               <Link 
+                  href={item.link || '#'}
+                  onClick={onClose}
+                  className="px-5 py-2.5 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition shadow-sm"
+               >
+                  {item.source === 'assignment' ? 'Open Assignment' : 'View in YAAG'}
+               </Link>
+            )}
+         </div>
+      </div>
+    </div>
   );
 }
 
