@@ -24,7 +24,7 @@ export default function Dashboard() {
   const router = useRouter();
   const { user, loading } = useAuth() || { user: null, loading: true };
   const { displayName } = useUserDisplayName();
-  const [focusItem, setFocusItem] = useState<{title: string, type: string, link: string, due_date?: string} | null>(null);
+  const [focusItem, setFocusItem] = useState<{title: string, type: string, link: string, due_date?: string, source?: string, id?: string} | null>(null);
   const [nextAssignment, setNextAssignment] = useState<any>(null);
   const [upcomingAssignments, setUpcomingAssignments] = useState<any[]>([]);
   const [supportExpanded, setSupportExpanded] = useState(false);
@@ -51,17 +51,21 @@ export default function Dashboard() {
            setUpcomingAssignments(data.upcomingAssignments);
            
            // Build YAAG link with event hash for auto-scroll
-           const yaagLink = next.yaagLink || (next.source === 'assignment' ? `/assignments?assignmentId=${next.id}` : '/year-at-a-glance');
-           const yaagLinkWithHash = yaagLink + `#event-${next.id}`;
+           // For Assignments: Link to Assignment Widget
+           // For Others: Link to YAAG Day View
+           const actionLink = next.source === 'assignment' 
+              ? `/assignments?assignmentId=${next.id}`
+              : (next.yaagLink ? next.yaagLink + `#event-${next.id}` : '/year-at-a-glance');
            
            setFocusItem({
              id: next.id,
              title: next.title,
              type: next.typeLabel || (next.source === 'assignment' ? 'Assignment' : 'Deadline'),
-             link: yaagLinkWithHash,
-             yaagLink: yaagLinkWithHash,
+             link: actionLink,
+             yaagLink: actionLink,
              typeLabel: next.typeLabel,
-             due_date: next.due_date // Pass due date for timer
+             due_date: next.due_date, // Pass due date for timer
+             source: next.source
            });
         }
       }).catch(err => console.error('Focus fetch error', err));
@@ -170,31 +174,31 @@ export default function Dashboard() {
                            )}
 
                            <div className="flex flex-wrap items-center gap-3 mt-6">
-                               {/* 
-                                 GUARDRAIL: DASHBOARD BANNER LINK
-                                 Must navigate to YAAG Day View with #event-{id} hash for auto-scroll.
-                                 Fallback to simple YAAG URL if no event ID exists.
-                               */}
-                               {focusItem.id ? (
-                                 <Link 
-                                    href={`/year-at-a-glance/day?y=${currentYearKey}&d=${focusItem.date}#event-${focusItem.id.replace(/^(assignment-|personal-|plan-)/, '')}`}
-                                    className="px-5 py-2.5 bg-white text-indigo-900 rounded-xl font-bold hover:bg-indigo-50 transition flex items-center gap-2 shadow-lg"
-                                 >
-                                    View in YAAG
-                                    <ArrowRight className="w-4 h-4" />
-                                 </Link>
-                               ) : (
-                                 <Link 
-                                    href={`/year-at-a-glance/day?y=${currentYearKey}&d=${focusItem.date}`}
-                                    className="px-5 py-2.5 bg-white text-indigo-900 rounded-xl font-bold hover:bg-indigo-50 transition flex items-center gap-2 shadow-lg"
-                                 >
-                                    View in YAAG
-                                    <ArrowRight className="w-4 h-4" />
-                                 </Link>
-                               )}
-                               
-                               <button className="px-5 py-2.5 bg-indigo-800/50 text-white rounded-xl font-medium hover:bg-indigo-800/70 transition flex items-center gap-2 border border-indigo-500/30">
-                                  <HelpCircle className="w-4 h-4" />
+                              {/* 
+                                GUARDRAIL: DASHBOARD BANNER LINK
+                                - Assignments: Link to Assignment Widget (Resume/Plan)
+                                - Others: Link to YAAG Day View (#event-{id})
+                              */}
+                              {focusItem.id ? (
+                                <Link 
+                                   href={focusItem.link}
+                                   className="px-5 py-2.5 bg-white text-indigo-900 rounded-xl font-bold hover:bg-indigo-50 transition flex items-center gap-2 shadow-lg"
+                                >
+                                   {focusItem.source === 'assignment' ? 'Continue Assignment' : 'View in YAAG'}
+                                   <ArrowRight className="w-4 h-4" />
+                                </Link>
+                              ) : (
+                                <Link 
+                                   href={`/year-at-a-glance?y=${currentYearKey}`}
+                                   className="px-5 py-2.5 bg-white text-indigo-900 rounded-xl font-bold hover:bg-indigo-50 transition flex items-center gap-2 shadow-lg"
+                                >
+                                   View in YAAG
+                                   <ArrowRight className="w-4 h-4" />
+                                </Link>
+                              )}
+                              
+                              <button className="px-5 py-2.5 bg-indigo-800/50 text-white rounded-xl font-medium hover:bg-indigo-800/70 transition flex items-center gap-2 border border-indigo-500/30">
+                                 <HelpCircle className="w-4 h-4" />
                                  Why this?
                               </button>
                            </div>
@@ -234,8 +238,8 @@ export default function Dashboard() {
                 </div>
                
                <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-                  <button onClick={() => router.push(focusItem?.yaagLink || '/year-at-a-glance')} className="inline-flex items-center justify-center gap-2 rounded-xl bg-white text-indigo-900 font-bold px-6 py-3.5 hover:bg-indigo-50 transition shadow-lg whitespace-nowrap">
-                     View in YAAG <ArrowRight className="w-4 h-4" />
+                  <button onClick={() => router.push(focusItem?.link || '/year-at-a-glance')} className="inline-flex items-center justify-center gap-2 rounded-xl bg-white text-indigo-900 font-bold px-6 py-3.5 hover:bg-indigo-50 transition shadow-lg whitespace-nowrap">
+                     {focusItem?.source === 'assignment' ? 'Open Assignment' : 'View in YAAG'} <ArrowRight className="w-4 h-4" />
                   </button>
                   <button className="inline-flex items-center justify-center gap-2 rounded-xl bg-white/10 text-white font-semibold px-4 py-3.5 hover:bg-white/20 transition border border-white/10 backdrop-blur-sm whitespace-nowrap group">
                      <HelpCircle className="w-4 h-4 text-indigo-200" />
