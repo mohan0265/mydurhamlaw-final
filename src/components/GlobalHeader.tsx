@@ -143,7 +143,7 @@ export default function GlobalHeader() {
 
   // Fetch display name and role from profiles table
   useEffect(() => {
-    if (!user) {
+    if (!user || !user.id) {
       setDisplayName('Student');
       setIsLovedOne(false);
       return;
