@@ -3,7 +3,7 @@
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
+import NextImage from 'next/image';
 import { useRouter } from 'next/router';
 import { useAuth } from '@/lib/supabase/AuthContext';
 import LogoutButton from '@/components/auth/LogoutButton';
@@ -280,7 +280,7 @@ export default function GlobalHeader() {
               aria-label="MyDurhamLaw Home"
             >
               <div className="relative">
-                <Image 
+                <NextImage 
                   src="/brand/logo-icon-128.png"
                   alt="MyDurhamLaw Logo"
                   width={56}
@@ -289,7 +289,7 @@ export default function GlobalHeader() {
                   className="h-[40px] md:h-[56px] w-auto object-contain transition-transform group-hover:scale-110 duration-500 drop-shadow-[0_0_15px_rgba(255,215,0,0.4)]"
                 />
                 <div className="absolute -top-1 -right-1 bg-white rounded-full p-0.5 shadow-sm border border-violet-100 hidden md:block">
-                   <Image src="/brand/durmah-mascot.png" alt="Durmah" width={20} height={20} className="rounded-full" />
+                   <NextImage src="/brand/durmah-mascot.png" alt="Durmah" width={20} height={20} className="rounded-full" />
                 </div>
               </div>
               <span className="text-xl md:text-3xl font-black text-white tracking-tight group-hover:text-amber-200 transition-colors drop-shadow-sm">
