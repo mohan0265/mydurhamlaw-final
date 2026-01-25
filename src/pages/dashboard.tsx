@@ -163,13 +163,17 @@ export default function Dashboard() {
                              You have a deadline approaching.
                            </span>
                            {isMounted && focusItem.due_date && (
-                              <div className="flex items-center gap-4 mt-2">
+                              <div className="flex items-center gap-3 mt-2">
                                  <CountdownTimer 
                                     dueDate={focusItem.due_date} 
                                     style="banner" 
                                     suppressTimer={!showCountdown}
                                     className="text-white bg-white/20 px-4 py-2 rounded-xl backdrop-blur-md border border-white/20"
                                  />
+                                 {/* Brief Date Display */}
+                                 <span className="text-sm font-semibold text-indigo-200 uppercase tracking-wide">
+                                    {new Date(focusItem.due_date).toLocaleDateString('en-GB', { wildcard: undefined, weekday: 'short', day: 'numeric', month: 'short' })}
+                                 </span>
                               </div>
                            )}
 
@@ -359,7 +363,30 @@ export default function Dashboard() {
                     <Link href="/assignments" className="text-xs font-semibold text-indigo-600 hover:text-indigo-800">View Calendar</Link>
                  </div>
                  <div className="p-2">
-                    <UpcomingDeadlines embedded={true} />
+                    {/* Expanded Deadlines List */}
+                     {upcomingAssignments.slice(1).map((a, idx) => {
+                        const actionLink = a.source === 'assignment' 
+                           ? `/assignments?assignmentId=${a.id}` 
+                           : (a.yaagLink || '/year-at-a-glance');
+                        
+                        return (
+                           <Link href={actionLink} key={a.id} className="bg-white hover:bg-gray-50 border-b border-gray-50 last:border-0 rounded-lg p-3 transition flex items-center justify-between group mb-2">
+                              <div className="flex flex-col">
+                                 <div className="flex items-center gap-2 mb-0.5">
+                                   <span className="text-[10px] font-black text-indigo-500 uppercase bg-indigo-50 px-1 rounded-sm">{a.typeLabel}</span>
+                                   <span className="text-xs font-bold text-gray-600">{a.module_name || a.module_code || "Law Module"}</span>
+                                 </div>
+                                 <span className="text-sm font-semibold text-gray-900 truncate max-w-[200px]">{a.title}</span>
+                              </div>
+                              <div className="text-right flex flex-col items-end">
+                                 <span className="text-xs font-bold text-indigo-600">{a.daysLeft <= 0 ? 'Today' : `${a.daysLeft}d`}</span>
+                                 <span className="text-[10px] text-gray-400">
+                                     {new Date(a.due_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+                                 </span>
+                              </div>
+                           </Link>
+                        );
+                     })}
                  </div>
               </div>
 
