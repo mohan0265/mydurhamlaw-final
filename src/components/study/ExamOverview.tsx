@@ -6,7 +6,7 @@ import toast from 'react-hot-toast';
 
 interface ExamOverviewProps {
   userId: string;
-  onSelectModule: (module: string, date: string) => void;
+  onSelectModule: (module: string, date: string, moduleId?: string) => void;
 }
 
 export default function ExamOverview({ userId, onSelectModule }: ExamOverviewProps) {
@@ -174,7 +174,7 @@ export default function ExamOverview({ userId, onSelectModule }: ExamOverviewPro
                       <td className="py-3 text-right">
                          <div className="flex items-center justify-end gap-2 text-gray-400">
                             <button 
-                               onClick={() => onSelectModule(exam.module_name || 'Exam', new Date(exam.exam_date).toLocaleDateString('en-GB', { timeZone: 'Europe/London' }))}
+                               onClick={() => onSelectModule(exam.module_name || 'Exam', new Date(exam.exam_date).toLocaleDateString('en-GB', { timeZone: 'Europe/London' }), exam.module_id)}
                                className="hover:text-violet-600 p-1" title="Plan Revision"
                             >
                                <BookOpen size={16} />

@@ -10,19 +10,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   if (req.method === 'GET') {
-    // List active workspaces with module details
-    const { data, error } = await supabase
-        .from('exam_workspaces')
-        .select(`
-            *,
-            module:modules!inner(
-                id, title, code, term,
-                lecture_set:module_lecture_sets!left(uploaded_count, expected_count, is_complete)
-            )
-        `)
-        .eq('user_id', session.user.id)
-        .eq('status', 'active')
-        .order('updated_at', { ascending: false });
+    const { year } = req.query;
+    let query = supabase
+      .from('module_catalog')
+      .select('*')
+      .order('code', { ascending: true });
+    
+    if (year) {
+        query = query.eq('year_level', year);
+    }
+
+    const { data, error } = await query;
 
     if (error) return res.status(500).json({ error: error.message });
     return res.status(200).json(data);

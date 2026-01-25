@@ -81,6 +81,7 @@ export interface AssignmentFeedback {
 export interface ExamPreparation {
   id: string;
   user_id: string;
+  module_id?: string;
   module_code?: string;
   module_name?: string;
   exam_date: string;

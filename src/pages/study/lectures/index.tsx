@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/Button';
 import { ArrowLeft, Plus, RefreshCw, FileAudio } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { useStudentOnly } from '@/hooks/useStudentOnly';
+import LecturerList from '@/components/lecturers/LecturerList';
 
 const LectureUploadModal = dynamic(() => import('@/components/lectures/LectureUploadModal'), { ssr: false });
 const LectureCard = dynamic(() => import('@/components/lectures/LectureCard'), { ssr: false });
@@ -28,6 +29,7 @@ interface Module {
   id: string;
   title: string;
   code: string;
+  year_level: number;
 }
 
 interface LectureSet {
@@ -115,6 +117,14 @@ export default function LecturesPage() {
   );
   const errorLectures = lectures.filter(l => l.status === 'error');
 
+  // Helper to group modules by year
+  const groupedModules = modules.reduce((acc, mod) => {
+    const year = mod.year_level || 1;
+    if (!acc[year]) acc[year] = [];
+    acc[year].push(mod);
+    return acc;
+  }, {} as Record<number, Module[]>);
+
   // Show loading while checking role or if loved one (redirecting)
   if (isRoleChecking || isLovedOne) {
     return (
@@ -160,8 +170,14 @@ export default function LecturesPage() {
                      onChange={(e) => setSelectedModuleId(e.target.value)}
                    >
                      <option value="">Select a Module...</option>
-                     {modules.map(m => (
-                        <option key={m.id} value={m.id}>{m.code ? `${m.code} - ` : ''}{m.title}</option>
+                     {Object.keys(groupedModules).map(year => (
+                        <optgroup key={year} label={`Year ${year}`}>
+                            {(groupedModules[parseInt(year)] || []).map(m => (
+                                <option key={m.id} value={m.id}>
+                                    {m.code} - {m.title}
+                                </option>
+                            ))}
+                        </optgroup>
                      ))}
                    </select>
                 </div>
@@ -306,6 +322,3 @@ export default function LecturesPage() {
     </div>
   );
 }
-
-// Import at top (added implicitly via replacement context if I include top of file, but I am replacing render block so I need to add import line)
-import LecturerList from '@/components/lecturers/LecturerList';

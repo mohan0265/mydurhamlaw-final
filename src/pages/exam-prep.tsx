@@ -19,6 +19,7 @@ export default function ExamPrepPage() {
   
   // Revision Planner State
   const [selectedModule, setSelectedModule] = useState('');
+  const [selectedModuleId, setSelectedModuleId] = useState<string | undefined>(undefined);
   const [revisionStartDate, setRevisionStartDate] = useState('');
   const [sessionsPerWeek, setSessionsPerWeek] = useState(3);
   const [generatedPlan, setGeneratedPlan] = useState<string[]>([]);
@@ -45,15 +46,23 @@ export default function ExamPrepPage() {
     if (router.query.module) {
        const mod = decodeURIComponent(router.query.module as string);
        setSelectedModule(mod);
+       
+       // Try to find matching workspace ID if available
+       const workspace = activeWorkspaces.find(w => w.module.title === mod || w.module.code === mod);
+       if (workspace) setSelectedModuleId(workspace.module_id);
+
        setChatContext({
           title: `Revision: ${mod}`,
           hint: `The student is revising for ${mod} exam. Help them create a detailed study schedule.`
        });
     }
-  }, [router.query]);
+  }, [router.query, activeWorkspaces]);
 
-  const handleSelectModuleForRevision = (moduleName: string, date: string) => {
+  const handleSelectModuleForRevision = (moduleName: string, date: string, moduleId?: string) => {
      setSelectedModule(moduleName);
+     if (moduleId) setSelectedModuleId(moduleId);
+     else setSelectedModuleId(undefined); // Clear if not provided (fallback to global)
+
      // Scroll to planner?
      setChatContext({
         title: `Revision: ${moduleName}`,
@@ -201,6 +210,7 @@ export default function ExamPrepPage() {
                 <DurmahChat 
                    contextType="exam"
                    contextTitle={chatContext.title}
+                   contextId={selectedModuleId}
                    systemHint={chatContext.hint}
                    className="h-full shadow-md"
                 />

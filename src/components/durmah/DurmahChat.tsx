@@ -94,7 +94,20 @@ export default function DurmahChat({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // 1. Initialize Chat Hook (Persistent Session per Assignment)
+
+  // Determine Scope and Context Object
+  const chatScope = (contextType === 'assignment') ? 'assignment' :
+                    (contextType === 'module_exam' || (contextType === 'exam' && contextId)) ? 'exam' :
+                    'global';
+  
+  const chatContext = useMemo(() => ({
+      assignmentId: contextType === 'assignment' ? contextId : undefined,
+      moduleId: (contextType === 'module_exam' || contextType === 'exam') ? contextId : undefined,
+      title: contextTitle,
+      mode: 'study'
+  }), [contextType, contextId, contextTitle]);
+
+  // 1. Initialize Chat Hook (Persistent Session per Assignment/Module)
   const { 
     messages, 
     sendMessage, 
@@ -104,15 +117,11 @@ export default function DurmahChat({
     discardSession,
     deleteMessages
   } = useDurmahChat({
-    source: 'assignment',
-    scope: 'assignment',
-    context: { 
-      assignmentId: contextId,
-      title: contextTitle,
-      mode: 'study' 
-    },
-    // Stabilize session ID based on Assignment ID for persistence
-    sessionId: contextId ? uuidv5(`assignment-${user?.id}-${contextId}`, DURMAH_NAMESPACE) : null
+    source: 'widget', // or derive from contextType
+    scope: chatScope,
+    context: chatContext,
+    // Stabilize session ID based on ID for persistence
+    sessionId: contextId ? uuidv5(`${chatScope}-${user?.id}-${contextId}`, DURMAH_NAMESPACE) : null
   });
 
   // Audio Ref for Voice

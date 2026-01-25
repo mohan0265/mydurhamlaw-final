@@ -6,8 +6,8 @@ import { v5 as uuidv5 } from 'uuid';
 // Namespace for deterministic UUIDs (Durmah Context Namespace)
 const DURMAH_NAMESPACE = '6ba7b810-9dad-11d1-80b4-00c04fd430c8'; 
 
-export type ChatSource = 'widget' | 'lecture' | 'assignment' | 'wellbeing' | 'community';
-export type ChatScope = 'global' | 'lecture' | 'assignment' | 'thread';
+export type ChatSource = 'widget' | 'lecture' | 'assignment' | 'wellbeing' | 'community' | 'exam';
+export type ChatScope = 'global' | 'lecture' | 'assignment' | 'thread' | 'exam';
 
 export interface UseDurmahChatOptions {
   source: ChatSource;
@@ -56,6 +56,7 @@ export function useDurmahChat({
   // Extract stable context values to avoid JSON.stringify in dependency array
   const lectureId = context.lectureId;
   const assignmentId = context.assignmentId;
+  const moduleId = context.moduleId;
 
   // 1. Determine Conversation ID
   useEffect(() => {
@@ -82,6 +83,9 @@ export function useDurmahChat({
     }
     else if (scope === 'assignment' && assignmentId) {
         cId = uuidv5(`assignment-${user.id}-${assignmentId}`, DURMAH_NAMESPACE);
+    }
+    else if (scope === 'exam' && moduleId) {
+        cId = uuidv5(`exam-${user.id}-${moduleId}`, DURMAH_NAMESPACE);
     }
     else {
       console.warn('[useDurmahChat] Scope requires ID but none provided. Falling back to global.');
@@ -139,7 +143,35 @@ export function useDurmahChat({
                       visibility: 'saved' // Assignments are always saved
                   })));
              }
-          } else {
+           } else if (scope === 'exam') {
+              const { data, error } = await supabase
+                .from('exam_messages')
+                .select('*')
+                .eq('session_id', cId)
+                .order('created_at', { ascending: true });
+
+              if (error) {
+                  console.error('[useDurmahChat] Fetch exam messages error:', error);
+                  return;
+              }
+              if (data) {
+                   console.log(`[useDurmahChat] Fetched ${data.length} messages from exam_messages`);
+                   const deduped: any[] = [];
+                   data.forEach((m: any) => {
+                       const last = deduped[deduped.length - 1];
+                       if (!last || last.role !== m.role || last.content !== m.content) {
+                           deduped.push(m);
+                       }
+                   });
+                   setMessages(deduped.map((m: any) => ({
+                       id: m.id,
+                       role: m.role,
+                       content: m.content || '(no content)',
+                       created_at: m.created_at,
+                       visibility: 'saved' 
+                   })));
+              }
+           } else {
               // Legacy/Global behavior
               const { data, error } = await supabase
                 .from('durmah_messages')
@@ -369,6 +401,41 @@ export function useDurmahChat({
              
              data = res.data; 
              error = res.error;
+          } else if (scope === 'exam' && context.moduleId) {
+             // 1. Ensure Session Exists
+             await supabase.from('exam_sessions').upsert({
+                 id: conversationId,
+                 module_id: context.moduleId,
+                 user_id: user.id,
+                 title: `Exam Prep ${new Date().toLocaleDateString()}`
+             }, { onConflict: 'id' });
+
+             // 1.5. Deduplicate (Refined)
+             const normalize = (s: string) => s.trim().replace(/\s+/g, " ");
+             const normalized = normalize(content);
+             const nowTs = Date.now();
+             
+             const isMatch = lastLoggedRef.current && 
+                             lastLoggedRef.current.role === role && 
+                             lastLoggedRef.current.content === normalized && 
+                             (nowTs - lastLoggedRef.current.ts < 2000);
+             
+             if (isMatch) {
+                 console.warn('[useDurmahChat] Dropping duplicate exam message:', normalized.substring(0, 20));
+                 return;
+             }
+             lastLoggedRef.current = { role, content: normalized, ts: nowTs };
+
+             // 2. Insert Message
+             const res = await supabase.from('exam_messages').insert({
+                 session_id: conversationId,
+                 user_id: user.id,
+                 role,
+                 content,
+             }).select('id, created_at').single();
+             
+             data = res.data; 
+             error = res.error;
           } else {
              // Legacy
              const res = await supabase
@@ -400,7 +467,7 @@ export function useDurmahChat({
                   role,
                   content,
                   created_at: data.created_at,
-                  visibility: scope === 'assignment' ? 'saved' : 'ephemeral'
+                  visibility: (scope === 'assignment' || scope === 'exam') ? 'saved' : 'ephemeral'
               };
               setMessages(prev => [...prev, newMsg]);
           }
@@ -422,7 +489,8 @@ export function useDurmahChat({
       setMessages(prev => prev.filter(m => !ids.includes(m.id)));
 
       try {
-          const tableName = scope === 'assignment' ? 'assignment_session_messages' : 'durmah_messages';
+          const tableName = scope === 'assignment' ? 'assignment_session_messages' : 
+                           scope === 'exam' ? 'exam_messages' : 'durmah_messages';
           const { error } = await supabase
             .from(tableName)
             .delete()
@@ -642,6 +710,28 @@ export function useDurmahChat({
         }
         
         console.log(`[useDurmahChat] Assignment session ${targetSessionId} cleared successfully`);
+      } else if (scope === 'exam') {
+        const { error: messagesError } = await supabase
+          .from('exam_messages')
+          .delete()
+          .eq('session_id', targetSessionId);
+
+        if (messagesError) {
+          console.error('[useDurmahChat] Delete exam messages error:', messagesError);
+          toast.error('Failed to clear messages');
+          return false;
+        }
+
+        const { error: sessionError } = await supabase
+          .from('exam_sessions')
+          .delete()
+          .eq('id', targetSessionId);
+
+        if (sessionError) {
+          console.error('[useDurmahChat] Delete exam session error:', sessionError);
+        }
+        
+        console.log(`[useDurmahChat] Exam session ${targetSessionId} cleared successfully`);
       } else {
         // Legacy/Global behavior
         // 1. Delete all messages from durmah_messages
@@ -699,6 +789,7 @@ export function useDurmahChat({
     // Fallback: use source/scope info
     const sourceLabel = scope === 'lecture' ? 'Lecture Chat' : 
                        scope === 'assignment' ? 'Assignment Chat' : 
+                       scope === 'exam' ? 'Exam Prep Chat' :
                        'Durmah Session';
     return `${sourceLabel} - ${new Date().toLocaleString()}`;
   }, [messages, scope]);
