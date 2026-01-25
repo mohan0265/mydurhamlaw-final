@@ -125,10 +125,17 @@ import { X, User, Heart, Scale } from 'lucide-react';
 
 // ... (existing imports)
 
+import { useEntitlements } from '@/components/auth/EntitlementGuards';
+
+// ... (existing imports)
+
 export default function GlobalHeader() {
   const { user } = useAuth() || { user: null };
   const [openMobile, setOpenMobile] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
+
+  // Entitlements
+  const { hasDurhamAccess, hasLnatAccess } = useEntitlements();
 
   // Role detection state
   const [displayName, setDisplayName] = useState<string>('Student');
@@ -258,14 +265,48 @@ export default function GlobalHeader() {
     []
   );
 
-  // Choose menus based on role
-  const studyMenu = isLovedOne ? lovedOneExploreMenu : studentStudyMenu;
-  const communityMenu = isLovedOne ? null : studentCommunityMenu; // Loved ones don't need separate community menu
-  const infoMenu = isLovedOne ? lovedOneInfoMenu : studentInfoMenu;
+  // --- LNAT MENUS ---
+  const lnatMenu: Menu = useMemo(
+    () => ({
+        label: 'LNAT Prep',
+        items: [
+            { label: 'Dashboard', href: '/lnat' },
+            { label: 'Preparation Guides', href: '/lnat-preparation' },
+            { label: 'Pricing', href: '/lnat/pricing' },
+        ]
+    }), []
+  );
+
+  // Choose menus based on entitlement & role
+  // Priority: Loved One -> LNAT Only -> Durham Student (Default)
   
-  // Dashboard link
-  const dashboardHref = isLovedOne ? '/loved-one-dashboard' : '/dashboard';
-  const dashboardLabel = isLovedOne ? 'My Dashboard' : 'Dashboard';
+  let studyMenu = studentStudyMenu;
+  let communityMenu: Menu | null = studentCommunityMenu;
+  let infoMenu = studentInfoMenu;
+  let dashboardHref = '/dashboard';
+  let dashboardLabel = 'Dashboard';
+
+  if (isLovedOne) {
+    studyMenu = lovedOneExploreMenu;
+    communityMenu = null;
+    infoMenu = lovedOneInfoMenu;
+    dashboardHref = '/loved-one-dashboard';
+    dashboardLabel = 'My Dashboard';
+  } else if (hasLnatAccess && !hasDurhamAccess) {
+    // Pure LNAT User
+    studyMenu = lnatMenu;
+    communityMenu = null;
+    infoMenu = {
+        label: 'Account',
+        items: [
+            { label: 'Upgrade', href: '/lnat/pricing' },
+            { label: 'Contact Support', href: 'mailto:support@mydurhamlaw.com' }
+        ]
+    };
+    dashboardHref = '/lnat';
+    dashboardLabel = 'LNAT Home';
+  }
+
 
   return (
     <>
@@ -350,6 +391,9 @@ export default function GlobalHeader() {
                   </Link>
                   <Link href="/signup" className="px-3 py-2 rounded-md text-sm font-semibold bg-white text-indigo-700 hover:bg-indigo-50 transition">
                     Start Free
+                  </Link>
+                  <Link href="/lnat/signup" className="px-3 py-2 rounded-md text-sm font-medium text-purple-200 hover:text-white transition">
+                    LNAT
                   </Link>
                 </>
               )}

@@ -96,6 +96,12 @@ return (
             </Link>
           </div>
           
+          <div className="mt-8">
+             <Link href="/lnat/signup" className="text-sm font-bold text-gray-500 hover:text-white transition-colors border-b border-gray-600 hover:border-white pb-0.5">
+                Applying for Law? Join LNAT Mentor &rarr;
+             </Link>
+          </div>
+          
           <div className="mt-12 pt-8 border-t border-white/5 text-[10px] text-gray-500 flex items-center justify-center gap-3 uppercase tracking-[0.2em] font-bold">
              <Shield className="w-3 h-3 text-purple-400" />
              <span>Learning support • Academic Integrity • Professional awareness</span>

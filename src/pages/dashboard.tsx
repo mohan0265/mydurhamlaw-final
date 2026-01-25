@@ -20,7 +20,18 @@ import CountdownTimer from '@/components/ui/CountdownTimer';
 
 import { useUserDisplayName } from '@/hooks/useUserDisplayName';
 
+// Components
+import { RequireDurhamAccess } from '@/components/auth/EntitlementGuards';
+
 export default function Dashboard() {
+  return (
+     <RequireDurhamAccess>
+        <DashboardContent />
+     </RequireDurhamAccess>
+  );
+}
+
+function DashboardContent() {
   const router = useRouter();
   const { user, loading } = useAuth() || { user: null, loading: true };
   const { displayName } = useUserDisplayName();
@@ -495,6 +506,7 @@ export default function Dashboard() {
     </>
   );
 }
+
 
 // Minimal WhyThisModal Component
 function WhyThisModal({ isOpen, onClose, item }: { isOpen: boolean; onClose: () => void; item: any }) {
