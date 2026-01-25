@@ -58,8 +58,11 @@ export default function Dashboard() {
            // Build YAAG link with event hash for auto-scroll
            // For Assignments: Link to Assignment Widget
            // For Others: Link to YAAG Day View
-           const actionLink = next.source === 'assignment' 
-              ? `/assignments?assignmentId=${next.id}`
+           const isAssignment = next.source === 'assignment' || (typeof next.id === 'string' && next.id.startsWith('assignment-'));
+           const cleanId = (typeof next.id === 'string' && next.id.startsWith('assignment-')) ? next.id.replace('assignment-', '') : next.id;
+
+           const actionLink = isAssignment
+              ? `/assignments?assignmentId=${cleanId}`
               : (next.typeLabel === 'Exam' || next.priorityScore === 300)
                  ? `/exam-prep?module=${encodeURIComponent(next.module_name || next.title)}`
                  : (next.yaagLink ? next.yaagLink + `#event-${next.id}` : '/year-at-a-glance');
@@ -182,7 +185,7 @@ export default function Dashboard() {
                                  />
                                  {/* Brief Date Display */}
                                  <span className="text-sm font-semibold text-indigo-200 uppercase tracking-wide">
-                                    {new Date(focusItem.due_date).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })}
+                                    {(focusItem.eventDay ? new Date(focusItem.eventDay) : new Date(focusItem.due_date)).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })}
                                  </span>
                               </div>
                            )}
@@ -229,8 +232,11 @@ export default function Dashboard() {
                    {showAllDeadlines && upcomingAssignments.length > 1 && (
                       <div className="mt-4 space-y-2 animate-in fade-in slide-in-from-top-2 relative z-20">
                           {upcomingAssignments.slice(1).map((a) => {
-                             const actionLink = a.source === 'assignment' 
-                                ? `/assignments?assignmentId=${a.id}` 
+                             const isAssignment = a.source === 'assignment' || (typeof a.id === 'string' && a.id.startsWith('assignment-'));
+                             const cleanId = (typeof a.id === 'string' && a.id.startsWith('assignment-')) ? a.id.replace('assignment-', '') : a.id;
+
+                             const actionLink = isAssignment
+                                ? `/assignments?assignmentId=${cleanId}` 
                                 : (a.typeLabel === 'Exam' || a.priorityScore === 300)
                                    ? `/exam-prep?module=${encodeURIComponent(a.module_name || a.title)}`
                                    : (a.yaagLink || '/year-at-a-glance');
@@ -249,7 +255,7 @@ export default function Dashboard() {
                                       </div>
                                       <div className="flex flex-col items-end">
                                          <span className="text-xs font-bold text-white">{a.daysLeft <= 0 ? 'Due Today' : `${a.daysLeft}d left`}</span>
-                                         <span className="text-[10px] text-white/50">{new Date(a.due_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}</span>
+                                         <span className="text-[10px] text-white/50">{(a.eventDay ? new Date(a.eventDay) : new Date(a.due_date)).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}</span>
                                       </div>
                                    </div>
                                 </Link>
