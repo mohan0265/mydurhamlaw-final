@@ -67,20 +67,48 @@ export default function Dashboard() {
                  ? `/exam-prep?module=${encodeURIComponent(next.module_name || next.title)}`
                  : (next.yaagLink ? next.yaagLink + `#event-${next.id}` : '/year-at-a-glance');
            
-           setFocusItem({
+           const initialFocusItem = {
              id: next.id,
              title: next.title,
              type: next.typeLabel || (next.source === 'assignment' ? 'Assignment' : 'Deadline'),
              link: actionLink,
              yaagLink: actionLink,
              typeLabel: next.typeLabel,
-             due_date: next.due_date, // Pass due date for timer
+             due_date: next.due_date, 
              source: next.source,
              reasonCodes: next.reasonCodes,
              module_name: next.module_name,
              priorityScore: next.priorityScore,
              eventDay: next.eventDay
-           });
+           };
+
+           setFocusItem(initialFocusItem);
+
+           // CLIENT-SIDE ENRICHMENT: Verify Assignment ID if source is YAAG
+           // This fixes the case where backend dedup fails but assignment exists
+           if (next.source !== 'assignment' && next.title) {
+               const supabase = getSupabaseClient();
+               supabase
+                   .from('assignments')
+                   .select('id, due_date, status')
+                   .ilike('title', next.title)
+                   .eq('user_id', user.id)
+                   .maybeSingle()
+                   .then(({ data: realAssignment }) => {
+                       if (realAssignment) {
+                           const enrichedLink = `/assignments?assignmentId=${realAssignment.id}`;
+                           setFocusItem(prev => ({
+                               ...prev!,
+                               id: realAssignment.id,
+                               link: enrichedLink,
+                               source: 'assignment',
+                               due_date: realAssignment.due_date,
+                               // Enforce Assignment type label if found
+                               typeLabel: 'Assignment'
+                           }));
+                       }
+                   });
+           }
         }
       }).catch(err => console.error('Focus fetch error', err));
     }
@@ -170,12 +198,14 @@ export default function Dashboard() {
                    <div className="text-indigo-100 text-base md:text-lg max-w-xl">
                      {focusItem ? (
                         <div className="flex flex-col gap-1">
-                           <span className="flex items-center gap-2">
-                             <span className="bg-yellow-400 text-black text-[10px] font-black px-1.5 py-0.5 rounded uppercase tracking-tighter">
-                                {focusItem.typeLabel || 'Deadline'}
-                             </span>
-                             You have a deadline approaching.
-                           </span>
+                            <span className="flex items-center gap-2">
+                              <Link href={focusItem.link} className="hover:opacity-80 transition active:scale-95">
+                                 <span className="bg-yellow-400 text-black text-[10px] font-black px-1.5 py-0.5 rounded uppercase tracking-tighter cursor-pointer">
+                                    {focusItem.typeLabel || 'Deadline'}
+                                 </span>
+                              </Link>
+                              You have a deadline approaching.
+                            </span>
                            {isMounted && focusItem.due_date && (
                               <div className="flex items-center gap-3 mt-2">
                                  <CountdownTimer 
