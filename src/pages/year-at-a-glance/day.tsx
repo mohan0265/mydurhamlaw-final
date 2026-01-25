@@ -1,8 +1,8 @@
-"use client";
-import React, { useCallback, useMemo, useEffect } from 'react';
+import React, { useCallback, useMemo, useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import { isValid, startOfDay, format, addDays } from 'date-fns';
+import dynamic from 'next/dynamic';
 
 const parseISO = (date: string) => new Date(date + 'T00:00:00.000Z');
 import { getEventsForWeek } from '@/lib/calendar/useCalendarData';
@@ -12,6 +12,11 @@ import type { YearKey } from '@/lib/calendar/links';
 import type { NormalizedEvent } from '@/lib/calendar/normalize';
 import { ArrowLeft, Calendar, Clock, MapPin, Book, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
+
+// Modals
+import PersonalItemModal from '@/components/calendar/PersonalItemModal';
+import { PlanEventModal } from '@/components/calendar/PlanEventModal';
+import SimpleAssignmentEditModal from '@/components/calendar/SimpleAssignmentEditModal';
 
 function getTermInfo(date: Date, yearKey: YearKey) {
   const plan = getDefaultPlanByStudentYear(yearKey);
@@ -75,16 +80,22 @@ function getEventIcon(kind: NormalizedEvent['kind']) {
 
 function getEventStyle(kind: NormalizedEvent['kind']) {
   switch (kind) {
-    case 'topic': return 'bg-blue-50 text-blue-800 border-blue-200';
-    case 'assessment': return 'bg-orange-50 text-orange-800 border-orange-200';
-    case 'exam': return 'bg-red-100 text-red-900 border-red-300';
-    default: return 'bg-gray-50 text-gray-800 border-gray-200';
+    case 'topic': return 'bg-blue-50 text-blue-800 border-blue-200 hover:bg-blue-100';
+    case 'assessment': return 'bg-orange-50 text-orange-800 border-orange-200 hover:bg-orange-100';
+    case 'exam': return 'bg-red-100 text-red-900 border-red-300 hover:bg-red-200';
+    default: return 'bg-gray-50 text-gray-800 border-gray-200 hover:bg-gray-100';
   }
 }
 
 export default function DayPage() {
   const router = useRouter();
   const { y: yParam, d: dParam } = router.query;
+  
+  // Modal states
+  const [selectedEvent, setSelectedEvent] = useState<NormalizedEvent | null>(null);
+  const [isPersonalModalOpen, setIsPersonalModalOpen] = useState(false);
+  const [isPlanModalOpen, setIsPlanModalOpen] = useState(false);
+  const [isAssignmentModalOpen, setIsAssignmentModalOpen] = useState(false);
   
   const yearKey: YearKey = useMemo(() => {
     return parseYearKey(typeof yParam === 'string' ? yParam : undefined);
@@ -172,6 +183,29 @@ export default function DayPage() {
     }
   }, []);
 
+  // Event Click Handler
+  const handleEventClick = (event: NormalizedEvent) => {
+    setSelectedEvent(event);
+    const source = event.meta?.source;
+
+    if (source === 'assignment') {
+      setIsAssignmentModalOpen(true);
+    } else if (source === 'personal' || source === 'plan_override') {
+      setIsPersonalModalOpen(true);
+    } else if (source === 'plan') {
+      setIsPlanModalOpen(true);
+    } else if (event.kind === 'topic') {
+       // Typically plan topics
+       setIsPlanModalOpen(true);
+    } else {
+       // Fallback for assessment/exam from plan
+       setIsPlanModalOpen(true);
+    }
+  };
+
+  const handleRefresh = () => {
+    router.replace(router.asPath);
+  };
 
   return (
     <>
@@ -241,7 +275,8 @@ export default function DayPage() {
                     <div
                       key={event.id}
                       id={`event-${event.id}`}
-                      className={`p-3 rounded border ${getEventStyle(event.kind)} transition-all duration-300`}
+                      onClick={() => handleEventClick(event)}
+                      className={`p-3 rounded border ${getEventStyle(event.kind)} transition-all duration-300 cursor-pointer hover:shadow-md`}
                     >
                       <div className="flex items-start gap-3">
                         {getEventIcon(event.kind)}
@@ -284,7 +319,8 @@ export default function DayPage() {
                     <div
                       key={event.id}
                       id={`event-${event.id}`}
-                      className={`p-3 rounded border ${getEventStyle(event.kind)} transition-all duration-300`}
+                      onClick={() => handleEventClick(event)}
+                      className={`p-3 rounded border ${getEventStyle(event.kind)} transition-all duration-300 cursor-pointer hover:shadow-md`}
                     >
                       <div className="flex items-start gap-3">
                         {getEventIcon(event.kind)}
@@ -324,7 +360,8 @@ export default function DayPage() {
               {next7Days.map(event => (
                 <div
                   key={event.id}
-                  className={`p-3 rounded border ${getEventStyle(event.kind)}`}
+                  onClick={() => handleEventClick(event)}
+                  className={`p-3 rounded border ${getEventStyle(event.kind)} cursor-pointer hover:shadow-md transition-all`}
                 >
                   <div className="flex items-start gap-3">
                     {getEventIcon(event.kind)}
@@ -349,6 +386,39 @@ export default function DayPage() {
           )}
         </div>
       </div>
+
+      {/* Edit Modals */}
+      <PersonalItemModal
+        isOpen={isPersonalModalOpen}
+        onClose={() => setIsPersonalModalOpen(false)}
+        onSave={handleRefresh}
+        mode="edit"
+        existingItem={selectedEvent?.meta?.source === 'personal' || selectedEvent?.meta?.source === 'plan_override' ? {
+          id: selectedEvent.meta.personalItemId,
+          title: selectedEvent.title,
+          type: selectedEvent.meta.type || 'study',
+          start_at: selectedEvent.start_at || `${selectedEvent.date}T${selectedEvent.start || '09:00'}:00Z`,
+          end_at: selectedEvent.end_at || null,
+          is_all_day: selectedEvent.allDay || false,
+          priority: selectedEvent.meta.priority || 'medium',
+          notes: selectedEvent.meta.notes || '',
+          completed: selectedEvent.meta.completed || false
+        } : undefined}
+      />
+
+      <PlanEventModal
+        isOpen={isPlanModalOpen}
+        onClose={() => setIsPlanModalOpen(false)}
+        onSave={handleRefresh}
+        event={selectedEvent}
+      />
+
+      <SimpleAssignmentEditModal
+        isOpen={isAssignmentModalOpen}
+        onClose={() => setIsAssignmentModalOpen(false)}
+        onSave={handleRefresh}
+        assignment={selectedEvent}
+      />
     </>
   );
 }
