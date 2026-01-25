@@ -498,7 +498,7 @@ export default function SettingsPage() {
                   <div className="relative inline-block">
                     <div className="w-32 h-32 rounded-full overflow-hidden bg-gray-100 border-4 border-white shadow-lg">
                       {avatarPreview ? (
-                        <Image
+                        <NextImage
                           src={avatarPreview}
                           alt="Profile"
                           width={128}

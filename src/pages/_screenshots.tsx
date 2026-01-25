@@ -1,6 +1,6 @@
 import React from 'react';
 import Head from 'next/head';
-import Image from 'next/image';
+import NextImage from 'next/image';
 import { BookOpen, FileText, Calendar, Target, Shield, CheckCircle, HelpCircle, ArrowRight, Zap, Heart, Clock, TrendingUp, Video } from 'lucide-react';
 
 // --- MOCK COMPONENTS (Inlined for stability in screenshotting) ---

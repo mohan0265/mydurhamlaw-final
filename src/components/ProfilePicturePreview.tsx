@@ -68,7 +68,7 @@ const ProfilePicturePreview = () => {
     <div>
       <h3>Profile Picture Preview</h3>
       {url ? (
-        <Image src={url} alt="Profile" style={{ width: '150px', borderRadius: '8px' }} width={150} height={150} />
+        <NextImage src={url} alt="Profile" style={{ width: '150px', borderRadius: '8px' }} width={150} height={150} />
       ) : (
         <p>No profile picture found.</p>
       )}

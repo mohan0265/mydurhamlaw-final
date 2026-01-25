@@ -37,7 +37,7 @@ export const QuizMeCard: React.FC<QuizMeCardProps> = ({
     <div className={`overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-indigo-700 via-purple-800 to-indigo-900 shadow-2xl border border-white/10 text-white relative group transition-all hover:shadow-purple-500/20 ${className}`}>
       {/* Quiz Me Mascot */}
       <div className="absolute top-0 right-0 p-4 translate-x-4 -translate-y-4 group-hover:translate-x-2 group-hover:-translate-y-2 transition-transform duration-500">
-        <Image 
+        <NextImage 
           src="/assets/mascots/quiz-me-bunny-160.webp" 
           alt="" 
           width={160}

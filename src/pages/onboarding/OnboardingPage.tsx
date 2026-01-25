@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useContext, useRef, useCallback } from 'react'
 import { useRouter } from 'next/router'
-import Image from 'next/image'
+import NextImage from 'next/image'
 import { AuthContext } from '@/lib/supabase/AuthContext'
 import { getSupabaseClient } from '@/lib/supabase/client'
 import ModernSidebar from '@/components/layout/ModernSidebar'

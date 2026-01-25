@@ -124,7 +124,7 @@ export default function QuizHub() {
           
           <div className="relative">
             <div className="absolute inset-0 bg-purple-200 blur-[100px] opacity-30 rounded-full"></div>
-            <Image 
+            <NextImage 
               src="/assets/mascots/quiz-me-bunny-256.webp" 
               alt="" 
               width={320}
