@@ -1,5 +1,6 @@
 import React from 'react';
 import Image from 'next/image';
+const NextImage = Image;
 import { Brain, GraduationCap, Mic, ArrowRight, Zap } from 'lucide-react';
 import { useRouter } from 'next/router';
 

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import Head from 'next/head';
 import Image from 'next/image';
+const NextImage = Image;
 import { useRouter } from 'next/router';
 import { useAuth } from '@/lib/supabase/AuthContext';
 import { getSupabaseClient } from '@/lib/supabase/client';
