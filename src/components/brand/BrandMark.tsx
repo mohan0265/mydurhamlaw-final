@@ -1,5 +1,5 @@
 import React from 'react';
-import Image from 'next/image';
+import NextImage from 'next/image';
 
 type BrandMarkProps = {
   variant?: 'header' | 'footer';
@@ -21,7 +21,7 @@ export const BrandMark: React.FC<BrandMarkProps> = ({ variant = 'header' }) => {
       
       {/* Icon Container */}
       <div className={`relative flex items-center justify-center ${iconContainerClass}`}>
-         <Image 
+         <NextImage 
            src="/brand/logo-icon-256.png" 
            alt="MyDurhamLaw Shield" 
            width={iconSize} 

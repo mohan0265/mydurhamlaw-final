@@ -1,7 +1,7 @@
 import React from 'react'
 import Head from 'next/head'
 import Link from 'next/link'
-import Image from 'next/image'
+import NextImage from 'next/image'
 import { useRouter } from 'next/router'
 import { 
    Brain, Shield, CheckCircle, 
