@@ -252,9 +252,10 @@ return (
                   </ul>
 
                   <div className="flex flex-col sm:flex-row gap-4">
+                     {/* Dynamic Button Text based on Launch Status - assumed checked via build time or hydration, but here hardcoding 'Join Waitlist' as default since env is unlikely to change at runtime without rebuild */}
                      <Link href="/lnat/signup">
                         <button className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 px-8 rounded-full transition-all shadow-lg shadow-indigo-200">
-                           Start Free LNAT Trial
+                           {process.env.NEXT_PUBLIC_LNAT_LAUNCH_ENABLED === 'true' ? 'Start Free LNAT Trial' : 'Join LNAT Waitlist'}
                         </button>
                      </Link>
                      <Link href="/lnat-preparation">

@@ -266,15 +266,18 @@ export default function GlobalHeader() {
   );
 
   // --- LNAT MENUS ---
+  const isLnatLaunchEnabled = process.env.NEXT_PUBLIC_LNAT_LAUNCH_ENABLED === 'true';
+  const lnatLabel = isLnatLaunchEnabled ? 'LNAT Prep' : 'LNAT (Upcoming)';
+
   const lnatMenu: Menu = useMemo(
     () => ({
-        label: 'LNAT Prep',
+        label: lnatLabel,
         items: [
             { label: 'Dashboard', href: '/lnat' },
             { label: 'Preparation Guides', href: '/lnat-preparation' },
             { label: 'Pricing', href: '/lnat/pricing' },
         ]
-    }), []
+    }), [lnatLabel]
   );
 
   // Choose menus based on entitlement & role

@@ -3,6 +3,8 @@ import Link from 'next/link';
 import { Brain, CheckCircle, ArrowRight, BookOpen, Clock, AlertTriangle } from 'lucide-react';
 
 export default function LnatPreparation() {
+  const isLaunchEnabled = process.env.NEXT_PUBLIC_LNAT_LAUNCH_ENABLED === 'true';
+
   return (
     <>
       <Head>
@@ -30,9 +32,9 @@ export default function LnatPreparation() {
                     Strong grades help — but admissions teams also look for reasoning clarity under pressure.
                  </p>
                  <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                    <Link href="/lnat/signup">
+                     <Link href="/lnat/signup">
                         <button className="bg-white text-gray-900 font-black py-4 px-10 rounded-full text-lg hover:scale-105 transition-transform shadow-[0_0_30px_rgba(255,255,255,0.3)]">
-                            Start Free LNAT Trial
+                            {isLaunchEnabled ? 'Start Free LNAT Trial' : 'Join LNAT Waitlist'}
                         </button>
                     </Link>
                  </div>
@@ -91,10 +93,10 @@ export default function LnatPreparation() {
                     <div className="mt-8 pt-6 border-t border-gray-200">
                          <div className="flex items-center gap-2 text-sm text-gray-500 mb-4">
                             <Clock className="w-4 h-4" />
-                            <span>Trial format available instantly</span>
+                            <span>{isLaunchEnabled ? 'Trial format available instantly' : 'Early access opens soon'}</span>
                          </div>
                          <Link href="/lnat/signup" className="text-purple-600 font-bold flex items-center gap-2 hover:gap-3 transition-all">
-                            Create Free Account <ArrowRight className="w-4 h-4" />
+                            {isLaunchEnabled ? 'Create Free Account' : 'Join Priority List'} <ArrowRight className="w-4 h-4" />
                          </Link>
                     </div>
                 </div>
@@ -130,7 +132,7 @@ export default function LnatPreparation() {
                 </p>
                 <Link href="/lnat/signup">
                     <button className="bg-purple-600 text-white font-bold py-3 px-8 rounded-full hover:bg-purple-700 transition shadow-lg hover:shadow-purple-200">
-                        Enter LNAT Mentor
+                        {isLaunchEnabled ? 'Enter LNAT Mentor' : 'Join LNAT Waitlist'}
                     </button>
                 </Link>
                 <p className="mt-4 text-xs text-gray-400">

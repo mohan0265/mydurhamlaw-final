@@ -4,12 +4,39 @@ import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Brain, FileText, BarChart, BookOpen, LogOut } from 'lucide-react';
 import { useSupabaseClient, useUser } from '@supabase/auth-helpers-react';
+import { useEntitlements } from '@/components/auth/EntitlementGuards';
 
-export default function LnatPortal() {
+export default function LnatDashboard() { 
+  const isLaunchEnabled = process.env.NEXT_PUBLIC_LNAT_LAUNCH_ENABLED === 'true';
   const router = useRouter();
+  
+  // UPCOMING GATE
+  if (!isLaunchEnabled) {
+      return (
+          <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-6 text-center">
+             <div className="bg-white p-8 rounded-2xl shadow-xl max-w-lg border border-gray-100">
+                 <div className="inline-flex items-center justify-center w-12 h-12 bg-purple-100 text-purple-600 rounded-xl mb-6">
+                     <Brain className="w-6 h-6" />
+                 </div>
+                 <h1 className="text-2xl font-black text-gray-900 mb-2">LNAT Mentor is Coming Soon</h1>
+                 <p className="text-gray-600 mb-8">
+                    We are currently in private development. Join the waitlist to be notified when early access opens.
+                 </p>
+                 <button 
+                    onClick={() => router.push('/lnat/signup')}
+                    className="w-full bg-purple-600 text-white font-bold py-3 px-6 rounded-xl hover:bg-purple-700 transition"
+                 >
+                    Join Waitlist
+                 </button>
+             </div>
+          </div>
+      );
+  }
+
+  const { hasLnatAccess, loading: entitlementsLoading } = useEntitlements();
   const user = useUser();
   const supabase = useSupabaseClient();
-  const [loading, setLoading] = useState(true);
+  const [authLoading, setAuthLoading] = useState(true);
 
   useEffect(() => {
     // Basic check - usually middleware handles this protection
@@ -20,7 +47,7 @@ export default function LnatPortal() {
         }, 1000); // reduced flash
         return () => clearTimeout(timer);
     }
-    setLoading(false);
+    setAuthLoading(false);
   }, [user, router]);
 
   const handleSignOut = async () => {
@@ -28,7 +55,7 @@ export default function LnatPortal() {
       router.push('/');
   };
 
-  if (loading) return null;
+  if (authLoading) return null;
 
   return (
     <>

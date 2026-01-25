@@ -2,7 +2,19 @@ import { createPagesServerClient } from '@supabase/auth-helpers-nextjs';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 // This endpoint should be called AFTER successful Google Auth on the LNAT signup page
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse
+) {
+  // FEATURE FLAG: LNAT Launch Control
+  const isLnatLaunchEnabled = process.env.NEXT_PUBLIC_LNAT_LAUNCH_ENABLED === 'true';
+  
+  if (!isLnatLaunchEnabled) {
+      return res.status(403).json({ 
+          message: 'LNAT Mentor is currently in waitlist mode. Access will open soon.' 
+      });
+  }
+
   if (req.method !== 'POST') {
       res.setHeader('Allow', ['POST']);
       return res.status(405).end(`Method ${req.method} Not Allowed`);
