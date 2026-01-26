@@ -320,7 +320,7 @@ export default function GlobalHeader() {
             {/* Brand */}
             <Link
               href="/"
-              className="flex items-center gap-3 rounded-xl px-2 py-2 group focus:outline-none focus:ring-2 focus:ring-purple-500"
+              className="flex items-center gap-2 rounded-xl px-2 py-2 group focus:outline-none focus:ring-2 focus:ring-purple-500"
               aria-label="MyDurhamLaw Home"
             >
               <div className="relative">
@@ -334,7 +334,7 @@ export default function GlobalHeader() {
                 />
 
               </div>
-              <span className="text-xl md:text-3xl font-bold tracking-tight transition-colors flex items-baseline gap-[1px]">
+              <span className="text-2xl md:text-4xl font-bold tracking-tight transition-colors flex items-baseline gap-[1px]">
                 <span className="text-[#5B2AAE]">MyDurham</span>
                 <span className="text-[#C9A227]">Law</span>
               </span>
