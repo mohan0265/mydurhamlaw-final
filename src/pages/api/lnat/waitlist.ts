@@ -27,6 +27,7 @@ export default async function handler(
     await resend.emails.send({
       from: 'MyDurhamLaw <noreply@mydurhamlaw.com>',
       to: 'support@mydurhamlaw.com',
+      replyTo: 'support@mydurhamlaw.com',
       subject: `LNAT Waitlist: ${name} (${role})`,
       html: `
         <h2>New LNAT Waitlist Signup</h2>

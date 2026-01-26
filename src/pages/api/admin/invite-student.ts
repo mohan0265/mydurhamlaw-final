@@ -237,6 +237,7 @@ MyDurhamLaw • Excellence in Legal Education
   await resend.emails.send({
     from: 'MyDurhamLaw <noreply@mydurhamlaw.com>',
     to: email,
+    replyTo: 'support@mydurhamlaw.com',
     subject: "You're invited: Master your Law Degree with MyDurhamLaw 🎓",
     html: htmlContent,
     text: textContent,

@@ -71,6 +71,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const payload: any = {
       from,
       to,
+      replyTo: email,
       subject: `MyDurhamLaw - ${safeSubject}`,
       html,
       text: stripHtml(`${name} <${email}> wrote:\n\n${message}`),

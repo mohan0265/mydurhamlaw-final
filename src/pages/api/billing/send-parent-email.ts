@@ -160,6 +160,7 @@ The MyDurhamLaw Team
       const emailResult = await resend.emails.send({
         from: 'MyDurhamLaw <noreply@mydurhamlaw.com>',
         to: parentEmail,
+        replyTo: 'support@mydurhamlaw.com',
         subject: `Payment Request from Your Child - MyDurhamLaw`,
         html: emailHtml,
         text: emailText

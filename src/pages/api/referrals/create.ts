@@ -79,8 +79,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           if (resend) {
             try {
                 await resend.emails.send({
-                    from: 'MyDurhamLaw <invites@mydurhamlaw.com>', // Or your verified domain
+                    from: 'MyDurhamLaw <invites@mydurhamlaw.com>',
                     to: email,
+                    replyTo: 'support@mydurhamlaw.com',
                     subject: "You've been invited to MyDurhamLaw",
                     html: `
                         <div style="font-family: sans-serif; padding: 20px;">

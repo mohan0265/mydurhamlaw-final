@@ -348,6 +348,9 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=
 OPENAI_API_KEY=
 (Voice/extra endpoints are external and optional.)
 
+## 💼 Operations & Infrastructure
+- [Email & DNS Runbook](file:///c:/Users/M%20Chandramohan/OneDrive/1MyDurhamLaw-4.0/mydurhamlaw-final/docs/ops/EMAIL_DNS_RUNBOOK.md) — Authoritative DNS records & transactional mail setup.
+
 📝 Contribution Rules
 Keep this repo voice-free; use the widget for voice.
 
