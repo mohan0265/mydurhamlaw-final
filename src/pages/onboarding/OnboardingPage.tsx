@@ -26,7 +26,7 @@ import {
   Eye,
   Users
 } from 'lucide-react'
-import { GoldScaleIcon } from '@/components/ui/GoldScaleIcon'
+// import { GoldScaleIcon } from '@/components/ui/GoldScaleIcon' // Removed
 import { BrandTitle } from '@/components/ui/BrandTitle'
 import toast from 'react-hot-toast'
 
@@ -457,9 +457,12 @@ const OnboardingPage = () => {
           <div className="text-center mb-12">
             <div className="flex justify-center mb-6">
               <div className="relative">
-                <GoldScaleIcon
-                  size={80}
-                  className="animate-pulse"
+                <NextImage
+                  src="/brand/logo-icon.svg"
+                  alt="MyDurhamLaw Logo"
+                  width={80}
+                  height={80}
+                  className="animate-pulse object-contain"
                 />
                 <div className="absolute -inset-2 bg-gradient-to-r from-amber-400/20 to-yellow-500/20 rounded-full opacity-30 blur animate-pulse"></div>
               </div>
