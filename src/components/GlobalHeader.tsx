@@ -326,13 +326,13 @@ export default function GlobalHeader() {
               <NextImage
                 src="/brand/logo-icon-header.svg"
                 alt="MyDurhamLaw Logo"
-                width={40}
-                height={40}
+                width={48}
+                height={48}
                 priority
-                className="h-9 md:h-[34px] w-auto object-contain"
+                className="h-10 md:h-12 w-auto object-contain transition-transform group-hover:scale-105 duration-300"
               />
 
-              <span className="text-2xl md:text-[34px] font-bold tracking-tight leading-none text-[#5B2AAE] translate-y-[1px]">
+              <span className="text-2xl md:text-[34px] font-bold tracking-tight leading-none text-[#1F2937] translate-y-[1px]">
                 MyDurhamLaw
               </span>
             </Link>
