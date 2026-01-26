@@ -36,7 +36,7 @@ function ActiveLink({
       href={href}
       className={cx(
         'px-3 py-2 rounded-md text-sm font-medium transition',
-        active ? 'bg-white/20 text-white' : 'text-white/90 hover:text-white',
+        active ? 'bg-purple-600 text-white' : 'text-gray-600 hover:text-purple-700 hover:bg-purple-50',
         className
       )}
     >
@@ -85,7 +85,7 @@ function HoverMenu({
         </div>
       ) : (
         <button
-          className="px-3 py-2 rounded-md text-sm font-medium text-white/90 hover:text-white"
+          className="px-3 py-2 rounded-md text-sm font-medium text-gray-600 hover:text-purple-700 hover:bg-purple-50"
           onClick={() => setOpen((v) => !v)}
           aria-expanded={open}
         >
@@ -314,28 +314,29 @@ export default function GlobalHeader() {
   return (
     <>
 
-      <header className="sticky top-0 z-50 bg-gradient-to-r from-violet-700 to-indigo-700 shadow border-b border-white/5">
+      <header className="sticky top-0 z-50 bg-white/95 backdrop-blur shadow-sm border-b border-gray-100">
         <nav className="mx-auto max-w-7xl px-4 sm:px-6">
           <div className="min-h-[72px] md:min-h-[110px] py-4 flex items-center justify-between transition-all duration-300">
             {/* Brand */}
             <Link
               href="/"
-              className="flex items-center gap-3 rounded-xl px-2 py-2 group focus:outline-none focus:ring-2 focus:ring-white/50"
+              className="flex items-center gap-3 rounded-xl px-2 py-2 group focus:outline-none focus:ring-2 focus:ring-purple-500"
               aria-label="MyDurhamLaw Home"
             >
               <div className="relative">
                 <NextImage 
-                  src="/brand/logo-icon-128.png"
+                  src="/brand/logo-icon.svg"
                   alt="MyDurhamLaw Logo"
-                  width={56}
-                  height={56}
+                  width={48}
+                  height={48}
                   priority
-                  className="h-[40px] md:h-[56px] w-auto object-contain transition-transform group-hover:scale-110 duration-500 drop-shadow-[0_0_15px_rgba(255,215,0,0.4)]"
+                  className="h-[40px] md:h-[48px] w-auto object-contain transition-transform group-hover:scale-105 duration-300"
                 />
 
               </div>
-              <span className="text-xl md:text-3xl font-black text-white tracking-tight group-hover:text-amber-200 transition-colors drop-shadow-sm">
-                MyDurhamLaw
+              <span className="text-xl md:text-3xl font-bold tracking-tight transition-colors flex items-baseline gap-[1px]">
+                <span className="text-[#5B2AAE]">MyDurham</span>
+                <span className="text-[#C9A227]">Law</span>
               </span>
             </Link>
 
@@ -363,9 +364,9 @@ export default function GlobalHeader() {
                 </>
               ) : (
                 <>
-                  <Link href="/#how-it-works" className="px-3 py-2 rounded-md text-sm font-medium text-white/90 hover:text-white">How It Works</Link>
-                  <Link href="/pricing" className="px-3 py-2 rounded-md text-sm font-medium text-white/90 hover:text-white">Pricing</Link>
-                  <Link href="/learn/academic-integrity" className="px-3 py-2 rounded-md text-sm font-medium text-white/90 hover:text-white">Academic Integrity</Link>
+                  <Link href="/#how-it-works" className="px-3 py-2 rounded-md text-sm font-medium text-gray-600 hover:text-purple-700 hover:bg-purple-50">How It Works</Link>
+                  <Link href="/pricing" className="px-3 py-2 rounded-md text-sm font-medium text-gray-600 hover:text-purple-700 hover:bg-purple-50">Pricing</Link>
+                  <Link href="/learn/academic-integrity" className="px-3 py-2 rounded-md text-sm font-medium text-gray-600 hover:text-purple-700 hover:bg-purple-50">Academic Integrity</Link>
                 </>
               )}
             </div>
@@ -374,7 +375,7 @@ export default function GlobalHeader() {
             <div className="hidden md:flex items-center gap-3">
               {user ? (
                 <>
-                  <span className="text-white/90 text-sm">Hi, {displayName}</span>
+                  <span className="text-gray-600 text-sm">Hi, {displayName}</span>
                   {!isLovedOne && (
                     <Link href="/signup">
                     <button className="px-5 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl text-sm font-bold shadow-lg shadow-purple-200 hover:shadow-xl hover:scale-105 transition-all">
@@ -382,20 +383,20 @@ export default function GlobalHeader() {
                     </button>
                   </Link>
                   )}
-                  <LogoutButton className="px-3 py-2 rounded-md border hover:bg-white/10 text-white text-sm" />
+                  <LogoutButton className="px-3 py-2 rounded-md border border-gray-200 hover:bg-gray-50 text-gray-600 text-sm" />
                 </>
               ) : (
                 <>
                   <Link 
                     href="/login"
-                    className="px-3 py-2 rounded-md text-sm font-medium text-white hover:bg-white/10 transition border border-white/30"
+                    className="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100 transition border border-gray-200"
                   >
                     Sign In
                   </Link>
-                  <Link href="/signup" className="px-3 py-2 rounded-md text-sm font-semibold bg-white text-indigo-700 hover:bg-indigo-50 transition">
+                  <Link href="/signup" className="px-3 py-2 rounded-md text-sm font-semibold bg-purple-600 text-white hover:bg-purple-700 transition">
                     Start Free
                   </Link>
-                  <Link href={isLnatLaunchEnabled ? "/lnat/signup" : "/lnat-preparation"} className="px-3 py-2 rounded-md text-sm font-medium text-purple-200 hover:text-white transition">
+                  <Link href={isLnatLaunchEnabled ? "/lnat/signup" : "/lnat-preparation"} className="px-3 py-2 rounded-md text-sm font-medium text-muted-gold-600 hover:text-purple-700 transition">
                     {lnatLabel}
                   </Link>
                 </>
@@ -404,7 +405,7 @@ export default function GlobalHeader() {
 
             {/* Mobile toggle */}
             <button
-              className="md:hidden text-white/90 hover:text-white"
+              className="md:hidden text-gray-600 hover:text-gray-900"
               onClick={() => setOpenMobile((v) => !v)}
               aria-label="Toggle menu"
             >

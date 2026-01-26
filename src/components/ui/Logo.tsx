@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react'
 import NextImage from 'next/image'
 import Link from 'next/link'
-import { GoldScaleIcon } from './GoldScaleIcon'
+// import { GoldScaleIcon } from './GoldScaleIcon' // Removed
 
 interface LogoProps {
   variant?: 'light' | 'dark'
@@ -47,15 +47,15 @@ export const Logo: React.FC<LogoProps> = ({
   const getTextClasses = () => {
     if (variant === 'dark') {
       return {
-        my: 'text-gray-900', // Black for light backgrounds
-        durham: 'text-teal-500', // Teal remains consistent
-        law: 'text-gray-900' // Black for light backgrounds
+        my: 'text-[#5B2AAE]', // Academic Purple
+        durham: 'text-[#5B2AAE]', 
+        law: 'text-[#C9A227]' // Muted Gold
       }
     } else {
       return {
-        my: 'text-white', // White for dark backgrounds
-        durham: 'text-teal-400', // Teal remains consistent
-        law: 'text-white' // White for dark backgrounds
+        my: 'text-white', 
+        durham: 'text-white', 
+        law: 'text-[#C9A227]' // Keep Gold if readable, else white. Gold on dark is usually ok.
       }
     }
   }
@@ -67,19 +67,21 @@ export const Logo: React.FC<LogoProps> = ({
     <div className={`flex items-center ${className}`}>
       {/* Logo Icon */}
       {showIcon && (
-        <div className="relative">
-          <GoldScaleIcon
-            size={size === 'sm' ? 24 : size === 'lg' ? 48 : 40}
-            className="group-hover:scale-110 transition-transform duration-300"
+        <div className="relative mr-3">
+          <NextImage
+            src={variant === 'dark' ? "/brand/logo-icon.svg" : "/brand/logo-icon-white.svg"}
+            alt="Logo"
+            width={size === 'sm' ? 24 : size === 'lg' ? 48 : 40}
+            height={size === 'sm' ? 24 : size === 'lg' ? 48 : 40}
+            className="object-contain transition-transform duration-300 group-hover:scale-110"
           />
-          <div className="absolute -inset-1 bg-gradient-to-r from-amber-400/20 to-yellow-500/20 rounded-full opacity-20 group-hover:opacity-40 blur transition-opacity duration-300"></div>
         </div>
       )}
       
       {/* Branded Wordmark */}
       {showText && (
-        <div className={showIcon ? sizeClasses.spacing : ''}>
-          <div className={`${sizeClasses.text} font-bold tracking-wide`}>
+        <div className={''}>
+          <div className={`${sizeClasses.text} font-bold tracking-tight flex items-baseline gap-[1px]`}>
             <span className={textClasses.my}>My</span>
             <span className={textClasses.durham}>Durham</span>
             <span className={textClasses.law}>Law</span>
