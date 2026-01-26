@@ -320,21 +320,21 @@ export default function GlobalHeader() {
             {/* Brand */}
             <Link
               href="/"
-              className="flex items-center gap-2 rounded-xl px-2 py-2 group focus:outline-none focus:ring-2 focus:ring-purple-500"
+              className="flex items-center gap-1.5 rounded-xl px-2 py-2 group focus:outline-none focus:ring-2 focus:ring-purple-500"
               aria-label="MyDurhamLaw Home"
             >
               <div className="relative">
                 <NextImage 
-                  src="/brand/logo-icon.svg"
+                  src="/brand/logo-icon-header.svg"
                   alt="MyDurhamLaw Logo"
                   width={40}
                   height={40}
                   priority
-                  className="h-9 md:h-10 w-auto object-contain transition-transform group-hover:scale-105 duration-300"
+                  className="h-8 md:h-10 w-auto object-contain transition-transform group-hover:scale-105 duration-300"
                 />
 
               </div>
-              <span className="text-2xl md:text-4xl font-bold tracking-tight transition-colors flex items-baseline gap-[1px]">
+              <span className="text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight transition-colors flex items-baseline gap-[1px]">
                 <span className="text-[#5B2AAE]">MyDurham</span>
                 <span className="text-[#C9A227]">Law</span>
               </span>
