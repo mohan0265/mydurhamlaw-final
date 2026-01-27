@@ -13,6 +13,12 @@ const DurmahWidget = dynamic(() => import("@/components/DurmahWidget"), {
 const AWYWidget = dynamic(() => import("@/components/awy/AWYWidget"), {
   ssr: false,
 });
+const GlobalDurmahSafe = dynamic(
+  () => import("@/components/durmah/GlobalDurmahSafe"),
+  {
+    ssr: false,
+  },
+);
 import { CalendarProvider } from "@/context/CalendarContext";
 import { WidgetErrorBoundary } from "@/components/common/WidgetErrorBoundary";
 
@@ -61,9 +67,9 @@ export default function LayoutShell({ children }: Props) {
       {/* Global Floating Widgets - Show on all pages except auth pages AND only when logged in */}
       {!isAuthPage && user && (
         <>
-          {/* <WidgetErrorBoundary>
-            <DurmahWidget />
-          </WidgetErrorBoundary> */}
+          <WidgetErrorBoundary>
+            <GlobalDurmahSafe />
+          </WidgetErrorBoundary>
           <AWYWidget />
         </>
       )}
