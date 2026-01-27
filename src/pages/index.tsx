@@ -51,16 +51,16 @@ return (
             <span className="text-sm font-medium text-gray-400 tracking-wide uppercase">Accepting all years (Foundation → Year 3)</span>
           </div>
 
-          <h1 className="flex flex-col md:flex-row flex-wrap justify-center items-center gap-2 md:gap-4 text-4xl sm:text-5xl lg:text-7xl font-black mb-6 tracking-tight text-white leading-tight">
-            <Link href="/learn" className="px-4 py-2 rounded-xl bg-white/5 border border-white/10 shadow-sm hover:bg-white/10 hover:border-purple-500/30 transition-all hover:scale-105 active:scale-95">
+          <h1 className="flex flex-col md:flex-row flex-wrap justify-center items-center gap-2 md:gap-3 text-4xl md:text-5xl xl:text-6xl font-black mb-6 tracking-tight text-white leading-tight">
+            <Link href="/learn" className="px-3 md:px-4 py-2 rounded-xl bg-white/5 border border-white/10 shadow-sm hover:bg-white/10 hover:border-purple-500/30 transition-all hover:scale-105 active:scale-95 whitespace-nowrap">
               Learn law
             </Link>
             <span className="hidden md:block text-white/20 text-3xl font-light">|</span>
-            <Link href="/write" className="px-4 py-2 rounded-xl bg-white/5 border border-white/10 shadow-sm hover:bg-white/10 hover:border-purple-500/30 transition-all hover:scale-105 active:scale-95">
+            <Link href="/write" className="px-3 md:px-4 py-2 rounded-xl bg-white/5 border border-white/10 shadow-sm hover:bg-white/10 hover:border-purple-500/30 transition-all hover:scale-105 active:scale-95 whitespace-nowrap">
               Write law
             </Link>
             <span className="hidden md:block text-white/20 text-3xl font-light">|</span>
-            <Link href="/quiz" className="px-4 py-2 rounded-xl bg-white/5 border border-white/10 shadow-sm hover:bg-white/10 hover:border-purple-500/30 transition-all hover:scale-105 active:scale-95">
+            <Link href="/quiz" className="px-3 md:px-4 py-2 rounded-xl bg-white/5 border border-white/10 shadow-sm hover:bg-white/10 hover:border-purple-500/30 transition-all hover:scale-105 active:scale-95 whitespace-nowrap">
               Speak law
             </Link>
           </h1>
