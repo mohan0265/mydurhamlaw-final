@@ -77,25 +77,25 @@ export default function DurhamLanding() {
           <h1 className="flex flex-col md:flex-row md:flex-nowrap justify-center items-center gap-2 md:gap-3 text-4xl md:text-5xl xl:text-6xl font-black mb-6 tracking-tight text-white leading-tight">
             <Link
               href="/learn"
-              className="px-3 md:px-4 py-2 rounded-xl bg-white/5 border border-white/10 shadow-sm hover:bg-white/10 hover:border-purple-500/30 transition-all hover:scale-105 active:scale-95 whitespace-nowrap"
+              className="px-3 md:px-4 py-2 rounded-xl bg-indigo-900/80 border border-indigo-700 shadow-lg shadow-indigo-900/20 hover:bg-indigo-800 hover:border-indigo-500 transition-all hover:scale-105 active:scale-95 whitespace-nowrap"
             >
               Learn law
             </Link>
-            <span className="hidden md:block text-white/20 text-3xl font-light">
+            <span className="hidden md:block text-purple-500 text-4xl md:text-5xl font-black opacity-50">
               |
             </span>
             <Link
               href="/write"
-              className="px-3 md:px-4 py-2 rounded-xl bg-white/5 border border-white/10 shadow-sm hover:bg-white/10 hover:border-purple-500/30 transition-all hover:scale-105 active:scale-95 whitespace-nowrap"
+              className="px-3 md:px-4 py-2 rounded-xl bg-indigo-900/80 border border-indigo-700 shadow-lg shadow-indigo-900/20 hover:bg-indigo-800 hover:border-indigo-500 transition-all hover:scale-105 active:scale-95 whitespace-nowrap"
             >
               Write law
             </Link>
-            <span className="hidden md:block text-white/20 text-3xl font-light">
+            <span className="hidden md:block text-purple-500 text-4xl md:text-5xl font-black opacity-50">
               |
             </span>
             <Link
               href="/quiz"
-              className="px-3 md:px-4 py-2 rounded-xl bg-white/5 border border-white/10 shadow-sm hover:bg-white/10 hover:border-purple-500/30 transition-all hover:scale-105 active:scale-95 whitespace-nowrap"
+              className="px-3 md:px-4 py-2 rounded-xl bg-indigo-900/80 border border-indigo-700 shadow-lg shadow-indigo-900/20 hover:bg-indigo-800 hover:border-indigo-500 transition-all hover:scale-105 active:scale-95 whitespace-nowrap"
             >
               Speak law
             </Link>
