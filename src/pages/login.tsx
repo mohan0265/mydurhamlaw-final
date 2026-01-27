@@ -1,7 +1,6 @@
-// src/pages/login.tsx
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/router";
 import Link from "next/link";
 import { BookOpen, Mail, Lock, Eye, EyeOff } from "lucide-react";
@@ -18,39 +17,90 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
-  const [alreadyConnectedUser, setAlreadyConnectedUser] = useState<{ email?: string } | null>(null);
+  // CRITICAL: NO SIDE EFFECTS ON LOGIN PAGE
+  // NO useEffect checking session
+  // NO auto-redirects
+  // NO Profile fetches to prevent loops
 
-    // CHANGED: Removed auto-redirect to prevent infinite loops with Middleware
-    // Instead, we let the UI handle the "Already logged in" state
-    const supabase = getSupabaseClient();
-    if (!supabase) return;
-
-    let unsub: (() => void) | undefined;
-
-    (async () => {
-      const { data } = await supabase.auth.getSession();
-      
-      if (data.session?.user) {
-        setAlreadyConnectedUser({ email: data.session.user.email });
-        // Optional: Pre-fill email state if they want to switch accounts
-        if (data.session.user.email) setEmail(data.session.user.email);
+  const handleGoogleSignIn = async () => {
+    setLoading(true);
+    try {
+      const supabase = getSupabaseClient();
+      if (!supabase) {
+        toast.error("Unable to connect to authentication service");
+        setLoading(false);
+        return;
       }
 
-      // Subscribe to auth changes just to keep internal state fresh, but NO redirects
-      const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
-         if (session?.user) {
-            setAlreadyConnectedUser({ email: session.user.email });
-         } else {
-            setAlreadyConnectedUser(null);
-         }
+      // FIXED: Use proper callback URL with role gating
+      const redirectTo = `${window.location.origin}/auth/callback?role=student`;
+      
+      console.log('🔄 Initiating Google OAuth (Student) with redirect:', redirectTo);
+      
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo,
+          scopes: "openid email profile",
+          queryParams: { 
+            access_type: "offline", 
+            prompt: "consent" 
+          },
+        },
       });
-      unsub = () => sub.subscription.unsubscribe();
-    })();
 
-    return () => { unsub?.(); };
-  }, [router]);
+      if (error) {
+        console.error("Google OAuth error:", error);
+        toast.error(`Google Sign-in failed: ${error.message}`);
+        setLoading(false);
+      } else {
+        console.log('✅ OAuth initiated successfully, redirecting to Google...');
+      }
+      // OAuth redirect takes over on success
+    } catch (err: any) {
+      console.error("Sign-in error:", err);
+      toast.error(`Google sign-in failed: ${err.message || "Please try again."}`);
+      setLoading(false);
+    }
+  };
 
-  // ... (handlers)
+  const handleEmailSignIn = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email || !password) {
+      toast.error("Please enter your email and password");
+      return;
+    }
+    
+    setLoading(true);
+    try {
+      const supabase = getSupabaseClient();
+      if (!supabase) {
+        toast.error("Unable to connect to authentication service");
+        setLoading(false);
+        return;
+      }
+
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) {
+        console.error("Email sign-in error:", error);
+        toast.error(`Sign-in failed: ${error.message}`);
+        setLoading(false);
+      } else if (data.session) {
+        console.log('✅ Email sign-in successful');
+        toast.success("Welcome back!");
+        // Explicit user action - safer to redirect
+        router.replace("/dashboard");
+      }
+    } catch (err: any) {
+      console.error("Email sign-in error:", err);
+      toast.error(`Sign-in failed: ${err.message || "Please try again."}`);
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-indigo-50 flex items-center justify-center px-4 sm:px-6">
@@ -67,45 +117,12 @@ export default function LoginPage() {
           </Link>
         </div>
 
-        {alreadyConnectedUser ? (
-            <div className="text-center mb-6">
-              <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                 <span className="text-2xl">👋</span>
-              </div>
-              <h2 className="text-xl font-bold text-gray-900 mb-2">You are already signed in</h2>
-              <p className="text-sm text-gray-600 mb-6">
-                Connected as <span className="font-semibold text-gray-900">{alreadyConnectedUser.email}</span>
-              </p>
-
-              <div className="space-y-3">
-                 <button
-                    onClick={() => router.push('/dashboard')}
-                    className="w-full bg-purple-600 hover:bg-purple-700 text-white py-3 px-4 rounded-lg font-bold shadow-lg shadow-purple-200 transition-all hover:shadow-purple-300"
-                 >
-                    Go to Dashboard
-                 </button>
-                 
-                 <button
-                    onClick={async () => {
-                        const sb = getSupabaseClient();
-                        if (sb) await sb.auth.signOut();
-                        setAlreadyConnectedUser(null);
-                        toast.success('Signed out');
-                    }}
-                    className="w-full bg-white border border-gray-200 text-gray-600 py-3 px-4 rounded-lg font-medium hover:bg-gray-50 transition-colors"
-                 >
-                    Sign Out & Switch Account
-                 </button>
-              </div>
-            </div>
-        ) : (
-           <>
-              <div className="text-center mb-6">
-                <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">Welcome Back!</h2>
-                <p className="text-sm sm:text-base text-gray-600">
-                  {showEmailLogin ? "Sign in with your email and password" : "Sign in to continue"}
-                </p>
-              </div>
+        <div className="text-center mb-6">
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">Welcome Back!</h2>
+          <p className="text-sm sm:text-base text-gray-600">
+            {showEmailLogin ? "Sign in with your email and password" : "Sign in to continue"}
+          </p>
+        </div>
 
         {!showEmailLogin ? (
           <>
@@ -221,8 +238,6 @@ export default function LoginPage() {
             </button>
           </>
         )}
-      </>
-      )}
 
         <p className="mt-6 text-center text-sm text-gray-600">
           Don&apos;t have an account?{" "}
