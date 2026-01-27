@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
-import { useAuth } from '@/lib/supabase/AuthContext';
+import { useAuth } from "@/lib/supabase/AuthContext";
 import { useDurmahRealtime } from "@/hooks/useDurmahRealtime";
 import { useDurmahGeminiLive } from "@/hooks/useDurmahGeminiLive"; // NEW: Gemini Live
 import { useDurmahDynamicContext } from "@/hooks/useDurmahDynamicContext";
@@ -11,32 +11,53 @@ import { normalizeTranscriptLanguage } from "@/lib/durmah/normalizeTranscriptLan
 import {
   buildDurmahSystemPrompt,
   buildDurmahContextBlock,
-  generateProactiveGreeting
+  generateProactiveGreeting,
 } from "@/lib/durmah/systemPrompt";
 import { DELIVERY_STYLES, SPEEDS } from "@/lib/voiceCatalog";
 import type { StudentContext } from "@/types/durmahContext";
 import type { DurmahContextPacket } from "@/types/durmah";
 import { formatTodayForDisplay } from "@/lib/durmah/phase";
 import { useDurmahSettings } from "@/hooks/useDurmahSettings";
-import { Settings, X, ArrowRight, AlertTriangle, Check, Volume2, Brain, Zap, RefreshCw, MoreHorizontal, Trash2, Smile, CheckSquare, Square, Save, Bookmark, BookmarkX, Filter, Minimize2, GripVertical, Minus } from "lucide-react";
-import Link from 'next/link';
+import {
+  Settings,
+  X,
+  ArrowRight,
+  AlertTriangle,
+  Check,
+  Volume2,
+  Brain,
+  Zap,
+  RefreshCw,
+  MoreHorizontal,
+  Trash2,
+  Smile,
+  CheckSquare,
+  Square,
+  Save,
+  Bookmark,
+  BookmarkX,
+  Filter,
+  Minimize2,
+  GripVertical,
+  Minus,
+} from "lucide-react";
+import Link from "next/link";
 import toast from "react-hot-toast";
-import { useRouter } from 'next/router';
+import { useRouter } from "next/router";
 import { getSupabaseClient } from "@/lib/supabase/client";
-import SaveConversationModal from '@/components/SaveConversationModal'; // NEW: Session save modal
-import SaveToFolderModal from '@/components/durmah/SaveToFolderModal';
-
+import SaveConversationModal from "@/components/SaveConversationModal"; // NEW: Session save modal
+import SaveToFolderModal from "@/components/durmah/SaveToFolderModal";
 
 // Voice Provider Selection - Forced to OpenAI for production quality and feature support
 // Gemini provider logic is kept in hooks but disabled in UI to avoid confusion.
-const VOICE_PROVIDER = 'openai';
+const VOICE_PROVIDER = "openai";
 const useVoiceHook = useDurmahRealtime;
-console.log('[DurmahWidget] Voice provider locked to:', VOICE_PROVIDER);
+console.log("[DurmahWidget] Voice provider locked to:", VOICE_PROVIDER);
 
-type Msg = { 
+type Msg = {
   id?: string;
-  role: "durmah" | "you"; 
-  text: string; 
+  role: "durmah" | "you";
+  text: string;
   ts: number;
   saved_at?: string | null;
   session_id?: string;
@@ -52,8 +73,8 @@ const DEDUPE_WINDOW_MS = 2000;
 
 function normalizeTurnText(text: string) {
   return (text || "")
-    .replace(/\s+([,.!?;:])/g, "$1")  // Remove space before punctuation
-    .replace(/\s+/g, " ")              // Collapse whitespace
+    .replace(/\s+([,.!?;:])/g, "$1") // Remove space before punctuation
+    .replace(/\s+/g, " ") // Collapse whitespace
     .trim();
 }
 
@@ -61,7 +82,7 @@ function isDuplicateTurn(
   existing: Msg[],
   role: Msg["role"],
   normalizedText: string,
-  ts: number
+  ts: number,
 ) {
   const last = existing[existing.length - 1];
   const lowered = normalizedText.toLowerCase();
@@ -169,11 +190,13 @@ async function resolveAccessToken() {
 
 function buildContextChipText(
   context: DurmahContextPacket | null,
-  timeLabel: string | null
+  timeLabel: string | null,
 ) {
   if (!context) return null;
   const termLabel =
-    context.academic.term === "Unknown" ? "Unknown term" : context.academic.term;
+    context.academic.term === "Unknown"
+      ? "Unknown term"
+      : context.academic.term;
   const weekLabel = context.academic.weekOfTerm
     ? `Week ${context.academic.weekOfTerm}`
     : null;
@@ -199,19 +222,26 @@ function buildContextGreeting(context: DurmahContextPacket) {
 
   const termPhrase = weekLabel ? `${termLabel} ${weekLabel}` : termLabel;
   return `Hi ${name} - it's ${timeOfDay} and we're in ${termPhrase}. Want to review this week, plan your study, or practice a quick quiz?`;
-
 }
 
 export default function DurmahWidget() {
   const { user } = useAuth() || { user: null };
   const router = useRouter();
   const signedIn = !!user?.id;
-  
+
   // 1. Source Context
   const durmahCtx = useDurmah();
   const { upcomingTasks, todaysEvents, authError } = useDurmahDynamicContext();
-  const { preset, deliveryStyleId, deliveryStyle, speed, updateSettings, availablePresets, voiceId } = useDurmahSettings();
-  
+  const {
+    preset,
+    deliveryStyleId,
+    deliveryStyle,
+    speed,
+    updateSettings,
+    availablePresets,
+    voiceId,
+  } = useDurmahSettings();
+
   // Construct the unified context object
   const studentContext: {
     userId: string;
@@ -228,22 +258,26 @@ export default function DurmahWidget() {
     upcomingTasks: any[];
     todaysEvents: any[];
   } = useMemo(() => {
-    const base = durmahCtx.hydrated ? durmahCtx : (typeof window !== 'undefined' ? window.__mdlStudentContext : null);
-    
+    const base = durmahCtx.hydrated
+      ? durmahCtx
+      : typeof window !== "undefined"
+        ? window.__mdlStudentContext
+        : null;
+
     // Robust name resolution
-    const rawName = (base as any)?.profile?.displayName || 
-                    base?.firstName || 
-                    user?.user_metadata?.full_name || 
-                    user?.user_metadata?.name || 
-                    "Student";
+    const rawName =
+      (base as any)?.profile?.displayName ||
+      base?.firstName ||
+      user?.user_metadata?.full_name ||
+      user?.user_metadata?.name ||
+      "Student";
 
     // Robust role resolution
-    const rawRole = base?.yearKey || 
-                    (base as any)?.profile?.yearGroup || 
-                    "Law Student";
+    const rawRole =
+      base?.yearKey || (base as any)?.profile?.yearGroup || "Law Student";
 
     if (!base) {
-       return {
+      return {
         userId: user?.id || "anon",
         firstName: rawName,
         university: "Durham University",
@@ -254,7 +288,7 @@ export default function DurmahWidget() {
         nowPhase: "term time" as any,
         currentPhase: "Michaelmas Term",
         upcomingTasks: [],
-        todaysEvents: []
+        todaysEvents: [],
       };
     }
 
@@ -266,20 +300,20 @@ export default function DurmahWidget() {
       yearGroup: rawRole,
       academicYear: base?.academicYear || "2025/26",
       modules: base?.modules || [],
-      nowPhase: base?.nowPhase || "term time" as any,
+      nowPhase: base?.nowPhase || ("term time" as any),
       currentPhase: base?.nowPhase || "Unknown Term",
       keyDates: base?.keyDates,
       todayLabel: formatTodayForDisplay(),
       upcomingTasks,
-      todaysEvents
+      todaysEvents,
     };
   }, [durmahCtx, user, upcomingTasks, todaysEvents]);
 
   const [isOpen, setIsOpen] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [ready, setReady] = useState(false);
-  const [mode, setMode] = useState<'chat' | 'study' | 'NEWS_STRICT'>('chat');
-  
+  const [mode, setMode] = useState<"chat" | "study" | "NEWS_STRICT">("chat");
+
   // NEW: Session Management State
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
   const [showSaveModal, setShowSaveModal] = useState(false);
@@ -290,7 +324,6 @@ export default function DurmahWidget() {
   const [transcriptForFolder, setTranscriptForFolder] = useState<any>(null);
   const [isSavingTranscript, setIsSavingTranscript] = useState(false);
 
-  
   // Generate new session ID on widget open
   useEffect(() => {
     if (isOpen && !currentSessionId) {
@@ -299,45 +332,48 @@ export default function DurmahWidget() {
       setIsSessionSaved(false); // Reset saved status for new session
     }
   }, [isOpen, currentSessionId]);
-  
+
   // UNIFIED CHAT HOOK with session management
-  const { 
-    messages: unifiedMessages, 
-    sendMessage, 
-    logMessage, 
-    isLoading: chatIsLoading, 
-    toggleSaveMetadata, 
-    clearUnsaved, 
-    deleteMessages, 
-    refetchMessages, 
+  const {
+    messages: unifiedMessages,
+    sendMessage,
+    logMessage,
+    isLoading: chatIsLoading,
+    toggleSaveMetadata,
+    clearUnsaved,
+    deleteMessages,
+    refetchMessages,
     conversationId,
     createSession,
     saveSession,
-    discardSession
+    discardSession,
   } = useDurmahChat({
-      source: 'widget',
-      scope: 'global',
-      context: { 
-        mode,
-        lectureId: router.pathname.includes('/study/lectures') ? (router.query.id as string) : undefined,
-        assignmentId: router.pathname.includes('/assignments') ? (router.query.assignmentId as string) : undefined
-      },
-      sessionId: currentSessionId,
-      skipAutoFetch: true  // Don't auto-load old messages
+    source: "widget",
+    scope: "global",
+    context: {
+      mode,
+      lectureId: router.pathname.includes("/study/lectures")
+        ? (router.query.id as string)
+        : undefined,
+      assignmentId: router.pathname.includes("/assignments")
+        ? (router.query.assignmentId as string)
+        : undefined,
+    },
+    sessionId: currentSessionId,
+    skipAutoFetch: true, // Don't auto-load old messages
   });
 
-
-  const scope = 'global';
+  const scope = "global";
 
   // Map unified messages to legacy Msg format for UI compatibility
   const messages = useMemo<Msg[]>(() => {
-      return unifiedMessages.map(m => ({
-          id: m.id,
-          role: m.role === 'assistant' ? 'durmah' : 'you',
-          text: m.content,
-          ts: new Date(m.created_at).getTime(),
-          saved_at: m.saved_at,
-      }));
+    return unifiedMessages.map((m) => ({
+      id: m.id,
+      role: m.role === "assistant" ? "durmah" : "you",
+      text: m.content,
+      ts: new Date(m.created_at).getTime(),
+      saved_at: m.saved_at,
+    }));
   }, [unifiedMessages]);
 
   const [input, setInput] = useState("");
@@ -347,35 +383,56 @@ export default function DurmahWidget() {
   const [voiceSessionActive, setVoiceSessionActive] = useState(false);
   const [voiceSessionHadTurns, setVoiceSessionHadTurns] = useState(false);
   const [voiceSessionId, setVoiceSessionId] = useState<string | null>(null);
-  const [voiceSessionStartedAt, setVoiceSessionStartedAt] = useState<Date | null>(null);
-  const [voiceSessionEndedAt, setVoiceSessionEndedAt] = useState<Date | null>(null);
+  const [voiceSessionStartedAt, setVoiceSessionStartedAt] =
+    useState<Date | null>(null);
+  const [voiceSessionEndedAt, setVoiceSessionEndedAt] = useState<Date | null>(
+    null,
+  );
   const [showHeaderMenu, setShowHeaderMenu] = useState(false);
-  const [memory, setMemory] = useState<{ last_topic?: string; last_message?: string; last_seen_at?: string } | null>(null);
-  const [previewingVoiceId, setPreviewingVoiceId] = useState<string | null>(null);
-  const [contextPacket, setContextPacket] = useState<DurmahContextPacket | null>(null);
+  const [memory, setMemory] = useState<{
+    last_topic?: string;
+    last_message?: string;
+    last_seen_at?: string;
+  } | null>(null);
+  const [previewingVoiceId, setPreviewingVoiceId] = useState<string | null>(
+    null,
+  );
+  const [contextPacket, setContextPacket] =
+    useState<DurmahContextPacket | null>(null);
   const [contextTimeLabel, setContextTimeLabel] = useState<string | null>(null);
-  
-  const [studentContextData, setStudentContextData] = useState<StudentContext | null>(null);
+
+  const [studentContextData, setStudentContextData] =
+    useState<StudentContext | null>(null);
   const [contextLoading, setContextLoading] = useState(false);
-  const [lastProactiveGreeting, setLastProactiveGreeting] = useState<string | null>(null);
+  const [lastProactiveGreeting, setLastProactiveGreeting] = useState<
+    string | null
+  >(null);
 
   // Select-to-Save State
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [viewMode, setViewMode] = useState<'session' | 'saved'>('session');
+  const [viewMode, setViewMode] = useState<"session" | "saved">("session");
 
   // Desktop Resize State (default dimensions from CSS)
   const DEFAULT_WIDTH = 400;
   const DEFAULT_HEIGHT = 600;
-  const [widgetSize, setWidgetSize] = useState({ width: DEFAULT_WIDTH, height: DEFAULT_HEIGHT });
+  const [widgetSize, setWidgetSize] = useState({
+    width: DEFAULT_WIDTH,
+    height: DEFAULT_HEIGHT,
+  });
   const [isResized, setIsResized] = useState(false);
-  const resizeRef = useRef<{ startX: number; startY: number; startW: number; startH: number } | null>(null);
+  const resizeRef = useRef<{
+    startX: number;
+    startY: number;
+    startW: number;
+    startH: number;
+  } | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Auto-resize textarea
   useEffect(() => {
     if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto'; // Reset
+      textareaRef.current.style.height = "auto"; // Reset
       textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 200)}px`;
     }
   }, [input]);
@@ -387,53 +444,75 @@ export default function DurmahWidget() {
 
   const handleResizeStart = (e: React.MouseEvent | React.TouchEvent) => {
     e.preventDefault();
-    const clientX = 'touches' in e && e.touches[0] ? e.touches[0].clientX : (e as React.MouseEvent).clientX;
-    const clientY = 'touches' in e && e.touches[0] ? e.touches[0].clientY : (e as React.MouseEvent).clientY;
-    
+    const clientX =
+      "touches" in e && e.touches[0]
+        ? e.touches[0].clientX
+        : (e as React.MouseEvent).clientX;
+    const clientY =
+      "touches" in e && e.touches[0]
+        ? e.touches[0].clientY
+        : (e as React.MouseEvent).clientY;
+
     resizeRef.current = {
       startX: clientX,
       startY: clientY,
       startW: widgetSize.width,
       startH: widgetSize.height,
     };
-    
+
     const handleResizeMove = (moveE: MouseEvent | TouchEvent) => {
       if (!resizeRef.current) return;
-      const moveX = 'touches' in moveE && moveE.touches[0] ? moveE.touches[0].clientX : (moveE as MouseEvent).clientX;
-      const moveY = 'touches' in moveE && moveE.touches[0] ? moveE.touches[0].clientY : (moveE as MouseEvent).clientY;
-      
+      const moveX =
+        "touches" in moveE && moveE.touches[0]
+          ? moveE.touches[0].clientX
+          : (moveE as MouseEvent).clientX;
+      const moveY =
+        "touches" in moveE && moveE.touches[0]
+          ? moveE.touches[0].clientY
+          : (moveE as MouseEvent).clientY;
+
       // Resize from top-left corner (widget is anchored bottom-right)
       const deltaX = resizeRef.current.startX - moveX;
       const deltaY = resizeRef.current.startY - moveY;
-      
-      const newWidth = Math.max(350, Math.min(800, resizeRef.current.startW + deltaX));
-      const newHeight = Math.max(400, Math.min(900, resizeRef.current.startH + deltaY));
-      
+
+      const newWidth = Math.max(
+        350,
+        Math.min(800, resizeRef.current.startW + deltaX),
+      );
+      const newHeight = Math.max(
+        400,
+        Math.min(900, resizeRef.current.startH + deltaY),
+      );
+
       setWidgetSize({ width: newWidth, height: newHeight });
       if (newWidth !== DEFAULT_WIDTH || newHeight !== DEFAULT_HEIGHT) {
         setIsResized(true);
       }
     };
-    
+
     const handleResizeEnd = () => {
       resizeRef.current = null;
-      document.removeEventListener('mousemove', handleResizeMove);
-      document.removeEventListener('mouseup', handleResizeEnd);
-      document.removeEventListener('touchmove', handleResizeMove);
-      document.removeEventListener('touchend', handleResizeEnd);
+      document.removeEventListener("mousemove", handleResizeMove);
+      document.removeEventListener("mouseup", handleResizeEnd);
+      document.removeEventListener("touchmove", handleResizeMove);
+      document.removeEventListener("touchend", handleResizeEnd);
     };
-    
-    document.addEventListener('mousemove', handleResizeMove);
-    document.addEventListener('mouseup', handleResizeEnd);
-    document.addEventListener('touchmove', handleResizeMove);
-    document.addEventListener('touchend', handleResizeEnd);
+
+    document.addEventListener("mousemove", handleResizeMove);
+    document.addEventListener("mouseup", handleResizeEnd);
+    document.addEventListener("touchmove", handleResizeMove);
+    document.addEventListener("touchend", handleResizeEnd);
   };
 
   // Session ID
-  const sessionIdRef = useRef<string>('');
+  const sessionIdRef = useRef<string>("");
   useEffect(() => {
-    if (!sessionIdRef.current && typeof crypto !== 'undefined') {
-       try { sessionIdRef.current = crypto.randomUUID(); } catch(e) { sessionIdRef.current = Date.now().toString(); }
+    if (!sessionIdRef.current && typeof crypto !== "undefined") {
+      try {
+        sessionIdRef.current = crypto.randomUUID();
+      } catch (e) {
+        sessionIdRef.current = Date.now().toString();
+      }
     }
   }, []);
 
@@ -441,70 +520,80 @@ export default function DurmahWidget() {
   const getMessageKey = (m: Msg): string => m.id || m.ts.toString();
 
   const toggleSelection = (key: string) => {
-      if (!key) return;
-      const next = new Set(selectedIds);
-      if (next.has(key)) next.delete(key);
-      else next.add(key);
-      setSelectedIds(next);
+    if (!key) return;
+    const next = new Set(selectedIds);
+    if (next.has(key)) next.delete(key);
+    else next.add(key);
+    setSelectedIds(next);
   };
 
   const selectAllMessages = () => {
-      const allKeys = messages.map(m => getMessageKey(m));
-      setSelectedIds(new Set(allKeys));
+    const allKeys = messages.map((m) => getMessageKey(m));
+    setSelectedIds(new Set(allKeys));
   };
 
   const deselectAllMessages = () => {
-      setSelectedIds(new Set());
+    setSelectedIds(new Set());
   };
 
-  const handleManageAction = async (action: 'save' | 'unsave' | 'delete_selected' | 'clear_unsaved') => {
-      if ((action === 'delete_selected' || action === 'save' || action === 'unsave') && selectedIds.size === 0) return;
+  const handleManageAction = async (
+    action: "save" | "unsave" | "delete_selected" | "clear_unsaved",
+  ) => {
+    if (
+      (action === "delete_selected" ||
+        action === "save" ||
+        action === "unsave") &&
+      selectedIds.size === 0
+    )
+      return;
 
-      const toastId = toast.loading('Processing...');
-      
-      try {
-          // Bulk processing via hook (toggleSaveMetadata)
-          const ids = Array.from(selectedIds);
-          let failureCount = 0;
+    const toastId = toast.loading("Processing...");
 
-          if (action === 'save' || action === 'unsave') {
-              for (const id of ids) {
-                 const m = messages.find(msg => msg.id === id);
-                 if (!m) continue;
-                 
-                 // Only toggle if state differs
-                 if (action === 'save' && !m.saved_at) {
-                     const success = await toggleSaveMetadata(id, 'ephemeral', true); // Silent
-                     if (!success) failureCount++;
-                 } else if (action === 'unsave' && m.saved_at) {
-                     const success = await toggleSaveMetadata(id, 'saved', true); // Silent
-                     if (!success) failureCount++;
-                 }
-              }
-              // Refresh state to ensure consistency
-              refetchMessages();
-          } else if (action === 'delete_selected') {
-              await deleteMessages(ids);
-          } else if (action === 'clear_unsaved') {
-              await clearUnsaved();
-          }
+    try {
+      // Bulk processing via hook (toggleSaveMetadata)
+      const ids = Array.from(selectedIds);
+      let failureCount = 0;
 
-          if (failureCount > 0) {
-              toast.error(`Some messages (${failureCount}) failed to save. Check RLS.`, { id: toastId });
-          } else {
-              toast.success('Done', { id: toastId });
+      if (action === "save" || action === "unsave") {
+        for (const id of ids) {
+          const m = messages.find((msg) => msg.id === id);
+          if (!m) continue;
+
+          // Only toggle if state differs
+          if (action === "save" && !m.saved_at) {
+            const success = await toggleSaveMetadata(id, "ephemeral", true); // Silent
+            if (!success) failureCount++;
+          } else if (action === "unsave" && m.saved_at) {
+            const success = await toggleSaveMetadata(id, "saved", true); // Silent
+            if (!success) failureCount++;
           }
-          if (action === 'save') {
-              setIsSessionSaved(true);
-          }
-          setSelectedIds(new Set());
-          setIsSelectionMode(false);
-      } catch (err) {
-          console.error('[Durmah Manage] Error:', err);
-          toast.error('Error', { id: toastId });
+        }
+        // Refresh state to ensure consistency
+        refetchMessages();
+      } else if (action === "delete_selected") {
+        await deleteMessages(ids);
+      } else if (action === "clear_unsaved") {
+        await clearUnsaved();
       }
-  };
 
+      if (failureCount > 0) {
+        toast.error(
+          `Some messages (${failureCount}) failed to save. Check RLS.`,
+          { id: toastId },
+        );
+      } else {
+        toast.success("Done", { id: toastId });
+      }
+      if (action === "save") {
+        setIsSessionSaved(true);
+      }
+      setSelectedIds(new Set());
+      setIsSelectionMode(false);
+    } catch (err) {
+      console.error("[Durmah Manage] Error:", err);
+      toast.error("Error", { id: toastId });
+    }
+  };
 
   const streamControllerRef = useRef<AbortController | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -517,9 +606,9 @@ export default function DurmahWidget() {
   useEffect(() => {
     // Create audio element if it doesn't exist
     if (!audioRef.current) {
-      const audio = document.createElement('audio');
-      audio.style.display = 'none';
-      audio.id = 'durmah-persistent-audio';
+      const audio = document.createElement("audio");
+      audio.style.display = "none";
+      audio.id = "durmah-persistent-audio";
       document.body.appendChild(audio);
       audioRef.current = audio;
     }
@@ -536,15 +625,15 @@ export default function DurmahWidget() {
   // Auto-scroll to bottom whenever messages change
   useEffect(() => {
     if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
   }, [messages, ready, isOpen]);
 
   // Voice transcript auto-scroll
   useEffect(() => {
     if (showVoiceTranscript) {
-      const anchor = document.getElementById('voice-scroll-anchor');
-      anchor?.scrollIntoView({ behavior: 'smooth' });
+      const anchor = document.getElementById("voice-scroll-anchor");
+      anchor?.scrollIntoView({ behavior: "smooth" });
     }
   }, [callTranscript, showVoiceTranscript]);
 
@@ -560,52 +649,67 @@ export default function DurmahWidget() {
   // effectively deprecated by Phase 3 logic
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
-         if (event.origin !== window.location.origin) return;
-         // Legacy support: if still receiving OPEN_DURMAH, forward to CustomEvent
-         if (event.data?.type === 'OPEN_DURMAH') {
-             const { mode: reqMode, autoMessage } = event.data.payload || {};
-              if (reqMode) setMode(reqMode);
-              setIsOpen(true);
-              if (autoMessage && typeof autoMessage === 'string' && signedIn) {
-                   setTimeout(() => {
-                       window.dispatchEvent(new CustomEvent('durmah:message', { 
-                           detail: { text: autoMessage, mode: reqMode }
-                       }));
-                   }, 500);
-              }
-         }
+      if (event.origin !== window.location.origin) return;
+      // Legacy support: if still receiving OPEN_DURMAH, forward to CustomEvent
+      if (event.data?.type === "OPEN_DURMAH") {
+        const { mode: reqMode, autoMessage } = event.data.payload || {};
+        if (reqMode) setMode(reqMode);
+        setIsOpen(true);
+        if (autoMessage && typeof autoMessage === "string" && signedIn) {
+          setTimeout(() => {
+            window.dispatchEvent(
+              new CustomEvent("durmah:message", {
+                detail: { text: autoMessage, mode: reqMode },
+              }),
+            );
+          }, 500);
+        }
+      }
     };
-    window.addEventListener('message', handleMessage);
-    return () => window.removeEventListener('message', handleMessage);
+    window.addEventListener("message", handleMessage);
+    return () => window.removeEventListener("message", handleMessage);
   }, [signedIn]);
 
   // NEW Phase 3: Listen for CustomEvent-based cross-component communication (e.g., from SmartNewsAgent)
   useEffect(() => {
     const handleDurmahOpen = () => {
-      console.log('[Durmah] Received durmah:open event');
+      console.log("[Durmah] Received durmah:open event");
       setIsOpen(true);
     };
 
     const handleDurmahMessage = (event: Event) => {
-      const customEvent = event as CustomEvent<{ text: string; mode?: 'chat' | 'study' }>;
+      const customEvent = event as CustomEvent<{
+        text: string;
+        mode?: "chat" | "study";
+      }>;
       const { text, mode: requestedMode } = customEvent.detail || {};
 
-      console.log('[Durmah] Received durmah:message event:', { text: text?.substring(0, 100), mode: requestedMode });
+      console.log("[Durmah] Received durmah:message event:", {
+        text: text?.substring(0, 100),
+        mode: requestedMode,
+      });
 
       if (!text || !signedIn) {
-        console.warn('[Durmah] Ignoring durmah:message - missing text or user not signed in');
+        console.warn(
+          "[Durmah] Ignoring durmah:message - missing text or user not signed in",
+        );
         return;
       }
 
       // 1. Set mode if requested
-      if (requestedMode && (requestedMode === 'chat' || requestedMode === 'study')) {
+      if (
+        requestedMode &&
+        (requestedMode === "chat" || requestedMode === "study")
+      ) {
         setMode(requestedMode);
       }
 
       // 2. Send message programmatically
       setTimeout(() => {
         if (isStreaming || voiceSessionActive) {
-          console.warn('[Durmah] Ignoring durmah:message - already streaming or in voice session');
+          console.warn(
+            "[Durmah] Ignoring durmah:message - already streaming or in voice session",
+          );
           return;
         }
 
@@ -615,7 +719,7 @@ export default function DurmahWidget() {
 
         (async () => {
           try {
-            await sendMessage(userText, 'text');
+            await sendMessage(userText, "text");
           } catch (err: any) {
             console.error("[Durmah] CustomEvent message send error:", err);
             toast.error("Failed to send message from external source");
@@ -627,13 +731,19 @@ export default function DurmahWidget() {
     };
 
     // Add listeners
-    window.addEventListener('durmah:open', handleDurmahOpen);
-    window.addEventListener('durmah:message', handleDurmahMessage as EventListener);
+    window.addEventListener("durmah:open", handleDurmahOpen);
+    window.addEventListener(
+      "durmah:message",
+      handleDurmahMessage as EventListener,
+    );
 
     // Cleanup
     return () => {
-      window.removeEventListener('durmah:open', handleDurmahOpen);
-      window.removeEventListener('durmah:message', handleDurmahMessage as EventListener);
+      window.removeEventListener("durmah:open", handleDurmahOpen);
+      window.removeEventListener(
+        "durmah:message",
+        handleDurmahMessage as EventListener,
+      );
     };
   }, [messages, mode, signedIn, isStreaming, voiceSessionActive]);
 
@@ -648,76 +758,101 @@ export default function DurmahWidget() {
     return () => window.clearInterval(interval);
   }, [contextPacket]);
 
+  // FIX: Use ref to track loading state to avoid dependency loop in useCallback
+  const contextLoadingRef = useRef(false);
+
   // NEW: Fetch Student Context from Phase 1 API
   const fetchStudentContext = useCallback(async () => {
-    if (!signedIn || contextLoading) return;
-    
+    if (!signedIn || contextLoadingRef.current || studentContextData) return;
+
+    contextLoadingRef.current = true;
     setContextLoading(true);
+
     try {
       // DETECT ROUTE and build query params
       const currentPath = router.pathname;
       const query = router.query;
       const params = new URLSearchParams();
-      
+
       // YAAG Week View
-      if (currentPath ===  '/year-at-a-glance/week' && typeof query.ws === 'string') {
-        params.set('focusDate', query.ws);
-        params.set('rangeDays', '7');
-        params.set('pageHint', 'yaag-week');
+      if (
+        currentPath === "/year-at-a-glance/week" &&
+        typeof query.ws === "string"
+      ) {
+        params.set("focusDate", query.ws);
+        params.set("rangeDays", "7");
+        params.set("pageHint", "yaag-week");
       }
-      // YAAG Month View  
-      else if (currentPath === '/year-at-a-glance/month' && typeof query.ym === 'string') {
-        const [year, month] = query.ym.split('-').map(Number);
+      // YAAG Month View
+      else if (
+        currentPath === "/year-at-a-glance/month" &&
+        typeof query.ym === "string"
+      ) {
+        const [year, month] = query.ym.split("-").map(Number);
         if (year && month) {
           const monthStart = new Date(year, month - 1, 1);
           const monthEnd = new Date(year, month, 0);
-          params.set('rangeStart', monthStart.toISOString().substring(0, 10));
-          params.set('rangeEnd', monthEnd.toISOString().substring(0, 10));
-          params.set('pageHint', 'yaag-month');
+          params.set("rangeStart", monthStart.toISOString().substring(0, 10));
+          params.set("rangeEnd", monthEnd.toISOString().substring(0, 10));
+          params.set("pageHint", "yaag-month");
         }
       }
       // Assignments Page
-      else if (currentPath === '/assignments' && typeof query.assignmentId === 'string') {
-        params.set('pageHint', 'assignments');
-        params.set('rangeDays', '14');
+      else if (
+        currentPath === "/assignments" &&
+        typeof query.assignmentId === "string"
+      ) {
+        params.set("pageHint", "assignments");
+        params.set("rangeDays", "14");
       }
       // Lecture Details Page
-      else if (currentPath.includes('/study/lectures/') || (query.id && (currentPath === '/study/lectures/[id]' || router.asPath.includes('/study/lectures/')))) {
-        const lectureId = typeof query.id === 'string' ? query.id : null;
+      else if (
+        currentPath.includes("/study/lectures/") ||
+        (query.id &&
+          (currentPath === "/study/lectures/[id]" ||
+            router.asPath.includes("/study/lectures/")))
+      ) {
+        const lectureId = typeof query.id === "string" ? query.id : null;
         if (lectureId) {
-          params.set('pageHint', 'lecture');
-          params.set('lectureId', lectureId);
-          params.set('rangeDays', '7'); // Short range for relevant nearby events
+          params.set("pageHint", "lecture");
+          params.set("lectureId", lectureId);
+          params.set("rangeDays", "7"); // Short range for relevant nearby events
         } else {
-             // Fallback if ID parsing fails
-             const today = new Date().toISOString().substring(0, 10);
-            params.set('focusDate', today);
-            params.set('rangeDays', '14');
-            params.set('pageHint', 'dashboard');
+          // Fallback if ID parsing fails
+          const today = new Date().toISOString().substring(0, 10);
+          params.set("focusDate", today);
+          params.set("rangeDays", "14");
+          params.set("pageHint", "dashboard");
         }
       }
       // Default: 14 days from today
       else {
         const today = new Date().toISOString().substring(0, 10);
-        params.set('focusDate', today);
-        params.set('rangeDays', '14');
-        params.set('pageHint', 'dashboard');
+        params.set("focusDate", today);
+        params.set("rangeDays", "14");
+        params.set("pageHint", "dashboard");
       }
-      
+
       const url = `/api/durmah/context?${params.toString()}`;
-      console.log('[Durmah] Fetching context with params:', params.toString());
-      
-      const res = await fetch(url);
+      console.log("[Durmah] Fetching context with params:", params.toString());
+
+      // USE fetchAuthed or standard fetch with HEADERS + TIMEOUT
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+      const res = await fetch(url, {
+        headers: { Accept: "application/json" },
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+
       if (res.ok) {
         const data: StudentContext = await res.json();
         setStudentContextData(data);
-        
-        console.log('[Durmah] Context loaded:', {
-          yaag: data.yaag ? `${Object.keys(data.yaag.itemsByDay).length} dates` : 'none',
-          assignments: data.assignments.total,
-          range: data.yaag ? `${data.yaag.rangeStart} to ${data.yaag.rangeEnd}` : 'none'
-        });
-        
+
+        console.log("[Durmah] Context loaded");
+
         // Generate proactive greeting ONCE per session
         if (!lastProactiveGreeting) {
           const greeting = generateProactiveGreeting(data);
@@ -726,18 +861,30 @@ export default function DurmahWidget() {
           }
         }
       } else {
-        console.error('Failed to fetch student context:', res.status);
+        console.error("Failed to fetch student context:", res.status);
       }
     } catch (error) {
-      console.error('Error fetching student context:', error);
+      console.error("Error fetching student context:", error);
     } finally {
+      contextLoadingRef.current = false;
       setContextLoading(false);
     }
-  }, [signedIn, contextLoading, lastProactiveGreeting, router.pathname, router.query]);
+  }, [
+    signedIn,
+    lastProactiveGreeting,
+    router.pathname,
+    router.query,
+    studentContextData,
+  ]); // Removed contextLoading
 
   // Fetch context when widget opens
   useEffect(() => {
-    if (isOpen && signedIn && !studentContextData) {
+    if (
+      isOpen &&
+      signedIn &&
+      !studentContextData &&
+      !contextLoadingRef.current
+    ) {
       fetchStudentContext();
     }
   }, [isOpen, signedIn, studentContextData, fetchStudentContext]);
@@ -745,10 +892,13 @@ export default function DurmahWidget() {
   // Refresh context periodically while widget is open (every 10 minutes)
   useEffect(() => {
     if (!isOpen || !signedIn) return;
-    
-    const interval = setInterval(() => {
-      fetchStudentContext();
-    }, 10 * 60 * 1000); // 10 minutes
+
+    const interval = setInterval(
+      () => {
+        fetchStudentContext();
+      },
+      10 * 60 * 1000,
+    ); // 10 minutes
 
     return () => clearInterval(interval);
   }, [isOpen, signedIn, fetchStudentContext]);
@@ -785,46 +935,48 @@ export default function DurmahWidget() {
         if (res.ok) {
           const data = await res.json();
           const ctx = data?.context as DurmahContextPacket | undefined;
-          
-          if (!cancelled && ctx) {
-             // Hook handles message loading now
-             if (ctx.lastSummary) {
-               setMemory({
-                 last_topic: 'continuation',
-                 last_message: ctx.lastSummary,
-                 last_seen_at: ctx.academic.localTimeISO,
-               });
-             }
-             setContextPacket(ctx);
 
-             if (process.env.NODE_ENV !== "production") {
-               console.log("[Durmah] Context loaded", {
-                 displayName: ctx.profile.displayName,
-                 yearGroup: ctx.profile.yearGroup,
-                 term: ctx.academic.term,
-                 weekOfTerm: ctx.academic.weekOfTerm,
-                 lastThreadId: ctx.threadId,
-               });
-             }
+          if (!cancelled && ctx) {
+            // Hook handles message loading now
+            if (ctx.lastSummary) {
+              setMemory({
+                last_topic: "continuation",
+                last_message: ctx.lastSummary,
+                last_seen_at: ctx.academic.localTimeISO,
+              });
+            }
+            setContextPacket(ctx);
+
+            if (process.env.NODE_ENV !== "production") {
+              console.log("[Durmah] Context loaded", {
+                displayName: ctx.profile.displayName,
+                yearGroup: ctx.profile.yearGroup,
+                term: ctx.academic.term,
+                weekOfTerm: ctx.academic.weekOfTerm,
+                lastThreadId: ctx.threadId,
+              });
+            }
           }
         }
       } catch (e) {
         console.error("Failed to fetch durmah context", e);
       }
-      
+
       if (!cancelled) {
         setReady(true);
       }
     })();
 
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [signedIn, isOpen]);
 
   // Set initial greeting once ready (context aware)
   useEffect(() => {
     if (!ready || !isOpen) return;
     if (messages.length > 0) return;
-    
+
     // PHASE 3 FIX: Re-enable "greet once per session" guard
     const greetKey = user?.id ? `durmah_greeted_${user.id}` : null;
     if (greetKey && sessionStorage.getItem(greetKey)) {
@@ -836,10 +988,11 @@ export default function DurmahWidget() {
     if (contextPacket?.recent?.lastMessages?.length) return;
 
     // Use proactive greeting from StudentContext if available, otherwise fallback
-    const greeting = lastProactiveGreeting || 
-                     (contextPacket ? buildContextGreeting(contextPacket) : null) ||
-                     preset?.welcomeMessage ||
-                     "Hey! I'm Durmah, your Durham Law study companion. What can I help with today?";
+    const greeting =
+      lastProactiveGreeting ||
+      (contextPacket ? buildContextGreeting(contextPacket) : null) ||
+      preset?.welcomeMessage ||
+      "Hey! I'm Durmah, your Durham Law study companion. What can I help with today?";
 
     // Mark as greeted for this session
     if (greetKey) sessionStorage.setItem(greetKey, "1");
@@ -847,7 +1000,7 @@ export default function DurmahWidget() {
     // Proactive greeting handled by hook (or manual send if absolutely needed)
     // Only send if history is empty
     if (unifiedMessages.length === 0) {
-        sendMessage(greeting, 'text').catch(console.error);
+      sendMessage(greeting, "text").catch(console.error);
     }
   }, [
     ready,
@@ -868,12 +1021,11 @@ export default function DurmahWidget() {
     }
   }, [authError]);
 
-
   // 3. Voice Hook - System prompt with FULL student context
   const systemPrompt = useMemo(() => {
     // 1. Core Identity & Ethics (Base)
     const basePrompt = buildDurmahSystemPrompt();
-    
+
     // 2. LISTEN FIRST Protocol (Critical Override)
     const listenFirstProtocol = `
 CRITICAL VOICE INSTRUCTIONS:
@@ -885,7 +1037,7 @@ CRITICAL VOICE INSTRUCTIONS:
 
     // 3. Mode-Specific Instructions
     let modeInstructions = "";
-    if (mode === 'chat') {
+    if (mode === "chat") {
       modeInstructions = `
 CURRENT MODE: CHAT (Conversational)
 - You are a friendly listener first.
@@ -908,7 +1060,7 @@ CURRENT MODE: STUDY (Tutor)
     // 4. Context Logic
     let contextBlock = "";
     if (studentContextData) {
-      if (mode === 'chat') {
+      if (mode === "chat") {
         // Minimal Context for Chat Mode (Prevent Hijacking)
         contextBlock = `
 MINIMAL CONTEXT (Chat Mode):
@@ -921,44 +1073,47 @@ Date: ${studentContextData.academic?.now?.nowText || studentContextData.student.
         contextBlock = buildDurmahContextBlock(studentContextData);
       }
     }
-    
+
     return `${listenFirstProtocol}\n\n${modeInstructions}\n\n${basePrompt}\n\n${contextBlock}`;
   }, [studentContextData, mode]);
 
-  const appendTranscriptTurn = useCallback(async (role: Msg["role"], text: string) => {
-    const normalizedText = normalizeTurnText(text);
-    if (!normalizedText) return;
+  const appendTranscriptTurn = useCallback(
+    async (role: Msg["role"], text: string) => {
+      const normalizedText = normalizeTurnText(text);
+      if (!normalizedText) return;
 
-    const ts = Date.now();
-    
-    // Log directly to unified chat (ephemeral by default)
-    await logMessage(
-        role === 'you' ? 'user' : 'assistant', 
-        normalizedText, 
-        'voice'
-    );
+      const ts = Date.now();
 
-    // Keep legacy callTranscript for Overlay if desired (or deprecate)
-    // We keep it for the "Live Transcript" view feature
-    setCallTranscript((prev) => {
-      // Fix undefined candidate error
-      const last = prev[prev.length - 1];
-      const lowered = normalizedText.toLowerCase();
+      // Log directly to unified chat (ephemeral by default)
+      await logMessage(
+        role === "you" ? "user" : "assistant",
+        normalizedText,
+        "voice",
+      );
 
-      if (
-        last &&
-        last.role === role &&
-        normalizeTurnText(last.text).toLowerCase() === lowered
-      ) {
-        return prev;
-      }
-      return [...prev, { role, text: normalizedText, ts }];
-    });
-    setVoiceSessionHadTurns(true);
-  }, [logMessage]);
+      // Keep legacy callTranscript for Overlay if desired (or deprecate)
+      // We keep it for the "Live Transcript" view feature
+      setCallTranscript((prev) => {
+        // Fix undefined candidate error
+        const last = prev[prev.length - 1];
+        const lowered = normalizedText.toLowerCase();
+
+        if (
+          last &&
+          last.role === role &&
+          normalizeTurnText(last.text).toLowerCase() === lowered
+        ) {
+          return prev;
+        }
+        return [...prev, { role, text: normalizedText, ts }];
+      });
+      setVoiceSessionHadTurns(true);
+    },
+    [logMessage],
+  );
 
   // Choose voice name (OpenAI Realtime)
-  const voiceName = preset?.openaiVoice || 'alloy';
+  const voiceName = preset?.openaiVoice || "alloy";
 
   // Pass selected realtime voice from the preset
   const {
@@ -968,7 +1123,7 @@ Date: ${studentContextData.academic?.now?.nowText || studentContextData.student.
     status,
     speaking,
     error: voiceError,
-    playVoicePreview // Imported from hook
+    playVoicePreview, // Imported from hook
   } = useVoiceHook({
     systemPrompt,
     voice: voiceName, // Use provider-specific voice
@@ -978,7 +1133,7 @@ Date: ${studentContextData.academic?.now?.nowText || studentContextData.student.
     onTurn: (turn) => {
       appendTranscriptTurn(
         turn.speaker === "user" ? "you" : "durmah",
-        turn.text
+        turn.text,
       );
     },
   });
@@ -1011,7 +1166,7 @@ Date: ${studentContextData.academic?.now?.nowText || studentContextData.student.
       contextTimeLabel ||
       formatContextDayTimeLabel(
         new Date(),
-        contextPacket.academic.timezone || "Europe/London"
+        contextPacket.academic.timezone || "Europe/London",
       );
     return buildContextChipText(contextPacket, time);
   }, [contextPacket, contextTimeLabel]);
@@ -1036,11 +1191,14 @@ Date: ${studentContextData.academic?.now?.nowText || studentContextData.student.
     function handleDurmahMessage(event: Event) {
       const customEvent = event as CustomEvent;
       const { text, mode: requestedMode } = customEvent.detail || {};
-      
+
       if (!text) return;
 
       // Set mode if specified
-      if (requestedMode && (requestedMode === 'chat' || requestedMode === 'study')) {
+      if (
+        requestedMode &&
+        (requestedMode === "chat" || requestedMode === "study")
+      ) {
         setMode(requestedMode);
       }
 
@@ -1055,15 +1213,14 @@ Date: ${studentContextData.academic?.now?.nowText || studentContextData.student.
       }, 200);
     }
 
-    window.addEventListener('durmah:open', handleDurmahOpen);
-    window.addEventListener('durmah:message', handleDurmahMessage);
+    window.addEventListener("durmah:open", handleDurmahOpen);
+    window.addEventListener("durmah:message", handleDurmahMessage);
 
     return () => {
-      window.removeEventListener('durmah:open', handleDurmahOpen);
-      window.removeEventListener('durmah:message', handleDurmahMessage);
+      window.removeEventListener("durmah:open", handleDurmahOpen);
+      window.removeEventListener("durmah:message", handleDurmahMessage);
     };
   }, [signedIn, isStreaming]);
-
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -1092,11 +1249,18 @@ Date: ${studentContextData.academic?.now?.nowText || studentContextData.student.
       setVoiceSessionActive(false);
     }
     prevListeningRef.current = isListening;
-  }, [isListening, voiceSessionActive, voiceSessionHadTurns, callTranscript.length]);
+  }, [
+    isListening,
+    voiceSessionActive,
+    voiceSessionHadTurns,
+    callTranscript.length,
+  ]);
 
   const chips = useMemo(() => {
-    if (studentContext.currentPhase === 'exams') return ["Revision tips", "Past papers", "Stress management"];
-    if (studentContext.currentPhase === 'induction_week') return ["Where is the library?", "How to reference", "Module choices"];
+    if (studentContext.currentPhase === "exams")
+      return ["Revision tips", "Past papers", "Stress management"];
+    if (studentContext.currentPhase === "induction_week")
+      return ["Where is the library?", "How to reference", "Module choices"];
     return ["Review this week", "Make a study plan", "Practice quiz"];
   }, [studentContext.currentPhase]);
 
@@ -1113,7 +1277,7 @@ Date: ${studentContextData.academic?.now?.nowText || studentContextData.student.
       setVoiceSessionEndedAt(null);
       setVoiceSessionStartedAt(new Date());
       setVoiceSessionId(createVoiceSessionId());
-      
+
       // TIMEZONE TRUTH: Refresh context before voice to get fresh NOW packet
       try {
         const res = await fetchAuthed("/api/durmah/context");
@@ -1121,13 +1285,16 @@ Date: ${studentContextData.academic?.now?.nowText || studentContextData.student.
           const data = await res.json();
           if (data) {
             setStudentContextData(data);
-            console.log("[DurmahVoice] NOW from server context:", data.academic?.now?.nowText || "missing");
+            console.log(
+              "[DurmahVoice] NOW from server context:",
+              data.academic?.now?.nowText || "missing",
+            );
           }
         }
       } catch (err) {
         console.warn("[DurmahVoice] Could not refresh context:", err);
       }
-      
+
       try {
         await startListening();
       } catch (err) {
@@ -1146,22 +1313,22 @@ Date: ${studentContextData.academic?.now?.nowText || studentContextData.student.
     setVoiceSessionEndedAt(new Date());
   }
 
-  const handlePreview = async (
-    voice_id: string,
-    e: React.MouseEvent
-  ) => {
+  const handlePreview = async (voice_id: string, e: React.MouseEvent) => {
     e.stopPropagation();
     if (isVoiceActive || previewingVoiceId === voice_id) return;
 
     setPreviewingVoiceId(voice_id);
     try {
       // Use the new Netlify function for preview
-      const response = await fetch('/.netlify/functions/voice-preview', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ voice_id, text: "Hi, I'm Durmah. Ready to study together?" })
+      const response = await fetch("/.netlify/functions/voice-preview", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          voice_id,
+          text: "Hi, I'm Durmah. Ready to study together?",
+        }),
       });
-      
+
       if (response.ok) {
         const blob = await response.blob();
         const url = URL.createObjectURL(blob);
@@ -1178,35 +1345,53 @@ Date: ${studentContextData.academic?.now?.nowText || studentContextData.student.
   const saveVoiceTranscript = async () => {
     const transcriptTurns = mergeDedupedTranscript(callTranscript);
     if (transcriptTurns.length > 0) {
-      const lastUser = [...transcriptTurns].reverse().find((m) => m.role === "you");
+      const lastUser = [...transcriptTurns]
+        .reverse()
+        .find((m) => m.role === "you");
       if (lastUser) {
         const topic = inferTopic(lastUser.text);
         try {
           const res = await fetchAuthed("/api/durmah/memory", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ last_topic: topic, last_message: lastUser.text }),
+            body: JSON.stringify({
+              last_topic: topic,
+              last_message: lastUser.text,
+            }),
           });
-          if (res.ok) setMemory((prev: any) => ({ ...prev, last_topic: topic, last_message: lastUser.text }));
-        } catch { }
+          if (res.ok)
+            setMemory((prev: any) => ({
+              ...prev,
+              last_topic: topic,
+              last_message: lastUser.text,
+            }));
+        } catch {}
       }
 
       // Instead of direct save, prepare payload and show folder picker
       const sessionStart = voiceSessionStartedAt ?? new Date();
       const sessionEnd = voiceSessionEndedAt ?? new Date();
-      const durationSeconds = Math.max(0, Math.round((sessionEnd.getTime() - sessionStart.getTime()) / 1000));
-      
+      const durationSeconds = Math.max(
+        0,
+        Math.round((sessionEnd.getTime() - sessionStart.getTime()) / 1000),
+      );
+
       const normalizedTranscript = await Promise.all(
         transcriptTurns.map(async (turn) => ({
           role: turn.role === "you" ? "you" : "durmah",
           text: await normalizeTranscriptLanguage(turn.text),
           timestamp: turn.ts,
-        }))
+        })),
       );
 
       const firstUserTurn = transcriptTurns.find((turn) => turn.role === "you");
-      const topic = firstUserTurn && firstUserTurn.text ? firstUserTurn.text.slice(0, 60) : "Durmah Voice Session";
-      const content_text = normalizedTranscript.map(t => `${t.role}: ${t.text}`).join('\n');
+      const topic =
+        firstUserTurn && firstUserTurn.text
+          ? firstUserTurn.text.slice(0, 60)
+          : "Durmah Voice Session";
+      const content_text = normalizedTranscript
+        .map((t) => `${t.role}: ${t.text}`)
+        .join("\n");
 
       setTranscriptForFolder({
         topic,
@@ -1216,10 +1401,10 @@ Date: ${studentContextData.academic?.now?.nowText || studentContextData.student.
         duration_seconds: durationSeconds,
         started_at: sessionStart.toISOString(),
         ended_at: sessionEnd.toISOString(),
-        source_type: 'voice_chat',
-        source_id: voiceSessionId
+        source_type: "voice_chat",
+        source_id: voiceSessionId,
       });
-      
+
       setShowFolderPicker(true);
     }
   };
@@ -1228,40 +1413,39 @@ Date: ${studentContextData.academic?.now?.nowText || studentContextData.student.
     if (!transcriptForFolder) return;
     setIsSavingTranscript(true);
     try {
-        const resp = await fetch('/api/transcripts/save', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                transcriptPayload: transcriptForFolder,
-                folderId
-            })
-        });
-        const json = await resp.json();
-        if (json.ok) {
-            toast.success("Transcript archived successfully!");
-            setIsSessionSaved(true);
-            localStorage.setItem('durmah:lastFolderId', folderId);
-            setShowFolderPicker(false);
-            setTranscriptForFolder(null);
-            
-            // Cleanup session
-            setShowVoiceTranscript(false);
-            setCallTranscript([]);
-            setVoiceSessionHadTurns(false);
-            setVoiceSessionActive(false);
-            setVoiceSessionId(null);
-            setVoiceSessionStartedAt(null);
-            setVoiceSessionEndedAt(null);
-        } else {
-            toast.error(json.error || "Failed to archive transcript");
-        }
+      const resp = await fetch("/api/transcripts/save", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          transcriptPayload: transcriptForFolder,
+          folderId,
+        }),
+      });
+      const json = await resp.json();
+      if (json.ok) {
+        toast.success("Transcript archived successfully!");
+        setIsSessionSaved(true);
+        localStorage.setItem("durmah:lastFolderId", folderId);
+        setShowFolderPicker(false);
+        setTranscriptForFolder(null);
+
+        // Cleanup session
+        setShowVoiceTranscript(false);
+        setCallTranscript([]);
+        setVoiceSessionHadTurns(false);
+        setVoiceSessionActive(false);
+        setVoiceSessionId(null);
+        setVoiceSessionStartedAt(null);
+        setVoiceSessionEndedAt(null);
+      } else {
+        toast.error(json.error || "Failed to archive transcript");
+      }
     } catch (err) {
-        toast.error("Network error saving transcript");
+      toast.error("Network error saving transcript");
     } finally {
-        setIsSavingTranscript(false);
+      setIsSavingTranscript(false);
     }
   };
-
 
   const discardVoiceTranscript = () => {
     setShowVoiceTranscript(false);
@@ -1272,11 +1456,11 @@ Date: ${studentContextData.academic?.now?.nowText || studentContextData.student.
     setVoiceSessionStartedAt(null);
     setVoiceSessionEndedAt(null);
   };
-  
+
   // ----------------------------
   // SESSION MANAGEMENT HANDLERS
   // ----------------------------
-  
+
   /**
    * Handle widget close: prompt to save/discard if there are messages and session not yet saved
    */
@@ -1284,7 +1468,7 @@ Date: ${studentContextData.academic?.now?.nowText || studentContextData.student.
     if (messages.length > 0 && !isSessionSaved) {
       // Show save modal
       setShowSaveModal(true);
-   } else {
+    } else {
       // No messages or already saved, just minimize
       setIsOpen(false);
     }
@@ -1334,48 +1518,51 @@ Date: ${studentContextData.academic?.now?.nowText || studentContextData.student.
     setIsSelectionMode(true);
     // User will manually save selected messages, then close
   };
-  
+
   // CLEAR CHAT - Clears entire conversation history for this SPECIFIC TOPIC/WIDGET
   const clearChat = async () => {
     // We only clear the current conversation scope (e.g. current lecture, current assignment, or global widget thread)
     // This preserves "Saved Transcripts" in the library that reside in other threads or are archived elsewhere.
-    const warning = `Are you sure you want to clear your chat history for this ${scope === 'global' ? 'widget' : scope}? \n\nAll messages currently visible here will be deleted. Your saved highlights in the separate Library will remain safe.`;
-    
+    const warning = `Are you sure you want to clear your chat history for this ${scope === "global" ? "widget" : scope}? \n\nAll messages currently visible here will be deleted. Your saved highlights in the separate Library will remain safe.`;
+
     if (!confirm(warning)) return;
-    
+
     setCallTranscript([]);
     // Clearing local state via hook
-    // Note: useDurmahChat's clearUnsaved only clears UN-saved. 
+    // Note: useDurmahChat's clearUnsaved only clears UN-saved.
     // We want a full clear, so we'll do it via DB and then reload/reset.
-    
+
     if (user?.id && supabaseClient && conversationId) {
       try {
         const { error } = await supabaseClient
-          .from('durmah_messages')
+          .from("durmah_messages")
           .delete()
-          .eq('conversation_id', conversationId); // CRITICAL: Scoped to current thread only
-          
+          .eq("conversation_id", conversationId); // CRITICAL: Scoped to current thread only
+
         if (error) throw error;
-        
-        toast.success('Chat history cleared');
+
+        toast.success("Chat history cleared");
         // Force a refresh of the messages in the hook
-        if (typeof refetchMessages === 'function') {
-           refetchMessages();
+        if (typeof refetchMessages === "function") {
+          refetchMessages();
         } else {
-           // Fallback: clear local state manually if refetch not enough
-           window.location.reload(); 
+          // Fallback: clear local state manually if refetch not enough
+          window.location.reload();
         }
       } catch (err) {
-        console.error('[DurmahWidget] Failed to clear messages:', err);
-        toast.error('Failed to clear chat');
+        console.error("[DurmahWidget] Failed to clear messages:", err);
+        toast.error("Failed to clear chat");
       }
     } else {
-      console.warn('[DurmahWidget] Clear chat failed: missing user, client, or conversationId', { 
-        userId: user?.id, 
-        hasClient: !!supabaseClient, 
-        conversationId 
-      });
-      toast.error('Unable to clear chat - check connection');
+      console.warn(
+        "[DurmahWidget] Clear chat failed: missing user, client, or conversationId",
+        {
+          userId: user?.id,
+          hasClient: !!supabaseClient,
+          conversationId,
+        },
+      );
+      toast.error("Unable to clear chat - check connection");
     }
   };
 
@@ -1388,9 +1575,12 @@ Date: ${studentContextData.academic?.now?.nowText || studentContextData.student.
     }
 
     try {
-      const { data, error } = await supabaseClient.rpc('seed_timetable_events_v1', {
-        mode: 'epiphany2026'
-      });
+      const { data, error } = await supabaseClient.rpc(
+        "seed_timetable_events_v1",
+        {
+          mode: "epiphany2026",
+        },
+      );
 
       if (error) {
         console.error("[SeedTimetable] RPC error:", error);
@@ -1441,7 +1631,9 @@ Date: ${studentContextData.academic?.now?.nowText || studentContextData.student.
 
     try {
       // First clear
-      const { data: cleared, error: clearError } = await supabaseClient.rpc('clear_timetable_events_v1');
+      const { data: cleared, error: clearError } = await supabaseClient.rpc(
+        "clear_timetable_events_v1",
+      );
 
       if (clearError) {
         console.error("[ResetTimetable] Clear error:", clearError);
@@ -1452,9 +1644,12 @@ Date: ${studentContextData.academic?.now?.nowText || studentContextData.student.
       console.log(`[ResetTimetable] Cleared ${cleared} events`);
 
       // Then seed
-      const { data: seeded, error: seedError } = await supabaseClient.rpc('seed_timetable_events_v1', {
-        mode: 'epiphany2026'
-      });
+      const { data: seeded, error: seedError } = await supabaseClient.rpc(
+        "seed_timetable_events_v1",
+        {
+          mode: "epiphany2026",
+        },
+      );
 
       if (seedError) {
         console.error("[ResetTimetable] Seed error:", seedError);
@@ -1495,7 +1690,6 @@ Date: ${studentContextData.academic?.now?.nowText || studentContextData.student.
     }
   };
 
-
   // ----------------------------
   // TEXT CHAT SEND
   // ----------------------------
@@ -1503,7 +1697,7 @@ Date: ${studentContextData.academic?.now?.nowText || studentContextData.student.
     if (!signedIn || !input.trim() || isStreaming || isVoiceActive) return;
 
     // Auto-switch to session view if in saved view
-    if (viewMode !== 'session') setViewMode('session');
+    if (viewMode !== "session") setViewMode("session");
 
     const userText = input.trim();
     let enrichedMessage = userText; // Initialize with userText
@@ -1512,31 +1706,49 @@ Date: ${studentContextData.academic?.now?.nowText || studentContextData.student.
     // ONBOARDING SEARCH INTEGRATION
     // ----------------------------
     const helpKeywords = [
-      'how do i', 'how to', 'where do i', 'where can i',
-      'sync', 'timetable', 'blackboard', 'panopto', 
-      'assignment', 'upload', 'import', 'download',
-      'find', 'access', 'connect', 'enrol'
+      "how do i",
+      "how to",
+      "where do i",
+      "where can i",
+      "sync",
+      "timetable",
+      "blackboard",
+      "panopto",
+      "assignment",
+      "upload",
+      "import",
+      "download",
+      "find",
+      "access",
+      "connect",
+      "enrol",
     ];
     const lowerMessage = userText.toLowerCase();
-    const isHelpQuery = helpKeywords.some(keyword => lowerMessage.includes(keyword));
+    const isHelpQuery = helpKeywords.some((keyword) =>
+      lowerMessage.includes(keyword),
+    );
 
     if (isHelpQuery) {
       try {
-        const searchRes = await fetchAuthed('/api/durmah/onboarding-search', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ query: userText, limit: 3 })
+        const searchRes = await fetchAuthed("/api/durmah/onboarding-search", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ query: userText, limit: 3 }),
         });
 
         if (searchRes.ok) {
           const { results } = await searchRes.json();
           if (results && results.length > 0) {
-            const guidesContext = results.map((guide: any, i: number) => `
+            const guidesContext = results
+              .map(
+                (guide: any, i: number) => `
 Guide ${i + 1}: ${guide.title}
 Summary: ${guide.summary}
 Content (excerpt): ${guide.content_markdown.substring(0, 800)}
 Link: /onboarding?guide=${guide.slug}
-`).join('\n---\n');
+`,
+              )
+              .join("\n---\n");
 
             enrichedMessage = `[SYSTEM CONTEXT: You have access to ${results.length} relevant help guide(s) from the MyDurhamLaw onboarding knowledge base. Use these to answer the user's question with exact step-by-step instructions. Include a link to the full guide.
 
@@ -1553,26 +1765,26 @@ User question: ${userText}`;
           }
         }
       } catch (error) {
-        console.error('[DurmahWidget] Onboarding search failed:', error);
+        console.error("[DurmahWidget] Onboarding search failed:", error);
       }
     }
 
     setInput("");
-    
+
     // Auto-focus immediately after clearing
     requestAnimationFrame(() => textareaRef.current?.focus());
 
     // Auto-resize textarea back to default
     if (textareaRef.current) {
-        textareaRef.current.style.height = '46px';
+      textareaRef.current.style.height = "46px";
     }
 
     try {
       // Unified Send
-      await sendMessage(enrichedMessage, 'text');
+      await sendMessage(enrichedMessage, "text");
     } catch (err: any) {
-        console.error(err);
-        toast.error("Failed to send");
+      console.error(err);
+      toast.error("Failed to send");
     } finally {
       // Ensure focus is regained after assistant reply starts/completes
       requestAnimationFrame(() => textareaRef.current?.focus());
@@ -1588,40 +1800,56 @@ User question: ${userText}`;
   if (isOpen && !signedIn) {
     return (
       <div className="fixed bottom-24 right-6 z-[45] flex w-full max-w-sm flex-col overflow-hidden rounded-3xl border border-violet-100 bg-white shadow-2xl animate-in slide-in-from-bottom-5 fade-in duration-300">
-         <div className="bg-gradient-to-r from-violet-600 to-indigo-600 px-5 py-4 flex items-center justify-between text-white">
-            <h3 className="font-bold text-lg">Unlock Your Legal Eagle Buddy</h3>
-            <button onClick={() => setIsOpen(false)} className="p-1 rounded-full hover:bg-white/20">
-               <X size={20} />
-            </button>
-         </div>
-         
-         <div className="p-8 text-center flex flex-col items-center">
-             <div className="w-20 h-20 mb-6 flex items-center justify-center animate-in fade-in zoom-in duration-700">
-                <Image 
-                  src="/assets/mascots/quiz-me-bunny-96.webp"
-                  alt="Durmah Mascot"
-                  width={80}
-                  height={80}
-                  className="object-contain"
-                />
-             </div>
-             <div className="space-y-1 mb-8">
-               <p className="text-gray-800 font-bold">Talk through legal concepts.</p>
-               <p className="text-gray-800 font-bold">Practice arguments out loud.</p>
-               <p className="text-gray-800 font-bold">Think like a Durham lawyer - with guidance.</p>
-             </div>
-             <p className="text-[11px] text-gray-400 mb-4 font-medium uppercase tracking-wider">
-               Log in or start a free trial to speak with Durmah, your personal Durham Law study mentor.
-             </p>
-             <div className="flex flex-col gap-3 w-full">
-                <Link href="/login" className="w-full py-3 bg-violet-600 text-white rounded-xl font-bold hover:bg-violet-700 transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2">
-                  Log In
-                </Link>
-                <Link href="/signup" className="w-full py-3 bg-white text-violet-600 border border-violet-200 rounded-xl font-bold hover:bg-violet-50 transition-all">
-                  Start Free Trial
-                </Link>
-             </div>
-         </div>
+        <div className="bg-gradient-to-r from-violet-600 to-indigo-600 px-5 py-4 flex items-center justify-between text-white">
+          <h3 className="font-bold text-lg">Unlock Your Legal Eagle Buddy</h3>
+          <button
+            onClick={() => setIsOpen(false)}
+            className="p-1 rounded-full hover:bg-white/20"
+          >
+            <X size={20} />
+          </button>
+        </div>
+
+        <div className="p-8 text-center flex flex-col items-center">
+          <div className="w-20 h-20 mb-6 flex items-center justify-center animate-in fade-in zoom-in duration-700">
+            <Image
+              src="/assets/mascots/quiz-me-bunny-96.webp"
+              alt="Durmah Mascot"
+              width={80}
+              height={80}
+              className="object-contain"
+            />
+          </div>
+          <div className="space-y-1 mb-8">
+            <p className="text-gray-800 font-bold">
+              Talk through legal concepts.
+            </p>
+            <p className="text-gray-800 font-bold">
+              Practice arguments out loud.
+            </p>
+            <p className="text-gray-800 font-bold">
+              Think like a Durham lawyer - with guidance.
+            </p>
+          </div>
+          <p className="text-[11px] text-gray-400 mb-4 font-medium uppercase tracking-wider">
+            Log in or start a free trial to speak with Durmah, your personal
+            Durham Law study mentor.
+          </p>
+          <div className="flex flex-col gap-3 w-full">
+            <Link
+              href="/login"
+              className="w-full py-3 bg-violet-600 text-white rounded-xl font-bold hover:bg-violet-700 transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2"
+            >
+              Log In
+            </Link>
+            <Link
+              href="/signup"
+              className="w-full py-3 bg-white text-violet-600 border border-violet-200 rounded-xl font-bold hover:bg-violet-50 transition-all"
+            >
+              Start Free Trial
+            </Link>
+          </div>
+        </div>
       </div>
     );
   }
@@ -1633,8 +1861,12 @@ User question: ${userText}`;
         {/* Tooltip */}
         <div className="absolute right-full mr-4 top-1/2 -translate-y-1/2 w-max opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none translate-x-2 group-hover:translate-x-0">
           <div className="bg-gray-900/90 backdrop-blur-sm text-white text-xs py-2.5 px-4 rounded-xl shadow-xl border border-white/10">
-            <div className="font-bold mb-0.5 text-violet-200">Durmah - Your Legal Eagle Buddy</div>
-            <div className="text-gray-300">I'm always here to help you study.</div>
+            <div className="font-bold mb-0.5 text-violet-200">
+              Durmah - Your Legal Eagle Buddy
+            </div>
+            <div className="text-gray-300">
+              I'm always here to help you study.
+            </div>
           </div>
           {/* Arrow */}
           <div className="absolute top-1/2 -translate-y-1/2 -right-1.5 w-3 h-3 bg-gray-900/90 rotate-45 border-t border-r border-white/10"></div>
@@ -1643,22 +1875,24 @@ User question: ${userText}`;
         <button
           onClick={() => setIsOpen(true)}
           className={`flex items-center gap-3 pl-2 pr-5 py-2 rounded-full shadow-xl backdrop-blur-md transition-all duration-300 hover:-translate-y-1 hover:ring-2 hover:ring-violet-400/50 ${
-            isVoiceActive 
-              ? "bg-gradient-to-r from-red-500 to-pink-600 animate-pulse text-white" 
+            isVoiceActive
+              ? "bg-gradient-to-r from-red-500 to-pink-600 animate-pulse text-white"
               : "bg-gradient-to-r from-violet-600 to-indigo-600 text-white"
           }`}
         >
           {/* Icon Circle */}
           <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center backdrop-blur-sm shadow-inner">
-             <span className="font-serif text-xl font-bold italic">D</span>
-             {isVoiceActive && (
-               <span className="absolute inset-0 rounded-full border-2 border-white opacity-50 animate-ping"></span>
-             )}
+            <span className="font-serif text-xl font-bold italic">D</span>
+            {isVoiceActive && (
+              <span className="absolute inset-0 rounded-full border-2 border-white opacity-50 animate-ping"></span>
+            )}
           </div>
-          
+
           <div className="flex flex-col items-start">
-             <span className="font-bold text-sm leading-tight">Durmah</span>
-             <span className="text-[10px] text-violet-100 font-medium">Your Legal Eagle Buddy</span>
+            <span className="font-bold text-sm leading-tight">Durmah</span>
+            <span className="text-[10px] text-violet-100 font-medium">
+              Your Legal Eagle Buddy
+            </span>
           </div>
         </button>
       </div>
@@ -1667,16 +1901,22 @@ User question: ${userText}`;
 
   // 3. Open Chat Widget (Logged In)
   return (
-    <div 
+    <div
       className="fixed bottom-0 left-0 right-0 sm:left-auto sm:right-6 sm:bottom-24 z-[45] flex flex-col w-full sm:max-w-none h-[450px] max-h-[85vh] sm:max-h-[90vh] overflow-visible rounded-t-3xl sm:rounded-3xl border-t sm:border border-violet-100 bg-white shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.2)] sm:shadow-2xl animate-in slide-in-from-bottom-full sm:slide-in-from-bottom-10 fade-in duration-300"
       style={{
         // Desktop only: use state-controlled dimensions
-        width: typeof window !== 'undefined' && window.innerWidth >= 640 ? `${widgetSize.width}px` : undefined,
-        height: typeof window !== 'undefined' && window.innerWidth >= 640 ? `${widgetSize.height}px` : undefined,
+        width:
+          typeof window !== "undefined" && window.innerWidth >= 640
+            ? `${widgetSize.width}px`
+            : undefined,
+        height:
+          typeof window !== "undefined" && window.innerWidth >= 640
+            ? `${widgetSize.height}px`
+            : undefined,
       }}
     >
       {/* Resize Handle - Desktop Only (top-left corner) */}
-      <div 
+      <div
         className="hidden sm:flex absolute top-0 left-0 w-6 h-6 cursor-nw-resize items-center justify-center z-50 group"
         onMouseDown={handleResizeStart}
         onTouchStart={handleResizeStart}
@@ -1688,95 +1928,124 @@ User question: ${userText}`;
       </div>
 
       {/* Premium Header Ribbon */}
-      <header className={`relative flex-none flex items-center justify-between px-5 py-4 text-white shadow-md z-30 transition-colors duration-300 ${isSelectionMode ? 'bg-[#374151]' : 'bg-gradient-to-r from-violet-600 via-indigo-600 to-violet-700'}`}>
-        
+      <header
+        className={`relative flex-none flex items-center justify-between px-5 py-4 text-white shadow-md z-30 transition-colors duration-300 ${isSelectionMode ? "bg-[#374151]" : "bg-gradient-to-r from-violet-600 via-indigo-600 to-violet-700"}`}
+      >
         {isSelectionMode ? (
-             <div className="flex items-center gap-2 w-full">
-                 <button onClick={() => { setIsSelectionMode(false); setSelectedIds(new Set()); }} className="hover:bg-white/10 p-1 rounded">
-                    <X className="w-5 h-5 text-white" />
-                 </button>
-                 
-                 {/* Select All / Deselect All Checkbox */}
-                 <button 
-                    onClick={() => {
-                        if (selectedIds.size === messages.length && messages.length > 0) {
-                            deselectAllMessages();
-                        } else {
-                            selectAllMessages();
-                        }
-                    }}
-                    className="p-1 hover:bg-white/10 rounded"
-                    title={selectedIds.size === messages.length ? "Deselect all" : "Select all"}
-                 >
-                    {selectedIds.size === messages.length && messages.length > 0 ? 
-                        <CheckSquare className="w-5 h-5 text-green-400" /> : 
-                        <Square className="w-5 h-5 text-white/60" />
-                    }
-                 </button>
-                 
-                 <span className="font-bold text-sm flex-1">{selectedIds.size} selected</span>
-                 
-                 {/* Save Selected */}
-                 <button onClick={() => handleManageAction('save')} 
-                        disabled={selectedIds.size === 0}
-                        className={`flex items-center gap-1 px-3 py-1.5 rounded text-xs font-bold transition-colors shadow-sm ${selectedIds.size === 0 ? 'bg-gray-500 cursor-not-allowed' : 'bg-green-500 hover:bg-green-600'}`}
-                        title="Save selected messages to your notes.">
-                    <Save className="w-3 h-3" /> Save
-                 </button>
-                 
-                 {/* Unsave Selected */}
-                 <button onClick={() => handleManageAction('unsave')} 
-                        disabled={selectedIds.size === 0}
-                        className={`flex items-center gap-1 px-3 py-1.5 rounded text-xs font-bold transition-colors shadow-sm ${selectedIds.size === 0 ? 'bg-gray-500 cursor-not-allowed' : 'bg-amber-500 hover:bg-amber-600'}`}
-                        title="Remove selected messages from saved notes.">
-                    <BookmarkX className="w-3 h-3" /> Unsave
-                 </button>
-                 
-                 {/* Clear Unsaved (Contextual) */}
-                 <button onClick={() => handleManageAction('clear_unsaved')} 
-                        className="flex items-center gap-1 bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded text-xs font-bold transition-colors border border-white/10"
-                        title="Remove temporary messages from this session.">
-                    <Trash2 className="w-3 h-3" /> Clear
-                 </button>
-             </div>
+          <div className="flex items-center gap-2 w-full">
+            <button
+              onClick={() => {
+                setIsSelectionMode(false);
+                setSelectedIds(new Set());
+              }}
+              className="hover:bg-white/10 p-1 rounded"
+            >
+              <X className="w-5 h-5 text-white" />
+            </button>
+
+            {/* Select All / Deselect All Checkbox */}
+            <button
+              onClick={() => {
+                if (
+                  selectedIds.size === messages.length &&
+                  messages.length > 0
+                ) {
+                  deselectAllMessages();
+                } else {
+                  selectAllMessages();
+                }
+              }}
+              className="p-1 hover:bg-white/10 rounded"
+              title={
+                selectedIds.size === messages.length
+                  ? "Deselect all"
+                  : "Select all"
+              }
+            >
+              {selectedIds.size === messages.length && messages.length > 0 ? (
+                <CheckSquare className="w-5 h-5 text-green-400" />
+              ) : (
+                <Square className="w-5 h-5 text-white/60" />
+              )}
+            </button>
+
+            <span className="font-bold text-sm flex-1">
+              {selectedIds.size} selected
+            </span>
+
+            {/* Save Selected */}
+            <button
+              onClick={() => handleManageAction("save")}
+              disabled={selectedIds.size === 0}
+              className={`flex items-center gap-1 px-3 py-1.5 rounded text-xs font-bold transition-colors shadow-sm ${selectedIds.size === 0 ? "bg-gray-500 cursor-not-allowed" : "bg-green-500 hover:bg-green-600"}`}
+              title="Save selected messages to your notes."
+            >
+              <Save className="w-3 h-3" /> Save
+            </button>
+
+            {/* Unsave Selected */}
+            <button
+              onClick={() => handleManageAction("unsave")}
+              disabled={selectedIds.size === 0}
+              className={`flex items-center gap-1 px-3 py-1.5 rounded text-xs font-bold transition-colors shadow-sm ${selectedIds.size === 0 ? "bg-gray-500 cursor-not-allowed" : "bg-amber-500 hover:bg-amber-600"}`}
+              title="Remove selected messages from saved notes."
+            >
+              <BookmarkX className="w-3 h-3" /> Unsave
+            </button>
+
+            {/* Clear Unsaved (Contextual) */}
+            <button
+              onClick={() => handleManageAction("clear_unsaved")}
+              className="flex items-center gap-1 bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded text-xs font-bold transition-colors border border-white/10"
+              title="Remove temporary messages from this session."
+            >
+              <Trash2 className="w-3 h-3" /> Clear
+            </button>
+          </div>
         ) : (
-            <>
-                <div className="flex flex-col">
-                  <div className="font-bold text-lg flex items-center gap-2">
-                    Durmah
-                    <span className="bg-white/20 backdrop-blur-sm rounded-full text-[10px] px-2 py-0.5 font-medium tracking-wide">BETA</span>
-                  </div>
-                  <span className="text-xs text-violet-100 font-medium">Your Legal Mentor</span>
-                  
-                  {contextChipText && (
-                    <div className="mt-1 inline-flex self-start items-center rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[11px] font-medium text-white/70 backdrop-blur-sm">
-                      {contextChipText}
-                    </div>
-                  )}
+          <>
+            <div className="flex flex-col">
+              <div className="font-bold text-lg flex items-center gap-2">
+                Durmah
+                <span className="bg-white/20 backdrop-blur-sm rounded-full text-[10px] px-2 py-0.5 font-medium tracking-wide">
+                  BETA
+                </span>
+              </div>
+              <span className="text-xs text-violet-100 font-medium">
+                Your Legal Mentor
+              </span>
 
-                  {/* Select Messages Button Only - No Confusing Toggle */}
-                  {messages.length > 0 && (
-                    <div className="mt-2">
-                      <button 
-                          onClick={(e) => { e.stopPropagation(); setIsSelectionMode(true); }}
-                          className="bg-black/20 hover:bg-white/20 px-3 py-1.5 rounded-lg text-xs flex items-center gap-2 transition-colors border border-white/10 backdrop-blur-sm text-violet-100"
-                          title="Select messages to save"
-                      >
-                          <CheckSquare className="w-4 h-4" />
-                          <span className="font-medium">Select Messages</span>
-                      </button>
-                    </div>
-                  )}
-
-                  {showVoiceStatus && (
-                    <span className={`text-[10px] font-medium ${voiceStatusClass}`}>
-                      {voiceStatusLabel}
-                    </span>
-                  )}
+              {contextChipText && (
+                <div className="mt-1 inline-flex self-start items-center rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[11px] font-medium text-white/70 backdrop-blur-sm">
+                  {contextChipText}
                 </div>
-            </>
-        )}
+              )}
 
+              {/* Select Messages Button Only - No Confusing Toggle */}
+              {messages.length > 0 && (
+                <div className="mt-2">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIsSelectionMode(true);
+                    }}
+                    className="bg-black/20 hover:bg-white/20 px-3 py-1.5 rounded-lg text-xs flex items-center gap-2 transition-colors border border-white/10 backdrop-blur-sm text-violet-100"
+                    title="Select messages to save"
+                  >
+                    <CheckSquare className="w-4 h-4" />
+                    <span className="font-medium">Select Messages</span>
+                  </button>
+                </div>
+              )}
+
+              {showVoiceStatus && (
+                <span className={`text-[10px] font-medium ${voiceStatusClass}`}>
+                  {voiceStatusLabel}
+                </span>
+              )}
+            </div>
+          </>
+        )}
 
         {/* Right side header controls */}
         <div className="flex items-center gap-2">
@@ -1790,7 +2059,7 @@ User question: ${userText}`;
               <Minimize2 size={16} />
             </button>
           )}
-          
+
           <div className="relative" ref={headerMenuRef}>
             <button
               onClick={() => setShowHeaderMenu((prev) => !prev)}
@@ -1871,8 +2140,8 @@ User question: ${userText}`;
           <button
             onClick={toggleVoice}
             className={`flex items-center gap-2 px-3 py-2 rounded-full transition-all duration-300 ${
-              isVoiceActive 
-                ? "bg-red-500 text-white shadow-lg scale-110" 
+              isVoiceActive
+                ? "bg-red-500 text-white shadow-lg scale-110"
                 : "bg-white/20 text-white hover:bg-white/30"
             }`}
             title={isVoiceActive ? "End voice chat" : "Start voice chat"}
@@ -1914,140 +2183,164 @@ User question: ${userText}`;
       {showSettings && (
         <div className="absolute inset-0 z-40 bg-gray-50/95 backdrop-blur-xl flex flex-col animate-in fade-in slide-in-from-bottom-4">
           <div className="flex justify-between items-center px-6 py-4 border-b border-gray-200 bg-white/50">
-             <div>
-                <h3 className="font-bold text-lg text-gray-800">Voice Settings</h3>
-                <p className="text-xs text-gray-500">Customize your Durmah experience</p>
-             </div>
-            <button onClick={() => setShowSettings(false)} className="p-2 rounded-full hover:bg-gray-200 text-gray-500">
+            <div>
+              <h3 className="font-bold text-lg text-gray-800">
+                Voice Settings
+              </h3>
+              <p className="text-xs text-gray-500">
+                Customize your Durmah experience
+              </p>
+            </div>
+            <button
+              onClick={() => setShowSettings(false)}
+              className="p-2 rounded-full hover:bg-gray-200 text-gray-500"
+            >
               <X size={20} />
             </button>
           </div>
-          
+
           <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
-              {/* 1. Delivery Style Section */}
-              <div className="mb-6">
-                 <h4 className="text-xs font-black uppercase tracking-widest text-gray-400 mb-3 px-1">Delivery Style</h4>
-                 <div className="grid grid-cols-2 gap-2">
-                    {DELIVERY_STYLES.map((style) => (
-                      <button
-                        key={style.id}
-                        onClick={() => updateSettings({ deliveryStyleId: style.id })}
-                        className={`px-3 py-2 rounded-xl text-xs font-semibold border transition-all ${
-                          deliveryStyleId === style.id 
-                            ? "bg-violet-600 border-violet-600 text-white shadow-md"
-                            : "bg-white border-gray-200 text-gray-600 hover:border-violet-300"
-                        }`}
-                      >
-                        {style.label}
-                      </button>
-                    ))}
-                 </div>
+            {/* 1. Delivery Style Section */}
+            <div className="mb-6">
+              <h4 className="text-xs font-black uppercase tracking-widest text-gray-400 mb-3 px-1">
+                Delivery Style
+              </h4>
+              <div className="grid grid-cols-2 gap-2">
+                {DELIVERY_STYLES.map((style) => (
+                  <button
+                    key={style.id}
+                    onClick={() =>
+                      updateSettings({ deliveryStyleId: style.id })
+                    }
+                    className={`px-3 py-2 rounded-xl text-xs font-semibold border transition-all ${
+                      deliveryStyleId === style.id
+                        ? "bg-violet-600 border-violet-600 text-white shadow-md"
+                        : "bg-white border-gray-200 text-gray-600 hover:border-violet-300"
+                    }`}
+                  >
+                    {style.label}
+                  </button>
+                ))}
               </div>
+            </div>
 
-              {/* 2. Speed Control Section */}
-              <div className="mb-8">
-                 <div className="flex items-center justify-between mb-3 px-1">
-                    <h4 className="text-xs font-black uppercase tracking-widest text-gray-400">Speech Speed</h4>
-                    <span className="text-xs font-bold text-violet-600 bg-violet-50 px-2 py-0.5 rounded-full">
-                      {SPEEDS.find(s => s.value === speed)?.label || 'Normal'} ({speed}x)
-                    </span>
-                 </div>
-                 <div className="flex gap-2">
-                    {SPEEDS.map((s) => (
-                      <button
-                        key={s.value}
-                        onClick={() => updateSettings({ speed: s.value })}
-                        className={`flex-1 py-2 rounded-lg text-xs font-bold border transition-all ${
-                          speed === s.value
-                            ? "bg-violet-100 border-violet-500 text-violet-700"
-                            : "bg-white border-gray-200 text-gray-500 hover:border-violet-200"
-                        }`}
-                      >
-                        {s.value}x
-                      </button>
-                    ))}
-                 </div>
+            {/* 2. Speed Control Section */}
+            <div className="mb-8">
+              <div className="flex items-center justify-between mb-3 px-1">
+                <h4 className="text-xs font-black uppercase tracking-widest text-gray-400">
+                  Speech Speed
+                </h4>
+                <span className="text-xs font-bold text-violet-600 bg-violet-50 px-2 py-0.5 rounded-full">
+                  {SPEEDS.find((s) => s.value === speed)?.label || "Normal"} (
+                  {speed}x)
+                </span>
               </div>
+              <div className="flex gap-2">
+                {SPEEDS.map((s) => (
+                  <button
+                    key={s.value}
+                    onClick={() => updateSettings({ speed: s.value })}
+                    className={`flex-1 py-2 rounded-lg text-xs font-bold border transition-all ${
+                      speed === s.value
+                        ? "bg-violet-100 border-violet-500 text-violet-700"
+                        : "bg-white border-gray-200 text-gray-500 hover:border-violet-200"
+                    }`}
+                  >
+                    {s.value}x
+                  </button>
+                ))}
+              </div>
+            </div>
 
-              {/* 3. Voice Selection Section */}
-              <h4 className="text-xs font-black uppercase tracking-widest text-gray-400 mb-3 px-1">Voice Catalog</h4>
-              <div className="grid grid-cols-1 gap-4 pb-4">
-                {availablePresets.map((p) => {
-                  const isSelected = voiceId === p.id;
-                  const isPreviewing = previewingVoiceId === p.id;
-                  
-                  return (
-                    <div 
-                      key={p.id}
-                      onClick={() => updateSettings({ voiceId: p.id })}
-                      className={`relative group rounded-2xl border transition-all duration-300 cursor-pointer overflow-hidden ${
-                        isSelected 
-                          ? "bg-white border-violet-500 shadow-lg ring-1 ring-violet-500 scale-[1.02]" 
-                          : "bg-white border-gray-200 hover:border-violet-200 hover:shadow-md hover:bg-gray-50"
-                      }`}
-                    >
-                      {/* Top Color Band */}
-                      <div className={`h-2 w-full bg-gradient-to-r ${p.colorClass}`}></div>
-                      
-                      {isSelected && (
-                        <div className="absolute top-4 right-4 bg-violet-600 text-white text-[10px] font-bold px-2 py-1 rounded-full flex items-center gap-1 shadow-sm transition-all animate-in zoom-in-75">
-                          <Check size={10} /> Selected
-                        </div>
-                      )}
+            {/* 3. Voice Selection Section */}
+            <h4 className="text-xs font-black uppercase tracking-widest text-gray-400 mb-3 px-1">
+              Voice Catalog
+            </h4>
+            <div className="grid grid-cols-1 gap-4 pb-4">
+              {availablePresets.map((p) => {
+                const isSelected = voiceId === p.id;
+                const isPreviewing = previewingVoiceId === p.id;
 
-                      <div className="p-5">
-                          <div className="flex items-start justify-between mb-3">
-                             <div className={`w-10 h-10 rounded-full flex items-center justify-center bg-gradient-to-br ${p.colorClass} text-white shadow-md`}>
-                                {p.icon === 'mentor' && <Brain size={20} />}
-                                {p.icon === 'owl' && <Brain size={20} />} 
-                                {p.icon === 'feather' && <Volume2 size={20} />} 
-                                {p.icon === 'spark' && <Zap size={20} />}
-                                {p.icon === 'smile' && <Smile size={20} />}
-                             </div>
-                          </div>
-                          
-                          <div className="flex items-center gap-2 mb-1">
-                             <h4 className="font-bold text-gray-900">{p.label}</h4>
-                             <span className="text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded capitalize font-medium">{p.gender}</span>
-                          </div>
-                          <p className="text-xs text-gray-500 mb-4 h-8">{p.subtitle}</p>
-                          
-                          <button
-                             onClick={(e) => handlePreview(p.id, e)}
-                             disabled={Boolean(isPreviewing) || isVoiceActive}
-                             className={`w-full py-2.5 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition-all ${
-                                isPreviewing 
-                                 ? "bg-violet-600 text-white shadow-lg animate-pulse"
-                                 : isVoiceActive 
-                                   ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                                   : "bg-gray-100 text-gray-600 hover:bg-violet-100 hover:text-violet-700"
-                             }`}
-                          >
-                             {isPreviewing ? (
-                               <>
-                                 <span className="w-2 h-2 bg-white rounded-full animate-ping"></span>
-                                 Playing Preview...
-                               </>
-                             ) : isVoiceActive ? (
-                               <>
-                                 <Volume2 size={14} /> In a call
-                               </>
-                             ) : (
-                               <>
-                                 <Volume2 size={14} /> Play Preview
-                               </>
-                             )}
-                          </button>
+                return (
+                  <div
+                    key={p.id}
+                    onClick={() => updateSettings({ voiceId: p.id })}
+                    className={`relative group rounded-2xl border transition-all duration-300 cursor-pointer overflow-hidden ${
+                      isSelected
+                        ? "bg-white border-violet-500 shadow-lg ring-1 ring-violet-500 scale-[1.02]"
+                        : "bg-white border-gray-200 hover:border-violet-200 hover:shadow-md hover:bg-gray-50"
+                    }`}
+                  >
+                    {/* Top Color Band */}
+                    <div
+                      className={`h-2 w-full bg-gradient-to-r ${p.colorClass}`}
+                    ></div>
+
+                    {isSelected && (
+                      <div className="absolute top-4 right-4 bg-violet-600 text-white text-[10px] font-bold px-2 py-1 rounded-full flex items-center gap-1 shadow-sm transition-all animate-in zoom-in-75">
+                        <Check size={10} /> Selected
                       </div>
+                    )}
+
+                    <div className="p-5">
+                      <div className="flex items-start justify-between mb-3">
+                        <div
+                          className={`w-10 h-10 rounded-full flex items-center justify-center bg-gradient-to-br ${p.colorClass} text-white shadow-md`}
+                        >
+                          {p.icon === "mentor" && <Brain size={20} />}
+                          {p.icon === "owl" && <Brain size={20} />}
+                          {p.icon === "feather" && <Volume2 size={20} />}
+                          {p.icon === "spark" && <Zap size={20} />}
+                          {p.icon === "smile" && <Smile size={20} />}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 mb-1">
+                        <h4 className="font-bold text-gray-900">{p.label}</h4>
+                        <span className="text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded capitalize font-medium">
+                          {p.gender}
+                        </span>
+                      </div>
+                      <p className="text-xs text-gray-500 mb-4 h-8">
+                        {p.subtitle}
+                      </p>
+
+                      <button
+                        onClick={(e) => handlePreview(p.id, e)}
+                        disabled={Boolean(isPreviewing) || isVoiceActive}
+                        className={`w-full py-2.5 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition-all ${
+                          isPreviewing
+                            ? "bg-violet-600 text-white shadow-lg animate-pulse"
+                            : isVoiceActive
+                              ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                              : "bg-gray-100 text-gray-600 hover:bg-violet-100 hover:text-violet-700"
+                        }`}
+                      >
+                        {isPreviewing ? (
+                          <>
+                            <span className="w-2 h-2 bg-white rounded-full animate-ping"></span>
+                            Playing Preview...
+                          </>
+                        ) : isVoiceActive ? (
+                          <>
+                            <Volume2 size={14} /> In a call
+                          </>
+                        ) : (
+                          <>
+                            <Volume2 size={14} /> Play Preview
+                          </>
+                        )}
+                      </button>
                     </div>
-                  );
-                })}
-              </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
-          
+
           <div className="p-4 border-t border-gray-200 bg-white/50 text-center">
             <div className="text-[10px] text-gray-400 uppercase tracking-widest font-semibold">
-               Powered by OpenAI Realtime
+              Powered by OpenAI Realtime
             </div>
           </div>
         </div>
@@ -2055,17 +2348,24 @@ User question: ${userText}`;
 
       {/* --------------- VOICE TRANSCRIPT (MODAL STYLE OVERLAY) ---------------- */}
       {showVoiceTranscript && !showSettings && (
-        <div 
+        <div
           className="flex-none p-4 bg-white border-b border-violet-200 z-[42] shadow-xl max-h-[50%] overflow-y-auto custom-scrollbar animate-in slide-in-from-top-4 duration-300"
-          style={{ scrollBehavior: 'smooth' }}
+          style={{ scrollBehavior: "smooth" }}
         >
           <div className="text-xs font-black uppercase tracking-[0.2em] text-violet-600 mb-4 flex items-center justify-between sticky top-0 bg-white py-1">
             <div className="flex items-center gap-2">
-              <span className={`w-2 h-2 rounded-full ${isVoiceActive ? 'bg-red-500 animate-pulse' : 'bg-gray-300'}`}></span>
-              {isVoiceActive ? 'Real-time Transcript' : 'Last Session Transcript'}
+              <span
+                className={`w-2 h-2 rounded-full ${isVoiceActive ? "bg-red-500 animate-pulse" : "bg-gray-300"}`}
+              ></span>
+              {isVoiceActive
+                ? "Real-time Transcript"
+                : "Last Session Transcript"}
             </div>
             {!isVoiceActive && (
-              <button onClick={() => setShowVoiceTranscript(false)} className="text-gray-400 hover:text-gray-600">
+              <button
+                onClick={() => setShowVoiceTranscript(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
                 <X size={14} />
               </button>
             )}
@@ -2073,29 +2373,40 @@ User question: ${userText}`;
 
           {callTranscript.length === 0 ? (
             <div className="text-sm text-gray-500 italic bg-slate-50 border border-slate-100 rounded-2xl px-4 py-6 text-center">
-              {isVoiceActive ? 'Listening... say something to Durmah!' : 'No transcript recorded.'}
+              {isVoiceActive
+                ? "Listening... say something to Durmah!"
+                : "No transcript recorded."}
             </div>
           ) : (
             <div className="space-y-4 pr-2 pb-4">
               {callTranscript.map((m) => (
-                <div key={m.ts} className={`flex ${m.role === "you" ? "justify-end" : "justify-start"} items-start gap-3`}>
-                   {isSelectionMode && (
-                        <div className={`flex items-center ${m.role === "you" ? "order-last" : "order-first"}`}>
-                            <button onClick={() => toggleSelection(getMessageKey(m as any))} className="p-1 hover:bg-gray-100 rounded transition-colors">
-                                {selectedIds.has(getMessageKey(m as any)) ? 
-                                    <CheckSquare className="w-5 h-5 text-violet-600" /> : 
-                                    <Square className="w-5 h-5 text-gray-300 hover:text-gray-400" />
-                                }
-                            </button>
-                        </div>
-                    )}
+                <div
+                  key={m.ts}
+                  className={`flex ${m.role === "you" ? "justify-end" : "justify-start"} items-start gap-3`}
+                >
+                  {isSelectionMode && (
+                    <div
+                      className={`flex items-center ${m.role === "you" ? "order-last" : "order-first"}`}
+                    >
+                      <button
+                        onClick={() => toggleSelection(getMessageKey(m as any))}
+                        className="p-1 hover:bg-gray-100 rounded transition-colors"
+                      >
+                        {selectedIds.has(getMessageKey(m as any)) ? (
+                          <CheckSquare className="w-5 h-5 text-violet-600" />
+                        ) : (
+                          <Square className="w-5 h-5 text-gray-300 hover:text-gray-400" />
+                        )}
+                      </button>
+                    </div>
+                  )}
 
                   <div
                     className={`max-w-[85%] px-4 py-3 rounded-2xl text-sm leading-relaxed ${
                       m.role === "you"
                         ? "bg-violet-600 text-white rounded-tr-none shadow-md shadow-violet-600/10"
                         : "bg-slate-50 text-slate-800 border border-slate-200 rounded-tl-none"
-                    } ${isSelectionMode && selectedIds.has(getMessageKey(m as any)) ? 'ring-2 ring-violet-400 ring-offset-2' : ''}`}
+                    } ${isSelectionMode && selectedIds.has(getMessageKey(m as any)) ? "ring-2 ring-violet-400 ring-offset-2" : ""}`}
                   >
                     {m.text}
                   </div>
@@ -2129,87 +2440,104 @@ User question: ${userText}`;
       {/* Error Message */}
       {voiceError && !showSettings && (
         <div className="flex-none px-4 py-3 text-xs font-medium text-red-600 bg-red-50 border-y border-red-100 flex items-center gap-2">
-           <AlertTriangle size={14} /> {voiceError}
+          <AlertTriangle size={14} /> {voiceError}
         </div>
       )}
 
       {/* --------------- CHAT HISTORY (Scrollable Flex Area) ---------------- */}
       <div className="flex-1 min-h-0 overflow-y-auto glb-scroll p-4 space-y-4 bg-slate-50/50">
         {messages.length === 0 && !ready && (
-           <div className="flex justify-center py-8">
-             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-violet-600"></div>
-           </div>
+          <div className="flex justify-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-violet-600"></div>
+          </div>
         )}
-        
+
         {/* Filtered Messages Logic: session mode hides saved messages to keep focus on current chat */}
         {(() => {
-            const isSaved = (m: any) => m.visibility === 'saved' || !!m.saved_at;
-            const savedMessages = messages.filter(isSaved);
-            const sessionMessages = messages.filter(m => !isSaved(m));
-            
-            const filteredMessages = viewMode === 'saved' ? savedMessages : sessionMessages;
-            
-            if (filteredMessages.length === 0 && viewMode === 'saved') {
-                return (
-                    <div className="flex flex-col items-center justify-center py-8 text-gray-400 gap-2">
-                        <Bookmark className="w-8 h-8 opacity-20" />
-                        <p className="text-xs">No saved messages yet.</p>
-                    </div>
-                );
-            }
+          const isSaved = (m: any) => m.visibility === "saved" || !!m.saved_at;
+          const savedMessages = messages.filter(isSaved);
+          const sessionMessages = messages.filter((m) => !isSaved(m));
 
-            return filteredMessages.map((m) => (
-              <div key={m.ts} className={`flex ${m.role === "you" ? "justify-end" : "justify-start"} group relative mb-2`}>
-                
-                {/* Selection Checkbox - Shows for ALL messages in selection mode */}
-                {isSelectionMode && (
-                    <div className={`flex items-center ${m.role === "you" ? "mr-2 order-last" : "mr-2 order-first"}`}>
-                        <button onClick={() => toggleSelection(getMessageKey(m))} className="p-1 hover:bg-gray-100 rounded transition-colors">
-                            {selectedIds.has(getMessageKey(m)) ? 
-                                <CheckSquare className="w-5 h-5 text-violet-600" /> : 
-                                <Square className="w-5 h-5 text-gray-300 hover:text-gray-400" />
-                            }
-                        </button>
-                    </div>
-                )}
+          const filteredMessages =
+            viewMode === "saved" ? savedMessages : sessionMessages;
 
+          if (filteredMessages.length === 0 && viewMode === "saved") {
+            return (
+              <div className="flex flex-col items-center justify-center py-8 text-gray-400 gap-2">
+                <Bookmark className="w-8 h-8 opacity-20" />
+                <p className="text-xs">No saved messages yet.</p>
+              </div>
+            );
+          }
+
+          return filteredMessages.map((m) => (
+            <div
+              key={m.ts}
+              className={`flex ${m.role === "you" ? "justify-end" : "justify-start"} group relative mb-2`}
+            >
+              {/* Selection Checkbox - Shows for ALL messages in selection mode */}
+              {isSelectionMode && (
                 <div
-                  className={`relative px-4 py-3 rounded-2xl max-w-[85%] text-sm shadow-sm leading-relaxed transition-all ${
-                    m.role === "you"
-                      ? "bg-gradient-to-br from-violet-600 to-indigo-600 text-white rounded-tr-sm"
-                      : "bg-white text-gray-800 border border-gray-100 rounded-tl-sm hover:shadow-md"
-                  } ${isSelectionMode && selectedIds.has(getMessageKey(m)) ? 'ring-2 ring-violet-400 ring-offset-2' : ''}`}
+                  className={`flex items-center ${m.role === "you" ? "mr-2 order-last" : "mr-2 order-first"}`}
                 >
-                  {m.text}
-                  
-                  {/* Metadata Footer */}
-                  <div className={`mt-1 flex items-center justify-end gap-1.5 text-[10px] ${m.role === 'you' ? 'text-white/70' : 'text-gray-400'}`}>
-                      {m.saved_at && (
-                          <span className="flex items-center gap-0.5" title="Saved to your notes">
-                              <Bookmark className="w-3 h-3 fill-current" /> Saved
-                          </span>
-                      )}
-                      
-                      {/* Hover Actions (Only if not selection mode) */}
-                      {!isSelectionMode && m.id && (
-                        <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-2 ml-2">
-                             {/* Save Toggle */}
-                             <button onClick={() => {
-                                 const newSet = new Set([m.id!]);
-                                 setSelectedIds(newSet);
-                                 // Immediate action hack or just toggle? Better to just trigger single action
-                                 // But for now, let's keep it simple: Select Mode is main way.
-                                 // Or maybe a quick save button?
-                                 // Let's rely on selection mode for consistency as per plan.
-                             }} className="hover:text-white">
-                                 {/* <MoreHorizontal size={12} /> */}
-                             </button>
-                        </div>
-                      )}
-                  </div>
+                  <button
+                    onClick={() => toggleSelection(getMessageKey(m))}
+                    className="p-1 hover:bg-gray-100 rounded transition-colors"
+                  >
+                    {selectedIds.has(getMessageKey(m)) ? (
+                      <CheckSquare className="w-5 h-5 text-violet-600" />
+                    ) : (
+                      <Square className="w-5 h-5 text-gray-300 hover:text-gray-400" />
+                    )}
+                  </button>
+                </div>
+              )}
+
+              <div
+                className={`relative px-4 py-3 rounded-2xl max-w-[85%] text-sm shadow-sm leading-relaxed transition-all ${
+                  m.role === "you"
+                    ? "bg-gradient-to-br from-violet-600 to-indigo-600 text-white rounded-tr-sm"
+                    : "bg-white text-gray-800 border border-gray-100 rounded-tl-sm hover:shadow-md"
+                } ${isSelectionMode && selectedIds.has(getMessageKey(m)) ? "ring-2 ring-violet-400 ring-offset-2" : ""}`}
+              >
+                {m.text}
+
+                {/* Metadata Footer */}
+                <div
+                  className={`mt-1 flex items-center justify-end gap-1.5 text-[10px] ${m.role === "you" ? "text-white/70" : "text-gray-400"}`}
+                >
+                  {m.saved_at && (
+                    <span
+                      className="flex items-center gap-0.5"
+                      title="Saved to your notes"
+                    >
+                      <Bookmark className="w-3 h-3 fill-current" /> Saved
+                    </span>
+                  )}
+
+                  {/* Hover Actions (Only if not selection mode) */}
+                  {!isSelectionMode && m.id && (
+                    <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-2 ml-2">
+                      {/* Save Toggle */}
+                      <button
+                        onClick={() => {
+                          const newSet = new Set([m.id!]);
+                          setSelectedIds(newSet);
+                          // Immediate action hack or just toggle? Better to just trigger single action
+                          // But for now, let's keep it simple: Select Mode is main way.
+                          // Or maybe a quick save button?
+                          // Let's rely on selection mode for consistency as per plan.
+                        }}
+                        className="hover:text-white"
+                      >
+                        {/* <MoreHorizontal size={12} /> */}
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
-            ));
+            </div>
+          ));
         })()}
         {/* Invisible element to scroll to */}
         <div ref={messagesEndRef} />
@@ -2223,8 +2551,12 @@ User question: ${userText}`;
               key={c}
               onClick={() => {
                 setInput(c);
-                if (c.includes('Review') || c.includes('plan') || c.includes('quiz')) {
-                    setMode('study');
+                if (
+                  c.includes("Review") ||
+                  c.includes("plan") ||
+                  c.includes("quiz")
+                ) {
+                  setMode("study");
                 }
               }}
               className="whitespace-nowrap text-xs font-medium px-4 py-2 rounded-full bg-violet-50 text-violet-700 border border-violet-100 hover:bg-violet-100 hover:border-violet-200 transition-all"
@@ -2244,10 +2576,10 @@ User question: ${userText}`;
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                    e.preventDefault();
-                    send();
-                }
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                send();
+              }
             }}
             placeholder="Ask Durmah..."
             className="flex-1 px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 transition-all bg-gray-50 focus:bg-white resize-none min-h-[46px] max-h-[200px] overflow-y-auto"
@@ -2269,18 +2601,18 @@ User question: ${userText}`;
       {isVoiceActive && !showSettings && (
         <div className="flex-none p-6 text-center bg-white border-t border-gray-100 z-10">
           <div className="flex items-center justify-center gap-1 h-8 mb-2">
-             {/* Simulated Waveform Animation */}
-             {[...Array(5)].map((_, i) => (
-               <div 
-                 key={i} 
-                 className={`w-1 bg-violet-500 rounded-full animate-waveform`}
-                 style={{ 
-                   height: speaking ? '100%' : '30%',
-                   animationDelay: `${i * 0.1}s`,
-                   animationDuration: '0.8s'
-                 }} 
-               />
-             ))}
+            {/* Simulated Waveform Animation */}
+            {[...Array(5)].map((_, i) => (
+              <div
+                key={i}
+                className={`w-1 bg-violet-500 rounded-full animate-waveform`}
+                style={{
+                  height: speaking ? "100%" : "30%",
+                  animationDelay: `${i * 0.1}s`,
+                  animationDuration: "0.8s",
+                }}
+              />
+            ))}
           </div>
           <div className="text-xs font-medium text-violet-600 uppercase tracking-wide">
             {status === "connecting"
@@ -2291,8 +2623,15 @@ User question: ${userText}`;
           </div>
           <style jsx>{`
             @keyframes waveform {
-              0%, 100% { height: 30%; opacity: 0.5; }
-              50% { height: 100%; opacity: 1; }
+              0%,
+              100% {
+                height: 30%;
+                opacity: 0.5;
+              }
+              50% {
+                height: 100%;
+                opacity: 1;
+              }
             }
             .animate-waveform {
               animation: waveform 1s infinite ease-in-out;
@@ -2302,11 +2641,11 @@ User question: ${userText}`;
       )}
 
       {/* Save To Folder Modal (Explorer Upgrade) */}
-      <SaveToFolderModal 
+      <SaveToFolderModal
         isOpen={showFolderPicker}
         onClose={() => {
-            setShowFolderPicker(false);
-            setTranscriptForFolder(null);
+          setShowFolderPicker(false);
+          setTranscriptForFolder(null);
         }}
         onSave={handleFinalSaveToFolder}
         isSaving={isSavingTranscript}
