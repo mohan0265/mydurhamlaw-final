@@ -11,6 +11,7 @@ import {
   BookOpen,
   TrendingUp,
   FileText,
+  HelpCircle,
 } from "lucide-react";
 import { useAuth } from "@/lib/supabase/AuthContext";
 import { isRouteAbortError } from "@/lib/navigation/safeNavigate";
@@ -173,6 +174,58 @@ export default function DurhamLanding() {
           </div>
         </div>
       </div>
+
+      {/* FEATURED ARTICLE BANNER */}
+      <section className="bg-white py-12 lg:py-16 overflow-hidden">
+        <div className="max-w-7xl mx-auto px-6">
+          <Link
+            href="/articles/no-question-is-a-stupid-question"
+            prefetch={false}
+            className="group block"
+          >
+            <div className="relative p-8 md:p-12 rounded-[2.5rem] bg-gradient-to-br from-indigo-50 to-white border border-indigo-100 shadow-2xl shadow-indigo-100/50 group-hover:border-indigo-300 transition-all duration-500 group-hover:-translate-y-1">
+              <div className="flex flex-col md:flex-row gap-10 items-center">
+                <div className="flex-1 space-y-6">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-600 text-white text-[10px] font-black uppercase tracking-widest">
+                    <span>Featured Article</span>
+                  </div>
+                  <h2 className="text-3xl md:text-4xl font-black text-gray-900 leading-tight">
+                    “No Question Is a Stupid Question”
+                  </h2>
+                  <p className="text-lg md:text-xl text-gray-600 font-medium leading-relaxed">
+                    Why fear stops students from learning — and what changes
+                    when embarrassment is removed.
+                  </p>
+                  <p className="text-gray-500 leading-relaxed max-w-2xl">
+                    Many students fall behind silently not because they aren’t
+                    capable, but because fear blocks the questions they need to
+                    ask.
+                  </p>
+                  <div className="flex flex-col gap-3">
+                    <div className="flex items-center gap-2 group-hover:gap-3 transition-all text-indigo-600 font-black uppercase tracking-widest text-sm">
+                      Read the article <ArrowRight className="w-5 h-5" />
+                    </div>
+                    <p className="text-xs text-gray-400 italic">
+                      “Ask and you shall learn — learning at the speed of
+                      courage, not confidence.”
+                    </p>
+                  </div>
+                </div>
+
+                <div className="hidden lg:block w-72 h-72 bg-indigo-100 rounded-3xl rotate-3 relative overflow-hidden shadow-inner shrink-0">
+                  <div className="absolute inset-0 flex items-center justify-center text-indigo-300 animate-pulse">
+                    <HelpCircle
+                      size={140}
+                      className="opacity-20 translate-y-4 -translate-x-4"
+                    />
+                  </div>
+                  <div className="absolute inset-0 bg-gradient-to-br from-indigo-600/5 to-transparent"></div>
+                </div>
+              </div>
+            </div>
+          </Link>
+        </div>
+      </section>
 
       {/* 2) SKILL PILLARS SECTION */}
       <section className="py-20 bg-white relative z-20 border-b border-gray-100">
@@ -528,6 +581,12 @@ export default function DurhamLanding() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[
               {
+                title: "No Question Is a Stupid Question",
+                desc: "How fear blocks questions — and how private, judgement-free clarification helps.",
+                slug: "/articles/no-question-is-a-stupid-question",
+                readTime: "8 min read",
+              },
+              {
                 title: "Durham Law AI Study Assistant",
                 desc: "Master Durmah for ethical case research, IRAC issue spotting, and exam prep.",
                 slug: "durham-law-ai-study-assistant",
@@ -564,7 +623,15 @@ export default function DurhamLanding() {
                 readTime: "11 min read",
               },
             ].map((guide) => (
-              <Link key={guide.slug} href={`/learn/${guide.slug}`}>
+              <Link
+                key={guide.slug}
+                href={
+                  guide.slug.startsWith("/") || guide.slug.startsWith("http")
+                    ? guide.slug
+                    : `/learn/${guide.slug}`
+                }
+                prefetch={false}
+              >
                 <div className="group p-6 rounded-xl border border-gray-200 bg-white hover:border-purple-300 hover:shadow-lg transition-all duration-300 h-full flex flex-col">
                   <h3 className="text-lg font-bold text-gray-900 mb-2 group-hover:text-purple-700 transition-colors">
                     {guide.title}

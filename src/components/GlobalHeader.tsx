@@ -232,6 +232,7 @@ export default function GlobalHeader() {
     () => ({
       label: "Info",
       items: [
+        { label: "Articles", href: "/articles" },
         { label: "About", href: "/about" },
         { label: "Pricing", href: "/pricing" },
         { label: "Exam Prep", href: "/exam-prep" },
@@ -389,7 +390,15 @@ export default function GlobalHeader() {
                     Pricing
                   </Link>
                   <Link
+                    href="/articles"
+                    prefetch={false}
+                    className="px-3 py-2 rounded-md text-sm font-medium text-gray-600 hover:text-purple-700 hover:bg-purple-50"
+                  >
+                    Articles
+                  </Link>
+                  <Link
                     href="/learn/academic-integrity"
+                    prefetch={false}
                     className="px-3 py-2 rounded-md text-sm font-medium text-gray-600 hover:text-purple-700 hover:bg-purple-50"
                   >
                     Academic Integrity
