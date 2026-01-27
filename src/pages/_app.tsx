@@ -16,6 +16,7 @@ import { loadMDLStudentContext } from '@/lib/supabase/supabaseBridge';
 import { Toaster } from 'react-hot-toast';
 import LayoutShell from '@/layout/LayoutShell';
 import Router from 'next/router';
+import { ThemeProvider } from '@/components/theme/ThemeProvider';
 import { isRouteAbortError } from '@/lib/navigation/safeNavigate';
 
 
@@ -160,39 +161,41 @@ export default function App({ Component, pageProps }: AppProps) {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </Head>
 
-      <AuthProvider>
-        <QueryClientProvider client={queryClient}>
-          <HydrationBoundary state={(pageProps as any)?.dehydratedState}>
-            <DurmahProvider>
-              <DurmahContextSetup />
-              <AppDurmahBootstrap>
-
-                <LayoutShell>
-                  <Component {...pageProps} />
-                </LayoutShell>
-
-
-                {/* Global Toaster */}
-                <Toaster
-                  position="top-right"
-                  toastOptions={{
-                    duration: 4000,
-                    style: { background: '#363636', color: '#fff' },
-                    success: {
-                      duration: 3000,
-                      iconTheme: { primary: '#10b981', secondary: '#fff' },
-                    },
-                    error: {
-                      duration: 5000,
-                      iconTheme: { primary: '#ef4444', secondary: '#fff' },
-                    },
-                  }}
-                />
-              </AppDurmahBootstrap>
-            </DurmahProvider>
-          </HydrationBoundary>
-        </QueryClientProvider>
-      </AuthProvider>
+      <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false} storageKey="mydurhamlaw-theme">
+        <AuthProvider>
+          <QueryClientProvider client={queryClient}>
+            <HydrationBoundary state={(pageProps as any)?.dehydratedState}>
+              <DurmahProvider>
+                <DurmahContextSetup />
+                <AppDurmahBootstrap>
+  
+                  <LayoutShell>
+                    <Component {...pageProps} />
+                  </LayoutShell>
+  
+  
+                  {/* Global Toaster */}
+                  <Toaster
+                    position="top-right"
+                    toastOptions={{
+                      duration: 4000,
+                      style: { background: '#363636', color: '#fff' },
+                      success: {
+                        duration: 3000,
+                        iconTheme: { primary: '#10b981', secondary: '#fff' },
+                      },
+                      error: {
+                        duration: 5000,
+                        iconTheme: { primary: '#ef4444', secondary: '#fff' },
+                      },
+                    }}
+                  />
+                </AppDurmahBootstrap>
+              </DurmahProvider>
+            </HydrationBoundary>
+          </QueryClientProvider>
+        </AuthProvider>
+      </ThemeProvider>
     </>
   );
 }

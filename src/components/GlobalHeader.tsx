@@ -5,6 +5,8 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import NextImage from 'next/image';
 import { useRouter } from 'next/router';
+import { Button } from './ui/Button';
+import { ThemeToggle } from './theme/ThemeToggle';
 import { useAuth } from '@/lib/supabase/AuthContext';
 import LogoutButton from '@/components/auth/LogoutButton';
 import PresenceBadge from '@/components/PresenceBadge';
@@ -398,6 +400,7 @@ export default function GlobalHeader() {
                   </Link>
                 </>
               )}
+              <ThemeToggle className={'border-gray-300 dark:border-white/10'} />
             </div>
 
             {/* Mobile toggle */}
@@ -416,6 +419,9 @@ export default function GlobalHeader() {
                 </svg>
               )}
             </button>
+            <div className="md:hidden flex items-center gap-4">
+              <ThemeToggle className={'border-gray-200 dark:border-white/10'} />
+            </div>
           </div>
         </nav>
 
