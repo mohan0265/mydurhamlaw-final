@@ -2,6 +2,10 @@ import { useState, useCallback, useRef, useEffect } from "react";
 import { useSupabaseClient, useUser } from "@/lib/supabase/AuthContext";
 import toast from "react-hot-toast";
 import { v5 as uuidv5 } from "uuid";
+import { safeInsert, safeUpsert } from "@/lib/safe/supabaseWrite";
+
+// Guard for RLS warning (log once per session)
+let hasLoggedRLSWarning = false;
 
 // Namespace for deterministic UUIDs (Durmah Context Namespace)
 const DURMAH_NAMESPACE = "6ba7b810-9dad-11d1-80b4-00c04fd430c8";
@@ -467,15 +471,16 @@ export function useDurmahChat({
         let data, error;
 
         if (scope === "assignment" && context.assignmentId) {
-          // 1. Ensure Session Exists
-          await supabase.from("assignment_sessions").upsert(
+          // 1. Ensure Session Exists (Safe Upsert)
+          await safeUpsert(
+            "assignment_sessions",
             {
               id: conversationId,
               assignment_id: context.assignmentId,
               user_id: user.id,
               title: `Session ${new Date().toLocaleDateString("en-GB", { timeZone: "Europe/London" })}`,
             },
-            { onConflict: "id" },
+            { tag: "ASSIGNMENT_DURMAH" },
           );
 
           // 1.5. Deduplicate (Refined)
@@ -489,83 +494,75 @@ export function useDurmahChat({
             lastLoggedRef.current.content === normalized &&
             nowTs - lastLoggedRef.current.ts < 2000;
 
-          // Additional check for role-specific user ID if applicable
-          // (role='assistant' ignores user_id, role='user' would match it implicitly via the ref)
-          if (isMatch) {
-            console.warn(
-              "[useDurmahChat] Dropping duplicate message:",
-              normalized.substring(0, 20),
-            );
-            return;
-          }
+          if (isMatch) return;
           lastLoggedRef.current = { role, content: normalized, ts: nowTs };
 
-          // 2. Insert Message
-          const res = await supabase
-            .from("assignment_session_messages")
-            .insert({
+          // 2. Insert Message (Safe Insert)
+          const { data: insertData, error: insertError } = await safeInsert(
+            "assignment_session_messages",
+            {
               session_id: conversationId,
               user_id: user.id,
               role,
               content,
-              // modality not in schema yet, adding to content metadata if needed or ignore
-            })
-            .select("id, created_at")
-            .single();
+            },
+            { tag: "ASSIGNMENT_DURMAH" },
+          );
 
-          data = res.data;
-          error = res.error;
+          if (insertError) {
+            const status = (insertError as any)?.status;
+            if (status === 403 && !hasLoggedRLSWarning) {
+              console.warn("[ASSIGNMENT_DURMAH] persistence skipped (RLS?)");
+              hasLoggedRLSWarning = true;
+            }
+          }
+
+          data = insertData;
+          error = insertError;
         } else if (scope === "exam" && context.moduleId) {
           // 1. Ensure Session Exists
-          await supabase.from("exam_sessions").upsert(
+          await safeUpsert(
+            "exam_sessions",
             {
               id: conversationId,
               module_id: context.moduleId,
               user_id: user.id,
               title: `Exam Prep ${new Date().toLocaleDateString()}`,
             },
-            { onConflict: "id" },
+            { tag: "EXAM_DURMAH" },
           );
 
-          // 1.5. Deduplicate (Refined)
+          // 1.5. Deduplicate
           const normalize = (s: string) => s.trim().replace(/\s+/g, " ");
           const normalized = normalize(content);
           const nowTs = Date.now();
-
-          const isMatch =
-            lastLoggedRef.current &&
-            lastLoggedRef.current.role === role &&
+          if (
+            lastLoggedRef.current?.role === role &&
             lastLoggedRef.current.content === normalized &&
-            nowTs - lastLoggedRef.current.ts < 2000;
-
-          if (isMatch) {
-            console.warn(
-              "[useDurmahChat] Dropping duplicate exam message:",
-              normalized.substring(0, 20),
-            );
+            nowTs - lastLoggedRef.current.ts < 2000
+          )
             return;
-          }
           lastLoggedRef.current = { role, content: normalized, ts: nowTs };
 
           // 2. Insert Message
-          const res = await supabase
-            .from("exam_messages")
-            .insert({
+          const { data: examData, error: examError } = await safeInsert(
+            "exam_messages",
+            {
               session_id: conversationId,
               user_id: user.id,
               role,
               content,
-            })
-            .select("id, created_at")
-            .single();
+            },
+            { tag: "EXAM_DURMAH" },
+          );
 
-          data = res.data;
-          error = res.error;
+          data = examData;
+          error = examError;
         } else {
           // Legacy
-          const res = await supabase
-            .from("durmah_messages")
-            .insert({
+          const { data: legData, error: legError } = await safeInsert(
+            "durmah_messages",
+            {
               user_id: user.id,
               conversation_id: conversationId,
               role,
@@ -574,31 +571,23 @@ export function useDurmahChat({
               source,
               scope,
               visibility: "ephemeral",
-            })
-            .select("id, created_at")
-            .single();
-          data = res.data;
-          error = res.error;
+            },
+            { tag: "DURMAH_LOG" },
+          );
+          data = legData;
+          error = legError;
         }
 
-        if (error) {
-          console.error("[useDurmahChat] Log message error:", error);
-          return;
-        }
-
-        if (data) {
-          const newMsg: DurmahMessage = {
-            id: data.id,
-            role,
-            content,
-            created_at: data.created_at,
-            visibility:
-              scope === "assignment" || scope === "exam"
-                ? "saved"
-                : "ephemeral",
-          };
-          setMessages((prev) => [...prev, newMsg]);
-        }
+        // Always continue to update UI even if persistence fails (Non-blocking resilience)
+        const resultMsg: DurmahMessage = {
+          id: data?.id || `temp-${Date.now()}`,
+          role,
+          content,
+          created_at: data?.created_at || new Date().toISOString(),
+          visibility:
+            scope === "assignment" || scope === "exam" ? "saved" : "ephemeral",
+        };
+        setMessages((prev) => [...prev, resultMsg]);
       } catch (err) {
         console.error("[useDurmahChat] Unexpected log error:", err);
       }
