@@ -141,16 +141,15 @@ export default function QuizHub() {
           </div>
 
           <div className="relative">
-            <div className="absolute inset-0 bg-purple-200 blur-[100px] opacity-30 rounded-full"></div>
+            <div className="absolute inset-0 bg-purple-200 blur-[100px] opacity-20 rounded-full"></div>
             <NextImage
-              src="/assets/mascots/quiz-me-bunny-256.webp"
-              alt=""
+              src="/images/quiz-me-professor.png"
+              alt="Durham Law Quiz Me – Barrister Professor"
               width={320}
               height={320}
-              className="w-64 h-64 md:w-80 md:h-80 object-contain relative z-10 drop-shadow-2xl animate-float"
+              className="w-64 h-64 md:w-80 md:h-80 object-contain relative z-10 drop-shadow-xl"
               priority={true}
-              srcSet="/assets/mascots/quiz-me-bunny-160.webp 160w, /assets/mascots/quiz-me-bunny-256.webp 256w"
-              sizes="(max-width: 768px) 160px, 256px"
+              sizes="(max-width: 768px) 160px, 320px"
             />
           </div>
         </div>
