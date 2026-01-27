@@ -1,29 +1,37 @@
 // src/layout/LayoutShell.tsx
-import React from 'react'
-import { useRouter } from 'next/router'
-import GlobalHeader from '@/components/GlobalHeader'
-import GlobalFooter from '@/components/GlobalFooter'
-import { AppFooter } from '@/components/footer/AppFooter'
-import { useAuth } from '@/lib/supabase/AuthContext'
-import dynamic from 'next/dynamic'
+import React from "react";
+import { useRouter } from "next/router";
+import GlobalHeader from "@/components/GlobalHeader";
+import GlobalFooter from "@/components/GlobalFooter";
+import { AppFooter } from "@/components/footer/AppFooter";
+import { useAuth } from "@/lib/supabase/AuthContext";
+import dynamic from "next/dynamic";
 // Dynamic imports to avoid SSR issues with Voice/WebRTC
-const DurmahWidget = dynamic(() => import('@/components/DurmahWidget'), { ssr: false })
-const AWYWidget = dynamic(() => import('@/components/awy/AWYWidget'), { ssr: false })
-import { CalendarProvider } from '@/context/CalendarContext'
+const DurmahWidget = dynamic(() => import("@/components/DurmahWidget"), {
+  ssr: false,
+});
+const AWYWidget = dynamic(() => import("@/components/awy/AWYWidget"), {
+  ssr: false,
+});
+import { CalendarProvider } from "@/context/CalendarContext";
 
-type Props = { children: React.ReactNode }
+type Props = { children: React.ReactNode };
 
 export default function LayoutShell({ children }: Props) {
-  const router = useRouter()
-  const { user } = useAuth() || { user: null }
+  const router = useRouter();
+  const { user } = useAuth() || { user: null };
 
   // Only the home page is full-bleed; everything else is constrained
-  const fullBleedPrefixes = ['/']
+  const fullBleedPrefixes = ["/"];
   const isFullBleed = fullBleedPrefixes.some(
-    (p) => router.pathname === p || router.pathname.startsWith(p + '/')
-  )
-  const isAuthPage = ['/login', '/signup', '/auth/redirect'].includes(router.pathname);
-  const isFullScreenPage = router.pathname.startsWith('/quiz/') || router.pathname.startsWith('/assignments/')
+    (p) => router.pathname === p || router.pathname.startsWith(p + "/"),
+  );
+  const isAuthPage = ["/login", "/signup", "/auth/redirect"].includes(
+    router.pathname,
+  );
+  const isFullScreenPage =
+    router.pathname.startsWith("/quiz/") ||
+    router.pathname.startsWith("/assignments/");
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-white to-gray-50">
@@ -52,14 +60,14 @@ export default function LayoutShell({ children }: Props) {
 
       {/* Unified Footer - Hidden for full-screen tools like Quiz/Assignments */}
       {!isFullScreenPage && <AppFooter isAuthed={!!user} />}
-      
+
       {/* Global Floating Widgets - Show on all pages except auth pages AND only when logged in */}
       {!isAuthPage && user && (
         <>
-          <DurmahWidget />
+          {/* <DurmahWidget /> */}
           <AWYWidget />
         </>
       )}
     </div>
-  )
+  );
 }
