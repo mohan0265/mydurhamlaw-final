@@ -16,7 +16,15 @@ export default async function handler(
   }
 
   if (req.method === "GET") {
-    const { module_id, focusDate, rangeDays, pageHint } = req.query;
+    let { module_id, focusDate, rangeDays, pageHint } = req.query;
+
+    // EMERGENCY DEFAULTS: NEVER 400 ON MISSING PARAMS
+    if (!focusDate || typeof focusDate !== "string") {
+      focusDate = new Date().toISOString().substring(0, 10);
+    }
+    if (!rangeDays || typeof rangeDays !== "string") {
+      rangeDays = "14";
+    }
 
     try {
       // If module_id is provided, use specific builder
@@ -43,11 +51,13 @@ export default async function handler(
         todaysEvents: [],
       };
 
-      return res.status(200).json(mockContext);
+      return res.status(200).json({ ok: true, ...mockContext });
     } catch (err: any) {
       console.error(err);
       // Return 200 with error field to prevent client retry loops on 500
-      return res.status(200).json({ error: err.message, fallback: true });
+      return res
+        .status(200)
+        .json({ ok: false, error: err.message, fallback: true });
     }
   }
 

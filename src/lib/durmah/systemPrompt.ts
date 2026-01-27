@@ -1,4 +1,4 @@
-import type { StudentContext } from '@/types/durmahContext';
+import type { StudentContext } from "@/types/durmahContext";
 
 /**
  * Builds a SHORT system prompt for Durmah (identity + ethics + style)
@@ -105,21 +105,44 @@ RELIABILITY:
  */
 export function buildDurmahContextBlock(context: StudentContext): string {
   const student = context?.student ?? null;
-  const assignments = context?.assignments ?? { total: 0, upcoming: [], overdue: [], recentlyCreated: [] };
-  const schedule = context?.schedule ?? { todaysClasses: [] };
+
+  // SAFE DEFAULTS FOR ALL BUCKETS
+  const rawAssignments = context?.assignments || {};
+  const assignments = {
+    total: rawAssignments.total ?? 0,
+    upcoming: Array.isArray(rawAssignments.upcoming)
+      ? rawAssignments.upcoming
+      : [],
+    overdue: Array.isArray(rawAssignments.overdue)
+      ? rawAssignments.overdue
+      : [],
+    recentlyCreated: Array.isArray(rawAssignments.recentlyCreated)
+      ? rawAssignments.recentlyCreated
+      : [],
+  };
+
+  const schedule = {
+    todaysClasses: Array.isArray(context?.schedule?.todaysClasses)
+      ? context.schedule.todaysClasses
+      : [],
+  };
+
   const academic = context?.academic ?? null;
-  
+
   // TIMEZONE TRUTH: Use academic.now if available, else fallback
   const academicNow = academic?.now ?? null;
-  const localISO = academicNow?.isoUTC ?? student?.localTimeISO ?? new Date().toISOString();
-  
-  const nowText = academicNow?.nowText || new Date(localISO).toLocaleString('en-GB', { timeZone: 'Europe/London' });
+  const localISO =
+    academicNow?.isoUTC ?? student?.localTimeISO ?? new Date().toISOString();
+
+  const nowText =
+    academicNow?.nowText ||
+    new Date(localISO).toLocaleString("en-GB", { timeZone: "Europe/London" });
   const todayKey = academicNow?.dayKey || localISO.substring(0, 10);
-  
-  const displayName = student?.displayName ?? 'Student';
-  const yearGroup = student?.yearGroup ?? 'Unknown Year';
-  const term = student?.term ?? 'Unknown Term';
-  const weekOfTerm = student?.weekOfTerm ?? '?';
+
+  const displayName = student?.displayName ?? "Student";
+  const yearGroup = student?.yearGroup ?? "Unknown Year";
+  const term = student?.term ?? "Unknown Term";
+  const weekOfTerm = student?.weekOfTerm ?? "?";
 
   // Keep context block COMPACT for voice mode
   let block = `NOW: ${nowText}
@@ -128,38 +151,41 @@ STUDENT: ${displayName}, ${yearGroup}, ${term} Week ${weekOfTerm}
 `;
 
   // CURRENT LECTURE CONTEXT (Central Intelligence Injection)
-  if (context.lectures?.current) {
+  if (context?.lectures?.current) {
     const l = context.lectures.current;
     if (l) {
-        block += `\nCurrently Viewing / Active Lecture: "${l.title}" (${l.module_name || 'Unknown Module'})\n`;
-        if (l.summary) block += `Summary: ${l.summary.substring(0, 300)}...\n`;
-        if (l.transcript_snippet) block += `Raw Transcript Snippet: "${l.transcript_snippet.substring(0, 500)}..."\n[Full context available to referencing]\n`;
-        if (l.key_points && l.key_points.length > 0) block += `Key Points: ${l.key_points.slice(0, 3).join('; ')}\n`;
-        if (l.engagement_hooks && l.engagement_hooks.length > 0) block += `Discussion Hooks: ${l.engagement_hooks.slice(0, 2).join('; ')}\n`;
-        block += `\nYou can refer to this lecture content directly in your conversation.\n\n`;
+      block += `\nCurrently Viewing / Active Lecture: "${l.title}" (${l.module_name || "Unknown Module"})\n`;
+      if (l.summary) block += `Summary: ${l.summary.substring(0, 300)}...\n`;
+      if (l.transcript_snippet)
+        block += `Raw Transcript Snippet: "${l.transcript_snippet.substring(0, 500)}..."\n[Full context available to referencing]\n`;
+      if (l.key_points && Array.isArray(l.key_points))
+        block += `Key Points: ${l.key_points.slice(0, 3).join("; ")}\n`;
+      if (l.engagement_hooks && Array.isArray(l.engagement_hooks))
+        block += `Discussion Hooks: ${l.engagement_hooks.slice(0, 2).join("; ")}\n`;
+      block += `\nYou can refer to this lecture content directly in your conversation.\n\n`;
     }
   }
 
   // Upcoming deadlines
-  if (assignments?.upcoming?.length > 0) {
+  if (assignments.upcoming.length > 0) {
     block += `UPCOMING DEADLINES:\n`;
     assignments.upcoming.forEach((a) => {
-      block += `- "${a.title}" (${a.module}) - ${a.daysLeft} day${a.daysLeft === 1 ? '' : 's'} left\n`;
+      block += `- "${a.title}" (${a.module}) - ${a.daysLeft} day${a.daysLeft === 1 ? "" : "s"} left\n`;
     });
   } else {
     block += `UPCOMING DEADLINES: None in next 7 days\n`;
   }
 
   // Overdue (RED FLAG)
-  if (assignments?.overdue?.length > 0) {
+  if (assignments.overdue.length > 0) {
     block += `\n⚠️ OVERDUE:\n`;
     assignments.overdue.forEach((a) => {
-      block += `- "${a.title}" (${a.module}) - ${a.daysOver} day${a.daysOver === 1 ? '' : 's'} overdue\n`;
+      block += `- "${a.title}" (${a.module}) - ${a.daysOver} day${a.daysOver === 1 ? "" : "s"} overdue\n`;
     });
   }
 
   // Recently created
-  if (assignments?.recentlyCreated?.length > 0) {
+  if (assignments.recentlyCreated.length > 0) {
     block += `\nRECENTLY ADDED:\n`;
     assignments.recentlyCreated.slice(0, 3).forEach((a) => {
       block += `- "${a.title}" (${a.module})\n`;
@@ -186,15 +212,15 @@ STUDENT: ${displayName}, ${yearGroup}, ${term} Week ${weekOfTerm}
     block += `- When asked "What classes this week?" → iterate through dates\n`;
     block += `- Event types: plan (lectures), personal (student tasks), assignment (deadlines), timetable (scheduled)\n`;
     block += `- NEVER guess or hallucinate schedule - ONLY use itemsByDay\n`;
-    
+
     // Sample a few days to show format
     const sampleDates = dates.slice(0, 3);
     if (sampleDates.length > 0) {
       block += `\nEXAMPLE DAYS:\n`;
-      sampleDates.forEach(date => {
+      sampleDates.forEach((date) => {
         const items = context.yaag!.itemsByDay[date];
         if (items && items.length > 0) {
-          block += `${date}: ${items.length} event${items.length === 1 ? '' : 's'} (${items.map(i => i.title.substring(0, 20)).join(', ')})\n`;
+          block += `${date}: ${items.length} event${items.length === 1 ? "" : "s"} (${items.map((i) => i.title.substring(0, 20)).join(", ")})\n`;
         } else {
           block += `${date}: No events\n`;
         }
@@ -206,7 +232,7 @@ STUDENT: ${displayName}, ${yearGroup}, ${term} Week ${weekOfTerm}
   if (context.lectures?.recent && context.lectures.recent.length > 0) {
     block += `\n\n🎓 MY LECTURES (${context.lectures.recent.length} available):\n`;
     context.lectures.recent.slice(0, 5).forEach((l: any) => {
-      block += `- [${l.id}] "${l.title}" (${l.module_code || l.module_name || 'Lecture'})${l.lecture_date ? ` - ${l.lecture_date}` : ''}\n`;
+      block += `- [${l.id}] "${l.title}" (${l.module_code || l.module_name || "Lecture"})${l.lecture_date ? ` - ${l.lecture_date}` : ""}\n`;
     });
     block += `\nTo discuss a specific lecture, use get_lecture_details(lectureId) to fetch its content.`;
   }
@@ -215,9 +241,12 @@ STUDENT: ${displayName}, ${yearGroup}, ${term} Week ${weekOfTerm}
   if (context.recentMemories && context.recentMemories.length > 0) {
     block += `\n\n🧠 RECENT MEMORIES (Last ${context.recentMemories.length} interactions):\n`;
     context.recentMemories.forEach((m) => {
-        const role = m.role === 'user' ? 'Student' : 'Durmah';
-        const snippet = m.content.length > 150 ? m.content.substring(0, 150) + '...' : m.content;
-        block += `- ${role}: "${snippet}"\n`;
+      const role = m.role === "user" ? "Student" : "Durmah";
+      const snippet =
+        m.content.length > 150
+          ? m.content.substring(0, 150) + "..."
+          : m.content;
+      block += `- ${role}: "${snippet}"\n`;
     });
     block += `\nUse these memories to maintain conversation continuity. If the user refers to "what I just said" or "that lecture", look here first.`;
   }
@@ -231,23 +260,38 @@ STUDENT: ${displayName}, ${yearGroup}, ${term} Week ${weekOfTerm}
  * Generates a proactive greeting ONLY IF there's something urgent
  * Returns null if nothing urgent
  */
-export function generateProactiveGreeting(context: StudentContext): string | null {
-  const { assignments } = context;
+export function generateProactiveGreeting(
+  context: StudentContext,
+): string | null {
+  const rawAssignments = context?.assignments || {};
+  const assignments = {
+    upcoming: Array.isArray(rawAssignments.upcoming)
+      ? rawAssignments.upcoming
+      : [],
+    overdue: Array.isArray(rawAssignments.overdue)
+      ? rawAssignments.overdue
+      : [],
+    recentlyCreated: Array.isArray(rawAssignments.recentlyCreated)
+      ? rawAssignments.recentlyCreated
+      : [],
+  };
 
   // Priority 1: Overdue assignments
   if (assignments.overdue.length > 0) {
     const first = assignments.overdue[0];
     if (first) {
-      return `Hey! I noticed you have an overdue assignment: "${first.title}" (${first.module}). It was due ${first.daysOver} day${first.daysOver === 1 ? '' : 's'} ago. Want some help getting it finished?`;
+      return `Hey! I noticed you have an overdue assignment: "${first.title}" (${first.module}). It was due ${first.daysOver} day${first.daysOver === 1 ? "" : "s"} ago. Want some help getting it finished?`;
     }
   }
 
   // Priority 2: Urgent deadlines (< 3 days)
-  const urgent = assignments.upcoming.filter((a) => a.daysLeft !== null && a.daysLeft <= 3);
+  const urgent = assignments.upcoming.filter(
+    (a) => a.daysLeft !== null && a.daysLeft <= 3,
+  );
   if (urgent.length > 0) {
     const first = urgent[0];
     if (first && first.daysLeft !== null) {
-      return `Hey! Quick heads-up - your "${first.title}" assignment is due in ${first.daysLeft} day${first.daysLeft === 1 ? '' : 's'}. Need any help with it?`;
+      return `Hey! Quick heads-up - your "${first.title}" assignment is due in ${first.daysLeft} day${first.daysLeft === 1 ? "" : "s"}. Need any help with it?`;
     }
   }
 
@@ -261,4 +305,3 @@ export function generateProactiveGreeting(context: StudentContext): string | nul
 
   return null; // Regular conversational opening
 }
-

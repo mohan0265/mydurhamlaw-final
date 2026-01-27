@@ -204,7 +204,11 @@ function buildContextChipText(
   return parts.length > 0 ? parts.join(" | ") : null;
 }
 
-function buildContextGreeting(context: DurmahContextPacket) {
+function buildContextGreeting(context: DurmahContextPacket | null) {
+  if (!context?.profile || !context?.academic || !context?.continuity) {
+    return "Hi! I'm loading your student context to better assist you...";
+  }
+
   const name = context.profile.displayName || "Student";
   const termLabel =
     context.academic.term === "Unknown" ? "this term" : context.academic.term;
@@ -324,6 +328,10 @@ export default function DurmahWidget() {
   const [showFolderPicker, setShowFolderPicker] = useState(false);
   const [transcriptForFolder, setTranscriptForFolder] = useState<any>(null);
   const [isSavingTranscript, setIsSavingTranscript] = useState(false);
+
+  // EMERGENCY STABILIZATION: ERROR STATE GATING
+  const [contextError, setContextError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
 
   // Generate new session ID on widget open
   useEffect(() => {
@@ -774,20 +782,28 @@ export default function DurmahWidget() {
   // NEW: Fetch Student Context from Phase 1 API
   const fetchStudentContext = useCallback(async () => {
     // STRICT GUARD: only fetch if open, signed in, not loading, AND NO PREVIOUS SUCCESSFUL FETCH
-    if (!signedIn || contextLoadingRef.current || hasFetchedSessionRef.current)
+    if (
+      !signedIn ||
+      contextLoadingRef.current ||
+      hasFetchedSessionRef.current ||
+      contextError
+    )
       return;
 
     contextLoadingRef.current = true;
     hasFetchedSessionRef.current = true;
     setContextLoading(true);
+    setContextError(null);
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8000);
 
     try {
-      // DETECT ROUTE and build query params
+      // ... [DETECT ROUTE logic unchanged] ...
       const currentPath = router.pathname;
       const query = router.query;
       const params = new URLSearchParams();
 
-      // YAAG Week View
       if (
         currentPath === "/year-at-a-glance/week" &&
         typeof query.ws === "string"
@@ -795,9 +811,7 @@ export default function DurmahWidget() {
         params.set("focusDate", query.ws);
         params.set("rangeDays", "7");
         params.set("pageHint", "yaag-week");
-      }
-      // YAAG Month View
-      else if (
+      } else if (
         currentPath === "/year-at-a-glance/month" &&
         typeof query.ym === "string"
       ) {
@@ -809,17 +823,13 @@ export default function DurmahWidget() {
           params.set("rangeEnd", monthEnd.toISOString().substring(0, 10));
           params.set("pageHint", "yaag-month");
         }
-      }
-      // Assignments Page
-      else if (
+      } else if (
         currentPath === "/assignments" &&
         typeof query.assignmentId === "string"
       ) {
         params.set("pageHint", "assignments");
         params.set("rangeDays", "14");
-      }
-      // Lecture Details Page
-      else if (
+      } else if (
         currentPath.includes("/study/lectures/") ||
         (query.id &&
           (currentPath === "/study/lectures/[id]" ||
@@ -829,19 +839,14 @@ export default function DurmahWidget() {
         if (lectureId) {
           params.set("pageHint", "lecture");
           params.set("lectureId", lectureId);
-          params.set("rangeDays", "7"); // Short range for relevant nearby events
+          params.set("rangeDays", "7");
         } else {
-          // Fallback if ID parsing fails
-          const today = new Date().toISOString().substring(0, 10);
-          params.set("focusDate", today);
+          params.set("focusDate", new Date().toISOString().substring(0, 10));
           params.set("rangeDays", "14");
           params.set("pageHint", "dashboard");
         }
-      }
-      // Default: 14 days from today
-      else {
-        const today = new Date().toISOString().substring(0, 10);
-        params.set("focusDate", today);
+      } else {
+        params.set("focusDate", new Date().toISOString().substring(0, 10));
         params.set("rangeDays", "14");
         params.set("pageHint", "dashboard");
       }
@@ -849,36 +854,43 @@ export default function DurmahWidget() {
       const url = `/api/durmah/context?${params.toString()}`;
       console.log("[Durmah] Fetching context with params:", params.toString());
 
-      // USE fetchAuthed or standard fetch with HEADERS + TIMEOUT
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000);
-
       const res = await fetch(url, {
         headers: { Accept: "application/json" },
         signal: controller.signal,
       });
 
-      clearTimeout(timeoutId);
-
-      if (res.ok) {
-        const data: StudentContext = await res.json();
-        setStudentContextData(data);
-
-        console.log("[Durmah] Context loaded");
-
-        // Generate proactive greeting ONCE per session
-        if (!lastProactiveGreeting) {
-          const greeting = generateProactiveGreeting(data);
-          if (greeting) {
-            setLastProactiveGreeting(greeting);
-          }
-        }
-      } else {
-        console.error("Failed to fetch student context:", res.status);
+      if (res.status === 401 || res.status === 403) {
+        setContextError("Please sign in again");
+        return;
       }
-    } catch (error) {
-      console.error("Error fetching student context:", error);
+
+      if (!res.ok) {
+        setContextError("Temporarily unavailable");
+        return;
+      }
+
+      const data = await res.json();
+      const actualData = data.ok ? data : data; // Handle both wrapper and raw if needed
+      setStudentContextData(actualData);
+
+      console.log("[Durmah] Context loaded");
+
+      if (!lastProactiveGreeting) {
+        const greeting = generateProactiveGreeting(actualData);
+        if (greeting) {
+          setLastProactiveGreeting(greeting);
+        }
+      }
+    } catch (error: any) {
+      if (error.name === "AbortError") {
+        console.error("Durmah context fetch timed out");
+        setContextError("Connection timeout");
+      } else {
+        console.error("Error fetching student context:", error);
+        setContextError("Service error");
+      }
     } finally {
+      clearTimeout(timeoutId);
       contextLoadingRef.current = false;
       setContextLoading(false);
     }
@@ -2457,11 +2469,33 @@ User question: ${userText}`;
         </div>
       )}
 
-      {/* --------------- CHAT HISTORY (Scrollable Flex Area) ---------------- */}
+      {/* CHAT HISTORY (Scrollable Flex Area) */}
       <div className="flex-1 min-h-0 overflow-y-auto glb-scroll p-4 space-y-4 bg-slate-50/50">
-        {messages.length === 0 && !ready && (
+        {messages.length === 0 && !ready && !contextError && (
           <div className="flex justify-center py-8">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-violet-600"></div>
+          </div>
+        )}
+
+        {contextError && (
+          <div className="flex flex-col items-center justify-center py-10 px-6 text-center">
+            <div className="w-12 h-12 bg-red-50 text-red-500 rounded-full flex items-center justify-center mb-4">
+              <AlertTriangle size={24} />
+            </div>
+            <h4 className="text-gray-900 font-bold mb-1">
+              Durmah is having trouble
+            </h4>
+            <p className="text-sm text-gray-500 mb-6">{contextError}</p>
+            <button
+              onClick={() => {
+                setContextError(null);
+                hasFetchedSessionRef.current = false;
+                fetchStudentContext();
+              }}
+              className="px-6 py-2 bg-violet-600 text-white rounded-xl font-bold text-sm hover:bg-violet-700 transition"
+            >
+              Retry
+            </button>
           </div>
         )}
 
