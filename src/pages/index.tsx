@@ -226,14 +226,14 @@ export default function DurhamLanding() {
                   </div>
                 </div>
 
-                <div className="hidden lg:block w-72 h-72 bg-indigo-100 rounded-3xl rotate-3 relative overflow-hidden shadow-inner shrink-0">
-                  <div className="absolute inset-0 flex items-center justify-center text-indigo-300 animate-pulse">
-                    <HelpCircle
-                      size={140}
-                      className="opacity-20 translate-y-4 -translate-x-4"
-                    />
-                  </div>
-                  <div className="absolute inset-0 bg-gradient-to-br from-indigo-600/5 to-transparent"></div>
+                <div className="hidden lg:block w-72 h-72 bg-indigo-100 rounded-3xl rotate-3 relative overflow-hidden shadow-inner shrink-0 group-hover:rotate-6 transition-transform duration-500">
+                  <NextImage
+                    src="/images/demo-thumbnails/durmah-voice.png"
+                    alt="Professor Durmah listening"
+                    fill
+                    className="object-cover"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-br from-indigo-600/5 to-transparent pointer-events-none"></div>
                 </div>
               </div>
             </div>
