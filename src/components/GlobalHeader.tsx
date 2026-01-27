@@ -127,6 +127,7 @@ import { X, User, Heart, Scale } from "lucide-react";
 // ... (existing imports)
 
 import { useEntitlements } from "@/components/auth/EntitlementGuards";
+import { articles as allArticles } from "@/content/articlesIndex";
 
 // ... (existing imports)
 
@@ -378,23 +379,27 @@ export default function GlobalHeader() {
               ) : (
                 <>
                   <Link
-                    href="/#how-it-works"
-                    className="px-3 py-2 rounded-md text-sm font-medium text-gray-600 hover:text-purple-700 hover:bg-purple-50"
-                  >
-                    How It Works
-                  </Link>
-                  <Link
-                    href="/pricing"
-                    className="px-3 py-2 rounded-md text-sm font-medium text-gray-600 hover:text-purple-700 hover:bg-purple-50"
-                  >
-                    Pricing
-                  </Link>
-                  <Link
-                    href="/articles"
+                    href="/"
                     prefetch={false}
                     className="px-3 py-2 rounded-md text-sm font-medium text-gray-600 hover:text-purple-700 hover:bg-purple-50"
                   >
-                    Articles
+                    Home
+                  </Link>
+                  <HoverMenu
+                    label="Guides"
+                    items={[
+                      ...allArticles
+                        .slice(0, 6)
+                        .map((a) => ({ label: a.title, href: a.href })),
+                      { label: "View all guides →", href: "/articles" },
+                    ]}
+                  />
+                  <Link
+                    href="/pricing"
+                    prefetch={false}
+                    className="px-3 py-2 rounded-md text-sm font-medium text-gray-600 hover:text-purple-700 hover:bg-purple-50"
+                  >
+                    Pricing
                   </Link>
                   <Link
                     href="/learn/academic-integrity"

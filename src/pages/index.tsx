@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/lib/supabase/AuthContext";
 import { isRouteAbortError } from "@/lib/navigation/safeNavigate";
+import { articles as allArticles } from "@/content/articlesIndex";
 
 export default function DurhamLanding() {
   const router = useRouter();
@@ -579,65 +580,14 @@ export default function DurhamLanding() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[
-              {
-                title: "No Question Is a Stupid Question",
-                desc: "How fear blocks questions — and how private, judgement-free clarification helps.",
-                slug: "/articles/no-question-is-a-stupid-question",
-                readTime: "8 min read",
-              },
-              {
-                title: "Durham Law AI Study Assistant",
-                desc: "Master Durmah for ethical case research, IRAC issue spotting, and exam prep.",
-                slug: "durham-law-ai-study-assistant",
-                readTime: "12 min read",
-              },
-              {
-                title: "Academic Integrity & AI Use",
-                desc: "Understand Durham's AI policy. What's permitted, prohibited, and how to stay compliant.",
-                slug: "durham-law-academic-integrity-ai",
-                readTime: "10 min read",
-              },
-              {
-                title: "How to Ask Better Legal Questions",
-                desc: "The 4-layer questioning framework for tutorials, research, and Durmah.",
-                slug: "how-to-ask-better-legal-questions",
-                readTime: "8 min read",
-              },
-              {
-                title: "Durham Law Study Groups",
-                desc: "Build effective, compliant study groups with optimal meeting structures.",
-                slug: "durham-law-study-groups",
-                readTime: "9 min read",
-              },
-              {
-                title: "Durham Law Wellbeing Routine",
-                desc: "Balance intensive study with sustainable sleep, movement, and connection habits.",
-                slug: "durham-law-wellbeing-routine",
-                readTime: "7 min read",
-              },
-              {
-                title: "Durham Law Exam Technique",
-                desc: "IRAC method, essay structuring, time management, and ethical AI exam prep.",
-                slug: "durham-law-exam-technique",
-                readTime: "11 min read",
-              },
-            ].map((guide) => (
-              <Link
-                key={guide.slug}
-                href={
-                  guide.slug.startsWith("/") || guide.slug.startsWith("http")
-                    ? guide.slug
-                    : `/learn/${guide.slug}`
-                }
-                prefetch={false}
-              >
+            {allArticles.slice(0, 6).map((guide) => (
+              <Link key={guide.slug} href={guide.href} prefetch={false}>
                 <div className="group p-6 rounded-xl border border-gray-200 bg-white hover:border-purple-300 hover:shadow-lg transition-all duration-300 h-full flex flex-col">
                   <h3 className="text-lg font-bold text-gray-900 mb-2 group-hover:text-purple-700 transition-colors">
                     {guide.title}
                   </h3>
                   <p className="text-sm text-gray-600 mb-4 flex-1">
-                    {guide.desc}
+                    {guide.description}
                   </p>
                   <div className="flex items-center justify-between text-xs">
                     <span className="text-gray-400">{guide.readTime}</span>

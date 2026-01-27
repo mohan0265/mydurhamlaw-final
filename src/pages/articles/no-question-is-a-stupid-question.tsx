@@ -10,6 +10,7 @@ import {
   HelpCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
+import RelatedGuides from "@/components/seo/RelatedGuides";
 
 export default function NoQuestionIsAStupidQuestion() {
   return (
@@ -321,11 +322,10 @@ export default function NoQuestionIsAStupidQuestion() {
               properly.
             </p>
 
-            <p>
-              Because no question is a stupid question —<br />
-              and no student should struggle in silence.
-            </p>
+            <p>and no student should struggle in silence.</p>
           </div>
+
+          <RelatedGuides currentHref="/articles/no-question-is-a-stupid-question" />
 
           {/* CTA Block */}
           <div className="mt-20 p-8 md:p-12 bg-gradient-to-br from-indigo-800 to-indigo-950 rounded-3xl text-center text-white shadow-2xl">
