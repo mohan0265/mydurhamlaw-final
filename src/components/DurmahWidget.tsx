@@ -258,10 +258,11 @@ export default function DurmahWidget() {
     upcomingTasks: any[];
     todaysEvents: any[];
   } = useMemo(() => {
+    // FIX: Safely access window context
     const base = durmahCtx.hydrated
       ? durmahCtx
       : typeof window !== "undefined"
-        ? window.__mdlStudentContext
+        ? (window as any).__mdlStudentContext
         : null;
 
     // Robust name resolution
@@ -760,12 +761,24 @@ export default function DurmahWidget() {
 
   // FIX: Use ref to track loading state to avoid dependency loop in useCallback
   const contextLoadingRef = useRef(false);
+  // STRICT GUARD: Track if we have already fetched for this "open session"
+  const hasFetchedSessionRef = useRef(false);
+
+  // Reset fetch guard when widget closes
+  useEffect(() => {
+    if (!isOpen) {
+      hasFetchedSessionRef.current = false;
+    }
+  }, [isOpen]);
 
   // NEW: Fetch Student Context from Phase 1 API
   const fetchStudentContext = useCallback(async () => {
-    if (!signedIn || contextLoadingRef.current || studentContextData) return;
+    // STRICT GUARD: only fetch if open, signed in, not loading, AND NO PREVIOUS SUCCESSFUL FETCH
+    if (!signedIn || contextLoadingRef.current || hasFetchedSessionRef.current)
+      return;
 
     contextLoadingRef.current = true;
+    hasFetchedSessionRef.current = true;
     setContextLoading(true);
 
     try {
@@ -1812,7 +1825,7 @@ User question: ${userText}`;
 
         <div className="p-8 text-center flex flex-col items-center">
           <div className="w-20 h-20 mb-6 flex items-center justify-center animate-in fade-in zoom-in duration-700">
-            <Image
+            <img
               src="/assets/mascots/quiz-me-bunny-96.webp"
               alt="Durmah Mascot"
               width={80}
