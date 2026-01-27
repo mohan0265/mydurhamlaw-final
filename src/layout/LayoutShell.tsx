@@ -53,8 +53,8 @@ export default function LayoutShell({ children }: Props) {
       {/* Unified Footer - Hidden for full-screen tools like Quiz/Assignments */}
       {!isFullScreenPage && <AppFooter isAuthed={!!user} />}
       
-      {/* Global Floating Widgets - Show on all pages except auth pages */}
-      {!isAuthPage && (
+      {/* Global Floating Widgets - Show on all pages except auth pages AND only when logged in */}
+      {!isAuthPage && user && (
         <>
           <DurmahWidget />
           <AWYWidget />
