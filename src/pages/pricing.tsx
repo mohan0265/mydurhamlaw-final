@@ -113,9 +113,13 @@ export default function PricingPage() {
         {/* Hero Section */}
         <div className="bg-gradient-to-br from-indigo-50 to-white pt-16 pb-20 border-b border-gray-100">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <div className="inline-flex items-center gap-2 bg-indigo-600 text-white text-[11px] font-black px-4 py-1.5 rounded-full uppercase tracking-[0.2em] mb-8 shadow-lg shadow-indigo-200 animate-in fade-in slide-in-from-bottom-4 duration-700">
+            <div className="inline-flex items-center gap-2 bg-indigo-600 text-white text-[11px] font-black px-4 py-1.5 rounded-full uppercase tracking-[0.2em] mb-4 shadow-lg shadow-indigo-200 animate-in fade-in slide-in-from-bottom-4 duration-700">
                Everything Included
             </div>
+            
+            <p className="text-gray-500 text-xs font-bold uppercase tracking-widest mb-8">
+              Independent study companion • Not affiliated with Durham University
+            </p>
             <h1 className="text-4xl md:text-6xl font-black text-gray-900 mb-6 tracking-tight">
               One Plan. <span className="text-indigo-600">Full Access.</span>
             </h1>

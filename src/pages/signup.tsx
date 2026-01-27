@@ -54,8 +54,9 @@ export default function SignUpPage() {
             <h2 className="text-4xl font-bold text-gray-900 mb-3">
               Welcome to <BrandTitle variant="light" size="4xl" as="span" />
             </h2>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Built for Durham Law students. MyDurhamLaw is an independent study companion designed around the Durham Law journey.
+            <p className="text-sm text-gray-500 max-w-2xl mx-auto font-medium">
+              MyDurhamLaw is an independent study companion designed around the Durham Law journey. <br />
+              It is not affiliated with or endorsed by Durham University.
             </p>
           </div>
 

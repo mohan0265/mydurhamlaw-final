@@ -46,10 +46,15 @@ return (
         <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10 pointer-events-none" />
         
         <div className="relative z-10 max-w-5xl mx-auto px-6 w-full text-center">
-          <div className="inline-flex items-center gap-2 bg-white/5 backdrop-blur-xl px-4 py-2 rounded-full border border-white/10 mb-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
+          <div className="inline-flex items-center gap-2 bg-white/5 backdrop-blur-xl px-4 py-2 rounded-full border border-white/10 mb-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
             <span className="w-2 h-2 bg-purple-400 rounded-full animate-pulse shadow-[0_0_10px_#a855f7]"></span>
             <span className="text-sm font-medium text-gray-400 tracking-wide uppercase">Accepting all years (Foundation → Year 3)</span>
           </div>
+
+          <p className="text-gray-500 text-xs sm:text-sm font-medium max-w-2xl mx-auto mb-8 tracking-wide">
+            MyDurhamLaw is an independent study companion designed around the Durham Law journey. <br className="hidden sm:block" />
+            It is not affiliated with or endorsed by Durham University.
+          </p>
 
           <h1 className="flex flex-col md:flex-row flex-wrap justify-center items-center gap-2 md:gap-3 text-4xl md:text-5xl xl:text-6xl font-black mb-6 tracking-tight text-white leading-tight">
             <Link href="/learn" className="px-3 md:px-4 py-2 rounded-xl bg-white/5 border border-white/10 shadow-sm hover:bg-white/10 hover:border-purple-500/30 transition-all hover:scale-105 active:scale-95 whitespace-nowrap">

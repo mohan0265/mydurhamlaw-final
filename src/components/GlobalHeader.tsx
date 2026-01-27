@@ -459,7 +459,7 @@ export default function GlobalHeader() {
                         See Pricing
                       </Link>
                       <Link
-                        href="/request-access"
+                        href="/signup"
                         className="block px-4 py-2 text-sm text-indigo-700 bg-white rounded mx-3 mt-1 text-center font-semibold hover:bg-indigo-50"
                         onClick={() => setOpenMobile(false)}
                       >
