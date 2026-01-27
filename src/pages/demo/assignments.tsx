@@ -1,0 +1,113 @@
+import React from "react";
+import Head from "next/head";
+import Link from "next/link";
+import { BookOpen, ArrowRight, Play, Zap, CheckCircle } from "lucide-react";
+import { Button } from "@/components/ui/Button";
+import RelatedGuides from "@/components/seo/RelatedGuides";
+
+export default function AssignmentsDemo() {
+  return (
+    <div className="bg-white min-h-screen">
+      <Head>
+        <title>Assignment Support - Public Demo | MyDurhamLaw</title>
+        <meta
+          name="description"
+          content="Master legal assignments with MyDurhamLaw. From issue spotting to final polish, our AI guides you through every stage."
+        />
+        <link rel="canonical" href="https://mydurhamlaw.com/demo/assignments" />
+      </Head>
+
+      <main>
+        <section className="py-20 bg-gray-950 text-white relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-purple-900/20 to-transparent"></div>
+          <div className="max-w-4xl mx-auto px-6 relative z-10 text-center">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-500/20 text-purple-300 text-xs font-bold uppercase tracking-widest mb-6 border border-purple-500/30">
+              <BookOpen className="w-3.5 h-3.5" />
+              Feature Demo
+            </div>
+            <h1 className="text-5xl md:text-7xl font-black mb-8 tracking-tighter">
+              Assignment <span className="text-purple-400">Support</span>
+            </h1>
+            <p className="text-xl text-gray-400 mb-10 max-w-2xl mx-auto leading-relaxed font-medium">
+              Transform the way you write law. A structured, stage-by-stage
+              workflow designed to build your confidence and your marks.
+            </p>
+          </div>
+        </section>
+
+        <section className="py-24 max-w-5xl mx-auto px-6">
+          <div className="grid md:grid-cols-2 gap-16 items-center mb-24">
+            <div>
+              <h2 className="text-3xl font-bold text-gray-900 mb-8">
+                What you get
+              </h2>
+              <ul className="space-y-6">
+                {[
+                  {
+                    title: "Stage-by-Stage Workflow",
+                    desc: "Break down overwhelming assignments into manageable phases: Understanding, Research, and Drafting.",
+                  },
+                  {
+                    title: "Intelligent Issue Spotting",
+                    desc: "Collaborate with Durmah to identify legal issues and relevant case law from your module syllabus.",
+                  },
+                  {
+                    title: "Critical Feedback",
+                    desc: "Upload your draft for high-level analytical critique (not ghostwriting) to sharpen your legal voice.",
+                  },
+                ].map((item, i) => (
+                  <li key={i} className="flex gap-4">
+                    <div className="w-6 h-6 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center shrink-0 mt-1">
+                      <Zap className="w-3.5 h-3.5" />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-gray-900">{item.title}</h4>
+                      <p className="text-gray-600 text-sm mt-1 leading-relaxed">
+                        {item.desc}
+                      </p>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div className="aspect-video bg-gray-100 rounded-[2.5rem] border-4 border-gray-50 shadow-2xl flex flex-col items-center justify-center text-center p-8 relative overflow-hidden group">
+              <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-transparent"></div>
+              <div className="w-20 h-20 rounded-full bg-purple-600 text-white flex items-center justify-center mb-6 shadow-xl shadow-purple-200 group-hover:scale-110 transition-transform">
+                <Play className="w-8 h-8 ml-1" />
+              </div>
+              <p className="text-lg font-bold text-gray-900 mb-2">
+                Workflow Demo Coming Soon
+              </p>
+              <p className="text-sm text-gray-500 max-w-[200px]">
+                Master the art of legal writing.
+              </p>
+            </div>
+          </div>
+
+          {/* CTA */}
+          <div className="mt-24 py-16 bg-gray-950 rounded-[3rem] text-center text-white relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-purple-600/20 to-transparent"></div>
+            <div className="relative z-10 px-6">
+              <h2 className="text-3xl md:text-5xl font-black mb-6 tracking-tighter">
+                Scale your writing.
+              </h2>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <Link
+                  href="/eligibility?next=/signup&plan=free"
+                  prefetch={false}
+                >
+                  <Button className="bg-purple-600 text-white hover:bg-purple-700 px-10 py-5 text-xl font-bold rounded-2xl shadow-xl shadow-purple-900/40">
+                    Start Free Trial <ArrowRight className="w-6 h-6 ml-2" />
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          </div>
+
+          <RelatedGuides currentSlug="assignments" />
+        </section>
+      </main>
+    </div>
+  );
+}

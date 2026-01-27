@@ -12,10 +12,11 @@ import {
   TrendingUp,
   FileText,
   HelpCircle,
+  Clock,
 } from "lucide-react";
 import { useAuth } from "@/lib/supabase/AuthContext";
 import { isRouteAbortError } from "@/lib/navigation/safeNavigate";
-import { articles as allArticles } from "@/content/articlesIndex";
+import { guides as allGuides } from "@/content/articlesIndex";
 
 export default function DurhamLanding() {
   const router = useRouter();
@@ -565,33 +566,70 @@ export default function DurhamLanding() {
       {/* POPULAR DURHAM LAW GUIDES */}
       <section className="py-20 bg-white border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* FLAGSHIP GUIDE BANNER */}
+          <div className="mb-16">
+            <Link
+              href="/articles/no-question-is-a-stupid-question"
+              prefetch={false}
+              className="block group relative overflow-hidden rounded-[2.5rem] bg-indigo-600 p-8 md:p-12 text-white shadow-2xl shadow-indigo-200 transition-all duration-500 hover:scale-[1.01]"
+            >
+              <div className="absolute inset-0 bg-gradient-to-br from-indigo-400/20 to-transparent"></div>
+              <div className="relative z-10 flex flex-col md:flex-row items-center gap-8 md:gap-12">
+                <div className="w-20 h-20 md:w-24 md:h-24 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center border border-white/20 shrink-0">
+                  <HelpCircle className="w-10 h-10 md:w-12 md:h-12 text-white" />
+                </div>
+                <div className="text-center md:text-left flex-1">
+                  <span className="inline-block px-3 py-1 rounded-full bg-white/20 text-[10px] font-black uppercase tracking-widest mb-4 border border-white/10">
+                    Featured Guide
+                  </span>
+                  <h3 className="text-3xl md:text-4xl font-black mb-4 tracking-tight leading-tight">
+                    No Question Is a Stupid Question
+                  </h3>
+                  <p className="text-lg md:text-xl text-indigo-100/80 font-medium max-w-2xl leading-relaxed">
+                    Why fear stops students from learning—and how judgement-free
+                    clarification changes everything.
+                  </p>
+                </div>
+                <div className="shrink-0 flex items-center gap-2 font-black text-sm uppercase tracking-widest bg-white text-indigo-600 px-8 py-4 rounded-2xl group-hover:gap-4 transition-all">
+                  Read the guide <ArrowRight className="w-5 h-5" />
+                </div>
+              </div>
+            </Link>
+          </div>
+
           <div className="text-center mb-12">
-            <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-50 text-purple-600 text-xs font-bold uppercase tracking-wider mb-4">
+            <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-50 text-purple-600 text-[10px] font-black uppercase tracking-[0.2em] mb-4 border border-purple-100">
               <BookOpen className="w-3.5 h-3.5" />
               Learning Hub
             </span>
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">
+            <h2 className="text-3xl md:text-4xl font-black text-gray-900 mb-4 tracking-tighter">
               Popular <span className="text-purple-600">Durham Law Guides</span>
             </h2>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto font-medium opacity-80">
               Evidence-based study techniques, ethical AI use, and exam
               strategies—all Durham-specific.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {allArticles.slice(0, 6).map((guide) => (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {allGuides.slice(1, 4).map((guide) => (
               <Link key={guide.slug} href={guide.href} prefetch={false}>
-                <div className="group p-6 rounded-xl border border-gray-200 bg-white hover:border-purple-300 hover:shadow-lg transition-all duration-300 h-full flex flex-col">
-                  <h3 className="text-lg font-bold text-gray-900 mb-2 group-hover:text-purple-700 transition-colors">
+                <div className="group p-8 rounded-3xl border border-gray-100 bg-white hover:border-purple-300 hover:shadow-2xl transition-all duration-500 h-full flex flex-col hover:-translate-y-1 text-left">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-4 block">
+                    {guide.category[0]}
+                  </span>
+                  <h3 className="text-xl font-bold text-gray-900 mb-4 group-hover:text-purple-700 transition-colors leading-tight">
                     {guide.title}
                   </h3>
-                  <p className="text-sm text-gray-600 mb-4 flex-1">
+                  <p className="text-sm text-gray-600 mb-8 flex-1 leading-relaxed font-medium opacity-80">
                     {guide.description}
                   </p>
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-gray-400">{guide.readTime}</span>
-                    <div className="text-purple-600 font-semibold flex items-center gap-1 group-hover:gap-2 transition-all">
+                  <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest pt-6 border-t border-gray-50">
+                    <span className="text-gray-400 flex items-center gap-1.5">
+                      <Clock className="w-3.5 h-3.5" />
+                      {guide.readTime}
+                    </span>
+                    <div className="text-purple-600 flex items-center gap-1 group-hover:gap-2 transition-all">
                       Read guide <ArrowRight className="w-3.5 h-3.5" />
                     </div>
                   </div>
@@ -600,10 +638,11 @@ export default function DurhamLanding() {
             ))}
           </div>
 
-          <div className="mt-10 text-center">
-            <Link href="/learn">
-              <button className="inline-flex items-center gap-2 px-6 py-3 rounded-full border-2 border-purple-600 text-purple-600 font-bold hover:bg-purple-600 hover:text-white transition-all">
-                View All Guides <ArrowRight className="w-4 h-4" />
+          <div className="mt-12 text-center">
+            <Link href="/guides" prefetch={false}>
+              <button className="inline-flex items-center gap-2 px-10 py-4 rounded-2xl border border-purple-100 bg-purple-50 text-purple-600 font-black text-sm uppercase tracking-widest hover:bg-purple-600 hover:text-white transition-all shadow-sm">
+                View All {allGuides.length} Guides{" "}
+                <ArrowRight className="w-4 h-4" />
               </button>
             </Link>
           </div>

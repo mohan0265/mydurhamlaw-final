@@ -10,8 +10,10 @@ interface LearnLayoutProps {
   children: React.ReactNode;
   title: string;
   description: string;
-  canonicalUrl?: string; // Made optional for backwards compatibility
-  slug?: string; // Keep for backwards compatibility
+  category?: string[]; // Add category for RelatedGuides
+  pinnedSlugs?: string[]; // Add pinnedSlugs for RelatedGuides
+  canonicalUrl?: string;
+  slug?: string;
   relatedArticles?: { title: string; slug: string }[];
 }
 
@@ -19,6 +21,8 @@ export const LearnLayout: React.FC<LearnLayoutProps> = ({
   children,
   title,
   description,
+  category = [],
+  pinnedSlugs = [],
   canonicalUrl,
   slug,
   relatedArticles = [],
@@ -62,21 +66,20 @@ export const LearnLayout: React.FC<LearnLayoutProps> = ({
         {/* Article Content */}
         <article className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-20">
           <Link
-            href="/learn"
+            href="/guides"
             prefetch={false}
             className="inline-flex items-center gap-2 text-sm text-blue-600 font-medium mb-8 hover:underline"
           >
             <ArrowLeft className="w-4 h-4" />
-            Back to Learn Hub
+            Back to Guides Hub
           </Link>
 
           {children}
 
           <RelatedGuides
-            currentHref={finalCanonicalUrl.replace(
-              "https://mydurhamlaw.com",
-              "",
-            )}
+            currentSlug={slug || ""}
+            categories={category}
+            pinnedSlugs={pinnedSlugs}
           />
 
           {/* Final CTA Block */}

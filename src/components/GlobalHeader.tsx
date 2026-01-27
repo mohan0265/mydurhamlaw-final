@@ -127,7 +127,7 @@ import { X, User, Heart, Scale } from "lucide-react";
 // ... (existing imports)
 
 import { useEntitlements } from "@/components/auth/EntitlementGuards";
-import { articles as allArticles } from "@/content/articlesIndex";
+import { guides as allGuides } from "@/content/articlesIndex";
 
 // ... (existing imports)
 
@@ -385,28 +385,48 @@ export default function GlobalHeader() {
                   >
                     Home
                   </Link>
+
                   <HoverMenu
                     label="Guides"
                     items={[
-                      ...allArticles
-                        .slice(0, 6)
-                        .map((a) => ({ label: a.title, href: a.href })),
-                      { label: "View all guides →", href: "/articles" },
+                      {
+                        label: "No Question Is a Stupid Question",
+                        href: "/articles/no-question-is-a-stupid-question",
+                      },
+                      {
+                        label: "Durham Law AI Study Assistant",
+                        href: "/learn/durham-law-ai-study-assistant",
+                      },
+                      {
+                        label: "Academic Integrity & AI Use",
+                        href: "/learn/durham-law-academic-integrity-ai",
+                      },
+                      {
+                        label: "How to Ask Better Legal Questions",
+                        href: "/learn/how-to-ask-better-legal-questions",
+                      },
+                      {
+                        label: "Durham Law Exam Technique",
+                        href: "/learn/durham-law-exam-technique",
+                      },
+                      {
+                        label: "Stay Current: Legal News Habit",
+                        href: "/stay-current",
+                      },
+                      {
+                        label: "Durham Law Study Groups",
+                        href: "/learn/durham-law-study-groups",
+                      },
+                      { label: "View all guides →", href: "/guides" },
                     ]}
                   />
+
                   <Link
                     href="/pricing"
                     prefetch={false}
                     className="px-3 py-2 rounded-md text-sm font-medium text-gray-600 hover:text-purple-700 hover:bg-purple-50"
                   >
                     Pricing
-                  </Link>
-                  <Link
-                    href="/learn/academic-integrity"
-                    prefetch={false}
-                    className="px-3 py-2 rounded-md text-sm font-medium text-gray-600 hover:text-purple-700 hover:bg-purple-50"
-                  >
-                    Academic Integrity
                   </Link>
                 </>
               )}

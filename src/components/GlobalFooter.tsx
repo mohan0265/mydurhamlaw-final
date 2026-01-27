@@ -23,12 +23,21 @@ export default function GlobalFooter() {
 
         <div>
           <div className="font-semibold text-gray-900 mb-4 uppercase tracking-wider text-xs">
-            Study & Progress
+            Durham Law Guides
           </div>
           <ul className="space-y-2 text-gray-600">
             <li>
               <Link
-                className="hover:text-blue-600 transition-colors"
+                className="hover:text-purple-600 transition-colors"
+                href="/guides"
+                prefetch={false}
+              >
+                Guides Hub
+              </Link>
+            </li>
+            <li>
+              <Link
+                className="hover:text-purple-600 transition-colors"
                 href="/articles/no-question-is-a-stupid-question"
                 prefetch={false}
               >
@@ -37,34 +46,29 @@ export default function GlobalFooter() {
             </li>
             <li>
               <Link
-                className="hover:text-blue-600 transition-colors"
-                href="/learn/ai-study-assistant"
+                className="hover:text-purple-600 transition-colors"
+                href="/learn/durham-law-ai-study-assistant"
+                prefetch={false}
               >
                 AI Study Assistant
               </Link>
             </li>
             <li>
               <Link
-                className="hover:text-blue-600 transition-colors"
-                href="/learn/smart-chat-interface"
+                className="hover:text-purple-600 transition-colors"
+                href="/learn/durham-law-exam-technique"
+                prefetch={false}
               >
-                Smart Chat Tips
+                Exam Technique
               </Link>
             </li>
             <li>
               <Link
-                className="hover:text-blue-600 transition-colors"
-                href="/learn/premium-support"
+                className="hover:text-purple-600 transition-colors"
+                href="/stay-current"
+                prefetch={false}
               >
-                Exam Excellence
-              </Link>
-            </li>
-            <li>
-              <Link
-                className="hover:text-blue-600 transition-colors"
-                href="/pricing"
-              >
-                Plans & Pricing
+                Stay Current (News)
               </Link>
             </li>
           </ul>
@@ -77,32 +81,36 @@ export default function GlobalFooter() {
           <ul className="space-y-2 text-gray-600">
             <li>
               <Link
-                className="hover:text-blue-600 transition-colors"
-                href="/learn/always-with-you"
+                className="hover:text-purple-600 transition-colors"
+                href="/demo/durmah-voice"
+                prefetch={false}
               >
-                AWY Wellbeing
+                Durmah Voice Demo
               </Link>
             </li>
             <li>
               <Link
-                className="hover:text-blue-600 transition-colors"
+                className="hover:text-purple-600 transition-colors"
                 href="/learn/real-time-collaboration"
+                prefetch={false}
               >
                 Study Groups
               </Link>
             </li>
             <li>
               <Link
-                className="hover:text-blue-600 transition-colors"
+                className="hover:text-purple-600 transition-colors"
                 href="/community"
+                prefetch={false}
               >
                 Community Hub
               </Link>
             </li>
             <li>
               <Link
-                className="hover:text-blue-600 transition-colors"
+                className="hover:text-purple-600 transition-colors"
                 href="/about"
+                prefetch={false}
               >
                 Our Story
               </Link>
@@ -117,32 +125,36 @@ export default function GlobalFooter() {
           <ul className="space-y-2 text-gray-600">
             <li>
               <Link
-                className="hover:text-blue-600 transition-colors"
-                href="/learn/academic-integrity"
+                className="hover:text-purple-600 transition-colors"
+                href="/learn/durham-law-academic-integrity-ai"
+                prefetch={false}
               >
                 Academic Integrity
               </Link>
             </li>
             <li>
               <Link
-                className="hover:text-blue-600 transition-colors"
+                className="hover:text-purple-600 transition-colors"
                 href="/legal/privacy-policy"
+                prefetch={false}
               >
                 Privacy Policy
               </Link>
             </li>
             <li>
               <Link
-                className="hover:text-blue-600 transition-colors"
+                className="hover:text-purple-600 transition-colors"
                 href="/legal/terms-of-use"
+                prefetch={false}
               >
                 Terms of Use
               </Link>
             </li>
             <li>
               <Link
-                className="hover:text-blue-600 transition-colors text-xs"
+                className="hover:text-purple-600 transition-colors text-xs"
                 href="/admin/login"
+                prefetch={false}
               >
                 Admin Login
               </Link>

@@ -33,7 +33,7 @@ export default function StayCurrentPage() {
             world with our live legal news feed.
           </p>
           <div className="flex flex-col sm:flex-row justify-center gap-4">
-            <Link href="/legal/tools/legal-news-feed">
+            <Link href="/legal/tools/legal-news-feed" prefetch={false}>
               <button className="bg-red-600 hover:bg-red-700 text-white font-bold py-4 px-10 rounded-full transition-all shadow-lg shadow-red-900/50 flex items-center gap-2 mx-auto sm:mx-0">
                 Open News Feed <ArrowRight className="w-5 h-5" />
               </button>
@@ -43,6 +43,14 @@ export default function StayCurrentPage() {
       </div>
 
       <div className="py-24 max-w-4xl mx-auto px-6">
+        <Link
+          href="/guides"
+          prefetch={false}
+          className="inline-flex items-center gap-2 text-sm text-red-600 font-medium mb-12 hover:underline"
+        >
+          <ArrowRight className="w-4 h-4 rotate-180" />
+          Back to Guides Hub
+        </Link>
         <div className="grid sm:grid-cols-2 gap-12">
           <div>
             <h3 className="text-2xl font-bold text-gray-900 mb-6">
@@ -72,13 +80,14 @@ export default function StayCurrentPage() {
             </p>
             <Link
               href="/legal/tools/legal-news-feed"
+              prefetch={false}
               className="text-red-600 font-bold text-sm hover:underline"
             >
               View Full Feed &rarr;
             </Link>
           </div>
         </div>
-        <RelatedGuides currentHref="/stay-current" />
+        <RelatedGuides currentSlug="stay-current" categories={["News"]} />
       </div>
     </div>
   );

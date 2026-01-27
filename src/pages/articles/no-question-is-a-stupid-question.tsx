@@ -63,12 +63,12 @@ export default function NoQuestionIsAStupidQuestion() {
       <main className="flex-1">
         <article className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-20">
           <Link
-            href="/community"
+            href="/guides"
             prefetch={false}
             className="inline-flex items-center gap-2 text-sm text-indigo-600 font-medium mb-8 hover:underline"
           >
             <ArrowLeft className="w-4 h-4" />
-            Back to Community
+            Back to Guides Hub
           </Link>
 
           <div className="prose prose-indigo max-w-none">
@@ -183,6 +183,34 @@ export default function NoQuestionIsAStupidQuestion() {
               It’s the emotional cost of asking for help.
             </p>
 
+            {/* Contextual Callout */}
+            <div className="not-prose my-12 p-8 bg-indigo-50 rounded-3xl border border-indigo-100 shadow-sm relative overflow-hidden">
+              <div className="relative z-10 flex flex-col md:flex-row items-center gap-6">
+                <div className="flex-1 text-center md:text-left">
+                  <h3 className="text-xl font-bold text-gray-900 mb-2">
+                    Ready to ask better questions?
+                  </h3>
+                  <p className="text-gray-600 mb-6">
+                    Once fear is removed, the next step is learning how to ask
+                    questions that get you unstuck faster — in seminars,
+                    tutorials, and essays.
+                  </p>
+                  <Link
+                    href="/learn/how-to-ask-better-legal-questions"
+                    prefetch={false}
+                  >
+                    <button className="inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition shadow-lg shadow-indigo-100">
+                      Read: How to Ask Better Legal Questions{" "}
+                      <ArrowRight className="w-4 h-4" />
+                    </button>
+                  </Link>
+                </div>
+                <div className="hidden md:block p-4 bg-white rounded-2xl shadow-sm border border-indigo-50">
+                  <Zap className="w-12 h-12 text-indigo-500" />
+                </div>
+              </div>
+            </div>
+
             <h3 className="text-2xl font-bold text-gray-900 mt-12 mb-6">
               How MyDurhamLaw changes the equation
             </h3>
@@ -267,7 +295,7 @@ export default function NoQuestionIsAStupidQuestion() {
             <p>
               Integrated tools like{" "}
               <Link
-                href="/yaag"
+                href="/demo/year-at-a-glance"
                 prefetch={false}
                 className="text-indigo-600 hover:underline"
               >
@@ -275,7 +303,7 @@ export default function NoQuestionIsAStupidQuestion() {
               </Link>
               ,{" "}
               <Link
-                href="/assignments"
+                href="/demo/assignments"
                 prefetch={false}
                 className="text-indigo-600 hover:underline"
               >
@@ -283,7 +311,7 @@ export default function NoQuestionIsAStupidQuestion() {
               </Link>{" "}
               support, and{" "}
               <Link
-                href="/study"
+                href="/demo/quiz-me"
                 prefetch={false}
                 className="text-indigo-600 hover:underline"
               >
@@ -325,7 +353,11 @@ export default function NoQuestionIsAStupidQuestion() {
             <p>and no student should struggle in silence.</p>
           </div>
 
-          <RelatedGuides currentHref="/articles/no-question-is-a-stupid-question" />
+          <RelatedGuides
+            currentSlug="no-question-is-a-stupid-question"
+            categories={["Psychology"]}
+            pinnedSlugs={["how-to-ask-better-legal-questions"]}
+          />
 
           {/* CTA Block */}
           <div className="mt-20 p-8 md:p-12 bg-gradient-to-br from-indigo-800 to-indigo-950 rounded-3xl text-center text-white shadow-2xl">
