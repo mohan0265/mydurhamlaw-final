@@ -87,19 +87,10 @@ export default function LearnHub() {
         
         {/* Open Graph */}
         <meta property="og:title" content="Learn Hub - Study & Progress Guides for Durham Law Students" />
-        <meta property="og:description" content="Explore comprehensive guides on AI-assisted legal study, academic integrity, and student wellbeing at MyDurhamLaw." />
-        <meta property="og:url" content="https://mydurhamlaw.com/learn" />
-        <meta property="og:type" content="website" />
-        <meta property="og:image" content="https://mydurhamlaw.com/og/og-default.png" />
-        <meta property="og:image:width" content="1200" />
-        <meta property="og:image:height" content="630" />
-        <meta property="og:site_name" content="MyDurhamLaw" />
+        <meta property="og:image" content="https://mydurhamlaw.com/og/og-default.png?v=2" />
         
         {/* Twitter */}
-        <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="Learn Hub - MyDurhamLaw" />
-        <meta name="twitter:description" content="Explore comprehensive guides on AI-assisted legal study, academic integrity, and student wellbeing." />
-        <meta name="twitter:image" content="https://mydurhamlaw.com/og/og-default.png" />
+        <meta name="twitter:image" content="https://mydurhamlaw.com/og/og-default.png?v=2" />
       </Head>
 
       <main className="flex-1">

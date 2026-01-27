@@ -31,18 +31,11 @@ return (
       <Head>
         <title>MyDurhamLaw — Learn Law | Write Law | Speak Law</title>
         <meta name="description" content="Durham-specific law support — lectures, assignments, revision, and legal reasoning (text + voice)." />
-        <meta property="og:title" content="Learn law. Write law. Speak law." />
-        <meta property="og:description" content="Durham-specific law support — lectures, assignments, revision, and legal reasoning (text + voice)." />
-        <meta property="og:image" content="https://mydurhamlaw.com/og/og-hero.png?v=3" />
-        <meta property="og:site_name" content="MyDurhamLaw" />
-        <meta property="og:image:width" content="1200" />
-        <meta property="og:image:height" content="630" />
-        <meta property="og:url" content="https://mydurhamlaw.com/" />
-        <link rel="canonical" href="https://mydurhamlaw.com/" />
-        <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="Learn law. Write law. Speak law." />
-        <meta name="twitter:description" content="Durham-specific law support — lectures, assignments, revision, and legal reasoning (text + voice)." />
-        <meta name="twitter:image" content="https://mydurhamlaw.com/og/og-hero.png?v=3" />
+        
+        {/* Force refresh of OG image for Hero/Landing */}
+        <meta property="og:image" content="https://mydurhamlaw.com/og/og-default.png?v=2" />
+        <meta property="og:title" content="MyDurhamLaw — Learn Law | Write Law | Speak Law" />
+        <meta name="twitter:image" content="https://mydurhamlaw.com/og/og-default.png?v=2" />
       </Head>
 
       {/* 1) HERO SECTION */}

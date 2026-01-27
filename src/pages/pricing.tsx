@@ -98,27 +98,15 @@ export default function PricingPage() {
   return (
     <>
       <Head>
-        <title>Pricing & Plans | MyDurhamLaw AI Study Assistant</title>
-        <meta 
-          name="description" 
-          content="Transform your legal education at Durham with ethical AI. 14-day free trial on all plans. Core and Pro options available for focused law students." 
-        />
-        <link rel="canonical" href="https://mydurhamlaw.com/pricing" />
+        <title>Pricing - MyDurhamLaw Plans</title>
+        <meta name="description" content="One simple plan for comprehensive Durham Law support. Full access to AI voice tutoring, assignment tools, and legal news." />
         
         {/* Open Graph */}
-        <meta property="og:title" content="Pricing & Plans | MyDurhamLaw AI Study Assistant" />
-        <meta property="og:description" content="Choose the perfect AI study plan. 14-day free trial. No credit card required." />
-        <meta property="og:url" content="https://mydurhamlaw.com/pricing" />
-        <meta property="og:type" content="website" />
-        <meta property="og:image" content="https://mydurhamlaw.com/og/og-pricing.png" />
-        <meta property="og:image:width" content="1200" />
-        <meta property="og:image:height" content="630" />
+        <meta property="og:title" content="Pricing - MyDurhamLaw" />
+        <meta property="og:image" content="https://mydurhamlaw.com/og/og-default.png?v=2" />
         
         {/* Twitter */}
-        <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="Pricing Plans - MyDurhamLaw" />
-        <meta name="twitter:description" content="Choose the perfect AI study plan for your law degree. 14-day free trial." />
-        <meta name="twitter:image" content="https://mydurhamlaw.com/og/og-pricing.png" />
+        <meta name="twitter:image" content="https://mydurhamlaw.com/og/og-default.png?v=2" />
       </Head>
 
       <div className="min-h-screen bg-white">
