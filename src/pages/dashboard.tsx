@@ -189,12 +189,12 @@ function DashboardContent() {
           }
         })
         .catch((err) => {
+          if (err.name === "AbortError") {
+            console.debug("Overview fetch aborted");
+            return;
+          }
           console.error("Overview fetch error:", err);
-          setDashboardError(
-            err.name === "AbortError"
-              ? "Connection timed out"
-              : "Dashboard temporarily unavailable",
-          );
+          setDashboardError("Dashboard temporarily unavailable");
         })
         .finally(() => {
           clearTimeout(timeoutId);
@@ -438,6 +438,7 @@ function DashboardContent() {
                     <span className="flex items-center gap-2">
                       <Link
                         href={focusItem.link}
+                        prefetch={false}
                         className="hover:opacity-80 transition active:scale-95"
                       >
                         <span className="bg-yellow-400 text-black text-[10px] font-black px-1.5 py-0.5 rounded uppercase tracking-tighter cursor-pointer">
@@ -478,6 +479,7 @@ function DashboardContent() {
                     <div className="flex items-center gap-3">
                       <Link
                         href={`/year-at-a-glance?y=${currentYearKey}`}
+                        prefetch={false}
                         className="px-5 py-2 bg-white text-indigo-900 rounded-lg font-semibold hover:bg-indigo-50 transition flex items-center gap-2"
                       >
                         View in YAAG
@@ -532,6 +534,7 @@ function DashboardContent() {
                     return (
                       <Link
                         href={actionLink}
+                        prefetch={false}
                         key={a.id}
                         className="block group"
                       >

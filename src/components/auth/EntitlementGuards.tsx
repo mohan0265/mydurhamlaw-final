@@ -62,19 +62,28 @@ export function useEntitlements() {
       })
       .catch((err) => {
         const isAbort = err.name === "AbortError";
-        console.error(
-          `[useEntitlements] ${isAbort ? "Timeout" : "Error"}:`,
-          err.message,
-        );
+        if (isAbort) {
+          console.debug(
+            "[useEntitlements] Request aborted (likely timeout or unmount)",
+          );
+          return; // Exit silent on abort
+        }
+
+        console.error("[useEntitlements] Verification Failed:", err.message);
         if (isMounted) {
           setState((s) => ({
             ...s,
             loading: false,
-            error: isAbort ? "Connection Timeout" : "Verification Failed",
+            error: "Verification Failed",
           }));
         }
       })
-      .finally(() => clearTimeout(timeoutId));
+      .finally(() => {
+        if (isMounted) {
+          // Ensure timeout is cleared and any non-aborted state settles
+          clearTimeout(timeoutId);
+        }
+      });
 
     return () => {
       isMounted = false;
