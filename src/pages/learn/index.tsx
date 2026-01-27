@@ -1,96 +1,114 @@
-import React from 'react';
-import Head from 'next/head';
-import Link from 'next/link';
-import { 
-  Brain, 
-  Users, 
-  MessageSquare, 
-  Shield, 
-  Zap, 
-  Star, 
+import React from "react";
+import Head from "next/head";
+import Link from "next/link";
+import {
+  Brain,
+  Users,
+  MessageSquare,
+  Shield,
+  Zap,
+  Star,
   ChevronRight,
   ArrowRight,
   BookOpen,
-  GraduationCap
-} from 'lucide-react';
-import { Card } from '@/components/ui/Card';
+  GraduationCap,
+} from "lucide-react";
+import { Card } from "@/components/ui/Card";
 
 const articles = [
   {
     icon: GraduationCap,
-    title: 'Learn law. Write law. Speak law.',
-    description: 'Understand the three pillars of legal mastery. Why law school focus on reading and writing is only half the battle.',
-    slug: 'learn-write-speak-law',
-    category: 'Brand Pillar',
-    readTime: '10 min read'
+    title: "Learn law. Write law. Speak law.",
+    description:
+      "Understand the three pillars of legal mastery. Why law school focus on reading and writing is only half the battle.",
+    slug: "learn-write-speak-law",
+    category: "Brand Pillar",
+    readTime: "10 min read",
   },
   {
     icon: Brain,
-    title: 'Durham Law AI Study Assistant: Complete Setup Guide',
-    description: 'Master Durmah\'s features for ethical, effective legal study. Case research, IRAC issue spotting, and exam prep.',
-    slug: 'durham-law-ai-study-assistant',
-    category: 'Study Skills',
-    readTime: '12 min read'
+    title: "Durham Law AI Study Assistant: Complete Setup Guide",
+    description:
+      "Master Durmah's features for ethical, effective legal study. Case research, IRAC issue spotting, and exam prep.",
+    slug: "durham-law-ai-study-assistant",
+    category: "Study Skills",
+    readTime: "12 min read",
   },
   {
     icon: Shield,
-    title: 'Durham Law Academic Integrity & AI Use',
-    description: 'Understand Durham\'s AI policy. What\'s permitted, prohibited, and how to use AI ethically in legal education.',
-    slug: 'durham-law-academic-integrity-ai',
-    category: 'Ethics',
-    readTime: '10 min read'
+    title: "Durham Law Academic Integrity & AI Use",
+    description:
+      "Understand Durham's AI policy. What's permitted, prohibited, and how to use AI ethically in legal education.",
+    slug: "durham-law-academic-integrity-ai",
+    category: "Ethics",
+    readTime: "10 min read",
   },
   {
     icon: MessageSquare,
-    title: 'How to Ask Better Legal Questions',
-    description: 'Frame precise analytical questions for tutorials, Durmah, and research. The 4-layer questioning framework.',
-    slug: 'how-to-ask-better-legal-questions',
-    category: 'Workflow',
-    readTime: '8 min read'
+    title: "How to Ask Better Legal Questions",
+    description:
+      "Frame precise analytical questions for tutorials, Durmah, and research. The 4-layer questioning framework.",
+    slug: "how-to-ask-better-legal-questions",
+    category: "Workflow",
+    readTime: "8 min read",
   },
   {
     icon: Users,
-    title: 'Durham Law Study Groups: Collaboration Guide',
-    description: 'Build effective, compliant study groups. Optimal size, meeting structure, and ethical AI use for collaborative learning.',
-    slug: 'durham-law-study-groups',
-    category: 'Community',
-    readTime: '9 min read'
+    title: "Durham Law Study Groups: Collaboration Guide",
+    description:
+      "Build effective, compliant study groups. Optimal size, meeting structure, and ethical AI use for collaborative learning.",
+    slug: "durham-law-study-groups",
+    category: "Community",
+    readTime: "9 min read",
   },
   {
     icon: Star,
-    title: 'Durham Law Wellbeing Routine',
-    description: 'Balance intensive study with sustainable habits. Sleep, movement, nutrition, and connection strategies for law students.',
-    slug: 'durham-law-wellbeing-routine',
-    category: 'Wellbeing',
-    readTime: '7 min read'
+    title: "Durham Law Wellbeing Routine",
+    description:
+      "Balance intensive study with sustainable habits. Sleep, movement, nutrition, and connection strategies for law students.",
+    slug: "durham-law-wellbeing-routine",
+    category: "Wellbeing",
+    readTime: "7 min read",
   },
   {
     icon: Zap,
-    title: 'Durham Law Exam Technique: First-Class Strategy',
-    description: 'Master problem questions with IRAC, structure essays, manage time, and use AI ethically for exam prep.',
-    slug: 'durham-law-exam-technique',
-    category: 'Performance',
-    readTime: '11 min read'
-  }
+    title: "Durham Law Exam Technique: First-Class Strategy",
+    description:
+      "Master problem questions with IRAC, structure essays, manage time, and use AI ethically for exam prep.",
+    slug: "durham-law-exam-technique",
+    category: "Performance",
+    readTime: "11 min read",
+  },
 ];
 
 export default function LearnHub() {
   return (
     <div className="min-h-screen bg-white flex flex-col">
       <Head>
-        <title>Learn Hub - Study & Progress Guides for Durham Law Students</title>
-        <meta 
-          name="description" 
-          content="Explore comprehensive guides on AI-assisted legal study, academic integrity, and student wellbeing at MyDurhamLaw." 
+        <title>
+          Learn Hub - Study & Progress Guides for Durham Law Students
+        </title>
+        <meta
+          name="description"
+          content="Explore comprehensive guides on AI-assisted legal study, academic integrity, and student wellbeing at MyDurhamLaw."
         />
         <link rel="canonical" href="https://mydurhamlaw.com/learn" />
-        
+
         {/* Open Graph */}
-        <meta property="og:title" content="Learn Hub - Study & Progress Guides for Durham Law Students" />
-        <meta property="og:image" content="https://mydurhamlaw.com/og/og-default.png?v=2" />
-        
+        <meta
+          property="og:title"
+          content="Learn Hub - Study & Progress Guides for Durham Law Students"
+        />
+        <meta
+          property="og:image"
+          content="https://mydurhamlaw.com/og/mydurhamlaw-og.png"
+        />
+
         {/* Twitter */}
-        <meta name="twitter:image" content="https://mydurhamlaw.com/og/og-default.png?v=2" />
+        <meta
+          name="twitter:image"
+          content="https://mydurhamlaw.com/og/og-default.png?v=2"
+        />
       </Head>
 
       <main className="flex-1">
@@ -105,8 +123,8 @@ export default function LearnHub() {
               Learn Law | Write Law | Speak Law
             </h1>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
-              Step-by-step guides helping you master legal study, maintain integrity, 
-              and thrive throughout your degree.
+              Step-by-step guides helping you master legal study, maintain
+              integrity, and thrive throughout your degree.
             </p>
           </div>
         </div>
@@ -133,10 +151,13 @@ export default function LearnHub() {
                         {article.description}
                       </p>
                       {article.readTime && (
-                        <p className="text-gray-400 text-xs mb-3">{article.readTime}</p>
+                        <p className="text-gray-400 text-xs mb-3">
+                          {article.readTime}
+                        </p>
                       )}
                       <div className="flex items-center gap-1.5 text-blue-600 font-bold text-sm">
-                        Read Guide <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                        Read Guide{" "}
+                        <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                       </div>
                     </Card>
                   </Link>
@@ -145,11 +166,13 @@ export default function LearnHub() {
             </div>
           </div>
         </div>
-        
+
         {/* Support Section */}
         <div className="bg-gray-50 py-16 border-t border-gray-100">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">Ready to apply these methods?</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">
+              Ready to apply these methods?
+            </h2>
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <Link href="/eligibility?next=/signup&plan=free">
                 <button className="bg-blue-600 text-white font-bold py-3 px-8 rounded-full shadow-lg hover:bg-blue-700 transition transform hover:scale-105">

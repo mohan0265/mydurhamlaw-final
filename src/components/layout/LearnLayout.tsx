@@ -47,7 +47,7 @@ export const LearnLayout: React.FC<LearnLayoutProps> = ({
         <meta property="og:site_name" content="MyDurhamLaw" />
         <meta
           property="og:image"
-          content="https://mydurhamlaw.com/og/og-default.png"
+          content="https://mydurhamlaw.com/og/mydurhamlaw-og.png"
         />
         <meta property="og:image:width" content="1200" />
         <meta property="og:image:height" content="630" />
@@ -58,7 +58,7 @@ export const LearnLayout: React.FC<LearnLayoutProps> = ({
         <meta name="twitter:description" content={description} />
         <meta
           name="twitter:image"
-          content="https://mydurhamlaw.com/og/og-default.png"
+          content="https://mydurhamlaw.com/og/mydurhamlaw-og.png"
         />
       </Head>
 

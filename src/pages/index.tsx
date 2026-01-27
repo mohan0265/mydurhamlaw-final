@@ -34,24 +34,36 @@ export default function DurhamLanding() {
   return (
     <>
       <Head>
-        <title>MyDurhamLaw — Learn Law | Write Law | Speak Law</title>
+        <title>MyDurhamLaw — Learn law | Write law | Speak law</title>
         <meta
           name="description"
-          content="Durham-specific law support — lectures, assignments, revision, and legal reasoning (text + voice)."
+          content="Durham-specific law support that helps students think, write, and reason like real lawyers."
         />
 
-        {/* Force refresh of OG image for Hero/Landing */}
-        <meta
-          property="og:image"
-          content="https://mydurhamlaw.com/og/og-default.png?v=2"
-        />
+        {/* Global OpenGraph Lock */}
+        <meta property="og:type" content="website" />
+        <meta property="og:site_name" content="MyDurhamLaw" />
+        <meta property="og:url" content="https://mydurhamlaw.com/" />
         <meta
           property="og:title"
-          content="MyDurhamLaw — Learn Law | Write Law | Speak Law"
+          content="MyDurhamLaw — Learn law | Write law | Speak law"
         />
         <meta
+          property="og:description"
+          content="Durham-specific law support that helps students think, write, and reason like real lawyers."
+        />
+        <meta
+          property="og:image"
+          content="https://mydurhamlaw.com/og/mydurhamlaw-og.png"
+        />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+
+        {/* Twitter */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta
           name="twitter:image"
-          content="https://mydurhamlaw.com/og/og-default.png?v=2"
+          content="https://mydurhamlaw.com/og/mydurhamlaw-og.png"
         />
       </Head>
 
