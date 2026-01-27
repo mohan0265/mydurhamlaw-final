@@ -61,9 +61,9 @@ export default function LayoutShell({ children }: Props) {
       {/* Global Floating Widgets - Show on all pages except auth pages AND only when logged in */}
       {!isAuthPage && user && (
         <>
-          <WidgetErrorBoundary>
+          {/* <WidgetErrorBoundary>
             <DurmahWidget />
-          </WidgetErrorBoundary>
+          </WidgetErrorBoundary> */}
           <AWYWidget />
         </>
       )}
