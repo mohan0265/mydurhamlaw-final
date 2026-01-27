@@ -29,14 +29,14 @@ export default function LoginPage() {
       // If already logged in, go to dashboard
       const { data } = await supabase.auth.getSession();
       if (data.session) {
-        router.replace("/year-at-a-glance"); // Updated to your main page
+        router.replace("/dashboard");
         return;
       }
 
       // Subscribe so UI updates immediately after OAuth redirect
       const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
         if (session) {
-          router.replace("/year-at-a-glance"); // Updated to your main page
+          router.replace("/dashboard");
         }
       });
       unsub = () => sub.subscription.unsubscribe();
@@ -115,7 +115,7 @@ export default function LoginPage() {
       } else if (data.session) {
         console.log('✅ Email sign-in successful');
         toast.success("Welcome back!");
-        router.replace("/year-at-a-glance");
+        router.replace("/dashboard");
       }
     } catch (err: any) {
       console.error("Email sign-in error:", err);
