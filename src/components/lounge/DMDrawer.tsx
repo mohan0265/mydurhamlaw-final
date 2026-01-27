@@ -1,7 +1,11 @@
 "use client";
 import React, { useEffect, useState, useRef } from "react";
 import { useSupabaseClient, useUser } from "@/lib/supabase/AuthContext";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ProfilePicturePreview";
+import {
+  Avatar,
+  AvatarImage,
+  AvatarFallback,
+} from "@/components/ProfilePicturePreview";
 import { Button } from "@/components/ui/Button";
 
 export interface DMUser {
@@ -33,10 +37,10 @@ function demoPeer(): DMUser {
   };
 }
 
-const DMDrawer: React.FC<DMDrawerProps> = ({ 
-  open = false, 
-  onClose = () => {}, 
-  peer 
+const DMDrawer: React.FC<DMDrawerProps> = ({
+  open = false,
+  onClose = () => {},
+  peer,
 }) => {
   const resolvedPeer = peer ?? demoPeer();
   const supabase = useSupabaseClient();
@@ -50,7 +54,7 @@ const DMDrawer: React.FC<DMDrawerProps> = ({
   // Auto-resize textarea
   useEffect(() => {
     if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto'; // Reset
+      textareaRef.current.style.height = "auto"; // Reset
       textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 200)}px`;
     }
   }, [input]);
@@ -69,20 +73,36 @@ const DMDrawer: React.FC<DMDrawerProps> = ({
       .limit(100)
       .then(({ data, error }: { data: any; error: any }) => {
         setIsLoading(false);
+        if (error) {
+          if (
+            error.status === 404 ||
+            error.code === "PGRST116" ||
+            error.code === "42P01"
+          ) {
+            setMessages([]);
+            return;
+          }
+          console.error("[DMDrawer] Fetch error:", error);
+          return;
+        }
         setMessages(data || []);
       });
 
     // Subscribe for new messages
     const channel = supabase
       .channel("dm-messages-" + user.id + "-" + resolvedPeer.id)
-      .on("postgres_changes", {
-        event: "INSERT",
-        schema: "public",
-        table: "lounge_dm_messages",
-        filter: `from_id=eq.${resolvedPeer.id},to_id=eq.${user.id}`,
-      }, (payload: any) => {
-        setMessages((prev) => [...prev, payload.new as DMMessage]);
-      })
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "lounge_dm_messages",
+          filter: `from_id=eq.${resolvedPeer.id},to_id=eq.${user.id}`,
+        },
+        (payload: any) => {
+          setMessages((prev) => [...prev, payload.new as DMMessage]);
+        },
+      )
       .subscribe();
 
     return () => {
@@ -103,12 +123,17 @@ const DMDrawer: React.FC<DMDrawerProps> = ({
       body: input.trim(),
     };
 
-    setMessages((prev) => [...prev, { ...msg, id: "tmp" + Date.now(), created_at: new Date().toISOString() } as DMMessage]);
+    setMessages((prev) => [
+      ...prev,
+      {
+        ...msg,
+        id: "tmp" + Date.now(),
+        created_at: new Date().toISOString(),
+      } as DMMessage,
+    ]);
     setInput("");
 
-    const { error } = await supabase
-      .from("lounge_dm_messages")
-      .insert([msg]);
+    const { error } = await supabase.from("lounge_dm_messages").insert([msg]);
 
     if (error) {
       // Optimistic rollback
@@ -129,13 +154,22 @@ const DMDrawer: React.FC<DMDrawerProps> = ({
       <div className="w-full max-w-sm h-full bg-white rounded-l-2xl shadow-2xl flex flex-col pt-4">
         <div className="flex items-center gap-3 px-4 pb-4 border-b">
           <Avatar className="w-10 h-10">
-            <AvatarImage alt={resolvedPeer.full_name} src={resolvedPeer.avatar_url || undefined} />
-            <AvatarFallback>
-              {resolvedPeer.full_name[0] || "U"}
-            </AvatarFallback>
+            <AvatarImage
+              alt={resolvedPeer.full_name}
+              src={resolvedPeer.avatar_url || undefined}
+            />
+            <AvatarFallback>{resolvedPeer.full_name[0] || "U"}</AvatarFallback>
           </Avatar>
-          <span className="font-semibold text-lg">{resolvedPeer.full_name}</span>
-          <Button aria-label="Close DM" className="ml-auto" onClick={onClose} size="sm" variant="ghost">
+          <span className="font-semibold text-lg">
+            {resolvedPeer.full_name}
+          </span>
+          <Button
+            aria-label="Close DM"
+            className="ml-auto"
+            onClick={onClose}
+            size="sm"
+            variant="ghost"
+          >
             ×
           </Button>
         </div>
@@ -143,7 +177,9 @@ const DMDrawer: React.FC<DMDrawerProps> = ({
           {isLoading ? (
             <div className="text-center text-gray-400 py-12">Loading...</div>
           ) : messages.length === 0 ? (
-            <div className="text-center text-gray-300 py-12">No messages yet. Say hi!</div>
+            <div className="text-center text-gray-300 py-12">
+              No messages yet. Say hi!
+            </div>
           ) : (
             messages.map((m) => (
               <div
@@ -153,12 +189,19 @@ const DMDrawer: React.FC<DMDrawerProps> = ({
                   ${m.from_id === user?.id ? "justify-end" : "justify-start"}
                 `}
               >
-                <div className={`rounded-2xl max-w-xs px-3 py-2 shadow text-gray-800 ${
-                  m.from_id === user?.id ? "bg-gradient-to-br from-blue-100 to-blue-200" : "bg-gradient-to-br from-yellow-100 to-purple-200"
-                }`}>
+                <div
+                  className={`rounded-2xl max-w-xs px-3 py-2 shadow text-gray-800 ${
+                    m.from_id === user?.id
+                      ? "bg-gradient-to-br from-blue-100 to-blue-200"
+                      : "bg-gradient-to-br from-yellow-100 to-purple-200"
+                  }`}
+                >
                   {m.body}
                   <div className="text-right text-xs text-gray-500 mt-1">
-                    {new Date(m.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                    {new Date(m.created_at).toLocaleTimeString([], {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
                   </div>
                 </div>
               </div>
@@ -174,7 +217,11 @@ const DMDrawer: React.FC<DMDrawerProps> = ({
             placeholder="Type message..."
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            onKeyDown={e => (e.key === "Enter" && !e.shiftKey) ? (e.preventDefault(), sendMessage()) : undefined}
+            onKeyDown={(e) =>
+              e.key === "Enter" && !e.shiftKey
+                ? (e.preventDefault(), sendMessage())
+                : undefined
+            }
             aria-label="Direct message input"
           />
           <Button

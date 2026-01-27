@@ -216,7 +216,7 @@ function buildContextGreeting(context: DurmahContextPacket | null) {
     profile.display_name ||
     "Student"
   ).trim();
-  const greetingName = name || "Student";
+  const greetingName = name || (profile as any).display_name || "Student";
 
   const term = academic.term || "your term";
   const weekLabel = academic.weekOfTerm ? `Week ${academic.weekOfTerm}` : "";
@@ -420,7 +420,7 @@ export default function DurmahWidget() {
   const [contextTimeLabel, setContextTimeLabel] = useState<string | null>(null);
 
   const [studentContextData, setStudentContextData] =
-    useState<StudentContext | null>(null);
+    useState<DurmahContextPacket | null>(null);
   const [contextLoading, setContextLoading] = useState(false);
   const [lastProactiveGreeting, setLastProactiveGreeting] = useState<
     string | null
@@ -879,13 +879,13 @@ export default function DurmahWidget() {
       }
 
       const data = await res.json();
-      const actualData = data.ok ? data : data;
-      setStudentContextData(actualData);
+      // Ensure we set the full response object which contains context keys at the top level
+      setStudentContextData(data);
 
       console.log("[Durmah] Context loaded");
 
       if (!lastProactiveGreeting) {
-        const greeting = generateProactiveGreeting(actualData);
+        const greeting = generateProactiveGreeting(data as any);
         if (greeting) {
           setLastProactiveGreeting(greeting);
         }
@@ -947,65 +947,12 @@ export default function DurmahWidget() {
     (el as any).playsInline = true;
   }, []);
 
-  // 2. Memory & Context
-  // 2. Memory & Context
+  // SET INITIAL READINESS
   useEffect(() => {
-    if (!signedIn || !isOpen) return;
-    let cancelled = false;
-
-    (async () => {
-      try {
-        const token = await resolveAccessToken();
-        if (!token) {
-          if (!cancelled) setReady(true);
-          return;
-        }
-
-        const res = await fetchAuthed("/api/durmah/context");
-        if (res.status === 401 || res.status === 403) {
-          if (!cancelled) setReady(true);
-          return;
-        }
-
-        if (res.ok) {
-          const data = await res.json();
-          const ctx = data?.context as DurmahContextPacket | undefined;
-
-          if (!cancelled && ctx) {
-            // Hook handles message loading now
-            if (ctx.lastSummary) {
-              setMemory({
-                last_topic: "continuation",
-                last_message: ctx.lastSummary,
-                last_seen_at: ctx.academic.localTimeISO,
-              });
-            }
-            setContextPacket(ctx);
-
-            if (process.env.NODE_ENV !== "production") {
-              console.log("[Durmah] Context loaded", {
-                displayName: ctx.profile.displayName,
-                yearGroup: ctx.profile.yearGroup,
-                term: ctx.academic.term,
-                weekOfTerm: ctx.academic.weekOfTerm,
-                lastThreadId: ctx.threadId,
-              });
-            }
-          }
-        }
-      } catch (e) {
-        console.error("Failed to fetch durmah context", e);
-      }
-
-      if (!cancelled) {
-        setReady(true);
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [signedIn, isOpen]);
+    if (signedIn) {
+      setReady(true);
+    }
+  }, [signedIn]);
 
   // Set initial greeting once ready (context aware)
   useEffect(() => {
@@ -1099,13 +1046,13 @@ CURRENT MODE: STUDY (Tutor)
         // Minimal Context for Chat Mode (Prevent Hijacking)
         contextBlock = `
 MINIMAL CONTEXT (Chat Mode):
-User: ${studentContextData.student.displayName}
-Date: ${studentContextData.academic?.now?.nowText || studentContextData.student.localTimeISO}
+User: ${studentContextData?.profile?.displayName ?? studentContextData?.profile?.display_name ?? "Student"}
+Date: ${(studentContextData.academic as any)?.now?.nowText || studentContextData.academic?.localTimeISO || "now"}
 (Full academic data hidden to prevent distraction)
 `;
       } else {
         // Full Context for Study Mode
-        contextBlock = buildDurmahContextBlock(studentContextData);
+        contextBlock = buildDurmahContextBlock(studentContextData as any);
       }
     }
 

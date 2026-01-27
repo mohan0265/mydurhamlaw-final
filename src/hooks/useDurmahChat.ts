@@ -138,11 +138,13 @@ export function useDurmahChat({
             .order("created_at", { ascending: true });
 
           if (error) {
-            if (error.code === "PGRST116" || error.status === 404) return; // Silent skip
-            console.error(
-              "[useDurmahChat] Fetch assignment messages error:",
-              error,
-            );
+            if (
+              error.code === "PGRST116" ||
+              error.status === 404 ||
+              error.code === "42P01"
+            )
+              return; // Silent skip
+            console.error("[useDurmahChat] Fetch error:", error);
             return;
           }
           if (data) {
@@ -178,8 +180,13 @@ export function useDurmahChat({
             .order("created_at", { ascending: true });
 
           if (error) {
-            if (error.code === "PGRST116" || error.status === 404) return; // Silent skip
-            console.error("[useDurmahChat] Fetch exam messages error:", error);
+            if (
+              error.code === "PGRST116" ||
+              error.status === 404 ||
+              error.code === "42P01"
+            )
+              return; // Silent skip
+            console.error("[useDurmahChat] Fetch error:", error);
             return;
           }
           if (data) {
@@ -212,7 +219,12 @@ export function useDurmahChat({
             .order("created_at", { ascending: true });
 
           if (error) {
-            if (error.code === "PGRST116" || error.status === 404) return; // Silent skip
+            if (
+              error.code === "PGRST116" ||
+              error.status === 404 ||
+              error.code === "42P01"
+            )
+              return; // Silent skip
             console.error("[useDurmahChat] Fetch error:", error);
             return;
           }

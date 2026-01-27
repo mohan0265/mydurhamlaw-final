@@ -33,8 +33,8 @@ function extractTextFromContent(content: any): string {
 // CHATGPT FIX: Normalize text for deduplication (removes spacing before punctuation)
 const normalizeForDedupe = (s: string) =>
   (s || "")
-    .replace(/\s+([,.!?;:])/g, "$1")  // Remove space before punctuation
-    .replace(/\s+/g, " ")              // Collapse whitespace
+    .replace(/\s+([,.!?;:])/g, "$1") // Remove space before punctuation
+    .replace(/\s+/g, " ") // Collapse whitespace
     .trim()
     .toLowerCase();
 
@@ -43,7 +43,7 @@ interface UseDurmahRealtimeProps {
   voice?: string;
   onTurn?: (turn: VoiceTurn) => void;
   audioRef: React.RefObject<HTMLAudioElement>;
-  
+
   // Compat Props (ignored or mapped)
   enabled?: boolean;
   userName?: string;
@@ -58,17 +58,17 @@ interface UseDurmahRealtimeProps {
 function normalizeDurmahTranscriptions(text: string): string {
   if (!text) return "";
   const mapping: Record<string, RegExp> = {
-    "Durmah": /\b(denmark|dharma|darma|durma|derma|doormah|duma|shimmer)\b/gi,
+    Durmah: /\b(denmark|dharma|darma|durma|derma|doormah|duma|shimmer)\b/gi,
   };
-  
+
   let normalized = text;
   Object.entries(mapping).forEach(([replacement, regex]) => {
     normalized = normalized.replace(regex, replacement);
   });
-  
+
   // Specific phrases
   normalized = normalized.replace(/hi denmark/gi, "Hi Durmah");
-  
+
   return normalized;
 }
 
@@ -126,19 +126,18 @@ export function useDurmahRealtime({
     if (incLower === curLower) return cur;
     if (incLower.startsWith(curLower)) return inc;
     if (curLower.startsWith(incLower)) return cur;
-    
+
     // FIXED: Don't just concat with space - check if inc starts with punctuation
     const needsSpace = !/^[,.!?;:]/.test(inc);
     const merged = needsSpace ? `${cur} ${inc}` : `${cur}${inc}`;
     return merged.replace(/\s+/g, " ").trim();
   }, []);
 
-
   // Handle function/tool calls from Realtime
   const handleFunctionCall = async (dc: RTCDataChannel, payload: any) => {
     const { call_id, name, arguments: argsStr } = payload;
     let args: any = {};
-    
+
     try {
       args = JSON.parse(argsStr);
     } catch (e) {
@@ -147,12 +146,14 @@ export function useDurmahRealtime({
     }
 
     console.log(`[FUNCTION CALL] ${name}`, args);
-    
+
     let toolResult: any;
     try {
       if (name === "get_yaag_events") {
         const { startISO, endISO } = args;
-        const res = await fetch(`/api/durmah/tools/yaag-events?startISO=${startISO}&endISO=${endISO}`);
+        const res = await fetch(
+          `/api/durmah/tools/yaag-events?startISO=${startISO}&endISO=${endISO}`,
+        );
         toolResult = await res.json();
       } else if (name === "get_news_headlines") {
         const params = new URLSearchParams();
@@ -161,77 +162,97 @@ export function useDurmahRealtime({
         const res = await fetch(`/api/durmah/tools/news-headlines?${params}`);
         toolResult = await res.json();
       } else if (name === "get_assignment_details") {
-        const res = await fetch(`/api/durmah/tools/assignment-by-id?id=${args.assignmentId}`);
+        const res = await fetch(
+          `/api/durmah/tools/assignment-by-id?id=${args.assignmentId}`,
+        );
         toolResult = await res.json();
       } else {
         toolResult = { error: "Unknown function: " + name };
       }
     } catch (error: any) {
-      console.error(`[FUNCTION CALL] ${name} failed:`,error);
+      console.error(`[FUNCTION CALL] ${name} failed:`, error);
       toolResult = { error: error.message || "Tool execution failed" };
     }
 
     // Send tool result back
-    dc.send(JSON.stringify({
-      type: "conversation.item.create",
-      item: {
-        type: "function_call_output",
-        call_id: call_id,
-        output: JSON.stringify(toolResult)
-      }
-    }));
+    dc.send(
+      JSON.stringify({
+        type: "conversation.item.create",
+        item: {
+          type: "function_call_output",
+          call_id: call_id,
+          output: JSON.stringify(toolResult),
+        },
+      }),
+    );
 
     // Trigger response generation
-    dc.send(JSON.stringify({
-      type: "response.create"
-    }));
+    dc.send(
+      JSON.stringify({
+        type: "response.create",
+      }),
+    );
   };
 
-  const appendAssistantText = useCallback((delta?: string) => {
-    assistantTranscriptRef.current = mergeIncremental(
-      assistantTranscriptRef.current,
-      delta
-    );
-  }, [mergeIncremental]);
+  const appendAssistantText = useCallback(
+    (delta?: string) => {
+      assistantTranscriptRef.current = mergeIncremental(
+        assistantTranscriptRef.current,
+        delta,
+      );
+    },
+    [mergeIncremental],
+  );
 
-  const appendUserText = useCallback((delta?: string) => {
-    userTranscriptRef.current = mergeIncremental(userTranscriptRef.current, delta);
-  }, [mergeIncremental]);
+  const appendUserText = useCallback(
+    (delta?: string) => {
+      userTranscriptRef.current = mergeIncremental(
+        userTranscriptRef.current,
+        delta,
+      );
+    },
+    [mergeIncremental],
+  );
 
   // CHATGPT FIX: Unified emit function with dedupe at source
   const emitTurn = useCallback(
     (speaker: "user" | "durmah", textRaw: string) => {
       if (!textRaw) return;
-      
+
       const normalized = normalizeForDedupe(textRaw);
       if (!normalized) return;
-      
+
       const now = Date.now();
       const lastEmit = lastEmitRef.current[speaker];
-      
+
       // Dedupe: skip if same speaker + same normalized text within 2500ms
-      if (lastEmit.text === normalized && (now - lastEmit.ts) < 2500) {
-        debugLog(`[DEDUPE] Skipping duplicate ${speaker} turn:`, normalized.slice(0, 50));
+      if (lastEmit.text === normalized && now - lastEmit.ts < 2500) {
+        debugLog(
+          `[DEDUPE] Skipping duplicate ${speaker} turn:`,
+          normalized.slice(0, 50),
+        );
         return;
       }
-      
+
       // Emit the turn with ORIGINAL text (not lowercased)
       // P6B: Normalize mishears before emitting
-      const cleanText = normalizeDurmahTranscriptions(normalizeTranscriptLanguageSync(textRaw));
+      const cleanText = normalizeDurmahTranscriptions(
+        normalizeTranscriptLanguageSync(textRaw),
+      );
       if (cleanText) {
         onTurn?.({ speaker, text: cleanText });
         lastEmitRef.current[speaker] = { text: normalized, ts: now };
         debugLog(`[EMIT] ${speaker}:`, cleanText.slice(0, 50));
       }
     },
-    [onTurn, debugLog]
+    [onTurn, debugLog],
   );
 
   const flushAssistantText = useCallback(
     (extra?: string) => {
       assistantTranscriptRef.current = mergeIncremental(
         assistantTranscriptRef.current,
-        extra
+        extra,
       );
       const text = assistantTranscriptRef.current.trim();
       if (text) {
@@ -239,14 +260,14 @@ export function useDurmahRealtime({
       }
       assistantTranscriptRef.current = "";
     },
-    [mergeIncremental, emitTurn]
+    [mergeIncremental, emitTurn],
   );
 
   const flushUserText = useCallback(
     (extra?: string) => {
       userTranscriptRef.current = mergeIncremental(
         userTranscriptRef.current,
-        extra
+        extra,
       );
       const text = userTranscriptRef.current.trim();
       if (text) {
@@ -254,7 +275,7 @@ export function useDurmahRealtime({
       }
       userTranscriptRef.current = "";
     },
-    [mergeIncremental, emitTurn]
+    [mergeIncremental, emitTurn],
   );
 
   // CHATGPT FIX: conversation.item.created calls emitTurn directly (no merge!)
@@ -262,19 +283,19 @@ export function useDurmahRealtime({
     (payload: any) => {
       const item = payload?.item;
       if (!item) return;
-      
+
       const text = extractTextFromContent(item.content);
       if (!text) return;
-      
+
       if (item.role === "user") {
-        userTranscriptRef.current = "";  // Clear buffer to avoid double-append
+        userTranscriptRef.current = ""; // Clear buffer to avoid double-append
         emitTurn("user", text);
       } else if (item.role === "assistant") {
-        assistantTranscriptRef.current = "";  // Clear buffer to avoid double-append
+        assistantTranscriptRef.current = ""; // Clear buffer to avoid double-append
         emitTurn("durmah", text);
       }
     },
-    [emitTurn]
+    [emitTurn],
   );
 
   const requestAnswerSdp = useCallback(
@@ -303,7 +324,7 @@ export function useDurmahRealtime({
         throw new Error(
           `Voice service error (${response.status}): ${
             answerSdp || response.statusText
-          }`
+          }`,
         );
       }
 
@@ -312,7 +333,7 @@ export function useDurmahRealtime({
       }
       return answerSdp;
     },
-    [voice]
+    [voice],
   );
 
   const stopPreview = useCallback(() => {
@@ -409,8 +430,7 @@ export function useDurmahRealtime({
 
       pc.ontrack = (event) => {
         console.debug("[DurmahVoice] Received remote track");
-        const remoteStream =
-          event.streams[0] || new MediaStream([event.track]);
+        const remoteStream = event.streams[0] || new MediaStream([event.track]);
         if (audioRef.current) {
           audioRef.current.srcObject = remoteStream;
           audioRef.current
@@ -447,17 +467,20 @@ export function useDurmahRealtime({
                 type: "server_vad",
                 threshold: 0.5,
                 min_speech_duration_ms: 200,
-                silence_duration_ms: 2000, 
+                silence_duration_ms: 2000,
               },
-              voice: chosenVoice,
+              // Fix: chosenVoice ReferenceError - use voice from props or fallback
+              voice: voice || "shimmer",
               temperature: 0.7, // Balanced for tutor persona
               max_response_output_tokens: 300, // Enforce conciseness
             },
-          })
+          }),
         );
 
         // Update with specific style and speed
-        const styleInstruction = deliveryStyle ? `\n\nDELIVERY STYLE: ${deliveryStyle}` : "";
+        const styleInstruction = deliveryStyle
+          ? `\n\nDELIVERY STYLE: ${deliveryStyle}`
+          : "";
         dc.send(
           JSON.stringify({
             type: "session.update",
@@ -467,8 +490,8 @@ export function useDurmahRealtime({
               // Note: speed is technically applied via session.audio_playback_rate in some models,
               // but for Realtime we typically use the standard session update if supported.
               // As of latest spec, we use session.update for speed.
-            }
-          })
+            },
+          }),
         );
 
         // P0-1 FIX: REMOVED unconditional response.create
@@ -491,14 +514,14 @@ export function useDurmahRealtime({
             if (!type) continue;
 
             // CHATGPT FIX: Simplified event handling - ONE finalization path per role
-            
+
             // User deltas: accumulate only
             if (
               type === "input_audio_transcription.delta" ||
               type === "conversation.item.input_audio_transcription.delta"
             ) {
               appendUserText(
-                payload.delta ?? payload.text ?? payload.transcript ?? ""
+                payload.delta ?? payload.text ?? payload.transcript ?? "",
               );
             }
             // User finalization: PRIMARY path (CRITICAL FIX)
@@ -512,11 +535,16 @@ export function useDurmahRealtime({
             }
             // Assistant deltas: Use BOTH output_text.delta AND audio_transcript.delta
             // audio_transcript.delta is what OpenAI Realtime uses for voice transcriptions
-            else if (type === "response.output_text.delta" || type === "response.audio_transcript.delta") {
+            else if (
+              type === "response.output_text.delta" ||
+              type === "response.audio_transcript.delta"
+            ) {
               const delta = payload.delta ?? payload.text ?? "";
               if (delta) {
                 appendAssistantText(delta);
-                debugLog(`[ASSISTANT DELTA] (${type}) "${delta.slice(0, 30)}..."`);
+                debugLog(
+                  `[ASSISTANT DELTA] (${type}) "${delta.slice(0, 30)}..."`,
+                );
               }
             }
             // SKIP only response.text.delta (old format, causes duplicates)
@@ -527,18 +555,18 @@ export function useDurmahRealtime({
             else if (type === "conversation.item.created") {
               handleConversationItem(payload);
               debugLog(`[FINALIZE ASSISTANT] via conversation.item.created`);
-            }
-            else if (type === "response.completed") {
+            } else if (type === "response.completed") {
               // Flush any pending assistant text
               flushAssistantText();
               debugLog(`[FINALIZE ASSISTANT] via response.completed`);
-            }
-            else if (type === "response.audio_transcript.done") {
+            } else if (type === "response.audio_transcript.done") {
               // Audio transcript finished - flush it
               const transcript = payload.transcript ?? "";
               if (transcript) {
                 flushAssistantText(transcript);
-                debugLog(`[FINALIZE ASSISTANT] via response.audio_transcript.done: "${transcript.slice(0, 50)}..."`);
+                debugLog(
+                  `[FINALIZE ASSISTANT] via response.audio_transcript.done: "${transcript.slice(0, 50)}..."`,
+                );
               }
             }
             // Still skip these specific duplicates
@@ -551,40 +579,52 @@ export function useDurmahRealtime({
             }
             // Response.done - FALLBACK for assistant transcript
             else if (type === "response.done") {
-               const response = payload?.response;
-               // ONLY use this fallback if the response failed or cancelled, 
-               // otherwise rely on deltas/completed events to avoid duplication.
-               if (response?.status === "failed" || response?.status === "cancelled") {
-                  debugLog("[RESPONSE.DONE] Response failed/cancelled, checking output...");
-                   if (response?.output) {
-                        let extractedText = "";
-                        for (const item of response.output) {
-                          if (item.type === "message" && item.role === "assistant") {
-                            // Walk content array for text
-                            if (Array.isArray(item.content)) {
-                              for (const content of item.content) {
-                                if (content.type === "text" && content.text) {
-                                  extractedText += content.text + " ";
-                                } else if (content.type === "audio" && content.transcript) {
-                                  extractedText += content.transcript + " ";
-                                } else if (content.transcript) {
-                                  extractedText += content.transcript + " ";
-                                }
-                              }
-                            }
+              const response = payload?.response;
+              // ONLY use this fallback if the response failed or cancelled,
+              // otherwise rely on deltas/completed events to avoid duplication.
+              if (
+                response?.status === "failed" ||
+                response?.status === "cancelled"
+              ) {
+                debugLog(
+                  "[RESPONSE.DONE] Response failed/cancelled, checking output...",
+                );
+                if (response?.output) {
+                  let extractedText = "";
+                  for (const item of response.output) {
+                    if (item.type === "message" && item.role === "assistant") {
+                      // Walk content array for text
+                      if (Array.isArray(item.content)) {
+                        for (const content of item.content) {
+                          if (content.type === "text" && content.text) {
+                            extractedText += content.text + " ";
+                          } else if (
+                            content.type === "audio" &&
+                            content.transcript
+                          ) {
+                            extractedText += content.transcript + " ";
+                          } else if (content.transcript) {
+                            extractedText += content.transcript + " ";
                           }
                         }
-                        extractedText = extractedText.trim();
-                        if (extractedText) {
-                          flushAssistantText(extractedText);
-                          debugLog(`[FINALIZE ASSISTANT] via response.done (fallback): "${extractedText.slice(0, 50)}..."`);
-                        }
-                   }
-               } else {
-                   debugLog(`[RESPONSE.DONE] Success - skipping extraction (handled by deltas)`);
-                   // Still flush any remaining buffer just in case
-                   flushAssistantText();
-               }
+                      }
+                    }
+                  }
+                  extractedText = extractedText.trim();
+                  if (extractedText) {
+                    flushAssistantText(extractedText);
+                    debugLog(
+                      `[FINALIZE ASSISTANT] via response.done (fallback): "${extractedText.slice(0, 50)}..."`,
+                    );
+                  }
+                }
+              } else {
+                debugLog(
+                  `[RESPONSE.DONE] Success - skipping extraction (handled by deltas)`,
+                );
+                // Still flush any remaining buffer just in case
+                flushAssistantText();
+              }
             }
             // Audio playback (unrelated to transcription)
             else if (type === "response.audio.delta") {
@@ -614,7 +654,7 @@ export function useDurmahRealtime({
                 );
               }
               */
-             debugLog(`[SKIP] response.audio.delta (handled by WebRTC track)`);
+              debugLog(`[SKIP] response.audio.delta (handled by WebRTC track)`);
             }
             // Error handling
             else if (type === "response.error") {
@@ -626,11 +666,11 @@ export function useDurmahRealtime({
             // Function call handling
             else if (type === "response.function_call_arguments.done") {
               debugLog("[FUNCTION CALL]", payload.name, payload.arguments);
-              handleFunctionCall(dc, payload).catch(err => {
+              handleFunctionCall(dc, payload).catch((err) => {
                 console.error("[FUNCTION CALL ERROR]", err);
               });
             }
-                        // Log unhandled event types
+            // Log unhandled event types
             else {
               debugLog(`[UNHANDLED] event type: ${type}`);
             }
@@ -675,8 +715,8 @@ export function useDurmahRealtime({
 
   // Handle dynamic system prompt updates
   useEffect(() => {
-    if (status !== 'listening' && status !== 'speaking') return;
-    if (!dcRef.current || dcRef.current.readyState !== 'open') return;
+    if (status !== "listening" && status !== "speaking") return;
+    if (!dcRef.current || dcRef.current.readyState !== "open") return;
 
     const payload = {
       type: "session.update",
@@ -687,8 +727,12 @@ export function useDurmahRealtime({
 
     try {
       if (REALTIME_DEBUG || true) {
-        console.log(`[DurmahRealtime] session.update sent (len=${(systemPrompt || "").length})`);
-        console.log(`[DurmahRealtime] Instructions prefix: ${(systemPrompt || "").slice(0, 120)}...`);
+        console.log(
+          `[DurmahRealtime] session.update sent (len=${(systemPrompt || "").length})`,
+        );
+        console.log(
+          `[DurmahRealtime] Instructions prefix: ${(systemPrompt || "").slice(0, 120)}...`,
+        );
       }
       dcRef.current.send(JSON.stringify(payload));
     } catch (e) {
@@ -707,7 +751,7 @@ export function useDurmahRealtime({
       try {
         stopPreview();
         setStatus((prev) =>
-          prev === "idle" || prev === "error" ? "previewing" : prev
+          prev === "idle" || prev === "error" ? "previewing" : prev,
         );
 
         const pc = new RTCPeerConnection();
@@ -745,7 +789,7 @@ export function useDurmahRealtime({
                   language: "en",
                 },
               },
-            })
+            }),
           );
           const prompt = `Say exactly this phrase with emotion: "${preset.previewText}"`;
           dc.send(
@@ -755,7 +799,7 @@ export function useDurmahRealtime({
                 modalities: ["audio", "text"],
                 instructions: prompt,
               },
-            })
+            }),
           );
         };
 
@@ -778,7 +822,7 @@ export function useDurmahRealtime({
 
         const answerSdp = await requestAnswerSdp(
           offer.sdp ?? undefined,
-          preset.openaiVoice
+          preset.openaiVoice,
         );
         await pc.setRemoteDescription({ type: "answer", sdp: answerSdp });
       } catch (err: any) {
@@ -788,7 +832,7 @@ export function useDurmahRealtime({
         stopPreview();
       }
     },
-    [requestAnswerSdp, stopPreview, systemPrompt]
+    [requestAnswerSdp, stopPreview, systemPrompt],
   );
 
   // Cleanup on component unmount ONLY
@@ -806,7 +850,7 @@ export function useDurmahRealtime({
   return {
     startListening,
     stopListening,
-    
+
     // Standard Aliases
     connect: startListening,
     disconnect: stopListening,
@@ -818,9 +862,9 @@ export function useDurmahRealtime({
     speaking,
     error,
     playVoicePreview,
-    
+
     // Compat fields
-    mode: 'voice',
-    transcript: '', 
+    mode: "voice",
+    transcript: "",
   };
 }
