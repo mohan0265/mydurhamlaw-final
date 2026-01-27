@@ -41,7 +41,7 @@ export default function LayoutShell({ children }: Props) {
     router.pathname.startsWith("/assignments/");
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-b from-white to-gray-50">
+    <div className="min-h-screen flex flex-col bg-gradient-to-b from-white to-gray-50 dark:from-gray-950 dark:to-gray-900 transition-colors duration-500">
       {/* Accessible skip link */}
       <a
         href="#main-content"

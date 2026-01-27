@@ -41,7 +41,7 @@ function ActiveLink({
         "px-3 py-2 rounded-md text-sm font-medium transition",
         active
           ? "bg-purple-600 text-white"
-          : "text-gray-600 hover:text-purple-700 hover:bg-purple-50",
+          : "text-gray-600 dark:text-gray-300 hover:text-purple-700 dark:hover:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20",
         className,
       )}
     >
@@ -85,7 +85,7 @@ function HoverMenu({
         </div>
       ) : (
         <button
-          className="px-3 py-2 rounded-md text-sm font-medium text-gray-600 hover:text-purple-700 hover:bg-purple-50"
+          className="px-3 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-purple-700 dark:hover:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20"
           onClick={() => setOpen((v) => !v)}
           aria-expanded={open}
         >
@@ -95,7 +95,7 @@ function HoverMenu({
 
       {open && (
         <div
-          className="absolute left-0 mt-2 w-56 rounded-xl border border-white/10 bg-white/95 shadow-2xl backdrop-blur"
+          className="absolute left-0 mt-2 w-56 rounded-xl border border-gray-100 dark:border-white/10 bg-white/95 dark:bg-gray-900/95 shadow-2xl dark:shadow-none backdrop-blur"
           onMouseEnter={openNow}
           onMouseLeave={closeSoon}
         >
@@ -105,7 +105,7 @@ function HoverMenu({
                 <Link
                   href={it.href}
                   prefetch={false}
-                  className="block px-3 py-2 text-sm text-gray-800 hover:bg-gray-100 rounded-lg mx-1"
+                  className="block px-3 py-2 text-sm text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg mx-1"
                 >
                   {it.label}
                 </Link>
@@ -317,7 +317,7 @@ export default function GlobalHeader() {
 
   return (
     <>
-      <header className="sticky top-0 z-50 bg-white/95 backdrop-blur shadow-sm border-b border-gray-100">
+      <header className="sticky top-0 z-50 bg-white/95 dark:bg-gray-950/95 backdrop-blur shadow-sm dark:shadow-none border-b border-gray-100 dark:border-white/5 transition-colors duration-500">
         <nav className="mx-auto max-w-7xl px-4 sm:px-6">
           <div className="min-h-[72px] md:min-h-[110px] py-4 flex items-center justify-between transition-all duration-300">
             {/* Brand */}
@@ -336,7 +336,7 @@ export default function GlobalHeader() {
                 className="h-10 md:h-12 w-auto object-contain transition-transform group-hover:scale-105 duration-300"
               />
 
-              <span className="text-2xl md:text-[34px] font-bold tracking-tight leading-none text-[#1F2937] translate-y-[1px]">
+              <span className="text-2xl md:text-[34px] font-bold tracking-tight leading-none text-gray-900 dark:text-white translate-y-[1px]">
                 MyDurhamLaw
               </span>
             </Link>
@@ -381,7 +381,7 @@ export default function GlobalHeader() {
                   <Link
                     href="/"
                     prefetch={false}
-                    className="px-3 py-2 rounded-md text-sm font-medium text-gray-600 hover:text-purple-700 hover:bg-purple-50"
+                    className="px-3 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-purple-700 dark:hover:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20"
                   >
                     Home
                   </Link>
@@ -410,7 +410,7 @@ export default function GlobalHeader() {
                   <Link
                     href="/speak-law"
                     prefetch={false}
-                    className="px-3 py-2 rounded-md text-sm font-bold text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50"
+                    className="px-3 py-2 rounded-md text-sm font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/20"
                   >
                     Speak Law
                   </Link>
@@ -418,7 +418,7 @@ export default function GlobalHeader() {
                   <Link
                     href="/pricing"
                     prefetch={false}
-                    className="px-3 py-2 rounded-md text-sm font-medium text-gray-600 hover:text-purple-700 hover:bg-purple-50"
+                    className="px-3 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-purple-700 dark:hover:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20"
                   >
                     Pricing
                   </Link>
@@ -446,7 +446,7 @@ export default function GlobalHeader() {
                 <>
                   <Link
                     href="/login"
-                    className="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100 transition border border-gray-200"
+                    className="px-3 py-2 rounded-md text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/5 transition border border-gray-200 dark:border-white/10"
                   >
                     Sign In
                   </Link>

@@ -56,46 +56,46 @@ export default function DurhamLanding() {
       </Head>
 
       {/* 1) HERO SECTION */}
-      <div className="relative min-h-screen flex items-center justify-center py-16 lg:py-24 bg-gray-950 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-b from-purple-900/20 via-gray-950 to-gray-950" />
-        <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10 pointer-events-none" />
+      <div className="relative min-h-screen flex items-center justify-center py-16 lg:py-24 bg-white dark:bg-gray-950 overflow-hidden transition-colors duration-500">
+        <div className="absolute inset-0 bg-gradient-to-b from-purple-50 via-white to-white dark:from-purple-900/20 dark:via-gray-950 dark:to-gray-950 transition-colors duration-500" />
+        <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-5 dark:opacity-10 pointer-events-none" />
 
         <div className="relative z-10 max-w-7xl mx-auto px-6 w-full text-center">
-          <div className="inline-flex items-center gap-2 bg-white/5 backdrop-blur-xl px-4 py-2 rounded-full border border-white/10 mb-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
-            <span className="w-2 h-2 bg-purple-400 rounded-full animate-pulse shadow-[0_0_10px_#a855f7]"></span>
-            <span className="text-sm font-medium text-gray-400 tracking-wide uppercase">
+          <div className="inline-flex items-center gap-2 bg-white border border-gray-200 dark:bg-white/5 dark:border-white/10 backdrop-blur-xl px-4 py-2 rounded-full mb-6 animate-in fade-in slide-in-from-bottom-4 duration-700 shadow-sm dark:shadow-none">
+            <span className="w-2 h-2 bg-purple-500 dark:bg-purple-400 rounded-full animate-pulse shadow-[0_0_10px_#a855f7]"></span>
+            <span className="text-sm font-medium text-gray-500 dark:text-gray-400 tracking-wide uppercase">
               Accepting all years (Foundation → Year 3)
             </span>
           </div>
 
-          <p className="text-gray-500 text-xs sm:text-sm font-medium max-w-2xl mx-auto mb-8 tracking-wide">
+          <p className="text-gray-500 dark:text-gray-500 text-xs sm:text-sm font-medium max-w-2xl mx-auto mb-8 tracking-wide">
             MyDurhamLaw is an independent study companion designed around the
             Durham Law journey. <br className="hidden sm:block" />
             It is not affiliated with or endorsed by Durham University.
           </p>
 
-          <h1 className="flex flex-col md:flex-row md:flex-nowrap justify-center items-center gap-2 md:gap-3 text-4xl md:text-5xl xl:text-6xl font-black mb-6 tracking-tight text-white leading-tight">
+          <h1 className="flex flex-col md:flex-row md:flex-nowrap justify-center items-center gap-2 md:gap-3 text-4xl md:text-5xl xl:text-6xl font-black mb-6 tracking-tight text-gray-900 dark:text-white leading-tight">
             <Link
               href="/learn"
-              className="px-3 md:px-4 py-2 rounded-xl bg-indigo-900/80 border border-indigo-700 shadow-lg shadow-indigo-900/20 hover:bg-indigo-800 hover:border-indigo-500 transition-all hover:scale-105 active:scale-95 whitespace-nowrap"
+              className="px-3 md:px-4 py-2 rounded-xl bg-indigo-600 text-white border-indigo-500 dark:bg-indigo-900/80 dark:border-indigo-700 shadow-lg shadow-indigo-200 dark:shadow-indigo-900/20 hover:bg-indigo-700 dark:hover:bg-indigo-800 hover:scale-105 active:scale-95 whitespace-nowrap transition-all"
             >
               Learn law
             </Link>
-            <span className="hidden md:block text-purple-500 text-4xl md:text-5xl font-black opacity-50">
+            <span className="hidden md:block text-purple-300 dark:text-purple-500 text-4xl md:text-5xl font-black opacity-50">
               |
             </span>
             <Link
               href="/write"
-              className="px-3 md:px-4 py-2 rounded-xl bg-indigo-900/80 border border-indigo-700 shadow-lg shadow-indigo-900/20 hover:bg-indigo-800 hover:border-indigo-500 transition-all hover:scale-105 active:scale-95 whitespace-nowrap"
+              className="px-3 md:px-4 py-2 rounded-xl bg-indigo-600 text-white border-indigo-500 dark:bg-indigo-900/80 dark:border-indigo-700 shadow-lg shadow-indigo-200 dark:shadow-indigo-900/20 hover:bg-indigo-700 dark:hover:bg-indigo-800 hover:scale-105 active:scale-95 whitespace-nowrap transition-all"
             >
               Write law
             </Link>
-            <span className="hidden md:block text-purple-500 text-4xl md:text-5xl font-black opacity-50">
+            <span className="hidden md:block text-purple-300 dark:text-purple-500 text-4xl md:text-5xl font-black opacity-50">
               |
             </span>
             <Link
               href="/quiz"
-              className="px-3 md:px-4 py-2 rounded-xl bg-indigo-900/80 border border-indigo-700 shadow-lg shadow-indigo-900/20 hover:bg-indigo-800 hover:border-indigo-500 transition-all hover:scale-105 active:scale-95 whitespace-nowrap"
+              className="px-3 md:px-4 py-2 rounded-xl bg-indigo-600 text-white border-indigo-500 dark:bg-indigo-900/80 dark:border-indigo-700 shadow-lg shadow-indigo-200 dark:shadow-indigo-900/20 hover:bg-indigo-700 dark:hover:bg-indigo-800 hover:scale-105 active:scale-95 whitespace-nowrap transition-all"
             >
               Speak law
             </Link>
@@ -104,13 +104,13 @@ export default function DurhamLanding() {
           <div className="mb-8">
             <Link
               href="/stay-current"
-              className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 hover:border-red-500/30 hover:text-white text-gray-400 font-bold tracking-wide uppercase text-sm transition-all hover:scale-105"
+              className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-gray-50 border border-gray-200 text-gray-500 hover:bg-white hover:border-red-200 hover:text-red-600 dark:bg-white/5 dark:border-white/10 dark:text-gray-400 dark:hover:bg-white/10 dark:hover:border-red-500/30 dark:hover:text-white font-bold tracking-wide uppercase text-sm transition-all hover:scale-105 hover:shadow-md dark:hover:shadow-none"
             >
               Stay current.
             </Link>
           </div>
 
-          <p className="mt-8 text-xl sm:text-2xl text-gray-400 max-w-3xl mx-auto leading-relaxed font-light">
+          <p className="mt-8 text-xl sm:text-2xl text-gray-600 dark:text-gray-400 max-w-3xl mx-auto leading-relaxed font-light">
             Durham-specific law support that helps students think, write, and
             reason like real lawyers — out loud.
           </p>
@@ -134,11 +134,11 @@ export default function DurhamLanding() {
               },
             ].map((pVal) => (
               <Link key={pVal.name} href={pVal.href}>
-                <div className="group relative bg-white/5 hover:bg-white/10 border border-white/5 hover:border-white/20 rounded-2xl p-5 transition-all duration-300 backdrop-blur-sm cursor-pointer border-b border-b-white/10 hover:border-b-purple-500/30 hover:-translate-y-1">
-                  <div className="text-lg font-bold text-white mb-0.5 group-hover:text-purple-400 transition-colors uppercase tracking-widest">
+                <div className="group relative bg-white border border-gray-100 dark:bg-white/5 dark:border-white/5 hover:border-purple-200 dark:hover:border-white/20 rounded-2xl p-5 transition-all duration-300 backdrop-blur-sm cursor-pointer shadow-sm hover:shadow-md dark:shadow-none hover:-translate-y-1">
+                  <div className="text-lg font-bold text-gray-900 dark:text-white mb-0.5 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors uppercase tracking-widest">
                     {pVal.name}
                   </div>
-                  <div className="text-xs text-gray-500 font-medium group-hover:text-gray-300 transition-colors">
+                  <div className="text-xs text-gray-500 font-medium group-hover:text-gray-700 dark:group-hover:text-gray-300 transition-colors">
                     {pVal.sub}
                   </div>
                 </div>
@@ -148,12 +148,12 @@ export default function DurhamLanding() {
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <Link href="/signup">
-              <button className="w-full sm:w-auto bg-white text-gray-950 font-black py-5 px-12 rounded-full text-lg transition-all hover:scale-105 shadow-[0_0_40px_rgba(168,85,247,0.3)] hover:shadow-[0_0_60px_rgba(168,85,247,0.5)] active:scale-95 uppercase tracking-widest">
+              <button className="w-full sm:w-auto bg-gray-900 text-white dark:bg-white dark:text-gray-950 font-black py-5 px-12 rounded-full text-lg transition-all hover:scale-105 shadow-xl hover:shadow-2xl active:scale-95 uppercase tracking-widest">
                 Start Free Trial
               </button>
             </Link>
             <Link href="/pricing">
-              <button className="w-full sm:w-auto bg-transparent hover:bg-white/5 border border-white/20 text-white font-bold py-5 px-12 rounded-full text-lg transition-all backdrop-blur-sm active:scale-95 uppercase tracking-widest">
+              <button className="w-full sm:w-auto bg-white hover:bg-gray-50 border border-gray-200 text-gray-900 dark:bg-transparent dark:hover:bg-white/5 dark:border-white/20 dark:text-white font-bold py-5 px-12 rounded-full text-lg transition-all backdrop-blur-sm active:scale-95 uppercase tracking-widest shadow-sm dark:shadow-none">
                 See Pricing
               </button>
             </Link>
@@ -162,14 +162,14 @@ export default function DurhamLanding() {
           <div className="mt-8">
             <Link
               href="/lnat/signup"
-              className="text-sm font-bold text-gray-500 hover:text-white transition-colors border-b border-gray-600 hover:border-white pb-0.5"
+              className="text-sm font-bold text-gray-500 hover:text-gray-900 dark:text-gray-500 dark:hover:text-white transition-colors border-b border-gray-300 hover:border-gray-900 dark:border-gray-600 dark:hover:border-white pb-0.5"
             >
               Applying for Law? Join LNAT Mentor &rarr;
             </Link>
           </div>
 
-          <div className="mt-12 pt-8 border-t border-white/5 text-[10px] text-gray-500 flex items-center justify-center gap-3 uppercase tracking-[0.2em] font-bold">
-            <Shield className="w-3 h-3 text-purple-400" />
+          <div className="mt-12 pt-8 border-t border-gray-200 dark:border-white/5 text-[10px] text-gray-400 dark:text-gray-500 flex items-center justify-center gap-3 uppercase tracking-[0.2em] font-bold">
+            <Shield className="w-3 h-3 text-purple-600 dark:text-purple-400" />
             <span>
               Learning support • Academic Integrity • Professional awareness
             </span>
@@ -230,13 +230,13 @@ export default function DurhamLanding() {
       </section>
 
       {/* 2) SKILL PILLARS SECTION */}
-      <section className="py-20 bg-white relative z-20 border-b border-gray-100">
+      <section className="py-20 bg-white dark:bg-gray-950 relative z-20 border-b border-gray-100 dark:border-white/5">
         <div className="max-w-7xl mx-auto px-6">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-black text-gray-900 mb-4 tracking-tight">
+            <h2 className="text-4xl font-black text-gray-900 dark:text-white mb-4 tracking-tight">
               The Core Pillars
             </h2>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+            <p className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
               Philosophy-led, tool-supported. Built specifically for the Durham
               University Law syllabus.
             </p>
@@ -248,43 +248,51 @@ export default function DurhamLanding() {
                 title: "Learn Law",
                 desc: "Durham Law understanding",
                 link: "/learn/durham-law-ai-study-assistant",
-                icon: <BookOpen className="w-6 h-6 text-purple-600" />,
+                icon: (
+                  <BookOpen className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+                ),
                 color: "purple",
               },
               {
                 title: "Write Law",
                 desc: "Structured legal writing",
                 link: "/learn/durham-law-academic-integrity-ai",
-                icon: <FileText className="w-6 h-6 text-orange-600" />,
+                icon: (
+                  <FileText className="w-6 h-6 text-orange-600 dark:text-orange-400" />
+                ),
                 color: "orange",
               },
               {
                 title: "Speak Law",
                 desc: "Legal reasoning & viva logic",
                 link: "/learn/durham-law-exam-technique",
-                icon: <Brain className="w-6 h-6 text-indigo-600" />,
+                icon: (
+                  <Brain className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
+                ),
                 color: "indigo",
               },
               {
                 title: "Live News",
                 desc: "Professional legal awareness",
                 link: "/legal/tools/legal-news-feed",
-                icon: <TrendingUp className="w-6 h-6 text-red-600" />,
+                icon: (
+                  <TrendingUp className="w-6 h-6 text-red-600 dark:text-red-400" />
+                ),
                 color: "red",
               },
             ].map((pillar, i) => (
               <Link key={pillar.title} href={pillar.link}>
-                <div className="h-full rounded-2xl border border-gray-100 bg-white p-6 shadow-sm hover:shadow-xl hover:border-purple-200 transition-all duration-300 flex flex-col group cursor-pointer">
-                  <div className="w-12 h-12 rounded-xl bg-gray-50 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                <div className="h-full rounded-2xl border border-gray-100 bg-white dark:bg-white/5 dark:border-white/5 p-6 shadow-sm hover:shadow-xl hover:border-purple-200 dark:hover:border-purple-500/30 transition-all duration-300 flex flex-col group cursor-pointer">
+                  <div className="w-12 h-12 rounded-xl bg-gray-50 dark:bg-white/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                     {pillar.icon}
                   </div>
-                  <h3 className="text-lg font-bold text-gray-900 mb-1">
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">
                     {pillar.title}
                   </h3>
-                  <p className="text-xs text-gray-500 leading-relaxed mb-4">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed mb-4">
                     {pillar.desc}
                   </p>
-                  <div className="mt-auto pt-4 border-t border-gray-50 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-purple-600">
+                  <div className="mt-auto pt-4 border-t border-gray-50 dark:border-white/5 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-purple-600 dark:text-purple-400">
                     Explore{" "}
                     <ArrowRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
                   </div>
@@ -298,14 +306,14 @@ export default function DurhamLanding() {
       {/* 3) HOW IT WORKS (Workflow) */}
       <section
         id="how-it-works"
-        className="py-20 bg-white border-b border-gray-100"
+        className="py-20 bg-white dark:bg-gray-950 border-b border-gray-100 dark:border-white/5"
       >
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
           <div className="text-center">
-            <h2 className="text-3xl font-bold text-gray-900">
+            <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
               Durham Law exam prep & revision workflow
             </h2>
-            <p className="mt-2 text-base text-gray-600">
+            <p className="mt-2 text-base text-gray-600 dark:text-gray-400">
               A simple loop designed for Durham Law students: clarity →
               coursework → confidence.
             </p>
@@ -336,18 +344,18 @@ export default function DurhamLanding() {
               },
             ].map((s) => (
               <Link href={s.link} key={s.step} className="block group">
-                <div className="rounded-[1.5rem] border border-gray-200 bg-white shadow-sm p-8 hover:shadow-xl hover:border-purple-200 transition-all duration-300 h-full">
-                  <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-purple-100 text-purple-700 font-bold mb-6 group-hover:bg-purple-600 group-hover:text-white transition-colors">
+                <div className="rounded-[1.5rem] border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 shadow-sm p-8 hover:shadow-xl hover:border-purple-200 dark:hover:border-purple-500/30 transition-all duration-300 h-full">
+                  <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300 font-bold mb-6 group-hover:bg-purple-600 group-hover:text-white transition-colors">
                     {s.step}
                   </div>
-                  <h3 className="text-xl font-bold text-gray-900 mb-3 group-hover:text-purple-700 transition-colors">
+                  <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3 group-hover:text-purple-700 dark:group-hover:text-purple-400 transition-colors">
                     {s.title}
                   </h3>
-                  <p className="text-base text-gray-600 leading-relaxed mb-6">
+                  <p className="text-base text-gray-600 dark:text-gray-400 leading-relaxed mb-6">
                     {s.desc}
                   </p>
 
-                  <div className="text-purple-600 font-semibold text-sm flex items-center gap-1 group-hover:gap-2 transition-all">
+                  <div className="text-purple-600 dark:text-purple-400 font-semibold text-sm flex items-center gap-1 group-hover:gap-2 transition-all">
                     Learn more <ArrowRight className="w-4 h-4" />
                   </div>
                 </div>
@@ -358,33 +366,33 @@ export default function DurhamLanding() {
       </section>
 
       {/* 4) LNAT MENTOR TEASER (New Placement) */}
-      <section className="py-24 bg-gray-50 border-b border-gray-100 relative overflow-hidden">
+      <section className="py-24 bg-gray-50 dark:bg-gray-900 border-b border-gray-100 dark:border-white/5 relative overflow-hidden transition-colors">
         {/* Background pattern */}
-        <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/grid-me.png')] opacity-5"></div>
+        <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/grid-me.png')] opacity-5 dark:opacity-[0.02]"></div>
 
         <div className="max-w-6xl mx-auto px-6 relative z-10">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
             <div>
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-100 text-purple-700 text-xs font-bold uppercase tracking-wider mb-6">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 text-xs font-bold uppercase tracking-wider mb-6">
                 <Brain className="w-3.5 h-3.5" />
                 {process.env.NEXT_PUBLIC_LNAT_LAUNCH_ENABLED === "true"
                   ? "New: Second Door Access"
                   : "Upcoming · Early Access Opening Soon"}
               </div>
-              <h2 className="text-4xl font-black text-gray-900 mb-6 tracking-tight">
+              <h2 className="text-4xl font-black text-gray-900 dark:text-white mb-6 tracking-tight">
                 LNAT Mentor
                 <br />
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600">
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400">
                   {process.env.NEXT_PUBLIC_LNAT_LAUNCH_ENABLED === "true"
                     ? "Master the logic."
                     : "A focused prep track for international & Foundation students — launching soon."}
                 </span>
               </h2>
-              <p className="text-lg text-gray-600 mb-6 leading-relaxed">
+              <p className="text-lg text-gray-600 dark:text-gray-400 mb-6 leading-relaxed">
                 The LNAT is a high-stakes admissions test used by leading UK law
                 schools — and you may only sit it once per admissions cycle.
               </p>
-              <p className="text-lg text-gray-600 mb-8 leading-relaxed">
+              <p className="text-lg text-gray-600 dark:text-gray-400 mb-8 leading-relaxed">
                 LNAT Mentor is being built to train the core skills the LNAT is
                 designed to assess: reading precision, logical reasoning, and
                 structured argumentation under time pressure.
@@ -392,14 +400,14 @@ export default function DurhamLanding() {
 
               <div className="flex flex-col sm:flex-row gap-4 mb-4">
                 <Link href="/lnat/signup">
-                  <button className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 px-8 rounded-full transition-all shadow-lg shadow-indigo-200">
+                  <button className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 px-8 rounded-full transition-all shadow-lg shadow-indigo-200 dark:shadow-indigo-900/20">
                     {process.env.NEXT_PUBLIC_LNAT_LAUNCH_ENABLED === "true"
                       ? "Start Free LNAT Trial"
                       : "Join LNAT Waitlist"}
                   </button>
                 </Link>
                 <Link href="/lnat-preparation">
-                  <button className="bg-white border-2 border-indigo-100 hover:border-indigo-200 text-indigo-700 font-bold py-3.5 px-8 rounded-full transition-all">
+                  <button className="bg-white hover:bg-gray-50 border-2 border-indigo-100 hover:border-indigo-200 text-indigo-700 dark:bg-transparent dark:border-indigo-800 dark:text-indigo-400 dark:hover:border-indigo-600 font-bold py-3.5 px-8 rounded-full transition-all">
                     {process.env.NEXT_PUBLIC_LNAT_LAUNCH_ENABLED === "true"
                       ? "Learn More"
                       : "Read the LNAT preparation guide"}
@@ -416,19 +424,19 @@ export default function DurhamLanding() {
 
             {/* Visual Card */}
             <div className="relative">
-              <div className="absolute -inset-4 bg-gradient-to-r from-purple-200 to-indigo-200 rounded-[2rem] blur-2xl opacity-50"></div>
-              <div className="relative bg-white border border-gray-200 rounded-2xl p-8 shadow-xl">
-                <div className="flex items-center justify-between mb-8 border-b border-gray-100 pb-4">
-                  <div className="font-bold text-gray-900">
+              <div className="absolute -inset-4 bg-gradient-to-r from-purple-200 to-indigo-200 dark:from-purple-900/20 dark:to-indigo-900/20 rounded-[2rem] blur-2xl opacity-50"></div>
+              <div className="relative bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-8 shadow-xl">
+                <div className="flex items-center justify-between mb-8 border-b border-gray-100 dark:border-white/5 pb-4">
+                  <div className="font-bold text-gray-900 dark:text-white">
                     Practice Session
                   </div>
-                  <div className="text-xs font-bold text-red-500 bg-red-50 px-2 py-1 rounded animate-pulse">
+                  <div className="text-xs font-bold text-red-500 bg-red-50 dark:bg-red-900/20 px-2 py-1 rounded animate-pulse">
                     LIVE TIMER: 14:02
                   </div>
                 </div>
                 <div className="space-y-6">
                   <div className="space-y-2">
-                    <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
+                    <div className="h-2 w-full bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
                       <div className="h-full w-2/3 bg-indigo-500"></div>
                     </div>
                     <div className="flex justify-between text-xs text-gray-400 font-mono">
@@ -437,18 +445,18 @@ export default function DurhamLanding() {
                     </div>
                   </div>
 
-                  <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 text-sm text-gray-600 italic">
+                  <div className="p-4 bg-gray-50 dark:bg-gray-900/50 rounded-xl border border-gray-100 dark:border-white/5 text-sm text-gray-600 dark:text-gray-300 italic">
                     "The author implies that legislative intent is irrelevant
                     when..."
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">
-                    <div className="h-10 border border-gray-200 rounded-lg"></div>
-                    <div className="h-10 bg-indigo-50 border border-indigo-200 rounded-lg flex items-center justify-center text-indigo-700 font-bold text-sm">
+                    <div className="h-10 border border-gray-200 dark:border-gray-600 rounded-lg"></div>
+                    <div className="h-10 bg-indigo-50 border border-indigo-200 dark:bg-indigo-900/30 dark:border-indigo-700 rounded-lg flex items-center justify-center text-indigo-700 dark:text-indigo-300 font-bold text-sm">
                       Option B
                     </div>
-                    <div className="h-10 border border-gray-200 rounded-lg"></div>
-                    <div className="h-10 border border-gray-200 rounded-lg"></div>
+                    <div className="h-10 border border-gray-200 dark:border-gray-600 rounded-lg"></div>
+                    <div className="h-10 border border-gray-200 dark:border-gray-600 rounded-lg"></div>
                   </div>
                 </div>
               </div>
@@ -509,10 +517,10 @@ export default function DurhamLanding() {
       </section>
 
       {/* 4) OUTCOME CARDS (Replacing Oversized Screenshots) */}
-      <section className="py-20 bg-gray-50 border-b border-gray-200">
+      <section className="py-20 bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-white/5 transition-colors">
         <div className="max-w-6xl mx-auto px-6">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-black text-gray-900 tracking-tight">
+            <h2 className="text-3xl font-black text-gray-900 dark:text-white tracking-tight">
               Focus on Outcomes
             </h2>
             <p className="text-gray-500 mt-2">
@@ -549,12 +557,12 @@ export default function DurhamLanding() {
             ].map((card, i) => (
               <div
                 key={i}
-                className="bg-white p-8 rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow"
+                className="bg-white dark:bg-white/5 p-8 rounded-2xl border border-gray-200 dark:border-white/5 shadow-sm hover:shadow-md transition-shadow"
               >
-                <h3 className="text-lg font-bold text-gray-900 mb-2">
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
                   {card.title}
                 </h3>
-                <p className="text-sm text-gray-500 leading-relaxed">
+                <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
                   {card.desc}
                 </p>
               </div>
@@ -564,14 +572,14 @@ export default function DurhamLanding() {
       </section>
 
       {/* POPULAR DURHAM LAW GUIDES */}
-      <section className="py-20 bg-white border-b border-gray-100">
+      <section className="py-20 bg-white dark:bg-gray-950 border-b border-gray-100 dark:border-white/5 transition-colors">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* FLAGSHIP GUIDE BANNER */}
           <div className="mb-16">
             <Link
               href="/articles/no-question-is-a-stupid-question"
               prefetch={false}
-              className="block group relative overflow-hidden rounded-[2.5rem] bg-indigo-600 p-8 md:p-12 text-white shadow-2xl shadow-indigo-200 transition-all duration-500 hover:scale-[1.01]"
+              className="block group relative overflow-hidden rounded-[2.5rem] bg-indigo-600 p-8 md:p-12 text-white shadow-2xl shadow-indigo-200 dark:shadow-indigo-900/20 transition-all duration-500 hover:scale-[1.01]"
             >
               <div className="absolute inset-0 bg-gradient-to-br from-indigo-400/20 to-transparent"></div>
               <div className="relative z-10 flex flex-col md:flex-row items-center gap-8 md:gap-12">
@@ -598,14 +606,17 @@ export default function DurhamLanding() {
           </div>
 
           <div className="text-center mb-12">
-            <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-50 text-purple-600 text-[10px] font-black uppercase tracking-[0.2em] mb-4 border border-purple-100">
+            <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-300 text-[10px] font-black uppercase tracking-[0.2em] mb-4 border border-purple-100 dark:border-purple-800">
               <BookOpen className="w-3.5 h-3.5" />
               Learning Hub
             </span>
-            <h2 className="text-3xl md:text-4xl font-black text-gray-900 mb-4 tracking-tighter">
-              Popular <span className="text-purple-600">Durham Law Guides</span>
+            <h2 className="text-3xl md:text-4xl font-black text-gray-900 dark:text-white mb-4 tracking-tighter">
+              Popular{" "}
+              <span className="text-purple-600 dark:text-purple-400">
+                Durham Law Guides
+              </span>
             </h2>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto font-medium opacity-80">
+            <p className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto font-medium opacity-80">
               Evidence-based study techniques, ethical AI use, and exam
               strategies—all Durham-specific.
             </p>
@@ -614,22 +625,22 @@ export default function DurhamLanding() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {allGuides.slice(1, 4).map((guide) => (
               <Link key={guide.slug} href={guide.href} prefetch={false}>
-                <div className="group p-8 rounded-3xl border border-gray-100 bg-white hover:border-purple-300 hover:shadow-2xl transition-all duration-500 h-full flex flex-col hover:-translate-y-1 text-left">
-                  <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-4 block">
+                <div className="group p-8 rounded-3xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 hover:border-purple-300 dark:hover:border-purple-500/50 hover:shadow-2xl transition-all duration-500 h-full flex flex-col hover:-translate-y-1 text-left">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-4 block">
                     {guide.category[0]}
                   </span>
-                  <h3 className="text-xl font-bold text-gray-900 mb-4 group-hover:text-purple-700 transition-colors leading-tight">
+                  <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4 group-hover:text-purple-700 dark:group-hover:text-purple-400 transition-colors leading-tight">
                     {guide.title}
                   </h3>
-                  <p className="text-sm text-gray-600 mb-8 flex-1 leading-relaxed font-medium opacity-80">
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-8 flex-1 leading-relaxed font-medium opacity-80">
                     {guide.description}
                   </p>
-                  <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest pt-6 border-t border-gray-50">
-                    <span className="text-gray-400 flex items-center gap-1.5">
+                  <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest pt-6 border-t border-gray-50 dark:border-white/5">
+                    <span className="text-gray-400 dark:text-gray-500 flex items-center gap-1.5">
                       <Clock className="w-3.5 h-3.5" />
                       {guide.readTime}
                     </span>
-                    <div className="text-purple-600 flex items-center gap-1 group-hover:gap-2 transition-all">
+                    <div className="text-purple-600 dark:text-purple-400 flex items-center gap-1 group-hover:gap-2 transition-all">
                       Read guide <ArrowRight className="w-3.5 h-3.5" />
                     </div>
                   </div>
@@ -640,7 +651,7 @@ export default function DurhamLanding() {
 
           <div className="mt-12 text-center">
             <Link href="/guides" prefetch={false}>
-              <button className="inline-flex items-center gap-2 px-10 py-4 rounded-2xl border border-purple-100 bg-purple-50 text-purple-600 font-black text-sm uppercase tracking-widest hover:bg-purple-600 hover:text-white transition-all shadow-sm">
+              <button className="inline-flex items-center gap-2 px-10 py-4 rounded-2xl border border-purple-100 dark:border-purple-900/50 bg-purple-50 dark:bg-purple-900/10 text-purple-600 dark:text-purple-400 font-black text-sm uppercase tracking-widest hover:bg-purple-600 hover:text-white dark:hover:bg-purple-600 dark:hover:text-white transition-all shadow-sm">
                 View All {allGuides.length} Guides{" "}
                 <ArrowRight className="w-4 h-4" />
               </button>
@@ -650,9 +661,12 @@ export default function DurhamLanding() {
       </section>
 
       {/* FAQ Section (Add new FAQ here or replace existing) */}
-      <section id="faq" className="py-20 bg-gray-50 border-t border-gray-100">
+      <section
+        id="faq"
+        className="py-20 bg-gray-50 dark:bg-gray-900 border-t border-gray-100 dark:border-white/5 transition-colors"
+      >
         <div className="max-w-4xl mx-auto px-6">
-          <h2 className="text-3xl font-black text-gray-900 mb-12 text-center tracking-tight">
+          <h2 className="text-3xl font-black text-gray-900 dark:text-white mb-12 text-center tracking-tight">
             Common Questions
           </h2>
           <div className="grid gap-8">
@@ -680,12 +694,12 @@ export default function DurhamLanding() {
             ].map((item, i) => (
               <div
                 key={i}
-                className="bg-white p-6 rounded-2xl border border-gray-200"
+                className="bg-white dark:bg-white/5 p-6 rounded-2xl border border-gray-200 dark:border-white/5"
               >
-                <h3 className="text-lg font-bold text-gray-900 mb-3">
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-3">
                   {item.q}
                 </h3>
-                <p className="text-gray-600 leading-relaxed text-sm">
+                <p className="text-gray-600 dark:text-gray-400 leading-relaxed text-sm">
                   {item.a}
                 </p>
               </div>
