@@ -1,17 +1,25 @@
-import { getApiAuth } from '@/lib/apiAuth';
-import type { SupabaseClient } from '@supabase/supabase-js';
-import type { DurmahContextPacket, DurmahTerm, DurmahTimeOfDay } from '@/types/durmah';
+import { getApiAuth } from "@/lib/apiAuth";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type {
+  DurmahContextPacket,
+  DurmahTerm,
+  DurmahTimeOfDay,
+} from "@/types/durmah";
 
-const DEFAULT_TIMEZONE = 'Europe/London';
+const DEFAULT_TIMEZONE = "Europe/London";
 
-const DURHAM_TERM_CALENDAR_2025_26: Array<{ term: DurmahTerm; start: string; end: string }> = [
-  { term: 'Michaelmas', start: '2025-10-06', end: '2025-12-12' },
-  { term: 'Epiphany', start: '2026-01-12', end: '2026-03-20' },
-  { term: 'Easter', start: '2026-04-27', end: '2026-06-19' },
+const DURHAM_TERM_CALENDAR_2025_26: Array<{
+  term: DurmahTerm;
+  start: string;
+  end: string;
+}> = [
+  { term: "Michaelmas", start: "2025-10-06", end: "2025-12-12" },
+  { term: "Epiphany", start: "2026-01-12", end: "2026-03-20" },
+  { term: "Easter", start: "2026-04-27", end: "2026-06-19" },
 ];
 
 function toUtcDateFromYmd(ymd: string) {
-  const parts = ymd.split('-').map((part) => Number(part));
+  const parts = ymd.split("-").map((part) => Number(part));
   const year = parts[0] ?? 2025;
   const month = parts[1] ?? 1;
   const day = parts[2] ?? 1;
@@ -19,20 +27,20 @@ function toUtcDateFromYmd(ymd: string) {
 }
 
 function getZonedParts(date: Date, timeZone: string) {
-  const formatter = new Intl.DateTimeFormat('en-GB', {
+  const formatter = new Intl.DateTimeFormat("en-GB", {
     timeZone,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
     hour12: false,
   });
   const parts = formatter.formatToParts(date);
   const map: Record<string, string> = {};
   for (const part of parts) {
-    if (part.type !== 'literal') {
+    if (part.type !== "literal") {
       map[part.type] = part.value;
     }
   }
@@ -47,10 +55,10 @@ function getZonedParts(date: Date, timeZone: string) {
 }
 
 function computeTimeOfDay(hour: number): DurmahTimeOfDay {
-  if (hour >= 5 && hour < 12) return 'morning';
-  if (hour >= 12 && hour < 17) return 'afternoon';
-  if (hour >= 17 && hour < 22) return 'evening';
-  return 'night';
+  if (hour >= 5 && hour < 12) return "morning";
+  if (hour >= 12 && hour < 17) return "afternoon";
+  if (hour >= 17 && hour < 22) return "evening";
+  return "night";
 }
 
 function computeAcademicContext(timeZone: string) {
@@ -58,10 +66,17 @@ function computeAcademicContext(timeZone: string) {
   const parts = getZonedParts(now, timeZone);
   const localDate = new Date(Date.UTC(parts.year, parts.month - 1, parts.day));
   const localTimeISO = new Date(
-    Date.UTC(parts.year, parts.month - 1, parts.day, parts.hour, parts.minute, parts.second)
+    Date.UTC(
+      parts.year,
+      parts.month - 1,
+      parts.day,
+      parts.hour,
+      parts.minute,
+      parts.second,
+    ),
   ).toISOString();
 
-  let term: DurmahTerm = 'Unknown';
+  let term: DurmahTerm = "Unknown";
   let weekOfTerm: number | null = null;
   let dayOfTerm: number | null = null;
 
@@ -78,13 +93,13 @@ function computeAcademicContext(timeZone: string) {
     }
   }
 
-  if (term === 'Unknown') {
-    term = 'Vacation';
+  if (term === "Unknown") {
+    term = "Vacation";
   }
 
-  const dayLabel = new Intl.DateTimeFormat('en-GB', {
+  const dayLabel = new Intl.DateTimeFormat("en-GB", {
     timeZone,
-    weekday: 'short',
+    weekday: "short",
   }).format(now);
   const timeOfDay = computeTimeOfDay(parts.hour);
   const startYear = parts.month >= 9 ? parts.year : parts.year - 1;
@@ -104,8 +119,8 @@ function computeAcademicContext(timeZone: string) {
 }
 
 function summarizeText(text: string, maxLen = 140) {
-  const trimmed = text.replace(/\s+/g, ' ').trim();
-  if (!trimmed) return '';
+  const trimmed = text.replace(/\s+/g, " ").trim();
+  if (!trimmed) return "";
   if (trimmed.length <= maxLen) return trimmed;
   return `${trimmed.slice(0, maxLen - 3)}...`;
 }
@@ -116,7 +131,7 @@ function extractRecommendations(text: string) {
     let title = url;
     try {
       const parsed = new URL(url);
-      title = parsed.hostname.replace(/^www\./, '');
+      title = parsed.hostname.replace(/^www\./, "");
     } catch {
       // Keep raw url as title
     }
@@ -126,48 +141,57 @@ function extractRecommendations(text: string) {
 
 async function ensureThread(supabase: SupabaseClient, userId: string) {
   const { data, error } = await supabase
-    .from('durmah_threads')
-    .select('id, onboarding_state, last_summary, last_message_at')
-    .eq('user_id', userId)
+    .from("durmah_threads")
+    .select("id, onboarding_state, last_summary, last_message_at")
+    .eq("user_id", userId)
     .maybeSingle();
 
   if (!error && data) return data;
 
   const nowIso = new Date().toISOString();
   const { data: inserted } = await supabase
-    .from('durmah_threads')
+    .from("durmah_threads")
     .upsert(
       {
         user_id: userId,
-        onboarding_state: 'new',
+        onboarding_state: "new",
         last_seen_at: nowIso,
         last_message_at: nowIso,
         last_summary: null,
       },
-      { onConflict: 'user_id' }
+      { onConflict: "user_id" },
     )
-    .select('id, onboarding_state, last_summary, last_message_at')
+    .select("id, onboarding_state, last_summary, last_message_at")
     .single();
 
   return inserted!;
 }
 
 async function fetchProfile(supabase: SupabaseClient, userId: string) {
-  const { data } = await supabase
-    .from('profiles')
-    .select('display_name, year_group, year_of_study, created_at, trial_started_at, trial_ever_used')
-    .eq('id', userId)
+  const { data, error } = await supabase
+    .from("profiles")
+    .select(
+      "display_name, year_group, year_of_study, created_at, trial_started_at, trial_ever_used",
+    )
+    .eq("id", userId)
     .maybeSingle();
 
+  if (error) {
+    console.warn(
+      "[contextBuilder] Profile fetch error (may be missing columns):",
+      error,
+    );
+  }
+
   const created = data?.trial_started_at || data?.created_at || null;
-  let trialStatus: 'trial' | 'inactive' | 'active' = 'inactive';
+  let trialStatus: "trial" | "inactive" | "active" = "inactive";
   let trialEndsAt: string | null = null;
   if (created) {
     const start = new Date(created);
     const end = new Date(start.getTime() + 14 * 24 * 60 * 60 * 1000);
     trialEndsAt = end.toISOString();
     if (new Date() < end && !data?.trial_ever_used) {
-      trialStatus = 'trial';
+      trialStatus = "trial";
     }
   }
 
@@ -177,39 +201,58 @@ async function fetchProfile(supabase: SupabaseClient, userId: string) {
     yearOfStudy: data?.year_of_study ?? data?.year_group ?? null, // Prefer year_of_study
     trialStatus,
     trialEndsAt,
-    role: 'student',
+    role: "student",
   };
 }
 
 export async function buildDurmahContext(req: any): Promise<
-  | { ok: false; status: 'unauthorized' | 'misconfigured' }
-  | { ok: true; context: DurmahContextPacket; supabase: SupabaseClient; userId: string; academicCalendar?: any }
+  | { ok: false; status: "unauthorized" | "misconfigured" }
+  | {
+      ok: true;
+      context: DurmahContextPacket;
+      supabase: SupabaseClient;
+      userId: string;
+      academicCalendar?: any;
+    }
 > {
   const auth = await getApiAuth(req);
-  if (auth.status === 'missing_token' || auth.status === 'invalid_token') {
-    return { ok: false, status: 'unauthorized' };
+  if (auth.status === "missing_token" || auth.status === "invalid_token") {
+    return { ok: false, status: "unauthorized" };
   }
-  if (auth.status === 'misconfigured') {
-    return { ok: false, status: 'misconfigured' };
+  if (auth.status === "misconfigured") {
+    return { ok: false, status: "misconfigured" };
   }
 
   const { supabase, user } = auth;
 
   const thread = await ensureThread(supabase, user.id);
 
-  const { data: messages } = await supabase
-    .from('durmah_messages')
-    .select('role, content, source, created_at')
-    .eq('user_id', user.id)
-    .eq('thread_id', thread.id)
-    .order('created_at', { ascending: true })
+  const { data: messages, error: messagesError } = await supabase
+    .from("durmah_messages")
+    .select("role, content, source, created_at")
+    .eq("user_id", user.id)
+    .eq("thread_id", thread.id)
+    .order("created_at", { ascending: true })
     .limit(12);
+
+  if (messagesError) {
+    if (messagesError.code === "42P01" || messagesError.code === "PGRST116") {
+      console.warn(
+        "[contextBuilder] durmah_messages table not found (Phase 1)",
+      );
+    } else {
+      console.error(
+        "[contextBuilder] durmah_messages fetch error:",
+        messagesError,
+      );
+    }
+  }
 
   const profile = await fetchProfile(supabase, user.id);
   let academic = computeAcademicContext(DEFAULT_TIMEZONE);
 
   // Add YAAG awareness
-  const yearGroup = profile.yearGroup || profile.yearOfStudy || 'year1';
+  const yearGroup = profile.yearGroup || profile.yearOfStudy || "year1";
   const yearAtAGlanceUrl = `/year-at-a-glance?y=${yearGroup}`;
   academic = {
     ...(academic as any),
@@ -219,45 +262,48 @@ export async function buildDurmahContext(req: any): Promise<
 
   // Track last_seen_at for greeting suppression
   const { data: existingMemory } = await supabase
-    .from('durmah_user_memory')
-    .select('last_seen_at')
-    .eq('user_id', user.id)
+    .from("durmah_user_memory")
+    .select("last_seen_at")
+    .eq("user_id", user.id)
     .single();
 
-  const lastSeenAt = existingMemory?.last_seen_at ? new Date(existingMemory.last_seen_at) : null;
+  const lastSeenAt = existingMemory?.last_seen_at
+    ? new Date(existingMemory.last_seen_at)
+    : null;
   const nowTime = new Date();
   const sixHoursAgo = new Date(nowTime.getTime() - 6 * 60 * 60 * 1000);
   const greetingSuppressed = lastSeenAt ? lastSeenAt > sixHoursAgo : false;
 
   // Upsert last_seen_at
-  await supabase
-    .from('durmah_user_memory')
-    .upsert({
+  await supabase.from("durmah_user_memory").upsert(
+    {
       user_id: user.id,
       last_seen_at: nowTime.toISOString(),
       updated_at: nowTime.toISOString(),
-    }, { onConflict: 'user_id' });
+    },
+    { onConflict: "user_id" },
+  );
 
   // Fetch timetable events (next 10 upcoming events within next 14 days)
   const now = new Date();
   const twoWeeksFromNow = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
   const { data: timetableEvents } = await supabase
-    .from('timetable_events')
-    .select('title, start_time, end_time, location, module_code, source')
-    .eq('user_id', user.id)
-    .gte('start_time', now.toISOString())
-    .lte('start_time', twoWeeksFromNow.toISOString())
-    .order('start_time', { ascending: true })
+    .from("timetable_events")
+    .select("title, start_time, end_time, location, module_code, source")
+    .eq("user_id", user.id)
+    .gte("start_time", now.toISOString())
+    .lte("start_time", twoWeeksFromNow.toISOString())
+    .order("start_time", { ascending: true })
     .limit(10);
 
   // Also fetch user_events from ICS import (normalized to same format)
   const { data: userEvents } = await supabase
-    .from('user_events')
-    .select('title, start_at, end_at, location, module_code, source')
-    .eq('user_id', user.id)
-    .gte('start_at', now.toISOString())
-    .lte('start_at', twoWeeksFromNow.toISOString())
-    .order('start_at', { ascending: true })
+    .from("user_events")
+    .select("title, start_at, end_at, location, module_code, source")
+    .eq("user_id", user.id)
+    .gte("start_at", now.toISOString())
+    .lte("start_at", twoWeeksFromNow.toISOString())
+    .order("start_at", { ascending: true })
     .limit(10);
 
   // Normalize user_events to same format as timetable_events
@@ -267,119 +313,143 @@ export async function buildDurmahContext(req: any): Promise<
     end_time: e.end_at,
     location: e.location,
     module_code: e.module_code,
-    source: e.source || 'ics',
+    source: e.source || "ics",
   }));
 
   // Merge and sort all events by start time
   const allEvents = [...(timetableEvents || []), ...normalizedUserEvents]
-    .sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime())
+    .sort(
+      (a, b) =>
+        new Date(a.start_time).getTime() - new Date(b.start_time).getTime(),
+    )
     .slice(0, 15); // Keep top 15 events
 
   // Data confidence: determine timetable source and profile completeness
   const hasIcsEvents = normalizedUserEvents.length > 0;
-  const timetableDataSource = allEvents.length > 0
-    ? (hasIcsEvents ? 'user' : (allEvents.every((e: any) => e.source?.startsWith('dev-')) ? 'dev-seed' : 'user'))
-    : 'none';
+  const timetableDataSource =
+    allEvents.length > 0
+      ? hasIcsEvents
+        ? "user"
+        : allEvents.every((e: any) => e.source?.startsWith("dev-"))
+          ? "dev-seed"
+          : "user"
+      : "none";
 
   const profileCompleteness = {
     isComplete: !!(profile.yearOfStudy && profile.displayName),
     missingFields: [
-      ...(!profile.yearOfStudy ? ['year of study'] : []),
-      ...(!profile.displayName ? ['name'] : []),
+      ...(!profile.yearOfStudy ? ["year of study"] : []),
+      ...(!profile.displayName ? ["name"] : []),
     ],
   };
 
   const timetableMeta = {
     hasEvents: allEvents.length > 0,
-    dataSource: timetableDataSource as 'dev-seed' | 'user' | 'none',
-    isVerified: timetableDataSource === 'user',
-    verificationUrl: '/setup',
+    dataSource: timetableDataSource as "dev-seed" | "user" | "none",
+    isVerified: timetableDataSource === "user",
+    verificationUrl: "/setup",
     icsImported: hasIcsEvents,
-
   };
 
-
   // Build schedule summary with Durham timezone formatting
-  const schedule = allEvents.length > 0 ? (() => {
-    const timezone = academic.timezone || DEFAULT_TIMEZONE;
-    
-    // Helper to format time in Durham timezone
-    const formatTime = (isoString: string) => {
-      const date = new Date(isoString);
-      return new Intl.DateTimeFormat('en-GB', {
-        timeZone: timezone,
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false,
-      }).format(date);
-    };
+  const schedule =
+    allEvents.length > 0
+      ? (() => {
+          const timezone = academic.timezone || DEFAULT_TIMEZONE;
 
-    const formatDayTime = (isoString: string) => {
-      const date = new Date(isoString);
-      return new Intl.DateTimeFormat('en-GB', {
-        timeZone: timezone,
-        weekday: 'short',
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false,
-      }).format(date);
-    };
+          // Helper to format time in Durham timezone
+          const formatTime = (isoString: string) => {
+            const date = new Date(isoString);
+            return new Intl.DateTimeFormat("en-GB", {
+              timeZone: timezone,
+              hour: "2-digit",
+              minute: "2-digit",
+              hour12: false,
+            }).format(date);
+          };
 
-    const nextClass = allEvents[0] ? {
-      title: allEvents[0].title,
-      start: allEvents[0].start_time,
-      end: allEvents[0].end_time,
-      location: allEvents[0].location || undefined,
-      label: `${allEvents[0].title} • ${formatDayTime(allEvents[0].start_time)}${allEvents[0].location ? ` • ${allEvents[0].location}` : ''}`,
-    } : null;
+          const formatDayTime = (isoString: string) => {
+            const date = new Date(isoString);
+            return new Intl.DateTimeFormat("en-GB", {
+              timeZone: timezone,
+              weekday: "short",
+              hour: "2-digit",
+              minute: "2-digit",
+              hour12: false,
+            }).format(date);
+          };
 
-    const today = allEvents.filter(e => {
-      const eventDate = new Date(e.start_time);
-      const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-      const todayEnd = new Date(todayStart.getTime() + 24 * 60 * 60 * 1000);
-      return eventDate >= todayStart && eventDate < todayEnd;
-    }).map(e => ({
-      title: e.title,
-      start: e.start_time,
-      end: e.end_time,
-      location: e.location || undefined,
-      label: `${e.title} • ${formatTime(e.start_time)}${e.location ? ` • ${e.location}` : ''}`,
-    }));
+          const nextClass = allEvents[0]
+            ? {
+                title: allEvents[0].title,
+                start: allEvents[0].start_time,
+                end: allEvents[0].end_time,
+                location: allEvents[0].location || undefined,
+                label: `${allEvents[0].title} • ${formatDayTime(allEvents[0].start_time)}${allEvents[0].location ? ` • ${allEvents[0].location}` : ""}`,
+              }
+            : null;
 
-    const weekPreview = allEvents.slice(0, 6).map(e => ({
-      title: e.title,
-      start: e.start_time,
-      end: e.end_time,
-      location: e.location || undefined,
-      label: `${e.title} • ${formatDayTime(e.start_time)}${e.location ? ` • ${e.location}` : ''}`,
-    }));
+          const today = allEvents
+            .filter((e) => {
+              const eventDate = new Date(e.start_time);
+              const todayStart = new Date(
+                now.getFullYear(),
+                now.getMonth(),
+                now.getDate(),
+              );
+              const todayEnd = new Date(
+                todayStart.getTime() + 24 * 60 * 60 * 1000,
+              );
+              return eventDate >= todayStart && eventDate < todayEnd;
+            })
+            .map((e) => ({
+              title: e.title,
+              start: e.start_time,
+              end: e.end_time,
+              location: e.location || undefined,
+              label: `${e.title} • ${formatTime(e.start_time)}${e.location ? ` • ${e.location}` : ""}`,
+            }));
 
-    return {
-      nextClass,
-      today,
-      weekPreview,
-      nextClassLabel: nextClass?.label || null,
-      todayLabels: today.map(t => t.label),
-      weekPreviewLabels: weekPreview.map(w => w.label),
-    };
-  })() : undefined;
+          const weekPreview = allEvents.slice(0, 6).map((e) => ({
+            title: e.title,
+            start: e.start_time,
+            end: e.end_time,
+            location: e.location || undefined,
+            label: `${e.title} • ${formatDayTime(e.start_time)}${e.location ? ` • ${e.location}` : ""}`,
+          }));
 
+          return {
+            nextClass,
+            today,
+            weekPreview,
+            nextClassLabel: nextClass?.label || null,
+            todayLabels: today.map((t) => t.label),
+            weekPreviewLabels: weekPreview.map((w) => w.label),
+          };
+        })()
+      : undefined;
 
   const recentMessages = messages || [];
-  const lastUser = [...recentMessages].reverse().find((m) => m.role === 'user');
-  const lastAssistant = [...recentMessages].reverse().find((m) => m.role === 'assistant');
+  const lastUser = [...recentMessages].reverse().find((m) => m.role === "user");
+  const lastAssistant = [...recentMessages]
+    .reverse()
+    .find((m) => m.role === "assistant");
   const lastUserIntent = lastUser ? summarizeText(lastUser.content) : null;
-  const lastAssistantSuggestion = lastAssistant ? summarizeText(lastAssistant.content) : null;
-  const lastRecommendations = lastAssistant ? extractRecommendations(lastAssistant.content) : [];
+  const lastAssistantSuggestion = lastAssistant
+    ? summarizeText(lastAssistant.content)
+    : null;
+  const lastRecommendations = lastAssistant
+    ? extractRecommendations(lastAssistant.content)
+    : [];
   const followUpQuestion = lastUserIntent
     ? `Want to continue from where we left off on ${lastUserIntent}?`
     : null;
 
   const lastMessagesSnippet = recentMessages
-    .filter((m) => m.role === 'user' || m.role === 'assistant')
+    .filter((m) => m.role === "user" || m.role === "assistant")
     .slice(-8)
     .map((m) => ({
-      role: m.role as 'user' | 'assistant',
+      role: m.role as "user" | "assistant",
       content: m.content,
       created_at: m.created_at,
     }));
@@ -391,7 +461,7 @@ export async function buildDurmahContext(req: any): Promise<
     context: {
       userId: user.id,
       threadId: thread.id,
-      onboardingState: (thread.onboarding_state as any) || 'new',
+      onboardingState: (thread.onboarding_state as any) || "new",
       lastSummary: thread.last_summary ?? null,
       recentMessages,
       profile,
@@ -408,7 +478,7 @@ export async function buildDurmahContext(req: any): Promise<
       },
       schedule,
       academicCalendar: {
-        currentYear: '2025/26',
+        currentYear: "2025/26",
         terms: DURHAM_TERM_CALENDAR_2025_26,
       },
       memory: {

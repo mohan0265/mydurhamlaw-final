@@ -205,27 +205,34 @@ function buildContextChipText(
 }
 
 function buildContextGreeting(context: DurmahContextPacket | null) {
-  if (!context?.profile || !context?.academic || !context?.continuity) {
+  if (!context) {
     return "Hi! I'm loading your student context to better assist you...";
   }
 
-  const name = context.profile.displayName || "Student";
-  const termLabel =
-    context.academic.term === "Unknown" ? "this term" : context.academic.term;
-  const weekLabel = context.academic.weekOfTerm
-    ? `week ${context.academic.weekOfTerm}`
-    : null;
-  const timeOfDay = context.academic.timeOfDay || "day";
-  const lastIntent = context.continuity.lastUserIntent;
+  const profile = context.profile || {};
+  const academic = context.academic || {};
+  const name = (
+    profile.displayName ||
+    profile.display_name ||
+    "Student"
+  ).trim();
+  const greetingName = name || "Student";
+
+  const term = academic.term || "your term";
+  const weekLabel = academic.weekOfTerm ? `Week ${academic.weekOfTerm}` : "";
+  const timeOfDay = academic.timeOfDay || "day";
+
+  // Continuity check
+  const lastIntent = context.continuity?.lastUserIntent;
   const followUp =
-    context.continuity.followUpQuestion || "Want to continue from there?";
+    context.continuity?.followUpQuestion || "Want to continue from there?";
 
   if (lastIntent) {
-    return `Hi ${name} - last time we discussed ${lastIntent}. ${followUp}`;
+    return `Hi ${greetingName} - last time we discussed ${lastIntent}. ${followUp}`;
   }
 
-  const termPhrase = weekLabel ? `${termLabel} ${weekLabel}` : termLabel;
-  return `Hi ${name} - it's ${timeOfDay} and we're in ${termPhrase}. Want to review this week, plan your study, or practice a quick quiz?`;
+  const termPhrase = weekLabel ? `${term} ${weekLabel}` : term;
+  return `Hi ${greetingName} - it's ${timeOfDay} and we're in ${termPhrase}. Want to review this week, plan your study, or practice a quick quiz?`;
 }
 
 export default function DurmahWidget() {
@@ -331,7 +338,9 @@ export default function DurmahWidget() {
 
   // EMERGENCY STABILIZATION: ERROR STATE GATING
   const [contextError, setContextError] = useState<string | null>(null);
+  const [fatalError, setFatalError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
+  const hasFetchedRef = useRef(false);
 
   // Generate new session ID on widget open
   useEffect(() => {
@@ -781,17 +790,15 @@ export default function DurmahWidget() {
 
   // NEW: Fetch Student Context from Phase 1 API
   const fetchStudentContext = useCallback(async () => {
-    // STRICT GUARD: only fetch if open, signed in, not loading, AND NO PREVIOUS SUCCESSFUL FETCH
-    if (
-      !signedIn ||
-      contextLoadingRef.current ||
-      hasFetchedSessionRef.current ||
-      contextError
-    )
-      return;
+    // STRICT GUARD: fail-stop and single-flight
+    if (fatalError) return;
+    if (hasFetchedRef.current) return;
 
+    // Only fetch if open, signed in, not loading
+    if (!signedIn || contextLoadingRef.current) return;
+
+    hasFetchedRef.current = true; // Mark as fetched immediately to prevent loops
     contextLoadingRef.current = true;
-    hasFetchedSessionRef.current = true;
     setContextLoading(true);
     setContextError(null);
 
@@ -861,16 +868,18 @@ export default function DurmahWidget() {
 
       if (res.status === 401 || res.status === 403) {
         setContextError("Please sign in again");
+        setFatalError("auth_failure");
         return;
       }
 
       if (!res.ok) {
         setContextError("Temporarily unavailable");
+        setFatalError(`fetch_failure_${res.status}`);
         return;
       }
 
       const data = await res.json();
-      const actualData = data.ok ? data : data; // Handle both wrapper and raw if needed
+      const actualData = data.ok ? data : data;
       setStudentContextData(actualData);
 
       console.log("[Durmah] Context loaded");
@@ -882,6 +891,7 @@ export default function DurmahWidget() {
         }
       }
     } catch (error: any) {
+      setFatalError("exception_in_fetch");
       if (error.name === "AbortError") {
         console.error("Durmah context fetch timed out");
         setContextError("Connection timeout");

@@ -344,11 +344,18 @@ export async function fetchProfileContext(
   yearOfStudy: string | null;
   role: string;
 }> {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("profiles")
     .select("display_name, year_group, year_of_study")
     .eq("id", userId)
     .maybeSingle();
+
+  if (error) {
+    console.warn(
+      "[contextBuilderEnhanced] Profile fetch error (may be missing columns):",
+      error,
+    );
+  }
 
   return {
     displayName: data?.display_name ?? null,
@@ -370,12 +377,25 @@ export async function fetchConversationHistory(
   conversationId: string,
   limit = 10,
 ) {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("durmah_messages")
     .select("role, content, created_at, saved_at")
     .eq("conversation_id", conversationId)
     .order("created_at", { ascending: false })
     .limit(limit);
+
+  if (error) {
+    if (error.code === "42P01" || error.code === "PGRST116") {
+      console.warn(
+        "[contextBuilderEnhanced] durmah_messages table not found (Phase 1)",
+      );
+    } else {
+      console.error(
+        "[contextBuilderEnhanced] durmah_messages fetch error:",
+        error,
+      );
+    }
+  }
 
   return (data || []).reverse().map((m) => ({
     role: m.role,
@@ -393,12 +413,23 @@ export async function fetchRecentTailAcrossScopes(
   userId: string,
   limit = 8,
 ) {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("durmah_messages")
     .select("role, content, created_at, scope, saved_at")
     .eq("user_id", userId)
     .order("created_at", { ascending: false })
     .limit(limit);
+
+  if (error) {
+    if (error.code === "42P01" || error.code === "PGRST116") {
+      // Silent skip
+    } else {
+      console.error(
+        "[contextBuilderEnhanced] durmah_messages recent tail error:",
+        error,
+      );
+    }
+  }
 
   return (data || []).reverse().map((m) => ({
     role: m.role,

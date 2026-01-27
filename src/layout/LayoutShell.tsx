@@ -14,6 +14,7 @@ const AWYWidget = dynamic(() => import("@/components/awy/AWYWidget"), {
   ssr: false,
 });
 import { CalendarProvider } from "@/context/CalendarContext";
+import { WidgetErrorBoundary } from "@/components/common/WidgetErrorBoundary";
 
 type Props = { children: React.ReactNode };
 
@@ -42,9 +43,7 @@ export default function LayoutShell({ children }: Props) {
       >
         Skip to content
       </a>
-
       <GlobalHeader />
-
       {/* Calendar state available to all pages */}
       <CalendarProvider>
         <main id="main-content" className="flex-1 flex flex-col min-h-0">
@@ -57,14 +56,14 @@ export default function LayoutShell({ children }: Props) {
           )}
         </main>
       </CalendarProvider>
-
       {/* Unified Footer - Hidden for full-screen tools like Quiz/Assignments */}
       {!isFullScreenPage && <AppFooter isAuthed={!!user} />}
-
       {/* Global Floating Widgets - Show on all pages except auth pages AND only when logged in */}
       {!isAuthPage && user && (
         <>
-          {/* <DurmahWidget /> */}
+          <WidgetErrorBoundary>
+            <DurmahWidget />
+          </WidgetErrorBoundary>
           <AWYWidget />
         </>
       )}

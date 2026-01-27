@@ -1,22 +1,35 @@
-﻿export type DurmahTerm = 'Michaelmas' | 'Epiphany' | 'Easter' | 'Vacation' | 'Unknown';
+﻿export type DurmahTerm =
+  | "Michaelmas"
+  | "Epiphany"
+  | "Easter"
+  | "Vacation"
+  | "Unknown";
 
-export type DurmahTimeOfDay = 'morning' | 'afternoon' | 'evening' | 'night';
+export type DurmahTimeOfDay = "morning" | "afternoon" | "evening" | "night";
 
-export type DurmahMode = 'general' | 'assignment' | 'lounge' | 'support' | 'planner' | 'awy' | 'quiz';
+export type DurmahMode =
+  | "general"
+  | "assignment"
+  | "lounge"
+  | "support"
+  | "planner"
+  | "awy"
+  | "quiz";
 
 export type DurmahContextPacket = {
   userId: string;
   threadId: string | null;
-  onboardingState: 'new' | 'onboarding' | 'active';
+  onboardingState: "new" | "onboarding" | "active";
   lastSummary: string | null;
   recentMessages: Array<{
-    role: 'user' | 'assistant' | 'system';
+    role: "user" | "assistant" | "system";
     content: string;
     source?: string;
     created_at: string;
   }>;
   profile: {
     displayName: string | null;
+    display_name?: string | null; // Support DB fallback
     yearGroup: string | null;
     yearOfStudy: string | null;
     role: string;
@@ -44,15 +57,33 @@ export type DurmahContextPacket = {
   };
   recent: {
     lastMessages: Array<{
-      role: 'user' | 'assistant';
+      role: "user" | "assistant";
       content: string;
       created_at: string;
     }>;
   };
   schedule?: {
-    nextClass: { title: string; start: string; end: string; location?: string; label: string } | null;
-    today: Array<{ title: string; start: string; end: string; location?: string; label: string }>;
-    weekPreview: Array<{ title: string; start: string; end: string; location?: string; label: string }>;
+    nextClass: {
+      title: string;
+      start: string;
+      end: string;
+      location?: string;
+      label: string;
+    } | null;
+    today: Array<{
+      title: string;
+      start: string;
+      end: string;
+      location?: string;
+      label: string;
+    }>;
+    weekPreview: Array<{
+      title: string;
+      start: string;
+      end: string;
+      location?: string;
+      label: string;
+    }>;
     nextClassLabel: string | null;
     todayLabels: string[];
     weekPreviewLabels: string[];
@@ -71,11 +102,11 @@ export type DurmahContextPacket = {
   };
   timetableMeta?: {
     hasEvents: boolean;
-    dataSource: 'dev-seed' | 'user' | 'none';
+    dataSource: "dev-seed" | "user" | "none";
     isVerified: boolean;
     verificationUrl: string;
   };
-  
+
   // NEW: Assignment awareness from AW tables
   assignments?: {
     active: Array<{
@@ -102,20 +133,20 @@ export type DurmahContextPacket = {
     }>;
     total: number;
   };
-  
+
   // NEW: AWY presence (if connected loved ones exist)
   awy?: {
     lovedOnes: Array<{
       id: string;
       name: string;
       relation: string;
-      status: 'online' | 'away' | 'offline';
+      status: "online" | "away" | "offline";
       lastSeen: string | null;
       isAvailable: boolean;
     }>;
     hasConnections: boolean;
   };
-  
+
   // NEW: Mode-specific context
   modeContext?: {
     mode: DurmahMode;
@@ -125,7 +156,7 @@ export type DurmahContextPacket = {
     quizSessionId?: string;
     relevantData?: any;
   };
-  
+
   // Lectures metadata only for global context (content fetched on-demand via tool)
   lectures?: {
     recent: Array<{
