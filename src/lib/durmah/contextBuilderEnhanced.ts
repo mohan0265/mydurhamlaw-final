@@ -1,21 +1,21 @@
-import type { SupabaseClient } from '@supabase/supabase-js';
-import type { DurmahContextPacket } from '@/types/durmah';
-import { QuizGuard } from './quiz/QuizGuard';
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { DurmahContextPacket } from "@/types/durmah";
+import { QuizGuard } from "./quiz/QuizGuard";
 
 // Durham Term Calendar 2025-26
 const DURHAM_TERMS = [
-  { term: 'Michaelmas', start: '2025-10-06', end: '2025-12-12' },
-  { term: 'Epiphany', start: '2026-01-12', end: '2026-03-20' },
-  { term: 'Easter', start: '2026-04-27', end: '2026-06-19' },
+  { term: "Michaelmas", start: "2025-10-06", end: "2025-12-12" },
+  { term: "Epiphany", start: "2026-01-12", end: "2026-03-20" },
+  { term: "Easter", start: "2026-04-27", end: "2026-06-19" },
 ];
 
 function computeAcademicContext() {
   const now = new Date();
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  
-  let term = 'Vacation';
+
+  let term = "Vacation";
   let weekOfTerm = 0;
-  
+
   for (const window of DURHAM_TERMS) {
     const start = new Date(window.start);
     const end = new Date(window.end);
@@ -27,19 +27,26 @@ function computeAcademicContext() {
       break;
     }
   }
-  
 
   const localTimeISO = now.toISOString();
-  
-  return { 
-    term: term as any, 
-    weekOfTerm, 
-    dayOfTerm: 1, 
-    dayLabel: now.toLocaleDateString('en-GB', { timeZone: 'Europe/London',  weekday: 'long' }),
-    timezone: 'Europe/London',
+
+  return {
+    term: term as any,
+    weekOfTerm,
+    dayOfTerm: 1,
+    dayLabel: now.toLocaleDateString("en-GB", {
+      timeZone: "Europe/London",
+      weekday: "long",
+    }),
+    timezone: "Europe/London",
     localTimeISO,
-    timeOfDay: now.getHours() < 12 ? 'morning' : now.getHours() < 17 ? 'afternoon' : 'evening',
-    academicYearLabel: '2025/26'
+    timeOfDay:
+      now.getHours() < 12
+        ? "morning"
+        : now.getHours() < 17
+          ? "afternoon"
+          : "evening",
+    academicYearLabel: "2025/26",
   };
 }
 
@@ -51,45 +58,50 @@ function computeAcademicContext() {
 
 export async function fetchAssignmentsContext(
   supabase: SupabaseClient,
-  userId: string
-): Promise<DurmahContextPacket['assignments']> {
+  userId: string,
+): Promise<DurmahContextPacket["assignments"]> {
   const now = new Date();
 
   // Fetch all assignments for user
   const { data: assignmentData } = await supabase
-    .from('assignments')
-    .select('id, title, module_code, status, due_date, created_at, updated_at')
-    .eq('user_id', userId)
-    .order('due_date', { ascending: true });
+    .from("assignments")
+    .select("id, title, module_code, status, due_date, created_at, updated_at")
+    .eq("user_id", userId)
+    .order("due_date", { ascending: true });
 
   // Fetch assignment progress from AW tables
   const { data: progressData } = await supabase
-    .from('assignment_progress')
-    .select('assignment_id, step_key, updated_at')
-    .eq('user_id', userId);
+    .from("assignment_progress")
+    .select("assignment_id, step_key, updated_at")
+    .eq("user_id", userId);
 
   // Build progress map (latest step per assignment)
   const progressMap = new Map<string, { step: string; updated: string }>();
-  (progressData || []).forEach(p => {
+  (progressData || []).forEach((p) => {
     const existing = progressMap.get(p.assignment_id);
     if (!existing || new Date(p.updated_at) > new Date(existing.updated)) {
-      progressMap.set(p.assignment_id, { step: p.step_key, updated: p.updated_at });
+      progressMap.set(p.assignment_id, {
+        step: p.step_key,
+        updated: p.updated_at,
+      });
     }
   });
 
   // Active assignments (not completed)
   const activeAssignments = (assignmentData || [])
-    .filter(a => a.status !== 'completed')
+    .filter((a) => a.status !== "completed")
     .slice(0, 5)
-    .map(a => {
+    .map((a) => {
       const progress = progressMap.get(a.id);
       return {
         id: a.id,
-        title: a.title || 'Untitled Assignment',
-        module: a.module_code || 'Unknown Module',
-        status: a.status || 'active',
-        currentStage: progress?.step || 'not_started',
-        nextStep: progress?.step ? `Continue ${progress.step}` : 'Start assignment',
+        title: a.title || "Untitled Assignment",
+        module: a.module_code || "Unknown Module",
+        status: a.status || "active",
+        currentStage: progress?.step || "not_started",
+        nextStep: progress?.step
+          ? `Continue ${progress.step}`
+          : "Start assignment",
         dueDate: a.due_date || undefined,
         progress: 0, // TODO: Calculate percentage from stage
       };
@@ -97,23 +109,29 @@ export async function fetchAssignmentsContext(
 
   // Recently completed
   const recentlyCompleted = (assignmentData || [])
-    .filter(a => a.status === 'completed')
+    .filter((a) => a.status === "completed")
     .slice(0, 3)
-    .map(a => ({
+    .map((a) => ({
       id: a.id,
-      title: a.title || 'Untitled Assignment',
-      module: a.module_code || 'Unknown Module',
+      title: a.title || "Untitled Assignment",
+      module: a.module_code || "Unknown Module",
       completedAt: a.updated_at || a.created_at,
     }));
 
   // Overdue assignments
   const overdueAssignments = (assignmentData || [])
-    .filter(a => a.status !== 'completed' && a.due_date && new Date(a.due_date) < now)
-    .map(a => ({
+    .filter(
+      (a) =>
+        a.status !== "completed" && a.due_date && new Date(a.due_date) < now,
+    )
+    .map((a) => ({
       id: a.id,
-      title: a.title || 'Untitled Assignment',
-      module: a.module_code || 'Unknown Module',
-      daysOver: Math.floor((now.getTime() - new Date(a.due_date!).getTime()) / (1000 * 60 * 60 * 24)),
+      title: a.title || "Untitled Assignment",
+      module: a.module_code || "Unknown Module",
+      daysOver: Math.floor(
+        (now.getTime() - new Date(a.due_date!).getTime()) /
+          (1000 * 60 * 60 * 24),
+      ),
     }));
 
   return {
@@ -128,42 +146,53 @@ export async function fetchAssignmentsContext(
  * Helper to fetch detailed content for a specific lecture
  * Falls back to raw transcript if notes are missing
  */
-async function fetchLectureDetails(supabase: SupabaseClient, lectureId: string) {
-    try {
-        // 1. Try Notes/Summary
-        const { data: notes } = await supabase
-            .from('lecture_notes')
-            .select('summary, key_points, engagement_hooks')
-            .eq('lecture_id', lectureId)
-            .maybeSingle();
+async function fetchLectureDetails(
+  supabase: SupabaseClient,
+  lectureId: string,
+) {
+  try {
+    // 1. Try Notes/Summary
+    const { data: notes } = await supabase
+      .from("lecture_notes")
+      .select("summary, key_points, engagement_hooks")
+      .eq("lecture_id", lectureId)
+      .maybeSingle();
 
-        if (notes) {
-            return {
-                summary: notes.summary,
-                key_points: notes.key_points ? (Array.isArray(notes.key_points) ? notes.key_points : []) : [],
-                engagement_hooks: notes.engagement_hooks ? (Array.isArray(notes.engagement_hooks) ? notes.engagement_hooks : []) : [],
-            };
-        }
-
-        // 2. Fallback to Transcript
-        const { data: transcript } = await supabase
-            .from('lecture_transcripts')
-            .select('transcript_text')
-            .eq('lecture_id', lectureId)
-            .maybeSingle();
-
-        if (transcript?.transcript_text) {
-            return {
-                summary: undefined,
-                key_points: [],
-                engagement_hooks: [],
-                transcript_snippet: transcript.transcript_text.substring(0, 4000) // Truncate
-            };
-        }
-    } catch (e) {
-        console.error('Error fetching lecture details:', e);
+    if (notes) {
+      return {
+        summary: notes.summary,
+        key_points: notes.key_points
+          ? Array.isArray(notes.key_points)
+            ? notes.key_points
+            : []
+          : [],
+        engagement_hooks: notes.engagement_hooks
+          ? Array.isArray(notes.engagement_hooks)
+            ? notes.engagement_hooks
+            : []
+          : [],
+      };
     }
-    return null;
+
+    // 2. Fallback to Transcript
+    const { data: transcript } = await supabase
+      .from("lecture_transcripts")
+      .select("transcript_text")
+      .eq("lecture_id", lectureId)
+      .maybeSingle();
+
+    if (transcript?.transcript_text) {
+      return {
+        summary: undefined,
+        key_points: [],
+        engagement_hooks: [],
+        transcript_snippet: transcript.transcript_text.substring(0, 4000), // Truncate
+      };
+    }
+  } catch (e) {
+    console.error("Error fetching lecture details:", e);
+  }
+  return null;
 }
 
 /**
@@ -173,7 +202,7 @@ async function fetchLectureDetails(supabase: SupabaseClient, lectureId: string) 
 export async function fetchLecturesContext(
   supabase: SupabaseClient,
   userId: string,
-  activeLectureId?: string
+  activeLectureId?: string,
 ): Promise<{
   recent: Array<{
     id: string;
@@ -184,18 +213,20 @@ export async function fetchLecturesContext(
     lecture_date?: string;
     status: string;
   }>;
-  current?: NonNullable<DurmahContextPacket['lectures']>['current']; // Use the type from DurmahContextPacket
+  current?: NonNullable<DurmahContextPacket["lectures"]>["current"]; // Use the type from DurmahContextPacket
   total: number;
 }> {
   // Fetch recent lectures - METADATA ONLY (no notes join)
   const { data: lectures } = await supabase
-    .from('lectures')
-    .select('id, title, module_code, module_name, lecturer_name, lecture_date, status')
-    .eq('user_id', userId)
-    .order('lecture_date', { ascending: false, nullsFirst: false }) // Fetch all recent, regardless of status for list
+    .from("lectures")
+    .select(
+      "id, title, module_code, module_name, lecturer_name, lecture_date, status",
+    )
+    .eq("user_id", userId)
+    .order("lecture_date", { ascending: false, nullsFirst: false }) // Fetch all recent, regardless of status for list
     .limit(5);
 
-  const recentLectures = (lectures || []).map(l => ({
+  const recentLectures = (lectures || []).map((l) => ({
     id: l.id,
     title: l.title,
     module_code: l.module_code,
@@ -210,29 +241,33 @@ export async function fetchLecturesContext(
   let targetLecture = null;
 
   if (activeLectureId) {
-      // Case A: User is ON a specific lecture page
-      targetLecture = recentLectures.find(l => l.id === activeLectureId);
-      // If not in recent list, we might need to fetch metadata separately, but for now assume in list or we just fetch details
-      if (!targetLecture) {
-           // Fetch metadata if not in recent list
-           const { data: specific } = await supabase.from('lectures').select('id, title, module_name').eq('id', activeLectureId).maybeSingle();
-           if (specific) targetLecture = specific;
-      }
+    // Case A: User is ON a specific lecture page
+    targetLecture = recentLectures.find((l) => l.id === activeLectureId);
+    // If not in recent list, we might need to fetch metadata separately, but for now assume in list or we just fetch details
+    if (!targetLecture) {
+      // Fetch metadata if not in recent list
+      const { data: specific } = await supabase
+        .from("lectures")
+        .select("id, title, module_name")
+        .eq("id", activeLectureId)
+        .maybeSingle();
+      if (specific) targetLecture = specific;
+    }
   } else if (recentLectures.length > 0) {
-      // Case B: Global Scope - Use the LATEST lecture as context
-      targetLecture = recentLectures[0];
+    // Case B: Global Scope - Use the LATEST lecture as context
+    targetLecture = recentLectures[0];
   }
 
   if (targetLecture) {
-      const details = await fetchLectureDetails(supabase, targetLecture.id);
-      if (details) {
-          currentLectureDetails = {
-              id: targetLecture.id,
-              title: targetLecture.title,
-              module_name: targetLecture.module_name,
-              ...details
-          };
-      }
+    const details = await fetchLectureDetails(supabase, targetLecture.id);
+    if (details) {
+      currentLectureDetails = {
+        id: targetLecture.id,
+        title: targetLecture.title,
+        module_name: targetLecture.module_name,
+        ...details,
+      };
+    }
   }
 
   return {
@@ -244,14 +279,14 @@ export async function fetchLecturesContext(
 
 export async function fetchAWYContext(
   supabase: SupabaseClient,
-  userId: string
-): Promise<DurmahContextPacket['awy'] | undefined> {
+  userId: string,
+): Promise<DurmahContextPacket["awy"] | undefined> {
   // Fetch AWY connections where user is the student
   const { data: awyConnections } = await supabase
-    .from('awy_connections')
-    .select('id, loved_one_name, relation, status, loved_user_id, loved_one_id')
+    .from("awy_connections")
+    .select("id, loved_one_name, relation, status, loved_user_id, loved_one_id")
     .or(`student_user_id.eq.${userId},student_id.eq.${userId}`)
-    .eq('status', 'active')
+    .eq("status", "active")
     .limit(5);
 
   if (!awyConnections || awyConnections.length === 0) {
@@ -260,7 +295,7 @@ export async function fetchAWYContext(
 
   // Get presence data for connected loved ones
   const lovedOneUserIds = awyConnections
-    .map(c => c.loved_user_id || c.loved_one_id)
+    .map((c) => c.loved_user_id || c.loved_one_id)
     .filter(Boolean) as string[];
 
   if (lovedOneUserIds.length === 0) {
@@ -271,21 +306,21 @@ export async function fetchAWYContext(
   }
 
   const { data: presenceData } = await supabase
-    .from('awy_presence')
-    .select('user_id, status, is_available, last_seen_at')
-    .in('user_id', lovedOneUserIds);
+    .from("awy_presence")
+    .select("user_id, status, is_available, last_seen_at")
+    .in("user_id", lovedOneUserIds);
 
-  const presenceMap = new Map((presenceData || []).map(p => [p.user_id, p]));
+  const presenceMap = new Map((presenceData || []).map((p) => [p.user_id, p]));
 
-  const lovedOnes = awyConnections.map(c => {
+  const lovedOnes = awyConnections.map((c) => {
     const lovedOneId = c.loved_user_id || c.loved_one_id;
     const presence = lovedOneId ? presenceMap.get(lovedOneId) : undefined;
-    
+
     return {
       id: c.id,
-      name: c.loved_one_name || 'Loved One',
-      relation: c.relation || 'Family',
-      status: (presence?.status as 'online' | 'away' | 'offline') || 'offline',
+      name: c.loved_one_name || "Loved One",
+      relation: c.relation || "Family",
+      status: (presence?.status as "online" | "away" | "offline") || "offline",
       lastSeen: presence?.last_seen_at || null,
       isAvailable: presence?.is_available || false,
     };
@@ -302,7 +337,7 @@ export async function fetchAWYContext(
  */
 export async function fetchProfileContext(
   supabase: SupabaseClient,
-  userId: string
+  userId: string,
 ): Promise<{
   displayName: string | null;
   yearGroup: string | null;
@@ -310,16 +345,16 @@ export async function fetchProfileContext(
   role: string;
 }> {
   const { data } = await supabase
-    .from('profiles')
-    .select('display_name, year_group, year_of_study')
-    .eq('id', userId)
+    .from("profiles")
+    .select("display_name, year_group, year_of_study")
+    .eq("id", userId)
     .maybeSingle();
 
   return {
     displayName: data?.display_name ?? null,
     yearGroup: data?.year_of_study ?? data?.year_group ?? null,
     yearOfStudy: data?.year_of_study ?? data?.year_group ?? null,
-    role: 'student' // Default role
+    role: "student", // Default role
   };
 }
 
@@ -333,20 +368,20 @@ export async function fetchProfileContext(
 export async function fetchConversationHistory(
   supabase: SupabaseClient,
   conversationId: string,
-  limit = 10
+  limit = 10,
 ) {
   const { data } = await supabase
-    .from('durmah_messages')
-    .select('role, content, created_at, saved_at')
-    .eq('conversation_id', conversationId)
-    .order('created_at', { ascending: false })
+    .from("durmah_messages")
+    .select("role, content, created_at, saved_at")
+    .eq("conversation_id", conversationId)
+    .order("created_at", { ascending: false })
     .limit(limit);
-    
-  return (data || []).reverse().map(m => ({
+
+  return (data || []).reverse().map((m) => ({
     role: m.role,
     content: m.content,
     ts: m.created_at,
-    saved_at: m.saved_at
+    saved_at: m.saved_at,
   }));
 }
 
@@ -356,20 +391,20 @@ export async function fetchConversationHistory(
 export async function fetchRecentTailAcrossScopes(
   supabase: SupabaseClient,
   userId: string,
-  limit = 8
+  limit = 8,
 ) {
   const { data } = await supabase
-    .from('durmah_messages')
-    .select('role, content, created_at, scope, saved_at')
-    .eq('user_id', userId)
-    .order('created_at', { ascending: false })
+    .from("durmah_messages")
+    .select("role, content, created_at, scope, saved_at")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false })
     .limit(limit);
 
-  return (data || []).reverse().map(m => ({
+  return (data || []).reverse().map((m) => ({
     role: m.role,
     content: m.content,
     ts: m.created_at,
-    saved_at: m.saved_at
+    saved_at: m.saved_at,
   }));
 }
 
@@ -378,7 +413,7 @@ export async function enhanceDurmahContext(
   userId: string,
   baseContext: DurmahContextPacket,
   conversationId?: string,
-  activeLectureId?: string 
+  activeLectureId?: string,
 ): Promise<DurmahContextPacket> {
   // Fetch enhanced context in parallel
   const [assignments, awy, lectures, profile, recentTail] = await Promise.all([
@@ -386,12 +421,12 @@ export async function enhanceDurmahContext(
     fetchAWYContext(supabase, userId),
     fetchLecturesContext(supabase, userId, activeLectureId), // PASS activeLectureId
     fetchProfileContext(supabase, userId),
-    fetchRecentTailAcrossScopes(supabase, userId)
+    fetchRecentTailAcrossScopes(supabase, userId),
   ]);
 
   let localHistory: any[] = [];
   if (conversationId) {
-      localHistory = await fetchConversationHistory(supabase, conversationId);
+    localHistory = await fetchConversationHistory(supabase, conversationId);
   }
 
   // Compute academic context (term, week)
@@ -399,22 +434,24 @@ export async function enhanceDurmahContext(
 
   // Deduplicate messages (prefer localHistory)
   const messageMap = new Map();
-  
+
   // Combine cross-scope recent tail and the specific conversation history
-  [...recentTail, ...localHistory].forEach(m => {
-      // Create unique key based on content + role ONLY (ignoring timestamp as it varies between local/DB)
-      // Normalize content to remove whitespace noise
-      const cleanContent = m.content?.trim().substring(0, 50) || '';
-      const key = `${m.role}-${cleanContent}`;
-      
-      // If key exists, we keep the one with the 'valid' timestamp or just the first one?
-      // Actually, we want to overlay local over global if they match.
-      if (!messageMap.has(key)) {
-         messageMap.set(key, m);
-      }
+  [...recentTail, ...localHistory].forEach((m) => {
+    // Create unique key based on content + role ONLY (ignoring timestamp as it varies between local/DB)
+    // Normalize content to remove whitespace noise
+    const cleanContent = m.content?.trim().substring(0, 50) || "";
+    const key = `${m.role}-${cleanContent}`;
+
+    // If key exists, we keep the one with the 'valid' timestamp or just the first one?
+    // Actually, we want to overlay local over global if they match.
+    if (!messageMap.has(key)) {
+      messageMap.set(key, m);
+    }
   });
 
-  const uniqueMessages = Array.from(messageMap.values()).sort((a, b) => new Date(a.ts).getTime() - new Date(b.ts).getTime());
+  const uniqueMessages = Array.from(messageMap.values()).sort(
+    (a, b) => new Date(a.ts).getTime() - new Date(b.ts).getTime(),
+  );
 
   // Grounding Guardrail: If in quiz mode, validate context and wrap prompt
   let finalContext = {
@@ -424,10 +461,10 @@ export async function enhanceDurmahContext(
     lectures,
     profile,
     academic: academic as any,
-    recentMessages: uniqueMessages as any[]
+    recentMessages: uniqueMessages as any[],
   };
 
-  if (finalContext.mode === 'quiz') {
+  if (finalContext.modeContext?.mode === "quiz") {
     const evaluation = QuizGuard.evaluateContext(finalContext);
     if (!evaluation.can_quiz) {
       // Inhibit quiz if no context, though usually handled by UI/API
