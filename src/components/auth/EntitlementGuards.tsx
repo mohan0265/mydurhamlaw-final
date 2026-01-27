@@ -7,6 +7,7 @@ interface EntitlementsState {
   hasDurhamAccess: boolean;
   hasLnatAccess: boolean;
   loading: boolean;
+  error: string | null;
 }
 
 export function useEntitlements() {
@@ -15,33 +16,36 @@ export function useEntitlements() {
     hasDurhamAccess: false,
     hasLnatAccess: false,
     loading: true,
+    error: null,
   });
+  const [retryKey, setRetryKey] = useState(0);
 
   useEffect(() => {
     if (!user) {
-      console.log("[useEntitlements] No user, skipping fetch.");
-      setState((s) => ({ ...s, loading: false }));
+      setState((s) => ({ ...s, loading: false, error: null }));
       return;
     }
 
     let isMounted = true;
+    setState((s) => ({ ...s, loading: true, error: null }));
+
     const controller = new AbortController();
     const timeoutId = setTimeout(() => {
-      console.warn("[useEntitlements] Fetch timed out after 4s");
+      console.warn("[useEntitlements] Fetch timed out after 5s");
       controller.abort();
-      if (isMounted) setState((s) => ({ ...s, loading: false }));
-    }, 4000); // Shorter 4s timeout
+      if (isMounted)
+        setState((s) => ({ ...s, loading: false, error: "Request timed out" }));
+    }, 5000);
 
     fetch("/api/entitlements/me", {
       signal: controller.signal,
       headers: { Accept: "application/json" },
     })
       .then((res) => {
-        // Handle non-JSON responses (e.g. 401/406)
         if (!res.ok) {
           if (res.status === 401)
             return { hasDurhamAccess: false, hasLnatAccess: false };
-          throw new Error(`Entitlements fetch failed: ${res.status}`);
+          throw new Error(`Server error: ${res.status}`);
         }
         return res.json();
       })
@@ -52,6 +56,7 @@ export function useEntitlements() {
             hasDurhamAccess: !!data.hasDurhamAccess,
             hasLnatAccess: !!data.hasLnatAccess,
             loading: false,
+            error: null,
           });
         }
       })
@@ -61,8 +66,13 @@ export function useEntitlements() {
           `[useEntitlements] ${isAbort ? "Timeout" : "Error"}:`,
           err.message,
         );
-        // On error/timeout, assume no access but STOP LOADING to allow redirect logic to run
-        if (isMounted) setState((s) => ({ ...s, loading: false }));
+        if (isMounted) {
+          setState((s) => ({
+            ...s,
+            loading: false,
+            error: isAbort ? "Connection Timeout" : "Verification Failed",
+          }));
+        }
       })
       .finally(() => clearTimeout(timeoutId));
 
@@ -71,9 +81,11 @@ export function useEntitlements() {
       clearTimeout(timeoutId);
       controller.abort();
     };
-  }, [user]);
+  }, [user, retryKey]);
 
-  return state;
+  const retry = () => setRetryKey((prev) => prev + 1);
+
+  return { ...state, retry };
 }
 
 export function RequireDurhamAccess({
@@ -81,31 +93,48 @@ export function RequireDurhamAccess({
 }: {
   children: React.ReactNode;
 }) {
-  const { hasDurhamAccess, loading } = useEntitlements();
+  const { hasDurhamAccess, loading, error, retry } = useEntitlements();
   const router = useRouter();
   const user = useUser();
 
   useEffect(() => {
-    console.log("[RequireDurhamAccess] State changed:", {
-      loading,
-      user: !!user,
-      hasDurhamAccess,
-    });
-    if (!loading && user && !hasDurhamAccess) {
+    // Only redirect if loading is false, there is no error, and access is explicitly missing
+    if (!loading && !error && user && !hasDurhamAccess) {
       console.log(
-        "[RequireDurhamAccess] Access denied, redirecting to eligibility...",
+        "[RequireDurhamAccess] Access explicitly denied. Redirecting...",
       );
       router.replace("/eligibility");
     } else if (!loading && !user) {
-      console.log("[RequireDurhamAccess] No user, redirecting to login");
       router.replace("/login");
     }
-  }, [hasDurhamAccess, loading, router, user]);
+  }, [hasDurhamAccess, loading, error, router, user]);
 
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <RefreshCw className="w-6 h-6 animate-spin text-gray-400" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center p-4 text-center">
+        <div className="bg-amber-50 p-6 rounded-2xl border border-amber-100 max-w-sm">
+          <RefreshCw className="w-8 h-8 text-amber-500 mb-4 mx-auto" />
+          <h3 className="text-lg font-bold text-amber-900 mb-2">
+            Access Check Delayed
+          </h3>
+          <p className="text-sm text-amber-800 mb-6">
+            {error}. This can happen on slow connections.
+          </p>
+          <button
+            onClick={retry}
+            className="w-full py-3 bg-amber-600 text-white rounded-xl font-bold shadow-lg shadow-amber-200 hover:bg-amber-700 transition"
+          >
+            Try Again
+          </button>
+        </div>
       </div>
     );
   }
@@ -116,9 +145,6 @@ export function RequireDurhamAccess({
         <RefreshCw className="w-6 h-6 animate-spin text-gray-400 mb-4" />
         <p className="text-sm text-gray-500 font-medium">
           Verifying your student access...
-        </p>
-        <p className="text-xs text-gray-400 mt-2">
-          If you aren't redirected in a few seconds, please click below.
         </p>
         <button
           onClick={() => router.replace("/eligibility")}
