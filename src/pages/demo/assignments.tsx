@@ -14,6 +14,8 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import RelatedGuides from "@/components/seo/RelatedGuides";
+import { DemoPlayer } from "@/components/demos/DemoPlayer";
+import { DEMO_VIDEOS } from "@/content/demoVideos";
 
 export default function AssignmentsDemo() {
   return (
@@ -134,18 +136,23 @@ export default function AssignmentsDemo() {
             <div className="relative pt-12">
               <div className="absolute inset-0 bg-purple-500 blur-[120px] opacity-10 rounded-full"></div>
               <div className="bg-white rounded-[2.5rem] border border-gray-100 shadow-2xl p-8 sticky top-24 overflow-hidden group">
-                <div className="aspect-[3/4] bg-gray-50 rounded-2xl border border-dashed border-gray-200 flex flex-col items-center justify-center text-center p-8">
-                  <div className="w-20 h-20 rounded-full bg-purple-600 text-white flex items-center justify-center mb-6 shadow-xl shadow-purple-100 group-hover:scale-110 transition cursor-pointer">
-                    <Play className="w-8 h-8 ml-1 fill-current" />
-                  </div>
-                  <p className="text-xl font-black text-gray-900 mb-2">
-                    Build a First-Class Plan
-                  </p>
-                  <p className="text-sm text-gray-400">
-                    Watch Durmah guide a student through a complex Tort Law
-                    problem scenario.
-                  </p>
-                </div>
+                <DemoPlayer
+                  video={DEMO_VIDEOS.assignments}
+                  trigger={
+                    <div className="aspect-[3/4] bg-gray-50 rounded-2xl border border-dashed border-gray-200 flex flex-col items-center justify-center text-center p-8 cursor-pointer hover:bg-gray-100 transition-colors">
+                      <div className="w-20 h-20 rounded-full bg-purple-600 text-white flex items-center justify-center mb-6 shadow-xl shadow-purple-100 group-hover:scale-110 transition">
+                        <Play className="w-8 h-8 ml-1 fill-current" />
+                      </div>
+                      <p className="text-xl font-black text-gray-900 mb-2">
+                        Build a First-Class Plan
+                      </p>
+                      <p className="text-sm text-gray-400">
+                        Watch Durmah guide a student through a complex Tort Law
+                        problem scenario.
+                      </p>
+                    </div>
+                  }
+                />
 
                 <div className="mt-8 space-y-3">
                   <div className="h-2 bg-gray-100 rounded-full overflow-hidden">

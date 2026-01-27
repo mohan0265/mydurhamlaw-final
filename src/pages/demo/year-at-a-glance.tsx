@@ -15,6 +15,8 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import RelatedGuides from "@/components/seo/RelatedGuides";
+import { DemoPlayer } from "@/components/demos/DemoPlayer";
+import { DEMO_VIDEOS } from "@/content/demoVideos";
 
 export default function YAAGDemo() {
   return (
@@ -103,17 +105,23 @@ export default function YAAGDemo() {
             <div className="relative">
               <div className="absolute inset-0 bg-blue-500 blur-[100px] opacity-10 rounded-full"></div>
               <div className="bg-white rounded-[2.5rem] border border-gray-100 shadow-2xl p-4 md:p-8 relative z-10 overflow-hidden group">
-                <div className="aspect-[4/5] bg-gray-50 rounded-2xl border border-dashed border-gray-200 flex flex-col items-center justify-center p-8 text-center">
-                  <div className="w-20 h-20 rounded-full bg-blue-600 text-white flex items-center justify-center mb-6 shadow-xl shadow-blue-100 group-hover:scale-110 transition cursor-pointer">
-                    <Play className="w-8 h-8 ml-1 fill-current" />
-                  </div>
-                  <p className="text-lg font-black text-gray-900 mb-2">
-                    Interactive Preview
-                  </p>
-                  <p className="text-sm text-gray-400">
-                    Watch how YAAG adapts to your module choices in real-time.
-                  </p>
-                </div>
+                <DemoPlayer
+                  video={DEMO_VIDEOS.yaag}
+                  trigger={
+                    <div className="aspect-[4/5] bg-gray-50 rounded-2xl border border-dashed border-gray-200 flex flex-col items-center justify-center p-8 text-center cursor-pointer hover:bg-gray-100 transition-colors">
+                      <div className="w-20 h-20 rounded-full bg-blue-600 text-white flex items-center justify-center mb-6 shadow-xl shadow-blue-100 group-hover:scale-110 transition">
+                        <Play className="w-8 h-8 ml-1 fill-current" />
+                      </div>
+                      <p className="text-lg font-black text-gray-900 mb-2">
+                        Interactive Preview
+                      </p>
+                      <p className="text-sm text-gray-400">
+                        Watch how YAAG adapts to your module choices in
+                        real-time.
+                      </p>
+                    </div>
+                  }
+                />
               </div>
             </div>
           </div>

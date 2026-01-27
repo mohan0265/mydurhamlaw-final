@@ -1,6 +1,8 @@
 import React from "react";
 import Head from "next/head";
 import Link from "next/link";
+import { DemoPlayer } from "@/components/demos/DemoPlayer";
+import { DEMO_VIDEOS } from "@/content/demoVideos";
 import {
   ShieldCheck,
   ArrowRight,
@@ -100,18 +102,23 @@ export default function ExamPrepDemo() {
             <div className="relative">
               <div className="absolute inset-0 bg-red-500 blur-[130px] opacity-10 rounded-full"></div>
               <div className="bg-white rounded-[2.5rem] border border-gray-100 shadow-2xl p-8 relative z-10 overflow-hidden group">
-                <div className="aspect-video bg-gray-50 rounded-2xl border border-dashed border-gray-200 flex flex-col items-center justify-center text-center p-8">
-                  <div className="w-20 h-20 rounded-full bg-red-600 text-white flex items-center justify-center mb-6 shadow-xl shadow-red-100 group-hover:scale-110 transition cursor-pointer">
-                    <Play className="w-8 h-8 ml-1 fill-current" />
-                  </div>
-                  <p className="text-xl font-black text-gray-900 mb-2">
-                    Simulate an Exam Scenario
-                  </p>
-                  <p className="text-sm text-gray-400">
-                    Experience a high-pressure scenario on Contract Law
-                    misrepresentation.
-                  </p>
-                </div>
+                <DemoPlayer
+                  video={DEMO_VIDEOS.exam_prep}
+                  trigger={
+                    <div className="aspect-video bg-gray-50 rounded-2xl border border-dashed border-gray-200 flex flex-col items-center justify-center text-center p-8 cursor-pointer hover:bg-gray-100 transition-colors">
+                      <div className="w-20 h-20 rounded-full bg-red-600 text-white flex items-center justify-center mb-6 shadow-xl shadow-red-100 group-hover:scale-110 transition">
+                        <Play className="w-8 h-8 ml-1 fill-current" />
+                      </div>
+                      <p className="text-xl font-black text-gray-900 mb-2">
+                        Simulate an Exam Scenario
+                      </p>
+                      <p className="text-sm text-gray-400">
+                        Experience a high-pressure scenario on Contract Law
+                        misrepresentation.
+                      </p>
+                    </div>
+                  }
+                />
 
                 <div className="mt-8 flex justify-between items-center bg-gray-50 p-4 rounded-2xl border border-gray-100">
                   <div className="flex items-center gap-2">

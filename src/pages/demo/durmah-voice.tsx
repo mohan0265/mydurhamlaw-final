@@ -1,6 +1,8 @@
 import React from "react";
 import Head from "next/head";
 import Link from "next/link";
+import { DemoPlayer } from "@/components/demos/DemoPlayer";
+import { DEMO_VIDEOS } from "@/content/demoVideos";
 import { Mic, ArrowRight, Play, Shield, Zap, Heart } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import RelatedGuides from "@/components/seo/RelatedGuides";
@@ -90,18 +92,23 @@ export default function DurmahVoiceDemo() {
               </ul>
             </div>
 
-            <div className="aspect-video bg-gray-100 rounded-[2.5rem] border-4 border-gray-50 shadow-2xl flex flex-col items-center justify-center text-center p-8 relative overflow-hidden group">
-              <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 to-transparent"></div>
-              <div className="w-20 h-20 rounded-full bg-indigo-600 text-white flex items-center justify-center mb-6 shadow-xl shadow-indigo-200 group-hover:scale-110 transition-transform">
-                <Play className="w-8 h-8 ml-1" />
-              </div>
-              <p className="text-lg font-bold text-gray-900 mb-2">
-                Demo Video Coming Soon
-              </p>
-              <p className="text-sm text-gray-500 max-w-[200px]">
-                Experience Durmah in action.
-              </p>
-            </div>
+            <DemoPlayer
+              video={DEMO_VIDEOS.durmah_voice}
+              trigger={
+                <div className="aspect-video bg-gray-100 rounded-[2.5rem] border-4 border-gray-50 shadow-2xl flex flex-col items-center justify-center text-center p-8 relative overflow-hidden group cursor-pointer hover:bg-gray-200 transition-colors">
+                  <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 to-transparent"></div>
+                  <div className="w-20 h-20 rounded-full bg-indigo-600 text-white flex items-center justify-center mb-6 shadow-xl shadow-indigo-200 group-hover:scale-110 transition-transform">
+                    <Play className="w-8 h-8 ml-1" />
+                  </div>
+                  <p className="text-lg font-bold text-gray-900 mb-2">
+                    Watch Durmah in Action
+                  </p>
+                  <p className="text-sm text-gray-500 max-w-[200px]">
+                    Experience the voice of law.
+                  </p>
+                </div>
+              }
+            />
           </div>
 
           <div className="bg-indigo-50 rounded-[3rem] p-12 md:p-16 border border-indigo-100">

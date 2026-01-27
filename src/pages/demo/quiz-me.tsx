@@ -1,6 +1,8 @@
 import React from "react";
 import Head from "next/head";
 import Link from "next/link";
+import { DemoPlayer } from "@/components/demos/DemoPlayer";
+import { DEMO_VIDEOS } from "@/content/demoVideos";
 import {
   Brain,
   ArrowRight,
@@ -115,18 +117,23 @@ export default function QuizMeDemo() {
             <div className="relative">
               <div className="absolute inset-0 bg-orange-500 blur-[100px] opacity-10 rounded-full"></div>
               <div className="bg-white rounded-[2.5rem] border border-gray-100 shadow-2xl p-8 relative z-10 overflow-hidden group">
-                <div className="aspect-square bg-gray-50 rounded-2xl border border-dashed border-gray-200 flex flex-col items-center justify-center text-center p-8">
-                  <div className="w-20 h-20 rounded-full bg-orange-600 text-white flex items-center justify-center mb-6 shadow-xl shadow-orange-100 group-hover:scale-110 transition cursor-pointer">
-                    <Play className="w-8 h-8 ml-1 fill-current" />
-                  </div>
-                  <p className="text-xl font-black text-gray-900 mb-2">
-                    Watch a Retrieval Session
-                  </p>
-                  <p className="text-sm text-gray-400">
-                    See how Durmah pushes a student to refine their explanation
-                    of Equity & Trusts.
-                  </p>
-                </div>
+                <DemoPlayer
+                  video={DEMO_VIDEOS.quiz_me}
+                  trigger={
+                    <div className="aspect-square bg-gray-50 rounded-2xl border border-dashed border-gray-200 flex flex-col items-center justify-center text-center p-8 cursor-pointer hover:bg-gray-100 transition-colors">
+                      <div className="w-20 h-20 rounded-full bg-orange-600 text-white flex items-center justify-center mb-6 shadow-xl shadow-orange-100 group-hover:scale-110 transition">
+                        <Play className="w-8 h-8 ml-1 fill-current" />
+                      </div>
+                      <p className="text-xl font-black text-gray-900 mb-2">
+                        Watch a Retrieval Session
+                      </p>
+                      <p className="text-sm text-gray-400">
+                        See how Durmah pushes a student to refine their
+                        explanation of Equity & Trusts.
+                      </p>
+                    </div>
+                  }
+                />
 
                 <div className="mt-8 flex items-center gap-4">
                   <div className="flex -space-x-3">
