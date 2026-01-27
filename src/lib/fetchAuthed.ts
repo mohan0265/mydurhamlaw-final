@@ -52,11 +52,18 @@ export async function fetchAuthed(
   }
 
   try {
-    return await fetch(input, {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), options.timeoutMs ?? 8000);
+
+    const response = await fetch(input, {
       ...init,
+      signal: controller.signal,
       credentials: 'include',
       headers,
     });
+    
+    clearTimeout(timeoutId);
+    return response;
   } catch (err) {
     // Never throw to calling code; return a synthetic 503 so callers can handle gracefully.
     if (process.env.NODE_ENV !== 'production' && isDiagnosticEndpoint) {

@@ -50,26 +50,40 @@ function DashboardContent() {
     setIsMounted(true);
   }, []);
 
+  // Dashboard content loading logic
+  // NON-BLOCKING: We render shell even if loading
+  const isLoading = loading || !isMounted;
+
+  // Safe fetch wrapper
   useEffect(() => {
-    if (!loading && user) {
-       fetch('/api/dashboard/overview').then(res => {
-        if(res.ok) return res.json();
-      }).then(data => {
-        if (data?.preferences) {
+    if (user && !loading) {
+       // Use fetchAuthed to ensure headers + timeout
+       // or standardized fetch with timeout
+       const controller = new AbortController();
+       const timeoutId = setTimeout(() => controller.abort(), 8000);
+
+       fetch('/api/dashboard/overview', { 
+           headers: { 'Accept': 'application/json' },
+           signal: controller.signal 
+       })
+       .then(res => {
+          if (res.status === 401) { router.replace('/login'); return null; }
+          if (!res.ok) throw new Error(`Dashboard fetch failed: ${res.status}`);
+          return res.json();
+       })
+       .then(data => {
+        if (!data) return;
+        if (data.preferences) {
           setShowCountdown(data.preferences.show_deadline_countdown);
         }
-        if (data?.yearKey) {
+        if (data.yearKey) {
           setCurrentYearKey(data.yearKey);
         }
-        if(data?.upcomingAssignments?.length > 0) {
+        if(data.upcomingAssignments?.length > 0) {
            const next = data.upcomingAssignments[0];
            setNextAssignment(next);
            setUpcomingAssignments(data.upcomingAssignments);
            
-           // Build YAAG link with event hash for auto-scroll
-           // For Assignments: Link to Assignment Widget
-            // Determine Primary Link (Assignment/Exam) 
-            // AND Calendar Link (YAAG) separately
             const isAssignment = next.source === 'assignment' || (typeof next.id === 'string' && next.id.startsWith('assignment-'));
             const cleanId = (typeof next.id === 'string' && next.id.startsWith('assignment-')) ? next.id.replace('assignment-', '') : next.id;
  
@@ -122,9 +136,21 @@ function DashboardContent() {
                     });
             }
         }
-      }).catch(err => console.error('Focus fetch error', err));
+      })
+      .catch(err => {
+          console.error('Overview fetch error:', err);
+          // Don't block UI on failure
+      })
+      .finally(() => {
+          clearTimeout(timeoutId);
+      });
+
+      return () => {
+          controller.abort();
+          clearTimeout(timeoutId);
+      };
     }
-  }, [user, loading]);
+  }, [user, loading, router]); // Added router to deps
 
   const toggleCountdownPreference = async () => {
     const newValue = !showCountdown;
@@ -143,10 +169,18 @@ function DashboardContent() {
     }
   };
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center bg-gray-50 text-indigo-600 font-medium">Loading...</div>;
-  if (!user) { router.replace('/login'); return null; }
+  // REMOVED BLOCKING SPINNER
+  // if (loading) return ... 
+  // Instead handle inside content or show skeleton if needed, but render shell first.
+  
+  if (!user && !loading) { 
+      // Only redirect if definitely done loading and no user
+      // Avoid redirecting while loading to prevent loops
+      router.replace('/login'); 
+      return null; 
+  }
 
-  const firstName = displayName || user.user_metadata?.first_name || 'Student';
+  const firstName = displayName || user?.user_metadata?.first_name || 'Student';
 
   return (
     <>

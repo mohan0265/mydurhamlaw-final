@@ -24,7 +24,10 @@ export function useEntitlements() {
         }
 
         let isMounted = true;
-        fetch('/api/entitlements/me')
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 6000); // 6s timeout
+
+        fetch('/api/entitlements/me', { signal: controller.signal, headers: { 'Accept': 'application/json' } })
             .then(res => {
                // Handle non-JSON responses (e.g. 401/406)
                if (!res.ok) {
@@ -44,10 +47,12 @@ export function useEntitlements() {
             })
             .catch(err => {
                 console.error('Failed to fetch entitlements', err);
+                // On error/timeout, assume no access but STOP LOADING to allow redirect logic to run
                 if(isMounted) setState(s => ({ ...s, loading: false }));
-            });
+            })
+            .finally(() => clearTimeout(timeoutId));
             
-        return () => { isMounted = false; };
+        return () => { isMounted = false; clearTimeout(timeoutId); controller.abort(); };
     }, [user]);
 
     return state;
