@@ -288,7 +288,15 @@ export default function HowToAskBetterLegalQuestions() {
           </p>
 
           <h3>When Using Durmah</h3>
-          <p>Durmah works best with:</p>
+          <p>
+            <Link
+              href="/demo/durmah-voice"
+              className="text-orange-600 hover:underline"
+            >
+              Durmah Voice
+            </Link>{" "}
+            works best with:
+          </p>
           <ol>
             <li>
               <strong>Contextual preamble</strong>: "I am writing on breach of
@@ -305,6 +313,16 @@ export default function HowToAskBetterLegalQuestions() {
               where that reasoning failed?"
             </li>
           </ol>
+          <p className="mt-4 text-sm bg-orange-50 p-3 rounded-lg border border-orange-100 italic">
+            Practice your oral questioning skills with{" "}
+            <Link
+              href="/demo/quiz-me"
+              className="text-orange-600 hover:underline font-bold"
+            >
+              Quiz Me's Speak Law mode
+            </Link>
+            .
+          </p>
 
           <h3>The "So What?" Test</h3>
           <p>Before asking any question, apply the "So What?" test:</p>

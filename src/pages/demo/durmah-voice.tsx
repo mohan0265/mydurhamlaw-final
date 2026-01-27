@@ -106,24 +106,24 @@ export default function DurmahVoiceDemo() {
 
           <div className="bg-indigo-50 rounded-[3rem] p-12 md:p-16 border border-indigo-100">
             <h2 className="text-3xl font-bold text-gray-900 mb-12 text-center text-balance">
-              How it works
+              The Engine of "Speak Law"
             </h2>
             <div className="grid sm:grid-cols-3 gap-12">
               {[
                 {
                   step: "01",
-                  title: "Tap to Listen",
-                  desc: "Click the Durmah button and start speaking. No typing required.",
+                  title: "Oral Articulation",
+                  desc: "Law is a spoken profession. Durmah forces you to verbalise your arguments, checking for clarity and precision.",
                 },
                 {
                   step: "02",
-                  title: "Instant Analysis",
-                  desc: "Durmah uses Gemini Realtime to understand your legal context.",
+                  title: "Socratic Method",
+                  desc: "Durmah doesn't just give answers. It asks follow-up questions to probe your understanding of the ratio decidendi.",
                 },
                 {
                   step: "03",
-                  title: "Guided Clarification",
-                  desc: "Get answers with references to your specific modules.",
+                  title: "Syllabus Grounding",
+                  desc: "Every response is cross-referenced with your specific lecture transcripts, not generic internet law.",
                 },
               ].map((step, i) => (
                 <div key={i} className="space-y-4">

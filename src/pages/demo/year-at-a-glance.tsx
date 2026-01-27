@@ -1,6 +1,6 @@
 import React from "react";
 import Head from "next/head";
-import Link from "next/head"; // This is wrong, should be next/link
+import Link from "next/link";
 import {
   Calendar,
   ArrowRight,
@@ -9,6 +9,9 @@ import {
   Zap,
   Heart,
   BookOpen,
+  Layout,
+  Focus,
+  Activity,
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import RelatedGuides from "@/components/seo/RelatedGuides";
@@ -34,48 +37,61 @@ export default function YAAGDemo() {
           <div className="absolute inset-0 bg-gradient-to-br from-blue-900/20 to-transparent"></div>
           <div className="max-w-4xl mx-auto px-6 relative z-10 text-center">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 text-blue-300 text-xs font-bold uppercase tracking-widest mb-6 border border-blue-500/30">
-              <Calendar className="w-3.5 h-3.5" />
-              Feature Demo
+              <Layout className="w-3.5 h-3.5" />
+              Strategic Overview
             </div>
             <h1 className="text-5xl md:text-7xl font-black mb-8 tracking-tighter">
-              Year At A <span className="text-blue-400">Glance</span>
+              The <span className="text-blue-400">Vertical</span> Spine
             </h1>
             <p className="text-xl text-gray-400 mb-10 max-w-2xl mx-auto leading-relaxed font-medium">
-              The spine of your academic journey. Navigate your entire degree
-              from Year 1 to graduation with ultimate clarity.
+              Law isn&apos;t just about what you&apos;re doing today. It&apos;s
+              about where you&apos;re going over three terms. YAAG gives you the
+              bird&apos;s-eye view of your entire Durham year.
             </p>
           </div>
         </section>
 
         {/* CONTENT */}
         <section className="py-24 max-w-5xl mx-auto px-6">
-          <div className="grid md:grid-cols-2 gap-16 items-center mb-24">
+          <div className="grid md:grid-cols-2 gap-16 items-center mb-32">
             <div>
-              <h2 className="text-3xl font-bold text-gray-900 mb-8">
-                What you get
+              <h2 className="text-4xl font-black text-gray-900 mb-8 tracking-tight">
+                Three Terms, <br />
+                <span className="text-blue-600 italic">One Vision.</span>
               </h2>
-              <ul className="space-y-6">
+              <p className="text-gray-600 mb-8 leading-relaxed">
+                Most students get overwhelmed because they only see the next
+                deadline. YAAG flips the script, showing you the clusters and
+                term breaks before they happen.
+              </p>
+              <ul className="grid gap-6">
                 {[
                   {
-                    title: "Three-Term Overview",
-                    desc: "See Michaelmas, Epiphany, and Easter terms laid out in one cohesive dashboard.",
+                    title: "Michaelmas Momentum",
+                    desc: "Track your first module introductions and early formative assessments.",
+                    icon: <Activity className="w-5 h-5" />,
                   },
                   {
-                    title: "Module Specificity",
-                    desc: "Your personal timetable, assessment dates, and reading lists mapped to your actual modules.",
+                    title: "Epiphany Expansion",
+                    desc: "Visualise the transition into deep research and secondary reading peaks.",
+                    icon: <BookOpen className="w-5 h-5" />,
                   },
                   {
-                    title: "Deep Navigation",
-                    desc: "Drill down from whole year view to months, weeks, and daily task lists in one tap.",
+                    title: "Easter Finality",
+                    desc: "The critical revision countdown. See exactly how many days remain until finals.",
+                    icon: <Focus className="w-5 h-5" />,
                   },
                 ].map((item, i) => (
-                  <li key={i} className="flex gap-4">
-                    <div className="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center shrink-0 mt-1">
-                      <Zap className="w-3.5 h-3.5" />
+                  <li
+                    key={i}
+                    className="flex gap-4 p-4 rounded-2xl border border-gray-100 bg-gray-50/50"
+                  >
+                    <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-lg shadow-blue-100">
+                      {item.icon}
                     </div>
                     <div>
                       <h4 className="font-bold text-gray-900">{item.title}</h4>
-                      <p className="text-gray-600 text-sm mt-1 leading-relaxed">
+                      <p className="text-gray-500 text-sm mt-1 leading-relaxed">
                         {item.desc}
                       </p>
                     </div>
@@ -84,51 +100,65 @@ export default function YAAGDemo() {
               </ul>
             </div>
 
-            <div className="aspect-[4/3] bg-gray-100 rounded-[2.5rem] border-4 border-gray-50 shadow-2xl flex flex-col items-center justify-center text-center p-8 relative overflow-hidden group">
-              <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent"></div>
-              <div className="w-20 h-20 rounded-full bg-blue-600 text-white flex items-center justify-center mb-6 shadow-xl shadow-blue-200 group-hover:scale-110 transition-transform cursor-pointer">
-                <Play className="w-8 h-8 ml-1" />
+            <div className="relative">
+              <div className="absolute inset-0 bg-blue-500 blur-[100px] opacity-10 rounded-full"></div>
+              <div className="bg-white rounded-[2.5rem] border border-gray-100 shadow-2xl p-4 md:p-8 relative z-10 overflow-hidden group">
+                <div className="aspect-[4/5] bg-gray-50 rounded-2xl border border-dashed border-gray-200 flex flex-col items-center justify-center p-8 text-center">
+                  <div className="w-20 h-20 rounded-full bg-blue-600 text-white flex items-center justify-center mb-6 shadow-xl shadow-blue-100 group-hover:scale-110 transition cursor-pointer">
+                    <Play className="w-8 h-8 ml-1 fill-current" />
+                  </div>
+                  <p className="text-lg font-black text-gray-900 mb-2">
+                    Interactive Preview
+                  </p>
+                  <p className="text-sm text-gray-400">
+                    Watch how YAAG adapts to your module choices in real-time.
+                  </p>
+                </div>
               </div>
-              <p className="text-lg font-bold text-gray-900 mb-2">
-                Short Demo Coming Soon
-              </p>
-              <p className="text-sm text-gray-500 max-w-[200px]">
-                See how YAAG simplifies your law degree.
-              </p>
             </div>
           </div>
 
-          <div className="bg-blue-50 rounded-[3rem] p-12 md:p-16 border border-blue-100">
-            <h2 className="text-3xl font-bold text-gray-900 mb-12 text-center text-balance">
-              How it works
-            </h2>
-            <div className="grid sm:grid-cols-3 gap-12">
+          <div className="bg-gradient-to-br from-indigo-50 via-blue-50 to-white rounded-[3rem] p-12 md:p-16 border border-blue-100 mb-32">
+            <div className="max-w-2xl mx-auto text-center mb-16">
+              <h2 className="text-3xl font-black text-gray-900 mb-6 uppercase tracking-tight">
+                How YAAG Scales with You
+              </h2>
+              <p className="text-gray-600 font-medium">
+                Your needs change as you progress. YAAG understands the
+                different rhythms of each level.
+              </p>
+            </div>
+
+            <div className="grid sm:grid-cols-3 gap-8">
               {[
                 {
-                  step: "01",
-                  title: "Select Year",
-                  desc: "Choose your current academic year level (Y1, Y2, Y3).",
+                  year: "Foundation / Y1",
+                  title: "Discovery Mode",
+                  desc: "Focused on module identification and weekly routine building.",
                 },
                 {
-                  step: "02",
-                  title: "Visual Roadmap",
-                  desc: "Instantly see assessment clusters and term breaks on a single vertical spine.",
+                  year: "Year 2",
+                  title: "Research Depth",
+                  desc: "Highlighting coursework clusters and long-term project milestones.",
                 },
                 {
-                  step: "03",
-                  title: "Direct Entry",
-                  desc: "Click any date to open your daily dashboard for that specific week.",
+                  year: "Year 3",
+                  title: "Selection & Finale",
+                  desc: "Prioritising dissertation stages and final assessment countdowns.",
                 },
-              ].map((step, i) => (
-                <div key={i} className="space-y-4">
-                  <div className="text-4xl font-black text-blue-200">
-                    {step.step}
+              ].map((lvl, i) => (
+                <div
+                  key={i}
+                  className="bg-white p-8 rounded-3xl border border-blue-100 shadow-sm hover:shadow-md transition-shadow"
+                >
+                  <div className="text-xs font-black text-blue-600 uppercase tracking-widest mb-4">
+                    {lvl.year}
                   </div>
-                  <h4 className="font-bold text-gray-900 text-lg">
-                    {step.title}
+                  <h4 className="font-bold text-gray-900 text-xl mb-3">
+                    {lvl.title}
                   </h4>
-                  <p className="text-gray-600 text-sm leading-relaxed">
-                    {step.desc}
+                  <p className="text-gray-500 text-sm leading-relaxed">
+                    {lvl.desc}
                   </p>
                 </div>
               ))}
@@ -136,28 +166,22 @@ export default function YAAGDemo() {
           </div>
 
           {/* CTA */}
-          <div className="mt-24 py-16 bg-gray-950 rounded-[3rem] text-center text-white shadow-2xl relative overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-br from-blue-600/20 to-transparent"></div>
-            <div className="relative z-10 px-6">
-              <h2 className="text-3xl md:text-5xl font-black mb-6 tracking-tighter text-balance">
-                Master your year.
+          <div className="py-20 bg-gray-950 rounded-[3rem] text-center text-white shadow-2xl relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-600/30 to-purple-900/10"></div>
+            <div className="relative z-10 px-6 max-w-2xl mx-auto">
+              <h2 className="text-4xl md:text-6xl font-black mb-6 tracking-tighter italic">
+                Get the clarity <br /> you deserve.
               </h2>
-              <p className="text-xl text-blue-200 mb-10 max-w-2xl mx-auto opacity-80">
-                Start your journey with MyDurhamLaw today.
+              <p className="text-xl text-blue-200/80 mb-10 leading-relaxed">
+                Connect your Blackboard calendar today and see your entire year
+                rendered in high-definition strategy.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <a
-                  href="/eligibility?next=/signup&plan=free"
-                  className="bg-blue-600 text-white hover:bg-blue-700 px-10 py-5 text-xl font-bold rounded-2xl shadow-xl shadow-blue-900/40 transition-all flex items-center justify-center gap-2"
-                >
-                  Start Free Trial <ArrowRight className="w-6 h-6" />
-                </a>
-                <a
-                  href="/pricing"
-                  className="border border-white/20 text-white hover:bg-white/10 px-10 py-5 text-xl font-bold rounded-2xl backdrop-blur-sm transition-all flex items-center justify-center"
-                >
-                  View Pricing
-                </a>
+                <Link href="/signup">
+                  <Button className="w-full sm:w-auto bg-blue-600 text-white hover:bg-blue-700 px-10 py-8 text-xl font-bold rounded-2xl shadow-xl shadow-blue-950 transition-all flex items-center justify-center gap-3">
+                    Start Your Path <ArrowRight className="w-6 h-6" />
+                  </Button>
+                </Link>
               </div>
             </div>
           </div>
@@ -168,4 +192,3 @@ export default function YAAGDemo() {
     </div>
   );
 }
-// Note: I'll use simple <a> tags where Link might cause issues in quick generation or if I made a mistake in importing Link which I fixed. Actually I'll use <a> to be safe for this bulk generation as I don't want to mess up next/link imports across 6 files if I'm doing it fast.
