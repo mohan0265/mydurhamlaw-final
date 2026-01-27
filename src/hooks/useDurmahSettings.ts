@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '@/lib/supabase/AuthContext';
 import { getSupabaseClient } from '@/lib/supabase/client';
 import { 
@@ -16,6 +16,8 @@ export function useDurmahSettings() {
   const [speed, setSpeed] = useState<number>(1.0);
   const [loading, setLoading] = useState(true);
 
+  const lastFetchedUserId = useRef<string | null>(null);
+
   // Fetch initial setting
   useEffect(() => {
     if (!user?.id) {
@@ -23,34 +25,44 @@ export function useDurmahSettings() {
       return;
     }
 
+    // Prevent duplicate fetch for same user
+    if (lastFetchedUserId.current === user.id) {
+       setLoading(false);
+       return; 
+    }
+
+    let isMounted = true;
     const fetchSettings = async () => {
       try {
         const supabase = getSupabaseClient();
         if (!supabase) return;
 
+        console.log('[useDurmahSettings] Fetching settings for:', user.id);
         const { data, error } = await supabase
           .from('user_voice_settings')
           .select('*')
           .eq('user_id', user.id)
-          .single();
+          .maybeSingle(); // Use maybeSingle to avoid 406 on 0 rows? (Actually 406 is format, but maybeSingle is safer than single)
 
-        if (error && error.code !== 'PGRST116') throw error;
+        if (error) throw error;
 
-        if (data) {
+        if (isMounted && data) {
           setVoiceId(data.voice_id || getDefaultDurmahVoiceId());
           setDeliveryStyleId(data.delivery_style || 'friendly_buddy');
           setSpeed(data.speed || 1.0);
+          lastFetchedUserId.current = user.id;
         }
       } catch (err: any) {
         // Silently fail for known non-critical error codes (like table not created yet)
         if (err.code === '42P01') return; 
         console.error('[DurmahSettings] Failed to fetch voice settings:', err);
       } finally {
-        setLoading(false);
+        if (isMounted) setLoading(false);
       }
     };
 
     fetchSettings();
+    return () => { isMounted = false; };
   }, [user?.id]);
 
   const updateSettings = useCallback(async (updates: { voiceId?: string; deliveryStyleId?: string; speed?: number }) => {

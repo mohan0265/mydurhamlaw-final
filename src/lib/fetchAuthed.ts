@@ -39,6 +39,9 @@ export async function fetchAuthed(
   if (!headers.has('Content-Type')) {
     headers.set('Content-Type', 'application/json');
   }
+  if (!headers.has('Accept')) {
+    headers.set('Accept', 'application/json');
+  }
 
   if (process.env.NODE_ENV !== 'production' && isDiagnosticEndpoint) {
     console.info('[fetchAuthed]', target, {

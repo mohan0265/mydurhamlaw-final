@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
-import { useUser } from '@supabase/auth-helpers-react';
+import { useUser } from '@/lib/supabase/AuthContext';
 import { RefreshCw } from 'lucide-react';
 
 interface EntitlementsState {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import Link from "next/link";
 import { BookOpen, Mail, Lock, Eye, EyeOff } from "lucide-react";
@@ -18,9 +18,36 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
 
   // CRITICAL: NO SIDE EFFECTS ON LOGIN PAGE
-  // NO useEffect checking session
   // NO auto-redirects
   // NO Profile fetches to prevent loops
+
+  // STRICT GUARD: If session exists, leave /login immediately (Client-side only)
+  useEffect(() => {
+     const checkSession = async () => {
+         const supabase = getSupabaseClient();
+         if (!supabase) return;
+
+         const { data } = await supabase.auth.getSession();
+         if (data.session?.user) {
+             console.log('[Login] Session found, strict redirect to /dashboard');
+             router.replace('/dashboard');
+         }
+     };
+     checkSession();
+
+     // Also listen for auth state changes (e.g. from local storage sync)
+     const supabase = getSupabaseClient();
+     const { data: { subscription } } = supabase!.auth.onAuthStateChange((event, session) => {
+         if (session?.user) {
+             console.log('[Login] onAuthStateChange -> redirecting to /dashboard');
+             router.replace('/dashboard');
+         }
+     });
+
+     return () => {
+         subscription.unsubscribe();
+     };
+  }, [router]);
 
   const handleGoogleSignIn = async () => {
     setLoading(true);
