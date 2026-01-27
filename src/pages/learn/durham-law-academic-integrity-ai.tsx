@@ -6,6 +6,7 @@ import {
   generateArticleSchema,
 } from "@/lib/seo";
 import Link from "next/link";
+import NextImage from "next/image";
 import {
   Shield,
   CheckCircle,
@@ -73,8 +74,13 @@ export default function DurhamLawAcademicIntegrityAI() {
           {/* Hero */}
           <div className="not-prose mb-12 p-8 bg-gradient-to-br from-green-50 to-blue-50 rounded-2xl border border-green-100">
             <div className="flex items-start gap-4">
-              <div className="p-3 bg-green-600 rounded-xl">
-                <Shield className="w-8 h-8 text-white" />
+              <div className="relative w-20 h-20 rounded-xl overflow-hidden shadow-sm border border-green-200 shrink-0">
+                <NextImage
+                  src="/images/demo-thumbnails/assignments.png"
+                  alt="Academic Integrity and Writing"
+                  fill
+                  className="object-cover"
+                />
               </div>
               <div className="flex-1">
                 <h1 className="text-3xl font-bold text-gray-900 mb-3">

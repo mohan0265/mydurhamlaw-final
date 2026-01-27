@@ -6,6 +6,7 @@ import {
   generateArticleSchema,
 } from "@/lib/seo";
 import Link from "next/link";
+import NextImage from "next/image";
 import {
   MessageSquare,
   CheckCircle,
@@ -73,8 +74,13 @@ export default function HowToAskBetterLegalQuestions() {
           {/* Hero */}
           <div className="not-prose mb-12 p-8 bg-gradient-to-br from-orange-50 to-purple-50 rounded-2xl border border-orange-100">
             <div className="flex items-start gap-4">
-              <div className="p-3 bg-orange-600 rounded-xl">
-                <MessageSquare className="w-8 h-8 text-white" />
+              <div className="relative w-20 h-20 rounded-xl overflow-hidden shadow-sm border border-orange-200 shrink-0">
+                <NextImage
+                  src="/images/demo-thumbnails/durmah-voice.png"
+                  alt="Professor Durmah Listening"
+                  fill
+                  className="object-cover"
+                />
               </div>
               <div className="flex-1">
                 <h1 className="text-3xl font-bold text-gray-900 mb-3">

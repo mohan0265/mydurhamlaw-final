@@ -1774,6 +1774,12 @@ User question: ${userText}`;
     }
   }
 
+  // Resolve current avatar based on settings
+  const currentAvatar =
+    preset?.gender === "female"
+      ? "/images/demo-thumbnails/durmah-voice-female.png"
+      : "/images/demo-thumbnails/durmah-voice.png";
+
   // ----------------------------
   // UI RENDER
   // ----------------------------
@@ -1793,13 +1799,11 @@ User question: ${userText}`;
         </div>
 
         <div className="p-8 text-center flex flex-col items-center">
-          <div className="w-20 h-20 mb-6 flex items-center justify-center animate-in fade-in zoom-in duration-700">
+          <div className="w-24 h-24 mb-6 flex items-center justify-center animate-in fade-in zoom-in duration-700 rounded-full border-4 border-violet-50 overflow-hidden shadow-lg bg-white">
             <img
-              src="/assets/mascots/quiz-me-bunny-96.webp"
-              alt="Durmah Mascot"
-              width={80}
-              height={80}
-              className="object-contain"
+              src={currentAvatar}
+              alt="Durmah Professor"
+              className="w-full h-full object-cover"
             />
           </div>
           <div className="space-y-1 mb-8">
@@ -1863,8 +1867,12 @@ User question: ${userText}`;
           }`}
         >
           {/* Icon Circle */}
-          <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center backdrop-blur-sm shadow-inner">
-            <span className="font-serif text-xl font-bold italic">D</span>
+          <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center backdrop-blur-sm shadow-inner overflow-hidden border border-white/30">
+            <img
+              src={currentAvatar}
+              alt="Durmah"
+              className="w-full h-full object-cover"
+            />
             {isVoiceActive && (
               <span className="absolute inset-0 rounded-full border-2 border-white opacity-50 animate-ping"></span>
             )}
@@ -2243,6 +2251,12 @@ User question: ${userText}`;
                 const isSelected = voiceId === p.id;
                 const isPreviewing = previewingVoiceId === p.id;
 
+                // Resolve avatar for this preset
+                const presetAvatar =
+                  p.gender === "female"
+                    ? "/images/demo-thumbnails/durmah-voice-female.png"
+                    : "/images/demo-thumbnails/durmah-voice.png";
+
                 return (
                   <div
                     key={p.id}
@@ -2266,14 +2280,12 @@ User question: ${userText}`;
 
                     <div className="p-5">
                       <div className="flex items-start justify-between mb-3">
-                        <div
-                          className={`w-10 h-10 rounded-full flex items-center justify-center bg-gradient-to-br ${p.colorClass} text-white shadow-md`}
-                        >
-                          {p.icon === "mentor" && <Brain size={20} />}
-                          {p.icon === "owl" && <Brain size={20} />}
-                          {p.icon === "feather" && <Volume2 size={20} />}
-                          {p.icon === "spark" && <Zap size={20} />}
-                          {p.icon === "smile" && <Smile size={20} />}
+                        <div className="relative w-16 h-16 rounded-xl overflow-hidden shadow-md border border-gray-100">
+                          <img
+                            src={presetAvatar}
+                            alt={`${p.label} Avatar`}
+                            className="w-full h-full object-cover"
+                          />
                         </div>
                       </div>
 

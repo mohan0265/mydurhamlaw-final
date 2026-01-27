@@ -6,6 +6,7 @@ import {
   generateArticleSchema,
 } from "@/lib/seo";
 import Link from "next/link";
+import NextImage from "next/image";
 import {
   Zap,
   CheckCircle,
@@ -72,8 +73,13 @@ export default function DurhamLawExamTechnique() {
           {/* Hero */}
           <div className="not-prose mb-12 p-8 bg-gradient-to-br from-purple-50 to-pink-50 rounded-2xl border border-purple-100">
             <div className="flex items-start gap-4">
-              <div className="p-3 bg-purple-600 rounded-xl">
-                <Target className="w-8 h-8 text-white" />
+              <div className="relative w-20 h-20 rounded-xl overflow-hidden shadow-sm border border-purple-200 shrink-0">
+                <NextImage
+                  src="/images/demo-thumbnails/exam-prep.png"
+                  alt="Exam Prep Strategy"
+                  fill
+                  className="object-cover"
+                />
               </div>
               <div className="flex-1">
                 <h1 className="text-3xl font-bold text-gray-900 mb-3">
