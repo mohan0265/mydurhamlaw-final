@@ -226,7 +226,8 @@ export function useDurmahChat({
             if (
               error.code === "PGRST116" ||
               error.status === 404 ||
-              error.code === "42P01"
+              error.code === "42P01" ||
+              error.code === "42883"
             )
               return; // Silent skip
             console.error("[useDurmahChat] Fetch error:", error);
