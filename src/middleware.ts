@@ -24,6 +24,13 @@ export async function middleware(req: NextRequest) {
   );
 
   if (!session && !isPublicPath) {
+    // API routes should return 401 JSON, not redirect to HTML login
+    if (req.nextUrl.pathname.startsWith('/api/')) {
+      return NextResponse.json(
+        { error: 'Unauthorized', message: 'Authentication required' },
+        { status: 401 }
+      );
+    }
     return NextResponse.redirect(new URL('/login', req.url));
   }
 

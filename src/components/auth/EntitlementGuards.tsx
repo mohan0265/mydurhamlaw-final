@@ -23,19 +23,31 @@ export function useEntitlements() {
             return;
         }
 
+        let isMounted = true;
         fetch('/api/entitlements/me')
-            .then(res => res.json())
+            .then(res => {
+               // Handle non-JSON responses (e.g. 401/406)
+               if (!res.ok) {
+                   if (res.status === 401) return { hasDurhamAccess: false, hasLnatAccess: false };
+                   throw new Error(`Entitlements fetch failed: ${res.status}`);
+               }
+               return res.json();
+            })
             .then(data => {
-                setState({
-                    hasDurhamAccess: !!data.hasDurhamAccess,
-                    hasLnatAccess: !!data.hasLnatAccess,
-                    loading: false
-                });
+                if(isMounted) {
+                    setState({
+                        hasDurhamAccess: !!data.hasDurhamAccess,
+                        hasLnatAccess: !!data.hasLnatAccess,
+                        loading: false
+                    });
+                }
             })
             .catch(err => {
                 console.error('Failed to fetch entitlements', err);
-                setState(s => ({ ...s, loading: false }));
+                if(isMounted) setState(s => ({ ...s, loading: false }));
             });
+            
+        return () => { isMounted = false; };
     }, [user]);
 
     return state;

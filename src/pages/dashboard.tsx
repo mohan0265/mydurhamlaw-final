@@ -7,7 +7,7 @@ import { useAuth } from '@/lib/supabase/AuthContext';
 import { getSupabaseClient } from '@/lib/supabase/client';
 
 // Icons
-import { BookOpen, FileText, Calendar, Target, Shield, CheckCircle, HelpCircle, ArrowRight, Zap, Heart, Video, MoreHorizontal, Clock, TrendingUp } from 'lucide-react';
+import { BookOpen, FileText, Calendar, Target, Shield, CheckCircle, HelpCircle, ArrowRight, Zap, Heart, Video, MoreHorizontal, Clock, TrendingUp, X } from 'lucide-react';
 
 // Components
 import { QuizMeCard } from '@/components/quiz/QuizMeCard';
@@ -185,7 +185,63 @@ function DashboardContent() {
            </div>
         </div>
 
+        {/* 1.5) WELCOME / START HERE BANNER (New User Guidance) */}
+        {!localStorage.getItem('mdl_welcome_dismissed') && (
+           <div className="bg-white border border-purple-100 rounded-2xl p-6 shadow-sm relative animate-in fade-in slide-in-from-top-4 mb-8">
+              <button 
+                 onClick={(e) => {
+                    const el = e.currentTarget.parentElement;
+                    if(el) el.style.display = 'none';
+                    localStorage.setItem('mdl_welcome_dismissed', 'true');
+                 }}
+                 className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
+              >
+                 <span className="sr-only">Dismiss</span>
+                 <X className="w-5 h-5" />
+              </button>
+              <h2 className="text-lg font-bold text-gray-900 mb-2">Welcome to MyDurhamLaw - Start Here</h2>
+              <p className="text-gray-600 text-sm mb-4">You're all set. Here are your Next 3 Actions to get started:</p>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                 <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-xl hover:bg-white hover:shadow-sm transition cursor-pointer border border-transparent hover:border-gray-100" onClick={() => router.push('/year-at-a-glance')}>
+                    <div className="p-2 bg-blue-100 text-blue-600 rounded-lg"><Calendar className="w-5 h-5" /></div>
+                    <div>
+                       <h3 className="text-sm font-bold text-gray-900">1. Confirm your Year</h3>
+                       <p className="text-xs text-gray-500 mt-1">Visit <strong>Year at a Glance</strong> to see your specific term structure.</p>
+                       <span className="text-xs text-blue-600 font-semibold mt-2 block hover:underline">Go to YAAG &rarr;</span>
+                    </div>
+                 </div>
+                 <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-xl hover:bg-white hover:shadow-sm transition cursor-pointer border border-transparent hover:border-gray-100" onClick={() => router.push('/study/lectures')}>
+                    <div className="p-2 bg-purple-100 text-purple-600 rounded-lg"><BookOpen className="w-5 h-5" /></div>
+                    <div>
+                       <h3 className="text-sm font-bold text-gray-900">2. Add a Lecture</h3>
+                       <p className="text-xs text-gray-500 mt-1">Upload notes or transcripts to unlock AI summaries.</p>
+                       <span className="text-xs text-purple-600 font-semibold mt-2 block hover:underline">Go to Lectures &rarr;</span>
+                    </div>
+                 </div>
+                 <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-xl hover:bg-white hover:shadow-sm transition cursor-pointer border border-transparent hover:border-gray-100" onClick={() => router.push('/assignments')}>
+                    <div className="p-2 bg-orange-100 text-orange-600 rounded-lg"><FileText className="w-5 h-5" /></div>
+                    <div>
+                       <h3 className="text-sm font-bold text-gray-900">3. Add an Assignment</h3>
+                       <p className="text-xs text-gray-500 mt-1">Paste a brief to get a structure plan and research hints.</p>
+                       <span className="text-xs text-orange-600 font-semibold mt-2 block hover:underline">Go to Assignments &rarr;</span>
+                    </div>
+                 </div>
+              </div>
+           </div>
+        )}
+
+        <div className="mb-8">
+            <button 
+                onClick={() => router.push('/year-at-a-glance')}
+                className="w-full sm:w-auto bg-white border-2 border-indigo-600 text-indigo-700 font-bold py-3 px-6 rounded-xl hover:bg-indigo-50 transition flex items-center justify-center gap-2 shadow-sm"
+            >
+                <Calendar className="w-5 h-5" />
+                Open Year at a Glance
+            </button>
+        </div>
+
         {/* 2) NEXT BEST ACTION (Smart Steering) */}
+
         <div className="bg-gradient-to-r from-gray-900 to-indigo-900 rounded-2xl p-6 md:p-8 relative overflow-hidden shadow-xl text-white">
            <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none"></div>
            
