@@ -4,6 +4,8 @@ import Link from "next/link";
 import { Brain, ArrowRight, Play, Zap, HelpCircle } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import RelatedGuides from "@/components/seo/RelatedGuides";
+import GuideCallout from "@/components/seo/GuideCallout";
+import { Mic, Users } from "lucide-react";
 
 export default function QuizMeDemo() {
   return (
@@ -36,6 +38,17 @@ export default function QuizMeDemo() {
         </section>
 
         <section className="py-24 max-w-5xl mx-auto px-6">
+          <GuideCallout
+            title="Master the theory before the drill"
+            body="Active recall is powerful, but only if you have the framework. Read our full guide on why this works, then try it with Durmah Voice."
+            ctaText="Read Quiz Me Guide"
+            ctaHref="/articles/quiz-me"
+            secondaryText="Try Durmah Voice"
+            secondaryHref="/demo/durmah-voice"
+            icon={Mic}
+            variant="purple"
+          />
+
           <div className="grid md:grid-cols-2 gap-16 items-center mb-24">
             <div>
               <h2 className="text-3xl font-bold text-gray-900 mb-8">
@@ -85,7 +98,7 @@ export default function QuizMeDemo() {
             </div>
           </div>
 
-          <RelatedGuides currentSlug="quiz-me" />
+          <RelatedGuides currentSlug="quiz-me-demo" />
         </section>
       </main>
     </div>

@@ -4,6 +4,8 @@ import Link from "next/link";
 import { Mic, ArrowRight, Play, Shield, Zap, Heart } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import RelatedGuides from "@/components/seo/RelatedGuides";
+import GuideCallout from "@/components/seo/GuideCallout";
+import { Users } from "lucide-react";
 
 export default function DurmahVoiceDemo() {
   return (
@@ -42,6 +44,17 @@ export default function DurmahVoiceDemo() {
 
         {/* CONTENT */}
         <section className="py-24 max-w-5xl mx-auto px-6">
+          <GuideCallout
+            title="Voice practice works best with structure"
+            body="Speak Law is the pillar behind this: how to build oral legal reasoning step-by-step. Then use Quiz Me to drill it."
+            ctaText="Read: Speak Law"
+            ctaHref="/speak-law"
+            secondaryText="Go to Quiz Me guide"
+            secondaryHref="/articles/quiz-me"
+            icon={Users}
+            variant="orange"
+          />
+
           <div className="grid md:grid-cols-2 gap-16 items-center mb-24">
             <div>
               <h2 className="text-3xl font-bold text-gray-900 mb-8">
@@ -160,7 +173,10 @@ export default function DurmahVoiceDemo() {
             </div>
           </div>
 
-          <RelatedGuides currentSlug="durmah-voice" />
+          <RelatedGuides
+            currentSlug="durmah-voice-demo"
+            pinnedSlugs={["speak-law", "quiz-me"]}
+          />
         </section>
       </main>
     </div>

@@ -388,38 +388,32 @@ export default function GlobalHeader() {
 
                   <HoverMenu
                     label="Guides"
-                    items={[
-                      {
-                        label: "No Question Is a Stupid Question",
-                        href: "/articles/no-question-is-a-stupid-question",
-                      },
-                      {
-                        label: "Durham Law AI Study Assistant",
-                        href: "/learn/durham-law-ai-study-assistant",
-                      },
-                      {
-                        label: "Academic Integrity & AI Use",
-                        href: "/learn/durham-law-academic-integrity-ai",
-                      },
-                      {
-                        label: "How to Ask Better Legal Questions",
-                        href: "/learn/how-to-ask-better-legal-questions",
-                      },
-                      {
-                        label: "Durham Law Exam Technique",
-                        href: "/learn/durham-law-exam-technique",
-                      },
-                      {
-                        label: "Stay Current: Legal News Habit",
-                        href: "/stay-current",
-                      },
-                      {
-                        label: "Durham Law Study Groups",
-                        href: "/learn/durham-law-study-groups",
-                      },
-                      { label: "View all guides →", href: "/guides" },
-                    ]}
+                    items={allGuides
+                      .filter(
+                        (g) => g.type === "article" || g.type === "pillar",
+                      )
+                      .slice(0, 8)
+                      .map((g) => ({ label: g.title, href: g.href }))
+                      .concat([
+                        { label: "View all guides →", href: "/guides" },
+                      ])}
                   />
+
+                  <HoverMenu
+                    label="Product Demos"
+                    items={allGuides
+                      .filter((g) => g.type === "demo")
+                      .map((g) => ({ label: g.title, href: g.href }))
+                      .concat([{ label: "View all demos →", href: "/demos" }])}
+                  />
+
+                  <Link
+                    href="/speak-law"
+                    prefetch={false}
+                    className="px-3 py-2 rounded-md text-sm font-bold text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50"
+                  >
+                    Speak Law
+                  </Link>
 
                   <Link
                     href="/pricing"
@@ -509,7 +503,51 @@ export default function GlobalHeader() {
         {openMobile && (
           <div className="md:hidden border-t border-white/10 bg-indigo-700/95 backdrop-blur">
             <div className="px-4 py-3 space-y-3">
-              {/* ... existing mobile menu items ... */}
+              {!user && (
+                <>
+                  <Link
+                    href="/speak-law"
+                    className="block px-4 py-2 text-base font-bold text-white bg-white/10 rounded-lg"
+                    onClick={() => setOpenMobile(false)}
+                    prefetch={false}
+                  >
+                    Speak Law
+                  </Link>
+                  <Link
+                    href="/guides"
+                    className="block px-4 py-2 text-base font-medium text-white/90 hover:bg-white/10 rounded-lg"
+                    onClick={() => setOpenMobile(false)}
+                    prefetch={false}
+                  >
+                    Guides Hub
+                  </Link>
+                  <div className="px-4 py-2 text-xs text-white/60 uppercase tracking-widest font-bold">
+                    Product Demos
+                  </div>
+                  {allGuides
+                    .filter((g) => g.type === "demo")
+                    .map((g) => (
+                      <Link
+                        key={g.slug}
+                        href={g.href}
+                        className="block px-6 py-2 text-sm text-white/80 hover:text-white"
+                        onClick={() => setOpenMobile(false)}
+                        prefetch={false}
+                      >
+                        {g.title}
+                      </Link>
+                    ))}
+                  <Link
+                    href="/demos"
+                    className="block px-6 py-2 text-sm text-indigo-200 font-bold hover:text-white"
+                    onClick={() => setOpenMobile(false)}
+                    prefetch={false}
+                  >
+                    View all demos →
+                  </Link>
+                </>
+              )}
+
               <div className="rounded-lg bg-white/5">
                 <div className="px-3 py-2 text-white/80 text-xs">
                   {user ? "Account" : "Get Started"}

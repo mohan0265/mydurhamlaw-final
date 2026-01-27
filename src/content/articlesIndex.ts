@@ -9,7 +9,7 @@ export interface Guide {
   canonicalPath: string;
   featured?: boolean;
   order: number;
-  type: "article" | "demo";
+  type: "article" | "demo" | "pillar";
   tags?: string[];
 }
 
@@ -112,6 +112,34 @@ export const guides: Guide[] = [
     order: 7,
     type: "article",
   },
+  {
+    slug: "quiz-me",
+    href: "/articles/quiz-me",
+    canonicalPath: "https://mydurhamlaw.com/articles/quiz-me",
+    title: "Quiz Me: The Active Recall System",
+    description:
+      "How to use oral prompts and spaced repetition to build long-term memory for legal doctrines.",
+    category: ["Speaking", "Study Skills"],
+    readTime: "9 min read",
+    publishedAt: "2026-01-27",
+    order: 8,
+    type: "article",
+    tags: ["speak-law", "practice", "viva", "confidence"],
+  },
+  {
+    slug: "speak-law",
+    href: "/speak-law",
+    canonicalPath: "https://mydurhamlaw.com/speak-law",
+    title: "Speak Law: Mastering Oral Reasoning",
+    description:
+      "The pillar of legal mastery. How to build oral reasoning step-by-step for seminars and vivas.",
+    category: ["Speaking"],
+    readTime: "12 min read",
+    publishedAt: "2026-01-27",
+    order: 9,
+    type: "pillar",
+    tags: ["speak-law", "oral-reasoning", "confidence"],
+  },
   // PRODUCT DEMOS
   {
     slug: "year-at-a-glance",
@@ -151,6 +179,21 @@ export const guides: Guide[] = [
     publishedAt: "2026-01-27",
     order: 12,
     type: "demo",
+    tags: ["speak-law", "voice", "practice", "confidence"],
+  },
+  {
+    slug: "quiz-me-demo",
+    href: "/demo/quiz-me",
+    canonicalPath: "https://mydurhamlaw.com/demo/quiz-me",
+    title: "Quiz Me (Demo)",
+    description:
+      "Interactive active recall session. Test your memory with AI-generated oral prompts.",
+    category: ["Speaking", "Study Skills"],
+    readTime: "3 min demo",
+    publishedAt: "2026-01-27",
+    order: 15,
+    type: "demo",
+    tags: ["speak-law", "practice", "viva", "confidence"],
   },
   {
     slug: "exam-prep-demo",
