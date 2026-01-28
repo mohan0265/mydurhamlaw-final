@@ -6,32 +6,29 @@ export default function Document() {
     <Html lang="en">
       <Head>
         {/* Favicons - Caseway Brand */}
-        <link rel="icon" href="/favicons/favicon.ico" sizes="any" />
+        <link rel="icon" href="/favicon.ico" sizes="any" />
         <link
           rel="icon"
           type="image/png"
           sizes="32x32"
-          href="/favicons/favicon-32x32.png"
+          href="/favicon-32x32.png"
         />
         <link
           rel="icon"
           type="image/png"
           sizes="16x16"
-          href="/favicons/favicon-16x16.png"
+          href="/favicon-16x16.png"
         />
         <link
           rel="apple-touch-icon"
           sizes="180x180"
-          href="/favicons/apple-touch-icon.png"
+          href="/apple-touch-icon.png"
         />
         <link rel="manifest" href="/site.webmanifest" />
 
         {/* Microsoft Tiles */}
         <meta name="msapplication-TileColor" content="#2B1B5A" />
-        <meta
-          name="msapplication-TileImage"
-          content="/favicons/mstile-150x150.png"
-        />
+        <meta name="msapplication-TileImage" content="/mstile-150x150.png" />
         <meta name="theme-color" content="#123733" />
 
         {/* Preload critical fonts */}

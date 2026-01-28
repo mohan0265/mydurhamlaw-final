@@ -51,9 +51,9 @@ export const Logo: React.FC<LogoProps> = ({
   // variant='dark' -> Dark Mode -> Needs White/Light Logo -> /brand/caseway/caseway-logo-dark.svg
 
   const logoSrc =
-    variant === "dark" || variant === "dark-header" // Assuming "dark" means dark theme/bg
+    variant === "dark" || variant === "dark-header"
       ? "/brand/caseway/caseway-logo-dark.svg" // White/Light text logo for dark backgrounds
-      : "/brand/caseway/caseway-logo.svg"; // Dark/Color text logo for light backgrounds
+      : "/assets/images/brand/caseway-logo.png"; // Color PNG for light backgrounds (Gold/Teal)
 
   // If specific parts are requested (icon/text only), we might need strict asset separation
   // But user said "Replace logo usage", implying full logo asset.

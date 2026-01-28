@@ -8,6 +8,7 @@ import {
   ChevronLeft,
   Pause,
   GripHorizontal,
+  MoveDiagonal,
 } from "lucide-react";
 import { DemoVideo } from "@/content/demoVideos";
 
@@ -24,21 +25,30 @@ export const DemoDock: React.FC<DemoDockProps> = ({
 }) => {
   const [isMinimized, setIsMinimized] = useState(false);
   const [position, setPosition] = useState({ x: 20, y: 20 });
+  const [size, setSize] = useState({ width: 400, height: 250 }); // Track size explicitly
   const [isDragging, setIsDragging] = useState(false);
+  const [isResizing, setIsResizing] = useState(false);
+
   const dragStartRef = useRef<{ x: number; y: number } | null>(null);
+  const resizeStartRef = useRef<{
+    width: number;
+    height: number;
+    x: number;
+    y: number;
+  } | null>(null);
   const dockRef = useRef<HTMLDivElement>(null);
 
   // Initial positioning: Bottom Right by default
   useEffect(() => {
     if (isOpen) {
       const { innerWidth, innerHeight } = window;
-      setPosition({ x: innerWidth - 420, y: innerHeight - 320 }); // Approx size
+      setPosition({ x: innerWidth - 440, y: innerHeight - 340 });
     }
   }, [isOpen]);
 
   // Drag Handlers
   const handleMouseDown = (e: React.MouseEvent) => {
-    if (isMinimized) return; // Don't drag when minimized (simplification)
+    if (isMinimized) return;
     setIsDragging(true);
     dragStartRef.current = {
       x: e.clientX - position.x,
@@ -46,26 +56,51 @@ export const DemoDock: React.FC<DemoDockProps> = ({
     };
   };
 
+  // Resize Handlers
+  const handleResizeStart = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsResizing(true);
+    resizeStartRef.current = {
+      width: size.width,
+      height: size.height,
+      x: e.clientX,
+      y: e.clientY,
+    };
+  };
+
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
-      if (!isDragging || !dragStartRef.current) return;
+      // Moving
+      if (isDragging && dragStartRef.current) {
+        const newX = e.clientX - dragStartRef.current.x;
+        const newY = e.clientY - dragStartRef.current.y;
 
-      const newX = e.clientX - dragStartRef.current.x;
-      const newY = e.clientY - dragStartRef.current.y;
+        const clampedX = Math.max(0, Math.min(window.innerWidth - 50, newX));
+        const clampedY = Math.max(0, Math.min(window.innerHeight - 50, newY));
 
-      // Clamp to viewport
-      const clampedX = Math.max(0, Math.min(window.innerWidth - 100, newX));
-      const clampedY = Math.max(0, Math.min(window.innerHeight - 50, newY));
+        setPosition({ x: clampedX, y: clampedY });
+      }
 
-      setPosition({ x: clampedX, y: clampedY });
+      // Resizing
+      if (isResizing && resizeStartRef.current) {
+        const deltaX = e.clientX - resizeStartRef.current.x;
+        const deltaY = e.clientY - resizeStartRef.current.y;
+
+        const newWidth = Math.max(300, resizeStartRef.current.width + deltaX);
+        const newHeight = Math.max(200, resizeStartRef.current.height + deltaY);
+
+        setSize({ width: newWidth, height: newHeight });
+      }
     };
 
     const handleMouseUp = () => {
       setIsDragging(false);
+      setIsResizing(false);
       dragStartRef.current = null;
+      resizeStartRef.current = null;
     };
 
-    if (isDragging) {
+    if (isDragging || isResizing) {
       window.addEventListener("mousemove", handleMouseMove);
       window.addEventListener("mouseup", handleMouseUp);
     }
@@ -74,14 +109,14 @@ export const DemoDock: React.FC<DemoDockProps> = ({
       window.removeEventListener("mousemove", handleMouseMove);
       window.removeEventListener("mouseup", handleMouseUp);
     };
-  }, [isDragging]);
+  }, [isDragging, isResizing]);
 
   if (!isOpen) return null;
 
   if (isMinimized) {
     return (
       <div
-        className="fixed bottom-4 right-4 z-[50] flex items-center gap-3 p-3 bg-gray-900 border border-white/20 rounded-full shadow-2xl cursor-pointer hover:bg-gray-800 transition-colors"
+        className="fixed bottom-4 right-4 z-[9999] flex items-center gap-3 p-3 bg-gray-900 border border-white/20 rounded-full shadow-2xl cursor-pointer hover:bg-gray-800 transition-colors"
         onClick={() => setIsMinimized(false)}
       >
         <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
@@ -99,44 +134,38 @@ export const DemoDock: React.FC<DemoDockProps> = ({
       style={{
         left: position.x,
         top: position.y,
-        width: "400px", // Initial width
-        height: "auto",
+        width: size.width,
+        height: size.height,
       }}
-      className="fixed z-[50] bg-gray-900 rounded-xl border border-white/10 shadow-2xl flex flex-col overflow-hidden min-w-[300px] min-h-[200px]"
+      className="fixed z-[9999] bg-gray-900 rounded-xl border border-white/10 shadow-2xl flex flex-col overflow-hidden"
     >
-      {/* Resize Handle (CSS) - Hidden but enabled via css resize */}
-      <style jsx>{`
-        div {
-          resize: both;
-          overflow: hidden; /* Needed for resize to work */
-        }
-      `}</style>
-
       {/* Header (Draggable) */}
       <div
         onMouseDown={handleMouseDown}
-        className={`bg-gray-800 p-3 flex justify-between items-center cursor-move select-none ${isDragging ? "cursor-grabbing" : ""}`}
+        className={`bg-gray-800 p-3 flex justify-between items-center cursor-move select-none shrink-0 border-b border-white/5 ${
+          isDragging ? "cursor-grabbing" : ""
+        }`}
       >
-        <div className="flex items-center gap-2 text-white/80">
-          <GripHorizontal size={16} />
-          <span className="text-xs font-bold uppercase tracking-wider truncate max-w-[200px]">
+        <div className="flex items-center gap-2 text-white/80 overflow-hidden">
+          <GripHorizontal size={16} className="shrink-0" />
+          <span className="text-xs font-bold uppercase tracking-wider truncate">
             {video.title}
           </span>
         </div>
         <div
-          className="flex items-center gap-1"
+          className="flex items-center gap-1 shrink-0"
           onMouseDown={(e) => e.stopPropagation()}
         >
           <button
             onClick={() => setIsMinimized(true)}
-            className="p-1.5 hover:bg-white/10 rounded text-gray-400 hover:text-white"
+            className="p-1.5 hover:bg-white/10 rounded text-gray-400 hover:text-white transition-colors"
             title="Minimize"
           >
             <Minimize2 size={14} />
           </button>
           <button
             onClick={onClose}
-            className="p-1.5 hover:bg-red-500/20 rounded text-gray-400 hover:text-red-400"
+            className="p-1.5 hover:bg-red-500/20 rounded text-gray-400 hover:text-red-400 transition-colors"
             title="Close"
           >
             <X size={14} />
@@ -145,7 +174,7 @@ export const DemoDock: React.FC<DemoDockProps> = ({
       </div>
 
       {/* Content */}
-      <div className="flex-1 bg-black relative max-h-[80vh] overflow-hidden">
+      <div className="flex-1 bg-black relative overflow-hidden">
         {video.type === "video" && video.src ? (
           <video
             src={video.src}
@@ -157,6 +186,14 @@ export const DemoDock: React.FC<DemoDockProps> = ({
           <CarouselPlayer video={video} />
         )}
       </div>
+
+      {/* Resize Handle (Custom) */}
+      <div
+        onMouseDown={handleResizeStart}
+        className="absolute bottom-0 right-0 p-1 cursor-nwse-resize hover:bg-white/10 rounded-tl-lg z-50 text-gray-500 hover:text-white transition-colors"
+      >
+        <MoveDiagonal size={16} />
+      </div>
     </div>
   );
 };
@@ -165,7 +202,13 @@ export const DemoDock: React.FC<DemoDockProps> = ({
 const CarouselPlayer: React.FC<{ video: DemoVideo }> = ({ video }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(true);
-  const frames = video.frames || []; // Should be injected from registry properly but falling back
+
+  // FIX: Map steps to frames if frames is empty
+  const frames =
+    video.frames && video.frames.length > 0
+      ? video.frames
+      : video.steps?.map((s) => s.src) || [];
+
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
@@ -180,13 +223,14 @@ const CarouselPlayer: React.FC<{ video: DemoVideo }> = ({ video }) => {
 
   if (!frames.length)
     return (
-      <div className="text-white text-center p-8 text-xs">
-        No frames available
+      <div className="flex flex-col items-center justify-center h-full text-gray-500 text-xs p-8 text-center bg-gray-900 via-gray-800 to-gray-900">
+        <p className="mb-2 font-bold text-gray-400">Demo Coming Soon</p>
+        <p className="opacity-50">No frames available for {video.title}</p>
       </div>
     );
 
   return (
-    <div className="relative w-full h-full group bg-black aspect-video">
+    <div className="relative w-full h-full group bg-black flex items-center justify-center">
       <img
         src={frames[currentIndex]}
         alt={`Step ${currentIndex + 1}`}
@@ -202,20 +246,20 @@ const CarouselPlayer: React.FC<{ video: DemoVideo }> = ({ video }) => {
       </div>
 
       {/* Floating Controls */}
-      <div className="absolute inset-x-0 bottom-0 p-4 flex justify-center gap-4 opacity-0 group-hover:opacity-100 transition-opacity bg-gradient-to-t from-black/80 to-transparent">
+      <div className="absolute inset-x-0 bottom-0 p-4 flex justify-center gap-4 opacity-0 group-hover:opacity-100 transition-opacity bg-gradient-to-t from-black/90 to-transparent pt-8">
         <button
           onClick={() =>
             setCurrentIndex(
               (prev) => (prev - 1 + frames.length) % frames.length,
             )
           }
-          className="p-1.5 bg-black/50 text-white rounded-full hover:bg-indigo-600"
+          className="p-1.5 bg-white/10 backdrop-blur text-white rounded-full hover:bg-indigo-600 transition-colors"
         >
           <ChevronLeft size={16} />
         </button>
         <button
           onClick={() => setIsPlaying(!isPlaying)}
-          className="p-2 bg-white text-black rounded-full hover:scale-110"
+          className="p-2 bg-white text-black rounded-full hover:scale-110 transition-transform"
         >
           {isPlaying ? (
             <Pause size={12} fill="currentColor" />
@@ -225,7 +269,7 @@ const CarouselPlayer: React.FC<{ video: DemoVideo }> = ({ video }) => {
         </button>
         <button
           onClick={() => setCurrentIndex((prev) => (prev + 1) % frames.length)}
-          className="p-1.5 bg-black/50 text-white rounded-full hover:bg-indigo-600"
+          className="p-1.5 bg-white/10 backdrop-blur text-white rounded-full hover:bg-indigo-600 transition-colors"
         >
           <ChevronRight size={16} />
         </button>
