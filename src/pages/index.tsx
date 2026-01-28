@@ -54,7 +54,7 @@ export default function DurhamLanding() {
         />
         <meta
           property="og:image"
-          content="https://mydurhamlaw.com/og/mydurhamlaw-og.png"
+          content="https://mydurhamlaw.com/og/mydurhamlaw-preview.png"
         />
         <meta property="og:image:width" content="1200" />
         <meta property="og:image:height" content="630" />
@@ -63,7 +63,7 @@ export default function DurhamLanding() {
         <meta name="twitter:card" content="summary_large_image" />
         <meta
           name="twitter:image"
-          content="https://mydurhamlaw.com/og/mydurhamlaw-og.png"
+          content="https://mydurhamlaw.com/og/mydurhamlaw-preview.png"
         />
       </Head>
 
