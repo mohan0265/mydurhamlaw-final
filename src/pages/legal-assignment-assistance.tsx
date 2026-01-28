@@ -1,0 +1,42 @@
+import React from "react";
+import GlobalHeader from "@/components/GlobalHeader";
+import GlobalFooter from "@/components/GlobalFooter";
+import { PenTool } from "lucide-react";
+import Link from "next/link";
+
+export default function LegalAssignmentAssistance() {
+  return (
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col font-sans">
+      <GlobalHeader />
+
+      <main className="flex-grow pt-24 pb-12 px-6">
+        <div className="max-w-4xl mx-auto">
+          <div className="bg-white dark:bg-gray-800 rounded-3xl p-8 md:p-12 shadow-sm border border-gray-100 dark:border-white/5 text-center">
+            <div className="w-16 h-16 bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 rounded-full flex items-center justify-center mx-auto mb-6">
+              <PenTool size={32} />
+            </div>
+
+            <h1 className="text-3xl md:text-4xl font-black text-gray-900 dark:text-white mb-6 tracking-tight">
+              Legal Assignment Assistance
+            </h1>
+
+            <p className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto leading-relaxed mb-8">
+              Learn how to structure problem questions, write distinctive
+              essays, and cite authorities correctly using OSCOLA.
+            </p>
+
+            <div className="flex justify-center gap-4">
+              <Link href="/write">
+                <button className="px-6 py-3 bg-orange-600 text-white rounded-xl font-bold hover:bg-orange-700 transition">
+                  Visit Writing Centre
+                </button>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </main>
+
+      <GlobalFooter />
+    </div>
+  );
+}

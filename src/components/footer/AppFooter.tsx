@@ -141,7 +141,7 @@ export const AppFooter: React.FC<AppFooterProps> = ({ isAuthed }) => {
           {/* Col 1: Brand */}
           <div className="md:col-span-1">
             <div className="mb-4">
-              <Logo variant="dark" className="h-9 w-auto" />
+              <Logo variant="light" className="h-10 w-auto" />
             </div>
             <p className="text-gray-300 mb-4 leading-relaxed text-xs">
               {BRAND_NAME} is an educational platform designed to support law

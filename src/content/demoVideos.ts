@@ -17,17 +17,20 @@ export const DEMO_VIDEOS: Record<string, DemoVideo> = {
       {
         src: "/demos/yaag/step-01.png",
         alt: "YAAG Overview",
-        caption: "See your entire academic year.",
+        caption:
+          "Plan your entire academic year in one view. Track deadlines and exams effortlessly.",
       },
       {
         src: "/demos/yaag/step-02.png",
         alt: "Year 2 View",
-        caption: "Switch years to plan ahead.",
+        caption:
+          "Switch between years instantly to see past modules or future requirements.",
       },
       {
         src: "/demos/yaag/step-03.png",
         alt: "Year 3 View",
-        caption: "Prepare for your dissertation.",
+        caption:
+          "Stay on top of dissertation milestones and final year credits.",
       },
     ],
   },
@@ -39,17 +42,20 @@ export const DEMO_VIDEOS: Record<string, DemoVideo> = {
       {
         src: "/demos/assignments/step-01.png",
         alt: "Assignment Hub",
-        caption: "Select your assignment type.",
+        caption:
+          "Click 'New Assignment' to start. Choose your module and essay type.",
       },
       {
         src: "/demos/assignments/step-02.png",
         alt: "Input Topic",
-        caption: "Input your essay question.",
+        caption:
+          "Paste your exact essay question. Our AI parses the legal issues automatically.",
       },
       {
         src: "/demos/assignments/step-03.png",
         alt: "Generated Plan",
-        caption: "Get an instant IRAC structure.",
+        caption:
+          "Receive a tailored IRAC plan. Use this structure to write your own original work.",
       },
     ],
   },
@@ -61,17 +67,20 @@ export const DEMO_VIDEOS: Record<string, DemoVideo> = {
       {
         src: "/demos/lectures/step-01.png",
         alt: "Upload Lecture",
-        caption: "Upload your recording.",
+        caption:
+          "Drag & drop your Panopto recording or audio file here to begin processing.",
       },
       {
         src: "/demos/lectures/step-02.png",
         alt: "Summarization",
-        caption: "Get narrative summaries.",
+        caption:
+          "Caseway generates a structured legal summary, highlighting key cases and ratiocinations.",
       },
       {
         src: "/demos/lectures/step-03.png",
         alt: "Quiz Generation",
-        caption: "Turn notes into quizzes.",
+        caption:
+          "Instantly convert your lecture notes into a revision quiz to test your recall.",
       },
     ],
   },
@@ -83,17 +92,20 @@ export const DEMO_VIDEOS: Record<string, DemoVideo> = {
       {
         src: "/demos/quiz-me/step-01.png",
         alt: "Feynman Method",
-        caption: "Explain concepts clearly.",
+        caption:
+          "Select a tough legal concept. The AI will ask you to explain it simply.",
       },
       {
         src: "/demos/quiz-me/step-02.png",
         alt: "Speak Law",
-        caption: "Practice oral arguments.",
+        caption:
+          "Use your microphone to practice oral arguments. Build confidence for tutorials.",
       },
       {
         src: "/demos/quiz-me/step-03.png",
         alt: "Ratio ID",
-        caption: "Identify case principles.",
+        caption:
+          "Receive instant feedback on how accurately you identified the legal principle.",
       },
     ],
   },
@@ -105,12 +117,14 @@ export const DEMO_VIDEOS: Record<string, DemoVideo> = {
       {
         src: "/demos/durmah-voice/step-01.png",
         alt: "Voice Interface",
-        caption: "Speak to Durmah naturally.",
+        caption:
+          "Tap the microphone to chat with Durmah, your 24/7 legal study companion.",
       },
       {
         src: "/demos/durmah-voice/step-02.png",
         alt: "Socratic Feedback",
-        caption: "Receive probing questions.",
+        caption:
+          "Durmah doesn't just give answers; she asks leading questions to deepen your understanding.",
       },
     ],
   },
@@ -122,12 +136,14 @@ export const DEMO_VIDEOS: Record<string, DemoVideo> = {
       {
         src: "/demos/exam-prep/step-01.png",
         alt: "Exam Simulator",
-        caption: "Start a timed mock exam.",
+        caption:
+          "Choose a module and start a timed mock exam under realistic conditions.",
       },
       {
         src: "/demos/exam-prep/step-02.png",
         alt: "Benchmarking",
-        caption: "Compare against First-Class standards.",
+        caption:
+          "Review your answers against First-Class sample criteria to identify gaps.",
       },
     ],
   },
