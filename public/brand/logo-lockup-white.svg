@@ -1,9 +1,0 @@
-<svg width="600" height="150" viewBox="0 0 600 150" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <g transform="translate(20, 25) scale(0.2)">
-    <path fill="#FFFFFF" d="M64 160h384v48H64z"/>
-    <path fill="#FFFFFF" d="M256 32L64 160h384L256 32z"/>
-    <path fill="#FFFFFF" d="M96 224h48v224H96zM176 224h48v224h-48zM288 224h48v224h-48zM368 224h48v224h-48z"/>
-    <rect x="48" y="448" width="416" height="32" fill="#FFFFFF"/>
-  </g>
-  <text x="140" y="100" font-family="sans-serif" font-weight="600" font-size="80" fill="#FFFFFF">MyDurham<tspan fill="#FFFFFF">Law</tspan></text>
-</svg>
