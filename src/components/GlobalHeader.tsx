@@ -335,7 +335,7 @@ export default function GlobalHeader() {
                  We will keep the icon if generic, or switch to text.
                  For now, let's stick to the existing structure but update text.
                */}
-              <Logo variant="light" size="sm" className="h-8 w-auto" />
+              <Logo variant="light" className="h-10 md:h-11 w-auto" />
             </Link>
             {/* Desktop nav */}
             <div className="hidden md:flex items-center gap-1">
