@@ -321,7 +321,6 @@ export default function GlobalHeader() {
       <header className="sticky top-0 z-50 bg-white/95 dark:bg-gray-950/95 backdrop-blur shadow-sm dark:shadow-none border-b border-gray-100 dark:border-white/5 transition-colors duration-500">
         <nav className="mx-auto max-w-7xl px-4 sm:px-6">
           <div className="min-h-[72px] md:min-h-[110px] py-4 flex items-center justify-between transition-all duration-300">
-            import {BRAND_NAME} from "@/lib/brand"; // ... inside component
             {/* Brand */}
             <Link
               href="/"
