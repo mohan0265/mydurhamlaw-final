@@ -211,7 +211,7 @@ export const guides: Guide[] = [
   {
     slug: "my-lectures-demo",
     href: "/demo/my-lectures",
-    canonicalPath: "https://mydurhamlaw.com/demo/my-lectures",
+    canonicalPath: "https://casewaylaw.ai/demo/my-lectures",
     title: "My Lectures & Notes (Demo)",
     description:
       "Syllabus-aligned tracking and organization for every lecture and tutorial.",

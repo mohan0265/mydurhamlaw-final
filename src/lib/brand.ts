@@ -1,22 +1,26 @@
-export const BRAND_CONFIG = {
-  name: "Caseway",
-  domain: "casewaylaw.ai",
-  url: "https://www.casewaylaw.ai",
-  email: "support@casewaylaw.ai",
-  tagline: "Your pathway to legal mastery",
-  description:
-    "Independent law student study platform — built for students at Durham University and beyond.",
-  legal: {
-    short: "Independent platform — not affiliated with Durham University.",
-    long: "Caseway is an independent law student study platform and is not affiliated with, endorsed by, or officially connected to Durham University or any of its colleges. All university names are used strictly for descriptive purposes only.",
-  },
-};
+export const BRAND_NAME = "Caseway";
+export const BRAND_DOMAIN =
+  process.env.NEXT_PUBLIC_APP_DOMAIN || "casewaylaw.ai";
+export const BRAND_BASE_URL =
+  process.env.NEXT_PUBLIC_APP_URL || `https://${BRAND_DOMAIN}`;
+export const BRAND_SUPPORT_EMAIL =
+  process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "support@casewaylaw.ai";
+export const UNIVERSITY_INSTANCE_NAME = "Durham Law Edition";
 
-export const BRAND_NAME = BRAND_CONFIG.name;
-export const BRAND_DOMAIN = BRAND_CONFIG.domain;
-export const BRAND_URL = BRAND_CONFIG.url;
-export const BRAND_SUPPORT_EMAIL = BRAND_CONFIG.email;
-export const BRAND_TAGLINE = BRAND_CONFIG.tagline;
-export const BRAND_DESCRIPTION = BRAND_CONFIG.description;
-export const LEGAL_DISCLAIMER_SHORT = BRAND_CONFIG.legal.short;
-export const LEGAL_DISCLAIMER_LONG = BRAND_CONFIG.legal.long;
+/**
+ * Returns the canonical URL for a given path.
+ * Ensures the path starts with a slash and is prepended with the base URL.
+ * @param urlPath - The path (e.g., "/about" or "about")
+ */
+export const BRAND_TAGLINE = " Empowering your legal education journey.";
+
+export const LEGAL_DISCLAIMER_SHORT =
+  "Caseway AI can make mistakes. Please verify.";
+
+export const LEGAL_DISCLAIMER_LONG =
+  "Caseway is an AI-powered independent study companion and is not affiliated with Durham University. Information provided should be verified against official module handbooks and primary legal sources.";
+
+export const canonical = (urlPath: string) => {
+  const path = urlPath.startsWith("/") ? urlPath : `/${urlPath}`;
+  return `${BRAND_BASE_URL}${path}`;
+};

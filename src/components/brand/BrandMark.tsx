@@ -7,40 +7,38 @@ type BrandMarkProps = {
 
 export const BrandMark: React.FC<BrandMarkProps> = ({ variant = "header" }) => {
   // Config based on variant
-  const iconSize = variant === "header" ? 32 : 48; // px
-  const textSize = variant === "header" ? "text-lg md:text-xl" : "text-xl";
-  const iconContainerClass =
-    variant === "header"
-      ? "bg-white/10 border border-white/10 p-1.5 rounded-lg shadow-sm group-hover:bg-white/20 transition-all"
-      : "bg-white/5 border border-white/10 p-2 rounded-xl mb-3 inline-flex";
+  // Using Caseway assets from public/brand/caseway/
+  // header: caseway-logo.svg (assuming color or appropriate for header)
+  // footer: caseway-logo-dark.svg (assuming white/light for dark footer)
 
-  const titleClass = "font-bold tracking-tight text-white";
-  const accentClass = "text-yellow-400 font-serif italic ml-[1px]";
+  // Actually, standard practice:
+  // Light bg -> Color logo (caseway-logo.svg)
+  // Dark bg -> White/Light logo (caseway-logo-dark.svg or similar)
+
+  // Warning: The user prompt said:
+  // For header: use caseway-logo.svg
+  // For footer: use caseway-logo-dark.svg
+
+  const logoSrc =
+    variant === "header"
+      ? "/brand/caseway/caseway-logo.svg"
+      : "/brand/caseway/caseway-logo-dark.svg";
+
+  const width = variant === "header" ? 140 : 160;
+  const height = variant === "header" ? 40 : 48;
 
   return (
     <div
-      className={`flex items-center gap-3 group ${variant === "footer" ? "flex-col items-start gap-0" : ""}`}
+      className={`relative flex items-center ${variant === "footer" ? "opacity-90 hover:opacity-100" : ""}`}
     >
-      {/* Icon Container */}
-      <div
-        className={`relative flex items-center justify-center ${iconContainerClass}`}
-      >
-        <NextImage
-          src="/gold-android-chrome-512x512.png"
-          alt="MyDurhamLaw Shield"
-          width={iconSize}
-          height={iconSize}
-          className="object-contain drop-shadow-sm"
-          priority
-        />
-      </div>
-
-      {/* Wordmark */}
-      <div className={`flex flex-col leading-tight ${textSize}`}>
-        <span className={titleClass}>
-          MyDurham<span className={accentClass}>Law</span>
-        </span>
-      </div>
+      <NextImage
+        src={logoSrc}
+        alt="Caseway"
+        width={width}
+        height={height}
+        className="object-contain h-auto w-auto"
+        priority
+      />
     </div>
   );
 };

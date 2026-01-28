@@ -627,6 +627,7 @@ function DashboardContent() {
           <CoreActionCard
             title="Assignments"
             icon={<FileText className="w-5 h-5 text-orange-600" />}
+            data-tour="dashboard-assignments"
             link={
               nextAssignment
                 ? `/assignments?assignmentId=${nextAssignment.id}${nextAssignment.current_stage > 0 ? `&view=workflow&stage=${nextAssignment.current_stage}` : ""}`
@@ -682,6 +683,7 @@ function DashboardContent() {
           <CoreActionCard
             title="Year at a Glance"
             icon={<Calendar className="w-5 h-5 text-blue-600" />}
+            data-tour="dashboard-yaag"
             link="/year-at-a-glance"
             preview={
               <div className="mt-3 flex gap-1">
@@ -999,9 +1001,9 @@ function WhyThisModal({
   );
 }
 
-function CoreActionCard({ title, icon, link, preview }: any) {
+function CoreActionCard({ title, icon, link, preview, ...props }: any) {
   return (
-    <Link href={link} className="group block h-full">
+    <Link href={link} className="group block h-full" {...props}>
       <div className="h-full bg-white rounded-2xl border border-gray-200 p-5 shadow-sm group-hover:shadow-md group-hover:border-purple-200 transition-all flex flex-col">
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-bold text-gray-900">{title}</h3>

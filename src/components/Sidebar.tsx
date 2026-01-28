@@ -1,51 +1,73 @@
-'use client'
+"use client";
 
 // Sidebar disabled via feature flag
-const ENABLE_SIDEBAR = process.env.NEXT_PUBLIC_ENABLE_SIDEBAR === 'true'
+const ENABLE_SIDEBAR = process.env.NEXT_PUBLIC_ENABLE_SIDEBAR === "true";
 
-import Link from 'next/link'
-import { useState, useContext } from 'react'
-import { AuthContext } from '@/lib/supabase/AuthContext'
+import Link from "next/link";
+import { useState, useContext } from "react";
+import { AuthContext } from "@/lib/supabase/AuthContext";
 
 export default function Sidebar() {
   // Always call hooks before early returns
-  const [isOpen, setIsOpen] = useState(true)
-  const { getDashboardRoute } = useContext(AuthContext)
-  
-  if (!ENABLE_SIDEBAR) return null
+  const [isOpen, setIsOpen] = useState(true);
+  const { getDashboardRoute } = useContext(AuthContext);
+
+  if (!ENABLE_SIDEBAR) return null;
 
   // Provide a safe default function if getDashboardRoute is undefined
-  const safeDashboardRoute = getDashboardRoute ? getDashboardRoute() : '/dashboard';
+  const safeDashboardRoute = getDashboardRoute
+    ? getDashboardRoute()
+    : "/dashboard";
 
   return (
-    <div className={`bg-white shadow-md transition-all duration-300 ${isOpen ? 'w-64' : 'w-20'} min-h-screen flex flex-col`}>
+    <div
+      className={`bg-white shadow-md transition-all duration-300 ${isOpen ? "w-64" : "w-20"} min-h-screen flex flex-col`}
+    >
       {/* Toggle Button */}
       <div className="flex justify-between items-center p-4 border-b">
         <div className="text-lg font-bold text-blue-600 flex items-center space-x-2">
-          {isOpen && <span>MyDurhamLaw</span>}
+          {isOpen && <span>Caseway</span>}
         </div>
-        <button onClick={() => setIsOpen(!isOpen)} className="text-gray-500 hover:text-blue-600">
-          {isOpen ? 'X' : 'Menu'}
+        <button
+          onClick={() => setIsOpen(!isOpen)}
+          className="text-gray-500 hover:text-blue-600"
+        >
+          {isOpen ? "X" : "Menu"}
         </button>
       </div>
 
       {/* Nav Items */}
       <nav className="flex-1 p-2 space-y-2">
-        <Link href={safeDashboardRoute} className="flex items-center p-2 rounded-md text-gray-700 hover:bg-blue-50">
-          {isOpen && 'AI Assistant'}
+        <Link
+          href={safeDashboardRoute}
+          className="flex items-center p-2 rounded-md text-gray-700 hover:bg-blue-50"
+        >
+          {isOpen && "AI Assistant"}
         </Link>
-        <Link href="/study-schedule" className="flex items-center p-2 rounded-md text-gray-700 hover:bg-blue-50">
-          {isOpen && 'Study Calendar'}
+        <Link
+          href="/study-schedule"
+          className="flex items-center p-2 rounded-md text-gray-700 hover:bg-blue-50"
+        >
+          {isOpen && "Study Calendar"}
         </Link>
-        <Link href="#" className="flex items-center p-2 rounded-md text-gray-700 hover:bg-blue-50">
-          {isOpen && 'Study Materials'}
+        <Link
+          href="#"
+          className="flex items-center p-2 rounded-md text-gray-700 hover:bg-blue-50"
+        >
+          {isOpen && "Study Materials"}
         </Link>
-        <Link href="#" className="flex items-center p-2 rounded-md text-gray-700 hover:bg-blue-50">
-          {isOpen && 'Reflect (Memory Manager)'}
+        <Link
+          href="#"
+          className="flex items-center p-2 rounded-md text-gray-700 hover:bg-blue-50"
+        >
+          {isOpen && "Reflect (Memory Manager)"}
         </Link>
         {/* ✅ References Link */}
-        <Link href="/references" className="flex items-center p-2 rounded-md text-gray-700 hover:bg-blue-50">
-          {isOpen && 'References'}
+        <Link
+          href="/references"
+          className="flex items-center p-2 rounded-md text-gray-700 hover:bg-blue-50"
+        >
+          {isOpen && "References"}
         </Link>
       </nav>
 
@@ -54,10 +76,13 @@ export default function Sidebar() {
         <div className="flex items-center space-x-2">
           {isOpen && <span>mohan0265@gmail.com</span>}
         </div>
-        <Link href="#" className="flex items-center space-x-2 text-gray-700 hover:text-blue-600">
+        <Link
+          href="#"
+          className="flex items-center space-x-2 text-gray-700 hover:text-blue-600"
+        >
           {isOpen && <span>Settings</span>}
         </Link>
       </div>
     </div>
-  )
+  );
 }

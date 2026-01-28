@@ -110,7 +110,7 @@ export function generateArticleSEO(params: {
   const { title, description, slug, keywords } = params;
 
   return generateSEOTags({
-    title: `${title} - MyDurhamLaw Learn`,
+    title: `${title} - Caseway Learn`,
     description,
     canonical: `/learn/${slug}`,
     ogImage: DEFAULT_OG_IMAGE,
@@ -157,7 +157,7 @@ export function generateArticleSchema(params: {
     description,
     datePublished,
     dateModified = datePublished,
-    author = "MyDurhamLaw Team",
+    author = "Caseway Team",
     image = DEFAULT_OG_IMAGE,
   } = params;
 

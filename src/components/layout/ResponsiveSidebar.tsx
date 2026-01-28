@@ -30,7 +30,9 @@ interface ResponsiveSidebarProps {
   className?: string;
 }
 
-export default function ResponsiveSidebar({ className }: ResponsiveSidebarProps) {
+export default function ResponsiveSidebar({
+  className,
+}: ResponsiveSidebarProps) {
   // Always call hooks first
   const router = useRouter();
   const { getDashboardRoute } = useContext(AuthContext);
@@ -57,11 +59,18 @@ export default function ResponsiveSidebar({ className }: ResponsiveSidebarProps)
 
   // Save collapsed state + CSS var (client only)
   useEffect(() => {
-    if (typeof window === "undefined" || typeof document === "undefined") return;
+    if (typeof window === "undefined" || typeof document === "undefined")
+      return;
     try {
-      window.localStorage.setItem("mdl:navCollapsed", JSON.stringify(isCollapsed));
+      window.localStorage.setItem(
+        "mdl:navCollapsed",
+        JSON.stringify(isCollapsed),
+      );
     } catch {}
-    document.documentElement?.style.setProperty("--sidebar-width", isCollapsed ? "4rem" : "16rem");
+    document.documentElement?.style.setProperty(
+      "--sidebar-width",
+      isCollapsed ? "4rem" : "16rem",
+    );
   }, [isCollapsed]);
 
   // Auto-close mobile menu on route change
@@ -86,13 +95,17 @@ export default function ResponsiveSidebar({ className }: ResponsiveSidebarProps)
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (!isMobileOpen) return;
-      if (sidebarRef.current && !sidebarRef.current.contains(e.target as Node)) {
+      if (
+        sidebarRef.current &&
+        !sidebarRef.current.contains(e.target as Node)
+      ) {
         setIsMobileOpen(false);
       }
     };
     if (typeof document !== "undefined") {
       document.addEventListener("mousedown", handleClickOutside);
-      return () => document.removeEventListener("mousedown", handleClickOutside);
+      return () =>
+        document.removeEventListener("mousedown", handleClickOutside);
     }
   }, [isMobileOpen]);
 
@@ -111,7 +124,8 @@ export default function ResponsiveSidebar({ className }: ResponsiveSidebarProps)
     (async () => {
       const supabase = getSupabaseClient();
       if (!supabase) return;
-      const { data: { session } = { session: null } } = await supabase.auth.getSession();
+      const { data: { session } = { session: null } } =
+        await supabase.auth.getSession();
       setUser(session?.user ?? null);
 
       if (session?.user) {
@@ -157,16 +171,59 @@ export default function ResponsiveSidebar({ className }: ResponsiveSidebarProps)
   };
 
   const navigationItems = [
-    { title: "Dashboard", href: getDashboardRoute(), icon: Home, color: "text-blue-600", bgColor: "bg-blue-50" },
-    { title: "Research Hub", href: "/research-hub", icon: Search, color: "text-purple-600", bgColor: "bg-purple-50" },
-    { title: "Study Schedule", href: "/study-schedule", icon: Calendar, color: "text-amber-600", bgColor: "bg-amber-50" },
-    { title: "Assignments", href: "/assignments", icon: FileText, color: "text-red-600", bgColor: "bg-red-50" },
-    { title: "Reflect & Grow", href: "/tools/memory-manager", icon: Brain, color: "text-indigo-600", bgColor: "bg-indigo-50" },
-    { title: "Wellbeing", href: "/wellbeing", icon: Heart, color: "text-pink-600", bgColor: "bg-pink-50" },
+    {
+      title: "Dashboard",
+      href: getDashboardRoute(),
+      icon: Home,
+      color: "text-blue-600",
+      bgColor: "bg-blue-50",
+    },
+    {
+      title: "Research Hub",
+      href: "/research-hub",
+      icon: Search,
+      color: "text-purple-600",
+      bgColor: "bg-purple-50",
+    },
+    {
+      title: "Study Schedule",
+      href: "/study-schedule",
+      icon: Calendar,
+      color: "text-amber-600",
+      bgColor: "bg-amber-50",
+    },
+    {
+      title: "Assignments",
+      href: "/assignments",
+      icon: FileText,
+      color: "text-red-600",
+      bgColor: "bg-red-50",
+    },
+    {
+      title: "Reflect & Grow",
+      href: "/tools/memory-manager",
+      icon: Brain,
+      color: "text-indigo-600",
+      bgColor: "bg-indigo-50",
+    },
+    {
+      title: "Wellbeing",
+      href: "/wellbeing",
+      icon: Heart,
+      color: "text-pink-600",
+      bgColor: "bg-pink-50",
+    },
   ];
 
   const personalizationItems = [
-    { title: "🎓 Onboarding Setup", href: "/onboarding/OnboardingPage", icon: GraduationCap, color: "text-teal-600", bgColor: "bg-teal-50", needsBadge: true },
+    {
+      title: "🎓 Onboarding Setup",
+      href: "/onboarding/OnboardingPage",
+      icon: GraduationCap,
+      color: "text-teal-600",
+      bgColor: "bg-teal-50",
+      needsBadge: true,
+    },
   ];
 
   const isActive = (href: string) => {
@@ -179,9 +236,20 @@ export default function ResponsiveSidebar({ className }: ResponsiveSidebarProps)
       {/* Header */}
       <div className="p-6 border-b border-gray-200/50">
         <div className="flex items-center justify-between">
-          <div className={clsx("flex items-center gap-3", isCollapsed && "justify-center")}>
+          <div
+            className={clsx(
+              "flex items-center gap-3",
+              isCollapsed && "justify-center",
+            )}
+          >
             {isCollapsed ? (
-              <Logo variant="dark" size="sm" href="/" showIcon showText={false} />
+              <Logo
+                variant="dark"
+                size="sm"
+                href="/"
+                showIcon
+                showText={false}
+              />
             ) : (
               <div className="flex flex-col">
                 <Logo variant="dark" size="sm" href="/" />
@@ -197,7 +265,11 @@ export default function ResponsiveSidebar({ className }: ResponsiveSidebarProps)
             aria-expanded={!isCollapsed}
             aria-controls="sidebar-nav"
           >
-            {isCollapsed ? <ChevronRight className="w-4 h-4 text-gray-600" /> : <ChevronLeft className="w-4 h-4 text-gray-600" />}
+            {isCollapsed ? (
+              <ChevronRight className="w-4 h-4 text-gray-600" />
+            ) : (
+              <ChevronLeft className="w-4 h-4 text-gray-600" />
+            )}
           </button>
 
           {/* Mobile close */}
@@ -217,17 +289,32 @@ export default function ResponsiveSidebar({ className }: ResponsiveSidebarProps)
           const IconComponent = item.icon;
           const active = isActive(item.href);
           return (
-            <Link key={index} href={item.href} onClick={() => setIsMobileOpen(false)}>
+            <Link
+              key={index}
+              href={item.href}
+              onClick={() => setIsMobileOpen(false)}
+            >
               <div
                 className={clsx(
                   "group relative flex items-center gap-3 p-3 rounded-xl transition-all duration-200 min-h-[44px]",
-                  active ? `${item.bgColor} ${item.color} shadow-sm` : "text-gray-600 hover:bg-gray-50",
-                  isCollapsed && "justify-center"
+                  active
+                    ? `${item.bgColor} ${item.color} shadow-sm`
+                    : "text-gray-600 hover:bg-gray-50",
+                  isCollapsed && "justify-center",
                 )}
               >
-                <IconComponent className={clsx("w-5 h-5 transition-transform duration-200", active ? "scale-110" : "group-hover:scale-105")} />
-                {!isCollapsed && <span className="font-medium">{item.title}</span>}
-                {active && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-gradient-to-b from-blue-500 to-purple-600 rounded-r-full" />}
+                <IconComponent
+                  className={clsx(
+                    "w-5 h-5 transition-transform duration-200",
+                    active ? "scale-110" : "group-hover:scale-105",
+                  )}
+                />
+                {!isCollapsed && (
+                  <span className="font-medium">{item.title}</span>
+                )}
+                {active && (
+                  <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-gradient-to-b from-blue-500 to-purple-600 rounded-r-full" />
+                )}
               </div>
             </Link>
           );
@@ -237,29 +324,49 @@ export default function ResponsiveSidebar({ className }: ResponsiveSidebarProps)
         {!isCollapsed && (
           <div className="pt-6">
             <div className="px-3 pb-2">
-              <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Personalization</h3>
+              <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                Personalization
+              </h3>
             </div>
             {personalizationItems.map((item, index) => {
               const IconComponent = item.icon;
               const active = isActive(item.href);
               return (
-                <Link key={`personalization-${index}`} href={item.href} onClick={() => setIsMobileOpen(false)}>
+                <Link
+                  key={`personalization-${index}`}
+                  href={item.href}
+                  onClick={() => setIsMobileOpen(false)}
+                >
                   <div
                     className={clsx(
                       "group relative flex items-center justify-between p-3 rounded-xl transition-all duration-200 min-h-[44px]",
-                      active ? `${item.bgColor} ${item.color} shadow-sm` : "text-gray-600 hover:bg-gray-50"
+                      active
+                        ? `${item.bgColor} ${item.color} shadow-sm`
+                        : "text-gray-600 hover:bg-gray-50",
                     )}
                   >
                     <div className="flex items-center gap-3">
-                      <IconComponent className={clsx("w-5 h-5 transition-transform duration-200", active ? "scale-110" : "group-hover:scale-105")} />
+                      <IconComponent
+                        className={clsx(
+                          "w-5 h-5 transition-transform duration-200",
+                          active ? "scale-110" : "group-hover:scale-105",
+                        )}
+                      />
                       <span className="font-medium">{item.title}</span>
                     </div>
                     {item.needsBadge && shouldShowOnboardingBadge() && (
-                      <span className={clsx("inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium", getOnboardingBadgeColor())}>
+                      <span
+                        className={clsx(
+                          "inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium",
+                          getOnboardingBadgeColor(),
+                        )}
+                      >
                         {getOnboardingBadgeText()}
                       </span>
                     )}
-                    {active && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-gradient-to-b from-teal-500 to-blue-600 rounded-r-full" />}
+                    {active && (
+                      <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-gradient-to-b from-teal-500 to-blue-600 rounded-r-full" />
+                    )}
                   </div>
                 </Link>
               );
@@ -273,23 +380,39 @@ export default function ResponsiveSidebar({ className }: ResponsiveSidebarProps)
             const IconComponent = item.icon;
             const active = isActive(item.href);
             return (
-              <Link key={`personalization-collapsed-${index}`} href={item.href} onClick={() => setIsMobileOpen(false)}>
+              <Link
+                key={`personalization-collapsed-${index}`}
+                href={item.href}
+                onClick={() => setIsMobileOpen(false)}
+              >
                 <div
                   className={clsx(
                     "group relative flex items-center justify-center p-3 rounded-xl transition-all duration-200 min-h-[44px]",
-                    active ? `${item.bgColor} ${item.color} shadow-sm` : "text-gray-600 hover:bg-gray-50"
+                    active
+                      ? `${item.bgColor} ${item.color} shadow-sm`
+                      : "text-gray-600 hover:bg-gray-50",
                   )}
                 >
-                  <IconComponent className={clsx("w-5 h-5 transition-transform duration-200", active ? "scale-110" : "group-hover:scale-105")} />
+                  <IconComponent
+                    className={clsx(
+                      "w-5 h-5 transition-transform duration-200",
+                      active ? "scale-110" : "group-hover:scale-105",
+                    )}
+                  />
                   {item.needsBadge && shouldShowOnboardingBadge() && (
                     <div
                       className={clsx(
                         "absolute -top-1 -right-1 w-3 h-3 rounded-full border-2 border-white",
-                        onboardingStatus === "partial" && onboardingProgress >= 50 ? "bg-orange-400" : "bg-red-400"
+                        onboardingStatus === "partial" &&
+                          onboardingProgress >= 50
+                          ? "bg-orange-400"
+                          : "bg-red-400",
                       )}
                     />
                   )}
-                  {active && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-gradient-to-b from-teal-500 to-blue-600 rounded-r-full" />}
+                  {active && (
+                    <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-gradient-to-b from-teal-500 to-blue-600 rounded-r-full" />
+                  )}
                 </div>
               </Link>
             );
@@ -304,8 +427,10 @@ export default function ResponsiveSidebar({ className }: ResponsiveSidebarProps)
               {(user.email?.[0] || "U").toUpperCase()}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-800 truncate">{user.email?.split("@")[0] || "User"}</p>
-              <p className="text-xs text-gray-500">MyDurhamLaw Student</p>
+              <p className="text-sm font-medium text-gray-800 truncate">
+                {user.email?.split("@")[0] || "User"}
+              </p>
+              <p className="text-xs text-gray-500">Caseway Student</p>
             </div>
           </div>
         )}
@@ -318,7 +443,7 @@ export default function ResponsiveSidebar({ className }: ResponsiveSidebarProps)
             }}
             className={clsx(
               "w-full flex items-center gap-3 p-3 rounded-xl text-gray-600 hover:bg-gray-50 transition-colors duration-200 min-h-[44px]",
-              isCollapsed && "justify-center"
+              isCollapsed && "justify-center",
             )}
           >
             <Settings className="w-5 h-5" />
@@ -332,7 +457,7 @@ export default function ResponsiveSidebar({ className }: ResponsiveSidebarProps)
             }}
             className={clsx(
               "w-full flex items-center gap-3 p-3 rounded-xl text-red-600 hover:bg-red-50 transition-colors duration-200 min-h-[44px]",
-              isCollapsed && "justify-center"
+              isCollapsed && "justify-center",
             )}
           >
             <LogOut className="w-5 h-5" />
@@ -358,7 +483,10 @@ export default function ResponsiveSidebar({ className }: ResponsiveSidebarProps)
 
       {/* Mobile backdrop */}
       {isMobileOpen && (
-        <div className="lg:hidden fixed inset-0 bg-black/20 backdrop-blur-sm z-40 transition-opacity duration-300" onClick={closeMobileMenu} />
+        <div
+          className="lg:hidden fixed inset-0 bg-black/20 backdrop-blur-sm z-40 transition-opacity duration-300"
+          onClick={closeMobileMenu}
+        />
       )}
 
       {/* Desktop sidebar */}
@@ -367,20 +495,33 @@ export default function ResponsiveSidebar({ className }: ResponsiveSidebarProps)
           "hidden lg:block fixed left-0 top-0 h-full bg-white/95 backdrop-blur-sm border-r border-gray-200/50 transition-all duration-300 ease-in-out shadow-lg z-30",
           isCollapsed ? "w-16" : "w-64",
           "hover:w-64 group",
-          className
+          className,
         )}
         onMouseEnter={() => {
           if (isCollapsed && typeof document !== "undefined") {
-            document.documentElement.style.setProperty("--sidebar-width", "16rem");
+            document.documentElement.style.setProperty(
+              "--sidebar-width",
+              "16rem",
+            );
           }
         }}
         onMouseLeave={() => {
           if (isCollapsed && typeof document !== "undefined") {
-            document.documentElement.style.setProperty("--sidebar-width", "4rem");
+            document.documentElement.style.setProperty(
+              "--sidebar-width",
+              "4rem",
+            );
           }
         }}
       >
-        <div className={clsx("transition-all duration-300 ease-in-out", isCollapsed ? "group-hover:block" : "block")}>{sidebarContent}</div>
+        <div
+          className={clsx(
+            "transition-all duration-300 ease-in-out",
+            isCollapsed ? "group-hover:block" : "block",
+          )}
+        >
+          {sidebarContent}
+        </div>
       </div>
 
       {/* Mobile sidebar */}
@@ -389,7 +530,7 @@ export default function ResponsiveSidebar({ className }: ResponsiveSidebarProps)
         id="mobile-sidebar"
         className={clsx(
           "lg:hidden fixed left-0 top-0 h-full w-72 bg-white/95 backdrop-blur-sm border-r border-gray-200/50 shadow-lg z-50 transition-transform duration-300 ease-in-out",
-          isMobileOpen ? "translate-x-0" : "-translate-x-full"
+          isMobileOpen ? "translate-x-0" : "-translate-x-full",
         )}
       >
         {sidebarContent}

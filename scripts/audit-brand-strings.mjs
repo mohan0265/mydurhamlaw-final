@@ -1,0 +1,96 @@
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const rootDir = path.resolve(__dirname, "..");
+
+const FORBIDDEN_STRINGS = ["MyDurhamLaw", "mydurhamlaw.com"];
+const EXCLUDED_DIRS = [
+  "docs",
+  "node_modules",
+  ".next",
+  ".git",
+  ".vscode",
+  "coverage",
+  "dist",
+  "build",
+];
+const EXCLUDED_FILES = [
+  "audit-brand-strings.mjs",
+  "package-lock.json",
+  "yarn.lock",
+  "pnpm-lock.yaml",
+];
+
+let foundErrors = false;
+
+function scanDirectory(directory) {
+  const files = fs.readdirSync(directory);
+
+  for (const file of files) {
+    const fullPath = path.join(directory, file);
+    const stat = fs.statSync(fullPath);
+
+    if (stat.isDirectory()) {
+      if (!EXCLUDED_DIRS.includes(file)) {
+        scanDirectory(fullPath);
+      }
+    } else {
+      if (
+        !EXCLUDED_FILES.includes(file) &&
+        !file.endsWith(".png") &&
+        !file.endsWith(".jpg") &&
+        !file.endsWith(".ico") &&
+        !file.endsWith(".svg")
+      ) {
+        checkFile(fullPath);
+      }
+    }
+  }
+}
+
+function checkFile(filePath) {
+  try {
+    const content = fs.readFileSync(filePath, "utf8");
+
+    // Check line by line for better reporting
+    const lines = content.split("\n");
+    lines.forEach((line, index) => {
+      for (const forbidden of FORBIDDEN_STRINGS) {
+        if (line.includes(forbidden)) {
+          // Ignore imports of legacy components if we are just renaming visible text,
+          // but goal is full rebrand. Let's flag everything.
+          // Exception: if it's in a comment that says "Legacy" maybe?
+          // For now, strict check.
+
+          // Exclude this script itself if somehow checked (already excluded by filename but just in case)
+          if (filePath.includes("audit-brand-strings.mjs")) return;
+
+          console.error(
+            `[FAIL] Found "${forbidden}" in ${path.relative(rootDir, filePath)}:${index + 1}`,
+          );
+          console.error(`       Line: ${line.trim().substring(0, 100)}...`);
+          foundErrors = true;
+        }
+      }
+    });
+  } catch (err) {
+    console.error(`Error reading ${filePath}:`, err);
+  }
+}
+
+console.log("🔍 Starting Brand String Audit...");
+console.log(`Checking for: ${FORBIDDEN_STRINGS.join(", ")}`);
+console.log(`Excluding directories: ${EXCLUDED_DIRS.join(", ")}`);
+
+scanDirectory(rootDir);
+
+if (foundErrors) {
+  console.error("\n❌ Audit FAILED. Found legacy brand strings.");
+  process.exit(1);
+} else {
+  console.log("\n✅ Audit PASSED. No legacy brand strings found.");
+  process.exit(0);
+}

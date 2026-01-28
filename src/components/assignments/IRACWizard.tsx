@@ -1,22 +1,21 @@
+"use client";
 
-'use client';
-
-import React, { useState, useEffect } from 'react';
-import { useFeatureFlag } from '@/lib/flags';
-import { telemetry } from '@/lib/telemetry';
-import { resilientFetch } from '@/lib/resilient-fetch';
-import { 
-  FileText, 
-  Save, 
-  Download, 
+import React, { useState, useEffect } from "react";
+import { useFeatureFlag } from "@/lib/flags";
+import { telemetry } from "@/lib/telemetry";
+import { resilientFetch } from "@/lib/resilient-fetch";
+import {
+  FileText,
+  Save,
+  Download,
   AlertTriangle,
   ChevronRight,
   ChevronLeft,
   CheckCircle,
   Edit3,
-  Eye
-} from 'lucide-react';
-import toast from 'react-hot-toast';
+  Eye,
+} from "lucide-react";
+import toast from "react-hot-toast";
 
 interface Assignment {
   id?: string;
@@ -37,29 +36,49 @@ interface Props {
   onSave?: (assignment: Assignment) => void;
 }
 
-const STEPS = ['Issue', 'Research', 'Analysis', 'Conclusion'];
+const STEPS = ["Issue", "Research", "Analysis", "Conclusion"];
 const INTEGRITY_LEVELS = [
-  { value: 'study_aid', label: 'Study Aid', description: 'Learning and understanding concepts' },
-  { value: 'research', label: 'Research', description: 'Gathering information and sources' },
-  { value: 'draft', label: 'Draft', description: 'Initial structuring and organizing ideas' },
-  { value: 'final', label: 'Final', description: 'Completed work for submission' },
+  {
+    value: "study_aid",
+    label: "Study Aid",
+    description: "Learning and understanding concepts",
+  },
+  {
+    value: "research",
+    label: "Research",
+    description: "Gathering information and sources",
+  },
+  {
+    value: "draft",
+    label: "Draft",
+    description: "Initial structuring and organizing ideas",
+  },
+  {
+    value: "final",
+    label: "Final",
+    description: "Completed work for submission",
+  },
 ];
 
-export default function IRACWizard({ assignmentId, initialData, onSave }: Props) {
-  const isEnabled = useFeatureFlag('ff_assignment_oscola');
+export default function IRACWizard({
+  assignmentId,
+  initialData,
+  onSave,
+}: Props) {
+  const isEnabled = useFeatureFlag("ff_assignment_oscola");
   const [currentStep, setCurrentStep] = useState(0);
   const [assignment, setAssignment] = useState<Assignment>({
-    title: '',
-    module: '',
-    integrity_level: 'study_aid',
-    status: 'draft',
-    issue: '',
-    research: '',
-    analysis: '',
-    draft: '',
+    title: "",
+    module: "",
+    integrity_level: "study_aid",
+    status: "draft",
+    issue: "",
+    research: "",
+    analysis: "",
+    draft: "",
     ...initialData,
   });
-  
+
   const [isSaving, setIsSaving] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [showIntegrityDialog, setShowIntegrityDialog] = useState(false);
@@ -72,7 +91,7 @@ export default function IRACWizard({ assignmentId, initialData, onSave }: Props)
 
   useEffect(() => {
     if (initialData) {
-      setAssignment(prev => ({ ...prev, ...initialData }));
+      setAssignment((prev) => ({ ...prev, ...initialData }));
     }
   }, [initialData]);
 
@@ -84,61 +103,75 @@ export default function IRACWizard({ assignmentId, initialData, onSave }: Props)
       analysis: countWords(assignment.analysis),
       draft: countWords(assignment.draft),
     });
-  }, [assignment.issue, assignment.research, assignment.analysis, assignment.draft]);
+  }, [
+    assignment.issue,
+    assignment.research,
+    assignment.analysis,
+    assignment.draft,
+  ]);
 
   const countWords = (text: string) => {
-    return text.trim().split(/\s+/).filter(word => word.length > 0).length;
+    return text
+      .trim()
+      .split(/\s+/)
+      .filter((word) => word.length > 0).length;
   };
 
   const handleFieldChange = (field: keyof Assignment, value: string) => {
-    setAssignment(prev => ({ ...prev, [field]: value }));
+    setAssignment((prev) => ({ ...prev, [field]: value }));
     setHasUnsavedChanges(true);
   };
 
   const saveAssignment = async () => {
     if (!assignment.title.trim()) {
-      toast.error('Please enter a title for your assignment');
+      toast.error("Please enter a title for your assignment");
       return;
     }
 
     try {
       setIsSaving(true);
-      
-      const endpoint = assignmentId ? 
-        `/api/assignments/${assignmentId}` : 
-        '/api/assignments';
-      
-      const method = assignmentId ? 'PUT' : 'POST';
+
+      const endpoint = assignmentId
+        ? `/api/assignments/${assignmentId}`
+        : "/api/assignments";
+
+      const method = assignmentId ? "PUT" : "POST";
 
       const assignmentData = {
         ...assignment,
-        word_count: wordCounts.issue + wordCounts.research + wordCounts.analysis + wordCounts.draft,
+        word_count:
+          wordCounts.issue +
+          wordCounts.research +
+          wordCounts.analysis +
+          wordCounts.draft,
       };
 
       const response = await resilientFetch(endpoint, {
         method,
         headers: {
-          'Content-Type': 'application/json',
-          'x-user-id': 'current-user', // TODO: Get from auth context
+          "Content-Type": "application/json",
+          "x-user-id": "current-user", // TODO: Get from auth context
         },
         body: JSON.stringify(assignmentData),
-        endpoint: 'assignments',
+        endpoint: "assignments",
       });
 
       const result = await response.json();
-      
+
       if (result.success) {
         setHasUnsavedChanges(false);
-        toast.success(assignmentId ? 'Assignment updated!' : 'Assignment created!');
-        
-        telemetry.assignmentCreated(assignment.module, 'IRAC');
+        toast.success(
+          assignmentId ? "Assignment updated!" : "Assignment created!",
+        );
+
+        telemetry.assignmentCreated(assignment.module, "IRAC");
         onSave?.(result.assignment);
       } else {
-        throw new Error(result.error || 'Failed to save assignment');
+        throw new Error(result.error || "Failed to save assignment");
       }
     } catch (error) {
-      console.error('Save assignment error:', error);
-      toast.error('Failed to save assignment');
+      console.error("Save assignment error:", error);
+      toast.error("Failed to save assignment");
     } finally {
       setIsSaving(false);
     }
@@ -147,8 +180,8 @@ export default function IRACWizard({ assignmentId, initialData, onSave }: Props)
   const exportAssignment = () => {
     const content = `
 # ${assignment.title}
-${assignment.module ? `**Module:** ${assignment.module}` : ''}
-${assignment.due_date ? `**Due Date:** ${new Date(assignment.due_date).toLocaleDateString('en-GB', { timeZone: 'Europe/London' })}` : ''}
+${assignment.module ? `**Module:** ${assignment.module}` : ""}
+${assignment.due_date ? `**Due Date:** ${new Date(assignment.due_date).toLocaleDateString("en-GB", { timeZone: "Europe/London" })}` : ""}
 
 ## Issue
 ${assignment.issue}
@@ -164,21 +197,21 @@ ${assignment.draft}
 
 ---
 **Word Count:** ${wordCounts.issue + wordCounts.research + wordCounts.analysis + wordCounts.draft} words
-**Integrity Level:** ${INTEGRITY_LEVELS.find(level => level.value === assignment.integrity_level)?.label}
-**Generated by MyDurhamLaw IRAC Wizard**
+**Integrity Level:** ${INTEGRITY_LEVELS.find((level) => level.value === assignment.integrity_level)?.label}
+**Generated by Caseway IRAC Wizard**
 `.trim();
 
-    const blob = new Blob([content], { type: 'text/markdown' });
+    const blob = new Blob([content], { type: "text/markdown" });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
+    const a = document.createElement("a");
     a.href = url;
-    a.download = `${assignment.title.replace(/[^a-zA-Z0-9]/g, '_')}.md`;
+    a.download = `${assignment.title.replace(/[^a-zA-Z0-9]/g, "_")}.md`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
 
-    toast.success('Assignment exported!');
+    toast.success("Assignment exported!");
   };
 
   const nextStep = () => {
@@ -204,7 +237,7 @@ ${assignment.draft}
               </label>
               <textarea
                 value={assignment.issue}
-                onChange={(e) => handleFieldChange('issue', e.target.value)}
+                onChange={(e) => handleFieldChange("issue", e.target.value)}
                 placeholder="What is the key legal question or problem that needs to be resolved? Be specific and concise."
                 rows={8}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -215,8 +248,9 @@ ${assignment.draft}
             </div>
             <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
               <div className="text-sm text-blue-800">
-                <strong>Tip:</strong> Frame the issue as a question. For example: 
-                "Did X owe a duty of care to Y under the principle established in Donoghue v Stevenson?"
+                <strong>Tip:</strong> Frame the issue as a question. For
+                example: "Did X owe a duty of care to Y under the principle
+                established in Donoghue v Stevenson?"
               </div>
             </div>
           </div>
@@ -231,7 +265,7 @@ ${assignment.draft}
               </label>
               <textarea
                 value={assignment.research}
-                onChange={(e) => handleFieldChange('research', e.target.value)}
+                onChange={(e) => handleFieldChange("research", e.target.value)}
                 placeholder="What are the relevant legal principles, statutes, and case law that apply to this issue?"
                 rows={10}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -242,8 +276,9 @@ ${assignment.draft}
             </div>
             <div className="p-3 bg-green-50 rounded-lg border border-green-200">
               <div className="text-sm text-green-800">
-                <strong>Remember:</strong> Include relevant statutes, case law, and legal principles. 
-                Ensure you cite sources properly using OSCOLA format.
+                <strong>Remember:</strong> Include relevant statutes, case law,
+                and legal principles. Ensure you cite sources properly using
+                OSCOLA format.
               </div>
             </div>
           </div>
@@ -258,7 +293,7 @@ ${assignment.draft}
               </label>
               <textarea
                 value={assignment.analysis}
-                onChange={(e) => handleFieldChange('analysis', e.target.value)}
+                onChange={(e) => handleFieldChange("analysis", e.target.value)}
                 placeholder="Apply the legal rules to the facts of your case. Analyze both sides of the argument."
                 rows={12}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -269,8 +304,9 @@ ${assignment.draft}
             </div>
             <div className="p-3 bg-purple-50 rounded-lg border border-purple-200">
               <div className="text-sm text-purple-800">
-                <strong>Analysis Tips:</strong> Consider counterarguments, distinguish cases, 
-                and explain why certain rules apply or don't apply to your facts.
+                <strong>Analysis Tips:</strong> Consider counterarguments,
+                distinguish cases, and explain why certain rules apply or don't
+                apply to your facts.
               </div>
             </div>
           </div>
@@ -285,7 +321,7 @@ ${assignment.draft}
               </label>
               <textarea
                 value={assignment.draft}
-                onChange={(e) => handleFieldChange('draft', e.target.value)}
+                onChange={(e) => handleFieldChange("draft", e.target.value)}
                 placeholder="What is your conclusion based on your analysis? Summarize your reasoning."
                 rows={6}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -296,8 +332,9 @@ ${assignment.draft}
             </div>
             <div className="p-3 bg-amber-50 rounded-lg border border-amber-200">
               <div className="text-sm text-amber-800">
-                <strong>Conclusion:</strong> Directly answer the issue you identified. 
-                Be definitive but acknowledge limitations or uncertainties where appropriate.
+                <strong>Conclusion:</strong> Directly answer the issue you
+                identified. Be definitive but acknowledge limitations or
+                uncertainties where appropriate.
               </div>
             </div>
           </div>
@@ -325,8 +362,12 @@ ${assignment.draft}
           <div className="flex items-center space-x-3">
             <FileText className="h-6 w-6 text-blue-600" />
             <div>
-              <h2 className="text-xl font-semibold text-gray-900">IRAC Wizard</h2>
-              <p className="text-sm text-gray-600">Structure your legal analysis</p>
+              <h2 className="text-xl font-semibold text-gray-900">
+                IRAC Wizard
+              </h2>
+              <p className="text-sm text-gray-600">
+                Structure your legal analysis
+              </p>
             </div>
           </div>
           <div className="flex items-center space-x-2">
@@ -338,7 +379,12 @@ ${assignment.draft}
               <span>Academic Integrity</span>
             </button>
             <div className="text-sm text-gray-500">
-              Total: {wordCounts.issue + wordCounts.research + wordCounts.analysis + wordCounts.draft} words
+              Total:{" "}
+              {wordCounts.issue +
+                wordCounts.research +
+                wordCounts.analysis +
+                wordCounts.draft}{" "}
+              words
             </div>
           </div>
         </div>
@@ -352,7 +398,7 @@ ${assignment.draft}
             <input
               type="text"
               value={assignment.title}
-              onChange={(e) => handleFieldChange('title', e.target.value)}
+              onChange={(e) => handleFieldChange("title", e.target.value)}
               placeholder="Enter assignment title"
               className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
@@ -363,8 +409,8 @@ ${assignment.draft}
             </label>
             <input
               type="text"
-              value={assignment.module || ''}
-              onChange={(e) => handleFieldChange('module', e.target.value)}
+              value={assignment.module || ""}
+              onChange={(e) => handleFieldChange("module", e.target.value)}
               placeholder="e.g., Contract Law"
               className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
@@ -375,8 +421,8 @@ ${assignment.draft}
             </label>
             <input
               type="date"
-              value={assignment.due_date || ''}
-              onChange={(e) => handleFieldChange('due_date', e.target.value)}
+              value={assignment.due_date || ""}
+              onChange={(e) => handleFieldChange("due_date", e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
@@ -393,10 +439,10 @@ ${assignment.draft}
                 onClick={() => setCurrentStep(index)}
                 className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                   currentStep === index
-                    ? 'bg-blue-600 text-white'
+                    ? "bg-blue-600 text-white"
                     : currentStep > index
-                    ? 'bg-green-100 text-green-800'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                      ? "bg-green-100 text-green-800"
+                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                 }`}
               >
                 {currentStep > index ? (
@@ -410,7 +456,7 @@ ${assignment.draft}
               </button>
             ))}
           </div>
-          
+
           <div className="flex items-center space-x-2">
             <button
               onClick={prevStep}
@@ -439,7 +485,7 @@ ${assignment.draft}
             {STEPS[currentStep]}
           </h3>
         </div>
-        
+
         {getStepContent()}
       </div>
 
@@ -449,10 +495,12 @@ ${assignment.draft}
           <div className="flex items-center space-x-2">
             <select
               value={assignment.integrity_level}
-              onChange={(e) => handleFieldChange('integrity_level', e.target.value)}
+              onChange={(e) =>
+                handleFieldChange("integrity_level", e.target.value)
+              }
               className="text-sm border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              {INTEGRITY_LEVELS.map(level => (
+              {INTEGRITY_LEVELS.map((level) => (
                 <option key={level.value} value={level.value}>
                   {level.label}
                 </option>
@@ -469,7 +517,7 @@ ${assignment.draft}
               <Download className="h-4 w-4" />
               <span>Export</span>
             </button>
-            
+
             <button
               onClick={saveAssignment}
               disabled={isSaving || !assignment.title.trim()}
@@ -480,7 +528,7 @@ ${assignment.draft}
               ) : (
                 <Save className="h-4 w-4" />
               )}
-              <span>{isSaving ? 'Saving...' : 'Save'}</span>
+              <span>{isSaving ? "Saving..." : "Save"}</span>
             </button>
           </div>
         </div>
@@ -498,27 +546,43 @@ ${assignment.draft}
           <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
             <div className="flex items-center space-x-2 mb-4">
               <AlertTriangle className="h-5 w-5 text-amber-600" />
-              <h3 className="text-lg font-semibold text-gray-900">Academic Integrity Guidelines</h3>
+              <h3 className="text-lg font-semibold text-gray-900">
+                Academic Integrity Guidelines
+              </h3>
             </div>
-            
+
             <div className="space-y-3 text-sm text-gray-700">
               <p>
-                This IRAC Wizard is designed to help you <strong>structure</strong> and <strong>organize</strong> your legal analysis, not to replace your own thinking and writing.
+                This IRAC Wizard is designed to help you{" "}
+                <strong>structure</strong> and <strong>organize</strong> your
+                legal analysis, not to replace your own thinking and writing.
               </p>
-              
+
               <ul className="list-disc list-inside space-y-1">
-                <li>Use this tool to organize your thoughts and ensure proper IRAC structure</li>
+                <li>
+                  Use this tool to organize your thoughts and ensure proper IRAC
+                  structure
+                </li>
                 <li>All content must be your own work and understanding</li>
                 <li>Always cite sources properly using OSCOLA format</li>
-                <li>Declare any AI assistance as required by your institution</li>
+                <li>
+                  Declare any AI assistance as required by your institution
+                </li>
                 <li>Review your institution's academic integrity policies</li>
               </ul>
-              
+
               <p>
-                Current integrity level: <strong>{INTEGRITY_LEVELS.find(l => l.value === assignment.integrity_level)?.label}</strong>
+                Current integrity level:{" "}
+                <strong>
+                  {
+                    INTEGRITY_LEVELS.find(
+                      (l) => l.value === assignment.integrity_level,
+                    )?.label
+                  }
+                </strong>
               </p>
             </div>
-            
+
             <div className="mt-6 flex justify-end">
               <button
                 onClick={() => setShowIntegrityDialog(false)}

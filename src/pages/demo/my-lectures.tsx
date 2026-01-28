@@ -97,7 +97,7 @@ export default function MyLecturesDemo() {
               <div className="absolute inset-0 bg-indigo-200 blur-[80px] opacity-10 rounded-full"></div>
               <div className="bg-white rounded-[2.5rem] border border-gray-100 shadow-2xl p-8 relative z-10 overflow-hidden group">
                 <DemoPlayer
-                  video={DEMO_VIDEOS.lectures}
+                  video={DEMO_VIDEOS.lectures!}
                   trigger={
                     <div className="aspect-video bg-gray-50 rounded-2xl flex flex-col items-center justify-center text-center p-6 border border-dashed border-gray-200 cursor-pointer hover:bg-gray-100 transition-colors">
                       <div className="w-16 h-16 rounded-full bg-indigo-600 text-white flex items-center justify-center mb-4 shadow-lg group-hover:scale-110 transition">

@@ -18,6 +18,8 @@ import LayoutShell from "@/layout/LayoutShell";
 import Router from "next/router";
 import { ThemeProvider } from "@/components/theme/ThemeProvider";
 import { isRouteAbortError } from "@/lib/navigation/safeNavigate";
+import { TourProvider } from "@/components/onboarding/TourProvider";
+import { TourHelpButton } from "@/components/onboarding/TourHelpButton";
 
 // Server-only init
 /*
@@ -171,9 +173,12 @@ export default function App({ Component, pageProps }: AppProps) {
               <DurmahProvider>
                 <DurmahContextSetup />
                 <AppDurmahBootstrap>
-                  <LayoutShell>
-                    <Component {...pageProps} />
-                  </LayoutShell>
+                  <TourProvider>
+                    <LayoutShell>
+                      <Component {...pageProps} />
+                    </LayoutShell>
+                    <TourHelpButton />
+                  </TourProvider>
 
                   {/* Global Toaster */}
                   <Toaster

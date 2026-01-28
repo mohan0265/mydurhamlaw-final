@@ -263,7 +263,7 @@ export default function GlobalHeader() {
     () => ({
       label: "Info",
       items: [
-        { label: "About MyDurhamLaw", href: "/about" },
+        { label: "About Caseway", href: "/about" },
         { label: "Contact", href: "/contact" },
       ],
     }),

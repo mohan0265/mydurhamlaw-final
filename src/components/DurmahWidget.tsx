@@ -1859,6 +1859,7 @@ User question: ${userText}`;
         </div>
 
         <button
+          data-tour="global-durmah-fab"
           onClick={() => setIsOpen(true)}
           className={`flex items-center gap-3 pl-2 pr-5 py-2 rounded-full shadow-xl backdrop-blur-md transition-all duration-300 hover:-translate-y-1 hover:ring-2 hover:ring-violet-400/50 ${
             isVoiceActive
