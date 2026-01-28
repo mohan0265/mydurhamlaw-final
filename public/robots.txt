@@ -15,4 +15,4 @@ Disallow: /lounge
 Disallow: /planner
 Disallow: /year-at-a-glance
 
-Sitemap: https://mydurhamlaw.com/sitemap.xml
+Sitemap: https://casewaylaw.ai/sitemap.xml

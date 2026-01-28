@@ -1,12 +1,11 @@
-// src/lib/supabase/supabaseBridge.ts
 import {
   KEY_DATES_2025_26,
   computeDaysUntil,
   computeNowPhase,
   todayISOInTZ,
 } from "../durmah/phase";
-import { getSupabaseClient } from '@/lib/supabase/client';
-import type { MDLStudentContext, YearKey } from "../durmah/context";
+import { getSupabaseClient } from "@/lib/supabase/client";
+import type { CasewayStudentContext, YearKey } from "../durmah/context";
 
 type MinimalUser = { id: string; user_metadata?: Record<string, unknown> };
 
@@ -26,9 +25,9 @@ function deriveYearKey(meta?: Record<string, unknown>): YearKey {
     : "year1";
 }
 
-export async function loadMDLStudentContext(
-  user?: MinimalUser
-): Promise<MDLStudentContext> {
+export async function loadCasewayStudentContext(
+  user?: MinimalUser,
+): Promise<CasewayStudentContext> {
   let u = user;
   try {
     const supabase = getSupabaseClient();
@@ -52,7 +51,7 @@ export async function loadMDLStudentContext(
   const daysUntil = computeDaysUntil(nowISO, keyDates);
   const nowPhase = computeNowPhase(nowISO, keyDates);
 
-  const ctx: MDLStudentContext = {
+  const ctx: CasewayStudentContext = {
     userId,
     firstName,
     university: "Durham University",
@@ -68,7 +67,7 @@ export async function loadMDLStudentContext(
   };
 
   if (typeof window !== "undefined") {
-    (window as any).__mdlStudentContext = ctx;
+    (window as any).__casewayStudentContext = ctx;
   }
   return ctx;
 }

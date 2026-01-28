@@ -1,168 +1,187 @@
 // Debug page to help troubleshoot OAuth flow issues
-// Access this at: https://www.mydurhamlaw.com/debug-auth
-import { useEffect, useState } from 'react'
-import { getSupabaseClient } from '@/lib/supabase/client'
-import { getAuthRedirect } from '@/lib/authRedirect'
+// Access this at: https://www.casewaylaw.ai/debug-auth
+import { useEffect, useState } from "react";
+import { getSupabaseClient } from "@/lib/supabase/client";
+import { getAuthRedirect } from "@/lib/authRedirect";
 
 export default function DebugAuthPage() {
-  const [debugInfo, setDebugInfo] = useState<any>(null)
-  const [testResults, setTestResults] = useState<any>([])
-  const [isClient, setIsClient] = useState(false)
-  
+  const [debugInfo, setDebugInfo] = useState<any>(null);
+  const [testResults, setTestResults] = useState<any>([]);
+  const [isClient, setIsClient] = useState(false);
+
   useEffect(() => {
-    setIsClient(true)
-    runDiagnostics()
-  }, [])
+    setIsClient(true);
+    runDiagnostics();
+  }, []);
 
   const runDiagnostics = async () => {
-    if (typeof window === 'undefined') return
-    
-    const results = []
-    
+    if (typeof window === "undefined") return;
+
+    const results = [];
+
     // Test 1: Environment Variables
     results.push({
-      test: 'Environment Variables',
-      status: process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? 'PASS' : 'FAIL',
+      test: "Environment Variables",
+      status:
+        process.env.NEXT_PUBLIC_SUPABASE_URL &&
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+          ? "PASS"
+          : "FAIL",
       details: {
-        supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL ? 'Present' : 'Missing',
-        supabaseKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? 'Present' : 'Missing',
+        supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL
+          ? "Present"
+          : "Missing",
+        supabaseKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+          ? "Present"
+          : "Missing",
         urlLength: process.env.NEXT_PUBLIC_SUPABASE_URL?.length || 0,
-        keyLength: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.length || 0
-      }
-    })
+        keyLength: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.length || 0,
+      },
+    });
 
     // Test 2: Current Session
     const supabase = getSupabaseClient();
-    const { data: { session }, error } = supabase ? await supabase.auth.getSession() : { data: { session: null }, error: new Error("No client") };
+    const {
+      data: { session },
+      error,
+    } = supabase
+      ? await supabase.auth.getSession()
+      : { data: { session: null }, error: new Error("No client") };
     results.push({
-      test: 'Current Session',
-      status: session ? 'PASS' : 'FAIL',
+      test: "Current Session",
+      status: session ? "PASS" : "FAIL",
       details: {
         hasSession: !!session,
-        userId: session?.user?.id || 'None',
-        email: session?.user?.email || 'None',
-        error: error ? (error as any)?.message || String(error) : 'None'
-      }
-    })
+        userId: session?.user?.id || "None",
+        email: session?.user?.email || "None",
+        error: error ? (error as any)?.message || String(error) : "None",
+      },
+    });
 
     // Test 3: URL Parameters (check for OAuth callback) - now inside useEffect guard
-    const urlParams = new URLSearchParams(window.location.search)
-    const hasCode = urlParams.has('code')
-    const hasError = urlParams.has('error')
-    
+    const urlParams = new URLSearchParams(window.location.search);
+    const hasCode = urlParams.has("code");
+    const hasError = urlParams.has("error");
+
     results.push({
-      test: 'URL Parameters',
-      status: hasCode ? 'OAUTH_CALLBACK' : 'NORMAL_PAGE',
+      test: "URL Parameters",
+      status: hasCode ? "OAUTH_CALLBACK" : "NORMAL_PAGE",
       details: {
         hasCode: hasCode,
         hasError: hasError,
-        code: hasCode ? urlParams.get('code')?.substring(0, 20) + '...' : 'None',
-        error: hasError ? urlParams.get('error') : 'None',
-        fullUrl: window.location.href
-      }
-    })
+        code: hasCode
+          ? urlParams.get("code")?.substring(0, 20) + "..."
+          : "None",
+        error: hasError ? urlParams.get("error") : "None",
+        fullUrl: window.location.href,
+      },
+    });
 
     // Test 4: Local Storage - now inside useEffect guard
-    const authToken = localStorage.getItem('supabase.auth.token')
+    const authToken = localStorage.getItem("supabase.auth.token");
     results.push({
-      test: 'Local Storage',
-      status: authToken ? 'PASS' : 'FAIL',
+      test: "Local Storage",
+      status: authToken ? "PASS" : "FAIL",
       details: {
         hasAuthToken: !!authToken,
         tokenLength: authToken?.length || 0,
-        storageKeys: Object.keys(localStorage).filter(key => key.includes('supabase') || key.includes('auth'))
-      }
-    })
+        storageKeys: Object.keys(localStorage).filter(
+          (key) => key.includes("supabase") || key.includes("auth"),
+        ),
+      },
+    });
 
     // Test 5: Supabase Connection
     try {
-      const supabase = getSupabaseClient()
+      const supabase = getSupabaseClient();
       if (!supabase) {
         results.push({
-          test: 'Supabase Connection',
-          status: 'FAIL',
+          test: "Supabase Connection",
+          status: "FAIL",
           details: {
             connected: false,
-            error: 'Supabase client not available'
-          }
-        })
+            error: "Supabase client not available",
+          },
+        });
       } else {
-        const { data, error } = await supabase.auth.getUser()
+        const { data, error } = await supabase.auth.getUser();
         results.push({
-          test: 'Supabase Connection',
-          status: error ? 'FAIL' : 'PASS',
+          test: "Supabase Connection",
+          status: error ? "FAIL" : "PASS",
           details: {
             connected: !error,
-            user: data?.user?.id || 'None',
-            error: error?.message || 'None'
-          }
-        })
+            user: data?.user?.id || "None",
+            error: error?.message || "None",
+          },
+        });
       }
     } catch (err: any) {
       results.push({
-        test: 'Supabase Connection',
-        status: 'FAIL',
+        test: "Supabase Connection",
+        status: "FAIL",
         details: {
           connected: false,
-          error: err.message
-        }
-      })
+          error: err.message,
+        },
+      });
     }
 
-    setTestResults(results)
+    setTestResults(results);
     setDebugInfo({
       timestamp: new Date().toISOString(),
       userAgent: navigator.userAgent,
       domain: window.location.hostname,
-      protocol: window.location.protocol
-    })
-  }
+      protocol: window.location.protocol,
+    });
+  };
 
   const testGoogleOAuth = async () => {
-    if (typeof window === 'undefined') return
-    
+    if (typeof window === "undefined") return;
+
     try {
-      const supabase = getSupabaseClient()
+      const supabase = getSupabaseClient();
       if (!supabase) {
-        alert('Supabase client not available')
-        return
+        alert("Supabase client not available");
+        return;
       }
 
-      const redirectTo = getAuthRedirect()
+      const redirectTo = getAuthRedirect();
       const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
+        provider: "google",
         options: {
           redirectTo,
           queryParams: {
-            access_type: 'offline',
-            prompt: 'consent'
+            access_type: "offline",
+            prompt: "consent",
           },
-          scopes: 'openid email profile'
-        }
-      })
+          scopes: "openid email profile",
+        },
+      });
 
       if (error) {
-        alert(`OAuth initiation failed: ${error.message}`)
+        alert(`OAuth initiation failed: ${error.message}`);
       } else {
-        alert('OAuth initiated successfully. You should be redirected to Google.')
+        alert(
+          "OAuth initiated successfully. You should be redirected to Google.",
+        );
       }
     } catch (err: any) {
-      alert(`OAuth error: ${err.message}`)
+      alert(`OAuth error: ${err.message}`);
     }
-  }
+  };
 
   const clearAuthData = () => {
-    if (typeof window === 'undefined') return
-    
-    localStorage.clear()
-    sessionStorage.clear()
-    const supabase = getSupabaseClient()
+    if (typeof window === "undefined") return;
+
+    localStorage.clear();
+    sessionStorage.clear();
+    const supabase = getSupabaseClient();
     if (supabase) {
-      supabase.auth.signOut()
+      supabase.auth.signOut();
     }
-    alert('Auth data cleared. Page will reload.')
-    window.location.reload()
-  }
+    alert("Auth data cleared. Page will reload.");
+    window.location.reload();
+  };
 
   // Don't render until client-side hydration is complete
   if (!isClient) {
@@ -180,7 +199,7 @@ export default function DebugAuthPage() {
           </div>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -190,7 +209,7 @@ export default function DebugAuthPage() {
           <h1 className="text-2xl font-bold text-gray-900 mb-6">
             🔍 OAuth Debug Dashboard
           </h1>
-          
+
           <div className="mb-6 flex gap-4">
             <button
               onClick={runDiagnostics}
@@ -226,18 +245,19 @@ export default function DebugAuthPage() {
               <div
                 key={index}
                 className={`p-4 rounded-md border-l-4 ${
-                  result.status === 'PASS' || result.status === 'OAUTH_CALLBACK'
-                    ? 'bg-green-50 border-green-400'
-                    : 'bg-red-50 border-red-400'
+                  result.status === "PASS" || result.status === "OAUTH_CALLBACK"
+                    ? "bg-green-50 border-green-400"
+                    : "bg-red-50 border-red-400"
                 }`}
               >
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="font-semibold text-gray-800">{result.test}</h3>
                   <span
                     className={`px-2 py-1 text-xs font-medium rounded ${
-                      result.status === 'PASS' || result.status === 'OAUTH_CALLBACK'
-                        ? 'bg-green-100 text-green-800'
-                        : 'bg-red-100 text-red-800'
+                      result.status === "PASS" ||
+                      result.status === "OAUTH_CALLBACK"
+                        ? "bg-green-100 text-green-800"
+                        : "bg-red-100 text-red-800"
                     }`}
                   >
                     {result.status}
@@ -265,26 +285,24 @@ export default function DebugAuthPage() {
 
           <div className="mt-4 text-sm text-gray-500">
             ⚠️ This page should be removed in production for security.
-            {isClient && (
-              <span> Current URL: {window.location.href}</span>
-            )}
+            {isClient && <span> Current URL: {window.location.href}</span>}
           </div>
         </div>
       </div>
     </div>
-  )
+  );
 }
 
 // Only show this page in development or when specifically accessed
 export async function getServerSideProps(context: any) {
   // Remove this check in production if you need to debug live issues
-  if (process.env.NODE_ENV === 'production' && !context.query.debug) {
+  if (process.env.NODE_ENV === "production" && !context.query.debug) {
     return {
-      notFound: true
-    }
+      notFound: true,
+    };
   }
-  
+
   return {
-    props: {}
-  }
+    props: {},
+  };
 }

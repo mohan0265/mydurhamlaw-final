@@ -9,13 +9,13 @@ export default function StayCurrentPage() {
     <div className="min-h-screen bg-white">
       <Head>
         <title>
-          Stay Current - Legal News & Commercial Awareness | MyDurhamLaw
+          Stay Current - Legal News & Commercial Awareness | Caseway
         </title>
         <meta
           name="description"
           content="Build commercial awareness with our live legal news feed, tailored for Durham Law students."
         />
-        <link rel="canonical" href="https://mydurhamlaw.com/stay-current" />
+        <link rel="canonical" href="https://casewaylaw.ai/stay-current" />
       </Head>
 
       <div className="py-20 lg:py-32 bg-gray-950 text-white overflow-hidden relative">

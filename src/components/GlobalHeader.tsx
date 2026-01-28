@@ -310,7 +310,7 @@ export default function GlobalHeader() {
       label: "Account",
       items: [
         { label: "Upgrade", href: "/lnat/pricing" },
-        { label: "Contact Support", href: "mailto:support@mydurhamlaw.com" },
+        { label: "Contact Support", href: "mailto:support@casewaylaw.ai" },
       ],
     };
     dashboardHref = "/lnat";

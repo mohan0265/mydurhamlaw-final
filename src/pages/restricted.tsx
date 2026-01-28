@@ -1,11 +1,14 @@
-import { GetServerSideProps } from 'next';
-import { useRouter } from 'next/router';
-import { getRestrictedMessageFor, type AccessDenialReason } from '@/lib/access/config';
-import { useState } from 'react';
+import { GetServerSideProps } from "next";
+import { useRouter } from "next/router";
+import {
+  getRestrictedMessageFor,
+  type AccessDenialReason,
+} from "@/lib/access/config";
+import { useState } from "react";
 
 /**
  * Restricted Access Page
- * 
+ *
  * Shown when user is denied access to the app
  * Reasons:
  * - domain_not_allowed: Email not @durham.ac.uk
@@ -21,7 +24,7 @@ interface RestrictedPageProps {
 
 export default function RestrictedPage({ reason, email }: RestrictedPageProps) {
   const router = useRouter();
-  const [requestEmail, setRequestEmail] = useState(email || '');
+  const [requestEmail, setRequestEmail] = useState(email || "");
   const [requesting, setRequesting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -32,16 +35,16 @@ export default function RestrictedPage({ reason, email }: RestrictedPageProps) {
     setError(null);
 
     try {
-      const res = await fetch('/api/access/request', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const res = await fetch("/api/access/request", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: requestEmail }),
       });
 
       const data = await res.json();
 
       if (!res.ok) {
-       setError(data.error || 'Failed to request access');
+        setError(data.error || "Failed to request access");
         setRequesting(false);
         return;
       }
@@ -51,11 +54,10 @@ export default function RestrictedPage({ reason, email }: RestrictedPageProps) {
 
       // Redirect to login after 2 seconds
       setTimeout(() => {
-        router.push('/login');
+        router.push("/login");
       }, 2000);
-
     } catch (err: any) {
-      setError(err.message || 'Network error');
+      setError(err.message || "Network error");
       setRequesting(false);
     }
   };
@@ -93,25 +95,31 @@ export default function RestrictedPage({ reason, email }: RestrictedPageProps) {
           </p>
 
           {/* Action Link for Rejections */}
-          {(reason === 'domain_not_allowed' || reason === 'not_in_allowlist') && !success && (
-            <div className="text-center mb-8">
-               <Link href="/request-access" className="text-purple-600 hover:text-purple-700 font-bold underline text-sm">
+          {(reason === "domain_not_allowed" || reason === "not_in_allowlist") &&
+            !success && (
+              <div className="text-center mb-8">
+                <Link
+                  href="/request-access"
+                  className="text-purple-600 hover:text-purple-700 font-bold underline text-sm"
+                >
                   Not a Durham student? Request early access &rarr;
-               </Link>
-            </div>
-          )}
+                </Link>
+              </div>
+            )}
 
           {/* Trial Request Form (only for allowlist issues) */}
-          {(reason === 'not_in_allowlist') && !success && (
+          {reason === "not_in_allowlist" && !success && (
             <form onSubmit={handleRequestAccess} className="space-y-4">
-               {/* ... as before ... */}
+              {/* ... as before ... */}
             </form>
           )}
 
           {/* Success Message */}
           {success && (
             <div className="rounded-lg bg-green-50 border border-green-200 p-4 text-center">
-              <p className="text-green-800 font-medium mb-2">✓ Request Received!</p>
+              <p className="text-green-800 font-medium mb-2">
+                ✓ Request Received!
+              </p>
               <p className="text-sm text-green-700">
                 We'll review your details shortly. Redirecting...
               </p>
@@ -119,10 +127,10 @@ export default function RestrictedPage({ reason, email }: RestrictedPageProps) {
           )}
 
           {/* Trial Expired / Blocked - Contact Support */}
-          {(reason === 'trial_expired' || reason === 'account_blocked') && (
+          {(reason === "trial_expired" || reason === "account_blocked") && (
             <div className="text-center">
               <a
-                href="mailto:support@mydurhamlaw.com"
+                href="mailto:support@casewaylaw.ai"
                 className="inline-block rounded-lg bg-purple-600 px-6 py-3 font-medium text-white hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
               >
                 Contact Support
@@ -133,7 +141,8 @@ export default function RestrictedPage({ reason, email }: RestrictedPageProps) {
 
         {/* Footer */}
         <p className="mt-6 text-center text-sm text-gray-600 max-w-sm mx-auto">
-          Built for Durham Law students. MyDurhamLaw is an independent study companion designed around the Durham Law journey.
+          Built for students studying law at Durham University. Caseway is an
+          independent study companion designed around the law curriculum.
         </p>
       </div>
     </div>
@@ -141,7 +150,7 @@ export default function RestrictedPage({ reason, email }: RestrictedPageProps) {
 }
 
 export const getServerSideProps: GetServerSideProps = async ({ query }) => {
-  const reason = (query.reason as AccessDenialReason) || 'not_in_allowlist';
+  const reason = (query.reason as AccessDenialReason) || "not_in_allowlist";
   const email = query.email as string | undefined;
 
   return {

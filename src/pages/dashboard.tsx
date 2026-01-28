@@ -241,7 +241,7 @@ function DashboardContent() {
   return (
     <>
       <Head>
-        <title>Dashboard - MyDurhamLaw</title>
+        <title>Dashboard - Caseway</title>
       </Head>
 
       <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 space-y-8">
@@ -301,7 +301,7 @@ function DashboardContent() {
               <X className="w-5 h-5" />
             </button>
             <h2 className="text-lg font-bold text-gray-900 mb-2">
-              Welcome to MyDurhamLaw - Start Here
+              Welcome to Caseway - Start Here
             </h2>
             <p className="text-gray-600 text-sm mb-4">
               You're all set. Here are your Next 3 Actions to get started:

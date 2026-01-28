@@ -393,7 +393,7 @@ export default function DurhamLawExamTechnique() {
               Ace Your Next Durham Law Exam
             </h3>
             <p className="text-purple-100 mb-6">
-              MyDurhamLaw\'s Durmah helps you master case law and build exam
+              Caseway's Durmah helps you master case law and build exam
               confidence.
             </p>
             <div className="flex flex-wrap gap-3">

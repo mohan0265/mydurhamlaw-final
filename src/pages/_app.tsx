@@ -1,24 +1,23 @@
 // src/pages/_app.tsx
-import '@/styles/globals.css';
-import type { AppProps } from 'next/app';
-import Head from 'next/head';
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/router';
+import "@/styles/globals.css";
+import type { AppProps } from "next/app";
+import Head from "next/head";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/router";
 import {
   HydrationBoundary,
   QueryClient,
   QueryClientProvider,
-} from '@tanstack/react-query';
-import { validateEnv } from '@/lib/env';
-import { AuthProvider } from '@/lib/supabase/AuthContext';
-import { DurmahProvider, DurmahContextSetup } from '@/lib/durmah/context';
-import { loadMDLStudentContext } from '@/lib/supabase/supabaseBridge';
-import { Toaster } from 'react-hot-toast';
-import LayoutShell from '@/layout/LayoutShell';
-import Router from 'next/router';
-import { ThemeProvider } from '@/components/theme/ThemeProvider';
-import { isRouteAbortError } from '@/lib/navigation/safeNavigate';
-
+} from "@tanstack/react-query";
+import { validateEnv } from "@/lib/env";
+import { AuthProvider } from "@/lib/supabase/AuthContext";
+import { DurmahProvider, DurmahContextSetup } from "@/lib/durmah/context";
+import { loadCasewayStudentContext } from "@/lib/supabase/supabaseBridge";
+import { Toaster } from "react-hot-toast";
+import LayoutShell from "@/layout/LayoutShell";
+import Router from "next/router";
+import { ThemeProvider } from "@/components/theme/ThemeProvider";
+import { isRouteAbortError } from "@/lib/navigation/safeNavigate";
 
 // Server-only init
 /*
@@ -38,13 +37,12 @@ const AppDurmahBootstrap: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   useEffect(() => {
-    loadMDLStudentContext(undefined as any).catch((e) =>
-      console.error('loadMDLStudentContext failed:', e)
+    loadCasewayStudentContext(undefined as any).catch((e) =>
+      console.error("loadCasewayStudentContext failed:", e),
     );
   }, []);
   return <>{children}</>;
 };
-
 
 export default function App({ Component, pageProps }: AppProps) {
   const router = useRouter();
@@ -60,24 +58,23 @@ export default function App({ Component, pageProps }: AppProps) {
           },
           mutations: { retry: 1 },
         },
-      })
+      }),
   );
 
   useEffect(() => {
     try {
       validateEnv();
     } catch (error) {
-      console.error('Environment validation failed:', error);
+      console.error("Environment validation failed:", error);
     }
   }, []);
 
   useEffect(() => {
     const handleRouteChange = () =>
-      window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+      window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
     handleRouteChange();
-    router.events.on('routeChangeComplete', handleRouteChange);
-    return () =>
-      router.events.off('routeChangeComplete', handleRouteChange);
+    router.events.on("routeChangeComplete", handleRouteChange);
+    return () => router.events.off("routeChangeComplete", handleRouteChange);
   }, [router.events]);
 
   // Swallow route abort errors globally (Next.js cancels prior routes on rapid redirects)
@@ -88,9 +85,9 @@ export default function App({ Component, pageProps }: AppProps) {
       }
       // Let other errors propagate quietly
     };
-    Router.events.on('routeChangeError', handler);
+    Router.events.on("routeChangeError", handler);
     return () => {
-      Router.events.off('routeChangeError', handler);
+      Router.events.off("routeChangeError", handler);
     };
   }, []);
 
@@ -101,9 +98,9 @@ export default function App({ Component, pageProps }: AppProps) {
         event.preventDefault();
       }
     };
-    window.addEventListener('unhandledrejection', swallowAbort);
+    window.addEventListener("unhandledrejection", swallowAbort);
     return () => {
-      window.removeEventListener('unhandledrejection', swallowAbort);
+      window.removeEventListener("unhandledrejection", swallowAbort);
     };
   }, []);
 
@@ -136,16 +133,17 @@ export default function App({ Component, pageProps }: AppProps) {
   useEffect(() => {
     const originalError = console.error;
     console.error = (...args) => {
-      if (args.some(arg => 
-        typeof arg === 'string' && (
-          arg.includes('Abort fetching component for route') || 
-          arg.includes('cancelled')
-        ) ||
-        (arg instanceof Error && (
-          arg.message.includes('Abort fetching component for route') ||
-          arg.name === 'AbortError'
-        ))
-      )) {
+      if (
+        args.some(
+          (arg) =>
+            (typeof arg === "string" &&
+              (arg.includes("Abort fetching component for route") ||
+                arg.includes("cancelled"))) ||
+            (arg instanceof Error &&
+              (arg.message.includes("Abort fetching component for route") ||
+                arg.name === "AbortError")),
+        )
+      ) {
         return; // Swallow it
       }
       originalError.apply(console, args);
@@ -161,32 +159,35 @@ export default function App({ Component, pageProps }: AppProps) {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </Head>
 
-      <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false} storageKey="mydurhamlaw-theme">
+      <ThemeProvider
+        attribute="class"
+        defaultTheme="light"
+        enableSystem={false}
+        storageKey="caseway-theme"
+      >
         <AuthProvider>
           <QueryClientProvider client={queryClient}>
             <HydrationBoundary state={(pageProps as any)?.dehydratedState}>
               <DurmahProvider>
                 <DurmahContextSetup />
                 <AppDurmahBootstrap>
-  
                   <LayoutShell>
                     <Component {...pageProps} />
                   </LayoutShell>
-  
-  
+
                   {/* Global Toaster */}
                   <Toaster
                     position="top-right"
                     toastOptions={{
                       duration: 4000,
-                      style: { background: '#363636', color: '#fff' },
+                      style: { background: "#363636", color: "#fff" },
                       success: {
                         duration: 3000,
-                        iconTheme: { primary: '#10b981', secondary: '#fff' },
+                        iconTheme: { primary: "#10b981", secondary: "#fff" },
                       },
                       error: {
                         duration: 5000,
-                        iconTheme: { primary: '#ef4444', secondary: '#fff' },
+                        iconTheme: { primary: "#ef4444", secondary: "#fff" },
                       },
                     }}
                   />

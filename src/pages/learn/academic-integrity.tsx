@@ -84,8 +84,7 @@ export default function AcademicIntegrity() {
           What’s usually safe and genuinely helpful
         </h2>
         <p>
-          To stay on the right side of the line, use MyDurhamLaw for these
-          tasks:
+          To stay on the right side of the line, use Caseway for these tasks:
         </p>
         <ul className="space-y-3">
           <li className="flex gap-2">
@@ -141,12 +140,12 @@ export default function AcademicIntegrity() {
           you shouldn't submit it.
         </p>
         <p className="text-sm italic text-gray-500">
-          Note: MyDurhamLaw is an independent study companion and is not
-          affiliated with Durham University.
+          Note: Caseway is an independent study companion and is not affiliated
+          with Durham University.
         </p>
 
         <h2 className="text-2xl font-bold text-gray-900 mt-12 mb-6">
-          How MyDurhamLaw helps
+          How Caseway helps
         </h2>
         <p>
           We build ethical reminders directly into our user experience. Our
@@ -209,8 +208,8 @@ export default function AcademicIntegrity() {
         </div>
 
         <p className="mt-20 text-[10px] text-gray-400 text-center uppercase tracking-widest">
-          MyDurhamLaw is an independent study companion and is not affiliated
-          with Durham University.
+          Caseway is an independent study companion and is not affiliated with
+          Durham University.
         </p>
       </div>
     </LearnLayout>

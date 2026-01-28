@@ -297,7 +297,7 @@ export default function DurhamLawAcademicIntegrityAI() {
             </li>
           </ul>
 
-          <h3>4. How MyDurhamLaw\'s Durmah Stays Compliant</h3>
+          <h3>4. How Caseway's Durmah Stays Compliant</h3>
           <p>
             Durmah is designed as a learning companion, not an essay generator:
           </p>
@@ -379,7 +379,7 @@ export default function DurhamLawAcademicIntegrityAI() {
               Use AI with Confidence - and Integrity
             </h3>
             <p className="text-purple-100 mb-6">
-              MyDurhamLaw\'s mission is to support ethical, excellent legal
+              Caseway's mission is to support ethical, excellent legal
               education.
             </p>
             <div className="flex flex-wrap gap-3">

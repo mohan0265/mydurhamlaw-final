@@ -54,13 +54,13 @@ export default function AlwaysWithYou() {
         <p>
           Adjusting to the unique rhythm of the Durham academic year—from the
           initial buzz of Michaelmas term to the intense pressure of the Easter
-          exams—requires stamina. MyDurhamLaw helps you navigate these workload
+          exams—requires stamina. Caseway helps you navigate these workload
           spikes while staying connected to your college community and family
           back home.
         </p>
         <p className="text-sm italic text-gray-500">
-          Note: MyDurhamLaw is an independent study companion and is not
-          affiliated with Durham University.
+          Note: Caseway is an independent study companion and is not affiliated
+          with Durham University.
         </p>
 
         <h2 className="text-2xl font-bold text-gray-900 mt-12 mb-6">
@@ -84,7 +84,6 @@ export default function AlwaysWithYou() {
             commit to just 5 minutes of focused entry into the work.
           </li>
         </ul>
-
         <h2 className="text-2xl font-bold text-gray-900 mt-12 mb-6">
           Managing stress before seminars and exams
         </h2>
@@ -114,7 +113,7 @@ export default function AlwaysWithYou() {
         </p>
 
         <h2 className="text-2xl font-bold text-gray-900 mt-12 mb-6">
-          How MyDurhamLaw helps
+          How Caseway helps
         </h2>
         <p>
           The AWY presence feature is available as an optional addon designed to
@@ -177,8 +176,8 @@ export default function AlwaysWithYou() {
         </div>
 
         <p className="mt-20 text-[10px] text-gray-400 text-center uppercase tracking-widest">
-          MyDurhamLaw is an independent study companion and is not affiliated
-          with Durham University.
+          Caseway is an independent study companion and is not affiliated with
+          Durham University.
         </p>
       </div>
     </LearnLayout>

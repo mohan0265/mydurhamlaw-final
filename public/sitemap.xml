@@ -2,88 +2,88 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <!-- Public Marketing Pages -->
   <url>
-    <loc>https://mydurhamlaw.com/</loc>
+    <loc>https://casewaylaw.ai/</loc>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://mydurhamlaw.com/about</loc>
+    <loc>https://casewaylaw.ai/about</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://mydurhamlaw.com/pricing</loc>
+    <loc>https://casewaylaw.ai/pricing</loc>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://mydurhamlaw.com/support</loc>
+    <loc>https://casewaylaw.ai/support</loc>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
 
   <!-- Learning Hub & SEO Articles -->
   <url>
-    <loc>https://mydurhamlaw.com/learn</loc>
+    <loc>https://casewaylaw.ai/learn</loc>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://mydurhamlaw.com/learn/durham-law-ai-study-assistant</loc>
+    <loc>https://casewaylaw.ai/learn/durham-law-ai-study-assistant</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://mydurhamlaw.com/learn/durham-law-wellbeing-routine</loc>
+    <loc>https://casewaylaw.ai/learn/durham-law-wellbeing-routine</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://mydurhamlaw.com/learn/how-to-ask-better-legal-questions</loc>
+    <loc>https://casewaylaw.ai/learn/how-to-ask-better-legal-questions</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://mydurhamlaw.com/learn/durham-law-academic-integrity-ai</loc>
+    <loc>https://casewaylaw.ai/learn/durham-law-academic-integrity-ai</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://mydurhamlaw.com/learn/durham-law-study-groups</loc>
+    <loc>https://casewaylaw.ai/learn/durham-law-study-groups</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://mydurhamlaw.com/learn/durham-law-exam-technique</loc>
+    <loc>https://casewaylaw.ai/learn/durham-law-exam-technique</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
 
   <!-- Legal & Compliance -->
   <url>
-    <loc>https://mydurhamlaw.com/legal/ethics</loc>
+    <loc>https://casewaylaw.ai/legal/ethics</loc>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
-    <loc>https://mydurhamlaw.com/legal/terms-of-use</loc>
+    <loc>https://casewaylaw.ai/legal/terms-of-use</loc>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
-    <loc>https://mydurhamlaw.com/legal/privacy-policy</loc>
+    <loc>https://casewaylaw.ai/legal/privacy-policy</loc>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
-    <loc>https://mydurhamlaw.com/legal/academic-integrity</loc>
+    <loc>https://casewaylaw.ai/legal/academic-integrity</loc>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
 
   <!-- Public Tools & Resources -->
   <url>
-    <loc>https://mydurhamlaw.com/legal/tools/legal-news-feed</loc>
+    <loc>https://casewaylaw.ai/legal/tools/legal-news-feed</loc>
     <changefreq>hourly</changefreq>
     <priority>0.8</priority>
   </url>

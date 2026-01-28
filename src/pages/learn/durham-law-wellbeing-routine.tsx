@@ -243,7 +243,7 @@ export default function DurhamLawWellbeingRoutine() {
               Support your wellbeing with better tools
             </h3>
             <p className="text-purple-100 mb-6">
-              MyDurhamLaw helps you manage workload, track deadlines, and reduce
+              Caseway helps you manage workload, track deadlines, and reduce
               stress—so you can focus on what matters.
             </p>
             <div className="flex flex-wrap gap-3">

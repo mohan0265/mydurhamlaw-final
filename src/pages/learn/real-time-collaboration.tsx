@@ -100,12 +100,12 @@ export default function RealTimeCollaboration() {
           massive syllabus more effectively.
         </p>
         <p className="text-sm italic text-gray-500">
-          Note: MyDurhamLaw is an independent study companion and is not
-          affiliated with Durham University.
+          Note: Caseway is an independent study companion and is not affiliated
+          with Durham University.
         </p>
 
         <h2 className="text-2xl font-bold text-gray-900 mt-12 mb-6">
-          How MyDurhamLaw helps
+          How Caseway helps
         </h2>
         <p>
           Our platform provides structured prompts for group discussion and
@@ -166,8 +166,8 @@ export default function RealTimeCollaboration() {
         </div>
 
         <p className="mt-20 text-[10px] text-gray-400 text-center uppercase tracking-widest">
-          MyDurhamLaw is an independent study companion and is not affiliated
-          with Durham University.
+          Caseway is an independent study companion and is not affiliated with
+          Durham University.
         </p>
       </div>
     </LearnLayout>

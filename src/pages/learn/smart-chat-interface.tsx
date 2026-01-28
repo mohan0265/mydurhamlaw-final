@@ -20,7 +20,7 @@ export default function SmartChatInterface() {
         </h1>
         <p className="text-xl text-gray-600 leading-relaxed mb-8">
           The power of AI in legal education is not in the technology itself,
-          but in the quality of the interaction. The MyDurhamLaw **Smart Chat
+          but in the quality of the interaction. The Caseway **Smart Chat
           Interface** is designed to bridge the gap between initial confusion
           and deep legal understanding, provided you know how to ask the right
           questions.
@@ -116,12 +116,12 @@ export default function SmartChatInterface() {
           revision maps.
         </p>
         <p className="text-sm italic text-gray-500">
-          Note: MyDurhamLaw is an independent study companion and is not
-          affiliated with Durham University.
+          Note: Caseway is an independent study companion and is not affiliated
+          with Durham University.
         </p>
 
         <h2 className="text-2xl font-bold text-gray-900 mt-12 mb-6">
-          How MyDurhamLaw helps
+          How Caseway helps
         </h2>
         <p>
           Our structured chat UX features guided prompts, checklists, and staged
@@ -181,8 +181,8 @@ export default function SmartChatInterface() {
         </div>
 
         <p className="mt-20 text-[10px] text-gray-400 text-center uppercase tracking-widest">
-          MyDurhamLaw is an independent study companion and is not affiliated
-          with Durham University.
+          Caseway is an independent study companion and is not affiliated with
+          Durham University.
         </p>
       </div>
     </LearnLayout>

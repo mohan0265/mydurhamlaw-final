@@ -1,5 +1,5 @@
 // src/config/nav.ts
-// Central navigation config for MyDurhamLaw.
+// Central navigation config for Caseway.
 // This version fixes the broken "Community Network" link by pointing to an existing page.
 
 export type NavItem = {

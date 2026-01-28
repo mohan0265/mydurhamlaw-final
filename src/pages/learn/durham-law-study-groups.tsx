@@ -397,7 +397,7 @@ export default function DurhamLawStudyGroups() {
           {/* CTA */}
           <div className="not-prose my-12 p-8 bg-gradient-to-br from-purple-600 to-blue-600 rounded-2xl text-white">
             <h3 className="text-2xl font-bold mb-3">
-              Try MyDurhamLaw\'s Group-Optimized Features
+              Try Caseway\'s Group-Optimized Features
             </h3>
             <p className="text-purple-100 mb-6">
               Durmah can assist your study group with real-time legal research

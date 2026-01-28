@@ -14,10 +14,10 @@ export default function AcademicIntegrityPage() {
   return (
     <>
       <Head>
-        <title>Academic Integrity | MyDurhamLaw</title>
+        <title>Academic Integrity | Caseway</title>
         <meta
           name="description"
-          content="MyDurhamLaw's commitment to academic integrity and ethical AI use in legal education."
+          content="Caseway's commitment to academic integrity and ethical AI use in legal education."
         />
       </Head>
 
@@ -54,9 +54,9 @@ export default function AcademicIntegrityPage() {
                     Learning, Not Cheating
                   </h3>
                   <p className="text-gray-600 text-sm">
-                    MyDurhamLaw is designed to enhance your understanding of
-                    legal concepts, not to complete assignments for you. We
-                    encourage critical thinking and original work.
+                    Caseway is designed to enhance your understanding of legal
+                    concepts, not to complete assignments for you. We encourage
+                    critical thinking and original work.
                   </p>
                 </div>
               </div>
@@ -107,7 +107,7 @@ export default function AcademicIntegrityPage() {
               <li>Check your module's specific AI use policy</li>
               <li>Cite AI assistance where required</li>
               <li>
-                Use MyDurhamLaw for understanding and revision, not direct
+                Use Caseway for understanding and revision, not direct
                 submission
               </li>
               <li>Consult your tutor if unsure about acceptable AI use</li>

@@ -11,7 +11,7 @@ import {
 export type YearKey = "foundation" | "year1" | "year2" | "year3";
 export type ModuleLite = { code: string; title: string; credits: number };
 
-export type MDLStudentContext = {
+export type CasewayStudentContext = {
   userId: string;
   firstName: string;
   university: "Durham University";
@@ -28,11 +28,11 @@ export type MDLStudentContext = {
 
 declare global {
   interface Window {
-    __mdlStudentContext?: MDLStudentContext;
+    __casewayStudentContext?: CasewayStudentContext;
   }
 }
 
-const AnonymousCtx: MDLStudentContext = {
+const AnonymousCtx: CasewayStudentContext = {
   userId: "",
   firstName: "there",
   university: "Durham University",
@@ -47,27 +47,29 @@ const AnonymousCtx: MDLStudentContext = {
   hydrated: false,
 };
 
-const Ctx = createContext<MDLStudentContext>(AnonymousCtx);
+const Ctx = createContext<CasewayStudentContext>(AnonymousCtx);
 
 export function DurmahProvider({ children }: { children: React.ReactNode }) {
-  const [ctx, setCtx] = useState<MDLStudentContext>(AnonymousCtx);
+  const [ctx, setCtx] = useState<CasewayStudentContext>(AnonymousCtx);
 
   useEffect(() => {
     const fromWindow =
-      typeof window !== "undefined" ? window.__mdlStudentContext : undefined;
+      typeof window !== "undefined"
+        ? window.__casewayStudentContext
+        : undefined;
     if (fromWindow) {
       setCtx({ ...fromWindow, hydrated: true });
     } else {
       const nowISO = todayISOInTZ("Europe/London");
       const daysUntil = computeDaysUntil(nowISO, KEY_DATES_2025_26);
       const nowPhase = computeNowPhase(nowISO, KEY_DATES_2025_26);
-      const anon: MDLStudentContext = {
+      const anon: CasewayStudentContext = {
         ...AnonymousCtx,
         daysUntil,
         nowPhase,
         hydrated: true,
       };
-      if (typeof window !== "undefined") window.__mdlStudentContext = anon;
+      if (typeof window !== "undefined") window.__casewayStudentContext = anon;
       setCtx(anon);
     }
   }, []);
@@ -75,18 +77,18 @@ export function DurmahProvider({ children }: { children: React.ReactNode }) {
   return <Ctx.Provider value={ctx}>{children}</Ctx.Provider>;
 }
 
-export function useDurmah(): MDLStudentContext {
+export function useDurmah(): CasewayStudentContext {
   return useContext(Ctx);
 }
 
 export function DurmahContextSetup({
   preloaded,
 }: {
-  preloaded?: Partial<MDLStudentContext>;
+  preloaded?: Partial<CasewayStudentContext>;
 }) {
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const existing = window.__mdlStudentContext;
+    const existing = window.__casewayStudentContext;
     if (existing && existing.hydrated) return;
 
     const base = {
@@ -103,13 +105,13 @@ export function DurmahContextSetup({
     const nowISO = todayISOInTZ("Europe/London");
     const daysUntil = computeDaysUntil(nowISO, base.keyDates);
     const nowPhase = computeNowPhase(nowISO, base.keyDates as any);
-    const full: MDLStudentContext = {
+    const full: CasewayStudentContext = {
       ...(base as any),
       daysUntil,
       nowPhase,
       hydrated: true,
     };
-    window.__mdlStudentContext = full;
+    window.__casewayStudentContext = full;
   }, [preloaded]);
 
   return null;

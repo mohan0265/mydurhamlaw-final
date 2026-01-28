@@ -19,7 +19,7 @@ import {
 const seo = generateArticleSEO({
   title: "How to Use AI as a Durham Law Study Assistant (Responsibly)",
   description:
-    "Learn how Durham Law students can ethically and effectively use AI tools like ChatGPT and MyDurhamLaw to understand concepts, practice application, and strengthen academic integrity.",
+    "Learn how Durham Law students can ethically and effectively use AI tools like ChatGPT and Caseway to understand concepts, practice application, and strengthen academic integrity.",
   slug: "durham-law-ai-study-assistant",
   keywords:
     "Durham Law, AI study tools, ChatGPT for law students, academic integrity, legal education AI, Durham University",
@@ -50,8 +50,7 @@ const faqs = [
       "Absolutely. Generating practice prompts, hypothetical scenarios, or issue-spotting exercises is one of the most ethical and effective uses of AI. Just ensure the questions relate to what you've actually studied in lectures and readings.",
   },
   {
-    question:
-      "Does using MyDurhamLaw count as AI assistance I need to declare?",
+    question: "Does using Caseway count as AI assistance I need to declare?",
     answer:
       "It depends on how you use it. If you use it to understand concepts, organize notes, or practice - that's typically like using a textbook (no declaration needed). If a tool generates text you incorporate into submitted work, check your module's AI policy. When in doubt, ask your supervisor or lecturer.",
   },
@@ -572,8 +571,8 @@ export default function DurhamLawAIStudyAssistant() {
               Ready to study smarter with AI?
             </h3>
             <p className="text-purple-100 mb-6">
-              MyDurhamLaw helps you use AI ethically and effectively—with
-              built-in safeguards for academic integrity.
+              Caseway helps you use AI ethically and effectively—with built-in
+              safeguards for academic integrity.
             </p>
             <div className="flex flex-wrap gap-3">
               <Link

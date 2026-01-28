@@ -23,7 +23,7 @@ export default function AIStudyAssistant() {
         </h1>
         <p className="text-xl text-gray-600 leading-relaxed mb-8">
           The transition to legal study involves a steep learning curve.
-          MyDurhamLaw's AI Study Assistant is designed to act as a 24/7 tutor,
+          Caseway's AI Study Assistant is designed to act as a 24/7 tutor,
           helping you bridge the gap between reading the law and applying it
           with precision. Whether you are navigating your first Michaelmas term
           or preparing for final year summative essays, our tools ensure you
@@ -58,12 +58,12 @@ export default function AIStudyAssistant() {
           As a student at Durham, you are part of a rigourous academic
           tradition. Whether you are studying at the Palatine Centre or revising
           in your college library, the expectations for original thought are
-          high. MyDurhamLaw supports the specific modular structure of the
-          Durham LLB, providing tools that align with the Term-time rhythms.
+          high. Caseway supports the specific modular structure of the Durham
+          LLB, providing tools that align with the Term-time rhythms.
         </p>
         <p className="text-sm italic text-gray-500">
-          Note: MyDurhamLaw is an independent study companion and is not
-          affiliated with Durham University.
+          Note: Caseway is an independent study companion and is not affiliated
+          with Durham University.
         </p>
 
         <h2 className="text-2xl font-bold text-gray-900 mt-12 mb-6">
@@ -117,7 +117,7 @@ export default function AIStudyAssistant() {
         <p>
           Distinction essays are built on planning. Start by analyzing the
           command verbs in your prompt: "discuss," "critically evaluate," or
-          "advise." MyDurhamLaw helps you build a strong thesis and a logical
+          "advise." Caseway helps you build a strong thesis and a logical
           roadmap before you start drafting. By adding counterarguments early,
           you demonstrate the evaluative depth that markers look for in
           summative work.
@@ -135,7 +135,7 @@ export default function AIStudyAssistant() {
         </p>
 
         <h2 className="text-2xl font-bold text-gray-900 mt-12 mb-6">
-          How MyDurhamLaw helps
+          How Caseway helps
         </h2>
         <p>
           Our platform turns your messy notes into structured checklists,
@@ -196,8 +196,8 @@ export default function AIStudyAssistant() {
         </div>
 
         <p className="mt-20 text-[10px] text-gray-400 text-center uppercase tracking-widest">
-          MyDurhamLaw is an independent study companion and is not affiliated
-          with Durham University.
+          Caseway is an independent study companion and is not affiliated with
+          Durham University.
         </p>
       </div>
     </LearnLayout>
