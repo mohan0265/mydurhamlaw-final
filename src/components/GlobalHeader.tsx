@@ -10,6 +10,7 @@ import { ThemeToggle } from "./theme/ThemeToggle";
 import { useAuth } from "@/lib/supabase/AuthContext";
 import LogoutButton from "@/components/auth/LogoutButton";
 import PresenceBadge from "@/components/PresenceBadge";
+import { BRAND_NAME } from "@/lib/brand";
 
 type MenuItem = { label: string; href: string };
 type Menu = { label: string; items: MenuItem[] };
@@ -320,27 +321,29 @@ export default function GlobalHeader() {
       <header className="sticky top-0 z-50 bg-white/95 dark:bg-gray-950/95 backdrop-blur shadow-sm dark:shadow-none border-b border-gray-100 dark:border-white/5 transition-colors duration-500">
         <nav className="mx-auto max-w-7xl px-4 sm:px-6">
           <div className="min-h-[72px] md:min-h-[110px] py-4 flex items-center justify-between transition-all duration-300">
+            import {BRAND_NAME} from "@/lib/brand"; // ... inside component
             {/* Brand */}
             <Link
               href="/"
               prefetch={false}
               className="flex items-center gap-2 rounded-xl px-2 py-2 group focus:outline-none focus:ring-2 focus:ring-purple-500"
-              aria-label="MyDurhamLaw Home"
+              aria-label={`${BRAND_NAME} Home`}
             >
+              {/* 
+                 Temporarily use text based logo from UI component or just text if Image not ready.
+                 But user requested using GlobalHeader update.
+                 We will keep the icon if generic, or switch to text.
+                 For now, let's stick to the existing structure but update text.
+               */}
               <NextImage
-                src="/brand/logo-icon-header.svg"
-                alt="MyDurhamLaw Logo"
-                width={48}
-                height={48}
+                src="/brand/caseway-logo.svg"
+                alt={`${BRAND_NAME} Logo`}
+                width={120}
+                height={40}
                 priority
-                className="h-10 md:h-12 w-auto object-contain transition-transform group-hover:scale-105 duration-300"
+                className="h-8 md:h-10 w-auto object-contain transition-transform group-hover:scale-105 duration-300"
               />
-
-              <span className="text-2xl md:text-[34px] font-bold tracking-tight leading-none text-gray-900 dark:text-white translate-y-[1px]">
-                MyDurhamLaw
-              </span>
             </Link>
-
             {/* Desktop nav */}
             <div className="hidden md:flex items-center gap-1">
               {user ? (
@@ -425,7 +428,6 @@ export default function GlobalHeader() {
                 </>
               )}
             </div>
-
             {/* Right (desktop) */}
             <div className="hidden md:flex items-center gap-3">
               {user ? (
@@ -468,7 +470,6 @@ export default function GlobalHeader() {
               )}
               <ThemeToggle className={"border-gray-300 dark:border-white/10"} />
             </div>
-
             {/* Mobile toggle */}
             <button
               className="md:hidden text-gray-600 hover:text-gray-900"

@@ -17,7 +17,7 @@ export default function NoQuestionIsAStupidQuestion() {
     <div className="bg-white min-h-screen flex flex-col">
       <Head>
         <title>
-          No Question Is a Stupid Question | Learning Without Fear | MyDurhamLaw
+          No Question Is a Stupid Question | Learning Without Fear | Caseway
         </title>
         <meta
           name="description"
@@ -25,11 +25,11 @@ export default function NoQuestionIsAStupidQuestion() {
         />
         <meta
           name="keywords"
-          content="asking questions without fear, learning anxiety, students afraid to ask questions, judgement free learning, university learning psychology, MyDurhamLaw"
+          content="asking questions without fear, learning anxiety, students afraid to ask questions, judgement free learning, university learning psychology, Caseway, Durham Law"
         />
         <link
           rel="canonical"
-          href="https://mydurhamlaw.com/articles/no-question-is-a-stupid-question"
+          href="https://www.casewaylaw.ai/articles/no-question-is-a-stupid-question"
         />
 
         {/* Open Graph */}
@@ -43,10 +43,10 @@ export default function NoQuestionIsAStupidQuestion() {
         />
         <meta
           property="og:url"
-          content="https://mydurhamlaw.com/articles/no-question-is-a-stupid-question"
+          content="https://www.casewaylaw.ai/articles/no-question-is-a-stupid-question"
         />
         <meta property="og:type" content="article" />
-        <meta property="og:site_name" content="MyDurhamLaw" />
+        <meta property="og:site_name" content="Caseway" />
 
         {/* Twitter */}
         <meta name="twitter:card" content="summary_large_image" />

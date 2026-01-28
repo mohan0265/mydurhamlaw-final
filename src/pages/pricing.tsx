@@ -101,23 +101,23 @@ export default function PricingPage() {
   return (
     <>
       <Head>
-        <title>Pricing - MyDurhamLaw Plans</title>
+        <title>Pricing - Caseway Plans</title>
         <meta
           name="description"
           content="One simple plan for comprehensive Durham Law support. Full access to AI voice tutoring, assignment tools, and legal news."
         />
 
         {/* Open Graph */}
-        <meta property="og:title" content="Pricing - MyDurhamLaw" />
+        <meta property="og:title" content="Pricing - Caseway" />
         <meta
           property="og:image"
-          content="https://mydurhamlaw.com/og/mydurhamlaw-og.png"
+          content="https://www.casewaylaw.ai/og/caseway-preview.png"
         />
 
         {/* Twitter */}
         <meta
           name="twitter:image"
-          content="https://mydurhamlaw.com/og/og-default.png?v=2"
+          content="https://www.casewaylaw.ai/og/caseway-preview.png"
         />
       </Head>
 

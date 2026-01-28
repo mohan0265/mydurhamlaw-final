@@ -3,6 +3,11 @@ import Link from "next/link";
 import { useMemo } from "react";
 
 import { BrandMark } from "@/components/brand/BrandMark";
+import {
+  BRAND_NAME,
+  BRAND_SUPPORT_EMAIL,
+  LEGAL_DISCLAIMER_SHORT,
+} from "@/lib/brand";
 
 export default function GlobalFooter() {
   const year = useMemo(() => new Date().getFullYear(), []);
@@ -13,7 +18,7 @@ export default function GlobalFooter() {
         <div>
           <BrandMark variant="footer" />
           <div className="mt-4 space-y-2 text-gray-600 text-xs sm:text-sm max-w-xs">
-            <p className="font-medium text-gray-900">Durmah Legal Eagle</p>
+            <p className="font-medium text-gray-900">{BRAND_NAME}</p>
             <p>
               Empowering Durham Law students with ethical AI and emotional
               presence.
@@ -165,13 +170,11 @@ export default function GlobalFooter() {
 
       <div className="border-t bg-gray-50">
         <div className="mx-auto max-w-7xl px-4 py-6 text-xs text-gray-600">
-          <p className="mb-2">
-            MyDurhamLaw is an independent educational technology platform
-            designed to support Durham Law students. It is not affiliated with
-            or endorsed by Durham University.
-          </p>
+          <p className="mb-2">{LEGAL_DISCLAIMER_SHORT}</p>
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
-            <span>© {year} MyDurhamLaw. All rights reserved.</span>
+            <span>
+              © {year} {BRAND_NAME}. All rights reserved.
+            </span>
             <span>
               Read our{" "}
               <Link

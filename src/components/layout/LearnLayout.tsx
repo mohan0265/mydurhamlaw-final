@@ -30,12 +30,12 @@ export const LearnLayout: React.FC<LearnLayoutProps> = ({
   const { user } = useAuth();
   // Use canonicalUrl if provided, otherwise construct from slug
   const finalCanonicalUrl =
-    canonicalUrl || `https://mydurhamlaw.com/learn/${slug}`;
+    canonicalUrl || `https://www.casewaylaw.ai/learn/${slug}`;
 
   return (
     <div className="bg-white flex flex-col">
       <Head>
-        <title>{title} - MyDurhamLaw Learn</title>
+        <title>{title} - Caseway Learn</title>
         <meta name="description" content={description} />
         <link rel="canonical" href={finalCanonicalUrl} />
 
@@ -44,10 +44,10 @@ export const LearnLayout: React.FC<LearnLayoutProps> = ({
         <meta property="og:description" content={description} />
         <meta property="og:url" content={finalCanonicalUrl} />
         <meta property="og:type" content="article" />
-        <meta property="og:site_name" content="MyDurhamLaw" />
+        <meta property="og:site_name" content="Caseway" />
         <meta
           property="og:image"
-          content="https://mydurhamlaw.com/og/mydurhamlaw-og.png"
+          content="https://www.casewaylaw.ai/og/caseway-preview.png"
         />
         <meta property="og:image:width" content="1200" />
         <meta property="og:image:height" content="630" />
@@ -58,7 +58,7 @@ export const LearnLayout: React.FC<LearnLayoutProps> = ({
         <meta name="twitter:description" content={description} />
         <meta
           name="twitter:image"
-          content="https://mydurhamlaw.com/og/mydurhamlaw-og.png"
+          content="https://www.casewaylaw.ai/og/caseway-preview.png"
         />
       </Head>
 
@@ -85,7 +85,7 @@ export const LearnLayout: React.FC<LearnLayoutProps> = ({
           {/* Final CTA Block */}
           <div className="mt-20 p-8 md:p-12 bg-gradient-to-br from-indigo-600 to-blue-700 rounded-3xl text-center text-white shadow-xl shadow-blue-200">
             <h2 className="text-2xl md:text-3xl font-bold mb-4">
-              Master Your Law Degree with MyDurhamLaw
+              Master Your Law Degree with Caseway
             </h2>
             <p className="text-lg text-blue-100 mb-8 max-w-2xl mx-auto">
               Join the growing community of Durham students using AI to study

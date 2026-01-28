@@ -37,10 +37,10 @@ export interface GeneratedSEOTags {
   keywords?: string;
 }
 
-const SITE_URL = "https://mydurhamlaw.com";
-const SITE_NAME = "MyDurhamLaw";
+const SITE_URL = "https://www.casewaylaw.ai";
+const SITE_NAME = "Caseway";
 const SITE_TAGLINE = "Learn Law | Write Law | Speak Law";
-const DEFAULT_OG_IMAGE = `${SITE_URL}/og/mydurhamlaw-preview.png`;
+const DEFAULT_OG_IMAGE = `${SITE_URL}/og/caseway-preview.png`;
 const DEFAULT_OG_WIDTH = "1200";
 const DEFAULT_OG_HEIGHT = "630";
 
@@ -175,7 +175,7 @@ export function generateArticleSchema(params: {
     },
     publisher: {
       "@type": "Organization",
-      name: "MyDurhamLaw",
+      name: "Caseway",
       logo: {
         "@type": "ImageObject",
         url: `${SITE_URL}/android-chrome-512x512.png`,

@@ -90,9 +90,9 @@ export default function LearnHub() {
         </title>
         <meta
           name="description"
-          content="Explore comprehensive guides on AI-assisted legal study, academic integrity, and student wellbeing at MyDurhamLaw."
+          content="Explore comprehensive guides on AI-assisted legal study, academic integrity, and student wellbeing at Caseway."
         />
-        <link rel="canonical" href="https://mydurhamlaw.com/learn" />
+        <link rel="canonical" href="https://www.casewaylaw.ai/learn" />
 
         {/* Open Graph */}
         <meta
@@ -101,13 +101,13 @@ export default function LearnHub() {
         />
         <meta
           property="og:image"
-          content="https://mydurhamlaw.com/og/mydurhamlaw-og.png"
+          content="https://www.casewaylaw.ai/og/caseway-preview.png"
         />
 
         {/* Twitter */}
         <meta
           name="twitter:image"
-          content="https://mydurhamlaw.com/og/og-default.png?v=2"
+          content="https://www.casewaylaw.ai/og/caseway-preview.png"
         />
       </Head>
 

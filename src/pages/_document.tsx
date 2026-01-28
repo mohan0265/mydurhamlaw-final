@@ -46,55 +46,55 @@ export default function Document() {
         {/* SEO Meta Tags */}
         <meta
           name="description"
-          content="MyDurhamLaw — Learn law | Write law | Speak law. Durham-specific support for students."
+          content="Caseway — Learn law | Write law | Speak law. Independent support for Durham students."
         />
         <meta
           name="keywords"
           content="law, study, Durham, AI, assistant, legal education, Durham University"
         />
-        <meta name="author" content="MyDurhamLaw Team" />
-        <meta name="application-name" content="MyDurhamLaw" />
+        <meta name="author" content="Caseway Team" />
+        <meta name="application-name" content="Caseway" />
 
         {/* Global Open Graph Defaults */}
-        <meta property="og:site_name" content="MyDurhamLaw" />
+        <meta property="og:site_name" content="Caseway" />
         <meta
           property="og:title"
-          content="MyDurhamLaw — Learn law | Write law | Speak law"
+          content="Caseway — Learn law | Write law | Speak law"
         />
         <meta
           property="og:description"
-          content="Durham-specific law support that helps students think, write, and reason like real lawyers."
+          content="Independent law student study platform — built for students at Durham University and beyond."
         />
         <meta property="og:type" content="website" />
-        <meta property="og:url" content="https://mydurhamlaw.com/" />
+        <meta property="og:url" content="https://www.casewaylaw.ai/" />
         <meta
           property="og:image"
-          content="https://mydurhamlaw.com/og/mydurhamlaw-og.png"
+          content="https://www.casewaylaw.ai/og/caseway-preview.png"
         />
         <meta property="og:image:width" content="1200" />
         <meta property="og:image:height" content="630" />
         <meta
           property="og:image:alt"
-          content="MyDurhamLaw - Learn law | Write law | Speak law"
+          content="Caseway - Learn law | Write law | Speak law"
         />
 
         {/* Twitter Card */}
         <meta name="twitter:card" content="summary_large_image" />
         <meta
           name="twitter:title"
-          content="MyDurhamLaw — Learn law | Write law | Speak law"
+          content="Caseway — Learn law | Write law | Speak law"
         />
         <meta
           name="twitter:description"
-          content="Durham-specific law support that helps students think, write, and reason like real lawyers."
+          content="Independent law student study platform — built for students at Durham University and beyond."
         />
         <meta
           name="twitter:image"
-          content="https://mydurhamlaw.com/og/og-default.png?v=2"
+          content="https://www.casewaylaw.ai/og/caseway-preview.png"
         />
         <meta
           name="twitter:image:alt"
-          content="MyDurhamLaw - Learn law | Write law | Speak law"
+          content="Caseway - Learn law | Write law | Speak law"
         />
       </Head>
       <body>

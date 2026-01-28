@@ -1,60 +1,89 @@
-import React from "react";
+import {
+  BRAND_NAME,
+  BRAND_TAGLINE,
+  LEGAL_DISCLAIMER_LONG,
+  LEGAL_DISCLAIMER_SHORT,
+} from "@/lib/brand";
 import Head from "next/head";
 import Link from "next/link";
 import NextImage from "next/image";
-import { useRouter } from "next/router";
 import {
-  Brain,
   Shield,
-  CheckCircle,
-  ArrowRight,
   BookOpen,
-  TrendingUp,
   FileText,
+  Brain,
+  TrendingUp,
+  ArrowRight,
   HelpCircle,
   Clock,
+  CheckCircle,
 } from "lucide-react";
-import { useAuth } from "@/lib/supabase/AuthContext";
-import { isRouteAbortError } from "@/lib/navigation/safeNavigate";
-import { guides as allGuides } from "@/content/articlesIndex";
 
-export default function DurhamLanding() {
-  const router = useRouter();
-  const { user } = useAuth();
+// Mock Data for Guides (kept consistent)
+const allGuides = [
+  {
+    title: "Learn law. Write law. Speak law.",
+    description:
+      "Understand the three pillars of legal mastery. Why law school focus on reading and writing is only half the battle.",
+    slug: "learn-write-speak-law",
+    category: ["Brand Pillar"],
+    href: "/learn/learn-write-speak-law",
+    readTime: "10 min read",
+  },
+  {
+    title: "Durham Law AI Study Assistant",
+    description:
+      "Master Durmah's features for ethical, effective legal study. Case research, IRAC issue spotting, and exam prep.",
+    slug: "durham-law-ai-study-assistant",
+    category: ["Study Skills"],
+    href: "/learn/durham-law-ai-study-assistant",
+    readTime: "12 min read",
+  },
+  {
+    title: "Durham Law Academic Integrity & AI",
+    description:
+      "Understand Durham's AI policy. What's permitted, prohibited, and how to use AI ethically in legal education.",
+    slug: "durham-law-academic-integrity-ai",
+    category: ["Ethics"],
+    href: "/learn/durham-law-academic-integrity-ai",
+    readTime: "10 min read",
+  },
+  {
+    title: "How to Ask Better Legal Questions",
+    description:
+      "Frame precise analytical questions for tutorials, Durmah, and research. The 4-layer questioning framework.",
+    slug: "how-to-ask-better-legal-questions",
+    category: ["Workflow"],
+    href: "/learn/how-to-ask-better-legal-questions",
+    readTime: "8 min read",
+  },
+];
 
-  // Redirect logged-in users
-  React.useEffect(() => {
-    if (user) {
-      router.replace("/dashboard").catch((err) => {
-        if (!isRouteAbortError(err)) console.error("Redirect error:", err);
-      });
-    }
-  }, [user, router]);
-
+export default function LandingPage() {
   return (
     <>
       <Head>
-        <title>MyDurhamLaw — Learn law | Write law | Speak law</title>
+        <title>{BRAND_NAME} — Learn law | Write law | Speak law</title>
         <meta
           name="description"
-          content="Durham-specific law support that helps students think, write, and reason like real lawyers."
+          content="Independent law student study platform — built for students at Durham University and beyond."
         />
 
         {/* Global OpenGraph Lock */}
         <meta property="og:type" content="website" />
-        <meta property="og:site_name" content="MyDurhamLaw" />
-        <meta property="og:url" content="https://mydurhamlaw.com/" />
+        <meta property="og:site_name" content={BRAND_NAME} />
+        <meta property="og:url" content="https://www.casewaylaw.ai/" />
         <meta
           property="og:title"
-          content="MyDurhamLaw — Learn law | Write law | Speak law"
+          content={`${BRAND_NAME} — Learn law | Write law | Speak law`}
         />
         <meta
           property="og:description"
-          content="Durham-specific law support that helps students think, write, and reason like real lawyers."
+          content="Independent law student study platform — built for students at Durham University and beyond."
         />
         <meta
           property="og:image"
-          content="https://mydurhamlaw.com/og/mydurhamlaw-preview.png"
+          content="https://www.casewaylaw.ai/og/caseway-preview.png"
         />
         <meta property="og:image:width" content="1200" />
         <meta property="og:image:height" content="630" />
@@ -63,7 +92,7 @@ export default function DurhamLanding() {
         <meta name="twitter:card" content="summary_large_image" />
         <meta
           name="twitter:image"
-          content="https://mydurhamlaw.com/og/mydurhamlaw-preview.png"
+          content="https://www.casewaylaw.ai/og/caseway-preview.png"
         />
       </Head>
 
@@ -81,36 +110,17 @@ export default function DurhamLanding() {
           </div>
 
           <p className="text-gray-500 dark:text-gray-500 text-xs sm:text-sm font-medium max-w-2xl mx-auto mb-8 tracking-wide">
-            MyDurhamLaw is an independent study companion designed around the
-            Durham Law journey. <br className="hidden sm:block" />
-            It is not affiliated with or endorsed by Durham University.
+            {LEGAL_DISCLAIMER_SHORT} <br className="hidden sm:block" />
+            Built for students studying law at Durham University.
           </p>
 
           <h1 className="flex flex-col md:flex-row md:flex-nowrap justify-center items-center gap-2 md:gap-3 text-4xl md:text-5xl xl:text-6xl font-black mb-6 tracking-tight text-gray-900 dark:text-white leading-tight">
-            <Link
-              href="/learn"
-              className="px-3 md:px-4 py-2 rounded-xl bg-indigo-600 text-white border-indigo-500 dark:bg-indigo-900/80 dark:border-indigo-700 shadow-lg shadow-indigo-200 dark:shadow-indigo-900/20 hover:bg-indigo-700 dark:hover:bg-indigo-800 hover:scale-105 active:scale-95 whitespace-nowrap transition-all"
-            >
-              Learn law
-            </Link>
-            <span className="hidden md:block text-purple-300 dark:text-purple-500 text-4xl md:text-5xl font-black opacity-50">
-              |
+            <span className="bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-indigo-600">
+              The Caseway
             </span>
-            <Link
-              href="/write"
-              className="px-3 md:px-4 py-2 rounded-xl bg-indigo-600 text-white border-indigo-500 dark:bg-indigo-900/80 dark:border-indigo-700 shadow-lg shadow-indigo-200 dark:shadow-indigo-900/20 hover:bg-indigo-700 dark:hover:bg-indigo-800 hover:scale-105 active:scale-95 whitespace-nowrap transition-all"
-            >
-              Write law
-            </Link>
-            <span className="hidden md:block text-purple-300 dark:text-purple-500 text-4xl md:text-5xl font-black opacity-50">
-              |
+            <span className="text-gray-900 dark:text-white">
+              to Legal Mastery
             </span>
-            <Link
-              href="/quiz"
-              className="px-3 md:px-4 py-2 rounded-xl bg-indigo-600 text-white border-indigo-500 dark:bg-indigo-900/80 dark:border-indigo-700 shadow-lg shadow-indigo-200 dark:shadow-indigo-900/20 hover:bg-indigo-700 dark:hover:bg-indigo-800 hover:scale-105 active:scale-95 whitespace-nowrap transition-all"
-            >
-              Speak law
-            </Link>
           </h1>
 
           <div className="mb-8">
@@ -204,7 +214,7 @@ export default function DurhamLanding() {
                     <span>Featured Article</span>
                   </div>
                   <h2 className="text-3xl md:text-4xl font-black text-gray-900 leading-tight">
-                    “No Question Is a Stupid Question”
+                    &ldquo;No Question Is a Stupid Question&rdquo;
                   </h2>
                   <p className="text-lg md:text-xl text-gray-600 font-medium leading-relaxed">
                     Why fear stops students from learning — and what changes
@@ -220,8 +230,8 @@ export default function DurhamLanding() {
                       Read the article <ArrowRight className="w-5 h-5" />
                     </div>
                     <p className="text-xs text-gray-400 italic">
-                      “Ask and you shall learn — learning at the speed of
-                      courage, not confidence.”
+                      &ldquo;Ask and you shall learn — learning at the speed of
+                      courage, not confidence.&rdquo;
                     </p>
                   </div>
                 </div>
@@ -458,8 +468,8 @@ export default function DurhamLanding() {
                   </div>
 
                   <div className="p-4 bg-gray-50 dark:bg-gray-900/50 rounded-xl border border-gray-100 dark:border-white/5 text-sm text-gray-600 dark:text-gray-300 italic">
-                    "The author implies that legislative intent is irrelevant
-                    when..."
+                    &quot;The author implies that legislative intent is
+                    irrelevant when...&quot;
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">
@@ -493,8 +503,8 @@ export default function DurhamLanding() {
               law.
             </p>
             <p className="text-xl text-gray-400 leading-relaxed mb-10 font-light">
-              MyDurhamLaw includes a regularly refreshed legal news feed to help
-              students build the habit of engaging with real-world legal
+              {BRAND_NAME} includes a regularly refreshed legal news feed to
+              help students build the habit of engaging with real-world legal
               developments — not just lecture notes and textbooks.
             </p>
 
@@ -672,7 +682,7 @@ export default function DurhamLanding() {
         </div>
       </section>
 
-      {/* FAQ Section (Add new FAQ here or replace existing) */}
+      {/* FAQ Section */}
       <section
         id="faq"
         className="py-20 bg-gray-50 dark:bg-gray-900 border-t border-gray-100 dark:border-white/5 transition-colors"
@@ -684,8 +694,8 @@ export default function DurhamLanding() {
           <div className="grid gap-8">
             {[
               {
-                q: "Is MyDurhamLaw part of Durham University?",
-                a: "No. MyDurhamLaw is an independent educational technology platform. It is not affiliated with or endorsed by Durham University. We provide expert AI-powered assistance designed to support Durham Law students in building real legal skills.",
+                q: `Is ${BRAND_NAME} part of Durham University?`,
+                a: `No. ${BRAND_NAME} is an independent educational technology platform. It is not affiliated with or endorsed by Durham University. We provide tailored AI-powered assistance designed to support Durham Law students in building real legal skills.`,
               },
               {
                 q: "What is the One Plan?",
