@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/Button";
 import RelatedGuides from "@/components/seo/RelatedGuides";
 
 export default function ExamPrepDemo() {
+  const [activeFeature, setActiveFeature] = React.useState(0);
   return (
     <div className="bg-white min-h-screen">
       <Head>
@@ -81,13 +82,19 @@ export default function ExamPrepDemo() {
                 ].map((item, i) => (
                   <div
                     key={i}
-                    className="flex gap-4 p-6 rounded-3xl border border-red-100 bg-red-50/30 shadow-sm"
+                    data-demo={`exam-feature-${i}`}
+                    onClick={() => setActiveFeature(i)}
+                    className={`flex gap-4 p-6 rounded-3xl border transition-all cursor-pointer ${activeFeature === i ? "bg-red-50 border-red-200 shadow-md scale-[1.02]" : "bg-red-50/30 border-red-100 hover:bg-red-50/50"}`}
                   >
-                    <div className="w-12 h-12 rounded-2xl bg-white text-red-600 flex items-center justify-center shrink-0 shadow-sm border border-red-100">
+                    <div
+                      className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-sm border transition-colors ${activeFeature === i ? "bg-red-600 text-white border-red-600" : "bg-white text-red-600 border-red-100"}`}
+                    >
                       {item.icon}
                     </div>
                     <div>
-                      <h4 className="font-bold text-gray-900 mb-1">
+                      <h4
+                        className={`font-bold text-gray-900 mb-1 ${activeFeature === i ? "text-red-900" : "text-gray-900"}`}
+                      >
                         {item.title}
                       </h4>
                       <p className="text-gray-500 text-sm leading-relaxed">
@@ -106,9 +113,13 @@ export default function ExamPrepDemo() {
                   video={DEMO_VIDEOS.exam_prep}
                   trigger={
                     <div className="aspect-video bg-gray-50 rounded-2xl border border-dashed border-gray-200 flex flex-col items-center justify-center text-center p-8 cursor-pointer hover:bg-gray-100 transition-colors">
-                      <div className="w-20 h-20 rounded-full bg-red-600 text-white flex items-center justify-center mb-6 shadow-xl shadow-red-100 group-hover:scale-110 transition">
-                        <Play className="w-8 h-8 ml-1 fill-current" />
-                      </div>
+                      <button
+                        data-demo="btn-start-timer"
+                        className="w-full py-4 rounded-xl bg-orange-600 text-white font-bold text-lg shadow-lg hover:bg-orange-700 hover:shadow-xl transition-all flex items-center justify-center gap-2 group"
+                      >
+                        <Play className="w-5 h-5 fill-current" />
+                        Start Mock Timer (45m)
+                      </button>
                       <p className="text-xl font-black text-gray-900 mb-2">
                         Simulate an Exam Scenario
                       </p>

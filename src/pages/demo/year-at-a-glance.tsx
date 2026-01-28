@@ -19,6 +19,7 @@ import { DemoPlayer } from "@/components/demos/DemoPlayer";
 import { DEMO_VIDEOS } from "@/content/demoVideos";
 
 export default function YAAGDemo() {
+  const [selectedYear, setSelectedYear] = React.useState<number | null>(null);
   return (
     <div className="bg-white min-h-screen">
       <Head>
@@ -157,15 +158,27 @@ export default function YAAGDemo() {
               ].map((lvl, i) => (
                 <div
                   key={i}
-                  className="bg-white p-8 rounded-3xl border border-blue-100 shadow-sm hover:shadow-md transition-shadow"
+                  data-demo={`select-year-${i}`}
+                  onClick={() => setSelectedYear(i)}
+                  className={`p-8 rounded-3xl border shadow-sm transition-all cursor-pointer ${
+                    selectedYear === i
+                      ? "bg-blue-600 border-blue-600 text-white shadow-xl scale-105"
+                      : "bg-white border-blue-100 hover:shadow-md text-gray-900"
+                  }`}
                 >
-                  <div className="text-xs font-black text-blue-600 uppercase tracking-widest mb-4">
+                  <div
+                    className={`text-xs font-black uppercase tracking-widest mb-4 ${selectedYear === i ? "text-blue-100" : "text-blue-600"}`}
+                  >
                     {lvl.year}
                   </div>
-                  <h4 className="font-bold text-gray-900 text-xl mb-3">
+                  <h4
+                    className={`font-bold text-xl mb-3 ${selectedYear === i ? "text-white" : "text-gray-900"}`}
+                  >
                     {lvl.title}
                   </h4>
-                  <p className="text-gray-500 text-sm leading-relaxed">
+                  <p
+                    className={`text-sm leading-relaxed ${selectedYear === i ? "text-blue-100" : "text-gray-500"}`}
+                  >
                     {lvl.desc}
                   </p>
                 </div>

@@ -18,6 +18,7 @@ import { DemoPlayer } from "@/components/demos/DemoPlayer";
 import { DEMO_VIDEOS } from "@/content/demoVideos";
 
 export default function AssignmentsDemo() {
+  const [showPlan, setShowPlan] = React.useState(false);
   return (
     <div className="bg-white min-h-screen">
       <Head>
@@ -115,6 +116,14 @@ export default function AssignmentsDemo() {
                     key={i}
                     className="p-6 rounded-3xl bg-white border border-gray-100 shadow-sm hover:border-purple-100 transition-colors group"
                   >
+                    {i === 3 && ( // Only render the input for the 4th item (index 3)
+                      <input
+                        type="text"
+                        data-demo="input-assignment-title"
+                        placeholder="e.g. Tort Law: Negligence Essay"
+                        className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition-all mb-4"
+                      />
+                    )}
                     <div className="flex items-start gap-4">
                       <div className="w-10 h-10 rounded-xl bg-purple-50 flex items-center justify-center shrink-0 group-hover:bg-purple-600 group-hover:text-white transition-colors duration-300">
                         {item.icon}
@@ -175,6 +184,23 @@ export default function AssignmentsDemo() {
                 <span className="italic text-purple-300 underline decoration-purple-400/30">
                   clarity.
                 </span>
+                <button
+                  data-demo="btn-generate-plan"
+                  onClick={() => setShowPlan(true)}
+                  className="bg-indigo-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-indigo-700 transition"
+                >
+                  Generate Plan
+                </button>
+                {showPlan && (
+                  <div className="mt-8 p-6 bg-indigo-900/10 rounded-xl border border-indigo-500/20 animate-in fade-in slide-in-from-bottom-4">
+                    <div className="flex items-center gap-2 mb-2 text-indigo-400 font-bold uppercase tracking-widest text-xs">
+                      <Zap className="w-4 h-4" /> AI Analysis Ready
+                    </div>
+                    <p className="text-lg text-white font-medium">
+                      Structure generated: 4 Issues Identified.
+                    </p>
+                  </div>
+                )}
               </h2>
               <p className="text-xl text-purple-100 mb-12 opacity-80 leading-relaxed font-medium">
                 Ditch the late-night stress. Move from orignial brief to

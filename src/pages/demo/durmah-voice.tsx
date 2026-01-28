@@ -10,6 +10,7 @@ import GuideCallout from "@/components/seo/GuideCallout";
 import { Users } from "lucide-react";
 
 export default function DurmahVoiceDemo() {
+  const [activeStep, setActiveStep] = React.useState(0);
   return (
     <div className="bg-white min-h-screen">
       <Head>
@@ -133,8 +134,15 @@ export default function DurmahVoiceDemo() {
                   desc: "Every response is cross-referenced with your specific lecture transcripts, not generic internet law.",
                 },
               ].map((step, i) => (
-                <div key={i} className="space-y-4">
-                  <div className="text-4xl font-black text-indigo-200">
+                <div
+                  key={i}
+                  data-demo={`voice-step-${i}`}
+                  onClick={() => setActiveStep(i)}
+                  className={`space-y-4 p-6 rounded-2xl transition-all cursor-pointer ${activeStep === i ? "bg-white shadow-xl scale-105" : "hover:bg-white/50"}`}
+                >
+                  <div
+                    className={`text-4xl font-black ${activeStep === i ? "text-indigo-600" : "text-indigo-200"}`}
+                  >
                     {step.step}
                   </div>
                   <h4 className="font-bold text-gray-900 text-lg">

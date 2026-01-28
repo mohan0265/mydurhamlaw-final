@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/Button";
 import RelatedGuides from "@/components/seo/RelatedGuides";
 
 export default function MyLecturesDemo() {
+  const [activeWorkflow, setActiveWorkflow] = React.useState(0);
   return (
     <div className="bg-white min-h-screen">
       <Head>
@@ -66,12 +67,23 @@ export default function MyLecturesDemo() {
                     icon: <Play className="w-5 h-5" />,
                   },
                 ].map((item, i) => (
-                  <li key={i} className="flex gap-4">
-                    <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0 border border-indigo-100 shadow-sm">
+                  <li
+                    key={i}
+                    data-demo={`lecture-step-${i}`}
+                    onClick={() => setActiveWorkflow(i)}
+                    className={`flex gap-4 p-4 rounded-xl cursor-pointer transition-all ${activeWorkflow === i ? "bg-indigo-50 border border-indigo-200 shadow-md" : "hover:bg-gray-50 border border-transparent"}`}
+                  >
+                    <div
+                      className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border shadow-sm transition-colors ${activeWorkflow === i ? "bg-indigo-600 text-white border-indigo-600" : "bg-indigo-50 text-indigo-600 border-indigo-100"}`}
+                    >
                       {item.icon}
                     </div>
                     <div>
-                      <h4 className="font-bold text-gray-900">{item.title}</h4>
+                      <h4
+                        className={`font-bold transition-colors ${activeWorkflow === i ? "text-indigo-900" : "text-gray-900"}`}
+                      >
+                        {item.title}
+                      </h4>
                       <p className="text-gray-600 text-sm mt-1 leading-relaxed">
                         {item.desc}
                       </p>

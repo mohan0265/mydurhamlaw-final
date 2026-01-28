@@ -20,6 +20,7 @@ import RelatedGuides from "@/components/seo/RelatedGuides";
 import GuideCallout from "@/components/seo/GuideCallout";
 
 export default function QuizMeDemo() {
+  const [activeDrill, setActiveDrill] = React.useState(0);
   return (
     <div className="bg-white min-h-screen">
       <Head>
@@ -98,13 +99,21 @@ export default function QuizMeDemo() {
                 ].map((item, i) => (
                   <li
                     key={i}
-                    className="flex gap-4 p-5 rounded-2xl bg-orange-50/50 border border-orange-100"
+                    data-demo={`drill-option-${i}`}
+                    onClick={() => setActiveDrill(i)}
+                    className={`flex gap-4 p-5 rounded-2xl border transition-all cursor-pointer ${activeDrill === i ? "bg-orange-100 border-orange-300 shadow-lg scale-[1.02]" : "bg-orange-50/50 border-orange-100 hover:bg-orange-100/50"}`}
                   >
-                    <div className="w-10 h-10 rounded-xl bg-white text-orange-600 flex items-center justify-center shrink-0 shadow-sm border border-orange-100">
+                    <div
+                      className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-sm border transition-colors ${activeDrill === i ? "bg-orange-600 text-white border-orange-600" : "bg-white text-orange-600 border-orange-100"}`}
+                    >
                       {item.icon}
                     </div>
                     <div>
-                      <h4 className="font-bold text-gray-900">{item.title}</h4>
+                      <h4
+                        className={`font-bold ${activeDrill === i ? "text-orange-900" : "text-gray-900"}`}
+                      >
+                        {item.title}
+                      </h4>
                       <p className="text-gray-500 text-sm mt-1 leading-relaxed">
                         {item.desc}
                       </p>
