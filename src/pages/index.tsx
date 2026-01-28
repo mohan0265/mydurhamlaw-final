@@ -97,13 +97,13 @@ export default function LandingPage() {
       </Head>
 
       {/* 1) HERO SECTION */}
-      <div className="relative min-h-screen flex items-center justify-center py-16 lg:py-24 bg-white dark:bg-gray-950 overflow-hidden transition-colors duration-500">
-        <div className="absolute inset-0 bg-gradient-to-b from-purple-50 via-white to-white dark:from-purple-900/20 dark:via-gray-950 dark:to-gray-950 transition-colors duration-500" />
+      <div className="relative min-h-screen flex items-center justify-center py-16 lg:py-24 bg-[#F7F6F2] dark:bg-[#0B1412] overflow-hidden transition-colors duration-500">
+        <div className="absolute inset-0 bg-gradient-to-b from-[#123733]/5 via-[#F7F6F2] to-[#F7F6F2] dark:from-[#123733]/40 dark:via-[#0B1412] dark:to-[#0B1412] transition-colors duration-500" />
         <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-5 dark:opacity-10 pointer-events-none" />
 
         <div className="relative z-10 max-w-7xl mx-auto px-6 w-full text-center">
           <div className="inline-flex items-center gap-2 bg-white border border-gray-200 dark:bg-white/5 dark:border-white/10 backdrop-blur-xl px-4 py-2 rounded-full mb-6 animate-in fade-in slide-in-from-bottom-4 duration-700 shadow-sm dark:shadow-none">
-            <span className="w-2 h-2 bg-purple-500 dark:bg-purple-400 rounded-full animate-pulse shadow-[0_0_10px_#a855f7]"></span>
+            <span className="w-2 h-2 bg-[#D5BF76] dark:bg-[#D5BF76] rounded-full animate-pulse shadow-[0_0_10px_#D5BF76]"></span>
             <span className="text-sm font-medium text-gray-500 dark:text-gray-400 tracking-wide uppercase">
               Accepting all years (Foundation → Year 3)
             </span>
@@ -115,7 +115,7 @@ export default function LandingPage() {
           </p>
 
           <h1 className="flex flex-col md:flex-row md:flex-nowrap justify-center items-center gap-2 md:gap-3 text-4xl md:text-5xl xl:text-6xl font-black mb-6 tracking-tight text-gray-900 dark:text-white leading-tight">
-            <span className="bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-indigo-600">
+            <span className="bg-clip-text text-transparent bg-gradient-to-r from-[#0f766e] to-[#D5BF76]">
               The Caseway
             </span>
             <span className="text-gray-900 dark:text-white">
@@ -126,7 +126,7 @@ export default function LandingPage() {
           <div className="mb-8">
             <Link
               href="/stay-current"
-              className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-gray-50 border border-gray-200 text-gray-500 hover:bg-white hover:border-red-200 hover:text-red-600 dark:bg-white/5 dark:border-white/10 dark:text-gray-400 dark:hover:bg-white/10 dark:hover:border-red-500/30 dark:hover:text-white font-bold tracking-wide uppercase text-sm transition-all hover:scale-105 hover:shadow-md dark:hover:shadow-none"
+              className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-gray-50 border border-gray-200 text-gray-500 hover:bg-white hover:border-[#D5BF76] hover:text-[#0f766e] dark:bg-white/5 dark:border-white/10 dark:text-gray-400 dark:hover:bg-white/10 dark:hover:border-[#D5BF76] dark:hover:text-white font-bold tracking-wide uppercase text-sm transition-all hover:scale-105 hover:shadow-md dark:hover:shadow-none"
             >
               Stay current.
             </Link>
@@ -156,8 +156,8 @@ export default function LandingPage() {
               },
             ].map((pVal) => (
               <Link key={pVal.name} href={pVal.href}>
-                <div className="group relative bg-white border border-gray-100 dark:bg-white/5 dark:border-white/5 hover:border-purple-200 dark:hover:border-white/20 rounded-2xl p-5 transition-all duration-300 backdrop-blur-sm cursor-pointer shadow-sm hover:shadow-md dark:shadow-none hover:-translate-y-1">
-                  <div className="text-lg font-bold text-gray-900 dark:text-white mb-0.5 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors uppercase tracking-widest">
+                <div className="group relative bg-white border border-gray-100 dark:bg-white/5 dark:border-white/5 hover:border-[#D5BF76]/50 dark:hover:border-[#D5BF76]/50 rounded-2xl p-5 transition-all duration-300 backdrop-blur-sm cursor-pointer shadow-sm hover:shadow-md dark:shadow-none hover:-translate-y-1">
+                  <div className="text-lg font-bold text-gray-900 dark:text-white mb-0.5 group-hover:text-[#0f766e] dark:group-hover:text-[#D5BF76] transition-colors uppercase tracking-widest">
                     {pVal.name}
                   </div>
                   <div className="text-xs text-gray-500 font-medium group-hover:text-gray-700 dark:group-hover:text-gray-300 transition-colors">
@@ -170,7 +170,7 @@ export default function LandingPage() {
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <Link href="/signup">
-              <button className="w-full sm:w-auto bg-gray-900 text-white dark:bg-white dark:text-gray-950 font-black py-5 px-12 rounded-full text-lg transition-all hover:scale-105 shadow-xl hover:shadow-2xl active:scale-95 uppercase tracking-widest">
+              <button className="w-full sm:w-auto bg-[#123733] text-white dark:bg-[#D5BF76] dark:text-[#0B1412] font-black py-5 px-12 rounded-full text-lg transition-all hover:scale-105 shadow-xl hover:shadow-2xl active:scale-95 uppercase tracking-widest border border-transparent hover:border-[#D5BF76]">
                 Start Free Trial
               </button>
             </Link>
@@ -191,7 +191,7 @@ export default function LandingPage() {
           </div>
 
           <div className="mt-12 pt-8 border-t border-gray-200 dark:border-white/5 text-[10px] text-gray-400 dark:text-gray-500 flex items-center justify-center gap-3 uppercase tracking-[0.2em] font-bold">
-            <Shield className="w-3 h-3 text-purple-600 dark:text-purple-400" />
+            <Shield className="w-3 h-3 text-[#D5BF76]" />
             <span>
               Learning support • Academic Integrity • Professional awareness
             </span>

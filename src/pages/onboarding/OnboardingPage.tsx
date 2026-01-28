@@ -502,7 +502,7 @@ const OnboardingPage = () => {
             <div className="flex justify-center mb-6">
               <div className="relative">
                 <NextImage
-                  src="/brand/logo-icon.svg"
+                  src="/brand/caseway/caseway-logo.svg"
                   alt="Caseway Logo"
                   width={80}
                   height={80}

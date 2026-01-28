@@ -5,31 +5,34 @@ export default function Document() {
   return (
     <Html lang="en">
       <Head>
-        {/* Favicons - Courthouse Brand (Purple) */}
-        <link rel="icon" href="/favicon.ico" sizes="any" />
+        {/* Favicons - Caseway Brand */}
+        <link rel="icon" href="/favicons/favicon.ico" sizes="any" />
         <link
           rel="icon"
           type="image/png"
           sizes="32x32"
-          href="/favicon-32x32.png"
+          href="/favicons/favicon-32x32.png"
         />
         <link
           rel="icon"
           type="image/png"
           sizes="16x16"
-          href="/favicon-16x16.png"
+          href="/favicons/favicon-16x16.png"
         />
         <link
           rel="apple-touch-icon"
           sizes="180x180"
-          href="/apple-touch-icon.png"
+          href="/favicons/apple-touch-icon.png"
         />
         <link rel="manifest" href="/site.webmanifest" />
 
         {/* Microsoft Tiles */}
-        <meta name="msapplication-TileColor" content="#5B2AAE" />
-        <meta name="msapplication-TileImage" content="/mstile-150x150.png" />
-        <meta name="theme-color" content="#5B2AAE" />
+        <meta name="msapplication-TileColor" content="#2B1B5A" />
+        <meta
+          name="msapplication-TileImage"
+          content="/favicons/mstile-150x150.png"
+        />
+        <meta name="theme-color" content="#123733" />
 
         {/* Preload critical fonts */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />

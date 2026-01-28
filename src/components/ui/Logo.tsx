@@ -1,38 +1,16 @@
 "use client";
 import React, { useState, useEffect } from "react";
-
 import Link from "next/link";
-// import { GoldScaleIcon } from './GoldScaleIcon' // Removed
+import NextImage from "next/image";
 
 interface LogoProps {
   variant?: "light" | "dark";
-  showIcon?: boolean;
-  showText?: boolean;
+  showIcon?: boolean; // Kept for API compatibility, but full logo preferred
+  showText?: boolean; // Kept for API compatibility
   size?: "sm" | "md" | "lg";
   className?: string;
   href?: string;
 }
-
-const GoldScaleIcon: React.FC<{ className?: string }> = ({ className }) => (
-  <svg
-    viewBox="0 0 100 100" // Generic square viewbox
-    fill="currentColor"
-    className={className}
-    xmlns="http://www.w3.org/2000/svg"
-  >
-    {/* Roof */}
-    <path d="M50 10 L90 40 H10 Z" fill="#C9A227" />
-    {/* Top Bar */}
-    <rect x="10" y="40" width="80" height="10" fill="#C9A227" />
-    {/* Pillars */}
-    <rect x="15" y="55" width="10" height="30" fill="#C9A227" />
-    <rect x="35" y="55" width="10" height="30" fill="#C9A227" />
-    <rect x="55" y="55" width="10" height="30" fill="#C9A227" />
-    <rect x="75" y="55" width="10" height="30" fill="#C9A227" />
-    {/* Base */}
-    <rect x="5" y="85" width="90" height="10" fill="#C9A227" />
-  </svg>
-);
 
 export const Logo: React.FC<LogoProps> = ({
   variant = "light",
@@ -42,79 +20,65 @@ export const Logo: React.FC<LogoProps> = ({
   className = "",
   href = "/",
 }) => {
-  const getSizeClasses = () => {
+  const getSizeDimensions = () => {
     switch (size) {
       case "sm":
-        return {
-          icon: "h-6 w-6",
-          text: "text-lg",
-          spacing: "ml-2",
-        };
+        return { width: 120, height: 32 };
       case "lg":
-        return {
-          icon: "h-12 w-12",
-          text: "text-3xl",
-          spacing: "ml-4",
-        };
+        return { width: 200, height: 53 };
       default:
-        return {
-          icon: "h-10 w-10",
-          text: "text-2xl",
-          spacing: "ml-3",
-        };
+        return { width: 150, height: 40 }; // md
     }
   };
 
-  const getTextClasses = () => {
-    if (variant === "dark") {
-      return {
-        text: "text-[#5B2AAE]", // Academic Purple for Light Mode (Dark Text)
-        highlight: "text-[#C9A227]", // Muted Gold
-      };
-    } else {
-      // Light Variant (for Dark backgrounds) matches request
-      return {
-        text: "text-gray-900 dark:text-white", // Adaptive
-        highlight: "text-[#C9A227]",
-      };
-    }
-  };
+  const { width, height } = getSizeDimensions();
 
-  const sizeClasses = getSizeClasses();
-  // const textClasses = getTextClasses(); // Logic refactored to specific colors
+  // Logic:
+  // variant='light' usually means "Logo for light background" -> dark text -> caseway-logo-dark.svg
+  // variant='dark' usually means "Logo for dark background" -> light text -> caseway-logo.svg
+  // Re-reading user intent: "Light mode: caseway-logo.svg (primary)", "Dark mode: caseway-logo-dark.svg".
+  // Wait, typically "caseway-logo.svg" is color/teal text (for light bg), "caseway-logo-dark.svg" is white text (for dark bg).
+  // Let's assume standard naming convention:
+  // - caseway-logo.svg (Primary/Color) -> For Light Mode backgrounds (White/Off-white)
+  // - caseway-logo-dark.svg (White/Light text) -> For Dark Mode backgrounds (Teal/Black)
+
+  // The 'variant' prop usually describes the BACKGROUND it sits on, OR the theme.
+  // Existing code: variant="light" -> text-gray-900 (Dark text). So variant="light" means "Light Mode" (Light BG, Dark Text).
+  // Existing code: variant="dark" -> text-white. So variant="dark" means "Dark Mode" (Dark BG, Light Text).
+
+  // Updated Assumption based on standard props:
+  // variant='light' -> Light Mode -> Needs Dark/Color Logo -> /brand/caseway/caseway-logo.svg (Primary)
+  // variant='dark' -> Dark Mode -> Needs White/Light Logo -> /brand/caseway/caseway-logo-dark.svg
+
+  const logoSrc =
+    variant === "dark" || variant === "dark-header" // Assuming "dark" means dark theme/bg
+      ? "/brand/caseway/caseway-logo-dark.svg" // White/Light text logo for dark backgrounds
+      : "/brand/caseway/caseway-logo.svg"; // Dark/Color text logo for light backgrounds
+
+  // If specific parts are requested (icon/text only), we might need strict asset separation
+  // But user said "Replace logo usage", implying full logo asset.
+  // For safety, if showIcon=true and showText=true, we use the full lockup.
+  // If only one is requested, we might fallback to generic text or icon if assets don't exist broken out.
+  // The README said: "caseway-logo.svg" is the logo.
 
   const LogoContent = () => (
-    <div className={`flex items-center ${className}`}>
-      {/* Logo Icon */}
-      {showIcon && (
-        <div
-          className={`relative ${sizeClasses.spacing === "ml-3" ? "mr-3" : "mr-2"} shrink-0`}
-        >
-          <GoldScaleIcon className={sizeClasses.icon} />
-        </div>
-      )}
-
-      {/* Branded Wordmark - Font Adjustments */}
-      {showText && (
-        <div className="flex flex-col justify-center">
-          {/* Main Text */}
-          <span
-            className={`${sizeClasses.text} font-black tracking-tight leading-none text-gray-900 dark:text-white`}
-            style={{
-              fontFamily: "'Inter', sans-serif",
-              letterSpacing: "-0.03em",
-            }}
-          >
-            Caseway
-          </span>
-        </div>
-      )}
+    <div
+      className={`relative flex items-center justify-center select-none ${className}`}
+    >
+      <NextImage
+        src={logoSrc}
+        alt="Caseway"
+        width={width}
+        height={height}
+        className="object-contain h-auto w-auto max-w-full"
+        priority
+      />
     </div>
   );
 
   if (href) {
     return (
-      <Link href={href} className="group">
+      <Link href={href} className="flex items-center" aria-label="Caseway Home">
         <LogoContent />
       </Link>
     );
@@ -123,7 +87,6 @@ export const Logo: React.FC<LogoProps> = ({
   return <LogoContent />;
 };
 
-// ... keep existing hooks
 export const useLogoVariant = (routePath?: string): "light" | "dark" => {
   const [variant, setVariant] = useState<"light" | "dark">("light");
   const [currentPath, setCurrentPath] = useState<string>("");
@@ -136,30 +99,29 @@ export const useLogoVariant = (routePath?: string): "light" | "dark" => {
   }, [routePath]);
 
   useEffect(() => {
-    const lightBackgroundPages = [
-      "/onboarding",
-      "/signup",
-      "/login",
-      "/complete-profile",
-      "/settings",
-      "/legal",
-      "/about",
-      "/ethics",
-      "/terms-of-use",
-      "/privacy-policy",
-      "/study-materials",
-      "/assignments",
-      "/study-schedule",
-      "/calendar",
-      "/research-hub",
-      "/tools",
+    // Pages with Dark Header or Dark Background used to use 'light' variant (legacy flip logic?)
+    // Let's standardise:
+    // If page has Light BG -> Return 'light' (Expects dark text logo)
+    // If page has Dark BG -> Return 'dark' (Expects light text logo)
+
+    // Pages with Dark Backgrounds (requiring White/Dark Mode Logo):
+    const darkBackgroundPages = [
+      "/dashboard",
+      // Homepage hero often dark?
+      // "/homepage" // if hero is dark
     ];
 
-    const isLightBackground = lightBackgroundPages.some((page) =>
-      currentPath.startsWith(page),
-    );
+    // Logic from previous file reversed 'light'/'dark' naming slightly confusingly.
+    // Let's stick to the prop meaning: variant="dark" -> Dark Theme Logo (White text).
 
-    setVariant(isLightBackground ? "dark" : "light");
+    // Most pages are Light BG.
+    // Dashboard might differ.
+    // For now, default to 'light' (Primary Logo) unless explicitly dark.
+
+    // Check if current path starts with dark pages
+    const isDarkBg = darkBackgroundPages.some((p) => currentPath.startsWith(p));
+
+    setVariant(isDarkBg ? "dark" : "light");
   }, [currentPath]);
 
   return variant;
