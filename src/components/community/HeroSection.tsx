@@ -9,11 +9,17 @@ const HERO_IMAGES = [
 export default function HeroSection() {
   const [index, setIndex] = useState(0);
   useEffect(() => {
-    const interval = setInterval(() => setIndex(i => (i + 1) % HERO_IMAGES.length), 5000);
+    const interval = setInterval(
+      () => setIndex((i) => (i + 1) % HERO_IMAGES.length),
+      5000,
+    );
     return () => clearInterval(interval);
   }, []);
   return (
-    <header className="relative h-72 md:h-96 flex items-center justify-center bg-gray-100 rounded-lg overflow-hidden mb-7" aria-label="Welcome Durnam Hero section">
+    <header
+      className="relative h-72 md:h-96 flex items-center justify-center bg-gray-100 rounded-lg overflow-hidden mb-7"
+      aria-label="Welcome Durnam Hero section"
+    >
       <img
         src={HERO_IMAGES[index]}
         alt="Durham view"
@@ -22,8 +28,12 @@ export default function HeroSection() {
         draggable={false}
       />
       <div className="z-10 relative backdrop-blur-sm bg-white/70 p-8 rounded">
-        <h1 className="text-3xl md:text-5xl font-bold text-indigo-700 drop-shadow">Welcome to Durham!</h1>
-        <p className="mt-2 text-lg text-indigo-800 font-medium">Your trusted guide to exploring, studying, and thriving</p>
+        <h1 className="text-3xl md:text-5xl font-bold text-indigo-700 drop-shadow">
+          Welcome to Your Community
+        </h1>
+        <p className="mt-2 text-lg text-indigo-800 font-medium">
+          Your trusted guide to exploring, studying, and thriving
+        </p>
       </div>
     </header>
   );

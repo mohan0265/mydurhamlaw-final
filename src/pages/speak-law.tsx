@@ -56,9 +56,12 @@ export default function SpeakLawPillar() {
                 <Users className="w-8 h-8 text-indigo-300" />
               </div>
               <div className="flex-1">
-                <h1 className="text-3xl md:text-5xl font-black text-white mb-4 tracking-tight">
-                  Speak Law
+                <h1 className="text-3xl md:text-5xl font-bold text-indigo-700 drop-shadow">
+                  Welcome to Your Community
                 </h1>
+                <h3 className="font-bold text-white mb-2">
+                  Tailored Excellence
+                </h3>
                 <p className="text-xl text-indigo-100 mb-0 opacity-80">
                   The third pillar of legal mastery: Oral Reasoning.
                 </p>
@@ -72,13 +75,13 @@ export default function SpeakLawPillar() {
             you do not yet truly own the knowledge."
           </p>
 
-          <h2>Why Speaking Matters at Durham</h2>
+          <h2>Why Speaking Matters in Law School</h2>
           <p>
-            The Durham Law experience is built around the Tutorial. Unlike
-            lectures, tutorials are interactive, demanding, and require you to
-            formulate legal arguments in real-time. Many students excel in
-            written work but feel "imposter syndrome" when asked to contribute
-            to discussions.
+            <h2 id="durham-strategies">Tutorial Question Strategies</h2>
+            The tutorial experience is built around interactive, demanding
+            sessions that require you to formulate legal arguments in real-time.
+            Many students excel in written work but feel "imposter syndrome"
+            when asked to contribute to discussions.
           </p>
 
           <p>
@@ -97,7 +100,7 @@ export default function SpeakLawPillar() {
             variant="purple"
           />
 
-          <h2>The 3 Layers of Oral Mastery</h2>
+          <h2 id="why-ai-matters">Why AI matters in Law School</h2>
 
           <h3>1. The Vocabulary of Law</h3>
           <p>
@@ -123,10 +126,9 @@ export default function SpeakLawPillar() {
           </p>
 
           <div className="not-prose my-12 p-8 bg-indigo-50 rounded-2xl border border-indigo-100">
-            <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-              <CheckCircle className="w-6 h-6 text-indigo-600" />
-              The Speaking Checklist
-            </h3>
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">
+              Official University Resources
+            </h2>
             <ul className="space-y-3 text-gray-700">
               <li className="flex items-start gap-3">
                 <Zap className="w-4 h-4 text-indigo-500 mt-1 flex-shrink-0" />

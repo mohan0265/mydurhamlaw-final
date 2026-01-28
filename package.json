@@ -9,7 +9,7 @@
   },
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "npm run audit:language && next build",
     "clean": "rimraf .next",
     "gen:brand": "node scripts/generate-brand-assets.mjs",
     "start": "next start",
@@ -19,6 +19,7 @@
     "test:unit": "vitest",
     "test:e2e": "playwright test",
     "test:ics": "node scripts/test-ics-upload.mjs",
+    "audit:language": "node scripts/audit-durham-language.mjs",
     "audit:fix": "npm audit fix --force",
     "update:deps": "npm update",
     "clean:all": "rimraf .next node_modules package-lock.json && npm install",

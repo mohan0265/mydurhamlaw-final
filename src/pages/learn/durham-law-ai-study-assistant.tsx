@@ -173,7 +173,7 @@ export default function DurhamLawAIStudyAssistant() {
           </div>
 
           {/* Why AI Matters */}
-          <h2 id="why-ai-matters">Why AI matters for Durham Law students</h2>
+          <h2 id="why-ai-matters">Why AI matters in Law School</h2>
 
           <p>
             You're studying law at Durham at a moment when AI tools—ChatGPT,

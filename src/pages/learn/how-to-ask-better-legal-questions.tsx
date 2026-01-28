@@ -280,7 +280,7 @@ export default function HowToAskBetterLegalQuestions() {
           </div>
 
           {/* Durham Strategies */}
-          <h2 id="durham-strategies">Durham-Specific Question Strategies</h2>
+          <h2 id="durham-strategies">Tutorial Question Strategies</h2>
 
           <h3>In Tutorials</h3>
           <p>Durham\'s tutorial system thrives on dialogue. Use:</p>
