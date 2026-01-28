@@ -7,6 +7,7 @@ import NextImage from "next/image";
 import { useRouter } from "next/router";
 import { Button } from "./ui/Button";
 import { ThemeToggle } from "./theme/ThemeToggle";
+import { Logo } from "./ui/Logo";
 import { useAuth } from "@/lib/supabase/AuthContext";
 import LogoutButton from "@/components/auth/LogoutButton";
 import PresenceBadge from "@/components/PresenceBadge";
@@ -334,14 +335,7 @@ export default function GlobalHeader() {
                  We will keep the icon if generic, or switch to text.
                  For now, let's stick to the existing structure but update text.
                */}
-              <NextImage
-                src="/brand/caseway-logo.svg"
-                alt={`${BRAND_NAME} Logo`}
-                width={120}
-                height={40}
-                priority
-                className="h-8 md:h-10 w-auto object-contain transition-transform group-hover:scale-105 duration-300"
-              />
+              <Logo variant="dark" />
             </Link>
             {/* Desktop nav */}
             <div className="hidden md:flex items-center gap-1">

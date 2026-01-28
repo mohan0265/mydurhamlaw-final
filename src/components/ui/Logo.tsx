@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import NextImage from "next/image";
+
 import Link from "next/link";
 // import { GoldScaleIcon } from './GoldScaleIcon' // Removed
 
@@ -12,6 +12,27 @@ interface LogoProps {
   className?: string;
   href?: string;
 }
+
+const GoldScaleIcon: React.FC<{ className?: string }> = ({ className }) => (
+  <svg
+    viewBox="0 0 100 100" // Generic square viewbox
+    fill="currentColor"
+    className={className}
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    {/* Roof */}
+    <path d="M50 10 L90 40 H10 Z" fill="#C9A227" />
+    {/* Top Bar */}
+    <rect x="10" y="40" width="80" height="10" fill="#C9A227" />
+    {/* Pillars */}
+    <rect x="15" y="55" width="10" height="30" fill="#C9A227" />
+    <rect x="35" y="55" width="10" height="30" fill="#C9A227" />
+    <rect x="55" y="55" width="10" height="30" fill="#C9A227" />
+    <rect x="75" y="55" width="10" height="30" fill="#C9A227" />
+    {/* Base */}
+    <rect x="5" y="85" width="90" height="10" fill="#C9A227" />
+  </svg>
+);
 
 export const Logo: React.FC<LogoProps> = ({
   variant = "light",
@@ -27,19 +48,19 @@ export const Logo: React.FC<LogoProps> = ({
         return {
           icon: "h-6 w-6",
           text: "text-lg",
-          spacing: "ml-1",
+          spacing: "ml-2",
         };
       case "lg":
         return {
           icon: "h-12 w-12",
-          text: "text-2xl",
-          spacing: "ml-3",
+          text: "text-3xl",
+          spacing: "ml-4",
         };
       default:
         return {
           icon: "h-10 w-10",
-          text: "text-xl",
-          spacing: "ml-2",
+          text: "text-2xl",
+          spacing: "ml-3",
         };
     }
   };
@@ -47,48 +68,45 @@ export const Logo: React.FC<LogoProps> = ({
   const getTextClasses = () => {
     if (variant === "dark") {
       return {
-        text: "text-[#5B2AAE]", // Academic Purple
+        text: "text-[#5B2AAE]", // Academic Purple for Light Mode (Dark Text)
         highlight: "text-[#C9A227]", // Muted Gold
       };
     } else {
+      // Light Variant (for Dark backgrounds) matches request
       return {
-        text: "text-white",
-        highlight: "text-[#C9A227]", // Gold on dark
+        text: "text-gray-900 dark:text-white", // Adaptive
+        highlight: "text-[#C9A227]",
       };
     }
   };
 
   const sizeClasses = getSizeClasses();
-  const textClasses = getTextClasses();
+  // const textClasses = getTextClasses(); // Logic refactored to specific colors
 
   const LogoContent = () => (
     <div className={`flex items-center ${className}`}>
       {/* Logo Icon */}
       {showIcon && (
-        <div className="relative mr-3">
-          <NextImage
-            src={
-              variant === "dark"
-                ? "/brand/logo-icon.svg"
-                : "/brand/logo-icon-white.svg"
-            }
-            alt="Logo"
-            width={size === "sm" ? 24 : size === "lg" ? 48 : 40}
-            height={size === "sm" ? 24 : size === "lg" ? 48 : 40}
-            className="object-contain transition-transform duration-300 group-hover:scale-110"
-          />
+        <div
+          className={`relative ${sizeClasses.spacing === "ml-3" ? "mr-3" : "mr-2"} shrink-0`}
+        >
+          <GoldScaleIcon className={sizeClasses.icon} />
         </div>
       )}
 
-      {/* Branded Wordmark */}
+      {/* Branded Wordmark - Font Adjustments */}
       {showText && (
-        <div className={""}>
-          <div
-            className={`${sizeClasses.text} font-bold tracking-tight flex items-baseline gap-[1px]`}
+        <div className="flex flex-col justify-center">
+          {/* Main Text */}
+          <span
+            className={`${sizeClasses.text} font-black tracking-tight leading-none text-gray-900 dark:text-white`}
+            style={{
+              fontFamily: "'Inter', sans-serif",
+              letterSpacing: "-0.03em",
+            }}
           >
-            <span className={textClasses.text}>Case</span>
-            <span className={textClasses.highlight}>way</span>
-          </div>
+            Caseway
+          </span>
         </div>
       )}
     </div>
@@ -105,13 +123,12 @@ export const Logo: React.FC<LogoProps> = ({
   return <LogoContent />;
 };
 
-// Helper hook to determine logo variant based on current route or theme
+// ... keep existing hooks
 export const useLogoVariant = (routePath?: string): "light" | "dark" => {
   const [variant, setVariant] = useState<"light" | "dark">("light");
   const [currentPath, setCurrentPath] = useState<string>("");
 
   useEffect(() => {
-    // Only access window.location inside useEffect hook for SSR safety
     if (typeof window !== "undefined") {
       const path = routePath || window.location.pathname;
       setCurrentPath(path);
@@ -119,7 +136,6 @@ export const useLogoVariant = (routePath?: string): "light" | "dark" => {
   }, [routePath]);
 
   useEffect(() => {
-    // Pages with light/white backgrounds should use dark logo
     const lightBackgroundPages = [
       "/onboarding",
       "/signup",
@@ -139,7 +155,6 @@ export const useLogoVariant = (routePath?: string): "light" | "dark" => {
       "/tools",
     ];
 
-    // Check if current path starts with any light background page
     const isLightBackground = lightBackgroundPages.some((page) =>
       currentPath.startsWith(page),
     );
