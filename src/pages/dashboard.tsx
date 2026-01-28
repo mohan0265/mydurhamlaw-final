@@ -450,12 +450,30 @@ function DashboardContent() {
                     </span>
                     {isMounted && focusItem.due_date && (
                       <div className="flex items-center gap-3 mt-2">
-                        <CountdownTimer
-                          dueDate={focusItem.due_date}
-                          style="banner"
-                          suppressTimer={!showCountdown}
-                          className="text-white bg-white/20 px-4 py-2 rounded-xl backdrop-blur-md border border-white/20"
-                        />
+                        {/* Interactive Timer Container */}
+                        <div
+                          onClick={toggleCountdownPreference}
+                          className="relative group cursor-pointer"
+                        >
+                          <CountdownTimer
+                            dueDate={focusItem.due_date}
+                            style="banner"
+                            suppressTimer={!showCountdown}
+                            className={`text-white bg-white/20 px-4 py-2 rounded-xl backdrop-blur-md border border-white/20 transition-all hover:bg-white/30 ${
+                              !showCountdown
+                                ? "ring-2 ring-transparent hover:ring-white/30"
+                                : ""
+                            }`}
+                          />
+                          {/* "Toast" / Tooltip */}
+                          {!showCountdown && (
+                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-[10px] font-bold rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
+                              Show Timer
+                              {/* Tiny Triangle */}
+                              <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
+                            </div>
+                          )}
+                        </div>
                         {/* Brief Date Display */}
                         <span className="text-sm font-semibold text-indigo-200 uppercase tracking-wide">
                           {(focusItem.eventDay
