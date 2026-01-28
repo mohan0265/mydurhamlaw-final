@@ -323,7 +323,7 @@ export default function DurhamLanding() {
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
           <div className="text-center">
             <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
-              Durham Law exam prep & revision workflow
+              Law exam prep & revision workflow
             </h2>
             <p className="mt-2 text-base text-gray-600 dark:text-gray-400">
               A simple loop designed for Durham Law students: clarity →
@@ -625,7 +625,7 @@ export default function DurhamLanding() {
             <h2 className="text-3xl md:text-4xl font-black text-gray-900 dark:text-white mb-4 tracking-tighter">
               Popular{" "}
               <span className="text-purple-600 dark:text-purple-400">
-                Durham Law Guides
+                Law Guides
               </span>
             </h2>
             <p className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto font-medium opacity-80">

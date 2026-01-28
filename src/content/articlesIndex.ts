@@ -35,9 +35,9 @@ export const guides: Guide[] = [
     href: "/learn/durham-law-ai-study-assistant",
     canonicalPath:
       "https://mydurhamlaw.com/learn/durham-law-ai-study-assistant",
-    title: "Durham Law AI Study Assistant",
+    title: "AI Study Assistant",
     description:
-      "Master Durmah features for ethical case research, IRAC issue spotting, and exam prep.",
+      "Master Durmah features for ethical case research, IRAC issue spotting, and exam prep. Optimized for the Durham syllabus.",
     category: ["Study Skills"],
     readTime: "12 min read",
     publishedAt: "2025-12-15",
@@ -51,7 +51,7 @@ export const guides: Guide[] = [
       "https://mydurhamlaw.com/learn/durham-law-academic-integrity-ai",
     title: "Academic Integrity & AI Use",
     description:
-      "Understand Durham's AI policy. What's permitted, prohibited, and how to stay compliant.",
+      "Understand the boundaries of AI use. What's permitted, prohibited, and how to stay compliant with University standards.",
     category: ["Ethics"],
     readTime: "10 min read",
     publishedAt: "2025-11-20",
@@ -77,9 +77,9 @@ export const guides: Guide[] = [
     slug: "durham-law-exam-technique",
     href: "/learn/durham-law-exam-technique",
     canonicalPath: "https://mydurhamlaw.com/learn/durham-law-exam-technique",
-    title: "Durham Law Exam Technique",
+    title: "Law Exam Technique",
     description:
-      "Master problem questions with IRAC, structure essays, and manage time like a pro.",
+      "Master problem questions with IRAC, structure essays, and manage time like a pro. Tailored for Durham exam formats.",
     category: ["Exam Prep"],
     readTime: "11 min read",
     publishedAt: "2025-11-05",
