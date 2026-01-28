@@ -319,7 +319,7 @@ export default function GlobalHeader() {
 
   return (
     <>
-      <header className="sticky top-0 z-50 bg-[#F7F6F2]/95 dark:bg-[#0B1412]/95 backdrop-blur shadow-sm dark:shadow-none border-b border-gray-100 dark:border-[#D5BF76]/20 transition-colors duration-500">
+      <header className="sticky top-0 z-50 bg-[#F7F6F2]/95 dark:bg-[#123733]/95 backdrop-blur shadow-sm dark:shadow-none border-b border-gray-100 dark:border-[#D5BF76]/20 transition-colors duration-500">
         <nav className="mx-auto max-w-7xl px-4 sm:px-6">
           <div className="min-h-[72px] md:min-h-[110px] py-4 flex items-center justify-between transition-all duration-300">
             {/* Brand */}
@@ -335,7 +335,7 @@ export default function GlobalHeader() {
                  We will keep the icon if generic, or switch to text.
                  For now, let's stick to the existing structure but update text.
                */}
-              <Logo variant="dark" />
+              <Logo variant="light" size="sm" className="h-8 w-auto" />
             </Link>
             {/* Desktop nav */}
             <div className="hidden md:flex items-center gap-1">

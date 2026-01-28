@@ -15,6 +15,7 @@ import {
   Scale,
   GraduationCap,
 } from "lucide-react";
+import { Logo } from "@/components/ui/Logo";
 import {
   BRAND_NAME,
   BRAND_TAGLINE,
@@ -133,16 +134,15 @@ export const AppFooter: React.FC<AppFooterProps> = ({ isAuthed }) => {
   );
 
   return (
-    <footer className="bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900 text-white py-10">
+    <footer className="bg-[#0B1412] text-white py-10 border-t border-white/5">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Main Grid */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
           {/* Col 1: Brand */}
           <div className="md:col-span-1">
-            <h3 className="text-xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent mb-3 flex items-center gap-2">
-              <Scale className="w-5 h-5 text-yellow-400" />
-              {BRAND_NAME}
-            </h3>
+            <div className="mb-4">
+              <Logo variant="dark" className="h-8 w-auto" />
+            </div>
             <p className="text-gray-300 mb-4 leading-relaxed text-xs">
               {BRAND_NAME} is an educational platform designed to support law
               students.
