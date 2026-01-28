@@ -2666,6 +2666,15 @@ User question: ${userText}`;
         onSave={handleFinalSaveToFolder}
         isSaving={isSavingTranscript}
       />
+
+      <SaveConversationModal
+        isOpen={showSaveModal}
+        onClose={() => setShowSaveModal(false)}
+        messageCount={messages.length}
+        onSaveAll={handleSaveSession}
+        onDiscard={handleDiscardSession}
+        onSelectMessages={handleSelectMessages}
+      />
     </div>
   );
 }
