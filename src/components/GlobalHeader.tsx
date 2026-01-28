@@ -364,10 +364,12 @@ export default function GlobalHeader() {
                         href: "/legal/tools/my-news-archive",
                       },
                     ]}
+                    trigger={
                       <div className="px-3 py-2 rounded-md text-sm font-bold text-rose-600 dark:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-900/20 transition-all flex items-center gap-1.5 animate-pulse hover:animate-none group">
                         <span className="w-2 h-2 rounded-full bg-red-600 dark:bg-red-500 box-shadow-glow"></span>
                         Live News!
                       </div>
+                    }
                   />
                 </>
               ) : (
