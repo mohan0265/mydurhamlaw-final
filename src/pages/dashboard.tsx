@@ -330,6 +330,7 @@ function DashboardContent() {
               <div
                 className="flex items-start gap-3 p-3 bg-gray-50 rounded-xl hover:bg-white hover:shadow-sm transition cursor-pointer border border-transparent hover:border-gray-100"
                 onClick={() => router.push("/study/lectures")}
+                data-tour="dashboard-welcome-upload"
               >
                 <div className="p-2 bg-purple-100 text-purple-600 rounded-lg">
                   <BookOpen className="w-5 h-5" />
@@ -608,6 +609,7 @@ function DashboardContent() {
           <CoreActionCard
             title="My Lectures"
             icon={<BookOpen className="w-5 h-5 text-purple-600" />}
+            data-tour="dashboard-lectures"
             link="/study/lectures"
             preview={
               <div className="space-y-2 mt-3">
@@ -707,6 +709,7 @@ function DashboardContent() {
           <CoreActionCard
             title="Exam Prep"
             icon={<Target className="w-5 h-5 text-green-600" />}
+            data-tour="dashboard-exam-prep"
             link="/exam-prep"
             preview={
               <div className="mt-3 bg-green-50 rounded border border-green-100 p-2 text-center">

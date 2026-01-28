@@ -22,8 +22,8 @@ export const TourHelpButton: React.FC = () => {
   return (
     <button
       onClick={handleRestart}
-      className="fixed bottom-4 right-20 z-40 p-2 bg-white/10 hover:bg-white/20 text-gray-500 hover:text-white rounded-full transition-all shadow-sm backdrop-blur-sm border border-white/10"
-      title="Replay Tour"
+      className="fixed bottom-4 right-20 z-40 p-2 bg-white/10 hover:bg-white/20 text-gray-500 hover:text-white rounded-full transition-all shadow-sm backdrop-blur-sm border border-white/10 group"
+      title="Need a quick walkthrough?"
       aria-label="Replay Tour"
     >
       <HelpCircle size={20} />

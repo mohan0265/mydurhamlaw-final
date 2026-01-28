@@ -6,21 +6,23 @@ import React, {
   useCallback,
 } from "react";
 import Joyride, { CallBackProps, STATUS, Step, Styles } from "react-joyride";
-import { usePathname } from "next/navigation"; // App router or works in Pages too usually? check compat.
 import { useRouter } from "next/router";
 import { GUEST_TOUR_STEPS, STUDENT_DASHBOARD_TOUR_STEPS } from "./tours";
 import { useAuth } from "@/lib/supabase/AuthContext";
+import { TourTooltip } from "./TourTooltip";
 
 type TourContextType = {
   startTour: (tourName: "guest" | "dashboard") => void;
   stopTour: () => void;
   isRunning: boolean;
+  setShouldPersist: (val: boolean) => void;
 };
 
 const TourContext = createContext<TourContextType>({
   startTour: () => {},
   stopTour: () => {},
   isRunning: false,
+  setShouldPersist: () => {},
 });
 
 export const useTour = () => useContext(TourContext);
@@ -31,6 +33,7 @@ export const TourProvider: React.FC<{ children: React.ReactNode }> = ({
   const [run, setRun] = useState(false);
   const [steps, setSteps] = useState<Step[]>([]);
   const [tourKey, setTourKey] = useState<string>("");
+  const [shouldPersist, setShouldPersist] = useState(true);
 
   const router = useRouter();
   const { user } = useAuth();
@@ -38,30 +41,12 @@ export const TourProvider: React.FC<{ children: React.ReactNode }> = ({
   // Custom styles to match Caseway branding
   const styles: any = {
     options: {
-      primaryColor: "#0f172a", // Dark slate / elegant
-      textColor: "#334155",
-      backgroundColor: "#ffffff",
-      arrowColor: "#ffffff",
+      primaryColor: "#4f46e5", // Indigo-600
       zIndex: 10000,
-      overlayColor: "rgba(0, 0, 0, 0.5)",
+      overlayColor: "rgba(0, 0, 0, 0.6)", // Slightly darker for focus
     },
-    buttonNext: {
-      backgroundColor: "#111827",
-      color: "#fff",
-      borderRadius: "6px",
-      fontSize: "14px",
-      fontWeight: 600,
-      padding: "8px 16px",
-    },
-    buttonBack: {
-      color: "#6b7280",
-      marginRight: 10,
-      fontSize: "14px",
-    },
-    tooltip: {
-      borderRadius: "8px",
-      boxShadow:
-        "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
+    spotlight: {
+      borderRadius: "16px", // Smooth rounded corners
     },
   };
 
@@ -82,7 +67,7 @@ export const TourProvider: React.FC<{ children: React.ReactNode }> = ({
     let targetTour: "guest" | "dashboard" | null = null;
     let storageKey = "";
 
-    // GUEST TOUR: Only on landing page "/", not logged in (or explicitly logged out logic)
+    // GUEST TOUR: Only on landing page "/", not logged in
     if (currentPath === "/" && !user) {
       targetTour = "guest";
       storageKey = "caseway_tour_done_guest_v1";
@@ -96,6 +81,7 @@ export const TourProvider: React.FC<{ children: React.ReactNode }> = ({
     if (targetTour && storageKey) {
       const isDone = localStorage.getItem(storageKey);
       if (!isDone) {
+        setShouldPersist(true); // Default to saving
         startTour(targetTour);
       }
     }
@@ -117,20 +103,44 @@ export const TourProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const handleJoyrideCallback = (data: CallBackProps) => {
-    const { status, type } = data;
+    const { status } = data;
     const finishedStatuses: string[] = [STATUS.FINISHED, STATUS.SKIPPED];
 
+    // Inject pulse animation class to target
+    if (data.type === "step:after" || data.type === "tour:start") {
+      // Remove from prev
+      document
+        .querySelectorAll(".tour-highlight-pulse")
+        .forEach((el) => el.classList.remove("tour-highlight-pulse"));
+
+      // Add to current (Wait for dom update)
+      setTimeout(() => {
+        const target = document.querySelector(data.step.target as string);
+        if (target) {
+          target.classList.add("tour-highlight-pulse");
+          // Ensure relative positioning if not fixed, so shadow isn't clipped?
+          // Actually box-shadow usually works fine.
+        }
+      }, 100);
+    }
     if (finishedStatuses.includes(status)) {
+      // Clean up
+      document
+        .querySelectorAll(".tour-highlight-pulse")
+        .forEach((el) => el.classList.remove("tour-highlight-pulse"));
+
       setRun(false);
-      // Mark as done
-      if (tourKey) {
+      // Mark as done ONLY if shouldPersist is true
+      if (tourKey && shouldPersist) {
         localStorage.setItem(tourKey, "true");
       }
     }
   };
 
   return (
-    <TourContext.Provider value={{ startTour, stopTour, isRunning: run }}>
+    <TourContext.Provider
+      value={{ startTour, stopTour, isRunning: run, setShouldPersist }}
+    >
       <Joyride
         steps={steps}
         run={run}
@@ -141,9 +151,13 @@ export const TourProvider: React.FC<{ children: React.ReactNode }> = ({
         spotlightClicks={true}
         callback={handleJoyrideCallback}
         styles={styles}
-        locale={{
-          last: "Finish",
-          skip: "Skip Tour",
+        tooltipComponent={TourTooltip}
+        spotlightPadding={14} // Target 12-18px
+        scrollOffset={100} // Smooth scroll offset
+        scrollToFirstStep={true}
+        floaterProps={{
+          hideArrow: false,
+          disableAnimation: true, // We handle animation in CSS
         }}
       />
       {children}

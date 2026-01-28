@@ -16,6 +16,8 @@ const EXCLUDED_DIRS = [
   "coverage",
   "dist",
   "build",
+  ".claude",
+  ".config",
 ];
 const EXCLUDED_FILES = [
   "audit-brand-strings.mjs",
@@ -26,26 +28,51 @@ const EXCLUDED_FILES = [
 
 let foundErrors = false;
 
-function scanDirectory(directory) {
-  const files = fs.readdirSync(directory);
+function scanDirectory(dir) {
+  if (!fs.existsSync(dir)) return;
 
-  for (const file of files) {
-    const fullPath = path.join(directory, file);
-    const stat = fs.statSync(fullPath);
+  let entries = [];
+  try {
+    entries = fs.readdirSync(dir);
+  } catch (e) {
+    // Directory might be inaccessible
+    return;
+  }
 
-    if (stat.isDirectory()) {
-      if (!EXCLUDED_DIRS.includes(file)) {
-        scanDirectory(fullPath);
-      }
+  for (const entry of entries) {
+    const entryPath = path.join(dir, entry);
+
+    // Skip if in excluded dirs
+    if (
+      EXCLUDED_DIRS.some(
+        (excluded) =>
+          entryPath.includes(path.sep + excluded + path.sep) ||
+          entryPath.endsWith(path.sep + excluded),
+      )
+    ) {
+      continue;
+    }
+
+    let stats;
+    try {
+      if (!fs.existsSync(entryPath)) continue;
+      stats = fs.statSync(entryPath);
+    } catch (e) {
+      // Skip files that can't be stat-ed
+      continue;
+    }
+
+    if (stats.isDirectory()) {
+      scanDirectory(entryPath);
     } else {
       if (
-        !EXCLUDED_FILES.includes(file) &&
-        !file.endsWith(".png") &&
-        !file.endsWith(".jpg") &&
-        !file.endsWith(".ico") &&
-        !file.endsWith(".svg")
+        !EXCLUDED_FILES.includes(entry) &&
+        !entry.endsWith(".png") &&
+        !entry.endsWith(".jpg") &&
+        !entry.endsWith(".ico") &&
+        !entry.endsWith(".svg")
       ) {
-        checkFile(fullPath);
+        checkFile(entryPath);
       }
     }
   }

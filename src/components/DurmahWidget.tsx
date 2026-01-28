@@ -2130,6 +2130,7 @@ User question: ${userText}`;
 
           <button
             onClick={toggleVoice}
+            data-tour="durmah-voice-btn"
             className={`flex items-center gap-2 px-3 py-2 rounded-full transition-all duration-300 ${
               isVoiceActive
                 ? "bg-red-500 text-white shadow-lg scale-110"
