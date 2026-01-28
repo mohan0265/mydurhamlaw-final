@@ -364,12 +364,10 @@ export default function GlobalHeader() {
                         href: "/legal/tools/my-news-archive",
                       },
                     ]}
-                    trigger={
-                      <div className="px-3 py-2 rounded-md text-sm font-bold text-pink-200 hover:text-white transition-all flex items-center gap-1.5 animate-pulse hover:animate-none group">
-                        <span className="w-2 h-2 rounded-full bg-red-500 box-shadow-glow"></span>
+                      <div className="px-3 py-2 rounded-md text-sm font-bold text-rose-600 dark:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-900/20 transition-all flex items-center gap-1.5 animate-pulse hover:animate-none group">
+                        <span className="w-2 h-2 rounded-full bg-red-600 dark:bg-red-500 box-shadow-glow"></span>
                         Live News!
                       </div>
-                    }
                   />
                 </>
               ) : (
@@ -425,7 +423,7 @@ export default function GlobalHeader() {
             <div className="hidden md:flex items-center gap-3">
               {user ? (
                 <>
-                  <span className="text-gray-600 text-sm">
+                  <span className="text-gray-600 dark:text-gray-200 text-sm font-medium">
                     Hi, {displayName}
                   </span>
                   {!isLovedOne && (
@@ -435,7 +433,7 @@ export default function GlobalHeader() {
                       </button>
                     </Link>
                   )}
-                  <LogoutButton className="px-3 py-2 rounded-md border border-gray-200 hover:bg-gray-50 text-gray-600 text-sm" />
+                  <LogoutButton className="px-3 py-2 rounded-md border border-gray-200 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-white/10 text-gray-600 dark:text-gray-200 text-sm transition-colors" />
                 </>
               ) : (
                 <>

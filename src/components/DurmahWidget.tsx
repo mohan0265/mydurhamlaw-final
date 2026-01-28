@@ -1894,13 +1894,13 @@ User question: ${userText}`;
     <div
       className="fixed bottom-0 left-0 right-0 sm:left-auto sm:right-6 sm:bottom-24 z-[45] flex flex-col w-full sm:max-w-none h-[450px] max-h-[85vh] sm:max-h-[90vh] overflow-visible rounded-t-3xl sm:rounded-3xl border-t sm:border border-violet-100 bg-white shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.2)] sm:shadow-2xl animate-in slide-in-from-bottom-full sm:slide-in-from-bottom-10 fade-in duration-300"
       style={{
-        // Desktop only: use state-controlled dimensions
+        // Desktop only: use state-controlled dimensions (Hydration Safe)
         width:
-          typeof window !== "undefined" && window.innerWidth >= 640
+          ready && window.innerWidth >= 640
             ? `${widgetSize.width}px`
             : undefined,
         height:
-          typeof window !== "undefined" && window.innerWidth >= 640
+          ready && window.innerWidth >= 640
             ? `${widgetSize.height}px`
             : undefined,
       }}
