@@ -1,5 +1,5 @@
 /** @type {import('next').NextConfig} */
-const path = require('path')
+const path = require("path");
 const nextConfig = {
   reactStrictMode: true,
   // IMPORTANT: Do NOT use `output: 'export'` — we deploy with Netlify's Next plugin
@@ -10,7 +10,7 @@ const nextConfig = {
   eslint: {
     // was: ignoreDuringBuilds: false,
     ignoreDuringBuilds: true, // ✅ TEMP: don't fail Netlify builds on lint
-    dirs: ['src'],
+    dirs: ["src"],
   },
   typescript: {
     // was: ignoreBuildErrors: false,
@@ -20,35 +20,37 @@ const nextConfig = {
   swcMinify: true,
   // Enable experimental features for better performance
   experimental: {
-    optimizePackageImports: ['@headlessui/react', 'lucide-react'],
+    optimizePackageImports: ["@headlessui/react", "lucide-react"],
   },
   images: {
     unoptimized: false,
-    domains: ['localhost'],
-    formats: ['image/webp', 'image/avif'],
+    domains: ["localhost"],
+    formats: ["image/webp", "image/avif"],
   },
   env: {
-    NEXT_PUBLIC_APP_NAME: 'MyDurhamLaw AI Study App',
+    NEXT_PUBLIC_APP_NAME: "MyDurhamLaw AI Study App",
     NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
     NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
     NEXT_PUBLIC_APP_VERSION: String(Date.now()),
     // Durmah voice configuration
-    NEXT_PUBLIC_DURMAH_VOICE_PROVIDER: process.env.NEXT_PUBLIC_DURMAH_VOICE_PROVIDER,
+    NEXT_PUBLIC_DURMAH_VOICE_PROVIDER:
+      process.env.NEXT_PUBLIC_DURMAH_VOICE_PROVIDER,
     NEXT_PUBLIC_GEMINI_LIVE_MODEL: process.env.NEXT_PUBLIC_GEMINI_LIVE_MODEL,
-    NEXT_PUBLIC_DURMAH_GEMINI_PROXY_WS_URL: process.env.NEXT_PUBLIC_DURMAH_GEMINI_PROXY_WS_URL,
+    NEXT_PUBLIC_DURMAH_GEMINI_PROXY_WS_URL:
+      process.env.NEXT_PUBLIC_DURMAH_GEMINI_PROXY_WS_URL,
   },
   // 🔧 Unify react-query across the app (fixes "No QueryClient set" at build)
   // 🧹 Durmah/AWY cleanup aliases - redirect imports to stubs
   webpack: (config) => {
     config.resolve = config.resolve || {};
-    const alias = config.resolve.alias || {}
-    const stub = (p) => path.resolve(process.cwd(), p)
+    const alias = config.resolve.alias || {};
+    const stub = (p) => path.resolve(process.cwd(), p);
     Object.assign(alias, {
-      'react-query': '@tanstack/react-query',
-      'react-query/devtools': '@tanstack/react-query-devtools',
-    })
-    config.resolve.alias = alias
+      "react-query": "@tanstack/react-query",
+      "react-query/devtools": "@tanstack/react-query-devtools",
+    });
+    config.resolve.alias = alias;
     return config;
   },
   // Configure headers for SSR routes (static assets handled by Netlify)
@@ -65,17 +67,38 @@ const nextConfig = {
   async redirects() {
     return [
       // Your originals
-      { source: '/calendar/main', destination: '/calendar', permanent: false },
-      { source: '/news', destination: '/legal/tools/legal-news-feed', permanent: false },
-      { source: '/ai-tools', destination: '/wellbeing', permanent: false },
-      { source: '/resources', destination: '/study-materials', permanent: false },
-      { source: '/voice', destination: '/wellbeing', permanent: false },
-      { source: '/student-lounge', destination: '/lounge', permanent: false },
-      { source: '/community-network', destination: '/community', permanent: false },
+      { source: "/calendar/main", destination: "/calendar", permanent: false },
+      {
+        source: "/news",
+        destination: "/legal/tools/legal-news-feed",
+        permanent: false,
+      },
+      { source: "/ai-tools", destination: "/wellbeing", permanent: false },
+      {
+        source: "/resources",
+        destination: "/study-materials",
+        permanent: false,
+      },
+      { source: "/voice", destination: "/wellbeing", permanent: false },
+      { source: "/student-lounge", destination: "/lounge", permanent: false },
+      {
+        source: "/community-network",
+        destination: "/community",
+        permanent: false,
+      },
+      { source: "/articles", destination: "/guides", permanent: false },
 
       // ➕ Canonicalize YAAG (optional, helps avoid planner duplication)
-      { source: '/planner', destination: '/year-at-a-glance', permanent: false },
-      { source: '/planner/:path*', destination: '/year-at-a-glance', permanent: false },
+      {
+        source: "/planner",
+        destination: "/year-at-a-glance",
+        permanent: false,
+      },
+      {
+        source: "/planner/:path*",
+        destination: "/year-at-a-glance",
+        permanent: false,
+      },
     ];
   },
 };
