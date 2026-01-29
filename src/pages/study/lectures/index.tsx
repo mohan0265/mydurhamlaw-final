@@ -135,18 +135,48 @@ export default function LecturesPage() {
 
   const [view, setView] = useState<"uploads" | "lecturers">("uploads");
 
-  const handleUploadSuccess = () => {
-    fetchLectures();
-  };
+  const [selectedLecturer, setSelectedLecturer] = useState<string>("");
 
-  const readyLectures = lectures.filter((l) => l.status === "ready");
-  const processingLectures = lectures.filter(
+  // Derived unique lecturers from ALL lectures (not just filtered)
+  const availableLecturers = Array.from(
+    new Set(lectures.map((l) => l.lecturer_name).filter(Boolean)),
+  ).sort();
+
+  // FILTERED LISTS
+  const filteredBase = lectures.filter((l) => {
+    // 1. Module Filter
+    // 1. Module Filter
+    if (selectedModuleId) {
+      // Find the module object we are filtering by
+      // Note: 'modules' state only has API modules. We need to check the comprehensive list or just match broadly.
+      // Easiest is to match: Does l.module_id == selected || l.module_code == selected (if selected is code)
+      // Actually, we stored 'id' in dropdown. For derived modules, 'id' might be the code.
+
+      const isIdMatch = l.module_id === selectedModuleId;
+      // If selectedModuleId is a code (e.g. from derived), check code match
+      const isCodeMatch = l.module_code === selectedModuleId;
+
+      // Also check if selectedModuleId maps to a code in our API list
+      const apiMod = modules.find((m) => m.id === selectedModuleId);
+      const isApiCodeMatch = apiMod && l.module_code === apiMod.code;
+
+      if (!isIdMatch && !isCodeMatch && !isApiCodeMatch) return false;
+    }
+    // 2. Lecturer Filter
+    if (selectedLecturer && l.lecturer_name !== selectedLecturer) {
+      return false;
+    }
+    return true;
+  });
+
+  const readyLectures = filteredBase.filter((l) => l.status === "ready");
+  const processingLectures = filteredBase.filter(
     (l) =>
       l.status === "transcribing" ||
       l.status === "summarizing" ||
       l.status === "uploaded",
   );
-  const errorLectures = lectures.filter((l) => l.status === "error");
+  const errorLectures = filteredBase.filter((l) => l.status === "error");
 
   // Nudge state
   const [showNudge, setShowNudge] = useState(false);
@@ -154,10 +184,6 @@ export default function LecturesPage() {
   useEffect(() => {
     // Only verify client-side to avoid hydration mismatch
     const dismissed = localStorage.getItem("caseway_lectures_nudge_dismissed");
-    // Show if not dismissed AND we have 0 ready lectures (or just 0 total to be safe/simple as requested)
-    // User asked: "Auto-hide once user has >=1 lecture with status 'ready/processed' OR clicks Got it"
-    // Let's use total length for simplicity first, or filter for success.
-    // "visible until first successful lecture" -> implies ready/processed.
     const hasSuccessful = lectures.some((l) =>
       ["ready", "processed"].includes(l.status),
     );
@@ -175,9 +201,29 @@ export default function LecturesPage() {
   };
 
   // Helper to group modules by year
-  const groupedModules = modules.reduce(
+  // Merge API modules with derived modules from lectures
+  const allModuleOptionMap = new Map<string, Module>();
+
+  // 1. Add API modules
+  modules.forEach((m) => allModuleOptionMap.set(m.code, m));
+
+  // 2. Add derived modules from lectures (if not already present)
+  lectures.forEach((l) => {
+    if (l.module_code && !allModuleOptionMap.has(l.module_code)) {
+      allModuleOptionMap.set(l.module_code, {
+        id: l.module_id || l.module_code,
+        code: l.module_code,
+        title: l.module_name || l.module_code,
+        year_level: 0, // "Other" or "Detected"
+      });
+    }
+  });
+
+  const uniqueModules = Array.from(allModuleOptionMap.values());
+
+  const groupedModules = uniqueModules.reduce(
     (acc, mod) => {
-      const year = mod.year_level || 1;
+      const year = mod.year_level || 0;
       if (!acc[year]) acc[year] = [];
       acc[year].push(mod);
       return acc;
@@ -267,74 +313,99 @@ export default function LecturesPage() {
           </Button>
         </div>
 
-        {/* Module Selector & Progress Strip */}
-        <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-4 w-full md:w-auto">
-            <div className="flex flex-col">
-              <label className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">
-                Current Module
-              </label>
-              <select
-                className="p-2 bg-gray-50 border border-gray-200 rounded-lg text-sm font-semibold text-gray-700 min-w-[200px] outline-none focus:ring-2 focus:ring-purple-500"
-                value={selectedModuleId}
-                onChange={(e) => setSelectedModuleId(e.target.value)}
-              >
-                <option value="">Select a Module...</option>
-                {Object.keys(groupedModules).map((year) => (
-                  <optgroup key={year} label={`Year ${year}`}>
-                    {(groupedModules[parseInt(year)] || []).map((m) => (
-                      <option key={m.id} value={m.id}>
-                        {m.code} - {m.title}
-                      </option>
-                    ))}
-                  </optgroup>
-                ))}
-              </select>
-            </div>
+        {/* Filter Bar (Module & Lecturer) */}
+        <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-col gap-4">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-4 w-full md:w-auto">
+              {/* Module Filter */}
+              <div className="flex flex-col">
+                <label className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">
+                  Filter by Module
+                </label>
+                <select
+                  className="p-2 bg-gray-50 border border-gray-200 rounded-lg text-sm font-semibold text-gray-700 min-w-[200px] outline-none focus:ring-2 focus:ring-purple-500"
+                  value={selectedModuleId}
+                  onChange={(e) => setSelectedModuleId(e.target.value)}
+                >
+                  <option value="">All Modules</option>
+                  {Object.keys(groupedModules).map((year) => (
+                    <optgroup
+                      key={year}
+                      label={
+                        year === "0" ? "Detected from Uploads" : `Year ${year}`
+                      }
+                    >
+                      {(groupedModules[parseInt(year)] || []).map((m) => (
+                        <option key={m.id} value={m.id}>
+                          {m.code} - {m.title}
+                        </option>
+                      ))}
+                    </optgroup>
+                  ))}
+                </select>
+              </div>
 
-            <div className="hidden md:block h-10 w-px bg-gray-200 mx-2"></div>
+              <div className="hidden md:block h-10 w-px bg-gray-200 mx-2"></div>
 
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-500">Target:</span>
-              <input
-                type="number"
-                className="w-16 p-1.5 border rounded-md text-sm text-center"
-                placeholder="0"
-                onBlur={(e) => {
-                  const val = parseInt(e.target.value);
-                  if (selectedModuleId && !isNaN(val)) {
-                    fetch("/api/module-lecture-set", {
-                      method: "POST",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({
-                        module_id: selectedModuleId,
-                        expected_count: val,
-                      }),
-                    }).then(() => fetchLectures());
-                  }
-                }}
-              />
-            </div>
-          </div>
-
-          {selectedModuleId && (
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-bold text-gray-400 uppercase">
-                Progress
-              </span>
-              <div className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-bold">
-                {
-                  lectures.filter(
-                    (l) =>
-                      l.module_id === selectedModuleId ||
-                      l.module_code ===
-                        modules.find((m) => m.id === selectedModuleId)?.code,
-                  ).length
-                }{" "}
-                Uploaded
+              {/* Lecturer Filter */}
+              <div className="flex flex-col">
+                <label className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">
+                  Filter by Lecturer
+                </label>
+                <select
+                  className="p-2 bg-gray-50 border border-gray-200 rounded-lg text-sm font-semibold text-gray-700 min-w-[180px] outline-none focus:ring-2 focus:ring-purple-500"
+                  value={selectedLecturer}
+                  onChange={(e) => setSelectedLecturer(e.target.value)}
+                  disabled={availableLecturers.length === 0}
+                >
+                  <option value="">All Lecturers</option>
+                  {availableLecturers.map((name) => (
+                    <option key={name as string} value={name as string}>
+                      {name as string}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
-          )}
+
+            {/* Target & Progress (Only show if filtering by module, optional) */}
+            {selectedModuleId && (
+              <div className="flex items-center gap-4 border-l pl-4 border-gray-100">
+                <div className="flex flex-col">
+                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">
+                    Target
+                  </label>
+                  <input
+                    type="number"
+                    className="w-16 p-1.5 border rounded-md text-sm text-center bg-gray-50"
+                    placeholder="0"
+                    onBlur={(e) => {
+                      const val = parseInt(e.target.value);
+                      if (selectedModuleId && !isNaN(val)) {
+                        fetch("/api/module-lecture-set", {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({
+                            module_id: selectedModuleId,
+                            expected_count: val,
+                          }),
+                        }).then(() => fetchLectures());
+                      }
+                    }}
+                  />
+                </div>
+
+                <div className="flex flex-col">
+                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">
+                    Progress
+                  </label>
+                  <div className="px-3 py-1.5 bg-green-100 text-green-700 rounded-lg text-xs font-bold">
+                    {readyLectures.length} / ?
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 

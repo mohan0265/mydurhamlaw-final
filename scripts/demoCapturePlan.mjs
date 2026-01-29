@@ -6,7 +6,10 @@ export const DEMO_PLANS = [
     steps: [
       {
         name: "Initial View",
-        actions: [{ type: "waitForLoadState", state: "networkidle" }],
+        actions: [
+          { type: "waitForLoadState", state: "domcontentloaded" },
+          { type: "wait", ms: 2000 },
+        ],
         screenshot: "step-01.png",
         caption: "See your entire academic year at a glance.",
       },
@@ -37,7 +40,10 @@ export const DEMO_PLANS = [
     steps: [
       {
         name: "Initial View",
-        actions: [{ type: "waitForLoadState", state: "networkidle" }],
+        actions: [
+          { type: "waitForLoadState", state: "domcontentloaded" },
+          { type: "wait", ms: 2000 },
+        ],
         screenshot: "step-01.png",
         caption: "Start by selecting an assignment type.",
       },
@@ -73,7 +79,7 @@ export const DEMO_PLANS = [
       {
         name: "Capture",
         actions: [
-          { type: "waitForLoadState", state: "networkidle" },
+          { type: "waitForLoadState", state: "domcontentloaded" },
           { type: "click", selector: '[data-demo="lecture-step-0"]' },
           { type: "wait", ms: 500 },
         ],
@@ -108,7 +114,7 @@ export const DEMO_PLANS = [
       {
         name: "Feynman Method",
         actions: [
-          { type: "waitForLoadState", state: "networkidle" },
+          { type: "waitForLoadState", state: "domcontentloaded" },
           { type: "click", selector: '[data-demo="drill-option-0"]' },
           { type: "wait", ms: 500 },
         ],
@@ -143,7 +149,7 @@ export const DEMO_PLANS = [
       {
         name: "Oral Articulation",
         actions: [
-          { type: "waitForLoadState", state: "networkidle" },
+          { type: "waitForLoadState", state: "domcontentloaded" },
           { type: "click", selector: '[data-demo="voice-step-0"]' },
           { type: "wait", ms: 500 },
         ],
@@ -169,7 +175,7 @@ export const DEMO_PLANS = [
       {
         name: "Pressure Test",
         actions: [
-          { type: "waitForLoadState", state: "networkidle" },
+          { type: "waitForLoadState", state: "domcontentloaded" },
           { type: "click", selector: '[data-demo="exam-feature-0"]' },
           { type: "wait", ms: 500 },
         ],
