@@ -15,7 +15,7 @@ export const TourTooltip = ({
   isLastStep,
 }: TooltipRenderProps) => {
   const { setShouldPersist } = useTour();
-  const [dontShowAgain, setDontShowAgain] = useState(true);
+  const [dontShowAgain, setDontShowAgain] = useState(false);
 
   // Sync checkbox state with provider
   useEffect(() => {

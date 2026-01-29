@@ -102,7 +102,10 @@ export default function LandingPage() {
         <div className="absolute inset-0 bg-gradient-to-b from-[#123733]/5 via-[#F7F6F2] to-[#F7F6F2] dark:from-[#123733]/40 dark:via-[#0B1412] dark:to-[#0B1412] transition-colors duration-500" />
         <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-5 dark:opacity-10 pointer-events-none" />
 
-        <div className="relative z-10 max-w-7xl mx-auto px-6 w-full text-center">
+        <div
+          className="relative z-10 max-w-7xl mx-auto px-6 w-full text-center"
+          data-tour="landing-hero"
+        >
           <div className="mb-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
             <IndependenceBadge variant="hero" />
           </div>
@@ -187,7 +190,7 @@ export default function LandingPage() {
 
       {/* FEATURED ARTICLE BANNER */}
       <section className="bg-white py-12 lg:py-16 overflow-hidden">
-        <div className="max-w-7xl mx-auto px-6">
+        <div className="max-w-7xl mx-auto px-6" data-tour="landing-durmah">
           <Link
             href="/articles/no-question-is-a-stupid-question"
             prefetch={false}
@@ -250,7 +253,10 @@ export default function LandingPage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
+            data-tour="landing-features"
+          >
             {[
               {
                 title: "Learn Law",
@@ -493,7 +499,10 @@ export default function LandingPage() {
                 structured argumentation under time pressure.
               </p>
 
-              <div className="flex flex-col sm:flex-row gap-4 mb-4">
+              <div
+                className="flex flex-col sm:flex-row gap-4 mb-4"
+                data-tour="landing-cta"
+              >
                 <Link href="/lnat/signup">
                   <button className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 px-8 rounded-full transition-all shadow-lg shadow-indigo-200 dark:shadow-indigo-900/20">
                     {process.env.NEXT_PUBLIC_LNAT_LAUNCH_ENABLED === "true"

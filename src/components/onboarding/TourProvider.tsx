@@ -40,7 +40,7 @@ export const TourProvider: React.FC<{ children: React.ReactNode }> = ({
   const [steps, setSteps] = useState<Step[]>([]);
   const [tourKey, setTourKey] = useState<string>("");
   const [stepIndex, setStepIndex] = useState(0);
-  const [shouldPersist, setShouldPersist] = useState(true);
+  const [shouldPersist, setShouldPersist] = useState(false);
 
   const router = useRouter();
   const { user } = useAuth();
