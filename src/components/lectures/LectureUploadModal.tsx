@@ -418,9 +418,22 @@ export default function LectureUploadModal({
                       Fastest way (30 seconds):
                     </p>
                     <ol className="space-y-1 text-gray-700 leading-snug">
-                      <li>
+                      <li className="flex items-center gap-1.5 relative group">
                         <span className="font-bold text-gray-900">1.</span> Open
                         your Panopto lecture → click <strong>Captions</strong>
+                        <div className="relative inline-block">
+                          <HelpCircle className="w-3.5 h-3.5 text-gray-400 cursor-help" />
+                          <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-48 bg-gray-900 text-white text-xs rounded-lg p-2 shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 pointer-events-none">
+                            <div className="font-bold mb-1">
+                              Where is Captions?
+                            </div>
+                            <div className="leading-relaxed opacity-90">
+                              In Panopto, it’s the left sidebar tab called
+                              Captions. If missing, captions may be unavailable.
+                            </div>
+                            <div className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-x-[6px] border-x-transparent border-t-[6px] border-t-gray-900"></div>
+                          </div>
+                        </div>
                       </li>
                       <li>
                         <span className="font-bold text-gray-900">2.</span>{" "}

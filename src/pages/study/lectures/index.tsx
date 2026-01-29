@@ -141,6 +141,32 @@ export default function LecturesPage() {
   );
   const errorLectures = lectures.filter((l) => l.status === "error");
 
+  // Nudge state
+  const [showNudge, setShowNudge] = useState(false);
+
+  useEffect(() => {
+    // Only verify client-side to avoid hydration mismatch
+    const dismissed = localStorage.getItem("caseway_lectures_nudge_dismissed");
+    // Show if not dismissed AND we have 0 ready lectures (or just 0 total to be safe/simple as requested)
+    // User asked: "Auto-hide once user has >=1 lecture with status 'ready/processed' OR clicks Got it"
+    // Let's use total length for simplicity first, or filter for success.
+    // "visible until first successful lecture" -> implies ready/processed.
+    const hasSuccessful = lectures.some((l) =>
+      ["ready", "processed"].includes(l.status),
+    );
+
+    if (!dismissed && !hasSuccessful && !loading) {
+      setShowNudge(true);
+    } else {
+      setShowNudge(false);
+    }
+  }, [lectures, loading]);
+
+  const dismissNudge = () => {
+    setShowNudge(false);
+    localStorage.setItem("caseway_lectures_nudge_dismissed", "1");
+  };
+
   // Helper to group modules by year
   const groupedModules = modules.reduce(
     (acc, mod) => {
@@ -163,6 +189,38 @@ export default function LecturesPage() {
 
   return (
     <div className="max-w-4xl mx-auto py-8 px-4">
+      {/* Nudge Banner */}
+      {showNudge && (
+        <div className="mb-6 bg-gradient-to-r from-purple-600 to-indigo-600 rounded-xl p-4 text-white shadow-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-in slide-in-from-top-2 fade-in duration-500">
+          <div>
+            <h3 className="font-bold text-sm flex items-center gap-2">
+              ⚡ Quick win
+            </h3>
+            <p className="text-sm text-purple-100 mt-1 max-w-xl">
+              Paste a transcript once — Caseway can then generate summaries, key
+              points, and exam prep instantly.
+            </p>
+          </div>
+          <div className="flex items-center gap-3 w-full sm:w-auto">
+            <button
+              onClick={dismissNudge}
+              className="text-xs font-semibold text-purple-200 hover:text-white px-3 py-2 transition"
+            >
+              Got it
+            </button>
+            <button
+              onClick={() => {
+                setShowUploadModal(true);
+                setInitialUploadMode("panopto");
+              }}
+              className="text-xs font-bold bg-white text-purple-600 px-4 py-2 rounded-lg hover:bg-purple-50 transition shadow-sm whitespace-nowrap flex-1 sm:flex-none text-center"
+            >
+              Add Lecture
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex flex-col gap-6 mb-8">
         <div className="flex items-center justify-between">
