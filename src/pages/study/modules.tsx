@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { Button } from "@/components/ui/Button";
 import { Plus, Edit2, Archive, Trash2, ArrowLeft } from "lucide-react";
 import { getSupabaseClient } from "@/lib/supabase/client";
