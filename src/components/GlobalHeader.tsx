@@ -97,7 +97,7 @@ function HoverMenu({
 
       {open && (
         <div
-          className="absolute left-0 mt-2 w-56 rounded-xl border border-gray-100 dark:border-white/10 bg-white/95 dark:bg-gray-900/95 shadow-2xl dark:shadow-none backdrop-blur"
+          className="absolute left-0 mt-2 w-56 rounded-xl border border-gray-100 dark:border-white/10 bg-white/95 dark:bg-gray-900/95 shadow-2xl dark:shadow-none backdrop-blur z-[100] pointer-events-auto"
           onMouseEnter={openNow}
           onMouseLeave={closeSoon}
         >

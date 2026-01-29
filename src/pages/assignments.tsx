@@ -18,6 +18,7 @@ import { useStudentOnly } from "@/hooks/useStudentOnly";
 import { useFamiliarity } from "@/hooks/useFamiliarity";
 import ClarityCard, { ClarityNudge } from "@/components/ui/ClarityCard";
 import { BookOpen } from "lucide-react";
+import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
 
 export default function AssignmentsPage() {
   const router = useRouter();
@@ -194,31 +195,36 @@ export default function AssignmentsPage() {
   };
 
   const handlePlanWithAI = () => {
-    if (!selectedAssignment) return;
+    try {
+      if (!selectedAssignment?.id) {
+        toast.error("No assignment selected");
+        return;
+      }
 
-    // Build context-aware prompt
-    // Build context-aware prompt (Internal System Context)
-    const brief = selectedAssignment.brief_rich
-      ? typeof selectedAssignment.brief_rich === "string"
-        ? selectedAssignment.brief_rich
-        : JSON.stringify(selectedAssignment.brief_rich)
-      : selectedAssignment.question_text || "No brief provided.";
+      // Build context-aware prompt (Internal System Context)
+      const brief = selectedAssignment.brief_rich
+        ? typeof selectedAssignment.brief_rich === "string"
+          ? selectedAssignment.brief_rich
+          : JSON.stringify(selectedAssignment.brief_rich)
+        : selectedAssignment.question_text || "No brief provided.";
 
-    // User-facing message (Simple)
-    const userMessage = `I'd like to plan my assignment "${selectedAssignment.title}".`;
+      // User-facing message (Simple)
+      const userMessage = `I'd like to plan my assignment "${selectedAssignment.title}".`;
 
-    setChatInitialPrompt(userMessage);
+      setChatInitialPrompt(userMessage);
 
-    // Explicity open workflow modal
-    setShowWorkflow(true);
+      // Explicitly open workflow modal only IF we have valid context
+      setShowWorkflow(true);
 
-    // REMOVED: Do not auto-dispatch message to global widget
-    // This prevents duplicate messages and ensures Durmah in the workflow starts fresh (or resumes properly)
-    // The workflow itself will handle context via systemHint
-
-    toast.success("Opening Assignment Assistant");
-
-    toast.success("Durmah briefed with assignment context");
+      // Show success toast AFTER state update
+      // We don't want to promise "briefed" if the render crashes immediately
+      setTimeout(() => {
+        toast.success("Opening Assignment Assistant");
+      }, 100);
+    } catch (err) {
+      console.error("[PlanWithDurmah] Crash avoided:", err);
+      toast.error("Could not launch assistant. Please refresh.");
+    }
   };
 
   if (loading || isRoleChecking || isLovedOne) {
@@ -371,20 +377,22 @@ export default function AssignmentsPage() {
 
       {/* Workflow Modal Overlay */}
       {showWorkflow && selectedAssignment && (
-        <AssignmentWorkflow
-          assignmentId={selectedAssignment.id}
-          assignmentData={selectedAssignment}
-          onClose={() => {
-            // Navigate back to assignment view (remove view param)
-            router.push(
-              `/assignments?assignmentId=${selectedAssignment.id}`,
-              undefined,
-              { shallow: true },
-            );
-            setShowWorkflow(false);
-            fetchAssignments(); // Refresh in case brief was uploaded
-          }}
-        />
+        <ErrorBoundary fallbackTitle="Assistant Unavailable">
+          <AssignmentWorkflow
+            assignmentId={selectedAssignment.id}
+            assignmentData={selectedAssignment}
+            onClose={() => {
+              // Navigate back to assignment view (remove view param)
+              router.push(
+                `/assignments?assignmentId=${selectedAssignment.id}`,
+                undefined,
+                { shallow: true },
+              );
+              setShowWorkflow(false);
+              fetchAssignments(); // Refresh in case brief was uploaded
+            }}
+          />
+        </ErrorBoundary>
       )}
     </div>
   );
