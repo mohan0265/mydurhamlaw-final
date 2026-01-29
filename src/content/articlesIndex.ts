@@ -15,6 +15,20 @@ export interface Guide {
 
 export const guides: Guide[] = [
   {
+    slug: "does-your-child-need-tutor-uk-guide",
+    href: "/does-your-child-need-tutor-uk-guide",
+    canonicalPath: "https://casewaylaw.ai/does-your-child-need-tutor-uk-guide",
+    title: "Does Your Child Need a Tutor? UK Parent Guide",
+    description:
+      "Real tutoring costs (£25–£50/hr), warning signs, and evidence-based alternatives for UK parents.",
+    category: ["Study Skills", "Psychology"],
+    readTime: "8 min read",
+    publishedAt: "2026-01-29",
+    order: 0, // Top priority
+    type: "pillar",
+    tags: ["parents", "tutoring", "costs", "study-skills"],
+  },
+  {
     slug: "no-question-is-a-stupid-question",
     href: "/articles/no-question-is-a-stupid-question",
     canonicalPath:
