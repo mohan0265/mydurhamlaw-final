@@ -419,8 +419,11 @@ export default function LectureUploadModal({
                     </p>
                     <ol className="space-y-1 text-gray-700 dark:text-gray-300 leading-snug">
                       <li className="flex items-center gap-1.5 relative group">
-                        <span className="font-bold text-gray-900 dark:text-white">1.</span> Open
-                        your Panopto lecture → click <strong>Captions</strong>
+                        <span className="font-bold text-gray-900 dark:text-white">
+                          1.
+                        </span>{" "}
+                        Open your Panopto lecture → click{" "}
+                        <strong>Captions</strong>
                         <div className="relative inline-block">
                           <HelpCircle className="w-3.5 h-3.5 text-gray-400 cursor-help" />
                           <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-48 bg-gray-900 text-white text-xs rounded-lg p-2 shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 pointer-events-none">
@@ -436,11 +439,15 @@ export default function LectureUploadModal({
                         </div>
                       </li>
                       <li>
-                        <span className="font-bold text-gray-900 dark:text-white">2.</span>{" "}
+                        <span className="font-bold text-gray-900 dark:text-white">
+                          2.
+                        </span>{" "}
                         Select all text → <strong>Copy</strong>
                       </li>
                       <li>
-                        <span className="font-bold text-gray-900 dark:text-white">3.</span>{" "}
+                        <span className="font-bold text-gray-900 dark:text-white">
+                          3.
+                        </span>{" "}
                         Paste here → <strong>Process lecture</strong>
                       </li>
                     </ol>
@@ -527,301 +534,6 @@ export default function LectureUploadModal({
             <Button
               type="submit"
               className="flex-1 bg-purple-600 hover:bg-purple-700 text-white dark:bg-purple-600 dark:hover:bg-purple-500"
-              disabled={
-                uploading || (mode === "panopto" ? !transcript : !selectedFile)
-              }
-            >
-              {uploading
-                ? "Processing..."
-                : mode === "panopto"
-                  ? "Import Transcript"
-                  : "Upload Audio"}
-            </Button>
-          </div>
-        </form>
-      </div>
-    </div>
-        <div className="border-b">
-          <div className="flex items-center justify-between p-4 pb-0">
-            <h2 className="text-lg font-semibold text-gray-900">
-              Add New Lecture
-            </h2>
-            <button
-              onClick={onClose}
-              className="text-gray-500 hover:text-gray-700"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
-
-          <div className="flex px-4 gap-6 mt-4">
-            <button
-              onClick={() => setMode("panopto")}
-              className={`pb-3 text-sm font-medium border-b-2 transition ${mode === "panopto" ? "border-purple-600 text-purple-700" : "border-transparent text-gray-500 hover:text-gray-700"}`}
-            >
-              Paste Transcript (Recommended)
-            </button>
-            <button
-              onClick={() => setMode("audio")}
-              className={`pb-3 text-sm font-medium border-b-2 transition ${mode === "audio" ? "border-purple-600 text-purple-700" : "border-transparent text-gray-500 hover:text-gray-700"}`}
-            >
-              Upload Audio
-            </button>
-          </div>
-        </div>
-
-        <form
-          onSubmit={
-            mode === "panopto" ? handlePanoptoImport : handleAudioUpload
-          }
-          className="p-4 space-y-4"
-        >
-          {/* Disclaimer / Tip Banner */}
-          {mode === "panopto" ? (
-            <div className="bg-blue-50 border border-blue-100 p-3 rounded-lg flex gap-3 text-sm text-blue-800">
-              <FileAudio className="w-5 h-5 flex-shrink-0" />
-              <div>
-                <p className="font-bold mb-1">Fastest & Most Accurate Method</p>
-                <p>
-                  In Panopto, verify the captions are decent, then copy and
-                  paste them below.
-                </p>
-              </div>
-            </div>
-          ) : (
-            <div className="bg-amber-50 border border-amber-100 p-3 rounded-lg flex gap-3 text-sm text-amber-800">
-              <FileAudio className="w-5 h-5 flex-shrink-0" />
-              <div>
-                <p className="font-bold mb-1">Audio Transcription</p>
-                <p>
-                  We'll transcribe your file with AI. Accuracy depends on
-                  recording clarity.
-                </p>
-              </div>
-            </div>
-          )}
-
-          {/* SHARED FIELDS: Title, Module, Lecturer, Date */}
-          {/* Title */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Lecture Title <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              value={title}
-              onChange={handleTitleChange}
-              placeholder={
-                mode === "panopto"
-                  ? "e.g., Contract Law - Week 3"
-                  : "e.g., Contract Law Sem 1"
-              }
-              className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500"
-              required
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Module Code
-              </label>
-              <input
-                type="text"
-                value={moduleCode}
-                onChange={(e) => setModuleCode(e.target.value)}
-                placeholder="e.g., LAW1071"
-                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Module Name
-              </label>
-              <input
-                type="text"
-                value={moduleName}
-                onChange={(e) => setModuleName(e.target.value)}
-                placeholder="e.g., Contract Law"
-                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Lecturer
-              </label>
-              <input
-                type="text"
-                value={lecturerName}
-                onChange={(e) => setLecturerName(e.target.value)}
-                placeholder="e.g., Prof. Smith"
-                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Date
-              </label>
-              <input
-                type="date"
-                value={lectureDate}
-                onChange={(e) => setLectureDate(e.target.value)}
-                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500"
-              />
-            </div>
-          </div>
-
-          {/* MODE SPECIFIC FIELDS */}
-          {mode === "panopto" && (
-            <>
-              {/* Panopto URL - Reference Only */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Panopto Link{" "}
-                  <span className="text-gray-400 font-normal ml-2">
-                    (Reference only)
-                  </span>
-                </label>
-                <div className="relative">
-                  <input
-                    type="url"
-                    value={panoptoUrl}
-                    onChange={handlePanoptoUrlChange}
-                    placeholder="https://durham.cloud.panopto.eu/..."
-                    className="w-full px-3 py-2 pr-10 border rounded-lg focus:ring-2 focus:ring-purple-500"
-                  />
-                  {/* ... (loader/link icons) */}
-                </div>
-                <p className="text-xs text-gray-500 mt-1">
-                  ✨ 1-click open in Panopto. We won't import content from this
-                  link.
-                </p>
-              </div>
-
-              {/* Transcript Input */}
-              <div>
-                <div className="mb-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Lecture Transcript <span className="text-red-500">*</span>
-                  </label>
-
-                  <div className="bg-purple-50 rounded-lg p-3 text-sm mb-2 border border-purple-100">
-                    <p className="text-xs text-gray-500 mb-1 font-medium uppercase tracking-wide">
-                      Fastest way (30 seconds):
-                    </p>
-                    <ol className="space-y-1 text-gray-700 leading-snug">
-                      <li className="flex items-center gap-1.5 relative group">
-                        <span className="font-bold text-gray-900">1.</span> Open
-                        your Panopto lecture → click <strong>Captions</strong>
-                        <div className="relative inline-block">
-                          <HelpCircle className="w-3.5 h-3.5 text-gray-400 cursor-help" />
-                          <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-48 bg-gray-900 text-white text-xs rounded-lg p-2 shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 pointer-events-none">
-                            <div className="font-bold mb-1">
-                              Where is Captions?
-                            </div>
-                            <div className="leading-relaxed opacity-90">
-                              In Panopto, it’s the left sidebar tab called
-                              Captions. If missing, captions may be unavailable.
-                            </div>
-                            <div className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-x-[6px] border-x-transparent border-t-[6px] border-t-gray-900"></div>
-                          </div>
-                        </div>
-                      </li>
-                      <li>
-                        <span className="font-bold text-gray-900">2.</span>{" "}
-                        Select all text → <strong>Copy</strong>
-                      </li>
-                      <li>
-                        <span className="font-bold text-gray-900">3.</span>{" "}
-                        Paste here → <strong>Process lecture</strong>
-                      </li>
-                    </ol>
-                    <p className="text-xs text-purple-700 mt-2 font-medium opacity-90">
-                      This gives you the most accurate summaries, key points,
-                      and exam prep.
-                    </p>
-                  </div>
-                </div>
-
-                <textarea
-                  value={transcript}
-                  onChange={(e) => setTranscript(e.target.value)}
-                  placeholder="Paste captions here..."
-                  className="w-full px-3 py-2 border rounded-lg font-mono text-sm h-48 focus:ring-2 focus:ring-purple-500"
-                  required
-                />
-                <div className="text-right">
-                  <span className="text-xs text-gray-400">
-                    Outputs depend on transcript quality. Verify key points.
-                  </span>
-                </div>
-              </div>
-            </>
-          )}
-
-          {mode === "audio" && (
-            <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:bg-gray-50 transition">
-              <input
-                type="file"
-                accept=".mp3,.m4a,.wav,.ogg"
-                id="audio-upload"
-                className="hidden"
-                onChange={(e) => {
-                  if (e.target.files?.[0]) setSelectedFile(e.target.files[0]);
-                }}
-              />
-              <label
-                htmlFor="audio-upload"
-                className="cursor-pointer flex flex-col items-center"
-              >
-                <div className="w-12 h-12 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center mb-3">
-                  <FileAudio className="w-6 h-6" />
-                </div>
-                <span className="text-sm font-medium text-gray-900 mb-1">
-                  {selectedFile
-                    ? selectedFile.name
-                    : "Click to upload audio file"}
-                </span>
-                <span className="text-xs text-gray-500">
-                  MP3, M4A, WAV supported
-                </span>
-              </label>
-            </div>
-          )}
-
-          {/* Error */}
-          {error && (
-            <div className="text-red-600 text-sm bg-red-50 p-2 rounded">
-              {error}
-            </div>
-          )}
-
-          {/* Progress */}
-          {uploading && (
-            <div className="w-full bg-gray-200 rounded-full h-2 mt-4">
-              <div
-                className="bg-purple-600 h-2 rounded-full transition-all duration-300"
-                style={{ width: `${uploadProgress}%` }}
-              ></div>
-            </div>
-          )}
-
-          {/* Footer Actions */}
-          <div className="flex gap-3 pt-4 border-t mt-4">
-            <Button
-              variant="ghost"
-              onClick={onClose}
-              type="button"
-              className="flex-1"
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              className="flex-1 bg-purple-600 hover:bg-purple-700 text-white"
               disabled={
                 uploading || (mode === "panopto" ? !transcript : !selectedFile)
               }
