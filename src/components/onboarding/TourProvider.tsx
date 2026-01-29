@@ -5,7 +5,13 @@ import React, {
   useState,
   useCallback,
 } from "react";
-import Joyride, { CallBackProps, STATUS, Step, Styles } from "react-joyride";
+import Joyride, {
+  CallBackProps,
+  STATUS,
+  Step,
+  Styles,
+  EVENTS,
+} from "react-joyride";
 import { useRouter } from "next/router";
 import { GUEST_TOUR_STEPS, STUDENT_DASHBOARD_TOUR_STEPS } from "./tours";
 import { useAuth } from "@/lib/supabase/AuthContext";
@@ -33,6 +39,7 @@ export const TourProvider: React.FC<{ children: React.ReactNode }> = ({
   const [run, setRun] = useState(false);
   const [steps, setSteps] = useState<Step[]>([]);
   const [tourKey, setTourKey] = useState<string>("");
+  const [stepIndex, setStepIndex] = useState(0);
   const [shouldPersist, setShouldPersist] = useState(true);
 
   const router = useRouter();
@@ -43,10 +50,19 @@ export const TourProvider: React.FC<{ children: React.ReactNode }> = ({
     options: {
       primaryColor: "#4f46e5", // Indigo-600
       zIndex: 10000,
-      overlayColor: "rgba(0, 0, 0, 0.6)", // Slightly darker for focus
+      overlayColor: "rgba(0, 0, 0, 0.6)",
+      width:
+        typeof window !== "undefined" && window.innerWidth < 768 ? "90vw" : 400,
     },
     spotlight: {
-      borderRadius: "16px", // Smooth rounded corners
+      borderRadius: "16px",
+    },
+    tooltip: {
+      borderRadius: "16px",
+    },
+    buttonNext: {
+      backgroundColor: "#4f46e5",
+      borderRadius: "8px",
     },
   };
 
@@ -103,34 +119,18 @@ export const TourProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const handleJoyrideCallback = (data: CallBackProps) => {
-    const { status } = data;
+    const { action, index, status, type } = data;
+
+    // Track step index changes
+    if (type === EVENTS.STEP_AFTER || type === EVENTS.TARGET_NOT_FOUND) {
+      setStepIndex(index + (action === "prev" ? -1 : 1));
+    }
+
     const finishedStatuses: string[] = [STATUS.FINISHED, STATUS.SKIPPED];
 
-    // Inject pulse animation class to target
-    if (data.type === "step:after" || data.type === "tour:start") {
-      // Remove from prev
-      document
-        .querySelectorAll(".tour-highlight-pulse")
-        .forEach((el) => el.classList.remove("tour-highlight-pulse"));
-
-      // Add to current (Wait for dom update)
-      setTimeout(() => {
-        const target = document.querySelector(data.step.target as string);
-        if (target) {
-          target.classList.add("tour-highlight-pulse");
-          // Ensure relative positioning if not fixed, so shadow isn't clipped?
-          // Actually box-shadow usually works fine.
-        }
-      }, 100);
-    }
     if (finishedStatuses.includes(status)) {
-      // Clean up
-      document
-        .querySelectorAll(".tour-highlight-pulse")
-        .forEach((el) => el.classList.remove("tour-highlight-pulse"));
-
       setRun(false);
-      // Mark as done ONLY if shouldPersist is true
+      setStepIndex(0); // Reset for next time
       if (tourKey && shouldPersist) {
         localStorage.setItem(tourKey, "true");
       }
@@ -144,20 +144,21 @@ export const TourProvider: React.FC<{ children: React.ReactNode }> = ({
       <Joyride
         steps={steps}
         run={run}
+        stepIndex={stepIndex}
         continuous
         showProgress
         showSkipButton
-        disableOverlayClose={true} // Force user to interact with tour controls
+        disableOverlayClose={true}
         spotlightClicks={true}
         callback={handleJoyrideCallback}
         styles={styles}
         tooltipComponent={TourTooltip}
-        spotlightPadding={14} // Target 12-18px
-        scrollOffset={100} // Smooth scroll offset
+        spotlightPadding={10}
+        scrollOffset={100}
         scrollToFirstStep={true}
         floaterProps={{
           hideArrow: false,
-          disableAnimation: true, // We handle animation in CSS
+          disableAnimation: true,
         }}
       />
       {children}

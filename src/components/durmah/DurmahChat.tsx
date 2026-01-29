@@ -366,7 +366,7 @@ INSTRUCTIONS:
               }`}
             >
               <img
-                src="/images/durmah.png"
+                src="/images/durmah_barrister.png"
                 alt="Durmah"
                 className="w-full h-full object-cover"
               />

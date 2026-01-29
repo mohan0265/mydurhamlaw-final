@@ -2,7 +2,7 @@ import Link from "next/link";
 import { useMemo } from "react";
 
 import { Logo } from "@/components/ui/Logo";
-import { BRAND_NAME, LEGAL_DISCLAIMER_SHORT } from "@/lib/brand";
+import { BRAND_NAME, LEGAL_DISCLAIMER_LONG } from "@/lib/brand";
 
 export default function GlobalFooter() {
   const year = useMemo(() => new Date().getFullYear(), []);
@@ -167,7 +167,7 @@ export default function GlobalFooter() {
 
       <div className="border-t border-white/5 bg-[#0B1412]">
         <div className="mx-auto max-w-7xl px-4 py-8 text-xs text-gray-600">
-          <p className="mb-2">{LEGAL_DISCLAIMER_SHORT}</p>
+          <p className="mb-2">{LEGAL_DISCLAIMER_LONG}</p>
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <span>
               © {year} {BRAND_NAME}. All rights reserved.

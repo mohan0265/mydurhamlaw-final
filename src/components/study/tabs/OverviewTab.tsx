@@ -245,7 +245,7 @@ export default function OverviewTab({ assignment }: OverviewTabProps) {
           <div>
             <div className="flex justify-between text-xs font-medium text-gray-500 mb-1">
               <span>Checklist Completion</span>
-              <span>0%</span>
+              <span>0% complete (you haven't begun — that's okay)</span>
             </div>
             <div className="w-full bg-gray-100 rounded-full h-2">
               <div

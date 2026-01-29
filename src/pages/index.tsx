@@ -107,35 +107,45 @@ export default function LandingPage() {
             <IndependenceBadge variant="hero" />
           </div>
 
-          <p className="text-xl sm:text-2xl font-bold text-[#D5BF76] mb-8 max-w-2xl mx-auto uppercase tracking-wider">
-            {LEGAL_AI_WARNING_SHORT} <br className="hidden sm:block" />
-            Designed for students studying the Durham Law curriculum.
-          </p>
-
-          <h1 className="flex flex-col md:flex-row md:flex-nowrap justify-center items-center gap-2 md:gap-3 text-4xl md:text-5xl xl:text-6xl font-black mb-6 tracking-tight text-gray-900 dark:text-white leading-tight">
+          <h1 className="text-4xl md:text-5xl xl:text-6xl font-black mb-6 tracking-tight text-gray-900 dark:text-white leading-tight max-w-5xl mx-auto">
+            Your Durham Law Companion — <br className="hidden md:block" />
+            Built for{" "}
             <span className="bg-clip-text text-transparent bg-gradient-to-r from-[#0f766e] to-[#D5BF76]">
-              The Caseway
+              Clarity, Confidence, and Performance
             </span>
-            <span className="text-gray-900 dark:text-white">
-              to Legal Mastery
-            </span>
+            .
           </h1>
 
-          <div className="mb-8">
-            <Link
-              href="/stay-current"
-              className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-gray-50 border border-gray-200 text-gray-500 hover:bg-white hover:border-[#D5BF76] hover:text-[#0f766e] dark:bg-white/5 dark:border-white/10 dark:text-gray-400 dark:hover:bg-white/10 dark:hover:border-[#D5BF76] dark:hover:text-white font-bold tracking-wide uppercase text-sm transition-all hover:scale-105 hover:shadow-md dark:hover:shadow-none"
-            >
-              Stay current.
-            </Link>
-          </div>
-
-          <p className="mt-8 text-xl sm:text-2xl text-gray-600 dark:text-gray-400 max-w-3xl mx-auto leading-relaxed font-light">
-            Durham-specific law support that helps students think, write, and
-            reason like real lawyers — out loud.
+          <p className="mt-6 text-xl text-gray-600 dark:text-gray-400 max-w-3xl mx-auto leading-relaxed font-light">
+            Turn lectures into structured notes, practise tutor-like
+            explanations, and stay on top of deadlines — aligned to the Durham
+            Law curriculum.
           </p>
 
-          <div className="mt-12 mb-16 grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-3xl mx-auto">
+          <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center items-center">
+            <Link href="/signup">
+              <button className="w-full sm:w-auto bg-[#123733] text-white dark:bg-[#D5BF76] dark:text-[#0B1412] font-black py-4 px-10 rounded-full text-lg transition-all hover:scale-105 shadow-xl hover:shadow-2xl active:scale-95 uppercase tracking-widest border border-transparent hover:border-[#D5BF76]">
+                Create your account
+              </button>
+            </Link>
+            <button
+              onClick={() =>
+                document
+                  .getElementById("how-it-works")
+                  ?.scrollIntoView({ behavior: "smooth" })
+              }
+              className="w-full sm:w-auto bg-white hover:bg-gray-50 border border-gray-200 text-gray-900 dark:bg-transparent dark:hover:bg-white/5 dark:border-white/20 dark:text-white font-bold py-4 px-10 rounded-full text-lg transition-all backdrop-blur-sm active:scale-95 uppercase tracking-widest shadow-sm dark:shadow-none"
+            >
+              Explore features
+            </button>
+          </div>
+
+          <p className="mt-6 text-xs text-gray-400 dark:text-gray-600 max-w-2xl mx-auto">
+            {LEGAL_AI_WARNING_SHORT} Designed for students, not endorsed by
+            Durham University. Verify output with official course materials.
+          </p>
+
+          <div className="mt-16 grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-3xl mx-auto">
             {[
               {
                 name: "Learn",
@@ -164,28 +174,6 @@ export default function LandingPage() {
                 </div>
               </Link>
             ))}
-          </div>
-
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            <Link href="/signup">
-              <button className="w-full sm:w-auto bg-[#123733] text-white dark:bg-[#D5BF76] dark:text-[#0B1412] font-black py-5 px-12 rounded-full text-lg transition-all hover:scale-105 shadow-xl hover:shadow-2xl active:scale-95 uppercase tracking-widest border border-transparent hover:border-[#D5BF76]">
-                Start Free Trial
-              </button>
-            </Link>
-            <Link href="/pricing">
-              <button className="w-full sm:w-auto bg-white hover:bg-gray-50 border border-gray-200 text-gray-900 dark:bg-transparent dark:hover:bg-white/5 dark:border-white/20 dark:text-white font-bold py-5 px-12 rounded-full text-lg transition-all backdrop-blur-sm active:scale-95 uppercase tracking-widest shadow-sm dark:shadow-none">
-                See Pricing
-              </button>
-            </Link>
-          </div>
-
-          <div className="mt-8">
-            <Link
-              href="/lnat/signup"
-              className="text-sm font-bold text-gray-500 hover:text-gray-900 dark:text-gray-500 dark:hover:text-white transition-colors border-b border-gray-300 hover:border-gray-900 dark:border-gray-600 dark:hover:border-white pb-0.5"
-            >
-              Applying for Law? Join LNAT Mentor &rarr;
-            </Link>
           </div>
 
           <div className="mt-12 pt-8 border-t border-gray-200 dark:border-white/5 text-[10px] text-gray-400 dark:text-gray-500 flex items-center justify-center gap-3 uppercase tracking-[0.2em] font-bold">

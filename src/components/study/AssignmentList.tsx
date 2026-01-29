@@ -146,10 +146,10 @@ export default function AssignmentList({
                       (due.getTime() - now.getTime()) / (1000 * 60 * 60);
                     const diffDays = diffHours / 24;
 
-                    if (diffHours < 0) return "text-red-600 font-bold"; // Overdue
-                    if (diffHours < 24) return "text-red-600 font-bold"; // < 24h
-                    if (diffDays <= 3) return "text-amber-600 font-medium"; // 1-3 days
-                    return "text-gray-500"; // > 3 days
+                    if (diffHours < 0) return "text-red-600 font-bold";
+                    if (diffHours < 24) return "text-red-600 font-bold";
+                    if (diffDays <= 3) return "text-amber-600 font-medium";
+                    return "text-gray-500";
                   })()}`}
                 >
                   <Clock size={12} />
@@ -158,10 +158,11 @@ export default function AssignmentList({
                     const now = new Date();
                     const diffHours =
                       (due.getTime() - now.getTime()) / (1000 * 60 * 60);
+                    const diffDays = Math.ceil(diffHours / 24);
 
                     if (diffHours < 0) return "Overdue";
                     if (diffHours < 24) return "Due today";
-                    return format(due, "MMM d");
+                    return `Due in ${diffDays} days`;
                   })()}
                 </span>
               </div>

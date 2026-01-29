@@ -6,7 +6,14 @@ import Link from "next/link";
 import { useContext } from "react";
 import { AuthContext } from "@/lib/supabase/AuthContext";
 import { Button } from "@/components/ui/Button";
-import { ArrowLeft, Plus, RefreshCw, FileAudio } from "lucide-react";
+import {
+  ArrowLeft,
+  Plus,
+  RefreshCw,
+  FileAudio,
+  FileText,
+  ExternalLink,
+} from "lucide-react";
 import dynamic from "next/dynamic";
 import { useStudentOnly } from "@/hooks/useStudentOnly";
 import LecturerList from "@/components/lecturers/LecturerList";
@@ -442,104 +449,48 @@ export default function LecturesPage() {
                   Choose how you want to start:
                 </p>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-left max-w-4xl mx-auto">
+                <div className="max-w-md mx-auto flex flex-col gap-4">
                   {/* Option 1 - Paste Transcript */}
                   <div
                     onClick={() => {
                       setShowUploadModal(true);
                       setInitialUploadMode("panopto");
                     }}
-                    className="p-6 rounded-xl bg-purple-50 border border-purple-100 ring-1 ring-purple-200 hover:shadow-md transition cursor-pointer group relative flex flex-col"
+                    className="p-5 rounded-xl bg-violet-600 text-white shadow-lg shadow-violet-200 hover:shadow-xl hover:bg-violet-700 transition-all cursor-pointer group flex flex-col items-center text-center relative overflow-hidden"
                   >
-                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-purple-600 text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wide shadow-sm">
-                      Recommended
+                    <div className="absolute top-0 right-0 p-2 opacity-10">
+                      <FileText size={48} />
                     </div>
-                    <div className="font-bold text-gray-900 mb-2 flex items-center gap-3">
-                      <span className="bg-purple-200 text-purple-800 w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold">
-                        1
-                      </span>
+                    <h3 className="font-bold text-lg flex items-center gap-2">
                       Paste Transcript
-                    </div>
-                    <p className="text-sm text-gray-600 mb-4 leading-relaxed flex-grow">
-                      Fastest & most accurate. Copy captions from Panopto and
-                      paste them here.
-                    </p>
-                    <div className="flex items-center gap-2 text-xs font-medium text-purple-700 bg-purple-100/50 px-2 py-1 rounded w-fit mb-4">
-                      <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>{" "}
-                      Saves DB Space
-                    </div>
-                    <button className="text-sm font-bold text-white bg-purple-600 w-full py-2.5 rounded-lg hover:bg-purple-700 transition shadow-sm">
-                      Import Text
-                    </button>
+                    </h3>
+                    <span className="text-xs font-medium bg-white/20 px-2 py-0.5 rounded-full mt-1 mb-2">
+                      Recommended
+                    </span>
                   </div>
 
-                  {/* Option 2 - Upload Audio */}
-                  <div
-                    onClick={() => {
-                      setShowUploadModal(true);
-                      setInitialUploadMode("audio");
-                    }}
-                    className="p-6 rounded-xl bg-white border border-gray-200 hover:border-purple-200 transition cursor-pointer group flex flex-col"
-                  >
-                    <div className="font-bold text-gray-900 mb-2 flex items-center gap-3">
-                      <span className="bg-gray-100 text-gray-600 w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold">
-                        2
-                      </span>
-                      Upload Audio
-                    </div>
-                    <p className="text-sm text-gray-500 mb-4 leading-relaxed flex-grow">
-                      Have an MP3 or M4A? Upload it and we'll transcribe it for
-                      you.
-                    </p>
-                    <div className="text-xs font-medium text-amber-700 bg-amber-50 px-2 py-1 rounded w-fit mb-4">
-                      Depends on clarity
-                    </div>
-                    <button className="text-sm font-bold text-gray-600 bg-gray-50 border border-gray-200 w-full py-2.5 rounded-lg hover:bg-white transition">
-                      Select File
-                    </button>
-                  </div>
-
-                  {/* Option 3 - Link */}
+                  {/* Option 2 - Add Link */}
                   <div
                     onClick={() => {
                       setShowUploadModal(true);
                       setInitialUploadMode("panopto");
                     }}
-                    className="p-6 rounded-xl bg-white border border-gray-200 hover:border-purple-200 transition cursor-pointer group flex flex-col"
+                    className="p-4 rounded-xl bg-white border border-gray-200 text-gray-700 hover:border-violet-300 hover:bg-gray-50 transition-all cursor-pointer flex items-center justify-center gap-2 font-semibold shadow-sm"
                   >
-                    <div className="font-bold text-gray-900 mb-2 flex items-center gap-3">
-                      <span className="bg-gray-100 text-gray-600 w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold">
-                        3
-                      </span>
-                      Add Link
-                    </div>
-                    <p className="text-sm text-gray-500 mb-4 leading-relaxed flex-grow">
-                      Add a reference URL for <strong>1-click open</strong> in a
-                      new tab.
-                    </p>
-                    <div className="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded w-fit mb-4">
-                      Reference Only
-                    </div>
-                    <button className="text-sm font-bold text-gray-600 bg-gray-50 border border-gray-200 w-full py-2.5 rounded-lg hover:bg-white transition">
-                      Add Link
-                    </button>
+                    <ExternalLink size={18} />
+                    Add Panopto link (optional)
                   </div>
-                </div>
 
-                {/* Pro Tip Card */}
-                <div className="mt-8 max-w-2xl mx-auto bg-blue-50 border border-blue-100 rounded-xl p-4 text-left flex gap-4">
-                  <div className="bg-blue-100 p-2 rounded-lg h-fit text-blue-600">
-                    <span className="text-xl">💡</span>
-                  </div>
-                  <div>
-                    <h4 className="font-bold text-blue-900 text-sm">
-                      Pro tip: Save the Panopto link
-                    </h4>
-                    <p className="text-xs text-blue-700 mt-1 leading-relaxed">
-                      When you’re reviewing your summary or key points, the link
-                      lets you jump back to the exact lecture quickly in a new
-                      tab.
-                    </p>
+                  {/* Pro Tip */}
+                  <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 flex gap-3 text-left">
+                    <span className="text-lg">💡</span>
+                    <div>
+                      <p className="text-sm font-bold text-blue-900">Pro tip</p>
+                      <p className="text-xs text-blue-800 leading-relaxed">
+                        Adding the Panopto link gives you{" "}
+                        <strong>1-click access</strong> while you review notes.
+                      </p>
+                    </div>
                   </div>
                 </div>
 
