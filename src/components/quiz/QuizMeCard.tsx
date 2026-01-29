@@ -38,22 +38,14 @@ export const QuizMeCard: React.FC<QuizMeCardProps> = ({
     <div
       className={`overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-indigo-700 via-purple-800 to-indigo-900 shadow-2xl border border-white/10 text-white relative group transition-all hover:shadow-purple-500/20 ${className}`}
     >
-      {/* Quiz Me Mascot */}
-      <div className="absolute top-0 right-0 p-4 translate-x-4 -translate-y-4 group-hover:translate-x-2 group-hover:-translate-y-2 transition-transform duration-500">
-        <NextImage
-          src="/images/quiz-me-professor.png"
-          alt="Professor Barrister"
-          width={160}
-          height={160}
-          className="w-32 h-32 md:w-40 md:h-40 object-contain drop-shadow-[0_10px_10px_rgba(0,0,0,0.3)]"
-          loading="lazy"
-        />
-      </div>
-
       <div className="relative z-10 p-8 sm:p-10">
         <div className="flex items-center gap-3 mb-6">
-          <div className="p-2.5 bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20">
-            <Brain className="w-5 h-5 text-purple-200" />
+          <div className="p-1 bg-white/10 backdrop-blur-xl rounded-full border border-white/20">
+            <img
+              src="/images/durmah.png"
+              alt="Barrister"
+              className="w-8 h-8 rounded-full object-cover"
+            />
           </div>
           <span className="text-xs font-black uppercase tracking-[0.2em] text-purple-200/80">
             Active Retrieval

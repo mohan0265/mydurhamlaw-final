@@ -162,10 +162,18 @@ export default function AssignmentDetail({
                   : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"
               }`}
             >
-              <tab.icon
-                size={16}
-                className={activeTab === tab.id ? "text-violet-300" : ""}
-              />
+              {tab.id === "quiz" ? (
+                <img
+                  src="/images/durmah.png"
+                  alt="Quiz"
+                  className="w-4 h-4 rounded-full object-cover"
+                />
+              ) : (
+                <tab.icon
+                  size={16}
+                  className={activeTab === tab.id ? "text-violet-300" : ""}
+                />
+              )}
               {tab.label}
             </button>
           ))}

@@ -139,16 +139,16 @@ export default function OverviewTab({ assignment }: OverviewTabProps) {
       {/* Key Metrics Cards (Academic/Minimalist) */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {/* Time Remaining */}
-        <div className="p-3 rounded-lg border border-gray-200 bg-white shadow-sm hover:border-gray-300 transition-all flex flex-col justify-between h-28 min-w-0">
-          <div className="flex justify-between items-start">
+        <div className="p-3 rounded-lg border border-gray-200 bg-white shadow-sm hover:border-gray-300 transition-all flex flex-col justify-between min-h-[7rem] h-auto">
+          <div className="flex justify-between items-start mb-2">
             <span className="text-[10px] font-serif uppercase tracking-widest text-gray-500 font-bold whitespace-nowrap">
               Time Left
             </span>
             <Clock size={14} className="text-gray-400 flex-shrink-0 ml-2" />
           </div>
-          <div className="min-w-0">
+          <div>
             <p
-              className={`text-xl font-serif font-medium truncate ${status.isOverdue ? "text-red-700" : "text-gray-900"}`}
+              className={`text-lg font-serif font-medium leading-tight ${status.isOverdue ? "text-red-700" : "text-gray-900"}`}
               title={status.text}
             >
               {status.text}
@@ -160,16 +160,16 @@ export default function OverviewTab({ assignment }: OverviewTabProps) {
         </div>
 
         {/* Word Target */}
-        <div className="p-3 rounded-lg border border-gray-200 bg-white shadow-sm hover:border-gray-300 transition-all flex flex-col justify-between h-28 min-w-0">
-          <div className="flex justify-between items-start">
+        <div className="p-3 rounded-lg border border-gray-200 bg-white shadow-sm hover:border-gray-300 transition-all flex flex-col justify-between min-h-[7rem] h-auto">
+          <div className="flex justify-between items-start mb-2">
             <span className="text-[10px] font-serif uppercase tracking-widest text-gray-500 font-bold whitespace-nowrap">
               Target
             </span>
             <Target size={14} className="text-gray-400 flex-shrink-0 ml-2" />
           </div>
-          <div className="min-w-0">
+          <div>
             <p
-              className="text-xl font-serif font-medium text-gray-900 truncate"
+              className="text-lg font-serif font-medium text-gray-900 leading-tight"
               title={assignment.word_count_target?.toString() || "Set"}
             >
               {assignment.word_count_target || "Set"}
@@ -181,16 +181,16 @@ export default function OverviewTab({ assignment }: OverviewTabProps) {
         </div>
 
         {/* Weighting */}
-        <div className="p-3 rounded-lg border border-gray-200 bg-white shadow-sm hover:border-gray-300 transition-all flex flex-col justify-between h-28 min-w-0">
-          <div className="flex justify-between items-start">
+        <div className="p-3 rounded-lg border border-gray-200 bg-white shadow-sm hover:border-gray-300 transition-all flex flex-col justify-between min-h-[7rem] h-auto">
+          <div className="flex justify-between items-start mb-2">
             <span className="text-[10px] font-serif uppercase tracking-widest text-gray-500 font-bold whitespace-nowrap">
               Weighting
             </span>
             <Percent size={14} className="text-gray-400 flex-shrink-0 ml-2" />
           </div>
-          <div className="min-w-0">
+          <div>
             <p
-              className="text-xl font-serif font-medium text-gray-900 truncate"
+              className="text-lg font-serif font-medium text-gray-900 leading-tight"
               title={assignment.weightage || "N/A"}
             >
               {assignment.weightage ? assignment.weightage : "N/A"}
@@ -202,16 +202,16 @@ export default function OverviewTab({ assignment }: OverviewTabProps) {
         </div>
 
         {/* Module */}
-        <div className="p-3 rounded-lg border border-gray-200 bg-white shadow-sm hover:border-gray-300 transition-all flex flex-col justify-between h-28 min-w-0">
-          <div className="flex justify-between items-start">
+        <div className="p-3 rounded-lg border border-gray-200 bg-white shadow-sm hover:border-gray-300 transition-all flex flex-col justify-between min-h-[7rem] h-auto">
+          <div className="flex justify-between items-start mb-2">
             <span className="text-[10px] font-serif uppercase tracking-widest text-gray-500 font-bold whitespace-nowrap">
               Module
             </span>
             <BookOpen size={14} className="text-gray-400 flex-shrink-0 ml-2" />
           </div>
-          <div className="min-w-0">
+          <div>
             <p
-              className="text-lg font-serif font-medium text-gray-900 truncate"
+              className="text-lg font-serif font-medium text-gray-900 break-words leading-tight"
               title={assignment.module_code || ""}
             >
               {assignment.module_code || "---"}
