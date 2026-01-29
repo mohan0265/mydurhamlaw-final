@@ -683,7 +683,7 @@ function DashboardContent() {
                     <span>Stage {nextAssignment.current_stage || 0}/6</span>
                     <span className="font-medium text-gray-900 capitalize truncate max-w-[80px]">
                       {nextAssignment.status === "not_started"
-                        ? "Not Started"
+                        ? "Not started yet"
                         : nextAssignment.status?.replace("_", " ") || "Active"}
                     </span>
                   </div>

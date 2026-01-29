@@ -371,21 +371,89 @@ export default function LecturesPage() {
               </div>
             ) : readyLectures.length === 0 &&
               processingLectures.length === 0 ? (
-              <div className="bg-gray-50 rounded-xl p-8 text-center">
-                <FileAudio className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">
-                  No lectures yet
+              <div className="bg-white rounded-xl border border-gray-200 p-8 text-center shadow-sm">
+                <FileAudio className="w-12 h-12 text-purple-100 mx-auto mb-4 bg-purple-600 rounded-xl p-2" />
+                <h3 className="text-xl font-bold text-gray-900 mb-2">
+                  Add your first lecture (3 ways)
                 </h3>
-                <p className="text-gray-600 mb-4">
-                  Upload your lecture recordings and Durmah will transcribe them
-                  and generate study notes!
+                <p className="text-gray-600 mb-8 max-w-lg mx-auto">
+                  Transform your raw lecture materials into exam-ready notes.
+                  Choose how you want to start:
                 </p>
-                <Button
-                  onClick={() => setShowUploadModal(true)}
-                  className="bg-purple-600 hover:bg-purple-700 text-white"
-                >
-                  Upload Your First Lecture
-                </Button>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-left max-w-4xl mx-auto">
+                  {/* Option 1 */}
+                  <div className="p-4 rounded-xl bg-gray-50 border border-gray-100 hover:border-purple-200 transition group cursor-default">
+                    <div className="font-bold text-gray-900 mb-1 flex items-center gap-2">
+                      <span className="bg-gray-200 text-gray-600 w-6 h-6 rounded-full flex items-center justify-center text-xs">
+                        1
+                      </span>
+                      Paste Link
+                    </div>
+                    <p className="text-xs text-gray-500 mb-3">
+                      Add a Panopto or source link so you can jump back anytime.
+                      (Reference only)
+                    </p>
+                    <div className="text-xs font-medium text-purple-600 bg-purple-50 px-2 py-1 rounded w-fit">
+                      Best for organization
+                    </div>
+                  </div>
+
+                  {/* Option 2 */}
+                  <div
+                    onClick={() => setShowUploadModal(true)}
+                    className="p-4 rounded-xl bg-purple-50 border border-purple-100 ring-1 ring-purple-200 hover:shadow-md transition cursor-pointer group relative"
+                  >
+                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-purple-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide">
+                      Recommended
+                    </div>
+                    <div className="font-bold text-purple-900 mb-1 flex items-center gap-2">
+                      <span className="bg-purple-200 text-purple-700 w-6 h-6 rounded-full flex items-center justify-center text-xs">
+                        2
+                      </span>
+                      Upload Audio
+                    </div>
+                    <p className="text-xs text-purple-700/80 mb-3">
+                      We'll transcribe MP3/WAV/M4A and turn it into Summary, Key
+                      Points, & Exam Prompts.
+                    </p>
+                    <button className="text-xs font-bold text-white bg-purple-600 w-full py-2 rounded-lg hover:bg-purple-700 transition">
+                      Upload File
+                    </button>
+                  </div>
+
+                  {/* Option 3 */}
+                  <div className="p-4 rounded-xl bg-gray-50 border border-gray-100 hover:border-purple-200 transition group cursor-default">
+                    <div className="font-bold text-gray-900 mb-1 flex items-center gap-2">
+                      <span className="bg-gray-200 text-gray-600 w-6 h-6 rounded-full flex items-center justify-center text-xs">
+                        3
+                      </span>
+                      Paste Text
+                    </div>
+                    <p className="text-xs text-gray-500 mb-3">
+                      If you already have captions or a transcript, paste it to
+                      skip transcription time.
+                    </p>
+                    <div className="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded w-fit">
+                      Fastest
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-8 pt-6 border-t border-gray-100 flex justify-center gap-8 text-xs text-gray-400">
+                  <span className="flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 bg-green-400 rounded-full"></span>
+                    Generates Summary
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 bg-blue-400 rounded-full"></span>
+                    Extracts Cases
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 bg-orange-400 rounded-full"></span>
+                    Creates Quiz
+                  </span>
+                </div>
               </div>
             ) : (
               <div className="space-y-3">
