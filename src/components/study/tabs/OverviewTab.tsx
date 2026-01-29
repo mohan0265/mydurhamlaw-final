@@ -139,12 +139,12 @@ export default function OverviewTab({ assignment }: OverviewTabProps) {
       {/* Key Metrics Cards (Academic/Minimalist) */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {/* Time Remaining */}
-        <div className="p-3 rounded-lg border border-gray-200 bg-white shadow-sm hover:border-gray-300 transition-all flex flex-col justify-between min-h-[7rem] h-auto">
+        <div className="p-3 rounded-lg border border-gray-200 bg-white shadow-sm hover:border-gray-300 transition-all flex flex-col justify-between min-h-[7rem] h-auto overflow-hidden">
           <div className="flex justify-between items-start mb-2">
-            <span className="text-[10px] font-sans uppercase tracking-widest text-gray-500 font-bold whitespace-nowrap">
+            <span className="text-[10px] font-sans uppercase tracking-widest text-gray-500 font-bold leading-tight mr-1">
               Time Left
             </span>
-            <Clock size={14} className="text-gray-400 flex-shrink-0 ml-2" />
+            <Clock size={14} className="text-gray-400 flex-shrink-0" />
           </div>
           <div>
             <p
@@ -153,19 +153,22 @@ export default function OverviewTab({ assignment }: OverviewTabProps) {
             >
               {status.text}
             </p>
-            <p className="text-[10px] text-gray-400 mt-1 font-sans truncate">
+            <p
+              className="text-[10px] text-gray-400 mt-1 font-sans truncate"
+              suppressHydrationWarning
+            >
               {format(due, "MMM d, HH:mm")}
             </p>
           </div>
         </div>
 
         {/* Word Target */}
-        <div className="p-3 rounded-lg border border-gray-200 bg-white shadow-sm hover:border-gray-300 transition-all flex flex-col justify-between min-h-[7rem] h-auto">
+        <div className="p-3 rounded-lg border border-gray-200 bg-white shadow-sm hover:border-gray-300 transition-all flex flex-col justify-between min-h-[7rem] h-auto overflow-hidden">
           <div className="flex justify-between items-start mb-2">
-            <span className="text-[10px] font-sans uppercase tracking-widest text-gray-500 font-bold whitespace-nowrap">
+            <span className="text-[10px] font-sans uppercase tracking-widest text-gray-500 font-bold leading-tight mr-1">
               Target
             </span>
-            <Target size={14} className="text-gray-400 flex-shrink-0 ml-2" />
+            <Target size={14} className="text-gray-400 flex-shrink-0" />
           </div>
           <div>
             <p
@@ -181,12 +184,12 @@ export default function OverviewTab({ assignment }: OverviewTabProps) {
         </div>
 
         {/* Weighting */}
-        <div className="p-3 rounded-lg border border-gray-200 bg-white shadow-sm hover:border-gray-300 transition-all flex flex-col justify-between min-h-[7rem] h-auto">
+        <div className="p-3 rounded-lg border border-gray-200 bg-white shadow-sm hover:border-gray-300 transition-all flex flex-col justify-between min-h-[7rem] h-auto overflow-hidden">
           <div className="flex justify-between items-start mb-2">
-            <span className="text-[10px] font-sans uppercase tracking-widest text-gray-500 font-bold whitespace-nowrap">
+            <span className="text-[10px] font-sans uppercase tracking-widest text-gray-500 font-bold leading-tight mr-1">
               Weighting
             </span>
-            <Percent size={14} className="text-gray-400 flex-shrink-0 ml-2" />
+            <Percent size={14} className="text-gray-400 flex-shrink-0" />
           </div>
           <div>
             <p
@@ -202,12 +205,12 @@ export default function OverviewTab({ assignment }: OverviewTabProps) {
         </div>
 
         {/* Module */}
-        <div className="p-3 rounded-lg border border-gray-200 bg-white shadow-sm hover:border-gray-300 transition-all flex flex-col justify-between min-h-[7rem] h-auto">
+        <div className="p-3 rounded-lg border border-gray-200 bg-white shadow-sm hover:border-gray-300 transition-all flex flex-col justify-between min-h-[7rem] h-auto overflow-hidden">
           <div className="flex justify-between items-start mb-2">
-            <span className="text-[10px] font-sans uppercase tracking-widest text-gray-500 font-bold whitespace-nowrap">
+            <span className="text-[10px] font-sans uppercase tracking-widest text-gray-500 font-bold leading-tight mr-1">
               Module
             </span>
-            <BookOpen size={14} className="text-gray-400 flex-shrink-0 ml-2" />
+            <BookOpen size={14} className="text-gray-400 flex-shrink-0" />
           </div>
           <div>
             <p
