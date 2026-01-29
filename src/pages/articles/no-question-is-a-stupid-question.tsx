@@ -330,7 +330,7 @@ export default function NoQuestionIsAStupidQuestion() {
             <p>Some need a quiet, private space to think, ask, and grow.</p>
 
             <p>
-              MyDurhamLaw supports not just academic progress, but emotional
+              Caseway supports not just academic progress, but emotional
               wellbeing during one of the most demanding transitions in a young
               person’s life.
             </p>
@@ -345,9 +345,8 @@ export default function NoQuestionIsAStupidQuestion() {
             </p>
 
             <p>
-              By removing fear from the act of asking questions, MyDurhamLaw
-              gives students confidence, clarity, and the freedom to learn
-              properly.
+              By removing fear from the act of asking questions, Caseway gives
+              students confidence, clarity, and the freedom to learn properly.
             </p>
 
             <p>and no student should struggle in silence.</p>
@@ -367,7 +366,7 @@ export default function NoQuestionIsAStupidQuestion() {
               </div>
             </div>
             <h2 className="text-2xl md:text-3xl font-bold mb-4">
-              Explore MyDurhamLaw
+              Explore Caseway
             </h2>
             <p className="text-lg text-indigo-100 mb-8 max-w-2xl mx-auto">
               Empower your legal education with judgement-free AI assistance and

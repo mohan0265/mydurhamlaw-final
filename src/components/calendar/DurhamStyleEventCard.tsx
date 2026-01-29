@@ -1,37 +1,44 @@
 // src/components/calendar/DurhamStyleEventCard.tsx
 // Event card component matching Durham University MyTimetable UX
-// With vibrant MyDurhamLaw branding
+// With vibrant Caseway branding
 
-import React from 'react';
-import { 
-  Monitor, 
-  Users, 
-  Calendar, 
-  FileText, 
-  Clock, 
-  MapPin, 
+import React from "react";
+import {
+  Monitor,
+  Users,
+  Calendar,
+  FileText,
+  Clock,
+  MapPin,
   User,
   BookOpen,
   AlertCircle,
   CheckCircle2,
-  ExternalLink
-} from 'lucide-react';
+  ExternalLink,
+} from "lucide-react";
 
-export type EventType = 'lecture' | 'seminar' | 'tutorial' | 'assessment' | 'deadline' | 'personal' | 'other';
+export type EventType =
+  | "lecture"
+  | "seminar"
+  | "tutorial"
+  | "assessment"
+  | "deadline"
+  | "personal"
+  | "other";
 
 export interface DurhamEventCardProps {
   id: string;
   title: string;
   moduleCode?: string;
-  time?: string;      // e.g. "15:00 - 16:00"
+  time?: string; // e.g. "15:00 - 16:00"
   startTime?: string; // e.g. "15:00"
-  endTime?: string;   // e.g. "16:00"
-  location?: string;  // e.g. "D/TLC042"
-  lecturer?: string;  // e.g. "Professor Kim Bouwer"
+  endTime?: string; // e.g. "16:00"
+  location?: string; // e.g. "D/TLC042"
+  lecturer?: string; // e.g. "Professor Kim Bouwer"
   type: EventType;
   isAllDay?: boolean;
-  source?: 'timetable' | 'assignment' | 'personal' | 'plan';
-  dueTime?: string;   // For assignments
+  source?: "timetable" | "assignment" | "personal" | "plan";
+  dueTime?: string; // For assignments
   submissionUrl?: string; // For "Submit on Blackboard" link
   onClick?: () => void;
   compact?: boolean;
@@ -40,86 +47,107 @@ export interface DurhamEventCardProps {
 // Event type icon mapping
 function getEventIcon(type: EventType) {
   switch (type) {
-    case 'lecture':    return <Monitor className="w-5 h-5" />;
-    case 'seminar':    return <Users className="w-5 h-5" />;
-    case 'tutorial':   return <BookOpen className="w-5 h-5" />;
-    case 'assessment': return <FileText className="w-5 h-5" />;
-    case 'deadline':   return <AlertCircle className="w-5 h-5" />;
-    case 'personal':   return <CheckCircle2 className="w-5 h-5" />;
-    default:           return <Calendar className="w-5 h-5" />;
+    case "lecture":
+      return <Monitor className="w-5 h-5" />;
+    case "seminar":
+      return <Users className="w-5 h-5" />;
+    case "tutorial":
+      return <BookOpen className="w-5 h-5" />;
+    case "assessment":
+      return <FileText className="w-5 h-5" />;
+    case "deadline":
+      return <AlertCircle className="w-5 h-5" />;
+    case "personal":
+      return <CheckCircle2 className="w-5 h-5" />;
+    default:
+      return <Calendar className="w-5 h-5" />;
   }
 }
 
 // Event type label
 function getEventLabel(type: EventType): string {
   switch (type) {
-    case 'lecture':    return 'Lecture';
-    case 'seminar':    return 'Seminar';
-    case 'tutorial':   return 'Tutorial';
-    case 'assessment': return 'Assessment';
-    case 'deadline':   return 'Due';
-    case 'personal':   return 'Personal';
-    default:           return 'Event';
+    case "lecture":
+      return "Lecture";
+    case "seminar":
+      return "Seminar";
+    case "tutorial":
+      return "Tutorial";
+    case "assessment":
+      return "Assessment";
+    case "deadline":
+      return "Due";
+    case "personal":
+      return "Personal";
+    default:
+      return "Event";
   }
 }
 
-// Vibrant color scheme for MyDurhamLaw branding
-function getEventStyles(type: EventType, source?: string): { border: string; icon: string; bg: string } {
+// Vibrant color scheme for Caseway branding
+function getEventStyles(
+  type: EventType,
+  source?: string,
+): { border: string; icon: string; bg: string } {
   // Assignment/deadline - warm orange
-  if (source === 'assignment' || type === 'deadline' || type === 'assessment') {
+  if (source === "assignment" || type === "deadline" || type === "assessment") {
     return {
-      border: 'border-l-4 border-l-orange-500',
-      icon: 'text-orange-600 bg-orange-50',
-      bg: 'bg-white hover:bg-orange-50/50'
+      border: "border-l-4 border-l-orange-500",
+      icon: "text-orange-600 bg-orange-50",
+      bg: "bg-white hover:bg-orange-50/50",
     };
   }
-  
+
   // Personal items - emerald green
-  if (source === 'personal' || type === 'personal') {
+  if (source === "personal" || type === "personal") {
     return {
-      border: 'border-l-4 border-l-emerald-500',
-      icon: 'text-emerald-600 bg-emerald-50',
-      bg: 'bg-white hover:bg-emerald-50/50'
+      border: "border-l-4 border-l-emerald-500",
+      icon: "text-emerald-600 bg-emerald-50",
+      bg: "bg-white hover:bg-emerald-50/50",
     };
   }
-  
-  // Lectures - vibrant purple (MyDurhamLaw brand)
-  if (type === 'lecture') {
+
+  // Lectures - vibrant purple (Caseway brand)
+  if (type === "lecture") {
     return {
-      border: 'border-l-4 border-l-purple-500',
-      icon: 'text-purple-600 bg-purple-50',
-      bg: 'bg-white hover:bg-purple-50/50'
+      border: "border-l-4 border-l-purple-500",
+      icon: "text-purple-600 bg-purple-50",
+      bg: "bg-white hover:bg-purple-50/50",
     };
   }
-  
+
   // Seminars - teal
-  if (type === 'seminar') {
+  if (type === "seminar") {
     return {
-      border: 'border-l-4 border-l-teal-500',
-      icon: 'text-teal-600 bg-teal-50',
-      bg: 'bg-white hover:bg-teal-50/50'
+      border: "border-l-4 border-l-teal-500",
+      icon: "text-teal-600 bg-teal-50",
+      bg: "bg-white hover:bg-teal-50/50",
     };
   }
-  
+
   // Tutorials - blue
-  if (type === 'tutorial') {
+  if (type === "tutorial") {
     return {
-      border: 'border-l-4 border-l-blue-500',
-      icon: 'text-blue-600 bg-blue-50',
-      bg: 'bg-white hover:bg-blue-50/50'
+      border: "border-l-4 border-l-blue-500",
+      icon: "text-blue-600 bg-blue-50",
+      bg: "bg-white hover:bg-blue-50/50",
     };
   }
-  
+
   // Default - gray
   return {
-    border: 'border-l-4 border-l-gray-400',
-    icon: 'text-gray-600 bg-gray-50',
-    bg: 'bg-white hover:bg-gray-50'
+    border: "border-l-4 border-l-gray-400",
+    icon: "text-gray-600 bg-gray-50",
+    bg: "bg-white hover:bg-gray-50",
   };
 }
 
 // Format time display
-function formatTimeRange(startTime?: string, endTime?: string, time?: string): string | null {
+function formatTimeRange(
+  startTime?: string,
+  endTime?: string,
+  time?: string,
+): string | null {
   if (time) return time;
   if (startTime && endTime) return `${startTime} - ${endTime}`;
   if (startTime) return startTime;
@@ -141,7 +169,7 @@ export const DurhamStyleEventCard: React.FC<DurhamEventCardProps> = ({
   dueTime,
   submissionUrl,
   onClick,
-  compact = false
+  compact = false,
 }) => {
   const styles = getEventStyles(type, source);
   const Icon = getEventIcon(type);
@@ -160,9 +188,7 @@ export const DurhamStyleEventCard: React.FC<DurhamEventCardProps> = ({
         `}
       >
         <div className="flex items-center gap-2">
-          <div className={`p-1 rounded ${styles.icon}`}>
-            {Icon}
-          </div>
+          <div className={`p-1 rounded ${styles.icon}`}>{Icon}</div>
           <div className="flex-1 min-w-0">
             <div className="text-xs font-medium text-gray-900 truncate">
               {moduleCode || title}
@@ -185,19 +211,19 @@ export const DurhamStyleEventCard: React.FC<DurhamEventCardProps> = ({
       className={`
         rounded-xl border shadow-sm transition-all duration-200
         ${styles.border} ${styles.bg}
-        ${onClick ? 'cursor-pointer hover:shadow-md hover:scale-[1.005]' : ''}
+        ${onClick ? "cursor-pointer hover:shadow-md hover:scale-[1.005]" : ""}
       `}
     >
       <div className="flex">
         {/* Left section: Type + Time */}
-        <div className={`
+        <div
+          className={`
           flex flex-col items-center justify-center px-4 py-4 
           min-w-[110px] border-r border-gray-100
-          ${styles.icon.replace('bg-', 'bg-').replace('/50', '')}
-        `}>
-          <div className={`p-2 rounded-lg ${styles.icon}`}>
-            {Icon}
-          </div>
+          ${styles.icon.replace("bg-", "bg-").replace("/50", "")}
+        `}
+        >
+          <div className={`p-2 rounded-lg ${styles.icon}`}>{Icon}</div>
           <div className="mt-2 text-sm font-semibold text-center">
             {typeLabel}
           </div>
@@ -207,9 +233,7 @@ export const DurhamStyleEventCard: React.FC<DurhamEventCardProps> = ({
             </div>
           )}
           {isAllDay && (
-            <div className="mt-1 text-xs text-gray-500">
-              All Day
-            </div>
+            <div className="mt-1 text-xs text-gray-500">All Day</div>
           )}
           {dueTime && (
             <div className="mt-1 text-xs text-orange-600 font-medium">
@@ -227,7 +251,9 @@ export const DurhamStyleEventCard: React.FC<DurhamEventCardProps> = ({
                 {moduleCode}
               </span>
             )}
-            <span className={`text-sm ${moduleCode ? 'text-gray-700' : 'font-semibold text-gray-900'}`}>
+            <span
+              className={`text-sm ${moduleCode ? "text-gray-700" : "font-semibold text-gray-900"}`}
+            >
               {moduleCode ? `- ${title}` : title}
             </span>
           </div>

@@ -42,7 +42,7 @@ export const QuizMeCard: React.FC<QuizMeCardProps> = ({
         <div className="flex items-center gap-3 mb-6">
           <div className="p-1 bg-white/10 backdrop-blur-xl rounded-full border border-white/20">
             <img
-              src="/images/durmah.png"
+              src="/images/durmah_barrister.png"
               alt="Barrister"
               className="w-8 h-8 rounded-full object-cover"
             />

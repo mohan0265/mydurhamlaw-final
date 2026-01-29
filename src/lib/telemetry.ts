@@ -25,7 +25,7 @@ class Telemetry {
         return "";
       }
     })();
-    this.domain = options.domain || parsedHost || "mydurhamlaw.com";
+    this.domain = options.domain || parsedHost || "casewaylaw.ai";
     this.apiHost = options.apiHost || "https://plausible.io";
     this.enabled = options.enabled !== false && typeof window !== "undefined";
   }

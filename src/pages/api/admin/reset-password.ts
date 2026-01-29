@@ -68,7 +68,7 @@ export default async function handler(
     console.error("Reset password error:", error);
 
     // Check if it's a test email that can't receive real emails
-    if (email.includes("@test.mydurhamlaw.local")) {
+    if (email.includes("@test.caseway.local")) {
       // For test accounts, just reset the password directly to default
       try {
         const { error: updateError } =

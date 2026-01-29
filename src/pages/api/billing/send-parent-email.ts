@@ -68,7 +68,7 @@ export default async function handler(
       
       <p>Your child, a law student at Durham University (${user.email}), has been using <strong>Caseway</strong> and would like to continue with a paid subscription.</p>
       
-      <p>Caseway (formerly MyDurhamLaw) helps students:</p>
+      <p>Caseway helps students:</p>
       <ul>
         <li>✓ Understand complex legal concepts with AI assistance</li>
         <li>✓ Manage assignments and track deadlines efficiently</li>

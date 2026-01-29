@@ -287,7 +287,7 @@ function getFallbackArticles(): NewsItem[] {
       summary:
         "While we enhance our news service, consider following the latest legal developments through official channels and legal publications.",
       url: "#",
-      source: "MyDurhamLaw News",
+      source: "Caseway News",
       publishedAt: new Date(Date.now() - 3600000).toISOString(),
       topicTags: ["Legal Education"],
       timestamp: new Date(Date.now() - 3600000).toISOString(),

@@ -272,15 +272,15 @@ export default function AboutPage() {
               </p>
               <p className="text-gray-600">
                 Recognizing that every Durham law student deserves this level of
-                support, we&apos;ve opened MyDurhamLaw to the entire student
-                body. This is our contribution to the Durham Law community -
-                built with love, shared with purpose.
+                support, we&apos;ve opened Caseway to the entire student body.
+                This is our contribution to the Durham Law community - built
+                with love, shared with purpose.
               </p>
               <div className="bg-rose-100 p-4 rounded-lg border-l-4 border-rose-500">
                 <p className="text-sm text-rose-800 italic">
                   &quot;Every student deserves to feel supported, understood,
-                  and empowered to achieve their potential. MyDurhamLaw is our
-                  way of ensuring that no Durham law student has to struggle
+                  and empowered to achieve their potential. Caseway is our way
+                  of ensuring that no Durham law student has to struggle
                   alone.&quot;
                 </p>
               </div>
@@ -345,8 +345,8 @@ export default function AboutPage() {
               </h2>
               <p className="text-xl text-purple-100 mb-6 max-w-2xl mx-auto">
                 Whether you&apos;re just starting in Foundation Year or
-                preparing for Finals, MyDurhamLaw is here for you - one voice,
-                one AI companion, one journey at a time.
+                preparing for Finals, Caseway is here for you - one voice, one
+                AI companion, one journey at a time.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
                 <div className="text-lg font-semibold text-purple-200">
@@ -359,7 +359,7 @@ export default function AboutPage() {
           {/* Footer Attribution */}
           <div className="text-center py-8 border-t border-gray-200">
             <p className="text-gray-600 mb-2">
-              © {new Date().getFullYear()} MyDurhamLaw
+              © {new Date().getFullYear()} Caseway
             </p>
             <p className="text-sm text-gray-500">
               Built with ❤️ for the Durham Law community. Guided by justice,

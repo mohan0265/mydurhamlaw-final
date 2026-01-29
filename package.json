@@ -21,6 +21,8 @@
     "test:ics": "node scripts/test-ics-upload.mjs",
     "audit:brand": "node scripts/audit-brand-strings.mjs",
     "audit:language": "node scripts/audit-durham-language.mjs",
+    "assets:audit": "node scripts/audit-public-assets.mjs",
+    "brand:guard": "node scripts/brand-guard.mjs",
     "demo:capture": "node scripts/capture-demos.mjs",
     "demo:capture:prod": "set DEMO_BASE_URL=https://casewaylaw.ai && node scripts/capture-demos.mjs",
     "audit:fix": "npm audit fix --force",

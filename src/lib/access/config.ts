@@ -1,7 +1,7 @@
 /**
  * Access Control Configuration
  *
- * Controls who can access MyDurhamLaw app
+ * Controls who can access Caseway app
  * - Domain validation (Durham emails only)
  * - Trial management
  * - Admin allowlist
