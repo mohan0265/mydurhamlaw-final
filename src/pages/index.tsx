@@ -144,8 +144,8 @@ export default function LandingPage() {
           </div>
 
           <p className="mt-6 text-xs text-gray-400 dark:text-gray-600 max-w-2xl mx-auto">
-            {LEGAL_AI_WARNING_SHORT} Designed for students, not endorsed by
-            Durham University. Verify output with official course materials.
+            {LEGAL_AI_WARNING_SHORT} Verify output with official course
+            materials.
           </p>
 
           <div className="mt-16 grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-3xl mx-auto">

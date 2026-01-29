@@ -339,11 +339,6 @@ export default function GlobalHeader() {
               <Logo variant="light" className="h-10 md:h-11 w-auto" />
             </Link>
 
-            {/* Disclaimer Badge (Desktop) */}
-            <div className="hidden xl:block ml-4">
-              <IndependenceBadge variant="header" />
-            </div>
-
             {/* Desktop nav */}
             <div className="hidden md:flex items-center gap-1">
               {user ? (
