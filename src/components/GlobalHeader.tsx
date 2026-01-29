@@ -11,8 +11,6 @@ import { Logo } from "./ui/Logo";
 import { useAuth } from "@/lib/supabase/AuthContext";
 import LogoutButton from "@/components/auth/LogoutButton";
 import PresenceBadge from "@/components/PresenceBadge";
-import LogoutButton from "@/components/auth/LogoutButton";
-import PresenceBadge from "@/components/PresenceBadge";
 import { BRAND_NAME } from "@/lib/brand";
 import { IndependenceBadge } from "@/components/ui/IndependenceBadge";
 
