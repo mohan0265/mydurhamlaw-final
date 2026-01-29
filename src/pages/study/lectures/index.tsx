@@ -67,6 +67,9 @@ export default function LecturesPage() {
 
   const [loading, setLoading] = useState(true);
   const [showUploadModal, setShowUploadModal] = useState(false);
+  const [initialUploadMode, setInitialUploadMode] = useState<
+    "panopto" | "audio"
+  >("panopto");
   const [isSettingGoal, setIsSettingGoal] = useState(false);
 
   // Fetch Modules
@@ -381,13 +384,16 @@ export default function LecturesPage() {
                   Choose how you want to start:
                 </p>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left max-w-3xl mx-auto">
-                  {/* Option 1 - Primary */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-left max-w-4xl mx-auto">
+                  {/* Option 1 - Paste Transcript */}
                   <div
-                    onClick={() => setShowUploadModal(true)}
-                    className="p-6 rounded-xl bg-purple-50 border border-purple-100 ring-1 ring-purple-200 hover:shadow-md transition cursor-pointer group relative"
+                    onClick={() => {
+                      setShowUploadModal(true);
+                      setInitialUploadMode("panopto");
+                    }}
+                    className="p-6 rounded-xl bg-purple-50 border border-purple-100 ring-1 ring-purple-200 hover:shadow-md transition cursor-pointer group relative flex flex-col"
                   >
-                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-purple-600 text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wide">
+                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-purple-600 text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wide shadow-sm">
                       Recommended
                     </div>
                     <div className="font-bold text-gray-900 mb-2 flex items-center gap-3">
@@ -396,10 +402,9 @@ export default function LecturesPage() {
                       </span>
                       Paste Transcript
                     </div>
-                    <p className="text-sm text-gray-600 mb-4 leading-relaxed">
-                      Copy the full caption text from Panopto and paste it here.
-                      Durmah will extract the summary, key cases, and exam
-                      prompts automatically.
+                    <p className="text-sm text-gray-600 mb-4 leading-relaxed flex-grow">
+                      Fastest & most accurate. Copy captions from Panopto and
+                      paste them here.
                     </p>
                     <div className="flex items-center gap-2 text-xs font-medium text-purple-700 bg-purple-100/50 px-2 py-1 rounded w-fit mb-4">
                       <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>{" "}
@@ -410,29 +415,73 @@ export default function LecturesPage() {
                     </button>
                   </div>
 
-                  {/* Option 2 - Reference */}
+                  {/* Option 2 - Upload Audio */}
                   <div
-                    onClick={() => setShowUploadModal(true)}
-                    className="p-6 rounded-xl bg-gray-50 border border-gray-100 hover:border-purple-200 transition cursor-pointer group"
+                    onClick={() => {
+                      setShowUploadModal(true);
+                      setInitialUploadMode("audio");
+                    }}
+                    className="p-6 rounded-xl bg-white border border-gray-200 hover:border-purple-200 transition cursor-pointer group flex flex-col"
                   >
                     <div className="font-bold text-gray-900 mb-2 flex items-center gap-3">
-                      <span className="bg-gray-200 text-gray-600 w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold">
+                      <span className="bg-gray-100 text-gray-600 w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold">
                         2
                       </span>
-                      Paste Link
+                      Upload Audio
                     </div>
-                    <p className="text-sm text-gray-500 mb-4 leading-relaxed">
-                      Paste your Panopto URL to enable{" "}
-                      <strong>1-click access</strong> to the actual lecture
-                      slides and audio from your dashboard. (Note: You still
-                      need to paste the transcript text).
+                    <p className="text-sm text-gray-500 mb-4 leading-relaxed flex-grow">
+                      Have an MP3 or M4A? Upload it and we'll transcribe it for
+                      you.
                     </p>
-                    <div className="text-xs font-medium text-gray-500 bg-gray-200/50 px-2 py-1 rounded w-fit mb-4">
+                    <div className="text-xs font-medium text-amber-700 bg-amber-50 px-2 py-1 rounded w-fit mb-4">
+                      Depends on clarity
+                    </div>
+                    <button className="text-sm font-bold text-gray-600 bg-gray-50 border border-gray-200 w-full py-2.5 rounded-lg hover:bg-white transition">
+                      Select File
+                    </button>
+                  </div>
+
+                  {/* Option 3 - Link */}
+                  <div
+                    onClick={() => {
+                      setShowUploadModal(true);
+                      setInitialUploadMode("panopto");
+                    }}
+                    className="p-6 rounded-xl bg-white border border-gray-200 hover:border-purple-200 transition cursor-pointer group flex flex-col"
+                  >
+                    <div className="font-bold text-gray-900 mb-2 flex items-center gap-3">
+                      <span className="bg-gray-100 text-gray-600 w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold">
+                        3
+                      </span>
+                      Add Link
+                    </div>
+                    <p className="text-sm text-gray-500 mb-4 leading-relaxed flex-grow">
+                      Add a reference URL for <strong>1-click open</strong> in a
+                      new tab.
+                    </p>
+                    <div className="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded w-fit mb-4">
                       Reference Only
                     </div>
-                    <button className="text-sm font-bold text-gray-600 bg-white border border-gray-200 w-full py-2.5 rounded-lg hover:bg-gray-50 transition">
+                    <button className="text-sm font-bold text-gray-600 bg-gray-50 border border-gray-200 w-full py-2.5 rounded-lg hover:bg-white transition">
                       Add Link
                     </button>
+                  </div>
+                </div>
+
+                {/* Pro Tip Card */}
+                <div className="mt-8 max-w-2xl mx-auto bg-blue-50 border border-blue-100 rounded-xl p-4 text-left flex gap-4">
+                  <div className="bg-blue-100 p-2 rounded-lg h-fit text-blue-600">
+                    <span className="text-xl">💡</span>
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-blue-900 text-sm">
+                      Pro tip: Save the Panopto link
+                    </h4>
+                    <p className="text-xs text-blue-700 mt-1 leading-relaxed">
+                      When you’re reviewing your summary or key points, the link
+                      lets you jump back to the exact lecture quickly in a new
+                      tab.
+                    </p>
                   </div>
                 </div>
 
@@ -482,6 +531,7 @@ export default function LecturesPage() {
         onClose={() => setShowUploadModal(false)}
         onSuccess={handleUploadSuccess}
         preSelectedModuleId={selectedModuleId}
+        initialMode={initialUploadMode}
       />
     </div>
   );
