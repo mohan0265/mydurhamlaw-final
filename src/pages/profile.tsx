@@ -234,7 +234,7 @@ export default function ProfilePage() {
                         display_name: e.target.value,
                       }))
                     }
-                    className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+                    className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-gray-900 bg-white"
                     placeholder="e.g. Priya"
                   />
                 </div>
@@ -251,7 +251,7 @@ export default function ProfilePage() {
                         year_group: e.target.value,
                       }))
                     }
-                    className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none bg-white"
+                    className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none bg-white text-gray-900"
                   >
                     <option value="">Select Year...</option>
                     <option value="foundation">Foundation Year</option>
@@ -273,7 +273,7 @@ export default function ProfilePage() {
                         degree_type: e.target.value,
                       }))
                     }
-                    className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none bg-white"
+                    className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none bg-white text-gray-900"
                   >
                     <option value="LLB">LLB Law</option>
                     <option value="MLaw">MLaw</option>
@@ -296,7 +296,7 @@ export default function ProfilePage() {
                       modulesInput: e.target.value,
                     }))
                   }
-                  className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none h-24"
+                  className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none h-24 text-gray-900 bg-white"
                   placeholder="e.g. Contract Law, Tort Law, EU Law..."
                 />
               </div>
@@ -345,14 +345,14 @@ export default function ProfilePage() {
                     value={inviteEmail}
                     onChange={(e) => setInviteEmail(e.target.value)}
                     placeholder="Email address"
-                    className="flex-1 p-2 border border-pink-200 rounded-lg focus:ring-2 focus:ring-pink-500 outline-none"
+                    className="flex-1 p-2 border border-pink-200 rounded-lg focus:ring-2 focus:ring-pink-500 outline-none text-gray-900 bg-white"
                   />
                   <input
                     type="text"
                     value={inviteRelationship}
                     onChange={(e) => setInviteRelationship(e.target.value)}
                     placeholder="Relationship (e.g. Mum)"
-                    className="flex-1 p-2 border border-pink-200 rounded-lg focus:ring-2 focus:ring-pink-500 outline-none"
+                    className="flex-1 p-2 border border-pink-200 rounded-lg focus:ring-2 focus:ring-pink-500 outline-none text-gray-900 bg-white"
                   />
                   <button
                     onClick={handleInvite}

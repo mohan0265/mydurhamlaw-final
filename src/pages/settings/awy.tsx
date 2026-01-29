@@ -222,7 +222,7 @@ export default function AWYSettingsPage() {
                           required
                           value={email}
                           onChange={(e) => setEmail(e.target.value)}
-                          className="block w-full rounded-md border-pink-200 shadow-sm focus:border-pink-500 focus:ring-pink-500 sm:text-sm"
+                          className="block w-full rounded-md border-pink-200 shadow-sm focus:border-pink-500 focus:ring-pink-500 sm:text-sm text-gray-900 bg-white"
                           placeholder="mum@example.com"
                         />
                       </div>
@@ -234,7 +234,7 @@ export default function AWYSettingsPage() {
                           required
                           value={relationship}
                           onChange={(e) => setRelationship(e.target.value)}
-                          className="block w-full rounded-md border-pink-200 shadow-sm focus:border-pink-500 focus:ring-pink-500 sm:text-sm"
+                          className="block w-full rounded-md border-pink-200 shadow-sm focus:border-pink-500 focus:ring-pink-500 sm:text-sm text-gray-900 bg-white"
                         >
                           <option value="">Select...</option>
                           <option value="Mum">Mum</option>
@@ -253,7 +253,7 @@ export default function AWYSettingsPage() {
                           type="text"
                           value={nickname}
                           onChange={(e) => setNickname(e.target.value)}
-                          className="block w-full rounded-md border-pink-200 shadow-sm focus:border-pink-500 focus:ring-pink-500 sm:text-sm"
+                          className="block w-full rounded-md border-pink-200 shadow-sm focus:border-pink-500 focus:ring-pink-500 sm:text-sm text-gray-900 bg-white"
                           placeholder="e.g. My Hero"
                         />
                       </div>
