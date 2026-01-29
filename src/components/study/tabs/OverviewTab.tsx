@@ -141,14 +141,14 @@ export default function OverviewTab({ assignment }: OverviewTabProps) {
         {/* Time Remaining */}
         <div className="p-3 rounded-lg border border-gray-200 bg-white shadow-sm hover:border-gray-300 transition-all flex flex-col justify-between min-h-[7rem] h-auto">
           <div className="flex justify-between items-start mb-2">
-            <span className="text-[10px] font-serif uppercase tracking-widest text-gray-500 font-bold whitespace-nowrap">
+            <span className="text-[10px] font-sans uppercase tracking-widest text-gray-500 font-bold whitespace-nowrap">
               Time Left
             </span>
             <Clock size={14} className="text-gray-400 flex-shrink-0 ml-2" />
           </div>
           <div>
             <p
-              className={`text-lg font-serif font-medium leading-tight ${status.isOverdue ? "text-red-700" : "text-gray-900"}`}
+              className={`text-lg font-sans font-bold leading-tight ${status.isOverdue ? "text-red-700" : "text-gray-900"}`}
               title={status.text}
             >
               {status.text}
@@ -162,14 +162,14 @@ export default function OverviewTab({ assignment }: OverviewTabProps) {
         {/* Word Target */}
         <div className="p-3 rounded-lg border border-gray-200 bg-white shadow-sm hover:border-gray-300 transition-all flex flex-col justify-between min-h-[7rem] h-auto">
           <div className="flex justify-between items-start mb-2">
-            <span className="text-[10px] font-serif uppercase tracking-widest text-gray-500 font-bold whitespace-nowrap">
+            <span className="text-[10px] font-sans uppercase tracking-widest text-gray-500 font-bold whitespace-nowrap">
               Target
             </span>
             <Target size={14} className="text-gray-400 flex-shrink-0 ml-2" />
           </div>
           <div>
             <p
-              className="text-lg font-serif font-medium text-gray-900 leading-tight"
+              className="text-lg font-sans font-bold text-gray-900 leading-tight"
               title={assignment.word_count_target?.toString() || "Set"}
             >
               {assignment.word_count_target || "Set"}
@@ -183,14 +183,14 @@ export default function OverviewTab({ assignment }: OverviewTabProps) {
         {/* Weighting */}
         <div className="p-3 rounded-lg border border-gray-200 bg-white shadow-sm hover:border-gray-300 transition-all flex flex-col justify-between min-h-[7rem] h-auto">
           <div className="flex justify-between items-start mb-2">
-            <span className="text-[10px] font-serif uppercase tracking-widest text-gray-500 font-bold whitespace-nowrap">
+            <span className="text-[10px] font-sans uppercase tracking-widest text-gray-500 font-bold whitespace-nowrap">
               Weighting
             </span>
             <Percent size={14} className="text-gray-400 flex-shrink-0 ml-2" />
           </div>
           <div>
             <p
-              className="text-lg font-serif font-medium text-gray-900 leading-tight"
+              className="text-lg font-sans font-bold text-gray-900 leading-tight"
               title={assignment.weightage || "N/A"}
             >
               {assignment.weightage ? assignment.weightage : "N/A"}
@@ -204,14 +204,14 @@ export default function OverviewTab({ assignment }: OverviewTabProps) {
         {/* Module */}
         <div className="p-3 rounded-lg border border-gray-200 bg-white shadow-sm hover:border-gray-300 transition-all flex flex-col justify-between min-h-[7rem] h-auto">
           <div className="flex justify-between items-start mb-2">
-            <span className="text-[10px] font-serif uppercase tracking-widest text-gray-500 font-bold whitespace-nowrap">
+            <span className="text-[10px] font-sans uppercase tracking-widest text-gray-500 font-bold whitespace-nowrap">
               Module
             </span>
             <BookOpen size={14} className="text-gray-400 flex-shrink-0 ml-2" />
           </div>
           <div>
             <p
-              className="text-lg font-serif font-medium text-gray-900 break-words leading-tight"
+              className="text-lg font-sans font-bold text-gray-900 break-words leading-tight"
               title={assignment.module_code || ""}
             >
               {assignment.module_code || "---"}
