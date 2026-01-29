@@ -27,7 +27,7 @@ export default function AssignmentsDemo() {
           name="description"
           content="Master legal assignments with MyDurhamLaw. From issue spotting to final polish, our AI guides you through every stage."
         />
-        <link rel="canonical" href="https://mydurhamlaw.com/demo/assignments" />
+        <link rel="canonical" href="https://casewaylaw.ai/demo/assignments" />
       </Head>
 
       <main>

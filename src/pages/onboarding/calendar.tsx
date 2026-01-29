@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import { useState, useRef } from 'react';
-import { useRouter } from 'next/router';
-import { Upload, Calendar, CheckCircle, AlertCircle, X } from 'lucide-react';
-import toast from 'react-hot-toast';
-import { getSupabaseClient } from '@/lib/supabase/client';
+import { useState, useRef } from "react";
+import { useRouter } from "next/router";
+import { Upload, Calendar, CheckCircle, AlertCircle, X } from "lucide-react";
+import toast from "react-hot-toast";
+import { getSupabaseClient } from "@/lib/supabase/client";
 
 export default function CalendarImportPage() {
   const router = useRouter();
@@ -16,8 +16,8 @@ export default function CalendarImportPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileUpload = async (file: File) => {
-    if (!file.name.endsWith('.ics')) {
-      toast.error('Please upload an .ics calendar file');
+    if (!file.name.endsWith(".ics")) {
+      toast.error("Please upload an .ics calendar file");
       return;
     }
 
@@ -27,22 +27,25 @@ export default function CalendarImportPage() {
     try {
       // Get Supabase session token
       const supabase = getSupabaseClient();
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      
+      const {
+        data: { session },
+        error: sessionError,
+      } = await supabase.auth.getSession();
+
       if (sessionError || !session) {
-        toast.error('Please login to upload calendar');
+        toast.error("Please login to upload calendar");
         setUploading(false);
         return;
       }
 
       const formData = new FormData();
-      formData.append('file', file);
+      formData.append("file", file);
 
-      const res = await fetch('/api/onboarding/ics', {
-        method: 'POST',
-        credentials: 'include',
+      const res = await fetch("/api/onboarding/ics", {
+        method: "POST",
+        credentials: "include",
         headers: {
-          'Authorization': `Bearer ${session.access_token}` // Add auth token
+          Authorization: `Bearer ${session.access_token}`, // Add auth token
         },
         body: formData,
       });
@@ -50,16 +53,18 @@ export default function CalendarImportPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.error || 'Upload failed');
+        throw new Error(data.error || "Upload failed");
       }
 
       setImported(true);
       setEventsCount(data.imported.events || 0);
       setAssessmentsCount(data.imported.assessments || 0);
-      
-      toast.success(`Imported ${data.imported.events} events and ${data.imported.assessments} assessments!`);
+
+      toast.success(
+        `Imported ${data.imported.events} events and ${data.imported.assessments} assessments!`,
+      );
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Upload failed';
+      const message = err instanceof Error ? err.message : "Upload failed";
       setError(message);
       toast.error(message);
     } finally {
@@ -79,11 +84,11 @@ export default function CalendarImportPage() {
   };
 
   const handleSkip = () => {
-    router.push('/onboarding');
+    router.push("/onboarding");
   };
 
   const handleComplete = () => {
-    router.push('/onboarding');
+    router.push("/onboarding");
   };
 
   return (
@@ -120,14 +125,12 @@ export default function CalendarImportPage() {
                 <h3 className="text-lg font-semibold text gray-700 mb-2">
                   Drop your .ics file here
                 </h3>
-                <p className="text-sm text-gray-500 mb-4">
-                  or click to browse
-                </p>
+                <p className="text-sm text-gray-500 mb-4">or click to browse</p>
                 <button
                   disabled={uploading}
                   className="px-6 py-3 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {uploading ? 'Uploading...' : 'Select File'}
+                  {uploading ? "Uploading..." : "Select File"}
                 </button>
                 <input
                   ref={fileInputRef}
@@ -144,25 +147,46 @@ export default function CalendarImportPage() {
                   📥 How to download your Blackboard calendar file:
                 </h4>
                 <ol className="text-sm text-blue-800 space-y-1 list-decimal list-inside">
-                  <li>Login to <strong>DU Hub</strong> (duo.dur.ac.uk) → click <strong>Blackboard</strong></li>
-                  <li>Click <strong>Calendar</strong> in the left sidebar</li>
-                  <li>Click the <strong>gear icon</strong> (⚙️) in the top right</li>
-                  <li>Click <strong>"Get External Link"</strong> or <strong>"Share Calendar"</strong></li>
-                  <li>Right-click the webcal link → <strong>"Save Link As..."</strong> → save as <strong>.ics</strong></li>
+                  <li>
+                    Login to <strong>DU Hub</strong> (duo.dur.ac.uk) → click{" "}
+                    <strong>Blackboard</strong>
+                  </li>
+                  <li>
+                    Click <strong>Calendar</strong> in the left sidebar
+                  </li>
+                  <li>
+                    Click the <strong>gear icon</strong> (⚙️) in the top right
+                  </li>
+                  <li>
+                    Click <strong>"Get External Link"</strong> or{" "}
+                    <strong>"Share Calendar"</strong>
+                  </li>
+                  <li>
+                    Right-click the webcal link →{" "}
+                    <strong>"Save Link As..."</strong> → save as{" "}
+                    <strong>.ics</strong>
+                  </li>
                   <li>Upload the saved file above</li>
                 </ol>
                 <div className="mt-3 pt-3 border-t border-blue-200">
                   <p className="text-xs text-blue-700">
-                    <strong>💫 Pro tip:</strong> Download and re-upload anytime to refresh your calendar with the latest deadlines from Blackboard.
+                    <strong>💫 Pro tip:</strong> Download and re-upload anytime
+                    to refresh your calendar with the latest deadlines from
+                    Blackboard.
                   </p>
                 </div>
               </div>
 
               {error && (
                 <div className="mt-4 p-4 bg-red-50 rounded-lg border border-red-200 flex items-start gap-2">
-                  <AlertCircle className="text-red-600 flex-shrink-0" size={20} />
+                  <AlertCircle
+                    className="text-red-600 flex-shrink-0"
+                    size={20}
+                  />
                   <div>
-                    <h4 className="text-sm font-semibold text-red-900">Upload Error</h4>
+                    <h4 className="text-sm font-semibold text-red-900">
+                      Upload Error
+                    </h4>
                     <p className="text-sm text-red-700">{error}</p>
                   </div>
                 </div>
@@ -189,26 +213,34 @@ export default function CalendarImportPage() {
                   Calendar Imported Successfully!
                 </h3>
                 <p className="text-gray-600 mb-6">
-                  Your timetable and deadlines are now available in your dashboard
+                  Your timetable and deadlines are now available in your
+                  dashboard
                 </p>
 
                 {/* Stats */}
                 <div className="grid grid-cols-2 gap-4 mb-8">
                   <div className="p-4 bg-purple-50 rounded-lg">
-                    <div className="text-3xl font-bold text-purple-600">{eventsCount}</div>
+                    <div className="text-3xl font-bold text-purple-600">
+                      {eventsCount}
+                    </div>
                     <div className="text-sm text-gray-600">Calendar Events</div>
                   </div>
                   <div className="p-4 bg-blue-50 rounded-lg">
-                    <div className="text-3xl font-bold text-blue-600">{assessmentsCount}</div>
-                    <div className="text-sm text-gray-600">Assessment Deadlines</div>
+                    <div className="text-3xl font-bold text-blue-600">
+                      {assessmentsCount}
+                    </div>
+                    <div className="text-sm text-gray-600">
+                      Assessment Deadlines
+                    </div>
                   </div>
                 </div>
 
                 {/* Warning Banner */}
                 <div className="p-4 bg-yellow-50 rounded-lg border border-yellow-200 mb-6 text-left">
                   <p className="text-sm text-yellow-800">
-                    ⚠️ <strong>Important:</strong> Always verify deadlines and events against official Durham systems. 
-                    This import is for your convenience only.
+                    ⚠️ <strong>Important:</strong> Always verify deadlines and
+                    events against official Durham systems. This import is for
+                    your convenience only.
                   </p>
                 </div>
 
@@ -216,25 +248,30 @@ export default function CalendarImportPage() {
                 <div className="p-5 bg-gradient-to-br from-purple-50 to-blue-50 rounded-lg border border-purple-200 mb-6 text-left">
                   <h4 className="text-sm font-bold text-purple-900 mb-3 flex items-center gap-2">
                     <span className="text-lg">📌</span>
-                    Next Steps - Get the Most Out of MyDurhamLaw
+                    Next Steps - Get the Most Out of Caseway
                   </h4>
                   <ol className="text-sm text-gray-700 space-y-2 list-decimal list-inside">
                     <li>
-                      <strong>Go to YAAG</strong> (Year at a Glance) to see your entire academic year in 3 terms
+                      <strong>Go to YAAG</strong> (Year at a Glance) to see your
+                      entire academic year in 3 terms
                     </li>
                     <li>
-                      <strong>Click any assignment deadline</strong> to open the Assignment Widget
+                      <strong>Click any assignment deadline</strong> to open the
+                      Assignment Widget
                     </li>
                     <li>
-                      <strong>Upload your assignment brief PDF</strong> inside the widget for AI-powered guidance
+                      <strong>Upload your assignment brief PDF</strong> inside
+                      the widget for AI-powered guidance
                     </li>
                     <li>
-                      <strong>Follow the stages</strong> to research, outline, and draft with Durmah's help
+                      <strong>Follow the stages</strong> to research, outline,
+                      and draft with Durmah's help
                     </li>
                   </ol>
                   <div className="mt-3 pt-3 border-t border-purple-200">
                     <p className="text-xs text-purple-700">
-                      <strong>💡 Pro Tip:</strong> The Assignment Widget remembers where you left off, so you can resume anytime!
+                      <strong>💡 Pro Tip:</strong> The Assignment Widget
+                      remembers where you left off, so you can resume anytime!
                     </p>
                   </div>
                 </div>
@@ -246,10 +283,10 @@ export default function CalendarImportPage() {
                 >
                   Back to Setup Checklist
                 </button>
-                
+
                 {/* Direct Link to YAAG */}
                 <button
-                  onClick={() => router.push('/year-at-a-glance')}
+                  onClick={() => router.push("/year-at-a-glance")}
                   className="w-full px-6 py-3 bg-white border-2 border-purple-600 text-purple-600 rounded-lg font-semibold hover:bg-purple-50"
                 >
                   View Year at a Glance →
@@ -262,7 +299,7 @@ export default function CalendarImportPage() {
         {/* Footer */}
         <div className="mt-6 text-center">
           <p className="text-xs text-gray-500">
-            🔒 Your calendar data is stored securely and never shared. 
+            🔒 Your calendar data is stored securely and never shared.
             <br />
             <strong>We never ask for your Blackboard password.</strong>
           </p>

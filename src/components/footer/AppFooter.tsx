@@ -20,8 +20,8 @@ import {
   BRAND_NAME,
   BRAND_TAGLINE,
   BRAND_SUPPORT_EMAIL,
-  LEGAL_DISCLAIMER_SHORT,
   LEGAL_DISCLAIMER_LONG,
+  LEGAL_AI_WARNING_SHORT,
 } from "@/lib/brand";
 
 interface AppFooterProps {
@@ -221,6 +221,10 @@ export const AppFooter: React.FC<AppFooterProps> = ({ isAuthed }) => {
               </p>
             </div>
           </div>
+        </div>
+        <div className="mt-8 pt-8 border-t border-gray-800 text-center text-sm text-gray-500">
+          <p className="mb-2">{LEGAL_AI_WARNING_SHORT}</p>
+          <p className="max-w-2xl mx-auto">{LEGAL_DISCLAIMER_LONG}</p>
         </div>
 
         {/* SEO Keywords (Public Only) */}

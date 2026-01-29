@@ -137,70 +137,79 @@ export default function OverviewTab({ assignment }: OverviewTabProps) {
     <div className="space-y-6 animate-in fade-in duration-300">
       {/* Key Metrics Cards */}
       {/* Key Metrics Cards (Academic/Minimalist) */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {/* Time Remaining */}
-        <div className="p-5 rounded-lg border border-gray-200 bg-white shadow-sm hover:border-gray-300 transition-all flex flex-col justify-between h-32">
+        <div className="p-3 rounded-lg border border-gray-200 bg-white shadow-sm hover:border-gray-300 transition-all flex flex-col justify-between h-28 min-w-0">
           <div className="flex justify-between items-start">
-            <span className="text-[10px] font-serif uppercase tracking-widest text-gray-500 font-bold">
-              Time Remaining
+            <span className="text-[10px] font-serif uppercase tracking-widest text-gray-500 font-bold whitespace-nowrap">
+              Time Left
             </span>
-            <Clock size={16} className="text-gray-400" />
+            <Clock size={14} className="text-gray-400 flex-shrink-0 ml-2" />
           </div>
-          <div>
+          <div className="min-w-0">
             <p
-              className={`text-2xl font-serif font-medium ${status.isOverdue ? "text-red-700" : "text-gray-900"}`}
+              className={`text-xl font-serif font-medium truncate ${status.isOverdue ? "text-red-700" : "text-gray-900"}`}
+              title={status.text}
             >
               {status.text}
             </p>
-            <p className="text-xs text-gray-400 mt-1 font-sans">
+            <p className="text-[10px] text-gray-400 mt-1 font-sans truncate">
               {format(due, "MMM d, HH:mm")}
             </p>
           </div>
         </div>
 
         {/* Word Target */}
-        <div className="p-5 rounded-lg border border-gray-200 bg-white shadow-sm hover:border-gray-300 transition-all flex flex-col justify-between h-32">
+        <div className="p-3 rounded-lg border border-gray-200 bg-white shadow-sm hover:border-gray-300 transition-all flex flex-col justify-between h-28 min-w-0">
           <div className="flex justify-between items-start">
-            <span className="text-[10px] font-serif uppercase tracking-widest text-gray-500 font-bold">
+            <span className="text-[10px] font-serif uppercase tracking-widest text-gray-500 font-bold whitespace-nowrap">
               Target
             </span>
-            <Target size={16} className="text-gray-400" />
+            <Target size={14} className="text-gray-400 flex-shrink-0 ml-2" />
           </div>
-          <div>
-            <p className="text-2xl font-serif font-medium text-gray-900">
+          <div className="min-w-0">
+            <p
+              className="text-xl font-serif font-medium text-gray-900 truncate"
+              title={assignment.word_count_target?.toString() || "Set"}
+            >
               {assignment.word_count_target || "Set"}
             </p>
-            <p className="text-xs text-gray-400 mt-1 font-sans">words target</p>
+            <p className="text-[10px] text-gray-400 mt-1 font-sans truncate">
+              words target
+            </p>
           </div>
         </div>
 
         {/* Weighting */}
-        <div className="p-5 rounded-lg border border-gray-200 bg-white shadow-sm hover:border-gray-300 transition-all flex flex-col justify-between h-32">
+        <div className="p-3 rounded-lg border border-gray-200 bg-white shadow-sm hover:border-gray-300 transition-all flex flex-col justify-between h-28 min-w-0">
           <div className="flex justify-between items-start">
-            <span className="text-[10px] font-serif uppercase tracking-widest text-gray-500 font-bold">
+            <span className="text-[10px] font-serif uppercase tracking-widest text-gray-500 font-bold whitespace-nowrap">
               Weighting
             </span>
-            <Percent size={16} className="text-gray-400" />
+            <Percent size={14} className="text-gray-400 flex-shrink-0 ml-2" />
           </div>
-          <div>
-            <p className="text-2xl font-serif font-medium text-gray-900">
+          <div className="min-w-0">
+            <p
+              className="text-xl font-serif font-medium text-gray-900 truncate"
+              title={assignment.weightage || "N/A"}
+            >
               {assignment.weightage ? assignment.weightage : "N/A"}
             </p>
-            <p className="text-xs text-gray-400 mt-1 font-sans">
+            <p className="text-[10px] text-gray-400 mt-1 font-sans truncate">
               of final grade
             </p>
           </div>
         </div>
 
         {/* Module */}
-        <div className="p-5 rounded-lg border border-gray-200 bg-white shadow-sm hover:border-gray-300 transition-all flex flex-col justify-between h-32">
+        <div className="p-3 rounded-lg border border-gray-200 bg-white shadow-sm hover:border-gray-300 transition-all flex flex-col justify-between h-28 min-w-0">
           <div className="flex justify-between items-start">
-            <span className="text-[10px] font-serif uppercase tracking-widest text-gray-500 font-bold">
+            <span className="text-[10px] font-serif uppercase tracking-widest text-gray-500 font-bold whitespace-nowrap">
               Module
             </span>
-            <BookOpen size={16} className="text-gray-400" />
+            <BookOpen size={14} className="text-gray-400 flex-shrink-0 ml-2" />
           </div>
-          <div>
+          <div className="min-w-0">
             <p
               className="text-lg font-serif font-medium text-gray-900 truncate"
               title={assignment.module_code || ""}
@@ -208,7 +217,7 @@ export default function OverviewTab({ assignment }: OverviewTabProps) {
               {assignment.module_code || "---"}
             </p>
             <p
-              className="text-xs text-gray-400 mt-1 font-sans truncate"
+              className="text-[10px] text-gray-400 mt-1 font-sans truncate"
               title={assignment.module_name || ""}
             >
               {assignment.module_name || "General"}

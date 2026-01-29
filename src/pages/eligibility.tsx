@@ -1,8 +1,8 @@
 // src/pages/eligibility.tsx
-import { useEffect } from 'react';
-import { useRouter } from 'next/router';
-import { getSupabaseClient } from '@/lib/supabase/client';
-import Head from 'next/head';
+import { useEffect } from "react";
+import { useRouter } from "next/router";
+import { getSupabaseClient } from "@/lib/supabase/client";
+import Head from "next/head";
 
 /**
  * Legacy Eligibility Route - Now Redirects to Unified Signup
@@ -13,25 +13,25 @@ export default function EligibilityRedirect() {
   useEffect(() => {
     const supabase = getSupabaseClient();
     if (!supabase) {
-        router.replace('/signup');
-        return;
+      router.replace("/signup");
+      return;
     }
 
     supabase.auth.getSession().then(({ data }) => {
       if (data.session) {
         // Logged-in users go to dashboard
-        router.replace('/dashboard');
+        router.replace("/dashboard");
       } else {
         // Logged-out users go to unified signup
         const { next, plan } = router.query;
-        let url = '/signup';
+        let url = "/signup";
         const params = new URLSearchParams();
-        if (next) params.set('next', Array.isArray(next) ? next[0] : next);
-        if (plan) params.set('plan', Array.isArray(plan) ? plan[0] : plan);
-        
+        if (next) params.set("next", Array.isArray(next) ? next[0] : next);
+        if (plan) params.set("plan", Array.isArray(plan) ? plan[0] : plan);
+
         const queryString = params.toString();
         if (queryString) url += `?${queryString}`;
-        
+
         router.replace(url);
       }
     });
@@ -40,7 +40,7 @@ export default function EligibilityRedirect() {
   return (
     <>
       <Head>
-        <title>Redirecting... | MyDurhamLaw</title>
+        <title>Redirecting... | Caseway</title>
         <meta name="robots" content="noindex" />
       </Head>
       <div className="min-h-screen flex items-center justify-center bg-white">

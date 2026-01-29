@@ -1,11 +1,11 @@
-'use client';
+"use client";
 
-import Head from 'next/head';
-import Link from 'next/link';
-import { useEffect, useMemo, useState } from 'react';
-import toast from 'react-hot-toast';
-import { withAuthProtection } from '@/lib/withAuthProtection';
-import { ArrowLeft, BookOpen, Loader2, Plus, Send, Search } from 'lucide-react';
+import Head from "next/head";
+import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
+import toast from "react-hot-toast";
+import { withAuthProtection } from "@/lib/withAuthProtection";
+import { ArrowLeft, BookOpen, Loader2, Plus, Send, Search } from "lucide-react";
 
 type JournalEntry = {
   id: string;
@@ -26,22 +26,22 @@ function JournalPage() {
   const [loading, setLoading] = useState(true);
 
   const [isWriting, setIsWriting] = useState(false);
-  const [content, setContent] = useState('');
+  const [content, setContent] = useState("");
   const [saving, setSaving] = useState(false);
 
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState("");
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return entries;
-    return entries.filter(e => (e.content || '').toLowerCase().includes(q));
+    return entries.filter((e) => (e.content || "").toLowerCase().includes(q));
   }, [entries, query]);
 
   const fetchEntries = async () => {
     try {
       setLoading(true);
-      const res = await fetch('/api/journal');
-      if (!res.ok) throw new Error('Failed to load journal');
+      const res = await fetch("/api/journal");
+      if (!res.ok) throw new Error("Failed to load journal");
       const data = (await res.json()) as JournalEntry[];
       setEntries(Array.isArray(data) ? data : []);
     } catch (e) {
@@ -64,19 +64,19 @@ function JournalPage() {
     setSaving(true);
 
     try {
-      const res = await fetch('/api/journal', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const res = await fetch("/api/journal", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ content: trimmed }),
       });
 
-      if (!res.ok) throw new Error('Save failed');
+      if (!res.ok) throw new Error("Save failed");
       const saved = (await res.json()) as JournalEntry;
 
-      setEntries(prev => [saved, ...prev]);
-      setContent('');
+      setEntries((prev) => [saved, ...prev]);
+      setContent("");
       setIsWriting(false);
-      toast.success('Saved.');
+      toast.success("Saved.");
     } catch (err) {
       console.error(err);
       toast.error("Couldn't save entry.");
@@ -88,7 +88,7 @@ function JournalPage() {
   return (
     <>
       <Head>
-        <title>Memory Journal - MyDurhamLaw</title>
+        <title>Memory Journal - Caseway</title>
       </Head>
 
       <main className="min-h-screen bg-gray-50">
@@ -117,10 +117,13 @@ function JournalPage() {
               <div>
                 <div className="flex items-center gap-2">
                   <BookOpen className="h-5 w-5 text-indigo-600" />
-                  <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Memory Journal</h1>
+                  <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
+                    Memory Journal
+                  </h1>
                 </div>
                 <p className="mt-1 text-sm text-gray-600 leading-snug">
-                  Capture one thing you learned today — it compounds faster than you think.
+                  Capture one thing you learned today — it compounds faster than
+                  you think.
                 </p>
               </div>
 
@@ -157,7 +160,7 @@ function JournalPage() {
                   <button
                     onClick={() => {
                       setIsWriting(false);
-                      setContent('');
+                      setContent("");
                     }}
                     className="text-sm font-medium text-gray-500 hover:text-purple-700 transition"
                   >
@@ -169,7 +172,11 @@ function JournalPage() {
                     disabled={saving || !content.trim()}
                     className="inline-flex items-center justify-center rounded-xl bg-purple-600 px-4 py-2 text-sm font-semibold text-white hover:bg-purple-700 transition disabled:opacity-50"
                   >
-                    {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Send className="h-4 w-4 mr-2" />}
+                    {saving ? (
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    ) : (
+                      <Send className="h-4 w-4 mr-2" />
+                    )}
                     Save
                   </button>
                 </div>
@@ -185,12 +192,14 @@ function JournalPage() {
               ) : filtered.length === 0 ? (
                 <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 p-8 text-center">
                   <div className="text-sm font-semibold text-gray-700">
-                    {entries.length === 0 ? 'No entries yet.' : 'No matches found.'}
+                    {entries.length === 0
+                      ? "No entries yet."
+                      : "No matches found."}
                   </div>
                   <div className="mt-1 text-sm text-gray-600">
                     {entries.length === 0
-                      ? 'Write one small insight today and build a personal knowledge bank.'
-                      : 'Try a different keyword.'}
+                      ? "Write one small insight today and build a personal knowledge bank."
+                      : "Try a different keyword."}
                   </div>
                 </div>
               ) : (
@@ -200,7 +209,9 @@ function JournalPage() {
                       key={entry.id}
                       className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm"
                     >
-                      <div className="text-xs text-gray-500">{formatDateTime(entry.created_at)}</div>
+                      <div className="text-xs text-gray-500">
+                        {formatDateTime(entry.created_at)}
+                      </div>
                       <div className="mt-2 text-sm text-gray-800 leading-relaxed whitespace-pre-wrap">
                         {entry.content}
                       </div>

@@ -27,7 +27,7 @@ export default function ExamPrepDemo() {
           name="description"
           content="Master Durham Law exams. IRAC mastery, essay structuring, and ethical AI-assisted revision."
         />
-        <link rel="canonical" href="https://mydurhamlaw.com/demo/exam-prep" />
+        <link rel="canonical" href="https://casewaylaw.ai/demo/exam-prep" />
       </Head>
 
       <main>

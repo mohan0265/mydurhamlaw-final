@@ -26,20 +26,16 @@ export default function EthicsPage() {
             <h1 className="text-3xl font-bold text-gray-900">Academic Ethics & AI Integrity</h1>
           </div>
           <p className="text-lg text-gray-600 max-w-3xl mx-auto">
-            MyDurhamLaw is committed to upholding the highest standards of academic integrity, 
-            transparency, and ethical AI assistance for Durham University Law students.
+            Caseway is committed to upholding the highest standards of academic integrity, 
+            ensuring both students and the public that legal qualifications are earned, not simulated.
           </p>
-        </div>
 
-        {/* Important Notice */}
-        <Card className="border-orange-200 bg-orange-50">
-          <CardContent className="p-6">
-            <div className="flex items-start gap-4">
-              <AlertTriangle />
-              <div>
-                <h3 className="font-semibold text-orange-900 mb-2">Important Notice</h3>
-                <p className="text-orange-800">
-                  <strong>MyDurhamLaw is not affiliated with Durham University.</strong> This platform 
+          <div className="bg-yellow-50 rounded-xl p-6 border border-yellow-100 mb-12">
+            <h3 className="text-lg font-bold text-yellow-800 mb-2 flex items-center gap-2">
+              <span className="text-xl">⚠️</span> Independent Platform
+            </h3>
+            <p className="text-sm text-yellow-800/80">
+                  <strong>Caseway is not affiliated with Durham University.</strong> This platform 
                   provides AI-powered academic assistance for educational enrichment only. All AI responses 
                   are for academic guidance and should never be considered as legal advice or official 
                   university guidance.

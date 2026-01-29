@@ -1,13 +1,30 @@
-import React from 'react';
-import Head from 'next/head';
-import { Award, Users, Globe, Heart, BookOpen, Star, ExternalLink } from 'lucide-react';
+import React from "react";
+import Head from "next/head";
+import {
+  Award,
+  Users,
+  Globe,
+  Heart,
+  BookOpen,
+  Star,
+  ExternalLink,
+} from "lucide-react";
 
 const CSRShowcase = () => {
   return (
     <>
       <Head>
-        <title>CSR Showcase - MyDurhamLaw</title>
-        <meta name="description" content="Discover our Corporate Social Responsibility initiatives and community impact at Durham University Law" />
+        <title>CSR Showcase - Caseway</title>
+        // ... (skipping description lines if not targeted, but let's check grep
+        again) // Grep matched line 39 for body content: "At MyDurhamLaw, we
+        believe..." // I will target line 39 separately in next call or just use
+        single replacement if lines are far apart. // Grep said line 9 for
+        title.
+        <title>CSR Showcase - Caseway</title>
+        <meta
+          name="description"
+          content="Discover our Corporate Social Responsibility initiatives and community impact at Durham University Law"
+        />
       </Head>
 
       <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100">
@@ -19,11 +36,14 @@ const CSRShowcase = () => {
                 CSR Showcase
               </h1>
               <p className="text-xl md:text-2xl text-green-100 mb-8 max-w-4xl mx-auto">
-                Making a Positive Impact Through Technology, Education, and Community Engagement
+                Making a Positive Impact Through Technology, Education, and
+                Community Engagement
               </p>
               <div className="flex items-center justify-center gap-2 text-green-200">
                 <Heart className="h-5 w-5" />
-                <span className="text-lg">Building a Better Future for Legal Education</span>
+                <span className="text-lg">
+                  Building a Better Future for Legal Education
+                </span>
               </div>
             </div>
           </div>
@@ -36,10 +56,11 @@ const CSRShowcase = () => {
               Our CSR Commitment
             </h2>
             <p className="text-lg text-gray-700 leading-relaxed mb-8">
-              At MyDurhamLaw, we believe that education technology should serve not just individual 
-              success, but collective progress. Our Corporate Social Responsibility initiatives 
-              focus on democratizing access to quality legal education, supporting student wellbeing, 
-              and fostering positive change in our communities.
+              At Caseway, we believe that education technology should serve not
+              just individual success, but collective progress. Our Corporate
+              Social Responsibility initiatives focus on democratizing access to
+              quality legal education, supporting student wellbeing, and
+              fostering positive change in our communities.
             </p>
           </div>
         </section>
@@ -60,8 +81,8 @@ const CSRShowcase = () => {
                   Educational Access Initiative
                 </h3>
                 <p className="text-gray-700 mb-4">
-                  Providing free access to our AI tutoring platform for students from 
-                  underrepresented backgrounds and developing communities.
+                  Providing free access to our AI tutoring platform for students
+                  from underrepresented backgrounds and developing communities.
                 </p>
                 <ul className="text-gray-600 space-y-2">
                   <li>• 500+ scholarships annually for platform access</li>
@@ -80,8 +101,8 @@ const CSRShowcase = () => {
                   Student Wellbeing Program
                 </h3>
                 <p className="text-gray-700 mb-4">
-                  Comprehensive mental health and wellbeing support through technology 
-                  and community partnerships.
+                  Comprehensive mental health and wellbeing support through
+                  technology and community partnerships.
                 </p>
                 <ul className="text-gray-600 space-y-2">
                   <li>• 24/7 AI-powered wellbeing companion</li>
@@ -100,7 +121,7 @@ const CSRShowcase = () => {
                   Community Legal Aid
                 </h3>
                 <p className="text-gray-700 mb-4">
-                  Connecting students with pro bono opportunities and community 
+                  Connecting students with pro bono opportunities and community
                   legal aid organizations to provide real-world impact.
                 </p>
                 <ul className="text-gray-600 space-y-2">
@@ -120,7 +141,7 @@ const CSRShowcase = () => {
                   Green Technology Initiative
                 </h3>
                 <p className="text-gray-700 mb-4">
-                  Committed to reducing environmental impact through sustainable 
+                  Committed to reducing environmental impact through sustainable
                   technology practices and carbon-neutral operations.
                 </p>
                 <ul className="text-gray-600 space-y-2">
@@ -142,24 +163,42 @@ const CSRShowcase = () => {
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
               <div className="text-center">
-                <div className="text-4xl font-bold text-blue-600 mb-2">2,500+</div>
-                <div className="text-gray-700 font-medium">Students Supported</div>
-                <div className="text-sm text-gray-500 mt-1">Through scholarship programs</div>
+                <div className="text-4xl font-bold text-blue-600 mb-2">
+                  2,500+
+                </div>
+                <div className="text-gray-700 font-medium">
+                  Students Supported
+                </div>
+                <div className="text-sm text-gray-500 mt-1">
+                  Through scholarship programs
+                </div>
               </div>
               <div className="text-center">
                 <div className="text-4xl font-bold text-green-600 mb-2">75</div>
-                <div className="text-gray-700 font-medium">Partner Organizations</div>
-                <div className="text-sm text-gray-500 mt-1">Community and educational</div>
+                <div className="text-gray-700 font-medium">
+                  Partner Organizations
+                </div>
+                <div className="text-sm text-gray-500 mt-1">
+                  Community and educational
+                </div>
               </div>
               <div className="text-center">
-                <div className="text-4xl font-bold text-purple-600 mb-2">10,000+</div>
+                <div className="text-4xl font-bold text-purple-600 mb-2">
+                  10,000+
+                </div>
                 <div className="text-gray-700 font-medium">Service Hours</div>
-                <div className="text-sm text-gray-500 mt-1">Community legal aid provided</div>
+                <div className="text-sm text-gray-500 mt-1">
+                  Community legal aid provided
+                </div>
               </div>
               <div className="text-center">
-                <div className="text-4xl font-bold text-orange-600 mb-2">100%</div>
+                <div className="text-4xl font-bold text-orange-600 mb-2">
+                  100%
+                </div>
                 <div className="text-gray-700 font-medium">Carbon Neutral</div>
-                <div className="text-sm text-gray-500 mt-1">Platform operations</div>
+                <div className="text-sm text-gray-500 mt-1">
+                  Platform operations
+                </div>
               </div>
             </div>
           </div>
@@ -181,7 +220,8 @@ const CSRShowcase = () => {
                   Durham Law School
                 </h3>
                 <p className="text-gray-600 text-sm">
-                  Primary academic partner providing curriculum guidance and student support
+                  Primary academic partner providing curriculum guidance and
+                  student support
                 </p>
               </div>
 
@@ -194,7 +234,8 @@ const CSRShowcase = () => {
                   Citizens Advice Durham
                 </h3>
                 <p className="text-gray-600 text-sm">
-                  Community legal aid partnership providing real-world experience for students
+                  Community legal aid partnership providing real-world
+                  experience for students
                 </p>
               </div>
 
@@ -207,7 +248,8 @@ const CSRShowcase = () => {
                   Mind Durham
                 </h3>
                 <p className="text-gray-600 text-sm">
-                  Mental health support partnership ensuring comprehensive student wellbeing
+                  Mental health support partnership ensuring comprehensive
+                  student wellbeing
                 </p>
               </div>
             </div>
@@ -230,12 +272,15 @@ const CSRShowcase = () => {
                   <Star className="h-5 w-5 text-yellow-400 fill-current" />
                 </div>
                 <p className="text-gray-700 italic mb-4">
-                  "The scholarship program made it possible for me to access world-class AI tutoring. 
-                  It's completely transformed my understanding of constitutional law and given me 
-                  confidence I never had before."
+                  "The scholarship program made it possible for me to access
+                  world-class AI tutoring. It's completely transformed my
+                  understanding of constitutional law and given me confidence I
+                  never had before."
                 </p>
                 <div className="text-gray-900 font-semibold">Sarah M.</div>
-                <div className="text-gray-600 text-sm">Year 2 Student, Scholarship Recipient</div>
+                <div className="text-gray-600 text-sm">
+                  Year 2 Student, Scholarship Recipient
+                </div>
               </div>
 
               <div className="bg-white rounded-xl p-8 shadow-lg">
@@ -247,12 +292,15 @@ const CSRShowcase = () => {
                   <Star className="h-5 w-5 text-yellow-400 fill-current" />
                 </div>
                 <p className="text-gray-700 italic mb-4">
-                  "Volunteering through the community legal aid program has been incredibly rewarding. 
-                  I've helped real people with real problems while developing practical skills 
-                  that complement my academic studies."
+                  "Volunteering through the community legal aid program has been
+                  incredibly rewarding. I've helped real people with real
+                  problems while developing practical skills that complement my
+                  academic studies."
                 </p>
                 <div className="text-gray-900 font-semibold">James L.</div>
-                <div className="text-gray-600 text-sm">Year 3 Student, Volunteer Coordinator</div>
+                <div className="text-gray-600 text-sm">
+                  Year 3 Student, Volunteer Coordinator
+                </div>
               </div>
             </div>
           </div>
@@ -265,7 +313,8 @@ const CSRShowcase = () => {
               Get Involved
             </h2>
             <p className="text-xl text-green-100 mb-8">
-              Join us in making a positive impact on legal education and communities worldwide.
+              Join us in making a positive impact on legal education and
+              communities worldwide.
             </p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <a

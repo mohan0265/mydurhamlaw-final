@@ -19,10 +19,7 @@ export default function DurmahVoiceDemo() {
           name="description"
           content="Experience Durmah, the AI legal eagle buddy. Instant, judgement-free answers to your law school questions."
         />
-        <link
-          rel="canonical"
-          href="https://mydurhamlaw.com/demo/durmah-voice"
-        />
+        <link rel="canonical" href="https://casewaylaw.ai/demo/durmah-voice" />
       </Head>
 
       <main>

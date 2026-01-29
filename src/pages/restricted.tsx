@@ -141,8 +141,8 @@ export default function RestrictedPage({ reason, email }: RestrictedPageProps) {
 
         {/* Footer */}
         <p className="mt-6 text-center text-sm text-gray-600 max-w-sm mx-auto">
-          Built for students studying law at Durham University. Caseway is an
-          independent study companion designed around the law curriculum.
+          Designed for students studying the Durham Law curriculum. Caseway is
+          an independent study companion designed around the law curriculum.
         </p>
       </div>
     </div>

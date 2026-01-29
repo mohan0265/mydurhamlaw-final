@@ -17,7 +17,7 @@ export default function DemosHub() {
           name="description"
           content="Explore the powerful features of MyDurhamLaw. From AI voice buddies to visual academic roadmaps."
         />
-        <link rel="canonical" href="https://mydurhamlaw.com/demos" />
+        <link rel="canonical" href="https://casewaylaw.ai/demos" />
       </Head>
 
       <GlobalHeader />
@@ -37,8 +37,8 @@ export default function DemosHub() {
                 Product <span className="text-indigo-600">Demos</span>
               </h1>
               <p className="text-xl text-gray-600 leading-relaxed font-medium">
-                Try before you join. Experience how MyDurhamLaw transforms the
-                legal study experience.
+                Try before you join. Experience how Caseway transforms the legal
+                study experience.
               </p>
             </div>
           </div>

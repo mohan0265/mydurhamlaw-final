@@ -1,17 +1,24 @@
 // src/pages/parent-payment.tsx
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/router';
-import Head from 'next/head';
-import { Logo } from '@/components/ui/Logo';
-import { Button } from '@/components/ui/Button';
-import { Card } from '@/components/ui/Card';
-import { CheckCircle, AlertCircle, Heart, CreditCard, Clock, Shield } from 'lucide-react';
-import toast from 'react-hot-toast';
+import { useState, useEffect } from "react";
+import { useRouter } from "next/router";
+import Head from "next/head";
+import { Logo } from "@/components/ui/Logo";
+import { Button } from "@/components/ui/Button";
+import { Card } from "@/components/ui/Card";
+import {
+  CheckCircle,
+  AlertCircle,
+  Heart,
+  CreditCard,
+  Clock,
+  Shield,
+} from "lucide-react";
+import toast from "react-hot-toast";
 
 export default function ParentPaymentPage() {
   const router = useRouter();
   const { token } = router.query;
-  
+
   const [loading, setLoading] = useState(true);
   const [linkData, setLinkData] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
@@ -25,11 +32,13 @@ export default function ParentPaymentPage() {
 
   const validatePaymentLink = async () => {
     try {
-      const res = await fetch(`/api/billing/validate-parent-link?token=${token}`);
+      const res = await fetch(
+        `/api/billing/validate-parent-link?token=${token}`,
+      );
       const data = await res.json();
 
       if (!res.ok || !data.valid) {
-        setError(data.error || 'Invalid or expired payment link');
+        setError(data.error || "Invalid or expired payment link");
         setLoading(false);
         return;
       }
@@ -37,7 +46,7 @@ export default function ParentPaymentPage() {
       setLinkData(data);
       setLoading(false);
     } catch (err) {
-      setError('Failed to validate payment link');
+      setError("Failed to validate payment link");
       setLoading(false);
     }
   };
@@ -46,13 +55,13 @@ export default function ParentPaymentPage() {
     setProcessing(true);
     try {
       // Create Stripe checkout session for parent
-      const res = await fetch('/api/stripe/parent-checkout', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
+      const res = await fetch("/api/stripe/parent-checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
           paymentToken: token,
-          plan: linkData.plan 
-        })
+          plan: linkData.plan,
+        }),
       });
 
       const data = await res.json();
@@ -60,23 +69,26 @@ export default function ParentPaymentPage() {
       if (data.url) {
         window.location.href = data.url;
       } else {
-        toast.error('Failed to create payment session');
+        toast.error("Failed to create payment session");
         setProcessing(false);
       }
     } catch (error) {
-      toast.error('Payment error. Please try again.');
+      toast.error("Payment error. Please try again.");
       setProcessing(false);
     }
   };
 
   const getPlanDetails = (plan: string) => {
-    const plans: Record<string, { name: string; price: string; period: string }> = {
-      core_monthly: { name: 'Core Plan', price: '£13.99', period: 'month' },
-      core_annual: { name: 'Core Plan', price: '£119', period: 'year' },
-      pro_monthly: { name: 'Pro Plan', price: '£24.99', period: 'month' },
-      pro_annual: { name: 'Pro Plan', price: '£199', period: 'year' }
+    const plans: Record<
+      string,
+      { name: string; price: string; period: string }
+    > = {
+      core_monthly: { name: "Core Plan", price: "£13.99", period: "month" },
+      core_annual: { name: "Core Plan", price: "£119", period: "year" },
+      pro_monthly: { name: "Pro Plan", price: "£24.99", period: "month" },
+      pro_annual: { name: "Pro Plan", price: "£199", period: "year" },
     };
-    return plans[plan] || { name: 'Plan', price: '£0', period: 'month' };
+    return plans[plan] || { name: "Plan", price: "£0", period: "month" };
   };
 
   if (loading) {
@@ -94,24 +106,28 @@ export default function ParentPaymentPage() {
     return (
       <>
         <Head>
-          <title>Invalid Payment Link - MyDurhamLaw</title>
+          <title>Compare Plans - Caseway</title>
         </Head>
         <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center p-4">
           <Card className="max-w-md w-full p-8 text-center">
             <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <AlertCircle className="w-8 h-8 text-red-600" />
             </div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">Invalid Payment Link</h1>
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">
+              Invalid Payment Link
+            </h1>
             <p className="text-gray-600 mb-6">{error}</p>
             <div className="space-y-3 text-sm text-gray-600 bg-gray-50 p-4 rounded-lg">
-              <p><strong>Possible reasons:</strong></p>
+              <p>
+                <strong>Possible reasons:</strong>
+              </p>
               <ul className="text-left space-y-1">
                 <li>• Link has expired (valid for 7 days)</li>
                 <li>• Link has already been used</li>
                 <li>• Invalid or tampered link</li>
               </ul>
             </div>
-            <Button onClick={() => router.push('/')} className="mt-6 w-full">
+            <Button onClick={() => router.push("/")} className="mt-6 w-full">
               Go to Homepage
             </Button>
           </Card>
@@ -120,7 +136,7 @@ export default function ParentPaymentPage() {
     );
   }
 
-  const planDetails = getPlanDetails(linkData?.plan || '');
+  const planDetails = getPlanDetails(linkData?.plan || "");
 
   return (
     <>
@@ -169,19 +185,27 @@ export default function ParentPaymentPage() {
 
               {/* Plan Details */}
               <div>
-                <h3 className="font-semibold text-gray-900 mb-3">Subscription Details</h3>
+                <h3 className="font-semibold text-gray-900 mb-3">
+                  Subscription Details
+                </h3>
                 <div className="bg-gray-50 rounded-xl p-4 space-y-2">
                   <div className="flex justify-between">
                     <span className="text-gray-600">Plan:</span>
-                    <span className="font-semibold text-gray-900">{planDetails.name}</span>
+                    <span className="font-semibold text-gray-900">
+                      {planDetails.name}
+                    </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">Price:</span>
-                    <span className="font-semibold text-gray-900">{planDetails.price}/{planDetails.period}</span>
+                    <span className="font-semibold text-gray-900">
+                      {planDetails.price}/{planDetails.period}
+                    </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">Trial Period:</span>
-                    <span className="font-semibold text-green-600">14 days free</span>
+                    <span className="font-semibold text-green-600">
+                      14 days free
+                    </span>
                   </div>
                 </div>
               </div>
@@ -190,13 +214,16 @@ export default function ParentPaymentPage() {
               <div className="flex items-start gap-2 bg-amber-50 border border-amber-100 rounded-lg p-3 text-sm">
                 <Clock className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" />
                 <div className="text-amber-800">
-                  <strong>Link expires:</strong> {new Date(linkData?.expiresAt).toLocaleString()}
+                  <strong>Link expires:</strong>{" "}
+                  {new Date(linkData?.expiresAt).toLocaleString()}
                 </div>
               </div>
 
               {/* What Happens Next */}
               <div>
-                <h3 className="font-semibold text-gray-900 mb-3">What happens next?</h3>
+                <h3 className="font-semibold text-gray-900 mb-3">
+                  What happens next?
+                </h3>
                 <ul className="space-y-2 text-sm text-gray-700">
                   <li className="flex items-start gap-2">
                     <CheckCircle className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
@@ -237,7 +264,8 @@ export default function ParentPaymentPage() {
               </Button>
 
               <p className="text-xs text-center text-gray-500">
-                Payments are processed securely by Stripe. We never see your card details.
+                Payments are processed securely by Stripe. We never see your
+                card details.
               </p>
             </div>
           </Card>

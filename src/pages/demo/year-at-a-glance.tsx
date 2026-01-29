@@ -30,7 +30,7 @@ export default function YAAGDemo() {
         />
         <link
           rel="canonical"
-          href="https://mydurhamlaw.com/demo/year-at-a-glance"
+          href="https://casewaylaw.ai/demo/year-at-a-glance"
         />
       </Head>
 

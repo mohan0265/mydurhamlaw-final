@@ -1,33 +1,37 @@
-import { useState } from 'react';
-import { useRouter } from 'next/router';
-import Link from 'next/link';
-import { Brain, ArrowLeft, Check, ShieldCheck } from 'lucide-react';
+import { useState } from "react";
+import { useRouter } from "next/router";
+import Link from "next/link";
+import { Brain, ArrowLeft, Check, ShieldCheck } from "lucide-react";
 
 /**
  * Request Access Page (Public)
- * 
+ *
  * Allows non-Durham students (foundation, alumni, etc.) to request access.
  * Submits to /api/public/submit-access-request for Admin approval.
  */
 
 export default function RequestAccessPage() {
   const router = useRouter();
-  
+
   const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    cohort: '',
-    message: '',
-    expected_term: '',
-    college: '',
-    website: '' // Honeypot
+    name: "",
+    email: "",
+    cohort: "",
+    message: "",
+    expected_term: "",
+    college: "",
+    website: "", // Honeypot
   });
 
   const [requesting, setRequesting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+    >,
+  ) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
@@ -37,16 +41,16 @@ export default function RequestAccessPage() {
     setError(null);
 
     // Basic Validation
-    if (!formData.email.includes('@') || !formData.name || !formData.cohort) {
-      setError('Please fill in all required fields.');
+    if (!formData.email.includes("@") || !formData.name || !formData.cohort) {
+      setError("Please fill in all required fields.");
       setRequesting(false);
       return;
     }
 
     try {
-      const res = await fetch('/api/public/submit-access-request', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const res = await fetch("/api/public/submit-access-request", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
       });
 
@@ -54,16 +58,15 @@ export default function RequestAccessPage() {
 
       if (!res.ok) {
         // Handle deduplication error specifically if needed, or generic
-        setError(data.error || 'Failed to submit request');
+        setError(data.error || "Failed to submit request");
         setRequesting(false);
         return;
       }
 
       setSuccess(true);
       setRequesting(false);
-
     } catch (err: any) {
-      setError(err.message || 'Network error');
+      setError(err.message || "Network error");
       setRequesting(false);
     }
   };
@@ -72,8 +75,8 @@ export default function RequestAccessPage() {
     <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
       <div className="w-full max-w-lg">
         {/* Back to Home */}
-        <Link 
-          href="/" 
+        <Link
+          href="/"
           className="inline-flex items-center text-slate-600 hover:text-purple-600 mb-6 text-sm font-medium transition"
         >
           <ArrowLeft className="w-4 h-4 mr-1" />
@@ -82,30 +85,40 @@ export default function RequestAccessPage() {
 
         {/* Main Card */}
         <div className="bg-white rounded-2xl shadow-xl p-8 border border-slate-200">
-          
           {/* Header */}
           <div className="text-center mb-8">
-             <div className="mx-auto mb-4 w-14 h-14 bg-purple-100 rounded-xl flex items-center justify-center">
-               <Brain className="w-8 h-8 text-purple-600" />
-             </div>
-             <h1 className="text-2xl font-bold text-slate-900">Request Early Access</h1>
-             <p className="text-slate-500 mt-2 text-sm text-balance">
-               For non-Durham email users, foundation, alumni, or special academic access.
-             </p>
+            <div className="mx-auto mb-4 w-14 h-14 bg-purple-100 rounded-xl flex items-center justify-center">
+              <Brain className="w-8 h-8 text-purple-600" />
+            </div>
+            <h1 className="text-2xl font-bold text-slate-900">
+              Request Early Access
+            </h1>
+            <p className="text-slate-500 mt-2 text-sm text-balance">
+              For non-Durham email users, foundation, alumni, or special
+              academic access.
+            </p>
           </div>
 
           {!success ? (
             <form onSubmit={handleSubmit} className="space-y-4">
-              
               {/* HONEYPOT - HIDDEN */}
               <div className="hidden" aria-hidden="true">
                 <label>Do not fill this field</label>
-                <input type="text" name="website" tabIndex={-1} autoComplete="off" value={formData.website} onChange={handleChange} />
+                <input
+                  type="text"
+                  name="website"
+                  tabIndex={-1}
+                  autoComplete="off"
+                  value={formData.website}
+                  onChange={handleChange}
+                />
               </div>
 
               {/* Name */}
               <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-1">Full Name *</label>
+                <label className="block text-sm font-semibold text-slate-700 mb-1">
+                  Full Name *
+                </label>
                 <input
                   name="name"
                   type="text"
@@ -119,7 +132,9 @@ export default function RequestAccessPage() {
 
               {/* Email */}
               <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-1">Email Address *</label>
+                <label className="block text-sm font-semibold text-slate-700 mb-1">
+                  Email Address *
+                </label>
                 <input
                   name="email"
                   type="email"
@@ -129,12 +144,23 @@ export default function RequestAccessPage() {
                   className="w-full rounded-lg border-slate-300 focus:ring-purple-500 focus:border-purple-500"
                   placeholder="name@example.com"
                 />
-                <p className="text-xs text-slate-400 mt-1">If you have a @durham.ac.uk email, simply <Link href="/login" className="text-purple-600 hover:underline">Sign In</Link> directly.</p>
+                <p className="text-xs text-slate-400 mt-1">
+                  If you have a @durham.ac.uk email, simply{" "}
+                  <Link
+                    href="/login"
+                    className="text-purple-600 hover:underline"
+                  >
+                    Sign In
+                  </Link>{" "}
+                  directly.
+                </p>
               </div>
 
               {/* Cohort Dropdown */}
               <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-1">Academic Status *</label>
+                <label className="block text-sm font-semibold text-slate-700 mb-1">
+                  Academic Status *
+                </label>
                 <select
                   name="cohort"
                   required
@@ -153,8 +179,10 @@ export default function RequestAccessPage() {
               {/* Optional Fields Group */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                   <label className="block text-xs font-medium text-slate-600 mb-1">Expected Term (Opt)</label>
-                   <input
+                  <label className="block text-xs font-medium text-slate-600 mb-1">
+                    Expected Term (Opt)
+                  </label>
+                  <input
                     name="expected_term"
                     type="text"
                     value={formData.expected_term}
@@ -164,8 +192,10 @@ export default function RequestAccessPage() {
                   />
                 </div>
                 <div>
-                   <label className="block text-xs font-medium text-slate-600 mb-1">College (If known)</label>
-                   <input
+                  <label className="block text-xs font-medium text-slate-600 mb-1">
+                    College (If known)
+                  </label>
+                  <input
                     name="college"
                     type="text"
                     value={formData.college}
@@ -178,7 +208,9 @@ export default function RequestAccessPage() {
 
               {/* Message */}
               <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-1">Reason for Request</label>
+                <label className="block text-sm font-semibold text-slate-700 mb-1">
+                  Reason for Request
+                </label>
                 <textarea
                   name="message"
                   rows={3}
@@ -202,34 +234,39 @@ export default function RequestAccessPage() {
                 disabled={requesting}
                 className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-xl transition shadow-md disabled:opacity-70 flex items-center justify-center gap-2"
               >
-                {requesting ? 'Submitting...' : 'Submit Request'}
+                {requesting ? "Submitting..." : "Submit Request"}
               </button>
             </form>
           ) : (
-             /* Success State */
+            /* Success State */
             <div className="text-center py-8">
               <div className="mx-auto mb-4 w-16 h-16 bg-green-100 rounded-full flex items-center justify-center animate-in zoom-in">
                 <ShieldCheck className="w-8 h-8 text-green-600" />
               </div>
-              <h2 className="text-xl font-bold text-slate-900 mb-2">Request Received</h2>
+              <h2 className="text-xl font-bold text-slate-900 mb-2">
+                Request Received
+              </h2>
               <p className="text-slate-600 mb-6">
-                Thank you, {formData.name}.<br/>
+                Thank you, {formData.name}.<br />
                 Our team will review your details shortly.
               </p>
               <div className="bg-blue-50 border border-blue-100 rounded-lg p-4 text-sm text-blue-800">
-                You will receive an email invitation if your request is approved.
+                You will receive an email invitation if your request is
+                approved.
               </div>
-              <Link href="/" className="inline-block mt-8 text-purple-600 font-semibold hover:underline">
+              <Link
+                href="/"
+                className="inline-block mt-8 text-purple-600 font-semibold hover:underline"
+              >
                 Return to Home
               </Link>
             </div>
           )}
-
         </div>
-        
+
         {/* Footer */}
         <p className="mt-6 text-center text-xs text-slate-400">
-          Protected by MyDurhamLaw Security • IP Logged
+          Protected by Caseway Security • IP Logged
         </p>
       </div>
     </div>

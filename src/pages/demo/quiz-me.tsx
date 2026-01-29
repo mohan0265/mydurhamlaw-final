@@ -29,7 +29,7 @@ export default function QuizMeDemo() {
           name="description"
           content="Test your legal knowledge with interactive active recall. Durmah quizzes you on your specific Durham Law modules."
         />
-        <link rel="canonical" href="https://mydurhamlaw.com/demo/quiz-me" />
+        <link rel="canonical" href="https://casewaylaw.ai/demo/quiz-me" />
       </Head>
 
       <main>

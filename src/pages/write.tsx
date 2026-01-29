@@ -13,7 +13,7 @@ export default function WriteLawPage() {
         </title>
         <meta
           name="description"
-          content="Master structured legal writing, IRAC methodology, and academic integrity with MyDurhamLaw."
+          content="Master structured legal writing, IRAC methodology, and academic integrity with Caseway."
         />
       </Head>
 

@@ -2,7 +2,8 @@ import {
   BRAND_NAME,
   BRAND_TAGLINE,
   LEGAL_DISCLAIMER_LONG,
-  LEGAL_DISCLAIMER_SHORT,
+  LEGAL_DISCLAIMER_LONG,
+  LEGAL_AI_WARNING_SHORT,
 } from "@/lib/brand";
 import Head from "next/head";
 import Link from "next/link";
@@ -107,9 +108,8 @@ export default function LandingPage() {
             <IndependenceBadge variant="hero" />
           </div>
 
-          <p className="text-gray-500 dark:text-gray-500 text-xs sm:text-sm font-medium max-w-2xl mx-auto mb-8 tracking-wide">
-            {LEGAL_DISCLAIMER_SHORT} <br className="hidden sm:block" />
-            Built for students studying law at Durham University.
+            {LEGAL_AI_WARNING_SHORT} <br className="hidden sm:block" />
+            Designed for students studying the Durham Law curriculum.
           </p>
 
           <h1 className="flex flex-col md:flex-row md:flex-nowrap justify-center items-center gap-2 md:gap-3 text-4xl md:text-5xl xl:text-6xl font-black mb-6 tracking-tight text-gray-900 dark:text-white leading-tight">

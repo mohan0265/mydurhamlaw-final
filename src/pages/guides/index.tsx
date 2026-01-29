@@ -49,7 +49,7 @@ export default function GuidesHub() {
           name="description"
           content="Evidence-based guides for Durham Law students: confidence, legal writing, exam prep, and study systems."
         />
-        <link rel="canonical" href="https://mydurhamlaw.com/guides" />
+        <link rel="canonical" href="https://casewaylaw.ai/guides" />
       </Head>
 
       <main className="flex-1 py-16 lg:py-24">

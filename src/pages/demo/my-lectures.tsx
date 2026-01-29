@@ -17,7 +17,7 @@ export default function MyLecturesDemo() {
           name="description"
           content="Organize your law degree lectures and notes. Syllabus-aligned tracking for your Durham Law modules."
         />
-        <link rel="canonical" href="https://mydurhamlaw.com/demo/my-lectures" />
+        <link rel="canonical" href="https://casewaylaw.ai/demo/my-lectures" />
       </Head>
 
       <main>
