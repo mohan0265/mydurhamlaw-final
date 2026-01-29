@@ -15,7 +15,6 @@ import {
   BRAND_NAME,
   BRAND_SUPPORT_EMAIL,
   LEGAL_DISCLAIMER_LONG,
-  LEGAL_DISCLAIMER_SHORT,
 } from "@/lib/brand";
 
 export const EnhancedFooter: React.FC = () => {
