@@ -137,6 +137,10 @@ export default function LecturesPage() {
 
   const [selectedLecturer, setSelectedLecturer] = useState<string>("");
 
+  const handleUploadSuccess = () => {
+    fetchLectures();
+  };
+
   // Derived unique lecturers from ALL lectures (not just filtered)
   const availableLecturers = Array.from(
     new Set(lectures.map((l) => l.lecturer_name).filter(Boolean)),
