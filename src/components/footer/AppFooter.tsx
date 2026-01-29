@@ -23,6 +23,7 @@ import {
   LEGAL_DISCLAIMER_LONG,
   LEGAL_AI_WARNING_SHORT,
 } from "@/lib/brand";
+import { useTour } from "@/components/onboarding/TourProvider";
 
 interface AppFooterProps {
   isAuthed: boolean;
@@ -34,9 +35,12 @@ type FooterLink = {
   icon?: React.ReactNode;
   disabled?: boolean;
   isExternal?: boolean;
+  onClick?: () => void;
 };
 
 export const AppFooter: React.FC<AppFooterProps> = ({ isAuthed }) => {
+  const { startTour } = useTour();
+
   // -- LINK CONFIGURATIONS --
 
   // 1. Legal Links (Common to everyone)
@@ -59,7 +63,14 @@ export const AppFooter: React.FC<AppFooterProps> = ({ isAuthed }) => {
     { label: "Request Access", href: "/request-access" },
     { label: "Support", href: "/support" },
     { label: "Legal News Feed", href: "/legal/tools/legal-news-feed" },
-    { label: "Research Hub", href: "/legal/research", disabled: false }, // Assuming exists per prompt
+    { label: "Legal News Feed", href: "/legal/tools/legal-news-feed" },
+    { label: "Research Hub", href: "/legal/research", disabled: false },
+    {
+      label: "Quick Walkthrough",
+      href: "#",
+      onClick: () => startTour("guest"),
+      icon: <HelpCircle className="w-4 h-4 mr-2" />,
+    },
   ];
 
   // 3. Student Column A: Study & Progress (Authed)
@@ -115,6 +126,14 @@ export const AppFooter: React.FC<AppFooterProps> = ({ isAuthed }) => {
                 Soon
               </span>
             </span>
+          ) : link.onClick ? (
+            <button
+              onClick={link.onClick}
+              className="text-gray-300 hover:text-blue-400 transition-colors duration-200 flex items-center text-xs group text-left w-full"
+            >
+              {link.icon || null}
+              {link.label}
+            </button>
           ) : (
             <Link
               href={link.href}

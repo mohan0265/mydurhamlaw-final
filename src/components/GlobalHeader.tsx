@@ -417,6 +417,7 @@ export default function GlobalHeader() {
                     href="/pricing"
                     prefetch={false}
                     className="px-3 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-purple-700 dark:hover:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20"
+                    data-tour="home-pricing"
                   >
                     Pricing
                   </Link>

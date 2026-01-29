@@ -12,7 +12,16 @@ export const TourHelpButton: React.FC = () => {
   const isDashboard = router.pathname === "/dashboard";
 
   if (!isLanding && !isDashboard) return null;
-  if (isRunning) return null; // Hide if tour is running
+  if (isRunning) return null;
+
+  // Logged-out logic: Hide floating reminder if they dismissed it (checked "don't show again")
+  // They can still use the footer link.
+  if (isLanding) {
+    const disabled =
+      typeof window !== "undefined" &&
+      localStorage.getItem("tour_home_autolaunch_disabled") === "true";
+    if (disabled) return null;
+  }
 
   const handleRestart = () => {
     if (isLanding) startTour("guest");

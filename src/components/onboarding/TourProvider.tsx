@@ -77,32 +77,6 @@ export const TourProvider: React.FC<{ children: React.ReactNode }> = ({
     return () => clearTimeout(timer);
   }, [currentPath, user]);
 
-  const handleAutoStart = useCallback(() => {
-    if (run) return; // Already running
-
-    let targetTour: "guest" | "dashboard" | null = null;
-    let storageKey = "";
-
-    // GUEST TOUR: Only on landing page "/", not logged in
-    if (currentPath === "/" && !user) {
-      targetTour = "guest";
-      storageKey = "caseway_tour_done_guest_v1";
-    }
-    // DASHBOARD TOUR: On /dashboard, logged in
-    else if (currentPath === "/dashboard" && user) {
-      targetTour = "dashboard";
-      storageKey = `caseway_tour_done_dashboard_v1_${user.id}`;
-    }
-
-    if (targetTour && storageKey) {
-      const isDone = localStorage.getItem(storageKey);
-      if (!isDone) {
-        setShouldPersist(true); // Default to saving
-        startTour(targetTour);
-      }
-    }
-  }, [currentPath, user, run]);
-
   const startTour = (tourName: "guest" | "dashboard") => {
     if (tourName === "guest") {
       setSteps(GUEST_TOUR_STEPS);
@@ -127,15 +101,46 @@ export const TourProvider: React.FC<{ children: React.ReactNode }> = ({
     }
 
     const finishedStatuses: string[] = [STATUS.FINISHED, STATUS.SKIPPED];
+    const isGuest = !user && currentPath === "/";
 
     if (finishedStatuses.includes(status)) {
       setRun(false);
       setStepIndex(0); // Reset for next time
-      if (tourKey && shouldPersist) {
-        localStorage.setItem(tourKey, "true");
+
+      // If "Don't show again" was checked, disable auto-launch for this user type
+      if (shouldPersist) {
+        if (isGuest) {
+          localStorage.setItem("tour_home_autolaunch_disabled", "true");
+        } else if (user) {
+          localStorage.setItem("tour_student_autolaunch_disabled", "true");
+        }
       }
     }
   };
+
+  const handleAutoStart = useCallback(() => {
+    if (run) return; // Already running
+
+    let targetTour: "guest" | "dashboard" | null = null;
+    let isDisabled = false;
+
+    // GUEST TOUR: Only on landing page "/", not logged in
+    if (currentPath === "/" && !user) {
+      targetTour = "guest";
+      isDisabled =
+        localStorage.getItem("tour_home_autolaunch_disabled") === "true";
+    }
+    // DASHBOARD TOUR: On /dashboard, logged in
+    else if (currentPath === "/dashboard" && user) {
+      targetTour = "dashboard";
+      isDisabled =
+        localStorage.getItem("tour_student_autolaunch_disabled") === "true";
+    }
+
+    if (targetTour && !isDisabled) {
+      startTour(targetTour);
+    }
+  }, [currentPath, user, run]);
 
   return (
     <TourContext.Provider

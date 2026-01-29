@@ -9,22 +9,26 @@ export const GUEST_TOUR_STEPS: Step[] = [
     disableBeacon: true,
   },
   {
-    target: '[data-tour="landing-hero"]',
+    target: '[data-tour="home-hero-cta"]',
     content:
       "This is your starting point. Explore features, pricing, and how Caseway helps you succeed.",
   },
   {
-    target: '[data-tour="landing-features"]',
+    target: '[data-tour="home-core-tools"]',
     content:
       "Discover our core tools: Year at a Glance, Assignment Assistant, and more.",
   },
   {
-    target: '[data-tour="landing-durmah"]',
+    target: '[data-tour="home-durmah"]',
     content:
       "Meet Durmah, your 24/7 AI voice tutor. Click to chat or ask questions anytime.",
   },
   {
-    target: '[data-tour="landing-cta"]',
+    target: '[data-tour="home-proof"]',
+    content: "See exactly how Caseway works in 60 seconds.",
+  },
+  {
+    target: '[data-tour="home-pricing"]',
     content: "Ready to excel? Start your free trial here.",
   },
 ];
@@ -92,7 +96,9 @@ export const STUDENT_DASHBOARD_TOUR_STEPS: Step[] = [
           Your assignments, exams, and workload are laid out clearly so you can
           plan ahead with confidence.
         </p>
-        <p className="italic text-indigo-600">This is where calm replaces panic.</p>
+        <p className="italic text-indigo-600">
+          This is where calm replaces panic.
+        </p>
       </div>
     ),
   },

@@ -127,7 +127,10 @@ export default function LandingPage() {
 
           <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center items-center">
             <Link href="/signup">
-              <button className="w-full sm:w-auto bg-[#123733] text-white dark:bg-[#D5BF76] dark:text-[#0B1412] font-black py-4 px-10 rounded-full text-lg transition-all hover:scale-105 shadow-xl hover:shadow-2xl active:scale-95 uppercase tracking-widest border border-transparent hover:border-[#D5BF76]">
+              <button
+                className="w-full sm:w-auto bg-[#123733] text-white dark:bg-[#D5BF76] dark:text-[#0B1412] font-black py-4 px-10 rounded-full text-lg transition-all hover:scale-105 shadow-xl hover:shadow-2xl active:scale-95 uppercase tracking-widest border border-transparent hover:border-[#D5BF76]"
+                data-tour="home-hero-cta"
+              >
                 Create your account
               </button>
             </Link>
@@ -255,7 +258,7 @@ export default function LandingPage() {
 
           <div
             className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
-            data-tour="landing-features"
+            data-tour="home-core-tools"
           >
             {[
               {
@@ -382,7 +385,7 @@ export default function LandingPage() {
       {/* SEE IT WORKING (PROOF) SECTION */}
       <section className="py-20 bg-indigo-900 text-white border-t border-indigo-800">
         <div className="max-w-6xl mx-auto px-6">
-          <div className="text-center mb-12">
+          <div className="text-center mb-12" data-tour="home-proof">
             <h2 className="text-3xl font-black mb-4 tracking-tight text-white">
               See it working (60 seconds)
             </h2>
@@ -442,7 +445,10 @@ export default function LandingPage() {
             </div>
 
             {/* Card 3: Durmah Audio */}
-            <div className="bg-white/10 rounded-2xl p-1 border border-white/10 hover:bg-white/15 transition duration-300">
+            <div
+              className="bg-white/10 rounded-2xl p-1 border border-white/10 hover:bg-white/15 transition duration-300"
+              data-tour="home-durmah"
+            >
               <div className="aspect-video bg-indigo-950/50 rounded-xl relative overflow-hidden flex items-center justify-center group cursor-pointer">
                 <div className="absolute inset-0 bg-gradient-to-tr from-blue-900 to-cyan-900 opacity-50"></div>
                 <div className="relative z-10 flex flex-col items-center gap-3">
