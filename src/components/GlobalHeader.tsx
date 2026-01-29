@@ -11,7 +11,10 @@ import { Logo } from "./ui/Logo";
 import { useAuth } from "@/lib/supabase/AuthContext";
 import LogoutButton from "@/components/auth/LogoutButton";
 import PresenceBadge from "@/components/PresenceBadge";
+import LogoutButton from "@/components/auth/LogoutButton";
+import PresenceBadge from "@/components/PresenceBadge";
 import { BRAND_NAME } from "@/lib/brand";
+import { IndependenceBadge } from "@/components/ui/IndependenceBadge";
 
 type MenuItem = { label: string; href: string };
 type Menu = { label: string; items: MenuItem[] };
@@ -337,6 +340,12 @@ export default function GlobalHeader() {
                */}
               <Logo variant="light" className="h-10 md:h-11 w-auto" />
             </Link>
+
+            {/* Disclaimer Badge (Desktop) */}
+            <div className="hidden xl:block ml-4">
+              <IndependenceBadge variant="header" />
+            </div>
+
             {/* Desktop nav */}
             <div className="hidden md:flex items-center gap-1">
               {user ? (

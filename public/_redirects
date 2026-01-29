@@ -1,0 +1,8 @@
+# Renamed Guides (Compliance Phase 2)
+/learn/durham-law-ai-study-assistant  /learn/caseway-guide-ai-study-for-law-students  301
+/learn/durham-law-academic-integrity-ai  /learn/caseway-guide-academic-integrity  301
+
+# Legacy Domain Redirects (if any traffic hits the old custom domain directly)
+# (Netlify usually handles domain aliases automatically, but explicit paths help)
+http://mydurhamlaw.com/*  https://www.casewaylaw.ai/:splat  301
+https://mydurhamlaw.com/*  https://www.casewaylaw.ai/:splat  301

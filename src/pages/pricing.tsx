@@ -85,7 +85,7 @@ export default function PricingPage() {
     {
       title: "Your Voice Matters",
       icon: Users,
-      text: "Have you tried MyDurhamLaw? We want to hear from you. Help us shape the future of legal education @ Durham.",
+      text: "Have you tried Caseway? We want to hear from you. Help us shape the future of legal education @ Durham.",
       cta: "Submit Review",
       link: "/community",
     },
@@ -317,9 +317,8 @@ export default function PricingPage() {
               Ready to Transform Your Law Studies?
             </h2>
             <p className="text-lg text-blue-100 mb-6">
-              Join hundreds of Durham Law students who are already using
-              MyDurhamLaw to excel in their studies and stay connected with
-              loved ones.
+              Join hundreds of Durham Law students who are already using Caseway
+              to excel in their studies and stay connected with loved ones.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               {user ? (

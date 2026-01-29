@@ -17,7 +17,7 @@ import {
 import GuideCallout from "@/components/seo/GuideCallout";
 
 const seo = generateArticleSEO({
-  title: "Speak Law: Mastering Oral Legal Reasoning - MyDurhamLaw",
+  title: "Speak Law: Mastering Oral Legal Reasoning - Caseway",
   description:
     "Legal mastery is more than writing. Learn how to build oral reasoning, seminar confidence, and viva skills step-by-step.",
   slug: "speak-law",

@@ -1,13 +1,16 @@
-import React from 'react';
-import Head from 'next/head';
-import { Calendar, Target, Users, Globe, BookOpen, Award } from 'lucide-react';
+import React from "react";
+import Head from "next/head";
+import { Calendar, Target, Users, Globe, BookOpen, Award } from "lucide-react";
 
 const Vision2035 = () => {
   return (
     <>
       <Head>
-        <title>Vision 2035 - MyDurhamLaw</title>
-        <meta name="description" content="Our vision for transforming legal education at Durham University by 2035" />
+        <title>Vision 2035 - Caseway</title>
+        <meta
+          name="description"
+          content="Our vision for transforming legal education at Durham University by 2035"
+        />
       </Head>
 
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
@@ -19,11 +22,14 @@ const Vision2035 = () => {
                 Vision 2035
               </h1>
               <p className="text-xl md:text-2xl text-blue-100 mb-8 max-w-4xl mx-auto">
-                Transforming Legal Education Through Innovation, Technology, and Human-Centered Learning
+                Transforming Legal Education Through Innovation, Technology, and
+                Human-Centered Learning
               </p>
               <div className="flex items-center justify-center gap-2 text-blue-200">
                 <Calendar className="h-5 w-5" />
-                <span className="text-lg">A Decade-Long Journey: 2025-2035</span>
+                <span className="text-lg">
+                  A Decade-Long Journey: 2025-2035
+                </span>
               </div>
             </div>
           </div>
@@ -36,10 +42,11 @@ const Vision2035 = () => {
               Our Mission
             </h2>
             <p className="text-lg text-gray-700 leading-relaxed">
-              By 2035, MyDurhamLaw will establish Durham University as the global leader in 
-              technology-enhanced legal education, where every law student has access to 
-              personalized AI companions, comprehensive wellbeing support, and innovative 
-              learning experiences that prepare them for the future of law.
+              By 2035, Caseway will establish Durham University as the global
+              leader in technology-enhanced legal education, where every law
+              student has access to personalized AI companions, comprehensive
+              wellbeing support, and innovative learning experiences that
+              prepare them for the future of law.
             </p>
           </div>
         </section>
@@ -60,8 +67,9 @@ const Vision2035 = () => {
                   AI-Enhanced Learning
                 </h3>
                 <p className="text-gray-700">
-                  Revolutionary AI companions that adapt to each student's learning style, 
-                  providing personalized tutoring, case analysis, and academic support 24/7.
+                  Revolutionary AI companions that adapt to each student's
+                  learning style, providing personalized tutoring, case
+                  analysis, and academic support 24/7.
                 </p>
               </div>
 
@@ -74,8 +82,9 @@ const Vision2035 = () => {
                   Holistic Wellbeing
                 </h3>
                 <p className="text-gray-700">
-                  Comprehensive mental health and wellbeing ecosystem that supports students 
-                  through their academic journey with proactive care and intervention.
+                  Comprehensive mental health and wellbeing ecosystem that
+                  supports students through their academic journey with
+                  proactive care and intervention.
                 </p>
               </div>
 
@@ -88,8 +97,9 @@ const Vision2035 = () => {
                   Global Leadership
                 </h3>
                 <p className="text-gray-700">
-                  Position Durham as the world's premier destination for legal education, 
-                  attracting top talent and setting new standards for the industry.
+                  Position Durham as the world's premier destination for legal
+                  education, attracting top talent and setting new standards for
+                  the industry.
                 </p>
               </div>
             </div>
@@ -113,8 +123,9 @@ const Vision2035 = () => {
                     Phase 1: Foundation (2025-2027)
                   </h3>
                   <p className="text-gray-700 mb-4">
-                    Launch MyDurhamLaw platform with core AI tutoring, voice companions, 
-                    and wellbeing support for all Durham law students.
+                    Launch Caseway platform with core AI tutoring, voice
+                    companions, and wellbeing support for all Durham law
+                    students.
                   </p>
                   <ul className="text-gray-600 space-y-1">
                     <li>• Deploy Durmah Voice MVP across all year groups</li>
@@ -134,8 +145,8 @@ const Vision2035 = () => {
                     Phase 2: Expansion (2027-2030)
                   </h3>
                   <p className="text-gray-700 mb-4">
-                    Scale platform capabilities with advanced AI, multi-language support, 
-                    and integration with global legal databases.
+                    Scale platform capabilities with advanced AI, multi-language
+                    support, and integration with global legal databases.
                   </p>
                   <ul className="text-gray-600 space-y-1">
                     <li>• Advanced case law analysis and prediction</li>
@@ -155,7 +166,7 @@ const Vision2035 = () => {
                     Phase 3: Innovation (2030-2033)
                   </h3>
                   <p className="text-gray-700 mb-4">
-                    Pioneer next-generation legal education with VR courtrooms, 
+                    Pioneer next-generation legal education with VR courtrooms,
                     AI-powered mock trials, and immersive learning experiences.
                   </p>
                   <ul className="text-gray-600 space-y-1">
@@ -176,8 +187,9 @@ const Vision2035 = () => {
                     Phase 4: Global Leadership (2033-2035)
                   </h3>
                   <p className="text-gray-700 mb-4">
-                    Establish Durham as the undisputed global leader in legal education 
-                    innovation, with our platform used by law schools worldwide.
+                    Establish Durham as the undisputed global leader in legal
+                    education innovation, with our platform used by law schools
+                    worldwide.
                   </p>
                   <ul className="text-gray-600 space-y-1">
                     <li>• Global platform licensing and partnerships</li>
@@ -198,20 +210,36 @@ const Vision2035 = () => {
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
               <div className="text-center">
-                <div className="text-4xl font-bold text-blue-600 mb-2">100%</div>
-                <div className="text-gray-700">of Durham law students using AI support</div>
+                <div className="text-4xl font-bold text-blue-600 mb-2">
+                  100%
+                </div>
+                <div className="text-gray-700">
+                  of Durham law students using AI support
+                </div>
               </div>
               <div className="text-center">
-                <div className="text-4xl font-bold text-purple-600 mb-2">50%</div>
-                <div className="text-gray-700">improvement in student wellbeing scores</div>
+                <div className="text-4xl font-bold text-purple-600 mb-2">
+                  50%
+                </div>
+                <div className="text-gray-700">
+                  improvement in student wellbeing scores
+                </div>
               </div>
               <div className="text-center">
-                <div className="text-4xl font-bold text-green-600 mb-2">200+</div>
-                <div className="text-gray-700">partner law schools globally</div>
+                <div className="text-4xl font-bold text-green-600 mb-2">
+                  200+
+                </div>
+                <div className="text-gray-700">
+                  partner law schools globally
+                </div>
               </div>
               <div className="text-center">
-                <div className="text-4xl font-bold text-indigo-600 mb-2">#1</div>
-                <div className="text-gray-700">ranked law school for innovation</div>
+                <div className="text-4xl font-bold text-indigo-600 mb-2">
+                  #1
+                </div>
+                <div className="text-gray-700">
+                  ranked law school for innovation
+                </div>
               </div>
             </div>
           </div>
@@ -224,7 +252,8 @@ const Vision2035 = () => {
               Join Us on This Journey
             </h2>
             <p className="text-xl text-blue-100 mb-8">
-              Be part of the transformation that will shape the future of legal education.
+              Be part of the transformation that will shape the future of legal
+              education.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <a

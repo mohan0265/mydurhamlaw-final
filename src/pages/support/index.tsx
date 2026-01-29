@@ -1,12 +1,12 @@
-import Head from 'next/head'
-import { SupportChat } from '@/components/support/SupportChat'
-import { MessageCircle } from 'lucide-react'
+import Head from "next/head";
+import { SupportChat } from "@/components/support/SupportChat";
+import { MessageCircle } from "lucide-react";
 
 export default function SupportPage() {
   return (
     <>
       <Head>
-        <title>Support - MyDurhamLaw</title>
+        <title>Support - Caseway</title>
       </Head>
       <div className="max-w-4xl mx-auto px-4 py-10">
         <div className="flex items-center gap-3 mb-6">
@@ -15,7 +15,9 @@ export default function SupportPage() {
           </div>
           <div>
             <h1 className="text-2xl font-bold text-slate-900">Support</h1>
-            <p className="text-slate-600 text-sm">Chat with Durmah-Support, browse quick fixes, and open a ticket.</p>
+            <p className="text-slate-600 text-sm">
+              Chat with Durmah-Support, browse quick fixes, and open a ticket.
+            </p>
           </div>
         </div>
 
@@ -24,7 +26,9 @@ export default function SupportPage() {
             <SupportChat />
           </div>
           <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-4">
-            <h2 className="text-lg font-semibold text-slate-900 mb-3">Common topics</h2>
+            <h2 className="text-lg font-semibold text-slate-900 mb-3">
+              Common topics
+            </h2>
             <ul className="text-sm text-slate-700 space-y-2">
               <li>• Login issues (Google OAuth)</li>
               <li>• Trial activation / Free • Inactive</li>
@@ -35,11 +39,12 @@ export default function SupportPage() {
               <li>• Mobile vs desktop tips</li>
             </ul>
             <p className="text-xs text-slate-500 mt-4">
-              If the chat cannot resolve it, we’ll escalate to a human and keep you posted via this thread.
+              If the chat cannot resolve it, we’ll escalate to a human and keep
+              you posted via this thread.
             </p>
           </div>
         </div>
       </div>
     </>
-  )
+  );
 }

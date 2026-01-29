@@ -211,11 +211,13 @@ export const AppFooter: React.FC<AppFooterProps> = ({ isAuthed }) => {
           <div className="flex items-start space-x-3">
             <MapPin className="w-4 h-4 text-blue-400 mt-0.5 flex-shrink-0" />
             <div>
-              <h5 className="font-semibold text-blue-300 mb-1 text-[10px] uppercase tracking-wider">
-                Independent study companion
-              </h5>
+              Independent educational platform
               <p className="text-blue-100 text-[10px] leading-relaxed">
-                {LEGAL_DISCLAIMER_LONG}
+                Caseway is an independent educational technology platform. We
+                are not affiliated with, endorsed by, sponsored by, or
+                officially connected to Durham University or any of its
+                colleges, departments, or representatives. University names are
+                used strictly for descriptive purposes only.
               </p>
             </div>
           </div>

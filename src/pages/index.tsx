@@ -18,6 +18,7 @@ import {
   Clock,
   CheckCircle,
 } from "lucide-react";
+import { IndependenceBadge } from "@/components/ui/IndependenceBadge";
 
 // Mock Data for Guides (kept consistent)
 const allGuides = [
@@ -102,11 +103,8 @@ export default function LandingPage() {
         <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-5 dark:opacity-10 pointer-events-none" />
 
         <div className="relative z-10 max-w-7xl mx-auto px-6 w-full text-center">
-          <div className="inline-flex items-center gap-2 bg-white border border-gray-200 dark:bg-white/5 dark:border-white/10 backdrop-blur-xl px-4 py-2 rounded-full mb-6 animate-in fade-in slide-in-from-bottom-4 duration-700 shadow-sm dark:shadow-none">
-            <span className="w-2 h-2 bg-[#D5BF76] dark:bg-[#D5BF76] rounded-full animate-pulse shadow-[0_0_10px_#D5BF76]"></span>
-            <span className="text-sm font-medium text-gray-500 dark:text-gray-400 tracking-wide uppercase">
-              Accepting all years (Foundation → Year 3)
-            </span>
+          <div className="mb-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
+            <IndependenceBadge variant="hero" />
           </div>
 
           <p className="text-gray-500 dark:text-gray-500 text-xs sm:text-sm font-medium max-w-2xl mx-auto mb-8 tracking-wide">

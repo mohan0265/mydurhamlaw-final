@@ -1115,8 +1115,8 @@ const OnboardingPage = () => {
                   🎉 You&apos;re Fully Onboarded!
                 </h2>
                 <p className="text-green-700 mb-6 max-w-md mx-auto">
-                  Welcome to MyDurhamLaw! Your personalized AI study companion
-                  is ready to help you succeed.
+                  Welcome to Caseway! Your personalized AI study companion is
+                  ready to help you succeed.
                 </p>
                 <button
                   onClick={redirectToDashboard}
