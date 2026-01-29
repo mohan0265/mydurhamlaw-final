@@ -102,8 +102,7 @@ export function DurhamPortalCard() {
         </div>
 
         <div className="mt-4 pt-4 border-t border-gray-100 text-[10px] text-gray-400 leading-tight">
-          Opens in a new tab. MyDurhamLaw never sees or stores your Durham
-          password.
+          Opens in a new tab. Caseway never sees or stores your Durham password.
         </div>
       </CardContent>
     </Card>

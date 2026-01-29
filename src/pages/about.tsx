@@ -54,10 +54,10 @@ export default function AboutPage() {
             </CardHeader>
             <CardContent>
               <p className="text-lg text-gray-700 leading-relaxed mb-4">
-                <strong>MyDurhamLaw</strong> exists to ensure no Durham law
-                student faces their academic journey alone. We believe that
-                exceptional legal education requires both intellectual rigor and
-                emotional support.
+                <strong>Caseway</strong> exists to ensure no Durham law student
+                faces their academic journey alone. We believe that exceptional
+                legal education requires both intellectual rigor and emotional
+                support.
               </p>
               <p className="text-gray-600">
                 This platform combines cutting-edge AI assistance with genuine
@@ -226,7 +226,7 @@ export default function AboutPage() {
             <CardContent className="space-y-4">
               <p className="text-lg text-gray-700">
                 Durham Law School has a unique culture of academic excellence
-                and collegiate support. MyDurhamLaw reflects these values by
+                and collegiate support. Caseway reflects these values by
                 combining rigorous academic assistance with genuine care for
                 student wellbeing.
               </p>
@@ -265,7 +265,7 @@ export default function AboutPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <p className="text-lg text-gray-700">
-                MyDurhamLaw began as a parent&apos;s gift to their child - a
+                Caseway began as a parent&apos;s gift to their child - a
                 personalized AI study companion to help navigate the challenges
                 of law school. What started as a private project has grown into
                 something much larger.

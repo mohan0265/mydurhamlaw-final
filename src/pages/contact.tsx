@@ -1,8 +1,8 @@
 // src/pages/contact.tsx
-import React, { useState } from 'react';
-import Head from 'next/head';
-import { Card } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
+import React, { useState } from "react";
+import Head from "next/head";
+import { Card } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
 
 type FormState = {
   name: string;
@@ -13,10 +13,10 @@ type FormState = {
 
 export default function ContactPage() {
   const [form, setForm] = useState<FormState>({
-    name: '',
-    email: '',
-    subject: '',
-    message: '',
+    name: "",
+    email: "",
+    subject: "",
+    message: "",
   });
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
@@ -29,17 +29,19 @@ export default function ContactPage() {
     setDone(false);
 
     try {
-      const res = await fetch('/api/contact', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
       });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data?.error || 'Failed to send message.');
+      if (!res.ok) throw new Error(data?.error || "Failed to send message.");
       setDone(true);
-      setForm({ name: '', email: '', subject: '', message: '' });
+      setForm({ name: "", email: "", subject: "", message: "" });
     } catch (err: any) {
-      setError(err?.message || 'Could not send your message. Please try again.');
+      setError(
+        err?.message || "Could not send your message. Please try again.",
+      );
     } finally {
       setSubmitting(false);
     }
@@ -48,10 +50,10 @@ export default function ContactPage() {
   return (
     <>
       <Head>
-        <title>Contact • MyDurhamLaw</title>
+        <title>Contact • Caseway</title>
         <meta
           name="description"
-          content="Contact the MyDurhamLaw team for general enquiries."
+          content="Contact the Caseway team for general enquiries."
         />
       </Head>
 
@@ -75,7 +77,10 @@ export default function ContactPage() {
 
           <form className="space-y-4" onSubmit={onSubmit}>
             <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+              <label
+                htmlFor="name"
+                className="block text-sm font-medium text-gray-700"
+              >
                 Your name
               </label>
               <input
@@ -90,7 +95,10 @@ export default function ContactPage() {
             </div>
 
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+              <label
+                htmlFor="email"
+                className="block text-sm font-medium text-gray-700"
+              >
                 Email address
               </label>
               <input
@@ -105,7 +113,10 @@ export default function ContactPage() {
             </div>
 
             <div>
-              <label htmlFor="subject" className="block text-sm font-medium text-gray-700">
+              <label
+                htmlFor="subject"
+                className="block text-sm font-medium text-gray-700"
+              >
                 Subject
               </label>
               <input
@@ -119,7 +130,10 @@ export default function ContactPage() {
             </div>
 
             <div>
-              <label htmlFor="message" className="block text-sm font-medium text-gray-700">
+              <label
+                htmlFor="message"
+                className="block text-sm font-medium text-gray-700"
+              >
                 Message
               </label>
               <textarea
@@ -139,7 +153,7 @@ export default function ContactPage() {
                 disabled={submitting}
                 className="px-6 py-2 text-white bg-indigo-600 hover:bg-indigo-700"
               >
-                {submitting ? 'Sending…' : 'Send message'}
+                {submitting ? "Sending…" : "Send message"}
               </Button>
             </div>
           </form>

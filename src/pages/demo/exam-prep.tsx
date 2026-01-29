@@ -22,7 +22,7 @@ export default function ExamPrepDemo() {
   return (
     <div className="bg-white min-h-screen">
       <Head>
-        <title>Exam Technique & Prep - Public Demo | MyDurhamLaw</title>
+        <title>Exam Technique & Prep - Public Demo | Caseway</title>
         <meta
           name="description"
           content="Master Durham Law exams. IRAC mastery, essay structuring, and ethical AI-assisted revision."

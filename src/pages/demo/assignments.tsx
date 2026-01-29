@@ -22,10 +22,10 @@ export default function AssignmentsDemo() {
   return (
     <div className="bg-white min-h-screen">
       <Head>
-        <title>Assignment Support - Public Demo | MyDurhamLaw</title>
+        <title>Assignment Support - Public Demo | Caseway</title>
         <meta
           name="description"
-          content="Master legal assignments with MyDurhamLaw. From issue spotting to final polish, our AI guides you through every stage."
+          content="Master legal assignments with Caseway. From issue spotting to final polish, our AI guides you through every stage."
         />
         <link rel="canonical" href="https://casewaylaw.ai/demo/assignments" />
       </Head>

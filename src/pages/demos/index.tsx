@@ -12,10 +12,10 @@ export default function DemosHub() {
   return (
     <div className="bg-white min-h-screen">
       <Head>
-        <title>Product Demos | MyDurhamLaw</title>
+        <title>Product Demos | Caseway</title>
         <meta
           name="description"
-          content="Explore the powerful features of MyDurhamLaw. From AI voice buddies to visual academic roadmaps."
+          content="Explore the powerful features of Caseway. From AI voice buddies to visual academic roadmaps."
         />
         <link rel="canonical" href="https://casewaylaw.ai/demos" />
       </Head>

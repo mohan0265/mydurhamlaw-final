@@ -212,10 +212,10 @@ export default function NoQuestionIsAStupidQuestion() {
             </div>
 
             <h3 className="text-2xl font-bold text-gray-900 mt-12 mb-6">
-              How MyDurhamLaw changes the equation
+              How Caseway changes the equation
             </h3>
 
-            <p>MyDurhamLaw was designed with this invisible barrier in mind.</p>
+            <p>Caseway was designed with this invisible barrier in mind.</p>
 
             <p>It quietly removes fear from the learning process.</p>
 
@@ -224,7 +224,7 @@ export default function NoQuestionIsAStupidQuestion() {
             </h4>
 
             <p>
-              Inside MyDurhamLaw, there is no such thing as an embarrassing
+              Inside Caseway, there is no such thing as an embarrassing
               question.
             </p>
 

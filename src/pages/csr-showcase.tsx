@@ -16,7 +16,7 @@ const CSRShowcase = () => {
       <Head>
         <title>CSR Showcase - Caseway</title>
         // ... (skipping description lines if not targeted, but let's check grep
-        again) // Grep matched line 39 for body content: "At MyDurhamLaw, we
+        again) // Grep matched line 39 for body content: "At Caseway, we
         believe..." // I will target line 39 separately in next call or just use
         single replacement if lines are far apart. // Grep said line 9 for
         title.

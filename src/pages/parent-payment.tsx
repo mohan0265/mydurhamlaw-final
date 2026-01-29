@@ -141,7 +141,7 @@ export default function ParentPaymentPage() {
   return (
     <>
       <Head>
-        <title>Complete Payment - MyDurhamLaw</title>
+        <title>Complete Payment - Caseway</title>
         <meta name="robots" content="noindex, nofollow" />
       </Head>
 
@@ -160,7 +160,7 @@ export default function ParentPaymentPage() {
               <Heart className="w-10 h-10 text-pink-600" />
             </div>
             <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              Parent Payment for MyDurhamLaw
+              Parent Payment for Caseway
             </h1>
             <p className="text-lg text-gray-600">
               Complete payment on behalf of your child's subscription
@@ -235,7 +235,7 @@ export default function ParentPaymentPage() {
                   </li>
                   <li className="flex items-start gap-2">
                     <CheckCircle className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
-                    <span>Student gains full access to MyDurhamLaw</span>
+                    <span>Student gains full access to Caseway</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <CheckCircle className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />

@@ -1,5 +1,4 @@
-
-// Telemetry system for MyDurhamLaw using Plausible
+// Telemetry system for Caseway using Plausible
 interface TelemetryEvent {
   name: string;
   props?: Record<string, string | number | boolean>;
@@ -18,17 +17,17 @@ class Telemetry {
   private enabled: boolean;
 
   constructor(options: TelemetryOptions = {}) {
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || '';
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "";
     const parsedHost = (() => {
       try {
-        return appUrl ? new URL(appUrl).host : '';
+        return appUrl ? new URL(appUrl).host : "";
       } catch {
-        return '';
+        return "";
       }
     })();
-    this.domain = options.domain || parsedHost || 'mydurhamlaw.com';
-    this.apiHost = options.apiHost || 'https://plausible.io';
-    this.enabled = options.enabled !== false && typeof window !== 'undefined';
+    this.domain = options.domain || parsedHost || "mydurhamlaw.com";
+    this.apiHost = options.apiHost || "https://plausible.io";
+    this.enabled = options.enabled !== false && typeof window !== "undefined";
   }
 
   private async send(event: TelemetryEvent) {
@@ -43,21 +42,21 @@ class Telemetry {
       };
 
       await fetch(`${this.apiHost}/api/event`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(payload),
       });
     } catch (error) {
-      console.debug('Telemetry error:', error);
+      console.debug("Telemetry error:", error);
     }
   }
 
   // Page view tracking
   pageView(url?: string) {
     this.send({
-      name: 'pageview',
+      name: "pageview",
       url: url || window?.location?.href,
     });
   }
@@ -65,7 +64,7 @@ class Telemetry {
   // API error tracking
   apiError(endpoint: string, error: string, statusCode?: number) {
     this.send({
-      name: 'api_error',
+      name: "api_error",
       props: {
         endpoint,
         error,
@@ -77,10 +76,10 @@ class Telemetry {
   // Chat request tracking
   chatRequest(mode?: string, module?: string) {
     this.send({
-      name: 'chat_request',
+      name: "chat_request",
       props: {
-        mode: mode || 'default',
-        module: module || 'general',
+        mode: mode || "default",
+        module: module || "general",
       },
     });
   }
@@ -88,21 +87,21 @@ class Telemetry {
   // Pomodoro session tracking
   pomodoroStart(duration: number, topic?: string) {
     this.send({
-      name: 'pomodoro_start',
+      name: "pomodoro_start",
       props: {
         duration_min: duration,
-        topic: topic || 'general',
+        topic: topic || "general",
       },
     });
   }
 
   pomodoroEnd(duration: number, completed: boolean, topic?: string) {
     this.send({
-      name: 'pomodoro_end',
+      name: "pomodoro_end",
       props: {
         duration_min: duration,
         completed: completed ? 1 : 0,
-        topic: topic || 'general',
+        topic: topic || "general",
       },
     });
   }
@@ -110,10 +109,10 @@ class Telemetry {
   // Assignment tracking
   assignmentCreated(module?: string, type?: string) {
     this.send({
-      name: 'assignment_created',
+      name: "assignment_created",
       props: {
-        module: module || 'unknown',
-        type: type || 'general',
+        module: module || "unknown",
+        type: type || "general",
       },
     });
   }
@@ -121,7 +120,7 @@ class Telemetry {
   // Mood tracking
   moodSubmit(score: number, stressors?: number) {
     this.send({
-      name: 'mood_submit',
+      name: "mood_submit",
       props: {
         score,
         stressors_count: stressors || 0,
@@ -131,7 +130,7 @@ class Telemetry {
 
   // Peer interaction tracking
   peerProfileView() {
-    this.send({ name: 'peer_profile_view' });
+    this.send({ name: "peer_profile_view" });
   }
 
   // Generic event tracking
@@ -143,7 +142,9 @@ class Telemetry {
 // Initialize telemetry
 const telemetry = new Telemetry({
   domain: process.env.PLAUSIBLE_DOMAIN,
-  enabled: process.env.NODE_ENV === 'production' || process.env.NEXT_PUBLIC_ENABLE_TELEMETRY === 'true',
+  enabled:
+    process.env.NODE_ENV === "production" ||
+    process.env.NEXT_PUBLIC_ENABLE_TELEMETRY === "true",
 });
 
 export { telemetry };

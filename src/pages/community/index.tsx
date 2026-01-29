@@ -1,6 +1,6 @@
 // src/pages/community/index.tsx
-import React from 'react';
-import Head from 'next/head';
+import React from "react";
+import Head from "next/head";
 
 // Use RELATIVE imports so TS doesn't depend on alias config
 // All of these components exist in src/components/community/*
@@ -17,27 +17,32 @@ import {
   PostAndGovSection,
   MapSection,
   StudentSocialCard,
-} from '../../components/community';
+} from "../../components/community";
 
 // Status controls live under community-network in this repo
-import StatusControls from '../../components/community-network/StatusControls';
-import { useEffect } from 'react';
+import StatusControls from "../../components/community-network/StatusControls";
+import { useEffect } from "react";
 
 export default function CommunityHubPage() {
   // Onboarding Hook
   useEffect(() => {
-    fetch('/api/onboarding/complete', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ task_key: 'visit_community' }),
-    }).catch(err => console.warn('[Onboarding] Failed to mark complete', err));
+    fetch("/api/onboarding/complete", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ task_key: "visit_community" }),
+    }).catch((err) =>
+      console.warn("[Onboarding] Failed to mark complete", err),
+    );
   }, []);
 
   return (
     <>
       <Head>
-        <title>Community Hub • MyDurhamLaw</title>
-        <meta name="description" content="Community resources, status controls, events, safety, transport, healthcare and more for Durham Law students and families." />
+        <title>Community Hub • Caseway</title>
+        <meta
+          name="description"
+          content="Community resources, status controls, events, safety, transport, healthcare and more for Durham Law students and families."
+        />
       </Head>
 
       <main className="min-h-screen bg-gray-50">
@@ -46,7 +51,7 @@ export default function CommunityHubPage() {
 
           {/* quick toggles (presence / DM) */}
           <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
-             <StatusControls />
+            <StatusControls />
           </div>
 
           {/* categories and carousels */}

@@ -4,7 +4,7 @@ import { DemoModal } from "./DemoModal";
 import { DemoDock } from "./DemoDock";
 
 interface DemoPlayerProps {
-  video: DemoVideo;
+  video?: DemoVideo;
   trigger?: React.ReactNode;
   isOpen?: boolean;
   onClose?: () => void;

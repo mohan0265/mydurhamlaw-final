@@ -14,7 +14,7 @@ export default function DurmahVoiceDemo() {
   return (
     <div className="bg-white min-h-screen">
       <Head>
-        <title>Durmah Voice Assistant - Public Demo | MyDurhamLaw</title>
+        <title>Durmah Voice Assistant - Public Demo | Caseway</title>
         <meta
           name="description"
           content="Experience Durmah, the AI legal eagle buddy. Instant, judgement-free answers to your law school questions."

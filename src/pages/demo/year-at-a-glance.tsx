@@ -23,10 +23,10 @@ export default function YAAGDemo() {
   return (
     <div className="bg-white min-h-screen">
       <Head>
-        <title>Year at a Glance (YAAG) - Public Demo | MyDurhamLaw</title>
+        <title>Year at a Glance (YAAG) - Public Demo | Caseway</title>
         <meta
           name="description"
-          content="Preview the MyDurhamLaw academic calendar. Michaelmas, Epiphany, and Easter terms mapped out with your specific modules."
+          content="Preview the Caseway academic calendar. Michaelmas, Epiphany, and Easter terms mapped out with your specific modules."
         />
         <link
           rel="canonical"

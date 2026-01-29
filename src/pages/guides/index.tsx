@@ -44,7 +44,7 @@ export default function GuidesHub() {
   return (
     <div className="bg-white min-h-screen flex flex-col">
       <Head>
-        <title>Durham Law Guides & Articles | MyDurhamLaw</title>
+        <title>Durham Law Guides & Articles | Caseway</title>
         <meta
           name="description"
           content="Evidence-based guides for Durham Law students: confidence, legal writing, exam prep, and study systems."

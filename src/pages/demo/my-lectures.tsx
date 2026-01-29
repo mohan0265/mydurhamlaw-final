@@ -12,7 +12,7 @@ export default function MyLecturesDemo() {
   return (
     <div className="bg-white min-h-screen">
       <Head>
-        <title>My Lectures & Notes - Public Demo | MyDurhamLaw</title>
+        <title>My Lectures & Notes - Public Demo | Caseway</title>
         <meta
           name="description"
           content="Organize your law degree lectures and notes. Syllabus-aligned tracking for your Durham Law modules."

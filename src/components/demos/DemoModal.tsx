@@ -15,7 +15,7 @@ import { DemoVideo } from "@/content/demoVideos";
 // Using a Portal style overlay.
 
 interface DemoPlayerProps {
-  video: DemoVideo;
+  video?: DemoVideo;
   trigger?: React.ReactNode;
   isOpen?: boolean;
   onClose?: () => void;
@@ -50,6 +50,7 @@ export const DemoModal: React.FC<DemoPlayerProps> = ({
   }
 
   if (!isOpen) return null;
+  if (!video) return null;
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">

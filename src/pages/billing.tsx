@@ -71,7 +71,7 @@ export default function BillingPage({ user }: BillingPageProps) {
         <title>Billing & Subscription - Caseway</title>
         <meta
           name="description"
-          content="Manage your MyDurhamLaw subscription and billing"
+          content="Manage your Caseway subscription and billing"
         />
       </Head>
 

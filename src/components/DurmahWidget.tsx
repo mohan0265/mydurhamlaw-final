@@ -1732,7 +1732,7 @@ Link: /onboarding?guide=${guide.slug}
               )
               .join("\n---\n");
 
-            enrichedMessage = `[SYSTEM CONTEXT: You have access to ${results.length} relevant help guide(s) from the MyDurhamLaw onboarding knowledge base. Use these to answer the user's question with exact step-by-step instructions. Include a link to the full guide.
+            enrichedMessage = `[SYSTEM CONTEXT: You have access to ${results.length} relevant help guide(s) from the Caseway onboarding knowledge base. Use these to answer the user's question with exact step-by-step instructions. Include a link to the full guide.
 
 ${guidesContext}
 

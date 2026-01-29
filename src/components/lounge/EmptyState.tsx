@@ -6,39 +6,45 @@ const inspirationalMessages = [
   {
     emoji: "⚖️",
     title: "Where future lawyers unite",
-    message: "Every distinguished barrister, solicitor, and judge once shared study tips with fellow students. Your voice could inspire the next generation of legal minds.",
-    cta: "Begin your legal legacy here"
+    message:
+      "Every distinguished barrister, solicitor, and judge once shared study tips with fellow students. Your voice could inspire the next generation of legal minds.",
+    cta: "Begin your legal legacy here",
   },
   {
     emoji: "🏛️",
     title: "Justice begins with community",
-    message: "From the chambers of Westminster to the courts of Durham, the law is built on collaboration. Share your insights and connect with tomorrow's legal leaders.",
-    cta: "Add your voice to legal history"
+    message:
+      "From the chambers of Westminster to the courts of Durham, the law is built on collaboration. Share your insights and connect with tomorrow's legal leaders.",
+    cta: "Add your voice to legal history",
   },
   {
     emoji: "🎓",
     title: "Your jurisprudence journey",
-    message: "Whether you're mastering tort law or diving into constitutional principles, this community celebrates every step of your legal education.",
-    cta: "Share your academic victories"
+    message:
+      "Whether you're mastering tort law or diving into constitutional principles, this community celebrates every step of your legal education.",
+    cta: "Share your academic victories",
   },
   {
     emoji: "💼",
     title: "Future advocates gather here",
-    message: "From pupillage to partnership, your journey in law starts with connections. Build relationships that will support your career for decades to come.",
-    cta: "Network with fellow advocates"
+    message:
+      "From pupillage to partnership, your journey in law starts with connections. Build relationships that will support your career for decades to come.",
+    cta: "Network with fellow advocates",
   },
   {
     emoji: "📚",
     title: "The scholar's sanctuary",
-    message: "Great legal minds are forged through discussion, debate, and shared wisdom. Your study techniques might unlock someone else's potential.",
-    cta: "Enlighten your fellow scholars"
+    message:
+      "Great legal minds are forged through discussion, debate, and shared wisdom. Your study techniques might unlock someone else's potential.",
+    cta: "Enlighten your fellow scholars",
   },
   {
     emoji: "🌟",
     title: "Excellence through unity",
-    message: "Durham Law students are destined for greatness. Share your challenges, celebrate wins, and lift each other toward legal excellence.",
-    cta: "Elevate your cohort"
-  }
+    message:
+      "Durham Law students are destined for greatness. Share your challenges, celebrate wins, and lift each other toward legal excellence.",
+    cta: "Elevate your cohort",
+  },
 ];
 
 const quickStartIdeas = [
@@ -57,7 +63,7 @@ const quickStartIdeas = [
   "📱 Recommend useful legal apps",
   "🎓 Celebrate small wins in your studies",
   "🔍 Ask for research methodology tips",
-  "💪 Share how you handle study stress"
+  "💪 Share how you handle study stress",
 ];
 
 export default function EmptyState({
@@ -67,13 +73,15 @@ export default function EmptyState({
   title?: string;
   note?: string;
 }) {
-  const [currentMessage, setCurrentMessage] = useState(inspirationalMessages[0]);
+  const [currentMessage, setCurrentMessage] = useState(
+    inspirationalMessages[0],
+  );
   const [currentIdeas, setCurrentIdeas] = useState(quickStartIdeas.slice(0, 3));
 
   useEffect(() => {
     // Rotate through different inspirational messages
     const messageInterval = setInterval(() => {
-      setCurrentMessage(prev => {
+      setCurrentMessage((prev) => {
         const currentIndex = prev ? inspirationalMessages.indexOf(prev) : -1;
         const nextIndex = (currentIndex + 1) % inspirationalMessages.length;
         return inspirationalMessages[nextIndex];
@@ -93,8 +101,11 @@ export default function EmptyState({
   }, []);
 
   // Use custom title/note if provided, otherwise use rotating message
-  const displayTitle = title || currentMessage?.title || 'Welcome to MyDurhamLaw';
-  const displayNote = note || currentMessage?.message || 'Connect with fellow law students and share your journey.';
+  const displayTitle = title || currentMessage?.title || "Welcome to Caseway";
+  const displayNote =
+    note ||
+    currentMessage?.message ||
+    "Connect with fellow law students and share your journey.";
 
   return (
     <SectionCard className="overflow-hidden">
@@ -110,13 +121,13 @@ export default function EmptyState({
         {/* Main content */}
         <div className="relative z-10">
           <div className="text-6xl mb-6 animate-bounce">
-            {title || note ? "🏛️" : (currentMessage?.emoji || "🏛️")}
+            {title || note ? "🏛️" : currentMessage?.emoji || "🏛️"}
           </div>
-          
+
           <h2 className="text-2xl font-bold text-gray-900 mb-4">
             {displayTitle}
           </h2>
-          
+
           <p className="text-gray-600 max-w-md mx-auto leading-relaxed mb-8">
             {displayNote}
           </p>
@@ -132,9 +143,9 @@ export default function EmptyState({
                   <div
                     key={index}
                     className="text-sm text-gray-600 p-3 bg-white/50 rounded-lg border border-gray-100 hover:bg-white/80 transition-all duration-300 cursor-default"
-                    style={{ 
+                    style={{
                       animationDelay: `${index * 200}ms`,
-                      animation: `fadeInUp 0.6s ease-out forwards`
+                      animation: `fadeInUp 0.6s ease-out forwards`,
                     }}
                   >
                     {idea}
@@ -148,13 +159,17 @@ export default function EmptyState({
           <div className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-full shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 cursor-default">
             <span className="animate-pulse">💜</span>
             <span className="font-medium">
-              {title || note ? "Ready to share?" : (currentMessage?.cta || "Begin your journey")}
+              {title || note
+                ? "Ready to share?"
+                : currentMessage?.cta || "Begin your journey"}
             </span>
           </div>
 
           {/* Encouraging note */}
           <p className="mt-6 text-xs text-gray-500 italic">
-            &ldquo;The law is not just in books-it lives in the minds and hearts of those who study it together. Your journey begins with a single shared thought.&rdquo;
+            &ldquo;The law is not just in books-it lives in the minds and hearts
+            of those who study it together. Your journey begins with a single
+            shared thought.&rdquo;
           </p>
         </div>
       </div>

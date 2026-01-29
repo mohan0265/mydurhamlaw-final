@@ -24,7 +24,7 @@ export default function QuizMeDemo() {
   return (
     <div className="bg-white min-h-screen">
       <Head>
-        <title>Active Recall (Quiz Me) - Public Demo | MyDurhamLaw</title>
+        <title>Active Recall (Quiz Me) - Public Demo | Caseway</title>
         <meta
           name="description"
           content="Test your legal knowledge with interactive active recall. Durmah quizzes you on your specific Durham Law modules."

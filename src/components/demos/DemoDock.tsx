@@ -13,7 +13,7 @@ import {
 import { DemoVideo } from "@/content/demoVideos";
 
 interface DemoDockProps {
-  video: DemoVideo;
+  video?: DemoVideo;
   isOpen: boolean;
   onClose: () => void;
 }
@@ -23,6 +23,8 @@ export const DemoDock: React.FC<DemoDockProps> = ({
   isOpen,
   onClose,
 }) => {
+  if (!video) return null;
+
   const [isMinimized, setIsMinimized] = useState(false);
   const [position, setPosition] = useState({ x: 20, y: 20 });
   const [size, setSize] = useState({ width: 400, height: 250 }); // Track size explicitly
