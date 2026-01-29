@@ -16,12 +16,19 @@ export const TourHelpButton: React.FC = () => {
 
   // Logged-out logic: Hide floating reminder if they dismissed it (checked "don't show again")
   // They can still use the footer link.
-  if (isLanding) {
-    const disabled =
-      typeof window !== "undefined" &&
-      localStorage.getItem("tour_home_autolaunch_disabled") === "true";
-    if (disabled) return null;
-  }
+  // Logged-out logic: Hide floating reminder if they dismissed it (checked "don't show again")
+  const [isDismissed, setIsDismissed] = React.useState(false);
+
+  React.useEffect(() => {
+    if (isLanding) {
+      const disabled =
+        typeof window !== "undefined" &&
+        localStorage.getItem("tour_home_autolaunch_disabled") === "true";
+      setIsDismissed(disabled);
+    }
+  }, [isLanding]);
+
+  if (isLanding && isDismissed) return null;
 
   const handleRestart = () => {
     if (isLanding) startTour("guest");

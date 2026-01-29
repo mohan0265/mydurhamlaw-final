@@ -46,13 +46,20 @@ export const TourProvider: React.FC<{ children: React.ReactNode }> = ({
   const { user } = useAuth();
 
   // Custom styles to match Caseway branding
+  const [tourWidth, setTourWidth] = useState<string | number>(400);
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && window.innerWidth < 768) {
+      setTourWidth("90vw");
+    }
+  }, []);
+
   const styles: any = {
     options: {
       primaryColor: "#4f46e5", // Indigo-600
       zIndex: 10000,
       overlayColor: "rgba(0, 0, 0, 0.6)",
-      width:
-        typeof window !== "undefined" && window.innerWidth < 768 ? "90vw" : 400,
+      width: tourWidth,
     },
     spotlight: {
       borderRadius: "16px",
