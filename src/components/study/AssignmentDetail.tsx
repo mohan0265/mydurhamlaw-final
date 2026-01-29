@@ -116,14 +116,14 @@ export default function AssignmentDetail({
             >
               {status === "not_started" ? (
                 <img
-                  src="/images/durmah.png"
+                  src="/images/durmah.png?v=2"
                   alt="Durmah"
                   className="w-5 h-5 rounded-full object-cover border border-white/20"
                 />
               ) : (
                 <div className="flex items-center gap-1">
                   <img
-                    src="/images/durmah.png"
+                    src="/images/durmah.png?v=2"
                     alt="Durmah"
                     className="w-5 h-5 rounded-full object-cover border border-white/20"
                   />
