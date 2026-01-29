@@ -374,69 +374,65 @@ export default function LecturesPage() {
               <div className="bg-white rounded-xl border border-gray-200 p-8 text-center shadow-sm">
                 <FileAudio className="w-12 h-12 text-purple-100 mx-auto mb-4 bg-purple-600 rounded-xl p-2" />
                 <h3 className="text-xl font-bold text-gray-900 mb-2">
-                  Add your first lecture (3 ways)
+                  Add your first lecture
                 </h3>
                 <p className="text-gray-600 mb-8 max-w-lg mx-auto">
                   Transform your raw lecture materials into exam-ready notes.
                   Choose how you want to start:
                 </p>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-left max-w-4xl mx-auto">
-                  {/* Option 1 */}
-                  <div className="p-4 rounded-xl bg-gray-50 border border-gray-100 hover:border-purple-200 transition group cursor-default">
-                    <div className="font-bold text-gray-900 mb-1 flex items-center gap-2">
-                      <span className="bg-gray-200 text-gray-600 w-6 h-6 rounded-full flex items-center justify-center text-xs">
-                        1
-                      </span>
-                      Paste Link
-                    </div>
-                    <p className="text-xs text-gray-500 mb-3">
-                      Add a Panopto or source link so you can jump back anytime.
-                      (Reference only)
-                    </p>
-                    <div className="text-xs font-medium text-purple-600 bg-purple-50 px-2 py-1 rounded w-fit">
-                      Best for organization
-                    </div>
-                  </div>
-
-                  {/* Option 2 */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left max-w-3xl mx-auto">
+                  {/* Option 1 - Primary */}
                   <div
                     onClick={() => setShowUploadModal(true)}
-                    className="p-4 rounded-xl bg-purple-50 border border-purple-100 ring-1 ring-purple-200 hover:shadow-md transition cursor-pointer group relative"
+                    className="p-6 rounded-xl bg-purple-50 border border-purple-100 ring-1 ring-purple-200 hover:shadow-md transition cursor-pointer group relative"
                   >
-                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-purple-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide">
+                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-purple-600 text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wide">
                       Recommended
                     </div>
-                    <div className="font-bold text-purple-900 mb-1 flex items-center gap-2">
-                      <span className="bg-purple-200 text-purple-700 w-6 h-6 rounded-full flex items-center justify-center text-xs">
-                        2
+                    <div className="font-bold text-gray-900 mb-2 flex items-center gap-3">
+                      <span className="bg-purple-200 text-purple-800 w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold">
+                        1
                       </span>
-                      Upload Audio
+                      Paste Transcript
                     </div>
-                    <p className="text-xs text-purple-700/80 mb-3">
-                      We'll transcribe MP3/WAV/M4A and turn it into Summary, Key
-                      Points, & Exam Prompts.
+                    <p className="text-sm text-gray-600 mb-4 leading-relaxed">
+                      Copy the full caption text from Panopto and paste it here.
+                      Durmah will extract the summary, key cases, and exam
+                      prompts automatically.
                     </p>
-                    <button className="text-xs font-bold text-white bg-purple-600 w-full py-2 rounded-lg hover:bg-purple-700 transition">
-                      Upload File
+                    <div className="flex items-center gap-2 text-xs font-medium text-purple-700 bg-purple-100/50 px-2 py-1 rounded w-fit mb-4">
+                      <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>{" "}
+                      Saves DB Space
+                    </div>
+                    <button className="text-sm font-bold text-white bg-purple-600 w-full py-2.5 rounded-lg hover:bg-purple-700 transition shadow-sm">
+                      Import Text
                     </button>
                   </div>
 
-                  {/* Option 3 */}
-                  <div className="p-4 rounded-xl bg-gray-50 border border-gray-100 hover:border-purple-200 transition group cursor-default">
-                    <div className="font-bold text-gray-900 mb-1 flex items-center gap-2">
-                      <span className="bg-gray-200 text-gray-600 w-6 h-6 rounded-full flex items-center justify-center text-xs">
-                        3
+                  {/* Option 2 - Reference */}
+                  <div
+                    onClick={() => setShowUploadModal(true)}
+                    className="p-6 rounded-xl bg-gray-50 border border-gray-100 hover:border-purple-200 transition cursor-pointer group"
+                  >
+                    <div className="font-bold text-gray-900 mb-2 flex items-center gap-3">
+                      <span className="bg-gray-200 text-gray-600 w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold">
+                        2
                       </span>
-                      Paste Text
+                      Paste Link
                     </div>
-                    <p className="text-xs text-gray-500 mb-3">
-                      If you already have captions or a transcript, paste it to
-                      skip transcription time.
+                    <p className="text-sm text-gray-500 mb-4 leading-relaxed">
+                      Paste your Panopto URL to enable{" "}
+                      <strong>1-click access</strong> to the actual lecture
+                      slides and audio from your dashboard. (Note: You still
+                      need to paste the transcript text).
                     </p>
-                    <div className="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded w-fit">
-                      Fastest
+                    <div className="text-xs font-medium text-gray-500 bg-gray-200/50 px-2 py-1 rounded w-fit mb-4">
+                      Reference Only
                     </div>
+                    <button className="text-sm font-bold text-gray-600 bg-white border border-gray-200 w-full py-2.5 rounded-lg hover:bg-gray-50 transition">
+                      Add Link
+                    </button>
                   </div>
                 </div>
 

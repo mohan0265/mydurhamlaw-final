@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { FileAudio, ChevronRight, Plus, Loader2 } from 'lucide-react';
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import { FileAudio, ChevronRight, Plus, Loader2 } from "lucide-react";
 
 interface Lecture {
   id: string;
@@ -20,13 +20,13 @@ export default function MyLecturesWidget() {
   useEffect(() => {
     const fetchLectures = async () => {
       try {
-        const res = await fetch('/api/lectures/list?limit=3&status=ready');
+        const res = await fetch("/api/lectures/list?limit=3&status=ready");
         if (res.ok) {
           const data = await res.json();
           setLectures(data.lectures || []);
         }
       } catch (error) {
-        console.error('Failed to fetch lectures:', error);
+        console.error("Failed to fetch lectures:", error);
       } finally {
         setLoading(false);
       }
@@ -35,10 +35,11 @@ export default function MyLecturesWidget() {
   }, []);
 
   const formatDate = (dateStr?: string) => {
-    if (!dateStr) return '';
-    return new Date(dateStr).toLocaleDateString('en-GB', { timeZone: 'Europe/London', 
-      day: 'numeric',
-      month: 'short',
+    if (!dateStr) return "";
+    return new Date(dateStr).toLocaleDateString("en-GB", {
+      timeZone: "Europe/London",
+      day: "numeric",
+      month: "short",
     });
   };
 
@@ -50,8 +51,8 @@ export default function MyLecturesWidget() {
           <FileAudio className="w-4 h-4 text-purple-600" />
           My Lectures
         </h3>
-        <Link 
-          href="/study/lectures" 
+        <Link
+          href="/study/lectures"
           className="text-sm text-purple-600 hover:text-purple-700 flex items-center gap-1"
         >
           View all
@@ -72,12 +73,12 @@ export default function MyLecturesWidget() {
             className="inline-flex items-center gap-1 text-sm font-medium text-purple-600 hover:text-purple-700"
           >
             <Plus className="w-4 h-4" />
-            Upload your first lecture
+            Add your first lecture
           </Link>
         </div>
       ) : (
         <div className="space-y-2">
-          {lectures.map(lecture => (
+          {lectures.map((lecture) => (
             <Link
               key={lecture.id}
               href={`/study/lectures/${lecture.id}`}
@@ -85,7 +86,9 @@ export default function MyLecturesWidget() {
             >
               <div className="flex items-center justify-between">
                 <div className="min-w-0">
-                  <p className="text-sm font-medium text-gray-900 truncate">{lecture.title}</p>
+                  <p className="text-sm font-medium text-gray-900 truncate">
+                    {lecture.title}
+                  </p>
                   <p className="text-xs text-gray-500">
                     {lecture.module_code && `${lecture.module_code} • `}
                     {formatDate(lecture.lecture_date)}
@@ -102,7 +105,8 @@ export default function MyLecturesWidget() {
       {lectures.length > 0 && (
         <div className="mt-3 pt-3 border-t">
           <p className="text-xs text-gray-500">
-            💡 <span className="font-medium">Before your next class?</span> Review past lecture notes!
+            💡 <span className="font-medium">Before your next class?</span>{" "}
+            Review past lecture notes!
           </p>
         </div>
       )}
