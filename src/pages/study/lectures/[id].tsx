@@ -501,7 +501,7 @@ export default function LectureDetailPage() {
                     </div>
                   </div>
 
-                  {signals.length > 0 ? (
+                  {filteredSignals.length > 0 ? (
                     <div className="space-y-4">
                       {filteredSignals.map((signal, idx) => {
                         // Badge Logic
