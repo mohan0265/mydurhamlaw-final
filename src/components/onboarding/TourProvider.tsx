@@ -41,6 +41,11 @@ export const TourProvider: React.FC<{ children: React.ReactNode }> = ({
   const [tourKey, setTourKey] = useState<string>("");
   const [stepIndex, setStepIndex] = useState(0);
   const [shouldPersist, setShouldPersist] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   const router = useRouter();
   const { user } = useAuth();
@@ -153,26 +158,28 @@ export const TourProvider: React.FC<{ children: React.ReactNode }> = ({
     <TourContext.Provider
       value={{ startTour, stopTour, isRunning: run, setShouldPersist }}
     >
-      <Joyride
-        steps={steps}
-        run={run}
-        stepIndex={stepIndex}
-        continuous
-        showProgress
-        showSkipButton
-        disableOverlayClose={true}
-        spotlightClicks={true}
-        callback={handleJoyrideCallback}
-        styles={styles}
-        tooltipComponent={TourTooltip}
-        spotlightPadding={10}
-        scrollOffset={100}
-        scrollToFirstStep={true}
-        floaterProps={{
-          hideArrow: false,
-          disableAnimation: true,
-        }}
-      />
+      {isMounted && (
+        <Joyride
+          steps={steps}
+          run={run}
+          stepIndex={stepIndex}
+          continuous
+          showProgress
+          showSkipButton
+          disableOverlayClose={true}
+          spotlightClicks={true}
+          callback={handleJoyrideCallback}
+          styles={styles}
+          tooltipComponent={TourTooltip}
+          spotlightPadding={10}
+          scrollOffset={100}
+          scrollToFirstStep={true}
+          floaterProps={{
+            hideArrow: false,
+            disableAnimation: true,
+          }}
+        />
+      )}
       {children}
     </TourContext.Provider>
   );

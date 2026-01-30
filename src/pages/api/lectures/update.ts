@@ -43,14 +43,12 @@ export default async function handler(
     }
 
     // 2. Use Admin Client to Bypass RLS (for reliability)
-    // We manually check ownership below.
     const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 
-    let dbClient = supabase; // Default to user client
+    let dbClient = supabase;
 
     if (serviceRoleKey && supabaseUrl) {
-      console.log("Using Service Role for Update verification");
       dbClient = createClient(supabaseUrl, serviceRoleKey, {
         auth: {
           autoRefreshToken: false,
@@ -59,32 +57,46 @@ export default async function handler(
       }) as any;
     }
 
-    // 3. Fetch existing lecture
+    // 3. Fetch existing lecture + transcript correctly
+    // FIX: transcript_text is in lecture_transcripts table, NOT lectures table.
     const { data: existing, error: fetchError } = await dbClient
       .from("lectures")
-      .select("transcript, user_id")
+      .select(
+        `
+        user_id,
+        lecture_transcripts (transcript_text)
+      `,
+      )
       .eq("id", id)
       .single();
 
     if (fetchError || !existing) {
-      console.error("Lecture lookup failed:", fetchError, "ID:", id);
-      return res
-        .status(404)
-        .json({ error: `Lecture record not found for ID: ${id}` });
+      console.error("Lecture lookup failed on Server:", {
+        error: fetchError,
+        id,
+        userId: user.id,
+      });
+      return res.status(404).json({
+        error: `Lecture record not found for ID: ${id}`,
+        debug: {
+          fetchError: fetchError?.message || "No specific error",
+          id,
+        },
+      });
     }
 
     // 4. Manually Enforce Ownership
     if (existing.user_id !== user.id) {
       console.warn("Ownership mismatch", {
-        existing: existing.user_id,
-        request: user.id,
+        existing_owner: existing.user_id,
+        request_user: user.id,
       });
-      return res
-        .status(403)
-        .json({ error: "Forbidden: You do not own this lecture" });
+      return res.status(403).json({
+        error: "Forbidden: You do not own this lecture",
+      });
     }
 
-    // 5. Prepare updates
+    // 5. Prepare updates for Lectures table
     const updates: any = {
       title,
       user_module_id: user_module_id || null,
@@ -96,21 +108,39 @@ export default async function handler(
       updated_at: new Date().toISOString(),
     };
 
-    // Handle Transcript Change
+    // 6. Handle Transcript Change
     let reprocess = false;
     if (typeof transcript === "string") {
-      const oldT = (existing.transcript || "").trim();
+      // transcript_text might be buried in the join array/object
+      const existingTranscript = Array.isArray(existing.lecture_transcripts)
+        ? existing.lecture_transcripts[0]?.transcript_text
+        : (existing.lecture_transcripts as any)?.transcript_text;
+
+      const oldT = (existingTranscript || "").trim();
       const newT = transcript.trim();
 
       if (oldT !== newT) {
-        updates.transcript = transcript;
+        // Update transcript in dedicated table
+        const { error: tError } = await dbClient
+          .from("lecture_transcripts")
+          .upsert({
+            lecture_id: id,
+            transcript_text: transcript,
+            updated_at: new Date().toISOString(),
+          });
+
+        if (tError) {
+          console.error("Transcript update error:", tError);
+          throw new Error("Failed to update transcript content");
+        }
+
         updates.status = "uploaded"; // Trigger reprocessing
         updates.notes = null; // Clear old AI notes
         reprocess = true;
       }
     }
 
-    // 6. Perform Update (using same client)
+    // 7. Perform Update on main record
     const { data: updated, error: updateError } = await dbClient
       .from("lectures")
       .update(updates)
