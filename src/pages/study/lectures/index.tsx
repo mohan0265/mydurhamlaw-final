@@ -481,6 +481,15 @@ export default function LecturesPage() {
             New
           </span>
         </button>
+        <Link
+          href="/study/glossary"
+          className="pb-3 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-purple-700 transition flex items-center gap-1"
+        >
+          Lexicon
+          <span className="bg-purple-600 text-white text-[10px] px-1.5 py-0.5 rounded-full ml-1 font-bold">
+            NEW
+          </span>
+        </Link>
       </div>
 
       {view === "lecturers" ? (

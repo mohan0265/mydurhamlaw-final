@@ -8,10 +8,7 @@ if (!process.env.SUPABASE_DB_URL) {
   process.exit(1);
 }
 
-const files = [
-  "supabase/migrations/20260130200000_create_academic_items.sql",
-  "supabase/migrations/20260130200500_backfill_academic_items.sql",
-];
+const files = ["supabase/migrations/20260130152400_master_glossary.sql"];
 
 async function runMigrations() {
   const client = new Client({

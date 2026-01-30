@@ -161,6 +161,44 @@ exports.handler = async (event) => {
       throw new Error(`Failed to save lecture notes: ${notesError.message}`);
     }
 
+    // 8.5 Sync to Master Glossary (Lexicon)
+    console.log("[background] Step 8.5: Syncing to Master Glossary");
+    if (analysis.glossary && Array.isArray(analysis.glossary)) {
+      for (const item of analysis.glossary) {
+        try {
+          // Upsert the term itself (Single Source of Truth for the term)
+          const { data: termData, error: termError } = await supabaseAdmin
+            .from("glossary_terms")
+            .upsert(
+              {
+                user_id: userId,
+                term: item.term,
+                definition: item.definition,
+              },
+              { onConflict: "user_id,term" },
+            )
+            .select()
+            .single();
+
+          if (!termError && termData) {
+            // Create a link between this Lexicon term and this specific lecture
+            await supabaseAdmin.from("lecture_glossary_links").upsert(
+              {
+                term_id: termData.id,
+                lecture_id: lectureId,
+              },
+              { onConflict: "term_id,lecture_id" },
+            );
+          }
+        } catch (e) {
+          console.error(
+            `[background] Lexicon sync failed for term "${item.term}":`,
+            e,
+          );
+        }
+      }
+    }
+
     // 9. Update status to ready
     console.log(
       `[background] Processing complete for ${lectureId}. Final status: ready`,
