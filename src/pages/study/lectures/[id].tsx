@@ -113,7 +113,7 @@ export default function LectureDetailPage() {
 
           // Stop polling if terminal state reached
           if (
-            (data.lecture.status === "ready" && data.lecture.notes) ||
+            data.lecture.status === "ready" ||
             data.lecture.status === "error"
           ) {
             clearInterval(pollInterval);

@@ -6,15 +6,11 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse,
 ) {
-  // Debug log to confirm endpoint is hit
-  console.log(`[API] ${req.method} /api/lectures/update`);
-
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
   try {
-    // 1. Authenticate User (Standard)
     const supabase = createPagesServerClient({ req, res });
     const {
       data: { user },
@@ -22,7 +18,6 @@ export default async function handler(
     } = await supabase.auth.getUser();
 
     if (authError || !user) {
-      console.warn("Update failed: Unauthorized", authError);
       return res.status(401).json({ error: "Unauthorized" });
     }
 
@@ -43,61 +38,30 @@ export default async function handler(
       return res.status(400).json({ error: "Lecture ID is required" });
     }
 
-    // 2. Use Admin Client to Bypass RLS (for reliability)
+    // Use Service Role Client for robustness
     const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const dbClient =
+      serviceRoleKey && supabaseUrl
+        ? createClient(supabaseUrl, serviceRoleKey)
+        : supabase;
 
-    let dbClient = supabase;
-
-    if (serviceRoleKey && supabaseUrl) {
-      dbClient = createClient(supabaseUrl, serviceRoleKey, {
-        auth: {
-          autoRefreshToken: false,
-          persistSession: false,
-        },
-      }) as any;
-    }
-
-    // 3. Fetch existing lecture + transcript correctly
-    // FIX: transcript_text is in lecture_transcripts table, NOT lectures table.
+    // 1. Verify ownership
     const { data: existing, error: fetchError } = await dbClient
       .from("lectures")
-      .select(
-        `
-        user_id,
-        lecture_transcripts (transcript_text)
-      `,
-      )
+      .select("user_id, status")
       .eq("id", id)
       .single();
 
     if (fetchError || !existing) {
-      console.error("Lecture lookup failed on Server:", {
-        error: fetchError,
-        id,
-        userId: user.id,
-      });
-      return res.status(404).json({
-        error: `Lecture record not found for ID: ${id}`,
-        debug: {
-          fetchError: fetchError?.message || "No specific error",
-          id,
-        },
-      });
+      return res.status(404).json({ error: "Lecture not found" });
     }
 
-    // 4. Manually Enforce Ownership
     if (existing.user_id !== user.id) {
-      console.warn("Ownership mismatch", {
-        existing_owner: existing.user_id,
-        request_user: user.id,
-      });
-      return res.status(403).json({
-        error: "Forbidden: You do not own this lecture",
-      });
+      return res.status(403).json({ error: "Forbidden" });
     }
 
-    // 5. Prepare updates for Lectures table
+    // 2. Prepare updates
     const updates: any = {
       title,
       user_module_id: user_module_id || null,
@@ -109,38 +73,34 @@ export default async function handler(
       updated_at: new Date().toISOString(),
     };
 
-    // 6. Handle Transcript Change
-    let reprocess = !!forceReprocess;
-    if (typeof transcript === "string") {
-      // transcript_text might be buried in the join array/object
-      const existingTranscript = Array.isArray(existing.lecture_transcripts)
-        ? existing.lecture_transcripts[0]?.transcript_text
-        : (existing.lecture_transcripts as any)?.transcript_text;
+    let needsReprocess = !!forceReprocess;
 
-      const oldT = (existingTranscript || "").trim();
-      const newT = transcript.trim();
+    // 3. Handle Transcript
+    if (typeof transcript === "string" && transcript.trim().length > 0) {
+      // Check if it's different
+      const { data: tData } = await dbClient
+        .from("lecture_transcripts")
+        .select("transcript_text")
+        .eq("lecture_id", id)
+        .single();
 
-      if (oldT !== newT) {
-        // Update transcript in dedicated table
-        const { error: tError } = await dbClient
-          .from("lecture_transcripts")
-          .upsert({
-            lecture_id: id,
-            transcript_text: transcript,
-          });
-
-        if (tError) {
-          console.error("Transcript update error:", tError);
-          throw new Error("Failed to update transcript content");
-        }
-
-        updates.status = "uploaded"; // Trigger reprocessing
-        updates.notes = null; // Clear old AI notes
-        reprocess = true;
+      if (!tData || tData.transcript_text.trim() !== transcript.trim()) {
+        await dbClient.from("lecture_transcripts").upsert({
+          lecture_id: id,
+          transcript_text: transcript,
+          word_count: transcript.split(/\s+/).length,
+        });
+        needsReprocess = true;
       }
     }
 
-    // 7. Perform Update on main record
+    // 4. If reprocessing, clear old notes and set status
+    if (needsReprocess) {
+      await dbClient.from("lecture_notes").delete().eq("lecture_id", id);
+      updates.status = "uploaded"; // Trigger background processing UI
+    }
+
+    // 5. Save updates
     const { data: updated, error: updateError } = await dbClient
       .from("lectures")
       .update(updates)
@@ -150,182 +110,33 @@ export default async function handler(
 
     if (updateError) throw updateError;
 
-    // 8. If reprocess is true, Run AI analysis now (inline)
-    if (reprocess && transcript) {
-      try {
-        const analysis = await generateLectureAnalysis({
-          transcript,
-          module_code: module_code || updated.module_code,
-          title: title || updated.title,
-          lecture_date: lecture_date || updated.lecture_date,
-        });
+    // 6. Trigger Background Process if needed
+    if (needsReprocess) {
+      const protocol = req.headers["x-forwarded-proto"] || "https";
+      const host = req.headers["x-forwarded-host"] || req.headers.host;
+      const origin = `${protocol}://${host}`;
+      const backgroundUrl = `${origin}/.netlify/functions/lecture-process-background`;
 
-        // Save analysis results
-        const { error: notesError } = await dbClient
-          .from("lecture_notes")
-          .upsert({
-            lecture_id: id,
-            summary: analysis.summary,
-            key_points: analysis.key_points,
-            discussion_topics: analysis.discussion_topics,
-            exam_prompts: analysis.exam_prompts || [],
-            exam_signals: analysis.exam_signals || [],
-            glossary: analysis.glossary || [],
-            // engagement_hooks: analysis.engagement_hooks || [], // Column missing in DB
-          });
-
-        if (notesError) {
-          console.error("Reprocess analysis failed to save:", notesError);
-          // Update status to ready anyway so they see the transcript
-          await dbClient
-            .from("lectures")
-            .update({
-              status: "ready",
-              error_message: "Updated, but AI summaries failed to save.",
-            })
-            .eq("id", id);
-
-          return res.status(200).json({
-            lecture: { ...updated, status: "ready" },
-            reprocessed: true,
-            warning: "Update saved, but AI analysis failed to store correctly.",
-          });
-        }
-
-        // Update status to ready
-        await dbClient
-          .from("lectures")
-          .update({ status: "ready" })
-          .eq("id", id);
-
-        return res.status(200).json({
-          lecture: { ...updated, status: "ready" },
-          reprocessed: true,
-          analysis,
-        });
-      } catch (analysisError) {
-        console.error("Reprocess analysis failed:", analysisError);
-        // Still return success for the update, but maybe a warning
-        return res.status(200).json({
-          lecture: updated,
-          reprocessed: true,
-          warning: "Update saved, but AI analysis failed to run.",
-        });
-      }
-    }
-
-    return res.status(200).json({ lecture: updated, reprocessed: reprocess });
-  } catch (error: any) {
-    console.error("Error updating lecture:", error);
-    return res.status(500).json({ error: error.message });
-  }
-}
-
-async function generateLectureAnalysis(params: {
-  transcript: string;
-  module_code?: string;
-  title: string;
-  lecture_date?: string;
-}) {
-  const { transcript, module_code, title, lecture_date } = params;
-
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    throw new Error("GEMINI_API_KEY not configured");
-  }
-
-  // 90s Timeout Protection
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 90000); // 90s grace
-
-  try {
-    // Call Gemini API for analysis
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${apiKey}`,
-      {
+      fetch(backgroundUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        signal: controller.signal,
         body: JSON.stringify({
-          contents: [
-            {
-              parts: [
-                {
-                  text: `You are an expert law tutor analyzing a lecture transcript for a Durham University law student.
-
-**Lecture Details:**
-- Title: ${title}
-- Module: ${module_code || "N/A"}
-- Date: ${lecture_date || "N/A"}
-
-**Transcript:**
-${transcript.substring(0, 10000)} ${transcript.length > 10000 ? "... (truncated)" : ""}
-
-**Task:** Generate a comprehensive analysis with the following sections:
-
-1. **Summary** (2-3 paragraphs): Concise overview of the lecture's main content and learning objectives.
-
-2. **Key Points** (5-7 bullet points): The most important concepts, cases, or principles covered.
-
-3. **Discussion Topics** (3-5 items): Thought-provoking questions or themes suitable for essay practice or study group discussions.
-
-4. **Exam Prompts** (3-5 items): Potential exam questions or practice prompts based on this lecture's content.
-
-5. **Exam Signals**: Identify topic areas that are likely to be of high emphasis (Strength 1-5).
-
-6. **Glossary**: Extract key definitions (term/definition pairs).
-
-7. **Engagement Hooks**: Short phrases that make the content memorable or "sparkle".
-
-Format your response as JSON:
-{
-  "summary": "...",
-  "key_points": ["...", "..."],
-  "discussion_topics": ["...", "..."],
-  "exam_prompts": ["...", "..."],
-  "exam_signals": [],
-  "glossary": [{"term": "...", "definition": "..."}],
-  "engagement_hooks": ["...", "..."]
-}`,
-                },
-              ],
-            },
-          ],
-          generationConfig: {
-            temperature: 0.7,
-            maxOutputTokens: 2000,
-          },
+          lectureId: id,
+          userId: user.id,
+          transcript: needsReprocess ? transcript : undefined, // Pass edited transcript if changed
         }),
-      },
-    );
-
-    clearTimeout(timeoutId);
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("Gemini API error:", errorText);
-      throw new Error(`AI Analysis failed: ${response.status}`);
-    }
-
-    const data = await response.json();
-    const textOutput = data.candidates?.[0]?.content?.parts?.[0]?.text;
-
-    if (!textOutput) {
-      throw new Error("No analysis received from AI");
-    }
-
-    // Clean JSON (handle possible markdown code blocks)
-    const cleanJson = textOutput
-      .replace(/```json/g, "")
-      .replace(/```/g, "")
-      .trim();
-    return JSON.parse(cleanJson);
-  } catch (error: any) {
-    if (error.name === "AbortError") {
-      throw new Error(
-        "AI Processing timed out. Please try again or check transcript length.",
+      }).catch((err) =>
+        console.error("[update] Background trigger failed:", err),
       );
     }
-    throw error;
+
+    return res.status(200).json({
+      success: true,
+      lecture: updated,
+      reprocessed: needsReprocess,
+    });
+  } catch (error: any) {
+    console.error("[lectures/update] Error:", error);
+    return res.status(500).json({ error: error.message });
   }
 }
