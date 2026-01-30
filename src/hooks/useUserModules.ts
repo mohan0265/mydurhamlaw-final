@@ -24,7 +24,7 @@ export function useUserModules() {
             `
             user_module_id,
             staff_names,
-            module_catalog:module_catalog_id (
+            module_catalog (
               module_code,
               module_title,
               color_theme

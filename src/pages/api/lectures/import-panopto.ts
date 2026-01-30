@@ -57,7 +57,7 @@ export default async function handler(
         panopto_url,
         transcript_source: "panopto_paste",
         audio_path: "", // Not applicable for Panopto imports
-        status: "transcribing", // Will update to 'ready' after analysis
+        status: "uploaded", // Set to uploaded so background processing picks it up if needed, or we process below
       })
       .select()
       .single();

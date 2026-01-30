@@ -295,12 +295,25 @@ export default function LectureUploadModal({
 
   // ... (keep smart fill logic)
   const applySmartMetadata = (text: string) => {
-    // ... (existing logic)
     const meta = parsePanoptoTitle(text);
-    if (meta.moduleCode) setModuleCode(meta.moduleCode);
-    if (meta.moduleName) setModuleName(meta.moduleName);
+    if (!meta) return;
+
+    if (meta.moduleCode) {
+      setModuleCode(meta.moduleCode);
+      setIsManualModule(true); // Switch to manual to show the auto-filled code
+    }
+    if (meta.moduleName) {
+      setModuleName(meta.moduleName);
+      setIsManualModule(true);
+    }
     if (meta.lectureDate) setLectureDate(meta.lectureDate);
     if (meta.title && meta.title !== text) setTitle(meta.title);
+
+    // User priority: "it will auto fill the details into the respective boxes... and only others manual entered"
+    if (meta.lecturer) {
+      setLecturerName(meta.lecturer);
+      setIsManualLecturer(true);
+    }
   };
   // ... (keep handlePanoptoUrlChange, handleTitleChange from existing code - simplified here for replacement context if needed,
   // check if I can just replace the Return block?
