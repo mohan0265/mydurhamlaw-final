@@ -170,6 +170,8 @@ export default async function handler(
             discussion_topics: analysis.discussion_topics,
             exam_prompts: analysis.exam_prompts || [],
             exam_signals: analysis.exam_signals || [],
+            glossary: analysis.glossary || [],
+            engagement_hooks: analysis.engagement_hooks || [],
           });
 
         if (notesError)
@@ -256,13 +258,19 @@ ${transcript.substring(0, 10000)} ${transcript.length > 10000 ? "... (truncated)
 
 5. **Exam Signals**: Identify topic areas that are likely to be of high emphasis (Strength 1-5).
 
+6. **Glossary**: Extract key definitions (term/definition pairs).
+
+7. **Engagement Hooks**: Short phrases that make the content memorable or "sparkle".
+
 Format your response as JSON:
 {
   "summary": "...",
   "key_points": ["...", "..."],
   "discussion_topics": ["...", "..."],
   "exam_prompts": ["...", "..."],
-  "exam_signals": []
+  "exam_signals": [],
+  "glossary": [{"term": "...", "definition": "..."}],
+  "engagement_hooks": ["...", "..."]
 }`,
                 },
               ],
