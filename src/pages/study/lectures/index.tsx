@@ -125,21 +125,24 @@ export default function LecturesPage() {
     fetchLectures();
   }, [fetchLectures]);
 
+  // Auto-refresh if any lectures are processing
+  useEffect(() => {
     const hasProcessing = lectures.some((l) => {
-      if (
-        !["transcribing", "summarizing", "uploaded"].includes(l.status)
-      ) {
+      if (!["transcribing", "summarizing", "uploaded"].includes(l.status)) {
         return false;
       }
 
       // Stop condition: if it's been processing for more than 10 minutes,
       // stop refreshing for this item to avoid infinite loops on Netlify timeouts.
-      const startTime = l.last_processed_at || l.created_at || new Date().toISOString();
+      const startTime =
+        l.last_processed_at || l.created_at || new Date().toISOString();
       const processingTimeMs = Date.now() - new Date(startTime).getTime();
       const tenMinutes = 10 * 60 * 1000;
 
       if (processingTimeMs > tenMinutes) {
-        console.warn(`[lectures] Process for ${l.id} timed out (>10m), stopping poll.`);
+        console.warn(
+          `[lectures] Process for ${l.id} timed out (>10m), stopping poll.`,
+        );
         return false;
       }
       return true;
