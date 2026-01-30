@@ -72,6 +72,7 @@ interface LectureDetail {
     engagement_hooks?: string[];
     exam_signals?: ExamSignal[];
   };
+  progress?: number;
 }
 
 export default function LectureDetailPage() {
@@ -864,14 +865,27 @@ export default function LectureDetailPage() {
                 Edit & Reprocess
               </Button>
             ) : (
-              <div className="flex flex-col items-center gap-2">
-                <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-2 inline-flex items-center gap-2 text-purple-600 dark:text-purple-400 text-sm font-medium animate-pulse">
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  Checking for updates...
+              <div className="w-full max-w-xs flex flex-col items-center gap-3">
+                <div className="w-full h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-purple-600 transition-all duration-500 ease-out"
+                    style={{ width: `${lecture.progress || 10}%` }}
+                  />
                 </div>
-                <p className="text-xs text-gray-400 font-mono">
-                  Status: {lecture.status}
-                </p>
+
+                <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  <span className="font-mono uppercase tracking-wider text-xs">
+                    {lecture.progress ? `${lecture.progress}% ` : ""}
+                    {lecture.status === "transcribing"
+                      ? "Transcribing Audio..."
+                      : lecture.status === "processing"
+                        ? "Generating AI Analysis..."
+                        : lecture.status === "summarizing"
+                          ? "Summarizing..."
+                          : `Processing (${lecture.status})...`}
+                  </span>
+                </div>
               </div>
             )}
           </div>
