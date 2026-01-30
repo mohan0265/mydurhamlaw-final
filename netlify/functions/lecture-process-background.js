@@ -30,6 +30,9 @@ exports.handler = async (event) => {
   console.log(
     `[background] Starting process for lecture ${lectureId} (User: ${userId})`,
   );
+  console.log(
+    `[background] Incoming transcript length: ${transcript?.length || 0}`,
+  );
 
   try {
     // 1. Fetch lecture details

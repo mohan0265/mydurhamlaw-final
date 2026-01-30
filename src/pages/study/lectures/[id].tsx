@@ -108,6 +108,11 @@ export default function LectureDetailPage() {
         const res = await fetch(`/api/lectures/get?id=${id}`);
         if (res.ok) {
           const data = await res.json();
+          if (isPoll) {
+            console.log("[lecture] poll result", {
+              status: data.lecture.status,
+            });
+          }
           setLecture(data.lecture);
           setEditedUrl(data.lecture.panopto_url || "");
 
@@ -736,8 +741,8 @@ export default function LectureDetailPage() {
               ? "Analysis Failed"
               : lecture.status === "ready" && !notes
                 ? "Analysis Missing"
-                : lecture.status === "uploaded"
-                  ? "Lecture Uploaded"
+                : lecture.status === "uploaded" || lecture.status === "queued"
+                  ? "Lecture Queued for AI"
                   : lecture.status === "transcribing"
                     ? "Transcribing Audio..."
                     : lecture.status === "summarizing"

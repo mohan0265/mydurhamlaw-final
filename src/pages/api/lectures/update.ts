@@ -97,7 +97,7 @@ export default async function handler(
     // 4. If reprocessing, clear old notes and set status
     if (needsReprocess) {
       await dbClient.from("lecture_notes").delete().eq("lecture_id", id);
-      updates.status = "uploaded"; // Trigger background processing UI
+      updates.status = "queued";
     }
 
     // 5. Save updates
@@ -117,17 +117,25 @@ export default async function handler(
       const origin = `${protocol}://${host}`;
       const backgroundUrl = `${origin}/.netlify/functions/lecture-process-background`;
 
-      fetch(backgroundUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          lectureId: id,
-          userId: user.id,
-          transcript: needsReprocess ? transcript : undefined, // Pass edited transcript if changed
-        }),
-      }).catch((err) =>
-        console.error("[update] Background trigger failed:", err),
-      );
+      console.log("[update] triggering reprocess", {
+        lectureId: id,
+        userId: user.id,
+      });
+
+      try {
+        const bRes = await fetch(backgroundUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            lectureId: id,
+            userId: user.id,
+            transcript: needsReprocess ? transcript : undefined, // Pass edited transcript if changed
+          }),
+        });
+        console.log(`[update] Background trigger status: ${bRes.status}`);
+      } catch (err) {
+        console.error("[update] Background trigger failed:", err);
+      }
     }
 
     return res.status(200).json({

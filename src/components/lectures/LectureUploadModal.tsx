@@ -117,7 +117,10 @@ export default function LectureUploadModal({
     setError("");
 
     try {
-      setUploadProgress(20);
+      console.log("[lecture] trigger update", {
+        id: initialData.id,
+        reprocess: true,
+      });
       const res = await fetch("/api/lectures/update", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -138,10 +141,11 @@ export default function LectureUploadModal({
 
       setUploadProgress(80);
 
+      const resData = await res.json();
+      console.log("[lecture] update response", res.status, resData);
+
       if (!res.ok) {
-        const err = await res.json();
-        console.error("Update failed:", err);
-        throw new Error(err.error || "Failed to update lecture");
+        throw new Error(resData.error || "Failed to update lecture");
       }
 
       onSuccess();
@@ -203,14 +207,20 @@ export default function LectureUploadModal({
 
       setUploadProgress(60);
 
-      // 3. Trigger processing (Optional - if your backend strictly needs it,
-      // otherwise status='uploaded' might be picked up by a cron/trigger)
-      // For now, let's assume 'uploaded' is enough or trigger process explicitly
-      await fetch("/api/lectures/process", {
+      // 3. Trigger processing
+      console.log("[lecture] trigger process (audio)", { lectureId });
+      const procRes = await fetch("/api/lectures/process", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ lectureId }),
       });
+
+      const procData = await procRes.json();
+      console.log("[lecture] process response", procRes.status, procData);
+
+      if (!procRes.ok) {
+        throw new Error(procData.error || "Failed to trigger processing");
+      }
 
       setUploadProgress(100);
 
@@ -243,6 +253,10 @@ export default function LectureUploadModal({
 
     try {
       // ... (keep existing panopto logic)
+      console.log("[lecture] trigger import-panopto", {
+        title,
+        transcriptLen: transcript.length,
+      });
       const res = await fetch("/api/lectures/import-panopto", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -259,9 +273,11 @@ export default function LectureUploadModal({
         }),
       });
 
+      const resData = await res.json();
+      console.log("[lecture] import response", res.status, resData);
+
       if (!res.ok) {
-        const errData = await res.json();
-        throw new Error(errData.error || "Failed to import lecture");
+        throw new Error(resData.error || "Failed to import lecture");
       }
 
       setUploadProgress(100);

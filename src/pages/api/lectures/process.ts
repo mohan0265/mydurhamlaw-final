@@ -47,10 +47,14 @@ export default async function handler(
     }
 
     // 3. Mark as queued
+    console.log("[process] triggering processing", {
+      lectureId,
+      userId: user.id,
+    });
     await supabase
       .from("lectures")
       .update({
-        status: "uploaded", // Frontend fallback: "AI Breakdown in Progress"
+        status: "queued",
         error_message: null,
         last_processed_at: new Date().toISOString(),
       })

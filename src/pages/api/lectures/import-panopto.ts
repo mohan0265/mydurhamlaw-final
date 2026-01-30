@@ -52,12 +52,19 @@ export default async function handler(
         panopto_url,
         transcript_source: "panopto_paste",
         audio_path: "",
-        status: "summarizing", // Pass straight to summarizing
+        status: "queued",
       })
       .select()
       .single();
 
     if (lectureError) throw lectureError;
+
+    console.log("[panopto] called", {
+      lecture_id: lecture.id,
+      userId: user.id,
+      title,
+      transcriptLen: transcript.length,
+    });
 
     // 2. Save transcript
     const { error: transcriptError } = await supabase
