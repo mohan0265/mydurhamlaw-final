@@ -734,40 +734,46 @@ export default function LectureDetailPage() {
           <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
             {lecture.status === "error"
               ? "Analysis Failed"
-              : lecture.status === "uploaded"
-                ? "Lecture Uploaded"
-                : lecture.status === "transcribing"
-                  ? "Transcribing Audio..."
-                  : lecture.status === "summarizing"
-                    ? "Generating AI Breakdown..."
-                    : "AI Breakdown in Progress"}
+              : lecture.status === "ready" && !notes
+                ? "Analysis Missing"
+                : lecture.status === "uploaded"
+                  ? "Lecture Uploaded"
+                  : lecture.status === "transcribing"
+                    ? "Transcribing Audio..."
+                    : lecture.status === "summarizing"
+                      ? "Generating AI Breakdown..."
+                      : "AI Breakdown in Progress"}
           </h3>
           <p className="text-gray-500 dark:text-gray-400 max-w-sm mx-auto mb-6">
             {lecture.status === "error"
               ? lecture.error_message ||
                 "Something went wrong during AI analysis."
-              : "We're generating your summary, key points, and exam prep. This usually takes 30-60 seconds for large lectures."}
+              : lecture.status === "ready" && !notes
+                ? "The AI analysis didn't save correctly. Please try reprocessing."
+                : "We're generating your summary, key points, and exam prep. This usually takes 30-60 seconds for large lectures."}
           </p>
+
           <div className="flex justify-center gap-3">
-            {lecture.status === "error" ? (
+            {lecture.status === "error" ||
+            (lecture.status === "ready" && !notes) ? (
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setShowEditModal(true)}
-                className="gap-2"
+                className="gap-2 bg-purple-600 text-white hover:bg-purple-700"
               >
                 Edit & Reprocess
               </Button>
             ) : (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => window.location.reload()}
-                className="gap-2"
-              >
-                <Loader2 className="w-4 h-4 animate-spin" /> Checking for
-                updates...
-              </Button>
+              <div className="flex flex-col items-center gap-2">
+                <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-2 inline-flex items-center gap-2 text-purple-600 dark:text-purple-400 text-sm font-medium animate-pulse">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Checking for updates...
+                </div>
+                <p className="text-xs text-gray-400 font-mono">
+                  Status: {lecture.status}
+                </p>
+              </div>
             )}
           </div>
         </div>
