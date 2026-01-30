@@ -263,7 +263,7 @@ Format your response as JSON:
   "discussion_topics": ["...", "..."],
   "exam_prompts": ["...", "..."],
   "exam_signals": []
-}`
+}`,
                 },
               ],
             },
@@ -292,54 +292,17 @@ Format your response as JSON:
     }
 
     // Clean JSON (handle possible markdown code blocks)
-    const cleanJson = textOutput.replace(/```json/g, "").replace(/```/g, "").trim();
+    const cleanJson = textOutput
+      .replace(/```json/g, "")
+      .replace(/```/g, "")
+      .trim();
     return JSON.parse(cleanJson);
   } catch (error: any) {
     if (error.name === "AbortError") {
-      throw new Error("AI Processing timed out. Please try again or check transcript length.");
+      throw new Error(
+        "AI Processing timed out. Please try again or check transcript length.",
+      );
     }
     throw error;
   }
-}
-5. **Exam Signals**: Identify if there are specific concepts highly relevant for exams.
-
-Format your response as valid JSON:
-{
-  "summary": "...",
-  "key_points": ["...", "..."],
-  "discussion_topics": ["...", "..."],
-  "exam_prompts": ["...", "..."],
-  "exam_signals": []
-}`,
-              },
-            ],
-          },
-        ],
-        generationConfig: {
-          temperature: 0.7,
-          maxOutputTokens: 2000,
-        },
-      }),
-    },
-  );
-
-  if (!response.ok) {
-    const error = await response.text();
-    throw new Error(`Gemini API error: ${error}`);
-  }
-
-  const data = await response.json();
-  const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-
-  if (!text) {
-    throw new Error("No response from Gemini API");
-  }
-
-  // Parse JSON response (handle markdown code blocks)
-  const jsonMatch = text.match(/\{[\s\S]*\}/);
-  if (!jsonMatch) {
-    throw new Error("Failed to parse AI response as JSON");
-  }
-
-  return JSON.parse(jsonMatch[0]);
 }
