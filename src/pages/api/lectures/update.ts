@@ -171,11 +171,26 @@ export default async function handler(
             exam_prompts: analysis.exam_prompts || [],
             exam_signals: analysis.exam_signals || [],
             glossary: analysis.glossary || [],
-            engagement_hooks: analysis.engagement_hooks || [],
+            // engagement_hooks: analysis.engagement_hooks || [], // Column missing in DB
           });
 
-        if (notesError)
-          console.error("Failed to save reprocessed notes:", notesError);
+        if (notesError) {
+          console.error("Reprocess analysis failed to save:", notesError);
+          // Update status to ready anyway so they see the transcript
+          await dbClient
+            .from("lectures")
+            .update({
+              status: "ready",
+              error_message: "Updated, but AI summaries failed to save.",
+            })
+            .eq("id", id);
+
+          return res.status(200).json({
+            lecture: { ...updated, status: "ready" },
+            reprocessed: true,
+            warning: "Update saved, but AI analysis failed to store correctly.",
+          });
+        }
 
         // Update status to ready
         await dbClient

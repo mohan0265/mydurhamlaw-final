@@ -113,12 +113,25 @@ export default async function handler(
       exam_prompts: analysis.exam_prompts || [],
       exam_signals: analysis.exam_signals || [],
       glossary: analysis.glossary || [],
-      engagement_hooks: analysis.engagement_hooks || [],
+      // engagement_hooks: analysis.engagement_hooks || [], // Missing in DB
     });
 
     if (notesError) {
-      console.error("Failed to save notes:", notesError);
-      // Still mark as ready even if notes fail
+      console.error("Failed to save lecture notes:", notesError);
+      await supabase
+        .from("lectures")
+        .update({
+          status: "ready",
+          error_message:
+            "Transcript saved, but AI summaries failed to store correctly.",
+        })
+        .eq("id", lecture.id);
+
+      return res.status(200).json({
+        success: true,
+        lecture_id: lecture.id,
+        warning: "Analysis failed to save. Transcript is available.",
+      });
     }
 
     // 5. Update lecture status

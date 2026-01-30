@@ -33,7 +33,7 @@ async function transcribeAudio(
   };
   const ext = extMap[mimeType] || "mp3";
 
-  const blob = new Blob([audioBuffer], { type: mimeType });
+  const blob = new Blob([new Uint8Array(audioBuffer)], { type: mimeType });
   formData.append("file", blob, `audio.${ext}`);
   formData.append("model", "whisper-1");
   formData.append("language", "en");
@@ -324,68 +324,66 @@ export default async function handler(
       discussion_topics: notes.discussion_topics,
       exam_prompts: notes.exam_prompts,
       glossary: notes.glossary || [],
-      engagement_hooks: notes.engagement_hooks || [],
+      // engagement_hooks: notes.engagement_hooks || [], // Missing in DB until migration applied
       exam_signals: notes.exam_signals || [],
     });
 
+    if (notesError) {
+      console.error("[lectures/process] Save notes error:", notesError);
+      await supabase
+        .from("lectures")
+        .update({
+          status: "ready",
+          error_message:
+            "Audio processed, but AI summaries could not be saved.",
+        })
+        .eq("id", lectureId);
+
+      return res.status(200).json({
+        success: true,
+        warning:
+          "Analysis completed but storage failed. Transcript is available.",
+      });
+    }
+
     // --- LECTURER INSIGHTS PIPELINE ---
-    const detectedName = (notes as any).lecturer_name_detected;
-    if (
-      detectedName &&
-      typeof detectedName === "string" &&
-      detectedName.length > 2
-    ) {
-      // 1. Upsert Lecturer
-      const { data: lecturerData, error: lecturerError } = await supabase
-        .from("lecturers")
-        .upsert(
-          {
-            name_normalized: detectedName.trim().toLowerCase(),
-            name: detectedName.trim(),
-          },
-          { onConflict: "name_normalized" },
-        )
-        .select()
-        .single();
-
-      if (lecturerData && !lecturerError) {
-        // 2. Update Actions
-        const style = (notes as any).teaching_style || {};
-
-        const { error: insightError } = await supabase
-          .from("lecturer_insights")
+    try {
+      const detectedName = (notes as any).lecturer_name_detected;
+      if (
+        detectedName &&
+        typeof detectedName === "string" &&
+        detectedName.length > 2
+      ) {
+        // 1. Upsert Lecturer
+        const { data: lecturerData, error: lecturerError } = await supabase
+          .from("lecturers")
           .upsert(
             {
+              name_normalized: detectedName.trim().toLowerCase(),
+              name: detectedName.trim(),
+            },
+            { onConflict: "name_normalized" },
+          )
+          .select()
+          .single();
+
+        if (lecturerData && !lecturerError) {
+          const style = (notes as any).teaching_style || {};
+          await supabase.from("lecturer_insights").upsert(
+            {
               lecturer_id: lecturerData.id,
-              // We merge or overwrite the insights JSON.
-              // Ideally we aggregate, but for now we take the latest lecture's style analysis as the "current" snapshot,
-              // or mix it. For MVP, overwriting with latest specific style data is acceptable or we should merge.
-              // Let's store the raw style object.
               insights_json: style,
               updated_at: new Date().toISOString(),
             },
             { onConflict: "lecturer_id" },
-          ); // Remove ignoreDuplicates to allow updating
-
-        if (insightError) console.error("Insight update error", insightError);
-
-        // Optional: Link lecture to lecturer (if column exists, or we use name matching)
-        // For now, we update the lecture's lecturer_name text field if it was empty
-        if (!lecture.lecturer_name) {
-          await supabase
-            .from("lectures")
-            .update({ lecturer_name: detectedName })
-            .eq("id", lectureId);
+          );
         }
       }
-    }
-    // ----------------------------------
-
-    if (notesError) {
-      console.error("[lectures/process] Notes save error:", notesError);
+    } catch (insightError) {
+      console.error("Lecturer insights failed (non-critical):", insightError);
     }
 
-    // Update status to ready
+    // Finalize status
     await supabase
       .from("lectures")
       .update({ status: "ready" })
@@ -395,29 +393,24 @@ export default async function handler(
 
     return res.status(200).json({
       success: true,
-      lectureId,
+      lecture_id: lectureId,
+      notes,
       transcript_length: transcript.length,
-      notes_generated: true,
     });
   } catch (error: any) {
-    console.error("[lectures/process] Error:", error);
-
-    // Save error to database for visibility
-    try {
+    console.error("[lectures/process] Critical Error:", error);
+    // Attempt to mark error in DB if we have an ID
+    const lectureIdToUpdate = req.body.lectureId || req.query.id;
+    if (lectureIdToUpdate) {
       const supabase = createPagesServerClient({ req, res });
       await supabase
         .from("lectures")
         .update({
           status: "error",
-          error_message: error.message || "Unknown processing error",
+          error_message: `Processing failed: ${error.message}`,
         })
-        .eq("id", req.body.lectureId);
-    } catch (dbError) {
-      console.error("[lectures/process] Failed to save error to DB:", dbError);
+        .eq("id", lectureIdToUpdate);
     }
-
-    return res
-      .status(500)
-      .json({ error: error.message || "Internal server error" });
+    return res.status(500).json({ error: error.message });
   }
 }
