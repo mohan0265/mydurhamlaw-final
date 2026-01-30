@@ -217,18 +217,24 @@ async function generateLectureAnalysis(params: {
     throw new Error("GEMINI_API_KEY not configured");
   }
 
-  // Call Gemini API for analysis
-  const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${apiKey}`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [
-          {
-            parts: [
-              {
-                text: `You are an expert law tutor analyzing a lecture transcript for a Durham University law student.
+  // 30s Timeout Protection
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 35000); // 35s grace
+
+  try {
+    // Call Gemini API for analysis
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${apiKey}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        signal: controller.signal,
+        body: JSON.stringify({
+          contents: [
+            {
+              parts: [
+                {
+                  text: `You are an expert law tutor analyzing a lecture transcript for a Durham University law student.
 
 **Lecture Details:**
 - Title: ${title}
@@ -248,6 +254,53 @@ ${transcript.substring(0, 10000)} ${transcript.length > 10000 ? "... (truncated)
 
 4. **Exam Prompts** (3-5 items): Potential exam questions or practice prompts based on this lecture's content.
 
+5. **Exam Signals**: Identify topic areas that are likely to be of high emphasis (Strength 1-5).
+
+Format your response as JSON:
+{
+  "summary": "...",
+  "key_points": ["...", "..."],
+  "discussion_topics": ["...", "..."],
+  "exam_prompts": ["...", "..."],
+  "exam_signals": []
+}`
+                },
+              ],
+            },
+          ],
+          generationConfig: {
+            temperature: 0.7,
+            maxOutputTokens: 2000,
+          },
+        }),
+      },
+    );
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("Gemini API error:", errorText);
+      throw new Error(`AI Analysis failed: ${response.status}`);
+    }
+
+    const data = await response.json();
+    const textOutput = data.candidates?.[0]?.content?.parts?.[0]?.text;
+
+    if (!textOutput) {
+      throw new Error("No analysis received from AI");
+    }
+
+    // Clean JSON (handle possible markdown code blocks)
+    const cleanJson = textOutput.replace(/```json/g, "").replace(/```/g, "").trim();
+    return JSON.parse(cleanJson);
+  } catch (error: any) {
+    if (error.name === "AbortError") {
+      throw new Error("AI Processing timed out. Please try again or check transcript length.");
+    }
+    throw error;
+  }
+}
 5. **Exam Signals**: Identify if there are specific concepts highly relevant for exams.
 
 Format your response as valid JSON:
