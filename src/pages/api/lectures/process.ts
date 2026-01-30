@@ -2,6 +2,7 @@
 // Triggers heavy AI processing via Netlify Background Function to avoid timeouts
 import type { NextApiRequest, NextApiResponse } from "next";
 import { createPagesServerClient } from "@supabase/auth-helpers-nextjs";
+import { LECTURE_STATUSES } from "@/lib/lectures/status";
 
 export default async function handler(
   req: NextApiRequest,
@@ -54,7 +55,7 @@ export default async function handler(
     await supabase
       .from("lectures")
       .update({
-        status: "processing",
+        status: LECTURE_STATUSES.PROCESSING,
         error_message: null,
         last_processed_at: new Date().toISOString(),
       })

@@ -159,7 +159,7 @@ exports.handler = async (event) => {
     await supabaseAdmin
       .from("lectures")
       .update({
-        status: "error",
+        status: "failed", // Standardized failure status
         error_message: `AI Processing failed: ${error.message}`,
       })
       .eq("id", lectureId);

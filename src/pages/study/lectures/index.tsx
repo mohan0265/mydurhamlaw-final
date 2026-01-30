@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { LECTURE_STATUSES } from "@/lib/lectures/status";
 import { useRouter } from "next/router";
 import Link from "next/link";
 import { useContext } from "react";
@@ -130,11 +131,11 @@ export default function LecturesPage() {
     const hasProcessing = lectures.some((l) => {
       if (
         ![
-          "transcribing",
-          "summarizing",
-          "uploaded",
-          "processing",
-          "queued",
+          LECTURE_STATUSES.TRANSCRIBING,
+          LECTURE_STATUSES.SUMMARIZING,
+          LECTURE_STATUSES.UPLOADED,
+          LECTURE_STATUSES.PROCESSING,
+          LECTURE_STATUSES.QUEUED,
         ].includes(l.status)
       ) {
         return false;

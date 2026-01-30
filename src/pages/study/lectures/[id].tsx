@@ -752,7 +752,7 @@ export default function LectureDetailPage() {
       ) : (
         <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-12 text-center mb-6 shadow-sm">
           <div className="w-16 h-16 bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 rounded-full flex items-center justify-center mx-auto mb-4">
-            {lecture.status === "error" ? (
+            {lecture.status === "error" || lecture.status === "failed" ? (
               <AlertTriangle className="w-8 h-8 text-red-500" />
             ) : (
               <Sparkles className="w-8 h-8 animate-pulse" />

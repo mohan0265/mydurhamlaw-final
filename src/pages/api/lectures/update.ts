@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { createPagesServerClient } from "@supabase/auth-helpers-nextjs";
 import { createClient } from "@supabase/supabase-js";
+import { LECTURE_STATUSES } from "@/lib/lectures/status";
 
 export default async function handler(
   req: NextApiRequest,
@@ -97,7 +98,7 @@ export default async function handler(
     // 4. If reprocessing, clear old notes and set status
     if (needsReprocess) {
       await dbClient.from("lecture_notes").delete().eq("lecture_id", id);
-      updates.status = "processing";
+      updates.status = LECTURE_STATUSES.PROCESSING;
     }
 
     // 5. Save updates

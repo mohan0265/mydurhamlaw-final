@@ -1,5 +1,6 @@
 import { createPagesServerClient } from "@supabase/auth-helpers-nextjs";
 import type { NextApiRequest, NextApiResponse } from "next";
+import { LECTURE_STATUSES } from "@/lib/lectures/status";
 
 export default async function handler(
   req: NextApiRequest,
@@ -52,7 +53,7 @@ export default async function handler(
         panopto_url,
         transcript_source: "panopto_paste",
         audio_path: "",
-        status: "processing",
+        status: LECTURE_STATUSES.PROCESSING,
       })
       .select()
       .single();
