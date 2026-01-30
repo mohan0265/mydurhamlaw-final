@@ -58,6 +58,7 @@ interface LectureDetail {
   status: string;
   transcript?: string;
   word_count?: number;
+  error_message?: string;
   notes?: {
     summary?: string;
     key_points?: string[];
