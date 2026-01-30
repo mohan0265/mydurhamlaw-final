@@ -310,10 +310,13 @@ export default function LectureUploadModal({
     if (meta.title && meta.title !== text) setTitle(meta.title);
 
     // User priority: "it will auto fill the details into the respective boxes... and only others manual entered"
+    // Note: PanoptoMetadata doesn't currently support lecturer, removing to fix error or will need to update parser
+    /*
     if (meta.lecturer) {
       setLecturerName(meta.lecturer);
       setIsManualLecturer(true);
     }
+    */
   };
   // ... (keep handlePanoptoUrlChange, handleTitleChange from existing code - simplified here for replacement context if needed,
   // check if I can just replace the Return block?
@@ -462,7 +465,7 @@ export default function LectureUploadModal({
                         setModuleName("");
                         setUserModuleId("");
                       } else {
-                        setUserModuleId(mod.user_module_id);
+                        setUserModuleId(mod.id);
                         setModuleCode(mod.module_code);
                         setModuleName(mod.module_title);
                         setIsManualModule(false);
