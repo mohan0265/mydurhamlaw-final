@@ -31,7 +31,7 @@ export default async function handler(
     // 1. Verify ownership and lecture existence
     const { data: lecture, error: lectureError } = await supabase
       .from("lectures")
-      .select("*")
+      .select("*, academic_item_id")
       .eq("id", lectureId)
       .eq("user_id", user.id)
       .single();
@@ -47,19 +47,37 @@ export default async function handler(
         .json({ success: true, message: "Already processed", status: "ready" });
     }
 
-    // 3. Mark as processing
+    // 3. Mark as processing (legacy + new)
     console.log("[process] triggering processing", {
       lectureId,
       userId: user.id,
+      academicItemId: lecture.academic_item_id,
     });
-    await supabase
+
+    const now = new Date().toISOString();
+
+    // Update Legacy
+    const p1 = supabase
       .from("lectures")
       .update({
         status: LECTURE_STATUSES.PROCESSING,
         error_message: null,
-        last_processed_at: new Date().toISOString(),
+        last_processed_at: now,
       })
       .eq("id", lectureId);
+
+    // Update Canonical
+    const p2 = lecture.academic_item_id
+      ? supabase
+          .from("academic_items")
+          .update({
+            state: { status: LECTURE_STATUSES.PROCESSING, progress: 0.1 },
+            updated_at: now,
+          })
+          .eq("id", lecture.academic_item_id)
+      : Promise.resolve();
+
+    await Promise.all([p1, p2]);
 
     // 4. Trigger Netlify Background Function
     // We derive the origin from headers to call the co-located function

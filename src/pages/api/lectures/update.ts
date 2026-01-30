@@ -50,7 +50,7 @@ export default async function handler(
     // 1. Verify ownership
     const { data: existing, error: fetchError } = await dbClient
       .from("lectures")
-      .select("user_id, status")
+      .select("user_id, status, academic_item_id")
       .eq("id", id)
       .single();
 
@@ -108,6 +108,16 @@ export default async function handler(
       .eq("id", id)
       .select()
       .single();
+
+    // Sync Academic Item
+    if (needsReprocess && existing.academic_item_id) {
+      await dbClient
+        .from("academic_items")
+        .update({
+          state: { status: LECTURE_STATUSES.PROCESSING, progress: 0.1 },
+        })
+        .eq("id", existing.academic_item_id);
+    }
 
     if (updateError) throw updateError;
 

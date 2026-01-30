@@ -53,10 +53,19 @@ exports.handler = async (event) => {
     // Only transcribe if transcript wasn't provided in the request
     if (!transcriptText) {
       // 2. Update status to transcribing
-      await supabaseAdmin
-        .from("lectures")
-        .update({ status: "transcribing", error_message: null })
-        .eq("id", lectureId);
+      console.log(`[background] Status -> transcribing`);
+      await Promise.all([
+        supabaseAdmin
+          .from("lectures")
+          .update({ status: "transcribing", error_message: null })
+          .eq("id", lectureId),
+        lecture.academic_item_id
+          ? supabaseAdmin
+              .from("academic_items")
+              .update({ state: { status: "transcribing", progress: 0.3 } })
+              .eq("id", lecture.academic_item_id)
+          : Promise.resolve(),
+      ]);
 
       // 3. Download audio from Storage
       console.log(`[background] Downloading audio: ${lecture.audio_path}`);
@@ -108,10 +117,18 @@ exports.handler = async (event) => {
 
     // 6. Update status to processing
     console.log("[background] Step 6: Updating status to processing");
-    await supabaseAdmin
-      .from("lectures")
-      .update({ status: "processing" })
-      .eq("id", lectureId);
+    await Promise.all([
+      supabaseAdmin
+        .from("lectures")
+        .update({ status: "processing" })
+        .eq("id", lectureId),
+      lecture.academic_item_id
+        ? supabaseAdmin
+            .from("academic_items")
+            .update({ state: { status: "processing", progress: 0.6 } })
+            .eq("id", lecture.academic_item_id)
+        : Promise.resolve(),
+    ]);
 
     // 7. Call OpenAI for Analysis
     console.log("[background] Calling OpenAI for analysis...");
@@ -148,21 +165,43 @@ exports.handler = async (event) => {
     console.log(
       `[background] Processing complete for ${lectureId}. Final status: ready`,
     );
-    await supabaseAdmin
-      .from("lectures")
-      .update({ status: "ready" })
-      .eq("id", lectureId);
+
+    await Promise.all([
+      supabaseAdmin
+        .from("lectures")
+        .update({ status: "ready" })
+        .eq("id", lectureId),
+      lecture.academic_item_id
+        ? supabaseAdmin
+            .from("academic_items")
+            .update({ state: { status: "ready", progress: 1.0 } })
+            .eq("id", lecture.academic_item_id)
+        : Promise.resolve(),
+    ]);
 
     console.log(`[background] ✅ Successfully processed lecture ${lectureId}`);
   } catch (error) {
     console.error("[background] Critical Error:", error);
-    await supabaseAdmin
-      .from("lectures")
-      .update({
-        status: "failed", // Standardized failure status
-        error_message: `AI Processing failed: ${error.message}`,
-      })
-      .eq("id", lectureId);
+
+    // FETCH LECTURE AGAIN to get academic_item_id if needed (in case it wasn't fetched initially)
+    // But we probably have it in `lecture` variable if step 1 succeeded.
+    // Safety check:
+    const aid = lecture?.academic_item_id;
+
+    const errMsg = `AI Processing failed: ${error.message}`;
+
+    await Promise.all([
+      supabaseAdmin
+        .from("lectures")
+        .update({ status: "failed", error_message: errMsg })
+        .eq("id", lectureId),
+      aid
+        ? supabaseAdmin
+            .from("academic_items")
+            .update({ state: { status: "failed", error: errMsg } })
+            .eq("id", aid)
+        : Promise.resolve(),
+    ]);
   }
 };
 
