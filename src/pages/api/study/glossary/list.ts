@@ -28,6 +28,7 @@ export default async function handler(
         id,
         term,
         definition,
+        source_reference,
         lecture_glossary_links (
           lecture_id,
           lectures (
@@ -46,6 +47,7 @@ export default async function handler(
       id: t.id,
       term: t.term,
       definition: t.definition,
+      source_reference: t.source_reference,
       lectures: (t.lecture_glossary_links || []).map((l: any) => ({
         id: l.lecture_id,
         title: l.lectures?.title || "Unknown Lecture",

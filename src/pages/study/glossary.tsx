@@ -20,6 +20,7 @@ interface GlossaryTerm {
   id: string;
   term: string;
   definition: string;
+  source_reference?: string;
   lectures: { id: string; title: string }[];
 }
 
@@ -181,6 +182,18 @@ export default function GlossaryPage() {
 
               {expandedTerm === t.id && (
                 <div className="bg-gray-50/50 border-t border-gray-100 p-6 animate-in slide-in-from-top-2 duration-300">
+                  {t.source_reference && (
+                    <div className="mb-6 bg-purple-50 dark:bg-purple-900/10 p-4 rounded-xl border border-purple-100 dark:border-purple-500/30">
+                      <div className="flex items-center gap-2 text-xs font-bold text-purple-600 dark:text-purple-400 uppercase tracking-widest mb-1">
+                        <Book className="w-3.5 h-3.5" />
+                        Manual Source / Reference
+                      </div>
+                      <p className="text-sm text-gray-700 dark:text-gray-300 font-semibold">
+                        {t.source_reference}
+                      </p>
+                    </div>
+                  )}
+
                   <div className="flex items-center gap-2 mb-4 text-xs font-bold text-gray-400 uppercase tracking-widest">
                     <Info className="w-3.5 h-3.5" />
                     Lecture Appearances

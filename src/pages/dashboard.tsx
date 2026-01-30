@@ -31,6 +31,12 @@ import UpcomingDeadlines from "@/components/dashboard/UpcomingDeadlines";
 import TodaysTasksWidget from "@/components/dashboard/TodaysTasksWidget";
 import MemoryJournalWidget from "@/components/dashboard/MemoryJournalWidget";
 import WellbeingTipWidget from "@/components/dashboard/WellbeingTipWidget";
+import dynamic from "next/dynamic";
+
+const LexiconQuickWidget = dynamic(
+  () => import("@/components/study/LexiconQuickWidget"),
+  { ssr: false },
+);
 
 import CountdownTimer from "@/components/ui/CountdownTimer";
 
@@ -820,6 +826,9 @@ function DashboardContent() {
 
           {/* Right Col: Widgets */}
           <div className="space-y-6">
+            {/* Lexicon */}
+            <LexiconQuickWidget />
+
             {/* Tasks */}
             <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 h-full">
               <div className="flex items-center justify-between mb-4">

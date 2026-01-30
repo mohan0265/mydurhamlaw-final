@@ -121,23 +121,42 @@ function HoverMenu({
   );
 }
 
-import { X, User, Heart, Scale } from "lucide-react";
-
-// ... (existing imports)
-
-// BrandMark import removed
-
-// ... (existing imports)
-
 import { useEntitlements } from "@/components/auth/EntitlementGuards";
 import { guides as allGuides } from "@/content/articlesIndex";
+import dynamic from "next/dynamic";
+import { Search, Command } from "lucide-react";
 
-// ... (existing imports)
+const LexiconSearchOverlay = dynamic(
+  () => import("@/components/study/LexiconSearchOverlay"),
+  { ssr: false },
+);
 
 export default function GlobalHeader() {
   const { user } = useAuth() || { user: null };
   const [openMobile, setOpenMobile] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const [isLexiconSearchOpen, setIsLexiconSearchOpen] = useState(false);
+
+  // Keyboard shortcut for Lexicon Search (CMD+K or CTRL+K)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+        setIsLexiconSearchOpen(true);
+      }
+    };
+
+    // Listen for custom event from other components
+    const handleCustomOpen = () => setIsLexiconSearchOpen(true);
+
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("open-lexicon-search", handleCustomOpen);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("open-lexicon-search", handleCustomOpen);
+    };
+  }, []);
 
   // Entitlements
   const { hasDurhamAccess, hasLnatAccess } = useEntitlements();
@@ -426,6 +445,15 @@ export default function GlobalHeader() {
             </div>
             {/* Right (desktop) */}
             <div className="hidden md:flex items-center gap-3">
+              {user && !isLovedOne && (
+                <button
+                  onClick={() => setIsLexiconSearchOpen(true)}
+                  className="p-2.5 text-gray-500 hover:text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-xl transition-all mr-2"
+                  title="Search Lexicon (Cmd+K)"
+                >
+                  <Search size={22} />
+                </button>
+              )}
               {user ? (
                 <>
                   <span className="text-gray-600 dark:text-gray-200 text-sm font-medium">
@@ -496,10 +524,43 @@ export default function GlobalHeader() {
           </div>
         </nav>
 
+        {/* Global Search Strip - Only for Students */}
+        {user && !isLovedOne && (
+          <div className="hidden md:block bg-gray-50/50 dark:bg-white/5 border-t border-gray-100 dark:border-white/10 py-2">
+            <div className="mx-auto max-w-7xl px-4 sm:px-6">
+              <button
+                onClick={() => setIsLexiconSearchOpen(true)}
+                className="w-full max-w-md bg-white dark:bg-gray-800 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-2 flex items-center justify-between text-sm text-gray-400 font-medium hover:border-purple-300 transition-all shadow-sm"
+              >
+                <div className="flex items-center gap-2">
+                  <Search size={16} className="text-purple-600" />
+                  Search legal terms in Lexicon...
+                </div>
+                <div className="flex items-center gap-1 opacity-60">
+                  <Command size={12} />K
+                </div>
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Mobile drawer */}
         {openMobile && (
           <div className="md:hidden border-t border-white/10 bg-indigo-700/95 backdrop-blur">
             <div className="px-4 py-3 space-y-3">
+              {/* Mobile Search Trigger */}
+              {user && !isLovedOne && (
+                <button
+                  onClick={() => {
+                    setIsLexiconSearchOpen(true);
+                    setOpenMobile(false);
+                  }}
+                  className="w-full flex items-center gap-3 bg-white/10 text-white rounded-xl p-3 font-semibold mb-2"
+                >
+                  <Search size={20} />
+                  Search Lexicon
+                </button>
+              )}
               {!user && (
                 <>
                   <Link
@@ -659,6 +720,11 @@ export default function GlobalHeader() {
           </div>
         </div>
       )}
+
+      <LexiconSearchOverlay
+        isOpen={isLexiconSearchOpen}
+        onClose={() => setIsLexiconSearchOpen(false)}
+      />
     </>
   );
 }

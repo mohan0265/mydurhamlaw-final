@@ -8,7 +8,7 @@ if (!process.env.SUPABASE_DB_URL) {
   process.exit(1);
 }
 
-const files = ["supabase/migrations/20260130152400_master_glossary.sql"];
+const files = ["supabase/migrations/20260130234200_glossary_source.sql"];
 
 async function runMigrations() {
   const client = new Client({
