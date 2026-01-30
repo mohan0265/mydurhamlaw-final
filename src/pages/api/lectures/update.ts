@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { createPagesServerClient } from "@supabase/auth-helpers-nextjs";
+import { createClient } from "@supabase/supabase-js";
 
 export default async function handler(
   req: NextApiRequest,
@@ -13,6 +14,7 @@ export default async function handler(
   }
 
   try {
+    // 1. Authenticate User (Standard)
     const supabase = createPagesServerClient({ req, res });
     const {
       data: { user },
@@ -20,6 +22,7 @@ export default async function handler(
     } = await supabase.auth.getUser();
 
     if (authError || !user) {
+      console.warn("Update failed: Unauthorized", authError);
       return res.status(401).json({ error: "Unauthorized" });
     }
 
@@ -39,8 +42,25 @@ export default async function handler(
       return res.status(400).json({ error: "Lecture ID is required" });
     }
 
-    // 1. Fetch existing lecture to compare
-    const { data: existing, error: fetchError } = await supabase
+    // 2. Use Admin Client to Bypass RLS (for reliability)
+    // We manually check ownership below.
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+
+    let dbClient = supabase; // Default to user client
+
+    if (serviceRoleKey && supabaseUrl) {
+      console.log("Using Service Role for Update verification");
+      dbClient = createClient(supabaseUrl, serviceRoleKey, {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false,
+        },
+      }) as any;
+    }
+
+    // 3. Fetch existing lecture
+    const { data: existing, error: fetchError } = await dbClient
       .from("lectures")
       .select("transcript, user_id")
       .eq("id", id)
@@ -53,11 +73,18 @@ export default async function handler(
         .json({ error: `Lecture record not found for ID: ${id}` });
     }
 
+    // 4. Manually Enforce Ownership
     if (existing.user_id !== user.id) {
-      return res.status(403).json({ error: "Forbidden" });
+      console.warn("Ownership mismatch", {
+        existing: existing.user_id,
+        request: user.id,
+      });
+      return res
+        .status(403)
+        .json({ error: "Forbidden: You do not own this lecture" });
     }
 
-    // 2. Prepare updates
+    // 5. Prepare updates
     const updates: any = {
       title,
       user_module_id: user_module_id || null,
@@ -69,7 +96,7 @@ export default async function handler(
       updated_at: new Date().toISOString(),
     };
 
-    // 3. Handle Transcript Change
+    // Handle Transcript Change
     let reprocess = false;
     if (typeof transcript === "string") {
       const oldT = (existing.transcript || "").trim();
@@ -83,8 +110,8 @@ export default async function handler(
       }
     }
 
-    // 4. Perform Update
-    const { data: updated, error: updateError } = await supabase
+    // 6. Perform Update (using same client)
+    const { data: updated, error: updateError } = await dbClient
       .from("lectures")
       .update(updates)
       .eq("id", id)
@@ -92,12 +119,6 @@ export default async function handler(
       .single();
 
     if (updateError) throw updateError;
-
-    // Trigger explicit process if needed
-    if (reprocess) {
-      // Optional: fire & forget process call
-      // fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/lectures/process`, ...).catch(...)
-    }
 
     return res.status(200).json({ lecture: updated, reprocessed: reprocess });
   } catch (error: any) {
