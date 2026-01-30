@@ -9,6 +9,7 @@ interface QuizMeCardProps {
   lectureId?: string;
   targetTitle?: string;
   className?: string;
+  onStart?: (mode: "text" | "voice") => void;
 }
 
 export const QuizMeCard: React.FC<QuizMeCardProps> = ({
@@ -16,10 +17,16 @@ export const QuizMeCard: React.FC<QuizMeCardProps> = ({
   lectureId,
   targetTitle,
   className = "",
+  onStart,
 }) => {
   const router = useRouter();
 
   const handleLaunchQuiz = (mode: "text" | "voice") => {
+    if (onStart) {
+      onStart(mode);
+      return;
+    }
+
     const query: any = { mode };
 
     if (lectureId) {

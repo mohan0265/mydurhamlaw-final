@@ -28,8 +28,12 @@ import {
 import { QuizMeCard } from "@/components/quiz/QuizMeCard";
 import toast from "react-hot-toast";
 import { getSupabaseClient } from "@/lib/supabase/client";
+import { useAuth } from "@/lib/supabase/AuthContext";
 import LectureChatWidget from "@/components/study/LectureChatWidget";
 import dynamic from "next/dynamic";
+
+import { LectureQuizHistory } from "@/components/quiz/LectureQuizHistory";
+import { EmbeddedQuizSession } from "@/components/quiz/EmbeddedQuizSession";
 
 const LectureUploadModal = dynamic(
   () => import("@/components/lectures/LectureUploadModal"),
@@ -73,6 +77,7 @@ interface LectureDetail {
 export default function LectureDetailPage() {
   const router = useRouter();
   const { id } = router.query;
+  const { user } = useAuth();
   const [lecture, setLecture] = useState<LectureDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [showTranscript, setShowTranscript] = useState(false);
@@ -92,6 +97,9 @@ export default function LectureDetailPage() {
     "All" | "High" | "Medium" | "Low"
   >("All");
   const [expandedSignal, setExpandedSignal] = useState<string | null>(null);
+  const [activeQuizSessionId, setActiveQuizSessionId] = useState<string | null>(
+    null,
+  );
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -175,6 +183,50 @@ export default function LectureDetailPage() {
   };
 
   // ... handleAddToRevision ...
+  // Handle embedded quiz start
+  const handleStartQuiz = async (mode: "text" | "voice") => {
+    if (!lecture) return;
+    const supabase = getSupabaseClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      toast.error("Please log in to start a quiz");
+      return;
+    }
+
+    const toastId = toast.loading("Preparing session...");
+
+    try {
+      // Create new session linked to this lecture (academic_item_id)
+      const { data: session, error } = await supabase
+        .from("quiz_sessions")
+        .insert({
+          user_id: user.id,
+          quiz_type: "lecture",
+          target_id: lecture.id, // Legacy compatibility
+          // academic_item_id: lecture.academic_item_id // TODO: Once FE uses academic_items, use this
+          status: "active",
+          performance_metadata: {
+            mode: mode,
+            quiz_style: "quick",
+            target_title: lecture.title,
+          },
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setActiveQuizSessionId(session.id);
+      toast.success("Ready to practice!", { id: toastId });
+    } catch (err) {
+      console.error("Failed to start quiz:", err);
+      toast.error("Could not start session", { id: toastId });
+    }
+  };
+
   const handleAddToRevision = async (signal: ExamSignal) => {
     // ... existing implementation
     const toastId = toast.loading("Adding to revision...");
@@ -423,13 +475,31 @@ export default function LectureDetailPage() {
             {/* EXAM PREP TAB */}
             {activeTab === "exam" && (
               <div className="space-y-8 animate-fadeIn">
-                {/* Quiz Me Spotlight Integration */}
-                <QuizMeCard
-                  lectureId={lecture!.id}
-                  moduleCode={lecture!.module_code}
-                  targetTitle={lecture!.title}
-                  className="mb-8"
-                />
+                {/* Quiz Me Embedded Experience */}
+                {activeQuizSessionId && user ? (
+                  <EmbeddedQuizSession
+                    sessionId={activeQuizSessionId}
+                    userId={user.id}
+                    onClose={() => setActiveQuizSessionId(null)}
+                    title={lecture!.title}
+                  />
+                ) : (
+                  <>
+                    <QuizMeCard
+                      lectureId={lecture!.id}
+                      moduleCode={lecture!.module_code}
+                      targetTitle={lecture!.title}
+                      className="mb-8"
+                      onStart={handleStartQuiz}
+                    />
+
+                    <LectureQuizHistory
+                      lectureId={lecture!.id}
+                      currentSessionId={activeQuizSessionId}
+                      onResume={setActiveQuizSessionId}
+                    />
+                  </>
+                )}
 
                 {/* Tab Header & Subtitle */}
                 <div className="mb-6 bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg border border-purple-100 dark:border-purple-800">
