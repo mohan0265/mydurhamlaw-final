@@ -70,17 +70,21 @@ export default async function handler(
       `[lectures/process] Enqueueing background job: ${backgroundUrl}`,
     );
 
-    // Fire and forget (Netlify will start the background task)
-    fetch(backgroundUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ lectureId, userId: user.id }),
-    }).catch((err) => {
+    try {
+      const bRes = await fetch(backgroundUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ lectureId, userId: user.id }),
+      });
+      console.log(
+        `[lectures/process] Background trigger status: ${bRes.status}`,
+      );
+    } catch (err) {
       console.error(
         "[lectures/process] Failed to trigger background task:",
         err,
       );
-    });
+    }
 
     return res.status(202).json({
       success: true,

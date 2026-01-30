@@ -104,6 +104,7 @@ exports.handler = async (event) => {
     }
 
     // 6. Update status to summarizing
+    console.log("[background] Step 6: Updating status to summarizing");
     await supabaseAdmin
       .from("lectures")
       .update({ status: "summarizing" })
@@ -119,6 +120,7 @@ exports.handler = async (event) => {
     });
 
     // 8. Save analysis results to lecture_notes
+    console.log("[background] Step 8: Saving AI analysis to lecture_notes");
     console.log("[background] Saving AI notes...");
     const { error: notesError } = await supabaseAdmin
       .from("lecture_notes")
@@ -139,6 +141,9 @@ exports.handler = async (event) => {
     }
 
     // 9. Update status to ready
+    console.log(
+      `[background] Processing complete for ${lectureId}. Final status: ready`,
+    );
     await supabaseAdmin
       .from("lectures")
       .update({ status: "ready" })

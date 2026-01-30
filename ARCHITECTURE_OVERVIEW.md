@@ -13,9 +13,10 @@
 **Durmah** should greet a signed-in student by name, know their **year**, and understand the **current academic phase** (all logic in **Europe/London**). It tailors answers, opens the right YAAG views, gives nudges, and offers fast actions.
 
 Beyond orientation, we expand to:
-- **Premier Lounge** – a presence-enabled, private-but-campus-wide lounge for Durham Law undergrads to network, DM, and help each other (see details below).  
-- **Durham Community Page** – a city-wide guide for students to connect with **Durham life** beyond campus (events, places, services).  
-- **Always With You (AWY)** – an opt-in presence link to loved ones with **one-click video calls**.  
+
+- **Premier Lounge** – a presence-enabled, private-but-campus-wide lounge for Durham Law undergrads to network, DM, and help each other (see details below).
+- **Durham Community Page** – a city-wide guide for students to connect with **Durham life** beyond campus (events, places, services).
+- **Always With You (AWY)** – an opt-in presence link to loved ones with **one-click video calls**.
 - **Academic Support** – topic pages and practice powered by **ChatGPT Study Mode** for world-class tutoring.
 
 **Why:** help Durham Law students **stay oriented**, **feel supported**, and **succeed academically**.
@@ -24,11 +25,11 @@ Beyond orientation, we expand to:
 
 ## 🌐 Deployment
 
-- **Frontend:** Next.js 14 (Pages Router under `/src/pages`)  
-- **Hosting:** Netlify  
-- **Serverless:** Netlify Functions (`/netlify/functions`)  
-- **DB/Auth:** Supabase (Postgres + RLS + Realtime)  
-- **AI:** GPT-4o endpoints (Study Mode integration lives on the Academic pages)  
+- **Frontend:** Next.js 14 (Pages Router under `/src/pages`)
+- **Hosting:** Netlify
+- **Serverless:** Netlify Functions (`/netlify/functions`)
+- **DB/Auth:** Supabase (Postgres + RLS + Realtime)
+- **AI:** GPT-4o endpoints (Study Mode integration lives on the Academic pages)
 - **Voice:** External widget (`Durmah-Legal-Buddy`) injected via `<DurmahWidget/>` only when enabled
 
 ---
@@ -55,13 +56,13 @@ Copy code
 
 ## 👥 User Types
 
-| User Type            | Dashboard Route              |
-|----------------------|------------------------------|
-| Foundation           | `/dashboard/foundation`      |
-| Year 1               | `/dashboard/year1`           |
-| Year 2               | `/dashboard/year2`           |
-| Year 3               | `/dashboard/year3`           |
-| Post-Grad (coming)   | `/dashboard/postgrad`        |
+| User Type          | Dashboard Route         |
+| ------------------ | ----------------------- |
+| Foundation         | `/dashboard/foundation` |
+| Year 1             | `/dashboard/year1`      |
+| Year 2             | `/dashboard/year2`      |
+| Year 3             | `/dashboard/year3`      |
+| Post-Grad (coming) | `/dashboard/postgrad`   |
 
 Assigned via `profiles.user_type` and user metadata; Durmah context **gates** detailed views by `yearKey`.
 
@@ -69,8 +70,8 @@ Assigned via `profiles.user_type` and user metadata; Durmah context **gates** de
 
 ## 📅 YAAG & Academic Calendar
 
-- Year-At-A-Glance (YAAG): `/pages/year-at-a-glance/*.tsx`  
-- Calendar data flows via `src/lib/hooks/useCalendarData.ts` + serverless routes.  
+- Year-At-A-Glance (YAAG): `/pages/year-at-a-glance/*.tsx`
+- Calendar data flows via `src/lib/hooks/useCalendarData.ts` + serverless routes.
 - Deep links and date clamps are driven by **Durmah phase** helpers (all London-time).
 
 ---
@@ -81,24 +82,26 @@ Assigned via `profiles.user_type` and user metadata; Durmah context **gates** de
 
 **Added/Updated Files**
 
-- `src/lib/durmah/phase.ts` — London-time helpers & canonical AY **2025/26** dates  
-  - `todayISOInTZ`, `computeNowPhase`, `computeDaysUntil`  
-  - Deep links: `defaultMonthDeepLink`, `weekOneLink`  
-- `src/lib/durmah/context.tsx` — React **provider** + `useDurmah()`; bootstraps `window.__mdlStudentContext`  
-- `src/components/durmah/Greeter.tsx` — first message UI: name, year, countdowns, quick actions  
-- `src/lib/supabase/supabaseBridge.ts` — builds context from Supabase session (`@/lib/supabase/client`)  
-- `src/pages/_app.tsx` — wraps app with `DurmahProvider`; refreshes on auth/profile changes  
+- `src/lib/durmah/phase.ts` — London-time helpers & canonical AY **2025/26** dates
+  - `todayISOInTZ`, `computeNowPhase`, `computeDaysUntil`
+  - Deep links: `defaultMonthDeepLink`, `weekOneLink`
+- `src/lib/durmah/context.tsx` — React **provider** + `useDurmah()`; bootstraps `window.__mdlStudentContext`
+- `src/components/durmah/Greeter.tsx` — first message UI: name, year, countdowns, quick actions
+- `src/lib/supabase/supabaseBridge.ts` — builds context from Supabase session (`@/lib/supabase/client`)
+- `src/pages/_app.tsx` — wraps app with `DurmahProvider`; refreshes on auth/profile changes
 - `src/data/durmah/seed.json` — initial anchors (dates/FAQ)
 
 **Acceptance checks (P0)**
-- Signed-in test `{ firstName:'Alex', yearKey:'year1' }` → personalized greeter + correct countdowns  
-- Before 29 Sep 2025: “Open October month view” → `/year-at-a-glance/month?y=year1&ym=2025-10`  
-- “Week 1 prep checklist” → `/year-at-a-glance/week?y=year1&start=2025-10-06`  
-- Logic strictly **Europe/London**; detailed Month/Week gated by student’s **own `yearKey`**  
+
+- Signed-in test `{ firstName:'Alex', yearKey:'year1' }` → personalized greeter + correct countdowns
+- Before 29 Sep 2025: “Open October month view” → `/year-at-a-glance/month?y=year1&ym=2025-10`
+- “Week 1 prep checklist” → `/year-at-a-glance/week?y=year1&start=2025-10-06`
+- Logic strictly **Europe/London**; detailed Month/Week gated by student’s **own `yearKey`**
 - Safe fallbacks: anonymous → invite sign-in; missing year → default **Year 1**
 
 **Build/config notes**  
 `tsconfig.json` must include:
+
 ```json
 {
   "compilerOptions": {
@@ -349,7 +352,7 @@ OPENAI_API_KEY=
 (Voice/extra endpoints are external and optional.)
 
 ## 💼 Operations & Infrastructure
-- [Email & DNS Runbook](file:///c:/Users/M%20Chandramohan/OneDrive/1MyDurhamLaw-4.0/mydurhamlaw-final/docs/ops/EMAIL_DNS_RUNBOOK.md) — Authoritative DNS records & transactional mail setup.
+- [Email & DNS Runbook](./docs/ops/EMAIL_DNS_RUNBOOK.md) — Authoritative DNS records & transactional mail setup.
 
 📝 Contribution Rules
 Keep this repo voice-free; use the widget for voice.
@@ -366,3 +369,4 @@ Now: ensure green builds; verify Greeter on real profiles; confirm YAAG deep lin
 Next: implement AWY presence + consent; Premier Lounge (presence directory, connect & DMs); Durham Community Page scaffold; first 3 Academic topics with Study Mode.
 
 This document is the single source of truth for architecture, scope, and launch plan. Keep it updated.
+```

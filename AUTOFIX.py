@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import os
-os.chdir(r"C:\Users\M Chandramohan\OneDrive\1MyDurhamLaw-4.0\mydurhamlaw-final")
+os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 # Fix index.tsx
 with open("src/pages/index.tsx", 'r', encoding='utf-8') as f:

@@ -78,17 +78,20 @@ export default async function handler(
 
     console.log(`[import-panopto] Enqueueing background job for ${lecture.id}`);
 
-    fetch(backgroundUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        lectureId: lecture.id,
-        userId: user.id,
-        transcript: transcript,
-      }),
-    }).catch((err) =>
-      console.error("[import-panopto] Background trigger failed:", err),
-    );
+    try {
+      const bRes = await fetch(backgroundUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          lectureId: lecture.id,
+          userId: user.id,
+          transcript: transcript,
+        }),
+      });
+      console.log(`[import-panopto] Background trigger status: ${bRes.status}`);
+    } catch (err) {
+      console.error("[import-panopto] Background trigger failed:", err);
+    }
 
     return res.status(202).json({
       success: true,

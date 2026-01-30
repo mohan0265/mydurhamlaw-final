@@ -8,7 +8,7 @@ import sys
 def run_git_command(cmd):
     """Run git command and return output"""
     try:
-        result = subprocess.run(cmd, shell=True, capture_output=True, text=True, cwd=r"C:\Users\M Chandramohan\OneDrive\1MyDurhamLaw-4.0\mydurhamlaw-final")
+        result = subprocess.run(cmd, shell=True, capture_output=True, text=True, cwd=".")
         print(result.stdout)
         if result.stderr:
             print(result.stderr, file=sys.stderr)

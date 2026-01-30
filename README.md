@@ -47,6 +47,7 @@ The AWY widget embodies our core philosophy of **"presence, not chat"** - provid
 ![AWY Widget Screenshot](./docs/awy-widget-screenshot.png)
 
 ### Key Features
+
 - **Presence Awareness**: See when loved ones are online with you
 - **Gentle Waves**: Send subtle notifications to show you're thinking of them
 - **Video Call Integration**: Quick access to meaningful conversations when needed
@@ -70,7 +71,7 @@ The AWY widget is designed specifically for the emotional demands of legal educa
 ```bash
 # Clone the repository
 git clone <repository-url>
-cd mydurhamlaw
+cd Caseway-Final
 
 # Install dependencies
 npm install
@@ -133,15 +134,18 @@ See [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md) for detailed setup instructions
 ### Environment Variables
 
 **Required:**
+
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 - `SUPABASE_SERVICE_ROLE_KEY`
 
 **Optional (for AI features):**
+
 - `OPENAI_API_KEY`
 - `ELEVENLABS_API_KEY`
 
 **AWY Widget:**
+
 - `NEXT_PUBLIC_FEATURE_AWY=1` - Enable AWY widget (set to 0 to disable)
 
 ## 🧪 Testing
@@ -206,4 +210,4 @@ For technical support or questions:
 ---
 
 **Made with ❤️ for Durham University Law Students**  
-*Empowering legal education through technology*
+_Empowering legal education through technology_
