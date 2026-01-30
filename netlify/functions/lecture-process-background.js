@@ -334,7 +334,13 @@ ${transcript.substring(0, 40000)} ${transcript.length > 40000 ? "... (truncated)
                   items: {
                     type: "object",
                     additionalProperties: false,
-                    required: ["topic", "why_it_matters", "likely_exam_angles"],
+                    required: [
+                      "topic",
+                      "why_it_matters",
+                      "likely_exam_angles",
+                      "evidence_quotes",
+                      "practice_prompts",
+                    ],
                     properties: {
                       topic: { type: "string", minLength: 8, maxLength: 120 },
                       why_it_matters: {
@@ -351,6 +357,41 @@ ${transcript.substring(0, 40000)} ${transcript.length > 40000 ? "... (truncated)
                           minLength: 15,
                           maxLength: 160,
                         },
+                      },
+                      evidence_quotes: {
+                        type: "array",
+                        minItems: 1,
+                        maxItems: 4,
+                        items: {
+                          type: "string",
+                          minLength: 10,
+                          maxLength: 200,
+                        },
+                        description:
+                          "Direct quotes from the transcript supporting this signal field.",
+                      },
+                      practice_prompts: {
+                        type: "array",
+                        minItems: 1,
+                        maxItems: 3,
+                        items: {
+                          type: "object",
+                          additionalProperties: false,
+                          required: ["type", "prompt"],
+                          properties: {
+                            type: {
+                              type: "string",
+                              enum: ["Problem Question", "Essay Question"],
+                            },
+                            prompt: {
+                              type: "string",
+                              minLength: 20,
+                              maxLength: 300,
+                            },
+                          },
+                        },
+                        description:
+                          "Short, targeted practice questions for this specific signal.",
                       },
                     },
                   },

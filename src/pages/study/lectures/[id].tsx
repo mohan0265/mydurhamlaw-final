@@ -287,8 +287,8 @@ export default function LectureDetailPage() {
       what_to_master: s.likely_exam_angles || [],
       common_traps: [], // Not present in new schema
       signal_strength: overallStrength,
-      evidence_quotes: [],
-      practice_prompts: [],
+      evidence_quotes: s.evidence_quotes || [],
+      practice_prompts: s.practice_prompts || [],
     }));
   }
 

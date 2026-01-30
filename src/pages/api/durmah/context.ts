@@ -41,15 +41,44 @@ export default async function handler(
       // For now, return a basic valid structure to stop 400s
       // In a real implementation this would call `buildStudentContext`
       // But here we just return minimum valid JSON to satisfy the widget
-      const mockContext = {
-        profile: {
-          displayName: session.user.user_metadata?.full_name || "Student",
+      // Use the enhanced context builder (Single Source of Truth)
+      // This fetches Profile, YAAG, Assignments, etc.
+      const { enhanceDurmahContext } = await import(
+        "@/lib/durmah/contextBuilderEnhanced"
+      );
+
+      const baseCtx = {
+        student: {
+          displayName: session.user.user_metadata?.full_name || "",
+          yearGroup: "",
+          term: "",
+          weekOfTerm: 0,
+          localTimeISO: new Date().toISOString(),
         },
-        academic: { term: "Michaelmas", weekOfTerm: 5, timeOfDay: "Afternoon" },
-        continuity: { lastUserIntent: null },
-        upcomingTasks: [],
-        todaysEvents: [],
+        assignments: {
+          upcoming: [],
+          overdue: [],
+          recentlyCreated: [],
+          total: 0,
+        },
+        schedule: { todaysClasses: [] },
       };
+
+      // Extract lectureId/assignmentId from query for specific context enhancement if needed
+      const lectureId =
+        typeof req.query.lectureId === "string"
+          ? req.query.lectureId
+          : undefined;
+
+      const fullContext = await enhanceDurmahContext(
+        supabase,
+        session.user.id,
+        baseCtx as any,
+        undefined, // conversationId not needed for pure context fetch
+        lectureId,
+      );
+
+      return res.status(200).json(fullContext);
 
       return res.status(200).json({ ok: true, ...mockContext });
     } catch (err: any) {
