@@ -75,28 +75,24 @@ export default async function handler(
 
     if (transcriptError) throw transcriptError;
 
-    // 3. Trigger AI analysis (with timeout protection)
+    // 3. Trigger AI analysis (with 90s timeout protection)
     let analysis;
     try {
-      analysis = await Promise.race([
-        generateLectureAnalysis({
-          transcript,
-          module_code,
-          title,
-          lecture_date,
-        }),
-        new Promise((_, reject) =>
-          setTimeout(() => reject(new Error("Analysis timeout")), 15000),
-        ),
-      ]);
-    } catch (analysisError) {
+      analysis = await generateLectureAnalysis({
+        transcript,
+        module_code,
+        title,
+        lecture_date,
+      });
+    } catch (analysisError: any) {
       console.error("AI analysis failed:", analysisError);
-      // Continue without analysis - lecture is still imported
+
+      // Update status to error to stop the perpetual loading state
       await supabase
         .from("lectures")
         .update({
-          status: "ready",
-          error_message: "Analysis failed, but transcript saved successfully",
+          status: "error",
+          error_message: `AI Analysis failed: ${analysisError.message || "Timeout or Gemini API error"}. Please try editing and reprocessing.`,
         })
         .eq("id", lecture.id);
 
@@ -104,7 +100,7 @@ export default async function handler(
         success: true,
         lecture_id: lecture.id,
         warning:
-          "Lecture imported but AI analysis failed. You can retry later.",
+          "Lecture imported but AI analysis failed. Please try manual reprocess in Edit Details.",
       });
     }
 
@@ -155,18 +151,24 @@ async function generateLectureAnalysis(params: {
     throw new Error("GEMINI_API_KEY not configured");
   }
 
-  // Call Gemini API for analysis
-  const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${apiKey}`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [
-          {
-            parts: [
-              {
-                text: `You are an expert law tutor analyzing a lecture transcript for a Durham University law student.
+  // 90s Timeout Protection
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 90000);
+
+  try {
+    // Call Gemini API for analysis
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${apiKey}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        signal: controller.signal,
+        body: JSON.stringify({
+          contents: [
+            {
+              parts: [
+                {
+                  text: `You are an expert law tutor analyzing a lecture transcript for a Durham University law student.
 
 **Lecture Details:**
 - Title: ${title}
@@ -174,7 +176,7 @@ async function generateLectureAnalysis(params: {
 - Date: ${lecture_date || "N/A"}
 
 **Transcript:**
-${transcript.substring(0, 10000)} ${transcript.length > 10000 ? "... (truncated)" : ""}
+${transcript.substring(0, 15000)} ${transcript.length > 15000 ? "... (truncated)" : ""}
 
 **Task:** Generate a comprehensive analysis with the following sections:
 
@@ -186,42 +188,55 @@ ${transcript.substring(0, 10000)} ${transcript.length > 10000 ? "... (truncated)
 
 4. **Exam Prompts** (3-5 items): Potential exam questions or practice prompts based on this lecture's content.
 
+5. **Exam Signals**: Identify topic areas that are likely to be of high emphasis (Strength 1-5).
+
 Format your response as valid JSON:
 {
   "summary": "...",
   "key_points": ["...", "..."],
   "discussion_topics": ["...", "..."],
-  "exam_prompts": ["...", "..."]
+  "exam_prompts": ["...", "..."],
+  "exam_signals": []
 }`,
-              },
-            ],
+                },
+              ],
+            },
+          ],
+          generationConfig: {
+            temperature: 0.7,
+            maxOutputTokens: 2000,
           },
-        ],
-        generationConfig: {
-          temperature: 0.7,
-          maxOutputTokens: 2000,
-        },
-      }),
-    },
-  );
+        }),
+      },
+    );
 
-  if (!response.ok) {
-    const error = await response.text();
-    throw new Error(`Gemini API error: ${error}`);
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("Gemini API error:", errorText);
+      throw new Error(`AI Analysis failed: ${response.status}`);
+    }
+
+    const data = await response.json();
+    const textOutput = data.candidates?.[0]?.content?.parts?.[0]?.text;
+
+    if (!textOutput) {
+      throw new Error("No analysis received from AI");
+    }
+
+    // Clean JSON (handle possible markdown code blocks)
+    const cleanJson = textOutput
+      .replace(/```json/g, "")
+      .replace(/```/g, "")
+      .trim();
+    return JSON.parse(cleanJson);
+  } catch (error: any) {
+    if (error.name === "AbortError") {
+      throw new Error(
+        "AI Processing timed out. Please try again or check transcript length.",
+      );
+    }
+    throw error;
   }
-
-  const data = await response.json();
-  const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-
-  if (!text) {
-    throw new Error("No response from Gemini API");
-  }
-
-  // Parse JSON response (handle markdown code blocks)
-  const jsonMatch = text.match(/\{[\s\S]*\}/);
-  if (!jsonMatch) {
-    throw new Error("Failed to parse AI response as JSON");
-  }
-
-  return JSON.parse(jsonMatch[0]);
 }

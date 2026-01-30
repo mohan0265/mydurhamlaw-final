@@ -217,9 +217,9 @@ async function generateLectureAnalysis(params: {
     throw new Error("GEMINI_API_KEY not configured");
   }
 
-  // 30s Timeout Protection
+  // 90s Timeout Protection
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 35000); // 35s grace
+  const timeoutId = setTimeout(() => controller.abort(), 90000); // 90s grace
 
   try {
     // Call Gemini API for analysis

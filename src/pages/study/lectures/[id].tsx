@@ -99,21 +99,40 @@ export default function LectureDetailPage() {
 
   useEffect(() => {
     if (!id) return;
-    const fetchLecture = async () => {
+
+    let pollInterval: NodeJS.Timeout;
+
+    const fetchLecture = async (isPoll = false) => {
       try {
         const res = await fetch(`/api/lectures/get?id=${id}`);
         if (res.ok) {
           const data = await res.json();
           setLecture(data.lecture);
           setEditedUrl(data.lecture.panopto_url || "");
+
+          // Stop polling if terminal state reached
+          if (
+            (data.lecture.status === "ready" && data.lecture.notes) ||
+            data.lecture.status === "error"
+          ) {
+            clearInterval(pollInterval);
+          }
         }
       } catch (error) {
         console.error("Failed to fetch lecture:", error);
       } finally {
-        setLoading(false);
+        if (!isPoll) setLoading(false);
       }
     };
+
     fetchLecture();
+
+    // Set up polling if not ready
+    pollInterval = setInterval(() => {
+      fetchLecture(true);
+    }, 5000);
+
+    return () => clearInterval(pollInterval);
   }, [id]);
 
   const handleUpdateUrl = async () => {
@@ -705,24 +724,50 @@ export default function LectureDetailPage() {
       ) : (
         <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-12 text-center mb-6 shadow-sm">
           <div className="w-16 h-16 bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Sparkles className="w-8 h-8 animate-pulse" />
+            {lecture.status === "error" ? (
+              <AlertTriangle className="w-8 h-8 text-red-500" />
+            ) : (
+              <Sparkles className="w-8 h-8 animate-pulse" />
+            )}
           </div>
           <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
-            AI Breakdown in Progress
+            {lecture.status === "error"
+              ? "Analysis Failed"
+              : lecture.status === "uploaded"
+                ? "Lecture Uploaded"
+                : lecture.status === "transcribing"
+                  ? "Transcribing Audio..."
+                  : lecture.status === "summarizing"
+                    ? "Generating AI Breakdown..."
+                    : "AI Breakdown in Progress"}
           </h3>
           <p className="text-gray-500 dark:text-gray-400 max-w-sm mx-auto mb-6">
-            We're generating your summary, key points, and exam prep. This
-            usually takes 10-15 seconds.
+            {lecture.status === "error"
+              ? lecture.error_message ||
+                "Something went wrong during AI analysis."
+              : "We're generating your summary, key points, and exam prep. This usually takes 30-60 seconds for large lectures."}
           </p>
           <div className="flex justify-center gap-3">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => window.location.reload()}
-              className="gap-2"
-            >
-              <Loader2 className="w-4 h-4 animate-spin" /> Refresh to check
-            </Button>
+            {lecture.status === "error" ? (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowEditModal(true)}
+                className="gap-2"
+              >
+                Edit & Reprocess
+              </Button>
+            ) : (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => window.location.reload()}
+                className="gap-2"
+              >
+                <Loader2 className="w-4 h-4 animate-spin" /> Checking for
+                updates...
+              </Button>
+            )}
           </div>
         </div>
       )}
