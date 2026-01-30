@@ -105,6 +105,16 @@ export function RequireDurhamAccess({
   const { hasDurhamAccess, loading, error, retry } = useEntitlements();
   const router = useRouter();
   const user = useUser();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     // Only redirect if loading is false, there is no error, and access is explicitly missing
@@ -118,7 +128,7 @@ export function RequireDurhamAccess({
     }
   }, [hasDurhamAccess, loading, error, router, user]);
 
-  if (loading) {
+  if (!mounted || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <RefreshCw className="w-6 h-6 animate-spin text-gray-400" />
@@ -172,6 +182,16 @@ export function RequireLnatAccess({ children }: { children: React.ReactNode }) {
   const { hasLnatAccess, loading } = useEntitlements();
   const router = useRouter();
   const user = useUser();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     if (!loading && user && !hasLnatAccess) {
@@ -181,7 +201,7 @@ export function RequireLnatAccess({ children }: { children: React.ReactNode }) {
     }
   }, [hasLnatAccess, loading, router, user]);
 
-  if (loading || !hasLnatAccess) {
+  if (!mounted || loading || !hasLnatAccess) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <RefreshCw className="w-6 h-6 animate-spin text-gray-400" />

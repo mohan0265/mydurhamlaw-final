@@ -78,6 +78,16 @@ export default function LecturesPage() {
     "panopto" | "audio"
   >("panopto");
   const [isSettingGoal, setIsSettingGoal] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Fetch Modules
   useEffect(() => {
@@ -236,10 +246,13 @@ export default function LecturesPage() {
   );
 
   // Show loading while checking role or if loved one (redirecting)
-  if (isRoleChecking || isLovedOne) {
+  if (!mounted || isRoleChecking || isLovedOne) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <RefreshCw className="w-6 h-6 text-gray-400 animate-spin" />
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 gap-4">
+        <RefreshCw className="w-8 h-8 text-purple-600 animate-spin" />
+        <p className="text-sm text-gray-500 animate-pulse">
+          Securing your session...
+        </p>
       </div>
     );
   }

@@ -127,7 +127,6 @@ export default async function handler(
           .upsert({
             lecture_id: id,
             transcript_text: transcript,
-            updated_at: new Date().toISOString(),
           });
 
         if (tError) {
@@ -171,7 +170,6 @@ export default async function handler(
             discussion_topics: analysis.discussion_topics,
             exam_prompts: analysis.exam_prompts || [],
             exam_signals: analysis.exam_signals || [],
-            updated_at: new Date().toISOString(),
           });
 
         if (notesError)
