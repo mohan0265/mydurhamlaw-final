@@ -15,12 +15,25 @@ interface LectureUploadModalProps {
 }
 
 // ... (keep props interface but add initialMode)
+export interface LectureEditData {
+  id: string;
+  title: string;
+  transcript?: string;
+  panopto_url?: string;
+  user_module_id?: string;
+  module_code?: string;
+  module_name?: string;
+  lecturer_name?: string;
+  lecture_date?: string;
+}
+
 interface LectureUploadModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
   preSelectedModuleId?: string;
   initialMode?: "panopto" | "audio";
+  initialData?: LectureEditData;
 }
 
 export default function LectureUploadModal({
@@ -29,13 +42,45 @@ export default function LectureUploadModal({
   onSuccess,
   preSelectedModuleId,
   initialMode = "panopto",
+  initialData,
 }: LectureUploadModalProps) {
-  const [mode, setMode] = useState<"panopto" | "audio">(initialMode);
+  const [mode, setMode] = useState<"panopto" | "audio">(
+    initialMode || "panopto",
+  );
+  const isEditMode = !!initialData;
 
-  // Affects initial render if prop changes while open (less likely but good practice)
+  // Affects initial render if prop changes while open
   useEffect(() => {
-    if (isOpen && initialMode) setMode(initialMode);
-  }, [isOpen, initialMode]);
+    if (isOpen) {
+      if (initialData) {
+        // Edit Mode: Pre-fill
+        setMode("panopto");
+        setTitle(initialData.title || "");
+        setTranscript(initialData.transcript || "");
+        setPanoptoUrl(initialData.panopto_url || "");
+        // Module
+        setUserModuleId(initialData.user_module_id || "");
+        setModuleCode(initialData.module_code || "");
+        setModuleName(initialData.module_name || "");
+        setIsManualModule(
+          !initialData.user_module_id && !!initialData.module_code,
+        ); // If code exists but no ID, manual
+        // Lecturer
+        setLecturerName(initialData.lecturer_name || "");
+        setIsManualLecturer(!!initialData.lecturer_name); // Assume manual/filled for now, Select will match if possible
+        // Date
+        setLectureDate(
+          initialData.lecture_date
+            ? initialData.lecture_date.split("T")[0] || ""
+            : "",
+        );
+      } else {
+        // Create Mode: Default
+        if (initialMode) setMode(initialMode);
+        // Don't reset form here, resetForm() handles it on close/success
+      }
+    }
+  }, [isOpen, initialData, initialMode]);
 
   // ... (keep existing states)
   const [title, setTitle] = useState("");
@@ -62,6 +107,47 @@ export default function LectureUploadModal({
   const [isFetchingMetadata, setIsFetchingMetadata] = useState(false);
 
   if (!isOpen) return null;
+
+  // Handle Update (Edit Mode)
+  const handleUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!initialData || !title) return;
+
+    setUploading(true);
+    setError("");
+
+    try {
+      const res = await fetch("/api/lectures/update", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: initialData.id,
+          title,
+          transcript, // Send potentially edited transcript
+          // Metadata
+          user_module_id: userModuleId || null,
+          module_code: moduleCode || null,
+          module_name: moduleName || null,
+          lecturer_name: lecturerName || null,
+          lecture_date: lectureDate || null,
+          panopto_url: panoptoUrl || null,
+        }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Failed to update lecture");
+      }
+
+      onSuccess();
+      onClose();
+      // No onboarding trigger for updates
+    } catch (err: any) {
+      setError(err.message || "Update failed");
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const handleAudioUpload = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -261,7 +347,7 @@ export default function LectureUploadModal({
         <div className="border-b border-gray-100 dark:border-white/10">
           <div className="flex items-center justify-between p-4 pb-0">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-              Add New Lecture
+              {isEditMode ? "Edit Lecture Details" : "Add New Lecture"}
             </h2>
             <button
               onClick={onClose}
@@ -278,18 +364,24 @@ export default function LectureUploadModal({
             >
               Paste Transcript (Recommended)
             </button>
-            <button
-              onClick={() => setMode("audio")}
-              className={`pb-3 text-sm font-medium border-b-2 transition ${mode === "audio" ? "border-purple-600 text-purple-700 dark:text-purple-400 dark:border-purple-400" : "border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"}`}
-            >
-              Upload Audio
-            </button>
+            {!isEditMode && (
+              <button
+                onClick={() => setMode("audio")}
+                className={`pb-3 text-sm font-medium border-b-2 transition ${mode === "audio" ? "border-purple-600 text-purple-700 dark:text-purple-400 dark:border-purple-400" : "border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"}`}
+              >
+                Upload Audio
+              </button>
+            )}
           </div>
         </div>
 
         <form
           onSubmit={
-            mode === "panopto" ? handlePanoptoImport : handleAudioUpload
+            isEditMode
+              ? handleUpdate
+              : mode === "panopto"
+                ? handlePanoptoImport
+                : handleAudioUpload
           }
           className="p-4 space-y-4"
         >
@@ -311,7 +403,7 @@ export default function LectureUploadModal({
               <div>
                 <p className="font-bold mb-1">Audio Transcription</p>
                 <p>
-                  We'll transcribe your file with AI. Accuracy depends on
+                  We&apos;ll transcribe your file with AI. Accuracy depends on
                   recording clarity.
                 </p>
               </div>
@@ -509,8 +601,8 @@ export default function LectureUploadModal({
                   {/* ... (loader/link icons) */}
                 </div>
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  ✨ 1-click open in Panopto. We won't import content from this
-                  link.
+                  ✨ 1-click open in Panopto. We won&apos;t import content from
+                  this link.
                 </p>
               </div>
 
@@ -539,7 +631,7 @@ export default function LectureUploadModal({
                               Where is Captions?
                             </div>
                             <div className="leading-relaxed opacity-90">
-                              In Panopto, it’s the left sidebar tab called
+                              In Panopto, it&apos;s the left sidebar tab called
                               Captions. If missing, captions may be unavailable.
                             </div>
                             <div className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-x-[6px] border-x-transparent border-t-[6px] border-t-gray-900"></div>
@@ -648,9 +740,11 @@ export default function LectureUploadModal({
             >
               {uploading
                 ? "Processing..."
-                : mode === "panopto"
-                  ? "Import Transcript"
-                  : "Upload Audio"}
+                : isEditMode
+                  ? "Update Details & Reprocess"
+                  : mode === "panopto"
+                    ? "Import Transcript"
+                    : "Upload Audio"}
             </Button>
           </div>
         </form>
