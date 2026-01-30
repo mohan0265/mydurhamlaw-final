@@ -47,7 +47,10 @@ export default async function handler(
       .single();
 
     if (fetchError || !existing) {
-      return res.status(404).json({ error: "Lecture not found" });
+      console.error("Lecture lookup failed:", fetchError, "ID:", id);
+      return res
+        .status(404)
+        .json({ error: `Lecture record not found for ID: ${id}` });
     }
 
     if (existing.user_id !== user.id) {

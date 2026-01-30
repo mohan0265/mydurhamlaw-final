@@ -136,6 +136,7 @@ export default function LectureUploadModal({
 
       if (!res.ok) {
         const err = await res.json();
+        console.error("Update failed:", err);
         throw new Error(err.error || "Failed to update lecture");
       }
 
