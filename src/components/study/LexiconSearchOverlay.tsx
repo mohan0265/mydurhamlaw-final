@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import Link from "next/link";
+import { useAuth } from "@/lib/supabase/AuthContext";
 import { motion, AnimatePresence, useDragControls } from "framer-motion";
 import { GripHorizontal } from "lucide-react";
 
@@ -33,6 +34,7 @@ export default function LexiconSearchOverlay({
   isOpen,
   onClose,
 }: LexiconSearchOverlayProps) {
+  const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
   const [results, setResults] = useState<GlossaryTerm[]>([]);
   const [loading, setLoading] = useState(false);
@@ -137,6 +139,8 @@ export default function LexiconSearchOverlay({
         body: JSON.stringify({
           ...aiDefinition,
           source_reference: sourceRef,
+          created_by_name:
+            user?.user_metadata?.display_name || user?.email || "Student",
         }),
       });
 
@@ -146,7 +150,8 @@ export default function LexiconSearchOverlay({
           onClose();
         }, 1500);
       } else {
-        setError("Failed to save to Lexicon.");
+        const errData = await res.json();
+        setError(errData.error || "Failed to save to Lexicon.");
       }
     } catch (err) {
       setError("Database connection error.");

@@ -30,24 +30,30 @@ export default async function handler(
       .upsert(
         {
           user_id: user.id,
-          term,
-          definition,
-          source_reference,
-          created_by_name,
+          term: term.trim(),
+          definition: definition.trim(),
+          source_reference: source_reference || "Manual Lookup",
+          created_by_name: created_by_name || "Student",
           is_manual: true,
+          updated_at: new Date().toISOString(),
         },
         { onConflict: "user_id,term" },
       )
       .select()
       .single();
 
-    if (error) throw error;
+    if (error) {
+      console.error("[glossary/add-manual] Supabase Error:", error);
+      throw error;
+    }
 
     return res.status(200).json(data);
   } catch (error: any) {
-    console.error("[glossary/add-manual] Error:", error);
-    return res
-      .status(500)
-      .json({ error: error.message || "Internal server error" });
+    console.error("[glossary/add-manual] Catch Error:", error);
+    return res.status(500).json({
+      error: error.message || "Internal server error",
+      details: error.details || error.hint || null,
+      code: error.code || null,
+    });
   }
 }
