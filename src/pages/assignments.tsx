@@ -19,6 +19,7 @@ import { useFamiliarity } from "@/hooks/useFamiliarity";
 import ClarityCard, { ClarityNudge } from "@/components/ui/ClarityCard";
 import { BookOpen } from "lucide-react";
 import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
+import CoverageCheck from "@/components/study/CoverageCheck";
 
 export default function AssignmentsPage() {
   const router = useRouter();
@@ -322,13 +323,21 @@ export default function AssignmentsPage() {
                   }
                 />
               ) : selectedAssignment ? (
-                <AssignmentDetail
-                  assignment={selectedAssignment}
-                  onUpdate={handleUpdate}
-                  onDelete={handleDelete}
-                  onPlanWithAI={handlePlanWithAI}
-                  onEdit={() => setIsEditing(true)}
-                />
+                <>
+                  <CoverageCheck
+                    moduleId={selectedAssignment.module_id}
+                    moduleName={
+                      selectedAssignment.module_code || selectedAssignment.title
+                    }
+                  />
+                  <AssignmentDetail
+                    assignment={selectedAssignment}
+                    onUpdate={handleUpdate}
+                    onDelete={handleDelete}
+                    onPlanWithAI={handlePlanWithAI}
+                    onEdit={() => setIsEditing(true)}
+                  />
+                </>
               ) : (
                 <div className="bg-white/50 border border-white/50 rounded-xl h-full flex flex-col items-center justify-center text-gray-500 p-8 text-center dashed-border">
                   <div className="bg-white p-4 rounded-full shadow-sm mb-4">

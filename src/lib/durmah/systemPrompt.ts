@@ -167,6 +167,25 @@ STUDENT: ${displayName}, ${yearGroup}, ${term} Week ${weekOfTerm}
     }
   }
 
+  // SYLLABUSSHIELD™ COVERAGE (Learning Gaps)
+  if (context.moduleCoverage) {
+    const mc = context.moduleCoverage;
+    block += `🛡️ SYLLABUSSHIELD™ COVERAGE: ${mc.coverage_pct}% Complete\n`;
+    if (mc.missing_high_importance && mc.missing_high_importance.length > 0) {
+      block += `⚠️ MISSING CRITICAL TOPICS: ${mc.missing_high_importance
+        .slice(0, 3)
+        .map((t: any) => t.title)
+        .join(", ")}\n`;
+      block += `INSTRUCTION: Proactively mention these missing topics if the user is working on an assignment. Encourage them to upload relevant lectures.\n`;
+    } else if (mc.missing_topics && mc.missing_topics.length > 0) {
+      block += `MISSING TOPICS: ${mc.missing_topics
+        .slice(0, 3)
+        .map((t: any) => t.title)
+        .join(", ")}\n`;
+    }
+    block += `\n`;
+  }
+
   // Upcoming deadlines
   if (assignments.upcoming.length > 0) {
     block += `UPCOMING DEADLINES:\n`;
@@ -302,6 +321,15 @@ export function generateProactiveGreeting(
     if (first) {
       return `I see you just added "${first.title}"! Want to plan it out together?`;
     }
+  }
+
+  // Priority 4: SyllabusShield™ Gaps (Proactive Warning)
+  if (
+    context.moduleCoverage &&
+    context.moduleCoverage.missing_high_importance?.length > 0
+  ) {
+    const missing = context.moduleCoverage.missing_high_importance[0];
+    return `Just a heads-up — I noticed we don't have any lectures yet covering "${missing.title}". If you're starting that tutorial or assignment, want me to help you find the reading first, or do you have a lecture to upload?`;
   }
 
   return null; // Regular conversational opening

@@ -69,6 +69,10 @@ export default async function handler(
         typeof req.query.lectureId === "string"
           ? req.query.lectureId
           : undefined;
+      const assignmentId =
+        typeof req.query.assignmentId === "string"
+          ? req.query.assignmentId
+          : undefined;
 
       const fullContext = await enhanceDurmahContext(
         supabase,
@@ -76,11 +80,10 @@ export default async function handler(
         baseCtx as any,
         undefined, // conversationId not needed for pure context fetch
         lectureId,
+        assignmentId,
       );
 
       return res.status(200).json(fullContext);
-
-      return res.status(200).json({ ok: true, ...mockContext });
     } catch (err: any) {
       console.error(err);
       // Return 200 with error field to prevent client retry loops on 500

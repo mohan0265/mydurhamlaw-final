@@ -445,6 +445,7 @@ export async function enhanceDurmahContext(
   baseContext: DurmahContextPacket,
   conversationId?: string,
   activeLectureId?: string,
+  activeAssignmentId?: string,
 ): Promise<DurmahContextPacket> {
   // Fetch enhanced context in parallel
   const [assignments, awy, lectures, profile, recentTail] = await Promise.all([
@@ -454,6 +455,39 @@ export async function enhanceDurmahContext(
     fetchProfileContext(supabase, userId),
     fetchRecentTailAcrossScopes(supabase, userId),
   ]);
+
+  // Fetch coverage for active module if applicable
+  let moduleCoverage = undefined;
+
+  // Refined: determine target module for coverage intelligence
+  let targetModuleId = lectures.current?.module_id;
+
+  if (!targetModuleId && activeAssignmentId) {
+    const { data: aMeta } = await supabase
+      .from("assignments")
+      .select("module_id")
+      .eq("id", activeAssignmentId)
+      .maybeSingle();
+    if (aMeta?.module_id) targetModuleId = aMeta.module_id;
+  }
+
+  // This is a bit tricky without knowing the current URL Params in this backend function.
+  // However, buildModuleContext (Line 32 in context.ts) is called if module_id is in query.
+  // Let's assume we want to attach coverage to the "current" context if it exists.
+
+  const fetchCoverage = async (mId: string) => {
+    const { data } = await supabase
+      .from("module_coverage_rollups")
+      .select("*")
+      .eq("module_id", mId)
+      .eq("user_id", userId)
+      .maybeSingle();
+    return data;
+  };
+
+  if (targetModuleId) {
+    moduleCoverage = await fetchCoverage(targetModuleId);
+  }
 
   let localHistory: any[] = [];
   if (conversationId) {
@@ -493,6 +527,7 @@ export async function enhanceDurmahContext(
     profile,
     academic: academic as any,
     recentMessages: uniqueMessages as any[],
+    moduleCoverage,
   };
 
   if (finalContext.modeContext?.mode === "quiz") {

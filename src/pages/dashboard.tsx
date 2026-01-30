@@ -42,6 +42,11 @@ import CountdownTimer from "@/components/ui/CountdownTimer";
 
 import { useUserDisplayName } from "@/hooks/useUserDisplayName";
 
+const ModuleReadinessWidget = dynamic(
+  () => import("@/components/dashboard/ModuleReadinessWidget"),
+  { ssr: false },
+);
+
 // Components
 import { RequireDurhamAccess } from "@/components/auth/EntitlementGuards";
 
@@ -779,25 +784,8 @@ function DashboardContent() {
                 </div>
               </div>
 
-              {/* Wellbeing Feature */}
-              <div
-                className="bg-gradient-to-br from-pink-50 to-white rounded-2xl border border-pink-100 p-5 shadow-sm hover:shadow-md transition cursor-pointer"
-                onClick={() => router.push("/wellbeing")}
-              >
-                <div className="flex items-start justify-between mb-3">
-                  <div className="p-2 bg-pink-100 rounded-lg text-pink-600">
-                    <Heart className="w-5 h-5" />
-                  </div>
-                </div>
-                <h4 className="font-bold text-gray-900 mb-1">Wellbeing Hub</h4>
-                <p className="text-xs text-gray-600 mb-3">
-                  Daily check-in incomplete. Track your trends.
-                </p>
-                <div className="text-xs font-semibold text-pink-700 flex items-center gap-1 group">
-                  Check In{" "}
-                  <ArrowRight className="w-3 h-3 group-hover:translate-x-1 transition" />
-                </div>
-              </div>
+              {/* SyllabusShield Readiness */}
+              <ModuleReadinessWidget />
 
               {/* Live Legal News reinforcement card */}
               <div

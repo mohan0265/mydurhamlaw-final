@@ -24,6 +24,7 @@ export default function ManageModulesPage() {
   const [customCode, setCustomCode] = useState("");
   const [customName, setCustomName] = useState("");
   const [staffNames, setStaffNames] = useState<string[]>([""]);
+  const [syllabusTopics, setSyllabusTopics] = useState<string>("");
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -76,6 +77,7 @@ export default function ManageModulesPage() {
     setCustomCode("");
     setCustomName("");
     setStaffNames([""]);
+    setSyllabusTopics("");
   };
 
   const handleOpenAdd = () => {
@@ -111,6 +113,27 @@ export default function ManageModulesPage() {
     if (!staffs || staffs.length === 0) staffs = [""];
 
     setStaffNames(staffs);
+
+    // Fetch existing syllabus topics
+    const fetchTopics = async () => {
+      const supabase = getSupabaseClient();
+      const { data: topics } = await supabase
+        .from("module_topics")
+        .select("title, importance_weight")
+        .eq("module_id", mod.catalog_id)
+        .eq("user_id", user?.id)
+        .order("order_index", { ascending: true });
+
+      if (topics) {
+        setSyllabusTopics(
+          topics
+            .map((t) => `${t.importance_weight >= 2 ? "! " : ""}${t.title}`)
+            .join("\n"),
+        );
+      }
+    };
+    fetchTopics();
+
     setShowModal(true);
   };
 
@@ -195,11 +218,43 @@ export default function ManageModulesPage() {
     if (error) {
       toast.error("Failed to save module");
       console.error(error);
-    } else {
-      toast.success("Module saved!");
-      setShowModal(false);
-      fetchUserModules();
+      setSubmitting(false);
+      return;
     }
+
+    toast.success("Module saved!");
+
+    // Save Syllabus Topics
+    const topicLines = syllabusTopics
+      .split("\n")
+      .map((l) => l.trim())
+      .filter((l) => l.length > 0);
+
+    if (topicLines.length > 0) {
+      // Delete old topics first for this user+module
+      await supabase
+        .from("module_topics")
+        .delete()
+        .eq("module_id", payload.catalog_id)
+        .eq("user_id", user?.id);
+
+      const topicsToInsert = topicLines.map((line, idx) => {
+        const isHigh = line.startsWith("!");
+        const title = isHigh ? line.substring(1).trim() : line;
+        return {
+          module_id: payload.catalog_id,
+          user_id: user?.id,
+          title,
+          importance_weight: isHigh ? 2 : 1,
+          order_index: idx,
+        };
+      });
+
+      await supabase.from("module_topics").insert(topicsToInsert);
+    }
+
+    setShowModal(false);
+    fetchUserModules();
     setSubmitting(false);
   };
 
@@ -412,10 +467,36 @@ export default function ManageModulesPage() {
                   <button
                     type="button"
                     onClick={() => setStaffNames([...staffNames, ""])}
-                    className="mt-2 text-sm font-semibold text-purple-600 hover:text-purple-700 flex items-center gap-1"
+                    className="mt-2 text-xs font-bold text-purple-600 hover:text-purple-700 flex items-center gap-1"
                   >
-                    <Plus size={16} /> Add another staff member
+                    <Plus size={14} /> Add Another Staff Member
                   </button>
+                </div>
+
+                {/* SyllabusShield Editor */}
+                <div className="bg-purple-50 dark:bg-purple-900/10 p-4 rounded-xl border border-purple-100 dark:border-purple-500/20">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="w-6 h-6 bg-purple-600 text-white rounded-md flex items-center justify-center text-[10px] font-bold">
+                      🛡️
+                    </div>
+                    <label className="text-sm font-bold text-gray-900 dark:text-white">
+                      SyllabusShield™ Topics
+                    </label>
+                  </div>
+                  <p className="text-[10px] text-purple-600 dark:text-purple-400 font-bold uppercase tracking-wider mb-2">
+                    Paste topics (One per line). Use "!" for high importance.
+                  </p>
+                  <textarea
+                    value={syllabusTopics}
+                    onChange={(e) => setSyllabusTopics(e.target.value)}
+                    placeholder="! Offer & Acceptance&#10;Consideration&#10;! Intention to Create Legal Relations&#10;Privity"
+                    rows={4}
+                    className="w-full px-3 py-2 border border-purple-200 dark:border-purple-500/30 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none bg-white dark:bg-gray-800 text-sm dark:text-white"
+                  />
+                  <p className="text-[10px] text-gray-500 mt-2">
+                    Durmah uses these to track your module coverage and warn
+                    before assignments.
+                  </p>
                 </div>
 
                 <div className="pt-4 flex gap-3">

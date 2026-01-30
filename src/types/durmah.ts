@@ -182,4 +182,12 @@ export type DurmahContextPacket = {
     };
     total: number;
   };
+  moduleCoverage?: {
+    module_id: string;
+    total_topics: number;
+    covered_topics: number;
+    coverage_pct: number;
+    missing_topics: { id: string; title: string }[];
+    missing_high_importance: { id: string; title: string }[];
+  };
 };

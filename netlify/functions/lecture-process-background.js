@@ -199,6 +199,134 @@ exports.handler = async (event) => {
       }
     }
 
+    // 8.6 SyllabusShield™ Tagging
+    console.log("[background] Step 8.6: SyllabusShield™ Tagging");
+    try {
+      const { data: topics } = await supabaseAdmin
+        .from("module_topics")
+        .select("id, title, description, keywords")
+        .eq("module_id", lecture.module_id)
+        .eq("user_id", userId);
+
+      if (topics && topics.length > 0) {
+        const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+        const model = process.env.OPENAI_MODEL || "gpt-4o-mini";
+
+        // Call LLM once to match lecture summary against topics
+        const response = await openai.chat.completions.create({
+          model,
+          messages: [
+            {
+              role: "system",
+              content:
+                "You are an AI that matches lecture summaries against a module syllabus. Select which topics are covered by the lecture based on the summary provided.",
+            },
+            {
+              role: "user",
+              content: `
+Lecture Summary: ${analysis.summary}
+Key Points: ${JSON.stringify(analysis.key_points)}
+
+Syllabus Topics (Select those covered):
+${topics.map((t, idx) => `${idx + 1}. ${t.title}${t.description ? `: ${t.description}` : ""}`).join("\n")}
+
+Respond in JSON format: { "matches": [ { "index": number, "confidence": number, "evidence": string } ] } index is 1-based from the list above.`,
+            },
+          ],
+          response_format: { type: "json_object" },
+        });
+
+        const result = JSON.parse(response.choices[0].message.content);
+        if (result.matches && Array.isArray(result.matches)) {
+          const coverageToInsert = result.matches
+            .filter((m) => m.confidence >= 0.65)
+            .map((m) => {
+              const topic = topics[m.index - 1];
+              if (!topic) return null;
+              return {
+                user_id: userId,
+                module_id: lecture.module_id,
+                lecture_item_id: lecture.academic_item_id,
+                topic_id: topic.id,
+                confidence: m.confidence,
+                evidence: { rationale: m.evidence },
+              };
+            })
+            .filter(Boolean);
+
+          if (coverageToInsert.length > 0) {
+            await supabaseAdmin
+              .from("lecture_topic_coverage")
+              .upsert(coverageToInsert, {
+                onConflict: "lecture_item_id,topic_id",
+              });
+          }
+        }
+      }
+    } catch (e) {
+      console.error("[background] SyllabusShield tagging failed:", e);
+    }
+
+    // 8.7 Update Module Coverage Rollup
+    console.log("[background] Step 8.7: Updating Module Coverage Rollup");
+    try {
+      // Logic to compute or trigger compute
+      // We'll create an API endpoint later but let's do a direct compute here as well
+      const [{ count: totalTopics }, { data: coveredData }] = await Promise.all(
+        [
+          supabaseAdmin
+            .from("module_topics")
+            .select("*", { count: "exact", head: true })
+            .eq("module_id", lecture.module_id)
+            .eq("user_id", userId),
+          supabaseAdmin
+            .from("lecture_topic_coverage")
+            .select("topic_id")
+            .eq("module_id", lecture.module_id)
+            .eq("user_id", userId)
+            .gte("confidence", 0.65),
+        ],
+      );
+
+      const uniqueCoveredIds = new Set(
+        (coveredData || []).map((d) => d.topic_id),
+      );
+      const coveredCount = uniqueCoveredIds.size;
+      const pct = totalTopics
+        ? Math.round((coveredCount / totalTopics) * 100)
+        : 0;
+
+      // Get missing topics
+      const { data: allTopics } = await supabaseAdmin
+        .from("module_topics")
+        .select("id, title, importance_weight")
+        .eq("module_id", lecture.module_id)
+        .eq("user_id", userId)
+        .order("order_index", { ascending: true });
+
+      const missing = (allTopics || []).filter(
+        (t) => !uniqueCoveredIds.has(t.id),
+      );
+
+      await supabaseAdmin.from("module_coverage_rollups").upsert(
+        {
+          user_id: userId,
+          module_id: lecture.module_id,
+          total_topics: totalTopics || 0,
+          covered_topics: coveredCount,
+          coverage_pct: pct,
+          missing_topics: missing.map((m) => ({ id: m.id, title: m.title })),
+          missing_high_importance: missing
+            .filter((m) => m.importance_weight >= 2)
+            .map((m) => ({ id: m.id, title: m.title })),
+          last_computed_at: new Date().toISOString(),
+        },
+        { onConflict: "user_id,module_id" },
+      );
+    } catch (e) {
+      console.error("[background] Rollup failed:", e);
+    }
+
     // 9. Update status to ready
     console.log(
       `[background] Processing complete for ${lectureId}. Final status: ready`,
