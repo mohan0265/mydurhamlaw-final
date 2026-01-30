@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 
-interface Assignment {
+interface IRACAssignment {
   id?: string;
   title: string;
   module?: string;
@@ -32,8 +32,8 @@ interface Assignment {
 
 interface Props {
   assignmentId?: string;
-  initialData?: Partial<Assignment>;
-  onSave?: (assignment: Assignment) => void;
+  initialData?: Partial<IRACAssignment>;
+  onSave?: (assignment: IRACAssignment) => void;
 }
 
 const STEPS = ["Issue", "Research", "Analysis", "Conclusion"];
@@ -67,7 +67,7 @@ export default function IRACWizard({
 }: Props) {
   const isEnabled = useFeatureFlag("ff_assignment_oscola");
   const [currentStep, setCurrentStep] = useState(0);
-  const [assignment, setAssignment] = useState<Assignment>({
+  const [assignment, setAssignment] = useState<IRACAssignment>({
     title: "",
     module: "",
     integrity_level: "study_aid",
@@ -117,7 +117,7 @@ export default function IRACWizard({
       .filter((word) => word.length > 0).length;
   };
 
-  const handleFieldChange = (field: keyof Assignment, value: string) => {
+  const handleFieldChange = (field: keyof IRACAssignment, value: string) => {
     setAssignment((prev) => ({ ...prev, [field]: value }));
     setHasUnsavedChanges(true);
   };

@@ -282,7 +282,7 @@ export default function AssignmentsPage() {
           )}
 
           {/* 3-Column Layout */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-[calc(100vh-140px)] min-h-[800px]">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-[calc(100vh-140px)] min-h-[0] overflow-hidden">
             {/* Left Col: List (3 cols) */}
             <div className="lg:col-span-3 h-full">
               <AssignmentList
@@ -303,81 +303,86 @@ export default function AssignmentsPage() {
             </div>
 
             {/* Center Col: Detail or Form (5 cols) */}
-            <div className="lg:col-span-5 h-full">
-              {showCreateForm || (isEditing && selectedAssignment) ? (
-                <AssignmentCreateForm
-                  onCancel={() => {
-                    setShowCreateForm(false);
-                    setIsEditing(false);
-                  }}
-                  onSave={handleCreateSave}
-                  initialDate={
-                    router.query.date
-                      ? new Date(router.query.date as string)
-                      : undefined
-                  }
-                  initialData={
-                    isEditing && selectedAssignment
-                      ? selectedAssignment
-                      : undefined
-                  }
-                />
-              ) : selectedAssignment ? (
-                <>
-                  <CoverageCheck
-                    moduleId={selectedAssignment.module_id}
-                    moduleName={
-                      selectedAssignment.module_code || selectedAssignment.title
+            <div className="lg:col-span-5 h-full overflow-y-auto no-scrollbar">
+              <div className="flex flex-col gap-6 min-h-full">
+                {showCreateForm || (isEditing && selectedAssignment) ? (
+                  <AssignmentCreateForm
+                    onCancel={() => {
+                      setShowCreateForm(false);
+                      setIsEditing(false);
+                    }}
+                    onSave={handleCreateSave}
+                    initialDate={
+                      router.query.date
+                        ? new Date(router.query.date as string)
+                        : undefined
+                    }
+                    initialData={
+                      isEditing && selectedAssignment
+                        ? selectedAssignment
+                        : undefined
                     }
                   />
-                  <AssignmentDetail
-                    assignment={selectedAssignment}
-                    onUpdate={handleUpdate}
-                    onDelete={handleDelete}
-                    onPlanWithAI={handlePlanWithAI}
-                    onEdit={() => setIsEditing(true)}
-                  />
-                </>
-              ) : (
-                <div className="bg-white/50 border border-white/50 rounded-xl h-full flex flex-col items-center justify-center text-gray-500 p-8 text-center dashed-border">
-                  <div className="bg-white p-4 rounded-full shadow-sm mb-4">
-                    <span className="text-4xl">📚</span>
+                ) : selectedAssignment ? (
+                  <div className="flex flex-col gap-6">
+                    <CoverageCheck
+                      moduleId={(selectedAssignment as any).module_id || ""}
+                      moduleName={
+                        selectedAssignment.module_code ||
+                        selectedAssignment.title
+                      }
+                    />
+                    <AssignmentDetail
+                      assignment={selectedAssignment}
+                      onUpdate={handleUpdate}
+                      onDelete={handleDelete}
+                      onPlanWithAI={handlePlanWithAI}
+                      onEdit={() => setIsEditing(true)}
+                    />
                   </div>
-                  <h3 className="text-xl font-bold text-gray-700 mb-2">
-                    Select an Assignment
-                  </h3>
-                  <p className="max-w-xs mx-auto">
-                    Choose a task from the list or create a new one to get
-                    started with Durmah.
-                  </p>
-                </div>
-              )}
+                ) : (
+                  <div className="bg-white/50 border border-white/50 rounded-xl h-full flex flex-col items-center justify-center text-gray-500 p-8 text-center dashed-border">
+                    <div className="bg-white p-4 rounded-full shadow-sm mb-4">
+                      <span className="text-4xl">📚</span>
+                    </div>
+                    <h3 className="text-xl font-bold text-gray-700 mb-2">
+                      Select an Assignment
+                    </h3>
+                    <p className="max-w-xs mx-auto">
+                      Choose a task from the list or create a new one to get
+                      started with Durmah.
+                    </p>
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Right Col: Chat or Workflow Overlay (4 cols) */}
-            <div className="lg:col-span-4 h-full">
-              {selectedAssignment && !showWorkflow && (
-                <DurmahChat
-                  contextType="assignment"
-                  contextTitle={selectedAssignment.title}
-                  contextId={selectedAssignment.id}
-                  initialPrompt={chatInitialPrompt}
-                  systemHint={`Brief: ${selectedAssignment.brief_rich}`}
-                />
-              )}
+            <div className="lg:col-span-4 h-full overflow-y-auto no-scrollbar">
+              <div className="flex flex-col h-full">
+                {selectedAssignment && !showWorkflow && (
+                  <DurmahChat
+                    contextType="assignment"
+                    contextTitle={selectedAssignment.title}
+                    contextId={selectedAssignment.id}
+                    initialPrompt={chatInitialPrompt}
+                    systemHint={`Brief: ${selectedAssignment.brief_rich}`}
+                  />
+                )}
 
-              <div className="mt-6 pt-4 border-t border-gray-100">
-                <Link
-                  href="/exam-prep"
-                  prefetch={false}
-                  className="text-xs font-bold text-gray-400 hover:text-indigo-600 transition flex items-center gap-2 group"
-                >
-                  Finalizing your draft?{" "}
-                  <span className="underline group-hover:no-underline font-black text-indigo-500">
-                    Prepare for exams
-                  </span>{" "}
-                  →
-                </Link>
+                <div className="mt-6 pt-4 border-t border-gray-100 dark:border-gray-800">
+                  <Link
+                    href="/exam-prep"
+                    prefetch={false}
+                    className="text-xs font-bold text-gray-400 hover:text-indigo-600 transition flex items-center gap-2 group"
+                  >
+                    Finalizing your draft?{" "}
+                    <span className="underline group-hover:no-underline font-black text-indigo-500">
+                      Prepare for exams
+                    </span>{" "}
+                    →
+                  </Link>
+                </div>
               </div>
             </div>
           </div>

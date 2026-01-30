@@ -162,6 +162,7 @@ export type DurmahContextPacket = {
     recent: Array<{
       id: string;
       title: string;
+      module_id?: string;
       module_code?: string;
       module_name?: string;
       lecturer_name?: string;
@@ -171,6 +172,7 @@ export type DurmahContextPacket = {
     current?: {
       id: string;
       title: string;
+      module_id?: string;
       module_code?: string;
       module_name?: string;
       lecturer_name?: string;

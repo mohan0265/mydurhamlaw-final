@@ -86,7 +86,7 @@ export default function AssignmentDetail({
   ];
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 h-[800px] flex flex-col overflow-hidden">
+    <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 h-full flex flex-col overflow-hidden">
       {/* Header */}
       <div className="p-6 border-b border-gray-100 bg-white z-10">
         <div className="flex justify-between items-start gap-4 mb-4">

@@ -1,4 +1,10 @@
-export type AssignmentStatus = 'not_started' | 'planning' | 'drafting' | 'editing' | 'submitted' | 'completed';
+export type AssignmentStatus =
+  | "not_started"
+  | "planning"
+  | "drafting"
+  | "editing"
+  | "submitted"
+  | "completed";
 
 export interface Assignment {
   id: string;
@@ -11,7 +17,8 @@ export interface Assignment {
   due_date: string;
   status: AssignmentStatus;
   estimated_effort_hours?: number;
-  
+  module_id?: string;
+
   // New fields for Hub Upgrade
   brief_rich?: string | any;
   word_count_target?: number;
@@ -49,7 +56,7 @@ export interface AssignmentMilestone {
   assignment_id: string;
   title: string;
   due_at?: string;
-  status: 'pending' | 'completed' | 'missed';
+  status: "pending" | "completed" | "missed";
   sort_order: number;
   created_at: string;
 }

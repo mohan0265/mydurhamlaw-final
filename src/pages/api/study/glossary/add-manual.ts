@@ -9,7 +9,7 @@ export default async function handler(
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  const { term, definition, source_reference } = req.body;
+  const { term, definition, source_reference, created_by_name } = req.body;
   if (!term || !definition) {
     return res.status(400).json({ error: "Term and definition are required" });
   }
@@ -33,6 +33,7 @@ export default async function handler(
           term,
           definition,
           source_reference,
+          created_by_name,
           is_manual: true,
         },
         { onConflict: "user_id,term" },

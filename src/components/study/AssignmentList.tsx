@@ -68,7 +68,7 @@ export default function AssignmentList({
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 flex flex-col h-[600px]">
+    <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 flex flex-col h-full">
       {/* Header */}
       <div className="p-4 border-b border-gray-100 space-y-3">
         <div className="flex justify-between items-center">

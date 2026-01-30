@@ -38,7 +38,15 @@ interface Lecture {
   module_name?: string;
   lecturer_name?: string;
   lecture_date?: string;
-  status: "uploaded" | "transcribing" | "summarizing" | "ready" | "error";
+  status:
+    | "uploaded"
+    | "queued"
+    | "processing"
+    | "transcribing"
+    | "summarizing"
+    | "ready"
+    | "failed"
+    | "error";
   created_at: string;
   last_processed_at?: string;
 }
@@ -136,7 +144,7 @@ export default function LecturesPage() {
           LECTURE_STATUSES.UPLOADED,
           LECTURE_STATUSES.PROCESSING,
           LECTURE_STATUSES.QUEUED,
-        ].includes(l.status)
+        ].includes(l.status as any)
       ) {
         return false;
       }

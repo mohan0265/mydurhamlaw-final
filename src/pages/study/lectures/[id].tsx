@@ -576,26 +576,31 @@ export default function LectureDetailPage() {
                     <div className="space-y-4">
                       {filteredSignals.map((signal, idx) => {
                         // Badge Logic
-                        let badgeColor = "bg-blue-100 text-blue-700";
+                        let badgeColor =
+                          "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400";
                         let badgeText = "Possible relevance (Strength 1)";
                         if (signal.signal_strength >= 5) {
-                          badgeColor = "bg-red-100 text-red-800";
+                          badgeColor =
+                            "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400";
                           badgeText = "High emphasis (Strength 5)";
                         } else if (signal.signal_strength === 4) {
-                          badgeColor = "bg-orange-100 text-orange-800";
+                          badgeColor =
+                            "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400";
                           badgeText = "Strong emphasis (Strength 4)";
                         } else if (signal.signal_strength === 3) {
-                          badgeColor = "bg-amber-100 text-amber-800";
+                          badgeColor =
+                            "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400";
                           badgeText = "Noted emphasis (Strength 3)";
                         } else if (signal.signal_strength === 2) {
-                          badgeColor = "bg-blue-100 text-blue-800";
+                          badgeColor =
+                            "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400";
                           badgeText = "Light emphasis (Strength 2)";
                         }
 
                         return (
                           <div
                             key={idx}
-                            className="border border-gray-200 rounded-xl p-5 hover:border-purple-300 transition-all shadow-sm bg-white group"
+                            className="border border-gray-200 dark:border-gray-800 rounded-xl p-5 hover:border-purple-300 dark:hover:border-purple-500/50 transition-all shadow-sm bg-white dark:bg-gray-900 group"
                           >
                             <div className="flex justify-between items-start gap-4 mb-3">
                               <div className="flex-1">
@@ -680,7 +685,7 @@ export default function LectureDetailPage() {
                                   {signal.common_traps &&
                                     signal.common_traps.length > 0 && (
                                       <div>
-                                        <h5 className="font-bold text-gray-900 mb-2 flex items-center gap-2">
+                                        <h5 className="font-bold text-gray-900 dark:text-gray-100 mb-2 flex items-center gap-2">
                                           <AlertTriangle className="w-4 h-4 text-red-500" />{" "}
                                           Common traps
                                         </h5>
@@ -688,7 +693,7 @@ export default function LectureDetailPage() {
                                           {signal.common_traps.map((m, i) => (
                                             <li
                                               key={i}
-                                              className="flex items-start gap-2 text-gray-700"
+                                              className="flex items-start gap-2 text-gray-700 dark:text-gray-300"
                                             >
                                               <div className="w-1.5 h-1.5 bg-red-300 rounded-full mt-1.5 shrink-0" />
                                               <span>{m}</span>
@@ -700,20 +705,20 @@ export default function LectureDetailPage() {
                                 </div>
 
                                 {/* Practice Prompts */}
-                                <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
-                                  <h5 className="font-bold text-gray-900 mb-3">
+                                <div className="bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-xl p-4">
+                                  <h5 className="font-bold text-gray-900 dark:text-gray-100 mb-3">
                                     Practice prompts
                                   </h5>
                                   <div className="space-y-3">
                                     {signal.practice_prompts.map((p, i) => (
                                       <div
                                         key={i}
-                                        className="flex gap-3 items-baseline bg-white p-3 rounded-lg border border-gray-200 shadow-sm"
+                                        className="flex gap-3 items-baseline bg-white dark:bg-gray-800 p-3 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm"
                                       >
-                                        <span className="text-xs font-bold uppercase tracking-wider text-purple-600 shrink-0 min-w-[5rem]">
+                                        <span className="text-xs font-bold uppercase tracking-wider text-purple-600 dark:text-purple-400 shrink-0 min-w-[5rem]">
                                           {p.type}
                                         </span>
-                                        <span className="text-gray-800">
+                                        <span className="text-gray-800 dark:text-gray-200">
                                           {p.prompt}
                                         </span>
                                       </div>
@@ -740,7 +745,7 @@ export default function LectureDetailPage() {
                                     <Button
                                       size="sm"
                                       variant="ghost"
-                                      className="text-gray-500 hover:text-gray-800"
+                                      className="text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
                                     >
                                       <MessageSquare className="w-4 h-4 mr-2" />{" "}
                                       Ask Durmah
@@ -892,12 +897,12 @@ export default function LectureDetailPage() {
         </div>
       )}
 
-      {/* Transcript Logic (kept same) */}
+      {/* Transcript Logic */}
       {lecture.transcript && (
-        <div className="bg-white rounded-xl border border-gray-200 mt-6">
+        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 mt-6 shadow-sm overflow-hidden">
           <button
             onClick={() => setShowTranscript(!showTranscript)}
-            className="w-full flex justify-between p-4 font-bold text-gray-700 hover:bg-gray-50"
+            className="w-full flex justify-between p-4 font-bold text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
           >
             <span>Full Transcript</span>
             {showTranscript ? <ChevronUp /> : <ChevronDown />}

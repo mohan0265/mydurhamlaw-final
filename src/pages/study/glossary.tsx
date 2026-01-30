@@ -15,22 +15,98 @@ import {
 import { Button } from "@/components/ui/Button";
 import Link from "next/link";
 import { getSupabaseClient } from "@/lib/supabase/client";
+import { useAuth } from "@/lib/supabase/AuthContext";
+import toast from "react-hot-toast";
+import { Loader2, Plus, Check } from "lucide-react";
 
 interface GlossaryTerm {
   id: string;
   term: string;
   definition: string;
   source_reference?: string;
+  is_manual?: boolean;
+  created_by_name?: string;
   lectures: { id: string; title: string }[];
 }
 
 export default function GlossaryPage() {
   const router = useRouter();
+  const { user } = useAuth();
   const [terms, setTerms] = useState<GlossaryTerm[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedLetter, setSelectedLetter] = useState<string | null>(null);
   const [expandedTerm, setExpandedTerm] = useState<string | null>(null);
+
+  // Manual Entry State
+  const [isDefining, setIsDefining] = useState(false);
+  const [aiDefinition, setAiDefinition] = useState<{
+    term: string;
+    definition: string;
+  } | null>(null);
+  const [manualReference, setManualReference] = useState("");
+
+  const handleDefine = async () => {
+    if (!searchQuery) return;
+    setIsDefining(true);
+    setAiDefinition(null);
+    try {
+      const res = await fetch("/api/study/glossary/define", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ term: searchQuery }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setAiDefinition(data);
+        toast.success("AI Definition Generated!");
+      } else {
+        const error = await res.json();
+        toast.error(error.error || "Failed to define term");
+      }
+    } catch (err) {
+      toast.error("Network error. Please try again.");
+    } finally {
+      setIsDefining(false);
+    }
+  };
+
+  const handleSaveManual = async () => {
+    if (!aiDefinition) return;
+    const toastId = toast.loading("Saving to your Lexicon...");
+    try {
+      const res = await fetch("/api/study/glossary/add-manual", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          term: aiDefinition.term,
+          definition: aiDefinition.definition,
+          source_reference: manualReference || "Manual Reading/Research",
+          created_by_name:
+            user?.user_metadata?.display_name || user?.email || "Student",
+        }),
+      });
+
+      if (res.ok) {
+        const saved = await res.json();
+        setTerms((prev) => [
+          ...prev,
+          {
+            ...saved,
+            lectures: [],
+          },
+        ]);
+        setAiDefinition(null);
+        setManualReference("");
+        setSearchQuery("");
+        toast.success("Successfully added to Lexicon!", { id: toastId });
+      } else {
+        toast.error("Failed to save term", { id: toastId });
+      }
+    } catch (err) {
+      toast.error("Error saving term", { id: toastId });
+    }
+  };
 
   useEffect(() => {
     const fetchTerms = async () => {
@@ -168,6 +244,11 @@ export default function GlossaryPage() {
                       {t.lectures.length}{" "}
                       {t.lectures.length === 1 ? "Source" : "Sources"}
                     </span>
+                    {t.is_manual && (
+                      <span className="bg-purple-100 text-purple-700 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-widest border border-purple-200">
+                        Entered by {t.created_by_name || "Student"}
+                      </span>
+                    )}
                   </div>
                   <p className="text-gray-600 mt-2 leading-relaxed">
                     {t.definition}
@@ -217,24 +298,104 @@ export default function GlossaryPage() {
           ))}
         </div>
       ) : (
-        <div className="text-center py-24 bg-white rounded-3xl border-2 border-dashed border-gray-200">
-          <div className="bg-gray-50 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6">
-            <Search className="w-10 h-10 text-gray-300" />
+        <div className="space-y-6">
+          {aiDefinition && (
+            <div className="bg-purple-50 border ring-2 ring-purple-200 border-purple-300 rounded-3xl p-8 animate-in slide-in-from-bottom-4 duration-500 shadow-xl">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-2xl font-black text-gray-900 flex items-center gap-2">
+                  <Check className="w-6 h-6 text-green-500" />
+                  Define: {aiDefinition.term}
+                </h3>
+                <span className="bg-purple-600 text-white text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest shadow-md shadow-purple-200">
+                  AI Generated
+                </span>
+              </div>
+
+              <div className="bg-white/80 backdrop-blur-sm p-6 rounded-2xl border border-purple-100 shadow-inner mb-6">
+                <p className="text-lg text-gray-800 leading-relaxed italic">
+                  &ldquo;{aiDefinition.definition}&rdquo;
+                </p>
+              </div>
+
+              <div className="flex flex-col gap-4">
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-bold text-purple-600 uppercase tracking-wider ml-1">
+                    Context / Source (Optional)
+                  </label>
+                  <input
+                    type="text"
+                    value={manualReference}
+                    onChange={(e) => setManualReference(e.target.value)}
+                    placeholder="e.g. My private research, textbook page 42..."
+                    className="w-full bg-white border border-purple-100 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-purple-400 outline-none transition-all shadow-sm"
+                  />
+                </div>
+
+                <div className="flex flex-wrap gap-3 mt-2">
+                  <Button
+                    onClick={handleSaveManual}
+                    className="bg-purple-600 hover:bg-purple-700 text-white shadow-lg shadow-purple-200"
+                  >
+                    Confirm & Save to Lexicon
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    onClick={() => setAiDefinition(null)}
+                    className="text-gray-500 hover:text-red-500"
+                  >
+                    Discard definition
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="text-center py-20 bg-white rounded-3xl border-2 border-dashed border-gray-200 shadow-sm">
+            <div className="bg-gray-50 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6">
+              <Search className="w-10 h-10 text-gray-300" />
+            </div>
+            <h3 className="text-xl font-bold text-gray-900">
+              {searchQuery ? `"${searchQuery}" not found` : "No terms found"}
+            </h3>
+            <p className="text-gray-500 mt-2 max-w-sm mx-auto">
+              {searchQuery
+                ? "This concept isn't in your Lexicon yet. Would you like Durmah to define it for you?"
+                : "Try adjusting your search or filters. Terms are automatically added when you upload new lectures."}
+            </p>
+
+            {searchQuery && !aiDefinition && (
+              <Button
+                disabled={isDefining}
+                className="mt-8 bg-purple-600 border-none px-8 py-6 rounded-2xl shadow-xl shadow-purple-100 transition-all hover:-translate-y-1 active:scale-95 text-lg font-black"
+                onClick={handleDefine}
+              >
+                {isDefining ? (
+                  <>
+                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                    Durmah Thinking...
+                  </>
+                ) : (
+                  <>
+                    <Plus className="w-5 h-5 mr-2" />
+                    Add "{searchQuery}" to Lexicon
+                  </>
+                )}
+              </Button>
+            )}
+
+            {!searchQuery && (
+              <Button
+                variant="outline"
+                className="mt-8"
+                onClick={() => {
+                  setSearchQuery("");
+                  setSelectedLetter(null);
+                }}
+              >
+                Clear Filters
+              </Button>
+            )}
           </div>
-          <h3 className="text-xl font-bold text-gray-900">No terms found</h3>
-          <p className="text-gray-500 mt-2 max-w-sm mx-auto">
-            Try adjusting your search or filters. Terms are automatically added
-            when you upload new lectures.
-          </p>
-          <Button
-            className="mt-8 bg-purple-600 border-none"
-            onClick={() => {
-              setSearchQuery("");
-              setSelectedLetter(null);
-            }}
-          >
-            Clear Filters
-          </Button>
         </div>
       )}
 
