@@ -36,6 +36,7 @@ export default async function handler(
       lecture_date,
       panopto_url,
       transcript,
+      reprocess: forceReprocess,
     } = req.body;
 
     if (!id) {
@@ -109,7 +110,7 @@ export default async function handler(
     };
 
     // 6. Handle Transcript Change
-    let reprocess = false;
+    let reprocess = !!forceReprocess;
     if (typeof transcript === "string") {
       // transcript_text might be buried in the join array/object
       const existingTranscript = Array.isArray(existing.lecture_transcripts)
@@ -182,13 +183,11 @@ export default async function handler(
           .update({ status: "ready" })
           .eq("id", id);
 
-        return res
-          .status(200)
-          .json({
-            lecture: { ...updated, status: "ready" },
-            reprocessed: true,
-            analysis,
-          });
+        return res.status(200).json({
+          lecture: { ...updated, status: "ready" },
+          reprocessed: true,
+          analysis,
+        });
       } catch (analysisError) {
         console.error("Reprocess analysis failed:", analysisError);
         // Still return success for the update, but maybe a warning

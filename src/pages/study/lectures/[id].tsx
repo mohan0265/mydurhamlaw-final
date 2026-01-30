@@ -91,6 +91,11 @@ export default function LectureDetailPage() {
     "All" | "High" | "Medium" | "Low"
   >("All");
   const [expandedSignal, setExpandedSignal] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     if (!id) return;
@@ -168,12 +173,16 @@ export default function LectureDetailPage() {
     }
   };
 
-  if (loading)
+  if (!mounted || loading) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <Loader2 className="w-8 h-8 text-purple-600 animate-spin" />
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+        <Loader2 className="w-10 h-10 text-purple-600 animate-spin" />
+        <p className="text-gray-500 animate-pulse">
+          Loading lecture details...
+        </p>
       </div>
     );
+  }
   if (!lecture)
     return (
       <div className="max-w-4xl mx-auto py-8 text-center text-gray-500">
@@ -324,7 +333,7 @@ export default function LectureDetailPage() {
       </div>
 
       {/* TABS */}
-      {notes && (
+      {notes ? (
         <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 mb-6 shadow-sm overflow-hidden">
           <div className="flex border-b overflow-x-auto">
             {[
@@ -690,6 +699,29 @@ export default function LectureDetailPage() {
                   {h}
                 </li>
               ))}
+          </div>
+        </div>
+      ) : (
+        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-12 text-center mb-6 shadow-sm">
+          <div className="w-16 h-16 bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Sparkles className="w-8 h-8 animate-pulse" />
+          </div>
+          <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+            AI Breakdown in Progress
+          </h3>
+          <p className="text-gray-500 dark:text-gray-400 max-w-sm mx-auto mb-6">
+            We're generating your summary, key points, and exam prep. This
+            usually takes 10-15 seconds.
+          </p>
+          <div className="flex justify-center gap-3">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => window.location.reload()}
+              className="gap-2"
+            >
+              <Loader2 className="w-4 h-4 animate-spin" /> Refresh to check
+            </Button>
           </div>
         </div>
       )}

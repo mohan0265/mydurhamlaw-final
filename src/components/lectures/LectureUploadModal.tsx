@@ -117,6 +117,7 @@ export default function LectureUploadModal({
     setError("");
 
     try {
+      setUploadProgress(20);
       const res = await fetch("/api/lectures/update", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -124,6 +125,7 @@ export default function LectureUploadModal({
           id: initialData.id,
           title,
           transcript, // Send potentially edited transcript
+          reprocess: true, // Trigger AI analysis
           // Metadata
           user_module_id: userModuleId || null,
           module_code: moduleCode || null,
@@ -133,6 +135,8 @@ export default function LectureUploadModal({
           panopto_url: panoptoUrl || null,
         }),
       });
+
+      setUploadProgress(80);
 
       if (!res.ok) {
         const err = await res.json();
