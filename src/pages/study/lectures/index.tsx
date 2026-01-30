@@ -128,7 +128,15 @@ export default function LecturesPage() {
   // Auto-refresh if any lectures are processing
   useEffect(() => {
     const hasProcessing = lectures.some((l) => {
-      if (!["transcribing", "summarizing", "uploaded"].includes(l.status)) {
+      if (
+        ![
+          "transcribing",
+          "summarizing",
+          "uploaded",
+          "processing",
+          "queued",
+        ].includes(l.status)
+      ) {
         return false;
       }
 

@@ -97,7 +97,7 @@ export default async function handler(
     // 4. If reprocessing, clear old notes and set status
     if (needsReprocess) {
       await dbClient.from("lecture_notes").delete().eq("lecture_id", id);
-      updates.status = "queued";
+      updates.status = "processing";
     }
 
     // 5. Save updates

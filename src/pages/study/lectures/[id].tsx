@@ -216,9 +216,31 @@ export default function LectureDetailPage() {
     );
 
   const notes = lecture.notes;
-  const signals = notes?.exam_signals || [];
 
-  const filteredSignals = signals.filter((s) => {
+  // Normalize signals to handle both legacy array and new object format
+  const rawSignals: any = notes?.exam_signals || [];
+  let displaySignals: ExamSignal[] = [];
+
+  if (Array.isArray(rawSignals)) {
+    // Legacy format
+    displaySignals = rawSignals;
+  } else if (typeof rawSignals === "object" && rawSignals.signals) {
+    // New OpenAI Strict Schema format
+    // Map overall strength (0-100) to 1-5 scale for badge compatibility
+    const overallStrength = Math.ceil((rawSignals.signal_strength || 50) / 20); // 0-100 -> 1-5
+
+    displaySignals = rawSignals.signals.map((s: any) => ({
+      topic_title: s.topic,
+      why_it_matters: s.why_it_matters,
+      what_to_master: s.likely_exam_angles || [],
+      common_traps: [], // Not present in new schema
+      signal_strength: overallStrength,
+      evidence_quotes: [],
+      practice_prompts: [],
+    }));
+  }
+
+  const filteredSignals = displaySignals.filter((s) => {
     if (signalFilter === "All") return true;
     if (signalFilter === "High") return s.signal_strength >= 4;
     if (signalFilter === "Medium") return s.signal_strength === 3;
@@ -741,8 +763,10 @@ export default function LectureDetailPage() {
               ? "Analysis Failed"
               : lecture.status === "ready" && !notes
                 ? "Analysis Missing"
-                : lecture.status === "uploaded" || lecture.status === "queued"
-                  ? "Lecture Queued for AI"
+                : lecture.status === "uploaded" ||
+                    lecture.status === "queued" ||
+                    lecture.status === "processing"
+                  ? "Lecture Processing (OpenAI)..."
                   : lecture.status === "transcribing"
                     ? "Transcribing Audio..."
                     : lecture.status === "summarizing"

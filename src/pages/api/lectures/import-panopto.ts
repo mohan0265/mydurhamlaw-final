@@ -52,7 +52,7 @@ export default async function handler(
         panopto_url,
         transcript_source: "panopto_paste",
         audio_path: "",
-        status: "queued",
+        status: "processing",
       })
       .select()
       .single();

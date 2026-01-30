@@ -46,7 +46,7 @@ export default async function handler(
         .json({ success: true, message: "Already processed", status: "ready" });
     }
 
-    // 3. Mark as queued
+    // 3. Mark as processing
     console.log("[process] triggering processing", {
       lectureId,
       userId: user.id,
@@ -54,7 +54,7 @@ export default async function handler(
     await supabase
       .from("lectures")
       .update({
-        status: "queued",
+        status: "processing",
         error_message: null,
         last_processed_at: new Date().toISOString(),
       })
