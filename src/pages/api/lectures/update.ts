@@ -150,9 +150,146 @@ export default async function handler(
 
     if (updateError) throw updateError;
 
+    // 8. If reprocess is true, Run AI analysis now (inline)
+    if (reprocess && transcript) {
+      try {
+        const analysis = await generateLectureAnalysis({
+          transcript,
+          module_code: module_code || updated.module_code,
+          title: title || updated.title,
+          lecture_date: lecture_date || updated.lecture_date,
+        });
+
+        // Save analysis results
+        const { error: notesError } = await dbClient
+          .from("lecture_notes")
+          .upsert({
+            lecture_id: id,
+            summary: analysis.summary,
+            key_points: analysis.key_points,
+            discussion_topics: analysis.discussion_topics,
+            exam_prompts: analysis.exam_prompts || [],
+            exam_signals: analysis.exam_signals || [],
+            updated_at: new Date().toISOString(),
+          });
+
+        if (notesError)
+          console.error("Failed to save reprocessed notes:", notesError);
+
+        // Update status to ready
+        await dbClient
+          .from("lectures")
+          .update({ status: "ready" })
+          .eq("id", id);
+
+        return res
+          .status(200)
+          .json({
+            lecture: { ...updated, status: "ready" },
+            reprocessed: true,
+            analysis,
+          });
+      } catch (analysisError) {
+        console.error("Reprocess analysis failed:", analysisError);
+        // Still return success for the update, but maybe a warning
+        return res.status(200).json({
+          lecture: updated,
+          reprocessed: true,
+          warning: "Update saved, but AI analysis failed to run.",
+        });
+      }
+    }
+
     return res.status(200).json({ lecture: updated, reprocessed: reprocess });
   } catch (error: any) {
     console.error("Error updating lecture:", error);
     return res.status(500).json({ error: error.message });
   }
+}
+
+async function generateLectureAnalysis(params: {
+  transcript: string;
+  module_code?: string;
+  title: string;
+  lecture_date?: string;
+}) {
+  const { transcript, module_code, title, lecture_date } = params;
+
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    throw new Error("GEMINI_API_KEY not configured");
+  }
+
+  // Call Gemini API for analysis
+  const response = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${apiKey}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [
+          {
+            parts: [
+              {
+                text: `You are an expert law tutor analyzing a lecture transcript for a Durham University law student.
+
+**Lecture Details:**
+- Title: ${title}
+- Module: ${module_code || "N/A"}
+- Date: ${lecture_date || "N/A"}
+
+**Transcript:**
+${transcript.substring(0, 10000)} ${transcript.length > 10000 ? "... (truncated)" : ""}
+
+**Task:** Generate a comprehensive analysis with the following sections:
+
+1. **Summary** (2-3 paragraphs): Concise overview of the lecture's main content and learning objectives.
+
+2. **Key Points** (5-7 bullet points): The most important concepts, cases, or principles covered.
+
+3. **Discussion Topics** (3-5 items): Thought-provoking questions or themes suitable for essay practice or study group discussions.
+
+4. **Exam Prompts** (3-5 items): Potential exam questions or practice prompts based on this lecture's content.
+
+5. **Exam Signals**: Identify if there are specific concepts highly relevant for exams.
+
+Format your response as valid JSON:
+{
+  "summary": "...",
+  "key_points": ["...", "..."],
+  "discussion_topics": ["...", "..."],
+  "exam_prompts": ["...", "..."],
+  "exam_signals": []
+}`,
+              },
+            ],
+          },
+        ],
+        generationConfig: {
+          temperature: 0.7,
+          maxOutputTokens: 2000,
+        },
+      }),
+    },
+  );
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`Gemini API error: ${error}`);
+  }
+
+  const data = await response.json();
+  const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+
+  if (!text) {
+    throw new Error("No response from Gemini API");
+  }
+
+  // Parse JSON response (handle markdown code blocks)
+  const jsonMatch = text.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) {
+    throw new Error("Failed to parse AI response as JSON");
+  }
+
+  return JSON.parse(jsonMatch[0]);
 }

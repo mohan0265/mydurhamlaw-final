@@ -36,7 +36,7 @@ export default function UserModulesSelect({
         if (val === "manual") {
           onSelect(null); // Signal manual entry
         } else {
-          const mod = modules.find((m) => m.user_module_id === val);
+          const mod = modules.find((m) => m.id === val);
           onSelect(mod || null);
         }
       }}
@@ -45,7 +45,7 @@ export default function UserModulesSelect({
     >
       <option value="">-- Select a Module --</option>
       {modules.map((m) => (
-        <option key={m.user_module_id} value={m.user_module_id}>
+        <option key={m.id} value={m.id}>
           {m.module_code} - {m.module_title}
         </option>
       ))}

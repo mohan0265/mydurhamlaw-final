@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 
 export interface UserModule {
-  user_module_id: string;
+  id: string;
   module_code: string;
   module_title: string;
   color_theme?: string;
@@ -22,25 +22,25 @@ export function useUserModules() {
           .from("user_modules")
           .select(
             `
-            user_module_id,
+            id,
             staff_names,
-            module_catalog (
-              module_code,
-              module_title,
-              color_theme
+            module_catalog:catalog_id (
+              code,
+              title,
+              created_at
             )
           `,
           )
-          .eq("status", "active");
+          .eq("is_active", true);
 
         if (error) throw error;
 
         // Flatten the data structure
         const formattedModules = (data || []).map((item: any) => ({
-          user_module_id: item.user_module_id,
-          module_code: item.module_catalog?.module_code || "UNKNOWN",
-          module_title: item.module_catalog?.module_title || "Unknown Module",
-          color_theme: item.module_catalog?.color_theme,
+          id: item.id,
+          module_code: item.module_catalog?.code || "UNKNOWN",
+          module_title: item.module_catalog?.title || "Unknown Module",
+          color_theme: item.module_catalog?.color_theme || "purple",
           staff_names: item.staff_names || [],
         }));
 

@@ -203,7 +203,7 @@ export default function LectureDetailPage() {
       </Button>
 
       {/* Header */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6 shadow-sm">
+      <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6 mb-6 shadow-sm">
         <div className="flex items-start gap-4">
           <div className="w-14 h-14 bg-purple-100 rounded-xl flex items-center justify-center flex-shrink-0">
             <FileAudio className="w-7 h-7 text-purple-600" />
@@ -211,24 +211,24 @@ export default function LectureDetailPage() {
           <div className="flex-1">
             <div className="flex justify-between items-start">
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                   {lecture.title}
                 </h1>
                 <div className="flex flex-wrap items-center gap-4 mt-3 text-sm text-gray-600">
                   {lecture.module_code && (
-                    <span className="flex items-center gap-1">
+                    <span className="flex items-center gap-1 text-gray-600 dark:text-gray-400">
                       <Book className="w-4 h-4" />
                       {lecture.module_code}
                     </span>
                   )}
                   {lecture.lecturer_name && (
-                    <span className="flex items-center gap-1">
+                    <span className="flex items-center gap-1 text-gray-600 dark:text-gray-400">
                       <User className="w-4 h-4" />
                       {lecture.lecturer_name}
                     </span>
                   )}
                   {lecture.lecture_date && (
-                    <span className="flex items-center gap-1">
+                    <span className="flex items-center gap-1 text-gray-600 dark:text-gray-400">
                       <Calendar className="w-4 h-4" />
                       {formatDate(lecture.lecture_date)}
                     </span>
@@ -325,7 +325,7 @@ export default function LectureDetailPage() {
 
       {/* TABS */}
       {notes && (
-        <div className="bg-white rounded-xl border border-gray-200 mb-6 shadow-sm">
+        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 mb-6 shadow-sm overflow-hidden">
           <div className="flex border-b overflow-x-auto">
             {[
               { key: "summary", label: "Summary", icon: BookOpen },
@@ -338,7 +338,7 @@ export default function LectureDetailPage() {
               <button
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key as any)}
-                className={`flex items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${activeTab === tab.key ? "border-purple-600 text-purple-600 bg-purple-50/50" : "border-transparent text-gray-500 hover:text-gray-700"}`}
+                className={`flex items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${activeTab === tab.key ? "border-purple-600 text-purple-600 bg-purple-50/50 dark:bg-purple-900/20" : "border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"}`}
               >
                 <tab.icon className="w-4 h-4" /> {tab.label}
               </button>
@@ -348,17 +348,19 @@ export default function LectureDetailPage() {
           <div className="p-6">
             {/* EXISTING TABS OMITTED FOR BREVITY, WILL KEEP IN FINAL FILE */}
             {activeTab === "summary" && notes?.summary && (
-              <p className="text-gray-700 whitespace-pre-wrap">
+              <p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap leading-relaxed">
                 {notes.summary}
               </p>
             )}
             {activeTab === "keypoints" &&
               notes?.key_points?.map((p, i) => (
-                <div key={i} className="mb-2 flex gap-2">
-                  <div className="w-6 h-6 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center text-xs font-bold shrink-0">
+                <div key={i} className="mb-4 flex gap-3 group">
+                  <div className="w-6 h-6 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">
                     {i + 1}
                   </div>
-                  <p>{p}</p>
+                  <p className="text-gray-700 dark:text-gray-300 leading-relaxed group-hover:text-gray-900 dark:group-hover:text-gray-100 transition-colors">
+                    {p}
+                  </p>
                 </div>
               ))}
 
@@ -373,19 +375,19 @@ export default function LectureDetailPage() {
                 />
 
                 {/* Tab Header & Subtitle */}
-                <div className="mb-6 bg-purple-50 p-4 rounded-lg border border-purple-100">
-                  <h3 className="text-purple-900 font-bold flex items-center gap-2">
+                <div className="mb-6 bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg border border-purple-100 dark:border-purple-800">
+                  <h3 className="text-purple-900 dark:text-purple-100 font-bold flex items-center gap-2">
                     <GraduationCap className="w-5 h-5" /> Exam Prep
                   </h3>
-                  <p className="text-purple-700 text-sm mt-1">
+                  <p className="text-purple-700 dark:text-purple-300 text-sm mt-1">
                     Practise understanding, application, and structure — aligned
                     to what you learned in this lecture.
                   </p>
                 </div>
 
                 {/* 1. ACADEMIC INTEGRITY DISCLAIMER */}
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex gap-3 text-sm text-blue-800">
-                  <ShieldAlert className="w-5 h-5 text-blue-600 flex-shrink-0" />
+                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 flex gap-3 text-sm text-blue-800 dark:text-blue-200">
+                  <ShieldAlert className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0" />
                   <div>
                     <p className="font-bold mb-1">
                       Built for academic integrity
@@ -394,7 +396,10 @@ export default function LectureDetailPage() {
                       We highlight lecturer emphasis to guide revision. We don’t
                       predict exam papers or generate work to submit as your
                       own.{" "}
-                      <a href="#" className="underline hover:text-blue-900">
+                      <a
+                        href="#"
+                        className="underline hover:text-blue-900 dark:hover:text-blue-100"
+                      >
                         Read our Integrity Guidelines
                       </a>
                     </p>
@@ -405,7 +410,7 @@ export default function LectureDetailPage() {
                 <div>
                   <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-4">
                     <div>
-                      <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                      <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
                         Lecturer Emphasis & Exam Signals
                         <span
                           className="text-gray-400 cursor-help"
@@ -472,12 +477,12 @@ export default function LectureDetailPage() {
                                   >
                                     {badgeText}
                                   </span>
-                                  <h4 className="font-bold text-gray-900 text-lg">
+                                  <h4 className="font-bold text-gray-900 dark:text-gray-100 text-lg">
                                     {signal.topic_title}
                                   </h4>
                                 </div>
-                                <div className="text-gray-600 text-sm bg-gray-50 p-3 rounded-lg border border-gray-100 inline-block max-w-full">
-                                  <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1">
+                                <div className="text-gray-600 dark:text-gray-400 text-sm bg-gray-50 dark:bg-gray-800/50 p-3 rounded-lg border border-gray-100 dark:border-gray-800 inline-block max-w-full">
+                                  <span className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider block mb-1">
                                     Evidence from transcript
                                   </span>
                                   <span className="italic">
@@ -515,10 +520,10 @@ export default function LectureDetailPage() {
                               <div className="mt-4 pt-4 border-t border-gray-100 text-sm space-y-5 animate-fadeIn">
                                 {/* Why it matters */}
                                 <div>
-                                  <h5 className="font-bold text-gray-900 mb-1 flex items-center gap-2">
+                                  <h5 className="font-bold text-gray-900 dark:text-gray-100 mb-1 flex items-center gap-2">
                                     Why it matters
                                   </h5>
-                                  <p className="text-gray-700 leading-relaxed">
+                                  <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
                                     {signal.why_it_matters}
                                   </p>
                                 </div>
@@ -526,17 +531,17 @@ export default function LectureDetailPage() {
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                   {/* What to Master */}
                                   <div>
-                                    <h5 className="font-bold text-gray-900 mb-2 flex items-center gap-2">
-                                      <CheckCircle className="w-4 h-4 text-green-600" />{" "}
+                                    <h5 className="font-bold text-gray-900 dark:text-gray-100 mb-2 flex items-center gap-2">
+                                      <CheckCircle className="w-4 h-4 text-green-600 dark:text-green-400" />{" "}
                                       What to master
                                     </h5>
                                     <ul className="space-y-2">
                                       {signal.what_to_master.map((m, i) => (
                                         <li
                                           key={i}
-                                          className="flex items-start gap-2 text-gray-700"
+                                          className="flex items-start gap-2 text-gray-700 dark:text-gray-300"
                                         >
-                                          <div className="w-1.5 h-1.5 bg-green-400 rounded-full mt-1.5 shrink-0" />
+                                          <div className="w-1.5 h-1.5 bg-green-400 dark:bg-green-500 rounded-full mt-1.5 shrink-0" />
                                           <span>{m}</span>
                                         </li>
                                       ))}
@@ -655,23 +660,33 @@ export default function LectureDetailPage() {
             {/* OTHER TABS */}
             {activeTab === "glossary" &&
               notes.glossary?.map((item, i) => (
-                <div key={i} className="flex mb-2">
-                  <dt className="font-bold w-1/3">{item.term}</dt>
-                  <dd>{item.definition}</dd>
+                <div
+                  key={i}
+                  className="flex flex-col md:flex-row mb-4 border-b border-gray-100 dark:border-gray-800 pb-2"
+                >
+                  <dt className="font-bold w-full md:w-1/3 text-purple-700 dark:text-purple-400">
+                    {item.term}
+                  </dt>
+                  <dd className="w-full md:w-2/3 text-gray-700 dark:text-gray-300">
+                    {item.definition}
+                  </dd>
                 </div>
               ))}
             {activeTab === "hooks" &&
               notes.engagement_hooks?.map((h, i) => (
                 <div
                   key={i}
-                  className="p-3 bg-purple-50 mb-2 border-l-4 border-purple-400"
+                  className="p-4 bg-purple-50 dark:bg-purple-900/20 mb-3 border-l-4 border-purple-400 dark:border-purple-600 rounded-r-lg text-gray-700 dark:text-gray-300"
                 >
                   {h}
                 </div>
               ))}
             {activeTab === "discussion" &&
               notes.discussion_topics?.map((h, i) => (
-                <li key={i} className="mb-2">
+                <li
+                  key={i}
+                  className="mb-3 text-gray-700 dark:text-gray-300 list-disc ml-5 leading-relaxed"
+                >
                   {h}
                 </li>
               ))}
@@ -690,7 +705,7 @@ export default function LectureDetailPage() {
             {showTranscript ? <ChevronUp /> : <ChevronDown />}
           </button>
           {showTranscript && (
-            <div className="p-4 border-t h-96 overflow-y-auto whitespace-pre-wrap text-sm">
+            <div className="p-4 border-t border-gray-100 dark:border-gray-800 h-96 overflow-y-auto whitespace-pre-wrap text-sm text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-900/50">
               {lecture.transcript}
             </div>
           )}

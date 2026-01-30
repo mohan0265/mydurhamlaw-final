@@ -21,7 +21,7 @@ export default function LecturerSelect({
 
   const suggestedStaff = useMemo(() => {
     if (!moduleId || loadingModules) return [];
-    const mod = modules.find((m) => m.user_module_id === moduleId);
+    const mod = modules.find((m) => m.id === moduleId);
     return mod?.staff_names || [];
   }, [moduleId, modules, loadingModules]);
 
