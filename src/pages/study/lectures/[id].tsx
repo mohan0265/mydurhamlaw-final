@@ -380,6 +380,7 @@ export default function LectureDetailPage() {
                 <QuizMeCard
                   lectureId={lecture!.id}
                   moduleCode={lecture!.module_code}
+                  targetTitle={lecture!.title}
                   className="mb-8"
                 />
 

@@ -41,6 +41,7 @@ export default function QuizHub() {
   const [sessions, setSessions] = useState<QuizSession[]>([]);
   const [loading, setLoading] = useState(true);
   const [showSetup, setShowSetup] = useState(false);
+  const [isAutoLaunching, setIsAutoLaunching] = useState(false);
   const {
     familiarity,
     loading: familiarityLoading,
@@ -53,6 +54,76 @@ export default function QuizHub() {
     if (!user) return;
     fetchSessions();
   }, [user]);
+
+  // Handle Direct Launch / Resume from Lecture Page
+  useEffect(() => {
+    if (!router.isReady || !user) return;
+    const { id: target_id, scope, mode, title } = router.query;
+
+    if (target_id && scope && mode) {
+      handleAutoLaunch(
+        target_id as string,
+        scope as string,
+        mode as "text" | "voice",
+        title as string,
+      );
+    }
+  }, [router.isReady, user, router.query]);
+
+  const handleAutoLaunch = async (
+    target_id: string,
+    scope: string,
+    mode: "text" | "voice",
+    title?: string,
+  ) => {
+    setIsAutoLaunching(true);
+    try {
+      // 1. Check for existing active session for this target
+      const { data: existing, error: fetchError } = await supabase
+        .from("quiz_sessions")
+        .select("id")
+        .eq("user_id", user?.id)
+        .eq("target_id", target_id)
+        .eq("status", "active")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .single();
+
+      if (existing) {
+        toast.success("Resuming your session...");
+        router.push(`/quiz/${existing.id}`);
+        return;
+      }
+
+      // 2. Otherwise create new
+      const { data: session, error: sessionError } = await supabase
+        .from("quiz_sessions")
+        .insert({
+          user_id: user?.id,
+          quiz_type: scope,
+          target_id: target_id,
+          status: "active",
+          performance_metadata: {
+            mode: mode,
+            quiz_style: "quick",
+            target_title: title || "New Session",
+          },
+        })
+        .select()
+        .single();
+
+      if (sessionError) throw sessionError;
+      toast.success("Starting new session...");
+      router.push(`/quiz/${session.id}`);
+    } catch (err: any) {
+      console.error("Auto-launch failed:", err);
+      setIsAutoLaunching(false); // Drop back to Hub if failed
+      if (err.code !== "PGRST116") {
+        // Not "not found"
+        toast.error("Couldn't launch session directly");
+      }
+    }
+  };
 
   const fetchSessions = async () => {
     setLoading(true);
@@ -97,9 +168,28 @@ export default function QuizHub() {
     canonical: "/quiz",
   });
 
-  if (!user && !loading) {
-    router.push("/login");
-    return null;
+  if ((!user || isAutoLaunching) && !loading) {
+    if (!user) {
+      router.push("/login");
+      return null;
+    }
+    return (
+      <div className="min-h-screen bg-white flex flex-col items-center justify-center gap-6">
+        <div className="relative">
+          <div className="absolute inset-0 bg-purple-200 blur-3xl opacity-30 rounded-full animate-pulse" />
+          <Brain className="w-16 h-16 text-purple-600 relative z-10 animate-float" />
+        </div>
+        <div className="text-center">
+          <h2 className="text-2xl font-black text-gray-900 mb-2">
+            Preparing your session...
+          </h2>
+          <p className="text-gray-500 font-medium">
+            Durmah is grounding the reasoning from your lecture.
+          </p>
+        </div>
+        <Loader2 className="w-6 h-6 text-purple-600 animate-spin mt-4" />
+      </div>
+    );
   }
 
   return (

@@ -7,12 +7,14 @@ import { useRouter } from "next/router";
 interface QuizMeCardProps {
   moduleCode?: string;
   lectureId?: string;
+  targetTitle?: string;
   className?: string;
 }
 
 export const QuizMeCard: React.FC<QuizMeCardProps> = ({
   moduleCode,
   lectureId,
+  targetTitle,
   className = "",
 }) => {
   const router = useRouter();
@@ -23,9 +25,11 @@ export const QuizMeCard: React.FC<QuizMeCardProps> = ({
     if (lectureId) {
       query.scope = "lecture";
       query.id = lectureId;
+      if (targetTitle) query.title = targetTitle;
     } else if (moduleCode) {
       query.scope = "module";
       query.id = moduleCode;
+      if (targetTitle) query.title = targetTitle;
     }
 
     router.push({
