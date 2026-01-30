@@ -110,11 +110,6 @@ export function RequireDurhamAccess({
   useEffect(() => {
     setMounted(true);
   }, []);
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   useEffect(() => {
     // Only redirect if loading is false, there is no error, and access is explicitly missing
@@ -182,11 +177,6 @@ export function RequireLnatAccess({ children }: { children: React.ReactNode }) {
   const { hasLnatAccess, loading } = useEntitlements();
   const router = useRouter();
   const user = useUser();
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {

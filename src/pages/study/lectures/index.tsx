@@ -83,11 +83,6 @@ export default function LecturesPage() {
   useEffect(() => {
     setMounted(true);
   }, []);
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   // Fetch Modules
   useEffect(() => {
