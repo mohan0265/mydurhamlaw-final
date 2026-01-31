@@ -395,12 +395,14 @@ export default function LandingPage() {
             <Link href="/dashboard?demo=true" className="block group">
               <div className="bg-white/10 rounded-2xl p-1 border border-white/10 hover:bg-white/15 transition duration-300 h-full">
                 <div className="aspect-video bg-indigo-950/50 rounded-xl relative overflow-hidden flex items-center justify-center">
-                  <div className="absolute inset-0 bg-gradient-to-tr from-indigo-900 to-purple-900 opacity-50"></div>
-                  <div className="relative z-10 flex flex-col items-center gap-3">
-                    <div className="p-3 bg-white/10 rounded-full group-hover:scale-110 transition-transform backdrop-blur-sm">
-                      <TrendingUp className="w-6 h-6 text-white" />
-                    </div>
-                    <span className="text-xs font-bold uppercase tracking-widest text-indigo-200">
+                  <img
+                    src="/images/landing/dashboard-3d.png"
+                    alt="Dashboard Preview"
+                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-indigo-950/80 via-transparent to-transparent"></div>
+                  <div className="relative z-10 flex flex-col items-center gap-3 mt-auto mb-6">
+                    <span className="text-xs font-bold uppercase tracking-widest text-indigo-200 bg-indigo-950/50 px-3 py-1 rounded-full border border-white/10 backdrop-blur-md">
                       Dashboard Snapshot
                     </span>
                   </div>
@@ -424,12 +426,14 @@ export default function LandingPage() {
             >
               <div className="bg-white/10 rounded-2xl p-1 border border-white/10 hover:bg-white/15 transition duration-300 h-full">
                 <div className="aspect-video bg-indigo-950/50 rounded-xl relative overflow-hidden flex items-center justify-center">
-                  <div className="absolute inset-0 bg-gradient-to-tr from-purple-900 to-pink-900 opacity-50"></div>
-                  <div className="relative z-10 flex flex-col items-center gap-3">
-                    <div className="p-3 bg-white/10 rounded-full group-hover:scale-110 transition-transform backdrop-blur-sm">
-                      <FileText className="w-6 h-6 text-white" />
-                    </div>
-                    <span className="text-xs font-bold uppercase tracking-widest text-purple-200">
+                  <img
+                    src="/images/landing/textbook-large.png"
+                    alt="Lecture Notes"
+                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 opacity-80"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-purple-950/90 via-purple-900/40 to-transparent"></div>
+                  <div className="relative z-10 flex flex-col items-center gap-3 mt-auto mb-6">
+                    <span className="text-xs font-bold uppercase tracking-widest text-purple-200 bg-purple-950/50 px-3 py-1 rounded-full border border-white/10 backdrop-blur-md">
                       Lecture to Notes
                     </span>
                   </div>
@@ -582,52 +586,102 @@ export default function LandingPage() {
       </section>
 
       {/* 5) LIVE NEWS USP SECTION */}
-      <section className="py-24 bg-gray-950 text-white relative overflow-hidden border-t border-white/5">
-        <div className="max-w-6xl mx-auto px-6 relative z-10">
-          <div className="max-w-3xl">
-            <h2 className="text-4xl sm:text-5xl font-black mb-8 leading-tight tracking-tight">
-              Why Law Students Must{" "}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-400 to-pink-300">
-                Stay Current
-              </span>
-            </h2>
-            <p className="text-xl text-gray-400 leading-relaxed mb-8 font-light">
-              Law does not evolve in isolation. Every new judgment, regulatory
-              shift, and public controversy shapes the development of the common
-              law.
-            </p>
-            <p className="text-xl text-gray-400 leading-relaxed mb-10 font-light">
-              {BRAND_NAME} includes a regularly refreshed legal news feed to
-              help students build the habit of engaging with real-world legal
-              developments — not just lecture notes and textbooks.
-            </p>
+      <section className="py-24 bg-[#123733] text-white overflow-hidden relative border-t border-white/5">
+        {/* Background Accent */}
+        <div className="absolute top-0 right-0 w-2/3 h-full opacity-10 pointer-events-none">
+          <img
+            src="/images/landing/news-desk-3d.png"
+            className="w-full h-full object-cover object-left mask-image-gradient"
+            alt=""
+          />
+        </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pb-12">
-              {[
-                "Connect cases to real judgments",
-                "Develop commercial awareness",
-                "Build habits of practitioners",
-                "Durham-specific legal lens",
-              ].map((benefit, i) => (
-                <div
-                  key={i}
-                  className="flex items-center gap-4 bg-white/5 p-4 rounded-xl border border-white/10"
-                >
-                  <div className="w-6 h-6 rounded-full bg-red-500/20 flex items-center justify-center text-red-500 shrink-0">
-                    <CheckCircle className="w-4 h-4" />
+        <div className="max-w-7xl mx-auto px-6 relative z-10">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+            <div className="space-y-8">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#D5BF76]/20 text-[#D5BF76] text-[10px] font-black uppercase tracking-widest border border-[#D5BF76]/30">
+                <span className="w-2 h-2 rounded-full bg-[#D5BF76] animate-pulse"></span>
+                Live Feature
+              </div>
+              <h2 className="text-4xl lg:text-5xl font-black tracking-tight leading-tight">
+                Connect Doctrine <br /> to the Real World.
+              </h2>
+              <p className="text-xl text-teal-100 font-light leading-relaxed">
+                Our{" "}
+                <span className="text-[#D5BF76] font-bold">
+                  Live Legal News
+                </span>{" "}
+                feed brings Durham students the latest judicial rulings and
+                parliamentary updates, automatically linking them to relevant
+                module principles.
+              </p>
+
+              <div className="space-y-6 pt-4">
+                <div className="flex items-start gap-4">
+                  <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center shrink-0">
+                    <CheckCircle className="w-5 h-5 text-[#D5BF76]" />
                   </div>
-                  <span className="text-gray-300 font-medium text-sm">
-                    {benefit}
-                  </span>
+                  <div>
+                    <h4 className="font-bold text-white">
+                      Daily Curated Headlines
+                    </h4>
+                    <p className="text-sm text-teal-200/80 mt-1">
+                      Syllabus-aligned updates filtered for law students.
+                    </p>
+                  </div>
                 </div>
-              ))}
+                <div className="flex items-start gap-4">
+                  <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center shrink-0">
+                    <CheckCircle className="w-5 h-5 text-[#D5BF76]" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-white">
+                      Cross-Linked Case Law
+                    </h4>
+                    <p className="text-sm text-teal-200/80 mt-1">
+                      See how new rulings impact your existing modules.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-8">
+                <Link href="/legal/tools/legal-news-feed">
+                  <button className="bg-[#D5BF76] hover:bg-[#c2ad66] text-[#0B1412] font-black py-4 px-10 rounded-full text-lg transition-all hover:scale-105 shadow-xl uppercase tracking-widest">
+                    Open News Feed
+                  </button>
+                </Link>
+              </div>
             </div>
 
-            <Link href="/legal/tools/legal-news-feed">
-              <button className="bg-red-600 hover:bg-red-700 text-white font-bold py-4 px-10 rounded-full transition-all shadow-xl shadow-red-600/20 flex items-center gap-2 uppercase tracking-widest text-sm">
-                Explore Live Legal News <ArrowRight className="w-5 h-5" />
-              </button>
-            </Link>
+            <div className="relative">
+              <div className="relative rounded-[2.5rem] overflow-hidden border border-white/10 shadow-2xl group">
+                <div className="absolute inset-0 bg-gradient-to-tr from-[#0B1412] to-transparent opacity-40 z-10"></div>
+                <img
+                  src="/images/landing/news-desk-3d.png"
+                  className="w-full h-auto transform group-hover:scale-105 transition-transform duration-1000"
+                  alt="Caseway Global News Desk"
+                />
+
+                {/* Floating Badge */}
+                <div className="absolute bottom-8 left-8 z-20 bg-white/10 backdrop-blur-md border border-white/20 p-4 rounded-xl flex items-center gap-4 max-w-xs">
+                  <div className="w-12 h-12 rounded-full bg-[#D5BF76] flex items-center justify-center shrink-0">
+                    <TrendingUp className="w-6 h-6 text-[#0B1412]" />
+                  </div>
+                  <div>
+                    <div className="text-[10px] uppercase tracking-widest text-[#D5BF76] font-bold">
+                      Just In
+                    </div>
+                    <div className="text-white font-bold text-sm leading-tight">
+                      Supreme Court hands down judgment in key tort appeal
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Decorative background blur */}
+              <div className="absolute -inset-4 bg-[#D5BF76] rounded-[3rem] blur-3xl opacity-20 -z-10"></div>
+            </div>
           </div>
         </div>
       </section>

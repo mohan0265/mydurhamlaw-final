@@ -82,6 +82,7 @@ export default function DurhamLawAIStudyAssistant() {
         category={["Study Skills"]}
         slug="durham-law-ai-study-assistant"
         canonicalUrl={seo.canonical}
+        featuredImage="/images/learn/students-collaborating.png"
       >
         <article className="prose prose-lg max-w-none">
           {/* Hero */}

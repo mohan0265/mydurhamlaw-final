@@ -15,6 +15,7 @@ interface LearnLayoutProps {
   canonicalUrl?: string;
   slug?: string;
   relatedArticles?: { title: string; slug: string }[];
+  featuredImage?: string;
 }
 
 export const LearnLayout: React.FC<LearnLayoutProps> = ({
@@ -26,6 +27,7 @@ export const LearnLayout: React.FC<LearnLayoutProps> = ({
   canonicalUrl,
   slug,
   relatedArticles = [],
+  featuredImage,
 }) => {
   const { user } = useAuth();
   // Use canonicalUrl if provided, otherwise construct from slug
@@ -73,6 +75,18 @@ export const LearnLayout: React.FC<LearnLayoutProps> = ({
             <ArrowLeft className="w-4 h-4" />
             Back to Guides Hub
           </Link>
+
+          {/* Featured Image Support */}
+          {featuredImage && (
+            <div className="relative w-full aspect-[21/9] rounded-3xl overflow-hidden mb-12 shadow-2xl border border-gray-100">
+              <img
+                src={featuredImage}
+                alt={title}
+                className="absolute inset-0 w-full h-full object-cover transform hover:scale-105 transition-transform duration-700"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-60"></div>
+            </div>
+          )}
 
           {children}
 
