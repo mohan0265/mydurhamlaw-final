@@ -115,11 +115,11 @@ export const TourProvider: React.FC<{ children: React.ReactNode }> = ({
     const finishedStatuses: string[] = [STATUS.FINISHED, STATUS.SKIPPED];
     const isGuest = !user && currentPath === "/";
 
-    if (finishedStatuses.includes(status)) {
+    if (finishedStatuses.includes(status) || type === EVENTS.TOUR_END) {
       setRun(false);
-      setStepIndex(0); // Reset for next time
+      setStepIndex(0);
 
-      // If "Don't show again" was checked, disable auto-launch for this user type
+      // If "Don't show again" was checked, disable auto-launch
       if (shouldPersist) {
         if (isGuest) {
           localStorage.setItem("tour_home_autolaunch_disabled", "true");
@@ -168,6 +168,7 @@ export const TourProvider: React.FC<{ children: React.ReactNode }> = ({
           showSkipButton
           disableOverlayClose={true}
           spotlightClicks={true}
+          disableBeacon={true}
           callback={handleJoyrideCallback}
           styles={styles}
           tooltipComponent={TourTooltip}

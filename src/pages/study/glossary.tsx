@@ -151,7 +151,7 @@ export default function GlossaryPage() {
   return (
     <div className="min-h-screen bg-white dark:bg-[#0B1020]">
       {/* Premium Sub-Header Banner */}
-      <div className="bg-[#F7F6F2] dark:bg-[#123733] border-b border-gray-100 dark:border-[#D5BF76]/20 py-12 mb-10 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8">
+      <div className="bg-[#F7F6F2] dark:bg-[#123733] border-b border-gray-100 dark:border-[#D5BF76]/20 py-6 mb-8 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8">
         <div className="max-w-5xl mx-auto px-6">
           <Button
             onClick={() => {
@@ -162,7 +162,7 @@ export default function GlossaryPage() {
               }
             }}
             variant="ghost"
-            className="mb-8 -ml-2 text-gray-500 hover:text-purple-600 transition-colors dark:text-gray-400 dark:hover:text-[#D5BF76]"
+            className="mb-4 -ml-2 text-gray-500 hover:text-purple-600 transition-colors dark:text-gray-400 dark:hover:text-[#D5BF76]"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
             Go Back
@@ -191,12 +191,12 @@ export default function GlossaryPage() {
                 </div>
               </div>
 
-              <p className="text-xl text-gray-600 dark:text-gray-300 font-medium max-w-2xl leading-relaxed">
+              <p className="text-lg text-gray-600 dark:text-gray-300 font-medium max-w-2xl leading-snug">
                 Mastery of the law starts with mastery of its language. The
                 Caseway Lexicon is more than a list—it's your personal legal
                 intelligence base.
               </p>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-4 max-w-2xl leading-relaxed">
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 max-w-2xl leading-relaxed">
                 Take ownership of your academic journey. While we automatically
                 ingest terms from your lectures, adding your own research
                 bridges the gap between theory and professional practice.
