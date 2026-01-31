@@ -45,7 +45,7 @@ export default function BriefTab({ assignment, onUpdate }: BriefTabProps) {
         .eq("id", assignment.id);
 
       if (error) throw error;
-      toast.success("Brief & Settings saved");
+      toast.success("Assignment saved."); // A-SUCCESS-1
       onUpdate();
     } catch (e) {
       toast.error("Failed to save");
@@ -144,11 +144,16 @@ export default function BriefTab({ assignment, onUpdate }: BriefTabProps) {
           className="flex-1 w-full border border-gray-200 dark:border-gray-700 rounded-xl p-4 text-sm leading-relaxed focus:ring-2 focus:ring-violet-500 focus:border-transparent outline-none resize-none font-mono text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-900"
           value={brief}
           onChange={(e) => setBrief(e.target.value)}
-          placeholder="Paste your module handbook instructions, essay questions, or Blackboard brief here..."
+          placeholder="Assignment created. Add the brief or file when you’re ready."
         />
-        <p className="text-xs text-gray-400 mt-2 text-right">
-          Supports Markdown (coming soon)
-        </p>
+        <div className="flex justify-between items-center mt-2">
+          <p className="text-[10px] text-gray-400 font-medium">
+            Changes are saved automatically.
+          </p>
+          <p className="text-xs text-gray-400">
+            Supports Markdown (coming soon)
+          </p>
+        </div>
       </div>
     </div>
   );

@@ -65,7 +65,7 @@ export default function AssignmentDetail({
         .from("assignments")
         .update({ status: newStatus, updated_at: new Date().toISOString() })
         .eq("id", assignment.id);
-      toast.success("Status updated");
+      toast.success("Assignment saved."); // A-SUCCESS-1
       onUpdate();
     } catch {
       toast.error("Failed to update status");

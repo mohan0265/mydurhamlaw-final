@@ -180,6 +180,7 @@ export default function LecturesPage() {
 
   const handleUploadSuccess = () => {
     fetchLectures();
+    toast.success("Lecture saved."); // L-SUCCESS-1
   };
 
   const { showUndoToast } = useUndoToast();
@@ -610,73 +611,47 @@ export default function LecturesPage() {
               </div>
             ) : readyLectures.length === 0 &&
               processingLectures.length === 0 ? (
-              <div className="bg-white rounded-xl border border-gray-200 p-8 text-center shadow-sm">
-                <FileAudio className="w-12 h-12 text-purple-100 mx-auto mb-4 bg-purple-600 rounded-xl p-2" />
-                <h3 className="text-xl font-bold text-gray-900 mb-2">
-                  Add your first lecture
-                </h3>
-                <p className="text-gray-600 mb-8 max-w-lg mx-auto">
-                  Transform your raw lecture materials into exam-ready notes.
-                  Choose how you want to start:
-                </p>
-
-                <div className="max-w-md mx-auto flex flex-col gap-4">
-                  {/* Option 1 - Paste Transcript */}
-                  <div
-                    onClick={() => {
-                      setShowUploadModal(true);
-                      setInitialUploadMode("panopto");
-                    }}
-                    className="p-5 rounded-xl bg-violet-600 text-white shadow-lg shadow-violet-200 hover:shadow-xl hover:bg-violet-700 transition-all cursor-pointer group flex flex-col items-center text-center relative overflow-hidden"
-                  >
-                    <div className="absolute top-0 right-0 p-2 opacity-10">
-                      <FileText size={48} />
-                    </div>
-                    <h3 className="font-bold text-lg flex items-center gap-2">
-                      Paste Transcript
-                    </h3>
-                    <span className="text-xs font-medium bg-white/20 px-2 py-0.5 rounded-full mt-1 mb-2">
-                      Recommended
-                    </span>
-                  </div>
-
-                  {/* Option 2 - Add Link */}
-                  <div
-                    onClick={() => {
-                      setShowUploadModal(true);
-                      setInitialUploadMode("panopto");
-                    }}
-                    className="p-4 rounded-xl bg-white border border-gray-200 text-gray-700 hover:border-violet-300 hover:bg-gray-50 transition-all cursor-pointer flex items-center justify-center gap-2 font-semibold shadow-sm"
-                  >
-                    <ExternalLink size={18} />
-                    Add Panopto link (optional)
-                  </div>
-
-                  {/* Pro Tip */}
-                  <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 flex gap-3 text-left">
-                    <span className="text-lg">💡</span>
-                    <div>
-                      <p className="text-sm font-bold text-blue-900">Pro tip</p>
-                      <p className="text-xs text-blue-800 leading-relaxed">
-                        Adding the Panopto link gives you{" "}
-                        <strong>1-click access</strong> while you review notes.
-                      </p>
-                    </div>
-                  </div>
+              <div className="bg-white rounded-2xl border-2 border-dashed border-gray-200 p-12 text-center shadow-sm">
+                <div className="bg-purple-50 w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                  <FileAudio className="w-10 h-10 text-purple-600" />
                 </div>
 
-                <div className="mt-8 pt-6 border-t border-gray-100 flex justify-center gap-8 text-xs text-gray-400">
-                  <span className="flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 bg-green-400 rounded-full"></span>
-                    Generates Summary
+                <h3 className="text-2xl font-black text-gray-900 mb-2">
+                  {selectedModuleId
+                    ? "No lectures for this module yet."
+                    : "No lectures yet."}
+                </h3>
+                <p className="text-gray-500 mb-8 max-w-sm mx-auto text-sm leading-relaxed">
+                  {selectedModuleId
+                    ? "Add the first one to start summaries and revision tools."
+                    : "Upload your first lecture in about 30 seconds."}
+                </p>
+
+                <div className="flex flex-col items-center gap-4">
+                  <button
+                    onClick={() => setShowUploadModal(true)}
+                    className="px-8 py-3 bg-purple-600 text-white rounded-xl font-bold hover:bg-purple-700 transition-all shadow-lg shadow-purple-200 flex items-center gap-2"
+                  >
+                    <FileAudio size={18} />
+                    {selectedModuleId ? "Add lecture" : "Upload lecture"}
+                  </button>
+                  <p className="text-[11px] text-gray-400 font-medium">
+                    Audio, transcript, or a lecture link — any one works.
+                  </p>
+                </div>
+
+                <div className="mt-12 pt-8 border-t border-gray-100 flex justify-center gap-10 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                  <span className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                    Summary
                   </span>
-                  <span className="flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 bg-blue-400 rounded-full"></span>
-                    Extracts Cases
+                  <span className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
+                    Cases
                   </span>
-                  <span className="flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 bg-orange-400 rounded-full"></span>
-                    Creates Quiz
+                  <span className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-orange-400 rounded-full"></div>
+                    Quiz
                   </span>
                 </div>
               </div>

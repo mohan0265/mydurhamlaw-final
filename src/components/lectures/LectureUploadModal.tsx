@@ -299,6 +299,7 @@ export default function LectureUploadModal({
       }
 
       setUploadProgress(100);
+      toast.success("Audio uploaded."); // L-SUCCESS-3
 
       // Cleanup
       resetForm();
@@ -394,6 +395,9 @@ export default function LectureUploadModal({
       if (!res.ok) {
         throw new Error(resData.error || "Failed to import lecture");
       }
+
+      setUploadProgress(100);
+      toast.success("Transcript added."); // L-SUCCESS-2
 
       // Clear autosave on success
       localStorage.removeItem("caseway_lecture_draft");

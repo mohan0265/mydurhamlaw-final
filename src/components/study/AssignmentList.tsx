@@ -115,9 +115,16 @@ export default function AssignmentList({
       {/* List */}
       <div className="flex-1 overflow-y-auto p-2 space-y-2">
         {filteredAssignments.length === 0 ? (
-          <div className="text-center py-8 text-gray-400 text-sm">
-            <div className="mb-2">📭</div>
-            No assignments found
+          <div className="text-center py-12 px-6">
+            <div className="bg-gray-50 w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-4 border border-gray-100">
+              <span className="text-xl">📅</span>
+            </div>
+            <h3 className="text-sm font-bold text-gray-700 mb-1">
+              No assignments here.
+            </h3>
+            <p className="text-[11px] text-gray-400 leading-relaxed">
+              Add one — you can fill in details later.
+            </p>
           </div>
         ) : (
           filteredAssignments.map((assignment) => (

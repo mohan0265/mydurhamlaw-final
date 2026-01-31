@@ -197,9 +197,7 @@ export default function AssignmentCreateForm({
         });
       }
 
-      toast.success(
-        initialData ? "Assignment updated!" : "Assignment created!",
-      );
+      toast.success("Assignment saved."); // A-SUCCESS-1
 
       // FIRE AND FORGET: Mark onboarding task as complete
       fetch("/api/onboarding/complete", {
@@ -367,7 +365,7 @@ export default function AssignmentCreateForm({
         }
       }
 
-      toast.success("✅ File uploaded successfully!");
+      toast.success("File added."); // A-SUCCESS-2
     } catch (error: any) {
       console.error("Upload error:", error);
       toast.error(error.message || "Failed to parse document");

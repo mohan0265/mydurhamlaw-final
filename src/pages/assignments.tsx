@@ -208,7 +208,7 @@ export default function AssignmentsPage() {
 
       if (error) throw error;
 
-      toast.success("Assignment removed"); // Using "removed" to match "Removed. Undo?"
+      toast.success("Assignment removed"); // A-SUCCESS-3 variant (actually delete)
 
       // Provide Undo Option
       showUndoToast(async () => {
@@ -377,17 +377,26 @@ export default function AssignmentsPage() {
                     />
                   </div>
                 ) : (
-                  <div className="bg-white/50 border border-white/50 rounded-xl h-full flex flex-col items-center justify-center text-gray-500 p-8 text-center dashed-border">
-                    <div className="bg-white p-4 rounded-full shadow-sm mb-4">
-                      <span className="text-4xl">📚</span>
+                  <div className="bg-white/50 border-2 border-dashed border-gray-200 rounded-2xl h-full flex flex-col items-center justify-center text-gray-500 p-12 text-center">
+                    <div className="bg-white p-5 rounded-3xl shadow-sm mb-6">
+                      <span className="text-5xl">📚</span>
                     </div>
-                    <h3 className="text-xl font-bold text-gray-700 mb-2">
-                      Select an Assignment
+                    <h3 className="text-2xl font-black text-gray-700 mb-2">
+                      No assignments yet.
                     </h3>
-                    <p className="max-w-xs mx-auto">
-                      Choose a task from the list or create a new one to get
-                      started with Durmah.
+                    <p className="max-w-xs mx-auto text-sm text-gray-400 mb-8 leading-relaxed">
+                      Add one to track deadlines and prep smarter.
                     </p>
+                    <button
+                      onClick={() => {
+                        router.push("/assignments?new=true", undefined, {
+                          shallow: true,
+                        });
+                      }}
+                      className="px-8 py-3 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200 flex items-center gap-2"
+                    >
+                      Add assignment
+                    </button>
                   </div>
                 )}
               </div>
