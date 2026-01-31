@@ -115,9 +115,9 @@ export function RequireDurhamAccess({
     // Only redirect if loading is false, there is no error, and access is explicitly missing
     if (!loading && !error && user && !hasDurhamAccess) {
       console.log(
-        "[RequireDurhamAccess] Access explicitly denied. Redirecting...",
+        "[RequireDurhamAccess] Access explicitly denied. Redirecting to pricing...",
       );
-      router.replace("/eligibility");
+      router.replace("/pricing");
     } else if (!loading && !user) {
       router.replace("/login");
     }

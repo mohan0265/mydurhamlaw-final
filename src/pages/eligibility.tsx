@@ -19,15 +19,21 @@ export default function EligibilityRedirect() {
 
     supabase.auth.getSession().then(({ data }) => {
       if (data.session) {
-        // Logged-in users go to dashboard
-        router.replace("/dashboard");
+        // Logged-in users who land here likely lack access - go to pricing
+        router.replace("/pricing");
       } else {
         // Logged-out users go to unified signup
         const { next, plan } = router.query;
         let url = "/signup";
         const params = new URLSearchParams();
-        if (next) params.set("next", Array.isArray(next) ? next[0] : next);
-        if (plan) params.set("plan", Array.isArray(plan) ? plan[0] : plan);
+        if (next) {
+          const val = Array.isArray(next) ? next[0] : next;
+          if (val) params.set("next", val);
+        }
+        if (plan) {
+          const val = Array.isArray(plan) ? plan[0] : plan;
+          if (val) params.set("plan", val);
+        }
 
         const queryString = params.toString();
         if (queryString) url += `?${queryString}`;
