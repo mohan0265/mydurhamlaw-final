@@ -173,7 +173,7 @@ export default function LexiconSearchOverlay({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             ref={containerRef}
-            className="w-full max-w-2xl bg-white dark:bg-gray-900 rounded-3xl shadow-[0_20px_60px_-15px_rgba(0,0,0,0.3)] border border-gray-100 dark:border-white/10 overflow-hidden pointer-events-auto flex flex-col resize-y min-h-[100px]"
+            className="w-full max-w-2xl bg-white dark:bg-[#0B1412] rounded-3xl shadow-[0_20px_60px_-15px_rgba(0,0,0,0.3)] border border-gray-100 dark:border-white/10 overflow-hidden pointer-events-auto flex flex-col resize-y min-h-[100px]"
             style={{ touchAction: "none" }}
           >
             {/* Drag Handle */}
@@ -315,7 +315,7 @@ export default function LexiconSearchOverlay({
                       placeholder="e.g., Donoghue v Stevenson, Textbook Ch 4..."
                       value={sourceRef}
                       onChange={(e) => setSourceRef(e.target.value)}
-                      className="w-full px-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-white/10 rounded-xl text-sm outline-none focus:ring-2 focus:ring-purple-500"
+                      className="w-full px-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-white/10 rounded-xl text-sm outline-none focus:ring-2 focus:ring-purple-500 text-gray-900 dark:text-white"
                     />
                   </div>
 

@@ -162,11 +162,11 @@ export default function GlossaryPage() {
 
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div>
-            <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight flex items-center gap-3">
+            <h1 className="text-4xl font-extrabold text-gray-900 dark:text-white tracking-tight flex items-center gap-3">
               <Book className="w-10 h-10 text-purple-600" />
               Caseway Lexicon
             </h1>
-            <p className="text-lg text-gray-500 mt-2 max-w-2xl">
+            <p className="text-lg text-gray-500 dark:text-gray-400 mt-2 max-w-2xl">
               Your master legal dictionary, automatically built from every
               lecture you attend. Track where concepts appear and master the
               language of law.
@@ -180,17 +180,17 @@ export default function GlossaryPage() {
               placeholder="Search terms or definitions..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 bg-white border border-gray-200 rounded-2xl shadow-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition-all"
+              className="w-full pl-10 pr-4 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-white/10 rounded-2xl shadow-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition-all text-gray-900 dark:text-white dark:placeholder-gray-500"
             />
           </div>
         </div>
       </div>
 
       {/* Alphabet Filter */}
-      <div className="flex flex-wrap gap-1 mb-8 bg-white p-2 rounded-2xl border border-gray-100 shadow-sm overflow-x-auto no-scrollbar">
+      <div className="flex flex-wrap gap-1 mb-8 bg-white dark:bg-gray-800 p-2 rounded-2xl border border-gray-100 dark:border-white/10 shadow-sm overflow-x-auto no-scrollbar">
         <button
           onClick={() => setSelectedLetter(null)}
-          className={`px-3 py-2 rounded-xl text-sm font-bold transition-all ${!selectedLetter ? "bg-purple-600 text-white shadow-md shadow-purple-200" : "text-gray-500 hover:bg-gray-50 hover:text-purple-600"}`}
+          className={`px-3 py-2 rounded-xl text-sm font-bold transition-all ${!selectedLetter ? "bg-purple-600 text-white shadow-md shadow-purple-200" : "text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5 hover:text-purple-600"}`}
         >
           ALL
         </button>
@@ -207,8 +207,8 @@ export default function GlossaryPage() {
                 selectedLetter === letter
                   ? "bg-purple-600 text-white shadow-md shadow-purple-200"
                   : hasTerms
-                    ? "text-gray-600 hover:bg-gray-100 hover:text-purple-600"
-                    : "text-gray-200 cursor-not-allowed"
+                    ? "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5 hover:text-purple-600"
+                    : "text-gray-200 dark:text-gray-700 cursor-not-allowed"
               }`}
             >
               {letter}
@@ -223,10 +223,10 @@ export default function GlossaryPage() {
           {filteredTerms.map((t) => (
             <div
               key={t.id}
-              className={`group bg-white rounded-2xl border transition-all duration-300 overflow-hidden ${
+              className={`group bg-white dark:bg-gray-800 rounded-2xl border transition-all duration-300 overflow-hidden ${
                 expandedTerm === t.id
                   ? "ring-2 ring-purple-500 border-transparent shadow-xl"
-                  : "border-gray-200 hover:border-purple-200 hover:shadow-lg"
+                  : "border-gray-200 dark:border-white/10 hover:border-purple-200 dark:hover:border-purple-500/30 hover:shadow-lg"
               }`}
             >
               <div
@@ -237,20 +237,20 @@ export default function GlossaryPage() {
               >
                 <div className="flex-1">
                   <div className="flex items-center gap-3">
-                    <h3 className="text-xl font-bold text-gray-900 group-hover:text-purple-600 transition-colors">
+                    <h3 className="text-xl font-bold text-gray-900 dark:text-white group-hover:text-purple-600 transition-colors">
                       {t.term}
                     </h3>
-                    <span className="bg-gray-100 text-gray-500 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-widest">
+                    <span className="bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-gray-400 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-widest">
                       {t.lectures.length}{" "}
                       {t.lectures.length === 1 ? "Source" : "Sources"}
                     </span>
                     {t.is_manual && (
-                      <span className="bg-purple-100 text-purple-700 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-widest border border-purple-200">
+                      <span className="bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-widest border border-purple-200 dark:border-purple-500/30">
                         Entered by {t.created_by_name || "Student"}
                       </span>
                     )}
                   </div>
-                  <p className="text-gray-600 mt-2 leading-relaxed">
+                  <p className="text-gray-600 dark:text-gray-400 mt-2 leading-relaxed">
                     {t.definition}
                   </p>
                 </div>
@@ -262,7 +262,7 @@ export default function GlossaryPage() {
               </div>
 
               {expandedTerm === t.id && (
-                <div className="bg-gray-50/50 border-t border-gray-100 p-6 animate-in slide-in-from-top-2 duration-300">
+                <div className="bg-gray-50/50 dark:bg-white/5 border-t border-gray-100 dark:border-white/10 p-6 animate-in slide-in-from-top-2 duration-300">
                   {t.source_reference && (
                     <div className="mb-6 bg-purple-50 dark:bg-purple-900/10 p-4 rounded-xl border border-purple-100 dark:border-purple-500/30">
                       <div className="flex items-center gap-2 text-xs font-bold text-purple-600 dark:text-purple-400 uppercase tracking-widest mb-1">
@@ -284,7 +284,7 @@ export default function GlossaryPage() {
                       <Link
                         key={lecture.id}
                         href={`/study/lectures/${lecture.id}`}
-                        className="flex items-center gap-2 bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm font-semibold text-gray-700 hover:border-purple-500 hover:text-purple-700 hover:shadow-md transition-all group/link"
+                        className="flex items-center gap-2 bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-2.5 text-sm font-semibold text-gray-700 dark:text-gray-300 hover:border-purple-500 hover:text-purple-700 hover:shadow-md transition-all group/link"
                       >
                         <FileText className="w-4 h-4 text-purple-400 group-hover/link:text-purple-600" />
                         {lecture.title}
@@ -300,9 +300,9 @@ export default function GlossaryPage() {
       ) : (
         <div className="space-y-6">
           {aiDefinition && (
-            <div className="bg-purple-50 border ring-2 ring-purple-200 border-purple-300 rounded-3xl p-8 animate-in slide-in-from-bottom-4 duration-500 shadow-xl">
+            <div className="bg-purple-50 dark:bg-purple-900/10 border ring-2 ring-purple-200 dark:ring-purple-800/30 border-purple-300 dark:border-purple-500/30 rounded-3xl p-8 animate-in slide-in-from-bottom-4 duration-500 shadow-xl">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-2xl font-black text-gray-900 flex items-center gap-2">
+                <h3 className="text-2xl font-black text-gray-900 dark:text-white flex items-center gap-2">
                   <Check className="w-6 h-6 text-green-500" />
                   Define: {aiDefinition.term}
                 </h3>
@@ -311,8 +311,8 @@ export default function GlossaryPage() {
                 </span>
               </div>
 
-              <div className="bg-white/80 backdrop-blur-sm p-6 rounded-2xl border border-purple-100 shadow-inner mb-6">
-                <p className="text-lg text-gray-800 leading-relaxed italic">
+              <div className="bg-white/80 dark:bg-black/20 backdrop-blur-sm p-6 rounded-2xl border border-purple-100 dark:border-purple-500/20 shadow-inner mb-6">
+                <p className="text-lg text-gray-800 dark:text-gray-200 leading-relaxed italic">
                   &ldquo;{aiDefinition.definition}&rdquo;
                 </p>
               </div>
@@ -327,7 +327,7 @@ export default function GlossaryPage() {
                     value={manualReference}
                     onChange={(e) => setManualReference(e.target.value)}
                     placeholder="e.g. My private research, textbook page 42..."
-                    className="w-full bg-white border border-purple-100 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-purple-400 outline-none transition-all shadow-sm"
+                    className="w-full bg-white dark:bg-gray-800 border border-purple-100 dark:border-purple-500/20 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-purple-400 outline-none transition-all shadow-sm text-gray-900 dark:text-white"
                   />
                 </div>
 
@@ -350,14 +350,14 @@ export default function GlossaryPage() {
             </div>
           )}
 
-          <div className="text-center py-20 bg-white rounded-3xl border-2 border-dashed border-gray-200 shadow-sm">
-            <div className="bg-gray-50 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6">
-              <Search className="w-10 h-10 text-gray-300" />
+          <div className="text-center py-20 bg-white dark:bg-gray-800/50 rounded-3xl border-2 border-dashed border-gray-200 dark:border-white/10 shadow-sm">
+            <div className="bg-gray-50 dark:bg-white/5 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6">
+              <Search className="w-10 h-10 text-gray-300 dark:text-gray-600" />
             </div>
-            <h3 className="text-xl font-bold text-gray-900">
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white">
               {searchQuery ? `"${searchQuery}" not found` : "No terms found"}
             </h3>
-            <p className="text-gray-500 mt-2 max-w-sm mx-auto">
+            <p className="text-gray-500 dark:text-gray-400 mt-2 max-w-sm mx-auto">
               {searchQuery
                 ? "This concept isn't in your Lexicon yet. Would you like Durmah to define it for you?"
                 : "Try adjusting your search or filters. Terms are automatically added when you upload new lectures."}
