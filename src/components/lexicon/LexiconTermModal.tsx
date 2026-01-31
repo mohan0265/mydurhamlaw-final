@@ -1,14 +1,23 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, BookOpen, MessageSquare, ArrowRight, Sparkles } from "lucide-react";
+import {
+  X,
+  BookOpen,
+  MessageSquare,
+  ArrowRight,
+  Sparkles,
+  Save,
+} from "lucide-react";
 import { Button } from "@/components/ui/Button";
 
 interface LexiconTerm {
   term: string;
   definition: string;
   durmah_explanation?: string;
+  id?: string;
+  userNotes?: string;
 }
 
 interface LexiconTermModalProps {
@@ -22,7 +31,35 @@ export function LexiconTermModal({
   isOpen,
   onClose,
 }: LexiconTermModalProps) {
+  const [showNoteEditor, setShowNoteEditor] = useState(false);
+  const [noteText, setNoteText] = useState(term?.userNotes || "");
+  const [isSaving, setIsSaving] = useState(false);
+
   if (!term) return null;
+
+  const handleSaveNote = async () => {
+    if (!term.id) return;
+
+    setIsSaving(true);
+    try {
+      // TODO: Call API to save note to lexicon_user_stars
+      await fetch("/api/lexicon/note", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          termId: term.id,
+          notes: noteText,
+        }),
+      });
+
+      // Close note editor after save
+      setShowNoteEditor(false);
+    } catch (err) {
+      console.error("Failed to save note:", err);
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   return (
     <AnimatePresence>
@@ -112,28 +149,54 @@ export function LexiconTermModal({
                   <div className="flex items-center gap-3 w-full sm:w-auto">
                     <Button
                       variant="outline"
-                      onClick={() => {
-                        onClose();
-                        // Trigger the overlay with this term
-                        window.dispatchEvent(
-                          new CustomEvent("open-lexicon-search-with-query", {
-                            detail: { query: term.term },
-                          }),
-                        );
-                      }}
+                      onClick={() => setShowNoteEditor(!showNoteEditor)}
                       className="flex-1 sm:flex-none rounded-xl border-gray-200 dark:border-white/10 hover:bg-purple-50 hover:text-purple-600 hover:border-purple-200"
                     >
                       <Sparkles size={16} className="mr-2" />
-                      Add Note
+                      {showNoteEditor ? "Cancel" : "Add Note"}
                     </Button>
                     <Button
                       onClick={onClose}
-                      className="flex-1 sm:flex-none bg-gray-900 dark:bg-white text-white dark:text-[#123733] hover:scale-105 transition-transform rounded-xl px-6 font-bold"
+                      className="flex-1 sm:flex-none rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 shadow-md border-0"
                     >
                       Got it, Back to Work
+                      <ArrowRight size={16} className="ml-2" />
                     </Button>
                   </div>
                 </div>
+
+                {/* Inline Note Editor */}
+                <AnimatePresence>
+                  {showNoteEditor && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="mt-4 pt-4 border-t border-gray-100 dark:border-white/5"
+                    >
+                      <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                        Your Personal Notes
+                      </label>
+                      <textarea
+                        value={noteText}
+                        onChange={(e) => setNoteText(e.target.value)}
+                        placeholder="Add your notes, insights, or examples here..."
+                        className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-[#0B1412]/30 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
+                        rows={4}
+                      />
+                      <div className="flex justify-end mt-3">
+                        <Button
+                          onClick={handleSaveNote}
+                          disabled={isSaving}
+                          className="rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 shadow-md"
+                        >
+                          <Save size={16} className="mr-2" />
+                          {isSaving ? "Saving..." : "Save Note"}
+                        </Button>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             </div>
           </motion.div>
@@ -142,3 +205,4 @@ export function LexiconTermModal({
     </AnimatePresence>
   );
 }
+```
