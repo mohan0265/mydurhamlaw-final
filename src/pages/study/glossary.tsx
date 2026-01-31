@@ -152,19 +152,27 @@ export default function GlossaryPage() {
       {/* Header Section */}
       <div className="mb-10 animate-in fade-in slide-in-from-top-4 duration-500">
         <Button
-          onClick={() => router.push("/study/lectures")}
+          onClick={() => {
+            if (window.history.length > 2) {
+              router.back();
+            } else {
+              router.push("/dashboard");
+            }
+          }}
           variant="ghost"
-          className="mb-4 -ml-2 text-gray-500 hover:text-purple-600 transition-colors"
+          className="mb-4 -ml-2 text-gray-500 hover:text-purple-600 transition-colors dark:text-gray-400 dark:hover:text-purple-400"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
-          Back to Lectures
+          Go Back
         </Button>
 
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div>
-            <h1 className="text-4xl font-extrabold text-gray-900 dark:text-white tracking-tight flex items-center gap-3">
-              <Book className="w-10 h-10 text-purple-600" />
-              Caseway Lexicon
+            <h1 className="text-4xl font-extrabold tracking-tight flex items-center gap-3">
+              <Book className="w-10 h-10 text-purple-600 dark:text-purple-400 filter drop-shadow-[0_0_15px_rgba(168,85,247,0.4)]" />
+              <span className="bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-purple-200">
+                Caseway Lexicon
+              </span>
             </h1>
             <p className="text-lg text-gray-500 dark:text-gray-400 mt-2 max-w-2xl">
               Your master legal dictionary, automatically built from every

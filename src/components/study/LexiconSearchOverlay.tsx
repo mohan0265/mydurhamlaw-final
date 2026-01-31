@@ -46,6 +46,7 @@ export default function LexiconSearchOverlay({
   const [sourceRef, setSourceRef] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [expandedTermId, setExpandedTermId] = useState<string | null>(null);
 
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -233,22 +234,58 @@ export default function LexiconSearchOverlay({
                     Existing Matches
                   </p>
                   {results.map((t) => (
-                    <Link
+                    <div
                       key={t.id}
-                      href="/study/glossary"
-                      onClick={onClose}
-                      className="group flex flex-col p-4 rounded-2xl hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-all border border-transparent hover:border-purple-100 dark:hover:border-purple-500/30 shadow-sm hover:shadow-md"
+                      className={`group flex flex-col p-4 rounded-2xl transition-all border ${
+                        expandedTermId === t.id
+                          ? "bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-500/40 shadow-md"
+                          : "hover:bg-gray-50 dark:hover:bg-white/5 border-transparent hover:border-gray-100 dark:hover:border-white/10"
+                      }`}
                     >
-                      <div className="flex items-center justify-between">
+                      <button
+                        onClick={() =>
+                          setExpandedTermId(
+                            expandedTermId === t.id ? null : t.id,
+                          )
+                        }
+                        className="flex items-center justify-between w-full text-left"
+                      >
                         <span className="font-bold text-gray-900 dark:text-white group-hover:text-purple-600 transition-colors">
                           {t.term}
                         </span>
-                        <ArrowRight className="w-4 h-4 text-gray-300 opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
-                      </div>
-                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 line-clamp-1 italic">
-                        {t.definition}
-                      </p>
-                    </Link>
+                        <div className="flex items-center gap-2">
+                          {expandedTermId !== t.id && (
+                            <span className="text-[10px] font-bold text-gray-400 group-hover:text-purple-400 opacity-0 group-hover:opacity-100 transition-opacity uppercase tracking-widest">
+                              Click to expand
+                            </span>
+                          )}
+                          <ArrowRight
+                            className={`w-4 h-4 text-gray-300 transition-all ${
+                              expandedTermId === t.id
+                                ? "rotate-90 text-purple-500"
+                                : "group-hover:text-purple-400 group-hover:translate-x-1"
+                            }`}
+                          />
+                        </div>
+                      </button>
+
+                      {expandedTermId === t.id && (
+                        <div className="mt-3 pt-3 border-t border-purple-200/50 dark:border-purple-500/20 animate-in slide-in-from-top-2 duration-300">
+                          <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+                            {t.definition}
+                          </p>
+                          <div className="mt-4 flex justify-end">
+                            <Link
+                              href={`/study/glossary?term=${encodeURIComponent(t.term)}`}
+                              onClick={onClose}
+                              className="text-[10px] font-bold text-purple-600 dark:text-purple-400 hover:underline uppercase tracking-widest flex items-center gap-1"
+                            >
+                              View in Full Lexicon <ArrowRight size={10} />
+                            </Link>
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   ))}
                 </div>
               )}
