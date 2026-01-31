@@ -396,8 +396,8 @@ export default function LandingPage() {
               <div className="bg-white/10 rounded-2xl p-1 border border-white/10 hover:bg-white/15 transition duration-300 h-full">
                 <div className="aspect-video bg-indigo-950/50 rounded-xl relative overflow-hidden flex items-center justify-center">
                   <img
-                    src="/images/landing/dashboard-3d.png"
-                    alt="Dashboard Preview"
+                    src="/images/landing/dashboard_hifi_landing_preview_1769851136263.png"
+                    alt="High-Fidelity Dashboard Preview"
                     className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-indigo-950/80 via-transparent to-transparent"></div>
@@ -460,12 +460,19 @@ export default function LandingPage() {
                 data-tour="home-durmah"
               >
                 <div className="aspect-video bg-indigo-950/50 rounded-xl relative overflow-hidden flex items-center justify-center">
-                  <div className="absolute inset-0 bg-gradient-to-tr from-blue-900 to-cyan-900 opacity-50"></div>
-                  <div className="relative z-10 flex flex-col items-center gap-3">
-                    <div className="p-3 bg-white/10 rounded-full group-hover:scale-110 transition-transform backdrop-blur-sm">
-                      <CheckCircle className="w-6 h-6 text-white" />
+                  <div className="absolute inset-0 bg-gradient-to-tr from-blue-900/40 to-cyan-900/40 opacity-50"></div>
+                  <div className="relative z-10 flex items-center justify-center w-full h-full">
+                    <div className="w-24 h-24 rounded-full border-4 border-white/20 overflow-hidden shadow-2xl relative">
+                      <img
+                        src="/images/durmah_barrister.png"
+                        alt="Durmah Barrister"
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-[#123733]/40 to-transparent"></div>
                     </div>
-                    <span className="text-xs font-bold uppercase tracking-widest text-blue-200">
+                  </div>
+                  <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20">
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-blue-200 bg-blue-950/50 px-3 py-1 rounded-full border border-white/10 backdrop-blur-md">
                       Try Durmah Chat
                     </span>
                   </div>
@@ -485,6 +492,67 @@ export default function LandingPage() {
               </div>
             </Link>
           </div>
+        </div>
+      </section>
+
+      {/* FEATURED CHAMPION FEATURES: LEXICON & SYLLABUS SHIELD */}
+      <section className="py-24 bg-white dark:bg-[#0B1412] overflow-hidden relative border-t border-gray-100 dark:border-white/5">
+        <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* CASEWAY Lexicon Card */}
+          <Link href="/study/glossary" className="block group">
+            <div className="relative h-full p-8 md:p-12 rounded-[2.5rem] bg-gradient-to-br from-[#123733] to-[#0B1412] text-white border border-white/5 shadow-2xl transition-all duration-500 hover:-translate-y-2">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-[#D5BF76]/10 rounded-full blur-3xl -mr-16 -mt-16"></div>
+              <div className="space-y-6">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#D5BF76]/20 text-[#D5BF76] text-[10px] font-black uppercase tracking-widest border border-[#D5BF76]/30">
+                  <BookOpen className="w-3.5 h-3.5" />
+                  <span>Trademark Worthy Feature</span>
+                </div>
+                <h2 className="text-4xl font-black tracking-tight leading-tight">
+                  CASEWAY <br />
+                  <span className="text-[#D5BF76]">Lexicon™</span>
+                </h2>
+                <p className="text-lg text-teal-100/80 font-medium leading-relaxed">
+                  Master Legal Language. Own the courtroom.
+                </p>
+                <p className="text-sm text-teal-200/60 leading-relaxed max-w-md">
+                  We've isolated the most difficult legal terminology into an
+                  interactive, memory-optimized glossary. Master the terms
+                  examiners look for.
+                </p>
+                <div className="flex items-center gap-2 text-[#D5BF76] font-black uppercase tracking-widest text-xs pt-4 group-hover:gap-4 transition-all">
+                  Explore the Lexicon <ArrowRight className="w-4 h-4" />
+                </div>
+              </div>
+            </div>
+          </Link>
+
+          {/* SyllabusShield Card */}
+          <Link href="/study/lectures" className="block group">
+            <div className="relative h-full p-8 md:p-12 rounded-[2.5rem] bg-gradient-to-br from-[#0f766e] to-[#134e4a] text-white border border-white/5 shadow-2xl transition-all duration-500 hover:-translate-y-2">
+              <div className="absolute bottom-0 left-0 w-32 h-32 bg-white/5 rounded-full blur-3xl -ml-16 -mb-16"></div>
+              <div className="space-y-6">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 text-white text-[10px] font-black uppercase tracking-widest border border-white/10">
+                  <Shield className="w-3.5 h-3.5" />
+                  <span>Champion Shield</span>
+                </div>
+                <h2 className="text-4xl font-black tracking-tight leading-tight">
+                  Syllabus<span className="text-purple-300">Shield™</span>
+                </h2>
+                <p className="text-lg text-teal-50 font-medium leading-relaxed">
+                  Never miss a lecture. Clear the syllabus with total
+                  confidence.
+                </p>
+                <p className="text-sm text-teal-100/60 leading-relaxed max-w-md">
+                  Designed to help you digest every lecture and ensure your
+                  exam-readiness. No content left behind, no student left in the
+                  dark.
+                </p>
+                <div className="flex items-center gap-2 text-white font-black uppercase tracking-widest text-xs pt-4 group-hover:gap-4 transition-all">
+                  Activate Shield <ArrowRight className="w-4 h-4" />
+                </div>
+              </div>
+            </div>
+          </Link>
         </div>
       </section>
 

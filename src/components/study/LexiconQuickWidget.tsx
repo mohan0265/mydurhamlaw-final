@@ -77,7 +77,9 @@ export default function LexiconQuickWidget() {
             />
           </div>
           <div>
-            <h3 className="font-bold text-gray-900 text-sm">Law Lexicon</h3>
+            <h3 className="font-bold text-gray-900 text-sm">
+              CASEWAY Lexicon™
+            </h3>
             <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
               Master Your Vocab
             </p>
