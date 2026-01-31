@@ -1,12 +1,15 @@
-import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs';
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
+import { createMiddlewareClient } from "@supabase/auth-helpers-nextjs";
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 
 export async function middleware(req: NextRequest) {
   const res = NextResponse.next();
-  
+
   // Guard against missing env vars to prevent undici crashes in createMiddlewareClient
-  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+  if (
+    !process.env.NEXT_PUBLIC_SUPABASE_URL ||
+    !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  ) {
     console.error("Middleware skipping: Missing Supabase Env Vars");
     return res;
   }
@@ -17,21 +20,34 @@ export async function middleware(req: NextRequest) {
     data: { session },
   } = await supabase.auth.getSession();
 
-  // Public routes
-  const publicPaths = ['/', '/login', '/auth', '/legal', '/about', '/loved-one-login'];
-  const isPublicPath = publicPaths.some(path => 
-    req.nextUrl.pathname === path || req.nextUrl.pathname.startsWith(path)
+  // Public routes or transition routes that handle their own auth/access logic
+  const publicPaths = [
+    "/",
+    "/login",
+    "/signup",
+    "/auth",
+    "/legal",
+    "/about",
+    "/loved-one-login",
+    "/LoginRedirectPage",
+    "/onboarding",
+    "/pricing",
+    "/restricted",
+  ];
+  const isPublicPath = publicPaths.some(
+    (path) =>
+      req.nextUrl.pathname === path || req.nextUrl.pathname.startsWith(path),
   );
 
   if (!session && !isPublicPath) {
     // API routes should return 401 JSON, not redirect to HTML login
-    if (req.nextUrl.pathname.startsWith('/api/')) {
+    if (req.nextUrl.pathname.startsWith("/api/")) {
       return NextResponse.json(
-        { error: 'Unauthorized', message: 'Authentication required' },
-        { status: 401 }
+        { error: "Unauthorized", message: "Authentication required" },
+        { status: 401 },
       );
     }
-    return NextResponse.redirect(new URL('/login', req.url));
+    return NextResponse.redirect(new URL("/login", req.url));
   }
 
   if (session) {
@@ -41,42 +57,40 @@ export async function middleware(req: NextRequest) {
         (meta.user_metadata?.user_role as string) ||
         (meta.app_metadata?.role as string) ||
         (meta.app_metadata?.user_role as string)) ??
-      'student';
+      "student";
 
-    if (!userRole || typeof userRole !== 'string') {
-      userRole = 'student';
+    if (!userRole || typeof userRole !== "string") {
+      userRole = "student";
     }
 
     // Reliance on session.user.user_metadata for role
     // We skip the DB call here to prevent Edge Function timeouts on slow connections/cold starts.
     // Ensure that login/profile updates sync the role to user_metadata.
-    if (userRole === 'student' && meta.user_metadata?.role) {
-       userRole = meta.user_metadata.role;
+    if (userRole === "student" && meta.user_metadata?.role) {
+      userRole = meta.user_metadata.role;
     }
 
     // Define allowed paths
     const lovedOnePaths = [
-      '/loved-one-dashboard', 
-      '/loved-one-settings',
-      '/api/awy' // Allow API access
+      "/loved-one-dashboard",
+      "/loved-one-settings",
+      "/api/awy", // Allow API access
     ];
 
     // Redirect based on role
-    if (userRole === 'loved_one') {
+    if (userRole === "loved_one") {
       // Loved ones can only access specific paths
-      const isAllowed = lovedOnePaths.some(path => 
-        req.nextUrl.pathname.startsWith(path)
-      ) || publicPaths.some(path => 
-        req.nextUrl.pathname.startsWith(path)
-      );
+      const isAllowed =
+        lovedOnePaths.some((path) => req.nextUrl.pathname.startsWith(path)) ||
+        publicPaths.some((path) => req.nextUrl.pathname.startsWith(path));
 
       if (!isAllowed) {
-        return NextResponse.redirect(new URL('/loved-one-dashboard', req.url));
+        return NextResponse.redirect(new URL("/loved-one-dashboard", req.url));
       }
     } else {
       // Students/Admins cannot access loved one login/dashboard (optional, but good for clarity)
-      if (req.nextUrl.pathname === '/loved-one-login') {
-         return NextResponse.redirect(new URL('/dashboard', req.url));
+      if (req.nextUrl.pathname === "/loved-one-login") {
+        return NextResponse.redirect(new URL("/dashboard", req.url));
       }
     }
   }
@@ -85,7 +99,5 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: [
-    '/((?!api|_next/static|_next/image|favicon.ico|public).*)',
-  ],
+  matcher: ["/((?!api|_next/static|_next/image|favicon.ico|public).*)"],
 };

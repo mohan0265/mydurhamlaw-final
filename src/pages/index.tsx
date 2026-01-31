@@ -499,7 +499,7 @@ export default function LandingPage() {
       <section className="py-24 bg-white dark:bg-[#0B1412] overflow-hidden relative border-t border-gray-100 dark:border-white/5">
         <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* CASEWAY Lexicon Card */}
-          <Link href="/study/glossary" className="block group">
+          <Link href="/articles/caseway-lexicon" className="block group">
             <div className="relative h-full p-8 md:p-12 rounded-[2.5rem] bg-gradient-to-br from-[#123733] to-[#0B1412] text-white border border-white/5 shadow-2xl transition-all duration-500 hover:-translate-y-2">
               <div className="absolute top-0 right-0 w-32 h-32 bg-[#D5BF76]/10 rounded-full blur-3xl -mr-16 -mt-16"></div>
               <div className="space-y-6">
@@ -527,7 +527,7 @@ export default function LandingPage() {
           </Link>
 
           {/* SyllabusShield Card */}
-          <Link href="/study/lectures" className="block group">
+          <Link href="/articles/syllabus-shield" className="block group">
             <div className="relative h-full p-8 md:p-12 rounded-[2.5rem] bg-gradient-to-br from-[#0f766e] to-[#134e4a] text-white border border-white/5 shadow-2xl transition-all duration-500 hover:-translate-y-2">
               <div className="absolute bottom-0 left-0 w-32 h-32 bg-white/5 rounded-full blur-3xl -ml-16 -mb-16"></div>
               <div className="space-y-6">

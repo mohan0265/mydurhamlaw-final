@@ -390,6 +390,24 @@ export default function GlobalHeader() {
                     {dashboardLabel}
                   </ActiveLink>
                   <HoverMenu label={studyMenu.label} items={studyMenu.items} />
+                  <HoverMenu
+                    label="Product Guides"
+                    items={[
+                      {
+                        label: "CASEWAY Lexicon™",
+                        href: "/articles/caseway-lexicon",
+                      },
+                      {
+                        label: "SyllabusShield™",
+                        href: "/articles/syllabus-shield",
+                      },
+                      {
+                        label: "No Question is Stupid",
+                        href: "/articles/no-question-is-a-stupid-question",
+                      },
+                      { label: "View all guides →", href: "/guides" },
+                    ]}
+                  />
                   {communityMenu && (
                     <HoverMenu
                       label={communityMenu.label}
