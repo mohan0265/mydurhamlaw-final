@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import RelatedGuides from "@/components/seo/RelatedGuides";
+import { LexiconRotatingBanner } from "@/components/lexicon/LexiconRotatingBanner";
 
 export default function CasewayLexiconArticle() {
   return (
@@ -91,6 +92,21 @@ export default function CasewayLexiconArticle() {
                   of your lectures, making them easier to recall in exams.
                 </p>
               </div>
+            </div>
+
+            {/* NEW: INTERACTIVE WIDGET SHOWCASE */}
+            <div className="my-16 not-prose">
+              <div className="text-center mb-10">
+                <h2 className="text-3xl font-black text-gray-900 dark:text-white mb-4 tracking-tight">
+                  Interactive Reinforcement
+                </h2>
+                <p className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto font-medium">
+                  Experience the tool designed for your cross-page mastery.
+                  Hover over a term to see its meaning, and click for Durmah's
+                  deep-dive context.
+                </p>
+              </div>
+              <LexiconRotatingBanner mode="public" className="shadow-2xl" />
             </div>
 
             {/* ETHICAL SECTION */}

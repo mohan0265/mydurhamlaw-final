@@ -19,6 +19,7 @@ import {
   CheckCircle,
 } from "lucide-react";
 import { IndependenceBadge } from "@/components/ui/IndependenceBadge";
+import { LexiconRotatingBanner } from "@/components/lexicon/LexiconRotatingBanner";
 
 // Mock Data for Guides (kept consistent)
 const allGuides = [
@@ -495,6 +496,23 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* NEW: LEXICON INTERACTIVE BANNER WIDGET */}
+      <section className="py-12 bg-[#F7F6F2] dark:bg-[#0B1412] relative">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="mb-8 text-center">
+            <h2 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight mb-2">
+              Master the Language of Law
+            </h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400 font-medium max-w-2xl mx-auto">
+              Law isn't just a subject; it's a language. Use our interactive
+              Lexicon widget to Master the terms examiners look for, one word at
+              a time.
+            </p>
+          </div>
+          <LexiconRotatingBanner mode="public" className="max-w-5xl mx-auto" />
+        </div>
+      </section>
+
       {/* FEATURED CHAMPION FEATURES: LEXICON & SYLLABUS SHIELD */}
       <section className="py-24 bg-white dark:bg-[#0B1412] overflow-hidden relative border-t border-gray-100 dark:border-white/5">
         <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -505,19 +523,19 @@ export default function LandingPage() {
               <div className="space-y-6">
                 <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#D5BF76]/20 text-[#D5BF76] text-[10px] font-black uppercase tracking-widest border border-[#D5BF76]/30">
                   <BookOpen className="w-3.5 h-3.5" />
-                  <span>Trademark Worthy Feature</span>
+                  <span>Legal Eagle Feature</span>
                 </div>
                 <h2 className="text-4xl font-black tracking-tight leading-tight">
                   CASEWAY <br />
                   <span className="text-[#D5BF76]">Lexicon™</span>
                 </h2>
-                <p className="text-lg text-teal-100/80 font-medium leading-relaxed">
-                  Master Legal Language. Own the courtroom.
+                <p className="text-xl text-teal-100/80 font-medium leading-relaxed">
+                  Master Legal Language. Own the Courtroom.
                 </p>
                 <p className="text-sm text-teal-200/60 leading-relaxed max-w-md">
-                  We've isolated the most difficult legal terminology into an
-                  interactive, memory-optimized glossary. Master the terms
-                  examiners look for.
+                  We've isolated the most high-impact legal terminology into an
+                  interactive, memory-optimized engine. Master the terms
+                  examiners look for with repeated, cross-page exposure.
                 </p>
                 <div className="flex items-center gap-2 text-[#D5BF76] font-black uppercase tracking-widest text-xs pt-4 group-hover:gap-4 transition-all">
                   Explore the Lexicon <ArrowRight className="w-4 h-4" />

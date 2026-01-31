@@ -51,6 +51,7 @@ const ModuleReadinessWidget = dynamic(
 );
 
 import OnboardingBanner from "@/components/dashboard/OnboardingBanner";
+import { LexiconRotatingBanner } from "@/components/lexicon/LexiconRotatingBanner";
 
 // Components
 import { RequireDurhamAccess } from "@/components/auth/EntitlementGuards";
@@ -322,6 +323,9 @@ function DashboardContent() {
             </button>
           </div>
         </div>
+
+        {/* LEXICON REINFORCEMENT BANNER */}
+        <LexiconRotatingBanner mode="auth" />
 
         {/* 1.5) WELCOME / START HERE BANNER (New User Guidance) */}
         {!localStorage.getItem("mdl_welcome_dismissed") && (
