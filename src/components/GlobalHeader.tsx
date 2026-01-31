@@ -183,13 +183,25 @@ export default function GlobalHeader() {
   // Role detection state
   const [displayName, setDisplayName] = useState<string>("Student");
   const [isLovedOne, setIsLovedOne] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   // Fetch display name and role from profiles table
   useEffect(() => {
     if (!user || !user.id) {
       setDisplayName("Student");
       setIsLovedOne(false);
+      setIsAdmin(false);
       return;
+    }
+
+    // Immediate metadata check for virtual/admin users
+    if (user.user_metadata?.role === "admin") {
+      setIsAdmin(true);
+      setDisplayName("Admin");
+    }
+    if (user.user_metadata?.role === "loved_one") {
+      setIsLovedOne(true);
+      setDisplayName(user.user_metadata.display_name || "Loved One");
     }
 
     const fetchUserInfo = async () => {
@@ -221,8 +233,11 @@ export default function GlobalHeader() {
         // Check if user is a loved one
         if (data?.user_role === "loved_one") {
           setIsLovedOne(true);
+        } else if (data?.user_role === "admin") {
+          setIsAdmin(true);
+          setDisplayName("Admin");
         } else {
-          // Also check awy_connections as backup
+          // Also check awy_connections as backup for loved ones
           if (user.email) {
             const { data: connData } = await supabase
               .from("awy_connections")
@@ -359,6 +374,9 @@ export default function GlobalHeader() {
     };
     dashboardHref = "/lnat";
     dashboardLabel = "LNAT Home";
+  } else if (isAdmin) {
+    dashboardHref = "/admin";
+    dashboardLabel = "Admin Panel";
   }
 
   return (
@@ -501,7 +519,7 @@ export default function GlobalHeader() {
                   <span className="text-gray-600 dark:text-gray-200 text-sm font-medium">
                     Hi, {displayName}
                   </span>
-                  {!isLovedOne && (
+                  {!isLovedOne && !isAdmin && (
                     <Link href="/signup">
                       <button className="px-5 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl text-sm font-bold shadow-lg shadow-purple-200 hover:shadow-xl hover:scale-105 transition-all">
                         Start Free Trial

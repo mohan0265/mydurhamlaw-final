@@ -162,7 +162,13 @@ export default function LoginRedirectPage() {
         }
 
         if (existingProfile) {
-          const profileRole = existingProfile.user_role || userRole;
+          // RESPECT EXISTING ROLE IF IT IS SPECIAL (admin, loved_one, etc)
+          const profileRole = existingProfile.user_role;
+          const finalRole =
+            profileRole === "admin" || profileRole === "loved_one"
+              ? profileRole
+              : userRole;
+
           const displayName =
             existingProfile.display_name || user.email?.split("@")[0] || "User";
           const metaYear =
@@ -171,14 +177,14 @@ export default function LoginRedirectPage() {
             existingProfile.year_group ||
             "year1";
 
-          if (existingProfile.user_role !== userRole) {
+          if (existingProfile.user_role !== finalRole) {
             console.log(
-              `🔄 Updating user role from ${existingProfile.user_role} to ${userRole}`,
+              `🔄 Updating user role from ${existingProfile.user_role} to ${finalRole}`,
             );
             await supabase
               .from("profiles")
               .update({
-                user_role: userRole,
+                user_role: finalRole,
                 year_group: metaYear,
                 updated_at: new Date().toISOString(),
               })
@@ -186,15 +192,18 @@ export default function LoginRedirectPage() {
           }
 
           console.log("✅ Existing profile found:", {
-            role: userRole,
+            role: finalRole,
             displayName,
           });
 
-          if (userRole === "loved_one") {
+          if (finalRole === "loved_one") {
             setStatus(
               `Welcome back, ${displayName}! Redirecting to your family dashboard...`,
             );
             navigateOnce("/loved-one-dashboard", 1500);
+          } else if (finalRole === "admin") {
+            setStatus(`Welcome back, Admin! Redirecting to dashboard...`);
+            navigateOnce("/admin", 1500);
           } else {
             const yearGroup = existingProfile.year_group;
             setStatus(
