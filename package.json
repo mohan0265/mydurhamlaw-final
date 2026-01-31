@@ -26,6 +26,8 @@
     "brand:guard": "node scripts/brand-guard.mjs",
     "demo:capture": "node scripts/capture-demos.mjs",
     "demo:capture:prod": "set DEMO_BASE_URL=https://casewaylaw.ai && node scripts/capture-demos.mjs",
+    "seed:lexicon": "node scripts/seed-lexicon-from-csv.mjs",
+    "migration:apply": "node scripts/apply-lexicon-migration.mjs",
     "audit:fix": "npm audit fix --force",
     "update:deps": "npm update",
     "clean:all": "rimraf .next node_modules package-lock.json && npm install",

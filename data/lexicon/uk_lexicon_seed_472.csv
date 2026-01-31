@@ -1,0 +1,473 @@
+term,area_of_law,priority_1_to_5,common_in_year,aliases,confusion_with
+Offer,Contract,5,Foundation/Year1,Proposal,Invitation to treat
+Acceptance,Contract,5,Foundation/Year1,Agreement,Counter-offer
+Consideration,Contract,5,Foundation/Year1,Quid pro quo,Gratuitous promise
+Invitation to treat,Contract,4,Year1,Preliminary negotiation,Offer
+Counter-offer,Contract,4,Year1,Modified proposal,Acceptance
+Mirror-image rule,Contract,3,Year1,,Battle of the forms
+Postal rule,Contract,3,Year1/Year2,Adams v Lindsell rule,Receipt rule
+Privity of contract,Contract,4,Year1/Year2,,Third party rights
+Misrepresentation,Contract,4,Year1/Year2,False statement,Mistake
+Fraudulent misrepresentation,Contract,3,Year2,Deceit,Negligent misrepresentation
+Negligent misrepresentation,Contract,3,Year2,,Innocent misrepresentation
+Innocent misrepresentation,Contract,3,Year2,,Fraudulent misrepresentation
+Rescission,Contract/Equity,4,Year1/Year2,Setting aside,Termination
+Affirmation,Contract,3,Year2,Ratification,Rescission
+Frustration,Contract,3,Year2,Impossibility,Breach
+Breach of contract,Contract,5,Foundation/Year1,,Performance
+Repudiatory breach,Contract,3,Year2,Fundamental breach,Minor breach
+Anticipatory breach,Contract,3,Year2,Anticipatory repudiation,Actual breach
+Damages,Contract/Tort,5,Year1,Monetary compensation,Specific performance
+Expectation damages,Contract,3,Year2,Loss of bargain,Reliance damages
+Reliance damages,Contract,3,Year2,,Expectation damages
+Remoteness,Contract/Tort,3,Year2,,Causation
+Mitigation,Contract,3,Year2,Duty to mitigate,
+Specific performance,Contract/Equity,4,Year2,Court order to perform,Damages
+Injunction,Equity/Tort,4,Year2,Court order to restrain,Damages
+Capacity,Contract,4,Year1,Legal ability to contract,
+Intention to create legal relations,Contract,5,Year1,Contractual intention,
+Duress,Contract/Criminal,3,Year2,Compulsion,Undue influence
+Undue influence,Contract/Equity,3,Year2,,Duress
+Mistake,Contract,3,Year2,Common/mutual/unilateral mistake,Misrepresentation
+Void contract,Contract,4,Year1,Null ab initio,Voidable contract
+Voidable contract,Contract,4,Year1,Contract capable of rescission,Void contract
+Terms of contract,Contract,4,Year1,Contractual provisions,
+Condition,Contract,3,Year1/Year2,Essential term,Warranty
+Warranty,Contract,3,Year1/Year2,Minor term,Condition
+Innominate term,Contract,3,Year2,Intermediate term,
+Express term,Contract,3,Year1,Stated term,Implied term
+Implied term,Contract,3,Year1/Year2,Unwritten term,Express term
+Exclusion clause,Contract,3,Year2,Exemption clause,
+Contra proferentem,Contract,2,Year2,Against the offeror,
+Tort,Tort,5,Foundation/Year1,Civil wrong,Crime
+Negligence,Tort,5,Year1,Carelessness,
+Duty of care,Tort,5,Year1,Legal obligation,
+Breach of duty,Tort,5,Year1,Failure to meet standard,
+Causation,Tort/Criminal,5,Year1,Cause and effect,
+But-for test,Tort,4,Year1/Year2,Factual causation test,
+Remoteness of damage,Tort,3,Year2,Legal causation,
+Reasonable foreseeability,Tort,4,Year1/Year2,,
+Vicarious liability,Tort,4,Year2,Employer liability,Direct liability
+Strict liability,Tort/Criminal,4,Year2,No-fault liability,Negligence
+Volenti non fit injuria,Tort,3,Year2,Voluntary assumption of risk,Contributory negligence
+Contributory negligence,Tort,4,Year2,Claimant fault,Volenti non fit injuria
+Claimant,Tort/Civil,5,Foundation/Year1,Plaintiff,Defendant
+Defendant,Tort/Criminal/Civil,5,Foundation/Year1,Respondent,Claimant
+Trespass to land,Tort,4,Year2,Unlawful entry,Nuisance
+Trespass to person,Tort,4,Year2,,
+Battery,Tort/Criminal,4,Year1,Unlawful touching,Assault
+Assault,Tort/Criminal,4,Year1,Threat of force,Battery
+False imprisonment,Tort,3,Year2,Unlawful detention,
+Private nuisance,Tort,4,Year2,Interference with land,Public nuisance
+Public nuisance,Tort,3,Year2,Crime and tort,Private nuisance
+Rylands v Fletcher,Tort,3,Year2,Strict liability escape,Nuisance
+Non-natural use,Tort,2,Year2,Rylands v Fletcher element,
+Occupiers' liability,Tort,3,Year2,,
+Lawful visitor,Tort,3,Year2,OLA 1957,Trespasser
+Trespasser,Tort,3,Year2,OLA 1984,Lawful visitor
+Product liability,Tort,2,Year2/Year3,Consumer Protection Act,
+Defamation,Tort,3,Year2/Year3,Libel/slander,
+Libel,Tort,2,Year2/Year3,Written defamation,Slander
+Slander,Tort,2,Year2/Year3,Spoken defamation,Libel
+Psychiatric harm,Tort,3,Year2,Nervous shock,Physical harm
+Primary victim,Tort,2,Year2,Within zone of danger,Secondary victim
+Secondary victim,Tort,2,Year2,Witnessing harm,Primary victim
+Pure economic loss,Tort,3,Year2,Financial loss only,Consequential loss
+Joint and several liability,Tort,3,Year2/Year3,,
+Crime,Criminal,5,Foundation/Year1,Criminal offence,Tort
+Actus reus,Criminal,5,Year1,Guilty act,Mens rea
+Mens rea,Criminal,5,Year1,Guilty mind,Actus reus
+Murder,Criminal,5,Year1,Unlawful killing with malice,Manslaughter
+Manslaughter,Criminal,5,Year1,Unlawful killing without malice,Murder
+Voluntary manslaughter,Criminal,4,Year1/Year2,,Involuntary manslaughter
+Involuntary manslaughter,Criminal,4,Year1/Year2,,Voluntary manslaughter
+GBH,Criminal,4,Year1,Grievous bodily harm,ABH
+ABH,Criminal,4,Year1,Actual bodily harm,GBH
+Common assault,Criminal,4,Year1,,
+Theft,Criminal,5,Year1,Dishonest appropriation,Robbery
+Robbery,Criminal,4,Year1,Theft with force,Theft
+Burglary,Criminal,4,Year1/Year2,Trespass with intent,
+Criminal damage,Criminal,4,Year1,,
+Intent,Criminal,5,Year1,Direct/oblique intent,Recklessness
+Direct intent,Criminal,3,Year1/Year2,Aim or purpose,Oblique intent
+Oblique intent,Criminal,3,Year2,Virtual certainty,Direct intent
+Recklessness,Criminal,4,Year1/Year2,Subjective recklessness,Intent
+Transferred malice,Criminal,3,Year2,,
+Coincidence of actus reus and mens rea,Criminal,3,Year2,Contemporaneity,
+Strict liability offence,Criminal,4,Year2,No mens rea required,
+Self-defence,Criminal,4,Year1/Year2,Lawful force,
+Duress by threats,Criminal,3,Year2,,Duress of circumstances
+Duress of circumstances,Criminal,3,Year2,Situational duress,Duress by threats
+Necessity,Criminal,3,Year2,Lesser evil defence,Duress
+Automatism,Criminal,3,Year2,Involuntary action,Insanity
+Insanity,Criminal,3,Year2,M'Naghten Rules,Automatism
+Diminished responsibility,Criminal,3,Year2,Partial defence to murder,Provocation
+Loss of control,Criminal,3,Year2,Replaced provocation,Diminished responsibility
+Intoxication,Criminal,3,Year2,Voluntary/involuntary,
+Attempt,Criminal,3,Year2,Inchoate offence,
+Conspiracy,Criminal,3,Year2/Year3,Inchoate offence,
+Incitement,Criminal,3,Year2/Year3,Encouraging crime,
+Aiding and abetting,Criminal,3,Year2,Secondary liability,
+Joint enterprise,Criminal,3,Year2,Common purpose,
+Causation in fact,Criminal,4,Year1/Year2,But-for test,Causation in law
+Causation in law,Criminal,4,Year1/Year2,Legal causation,Causation in fact
+Novus actus interveniens,Criminal,3,Year2,Intervening act,
+Parliamentary sovereignty,Public/Constitutional,5,Year1,Legislative supremacy,
+Separation of powers,Public/Constitutional,5,Year1,Division of state powers,
+Rule of law,Public/Constitutional,5,Year1,Dicey's principles,
+Judicial review,Public/Constitutional,5,Year1/Year2,Administrative law remedy,Appeal
+Ultra vires,Public/Constitutional,4,Year1/Year2,Beyond legal powers,Intra vires
+Intra vires,Public/Constitutional,3,Year2,Within legal powers,Ultra vires
+Wednesbury unreasonableness,Public/Constitutional,3,Year2,Irrationality,
+Illegality,Public/Constitutional,4,Year2,Acting beyond powers,
+Procedural impropriety,Public/Constitutional,4,Year2,Unfair procedure,
+Legitimate expectation,Public/Constitutional,3,Year2,,
+Natural justice,Public/Constitutional,4,Year2,Fair hearing principles,
+Bias,Public/Constitutional,3,Year2,Apparent/actual bias,
+Royal prerogative,Public/Constitutional,3,Year2,Crown powers,
+Constitutional convention,Public/Constitutional,4,Year1/Year2,Non-legal rule,Statute
+Statutory interpretation,Legal Method,5,Year1,,
+Human Rights Act 1998,Public/Constitutional,4,Year1/Year2,HRA,
+ECHR,Public/Constitutional,4,Year1/Year2,European Convention on Human Rights,EU law
+Declaration of incompatibility,Public/Constitutional,3,Year2,HRA s4,
+Proportionality,Public/Constitutional,4,Year2,,
+Freehold,Land,5,Year1/Year2,Fee simple absolute,Leasehold
+Fee simple absolute in possession,Land,4,Year2,Freehold estate,
+Leasehold,Land,5,Year1/Year2,Term of years absolute,Freehold
+Term of years absolute,Land,4,Year2,Leasehold estate,
+Estate,Land,4,Year2,Ownership interest,Interest
+Interest,Land,4,Year2,Right in land,Estate
+Legal interest,Land,4,Year2,LPA 1925 s1,Equitable interest
+Equitable interest,Land,4,Year2,,Legal interest
+Easement,Land,4,Year2,Right over land,Profit à prendre
+Dominant tenement,Land,3,Year2,Benefiting land,Servient tenement
+Servient tenement,Land,3,Year2,Burdened land,Dominant tenement
+Right of way,Land,3,Year2,Easement type,
+Profit à prendre,Land,2,Year2/Year3,Right to take from land,Easement
+Covenant,Land,4,Year2,Promise re land use,
+Restrictive covenant,Land,3,Year2,Negative obligation,Positive covenant
+Positive covenant,Land,3,Year2,Affirmative obligation,Restrictive covenant
+Adverse possession,Land,3,Year2,Squatter's rights,
+Proprietary estoppel,Land/Equity,3,Year2,Reliance-based claim,
+Exclusive possession,Land,4,Year2,Control of premises,
+Mortgage,Land,4,Year2,Secured loan on land,Charge
+Charge,Land,3,Year2,Security interest,Mortgage
+Mortgagor,Land,3,Year2,Borrower,Mortgagee
+Mortgagee,Land,3,Year2,Lender,Mortgagor
+Equity of redemption,Land,3,Year2,Right to pay off mortgage,
+Co-ownership,Land,3,Year2,Joint ownership,
+Joint tenancy,Land,3,Year2,Right of survivorship,Tenancy in common
+Tenancy in common,Land,3,Year2,Separate shares,Joint tenancy
+Severance,Land,3,Year2,Breaking joint tenancy,
+Registered land,Land,4,Year2,LRA 2002,Unregistered land
+Unregistered land,Land,3,Year2,Title deeds system,Registered land
+Overriding interest,Land,3,Year2,Automatic binding interest,
+Land registration,Land,4,Year2,Title registration system,
+Prescription,Land,3,Year2/Year3,Acquisition by long use,
+Equity,Equity,5,Year1/Year2,Fairness jurisdiction,Common law
+Trust,Equity,5,Year1/Year2,Fiduciary relationship,
+Settlor,Equity,4,Year2,Trust creator,
+Trustee,Equity,5,Year2,Legal title holder,Beneficiary
+Beneficiary,Equity,5,Year2,Equitable owner,Trustee
+Express trust,Equity,4,Year2,Intentionally created,Resulting trust
+Resulting trust,Equity,3,Year2,Implied trust,Constructive trust
+Constructive trust,Equity,3,Year2,Imposed trust,Resulting trust
+Three certainties,Equity,4,Year2,Trust validity requirements,
+Certainty of intention,Equity,4,Year2,Intent to create trust,
+Certainty of subject matter,Equity,4,Year2,Trust property defined,
+Certainty of objects,Equity,4,Year2,Beneficiaries defined,
+Fixed trust,Equity,3,Year2,Defined beneficiaries,Discretionary trust
+Discretionary trust,Equity,3,Year2,Trustee discretion,Fixed trust
+Bare trust,Equity,3,Year2,Simple trust,
+Charitable trust,Equity,3,Year2/Year3,Public benefit trust,
+Purpose trust,Equity,2,Year2/Year3,Non-charitable purpose,
+Fiduciary duty,Equity,5,Year2,Loyalty obligation,
+Breach of trust,Equity,4,Year2,,
+Equitable remedies,Equity,4,Year2,Discretionary relief,Common law remedies
+Equitable maxims,Equity,3,Year2,Equity principles,
+He who comes to equity must come with clean hands,Equity,3,Year2,Clean hands doctrine,
+Delay defeats equity,Equity,3,Year2,Laches,
+Equity follows the law,Equity,3,Year2,,
+Equity will not assist a volunteer,Equity,3,Year2,,
+Equity looks to intent not form,Equity,2,Year2,,
+Laches,Equity,2,Year2,Unreasonable delay,Limitation period
+Constitution of trust,Equity,3,Year2,Valid creation,
+Completely constituted trust,Equity,3,Year2,Valid trust,
+EU law,EU/Retained,4,Year1/Year2,European Union law,
+Direct effect,EU/Retained,3,Year2,Directly enforceable,
+Supremacy of EU law,EU/Retained,3,Year2,Primacy,Parliamentary sovereignty
+Retained EU law,EU/Retained,3,Year2/Year3,Post-Brexit EU law,Assimilated law
+Assimilated law,EU/Retained,2,Year3,Reformed retained EU law,Retained EU law
+EUWA 2018,EU/Retained,3,Year2/Year3,EU Withdrawal Act,
+Regulations,EU/Retained,3,Year2,EU/UK law instruments,Directives
+Directives,EU/Retained,3,Year2,EU law instruments,Regulations
+Ratio decidendi,Legal Method,5,Year1,Reason for decision,Obiter dicta
+Obiter dicta,Legal Method,5,Year1,Things said by the way,Ratio decidendi
+Precedent,Legal Method,5,Year1,Binding authority,
+Binding precedent,Legal Method,4,Year1,Must be followed,Persuasive precedent
+Persuasive precedent,Legal Method,4,Year1,May be followed,Binding precedent
+Stare decisis,Legal Method,4,Year1,Stand by decided matters,
+Distinguishing,Legal Method,4,Year1/Year2,Differentiating cases,Following
+Overruling,Legal Method,3,Year1/Year2,Higher court reversal,Reversing
+Reversing,Legal Method,3,Year1/Year2,Same case appeal reversal,Overruling
+Literal rule,Legal Method,5,Year1,Plain meaning,Golden rule
+Golden rule,Legal Method,4,Year1,Avoiding absurdity,Literal rule
+Mischief rule,Legal Method,4,Year1,Heydon's Case,Purposive approach
+Purposive approach,Legal Method,4,Year1/Year2,Legislative intent,Literal rule
+Hansard,Legal Method,3,Year2,Parliamentary debates,
+Statutory instrument,Legal Method,3,Year1/Year2,Secondary legislation,Act of Parliament
+Act of Parliament,Legal Method,5,Foundation/Year1,Primary legislation,Statutory instrument
+Primary legislation,Legal Method,4,Year1,Statute,Secondary legislation
+Secondary legislation,Legal Method,4,Year1/Year2,Delegated legislation,Primary legislation
+Ad hoc,Latin,3,Year1,For this purpose,
+Alibi,Latin/Criminal,3,Year1,Elsewhere,
+Amicus curiae,Latin,2,Year2/Year3,Friend of the court,
+Bona fide,Latin,3,Year1/Year2,Good faith,Mala fide
+Mala fide,Latin,2,Year2,Bad faith,Bona fide
+Caveat emptor,Latin/Contract,2,Year2,Buyer beware,
+Consensus ad idem,Latin/Contract,3,Year1/Year2,Meeting of minds,
+Contra proferentem,Latin/Contract,2,Year2,Against offeror,
+De facto,Latin,3,Year1/Year2,In fact,De jure
+De jure,Latin,3,Year1/Year2,By law,De facto
+Ex gratia,Latin,2,Year2,Voluntary payment,
+Ex parte,Latin,3,Year2,One side only,Inter partes
+Ex post facto,Latin/Criminal,2,Year2,After the fact,
+Habeas corpus,Latin/Public,4,Year1/Year2,Produce the body,
+In camera,Latin,2,Year2,Private hearing,
+In loco parentis,Latin,2,Year2,In place of parent,
+Inter alia,Latin,3,Year1/Year2,Among other things,
+Ipso facto,Latin,3,Year1/Year2,By that fact,
+Nemo dat quod non habet,Latin/Land,3,Year2,Cannot give better title,
+Non est factum,Latin/Contract,2,Year2,Not my deed,
+Per se,Latin,3,Year1/Year2,In itself,
+Prima facie,Latin,4,Year1,On first appearance,
+Quid pro quo,Latin/Contract,3,Year1/Year2,Something for something,Consideration
+Re,Latin,4,Year1,In the matter of,
+Res gestae,Latin/Criminal,2,Year2/Year3,Things done,
+Res ipsa loquitur,Latin/Tort,3,Year2,The thing speaks for itself,
+Res judicata,Latin,2,Year2,Already judged,
+Respondeat superior,Latin/Tort,2,Year2,Let master answer,Vicarious liability
+Sine qua non,Latin,2,Year2,Essential condition,
+Sui generis,Latin,2,Year2/Year3,Unique class,
+Uberrima fides,Latin/Contract,2,Year2,Utmost good faith,
+Ubi jus ibi remedium,Latin,2,Year2,"Where right, remedy",
+Ultra vires,Latin/Public,4,Year1/Year2,Beyond powers,Intra vires
+Verbatim,Latin,2,Year1/Year2,Word for word,
+Vice versa,Latin,3,Year1,The other way round,
+Appellant,Legal Method,4,Year1,Party appealing,Respondent
+Respondent,Legal Method,4,Year1,Party responding to appeal,Appellant
+Jurisdiction,Legal Method/Public,5,Foundation/Year1,Court authority,
+Burden of proof,Criminal/Tort,5,Year1,Onus of proof,
+Standard of proof,Criminal/Civil,5,Year1,Degree of certainty,
+Beyond reasonable doubt,Criminal,5,Year1,Criminal standard,Balance of probabilities
+Balance of probabilities,Civil/Tort,5,Year1,Civil standard,Beyond reasonable doubt
+Indictable offence,Criminal,4,Year1,Serious crime,Summary offence
+Summary offence,Criminal,4,Year1,Minor crime,Indictable offence
+Either-way offence,Criminal,3,Year1,Triable either way,
+Crown Court,Criminal,4,Foundation/Year1,Senior criminal court,Magistrates' Court
+Magistrates' Court,Criminal,4,Foundation/Year1,Lower court,Crown Court
+High Court,Legal Method,4,Year1,Senior civil court,
+Court of Appeal,Legal Method,5,Year1,Appeal court,
+Supreme Court,Legal Method,5,Year1,Highest UK court,House of Lords
+Injuria sine damno,Tort,2,Year2,Wrong without damage,Damnum sine injuria
+Damnum sine injuria,Tort,2,Year2,Damage without wrong,Injuria sine damno
+Limitation period,Civil/Criminal,4,Year1/Year2,Time limit for claims,
+Statute-barred,Legal Method,3,Year2,Expired limitation,
+Natural person,Legal Method,3,Year1,Individual human,Legal person
+Legal person,Legal Method,3,Year1,Corporation/entity,Natural person
+Solicitor,Legal Method,4,Foundation/Year1,Legal practitioner,Barrister
+Barrister,Legal Method,4,Foundation/Year1,Advocate,Solicitor
+QC/KC,Legal Method,3,Year1/Year2,Queen's/King's Counsel,Junior counsel
+Judgment,Legal Method,5,Year1,Court decision,
+Pleadings,Legal Method,3,Year2,Statements of case,
+Claim form,Legal Method,3,Year1/Year2,Starting court action,
+Particulars of claim,Legal Method,3,Year2,Details of claim,Defence
+Defence,Legal Method/Criminal,5,Year1,Response to claim,Claim
+Counterclaim,Legal Method,3,Year2,Defendant's claim,
+Disclosure,Legal Method,3,Year2,Document exchange,
+Discovery,Legal Method,2,Year2,Old term for disclosure,Disclosure
+CPR,Legal Method,3,Year2,Civil Procedure Rules,
+Writ,Legal Method,2,Year1/Year2,Old claim form,Claim form
+Certiorari,Public/Constitutional,2,Year2,Quashing order,
+Mandamus,Public/Constitutional,2,Year2,Mandatory order,
+Prohibition,Public/Constitutional,2,Year2,Prohibiting order,
+Leave to appeal,Legal Method,3,Year2,Permission to appeal,
+Summary judgment,Legal Method,3,Year2,Early judgment,Trial
+Interlocutory,Legal Method,2,Year2,Interim/provisional,Final
+Garnishee order,Legal Method,2,Year3,Third party debt order,
+Winding up,Company/Equity,2,Year2/Year3,Liquidation,
+Receivership,Company/Equity,2,Year2/Year3,Insolvency procedure,
+Insolvency,Company/Equity,3,Year2/Year3,Unable to pay debts,Solvency
+Bankruptcy,Legal Method,3,Year2,Individual insolvency,
+Charge certificate,Land,2,Year2,Registered charge document,
+Title absolute,Land,3,Year2,Guaranteed title,
+Possessory title,Land,2,Year2/Year3,Possession-based title,Title absolute
+Qualified title,Land,2,Year2/Year3,Limited guarantee,Title absolute
+Land Registry,Land,4,Year1/Year2,HM Land Registry,
+Conveyancing,Land,3,Year2,Transfer of land,
+Completion,Land/Contract,3,Year2,Final land transfer,Exchange
+Exchange of contracts,Land/Contract,3,Year2,Binding agreement,Completion
+Stamp duty,Land,3,Year2,Land transaction tax,
+Leasehold enfranchisement,Land,2,Year3,Buying freehold,
+Forfeiture,Land,3,Year2,Terminating lease,
+Surrender,Land,3,Year2,Giving up lease,Forfeiture
+Assignment,Land/Contract,3,Year2,Transferring rights,
+Subletting,Land,3,Year2,Underlease,Assignment
+Licence,Land,3,Year2,Permission to occupy,Lease
+Proprietary right,Land/Equity,4,Year2,Property interest,Personal right
+Personal right,Contract,4,Year2,Contractual right,Proprietary right
+Chose in action,Equity,2,Year2/Year3,Intangible property,Chose in possession
+Chose in possession,Equity,2,Year2/Year3,Tangible property,Chose in action
+Conversion,Tort,3,Year2,Wrongful dealing with goods,
+Detinue,Tort,2,Year2/Year3,Wrongful detention,Conversion
+Waiver,Contract/Legal Method,3,Year2,Giving up right,
+Estoppel,Equity/Contract,4,Year2,Prevented from denying,
+Promissory estoppel,Equity/Contract,3,Year2,Reliance on promise,Proprietary estoppel
+Estoppel by representation,Equity,3,Year2,,
+Quantum meruit,Contract,3,Year2,As much as earned,
+Restitution,Contract/Equity,3,Year2,Returning benefit,
+Unjust enrichment,Contract/Equity,3,Year2,Unfair benefit,
+Total failure of consideration,Contract,2,Year2,No benefit received,
+Substantial performance,Contract,3,Year2,Near complete performance,
+Entire contract,Contract,3,Year2,Complete performance required,Severable contract
+Severable contract,Contract,3,Year2,Divisible obligations,Entire contract
+Time of the essence,Contract,3,Year2,Timing is critical,
+Penalty clause,Contract,3,Year2,Unenforceable penalty,Liquidated damages
+Liquidated damages,Contract,3,Year2,Pre-agreed damages,Penalty clause
+Unliquidated damages,Contract/Tort,3,Year2,Unspecified damages,Liquidated damages
+Nominal damages,Tort/Contract,3,Year2,Token damages,Substantial damages
+Substantial damages,Tort/Contract,3,Year2,Significant compensation,Nominal damages
+Exemplary damages,Tort,2,Year2,Punitive damages,Compensatory damages
+Aggravated damages,Tort,2,Year2,Injury to feelings,
+Compensatory damages,Tort/Contract,4,Year1/Year2,Actual loss,Exemplary damages
+Injunction quia timet,Equity,2,Year3,Preventative injunction,
+Mandatory injunction,Equity,3,Year2,Order to act,Prohibitory injunction
+Prohibitory injunction,Equity,3,Year2,Order not to act,Mandatory injunction
+Interlocutory injunction,Equity,3,Year2,Interim injunction,Perpetual injunction
+Mareva injunction,Equity,2,Year2/Year3,Freezing injunction,
+Anton Piller order,Equity,2,Year3,Search order,
+Tracing,Equity,2,Year2/Year3,Following trust property,
+Account of profits,Equity,2,Year2/Year3,Disgorgement remedy,
+Equitable compensation,Equity,3,Year2,Equity damages,
+Common law,Legal Method,5,Foundation/Year1,Judge-made law,Equity
+Statute law,Legal Method,5,Foundation/Year1,Enacted law,Common law
+Case law,Legal Method,5,Foundation/Year1,Judicial precedent,Statute law
+Common law marriage,Family,2,Year2/Year3,Cohabitation myth,
+Partnership,Company,3,Year2/Year3,Business association,
+Company,Company,3,Year2/Year3,Corporate entity,Partnership
+Limited liability,Company,3,Year2/Year3,Liability cap,Unlimited liability
+Piercing the corporate veil,Company,2,Year3,Ignoring separate personality,
+Corporate personality,Company,3,Year2/Year3,Separate legal entity,
+Director,Company,3,Year2/Year3,Company officer,
+Shareholder,Company,3,Year2/Year3,Company owner,Director
+Dividend,Company,2,Year2/Year3,Profit distribution,
+Articles of association,Company,3,Year2/Year3,Company constitution,
+Memorandum of association,Company,2,Year2/Year3,Formation document,Articles of association
+Fiduciary relationship,Equity/Company,4,Year2,Trust relationship,
+Agency,Contract/Company,3,Year2,Representative relationship,
+Principal,Contract/Company,3,Year2,Person represented,Agent
+Agent,Contract/Company,3,Year2,Representative,Principal
+Ratification,Contract/Agency,2,Year2,Retrospective approval,
+Ostensible authority,Agency,2,Year2/Year3,Apparent authority,Actual authority
+Actual authority,Agency,2,Year2/Year3,Real authority,Ostensible authority
+Warranty of authority,Agency,2,Year3,Agent's guarantee,
+Undisclosed principal,Agency,2,Year3,Hidden principal,Disclosed principal
+Disclosed principal,Agency,2,Year3,Known principal,Undisclosed principal
+Bailment,Tort/Contract,2,Year2/Year3,Temporary possession,
+Bailor,Tort/Contract,2,Year2/Year3,Owner of goods,Bailee
+Bailee,Tort/Contract,2,Year2/Year3,Temporary possessor,Bailor
+Innkeeper's liability,Tort,1,Year3,Special strict liability,
+Passing off,Tort,2,Year2/Year3,Trade misrepresentation,
+Intellectual property,Legal Method,2,Year2/Year3,IP rights,
+Copyright,Intellectual Property,2,Year2/Year3,Creative work protection,Patent
+Patent,Intellectual Property,2,Year2/Year3,Invention protection,Copyright
+Trademark,Intellectual Property,2,Year2/Year3,Brand protection,
+Breach of confidence,Equity/Tort,2,Year2/Year3,Confidentiality breach,
+Trade secret,Contract/IP,2,Year3,Confidential business info,
+Competition law,EU/Public,2,Year3,Antitrust law,
+Consumer protection,Contract,3,Year2,Consumer rights,
+Unfair Contract Terms Act 1977,Contract,3,Year2,UCTA,
+Consumer Rights Act 2015,Contract,3,Year2,CRA 2015,
+Sale of Goods Act 1979,Contract,3,Year2,SGA,
+Supply of Goods and Services Act 1982,Contract,2,Year2,SGSA,
+Merchantable quality,Contract,2,Year2,Old term,Satisfactory quality
+Satisfactory quality,Contract,3,Year2,Implied term,
+Fitness for purpose,Contract,3,Year2,Implied term,
+Title to goods,Contract,3,Year2,Ownership,
+Nemo dat rule,Contract/Land,3,Year2,No better title,
+Romalpa clause,Contract,2,Year3,Retention of title,
+Retention of title,Contract,2,Year2/Year3,Ownership retention,
+Risk and property,Contract,2,Year2,Ownership vs risk,
+Acceptance of goods,Contract,3,Year2,Taking delivery,Rejection
+Rejection of goods,Contract,3,Year2,Refusing goods,Acceptance of goods
+Right to cure,Contract,2,Year2,Right to remedy defect,
+Force majeure,Contract,2,Year2/Year3,Unforeseeable circumstance,Frustration
+Hardship clause,Contract,2,Year3,Renegotiation clause,
+Material adverse change,Contract,2,Year3,MAC clause,
+Indemnity,Contract,3,Year2,Compensation promise,Guarantee
+Guarantee,Contract,3,Year2,Performance promise,Indemnity
+Surety,Contract,2,Year2,Guarantor,
+Novation,Contract,2,Year2/Year3,Contract substitution,Assignment
+Third party rights,Contract,3,Year2,Non-party enforcement,Privity
+Contracts (Rights of Third Parties) Act 1999,Contract,3,Year2,CRTPA,
+Battle of the forms,Contract,2,Year2,Competing standard terms,
+Course of dealing,Contract,2,Year2,Previous transactions,
+Incorporation of terms,Contract,3,Year2,Including terms,
+Reasonable notice,Contract,3,Year2,Adequate notice,
+Signed contract,Contract,4,Year1,Executed agreement,
+Signature rule,Contract,3,Year1,Bound by signature,
+Parol evidence rule,Contract/Legal Method,2,Year2,No external evidence,
+Entire agreement clause,Contract,2,Year2/Year3,No other terms,
+Boilerplate clause,Contract,2,Year2/Year3,Standard provisions,
+Severance clause,Contract,2,Year2,Invalid term removal,
+Force and effect,Contract,2,Year2,Full effect,
+Without prejudice,Legal Method,3,Year2,Settlement privilege,
+Subject to contract,Contract/Land,3,Year2,Not yet binding,
+Heads of terms,Contract,2,Year2,Agreement outline,Letter of intent
+Letter of intent,Contract,2,Year2/Year3,Preliminary agreement,Heads of terms
+Good faith,Contract,3,Year2,Honest dealing,Bad faith
+Bad faith,Contract,2,Year2,Dishonest conduct,Good faith
+Reasonableness test,Contract,3,Year2,UCTA test,
+Red hand rule,Contract,2,Year2,Onerous term notice,
+Four corners rule,Contract,2,Year2/Year3,Within document,
+Contra preferentem rule,Contract,2,Year2,Against drafter,
+Ejusdem generis,Legal Method,2,Year2,Of the same kind,
+Expressio unius,Legal Method,2,Year2,Express mention excludes,
+Noscitur a sociis,Legal Method,2,Year2,Known by associates,
+Rectification,Equity/Contract,2,Year2,Correcting document,Rescission
+Unilateral mistake,Contract,2,Year2,One party mistake,Common mistake
+Common mistake,Contract,3,Year2,Shared mistake,Mutual mistake
+Mutual mistake,Contract,2,Year2,Cross-purpose mistake,Common mistake
+Non est factum,Contract,2,Year2,Not my deed,
+Misrepresentation Act 1967,Contract,3,Year2,MA 1967,
+Section 2(1) MA 1967,Contract,3,Year2,Negligent misrep damages,
+Section 2(2) MA 1967,Contract,2,Year2,Innocent misrep damages,
+Hedley Byrne negligence,Tort/Contract,2,Year2,Negligent misstatement,
+Economic duress,Contract,2,Year2,Financial pressure,Physical duress
+Undue influence,Equity/Contract,3,Year2,Improper pressure,Duress
+Actual undue influence,Equity,2,Year2,Proven influence,Presumed undue influence
+Presumed undue influence,Equity,2,Year2,Relationship-based,Actual undue influence
+Manifest disadvantage,Equity,2,Year2/Year3,Obvious disadvantage,
+Notice,Equity/Land,3,Year2,Knowledge/awareness,
+Constructive notice,Equity/Land,3,Year2,Should have known,Actual notice
+Actual notice,Equity/Land,3,Year2,Real knowledge,Constructive notice
+Imputed notice,Equity,2,Year2,Agent's notice,
+Bona fide purchaser for value,Equity/Land,3,Year2,Good faith buyer,
+Equity's darling,Equity/Land,2,Year2,Bona fide purchaser,
+Doctrine of notice,Equity/Land,3,Year2,Equity notice rule,
+Overreaching,Land,2,Year2/Year3,Detaching interests,
+Undue influence and third parties,Equity/Land,2,Year2/Year3,Notice to bank,
+Unconscionable bargain,Equity,2,Year2/Year3,Unfair deal,
+Salvage,Contract,1,Year3,Maritime rescue,
+Crown immunity,Public,2,Year2/Year3,State immunity,
+Prerogative writ,Public,2,Year2,Old judicial review remedy,
+Ouster clause,Public,2,Year2/Year3,Jurisdiction exclusion,
+Privative clause,Public,2,Year2/Year3,Review exclusion,Ouster clause
+Anisminic principle,Public,2,Year3,No ouster of JR,
+Error of law,Public,3,Year2,Legal mistake,Error of fact
+Error of fact,Public,3,Year2,Factual mistake,Error of law
+Vires,Public,3,Year2,Powers,
+Fettering discretion,Public,2,Year2,Improperly limiting power,
+Relevant/irrelevant considerations,Public,3,Year2,JR ground,
+Improper purpose,Public,3,Year2,Wrong objective,Proper purpose
+Proper purpose,Public,3,Year2,Correct objective,Improper purpose
