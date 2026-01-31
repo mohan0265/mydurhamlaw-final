@@ -349,8 +349,12 @@ function DashboardContent() {
                 className="flex items-start gap-3 p-3 bg-gray-50 rounded-xl hover:bg-white hover:shadow-sm transition cursor-pointer border border-transparent hover:border-gray-100"
                 onClick={() => router.push("/year-at-a-glance")}
               >
-                <div className="p-2 bg-blue-100 text-blue-600 rounded-lg">
-                  <Calendar className="w-5 h-5" />
+                <div className="w-12 h-12 rounded-full overflow-hidden shadow-md border border-white/20 bg-white">
+                  <img
+                    src="/images/icons/calendar.png"
+                    className="w-full h-full object-cover"
+                    alt="Year"
+                  />
                 </div>
                 <div>
                   <h3 className="text-sm font-bold text-gray-900">
@@ -370,8 +374,12 @@ function DashboardContent() {
                 onClick={() => router.push("/study/lectures")}
                 data-tour="dashboard-welcome-upload"
               >
-                <div className="p-2 bg-purple-100 text-purple-600 rounded-lg">
-                  <BookOpen className="w-5 h-5" />
+                <div className="w-12 h-12 rounded-full overflow-hidden shadow-md border border-white/20 bg-white">
+                  <img
+                    src="/images/icons/learn.png"
+                    className="w-full h-full object-cover"
+                    alt="Lecture"
+                  />
                 </div>
                 <div>
                   <h3 className="text-sm font-bold text-gray-900">
@@ -389,8 +397,12 @@ function DashboardContent() {
                 className="flex items-start gap-3 p-3 bg-gray-50 rounded-xl hover:bg-white hover:shadow-sm transition cursor-pointer border border-transparent hover:border-gray-100"
                 onClick={() => router.push("/assignments")}
               >
-                <div className="p-2 bg-orange-100 text-orange-600 rounded-lg">
-                  <FileText className="w-5 h-5" />
+                <div className="w-12 h-12 rounded-full overflow-hidden shadow-md border border-white/20 bg-white">
+                  <img
+                    src="/images/icons/write.png"
+                    className="w-full h-full object-cover"
+                    alt="Assignment"
+                  />
                 </div>
                 <div>
                   <h3 className="text-sm font-bold text-gray-900">
@@ -792,8 +804,12 @@ function DashboardContent() {
                 onClick={() => router.push("/study/lectures")}
               >
                 <div className="flex items-start justify-between mb-3">
-                  <div className="p-2 bg-purple-100 rounded-lg text-purple-600">
-                    <TrendingUp className="w-5 h-5" />
+                  <div className="w-10 h-10 rounded-full overflow-hidden shadow-md border border-white/20 bg-white">
+                    <img
+                      src="/images/icons/speak.png"
+                      className="w-full h-full object-cover"
+                      alt="Speak"
+                    />
                   </div>
                   <span className="bg-purple-600 text-white text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wide">
                     New
@@ -820,8 +836,12 @@ function DashboardContent() {
                 onClick={() => router.push("/legal/tools/legal-news-feed")}
               >
                 <div className="flex items-start justify-between mb-3">
-                  <div className="p-2 bg-red-100 rounded-lg text-red-600">
-                    <TrendingUp className="w-5 h-5" />
+                  <div className="w-10 h-10 rounded-full overflow-hidden shadow-md border border-white/20 bg-white">
+                    <img
+                      src="/images/icons/news.png"
+                      className="w-full h-full object-cover"
+                      alt="News"
+                    />
                   </div>
                 </div>
                 <h4 className="font-bold text-gray-900 mb-1">

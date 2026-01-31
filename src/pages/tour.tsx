@@ -52,7 +52,13 @@ export default function TourPage() {
             <div className="grid lg:grid-cols-2 gap-12 items-center">
               <div>
                 <div className="flex items-center mb-4">
-                  <Brain className="w-8 h-8 text-purple-600 mr-3" />
+                  <div className="w-12 h-12 rounded-full overflow-hidden shadow-lg border-2 border-purple-100 mr-4">
+                    <img
+                      src="/images/icons/learn.png"
+                      className="w-full h-full object-cover"
+                      alt="Learn"
+                    />
+                  </div>
                   <h2 className="text-3xl font-bold text-gray-900">
                     AI-Powered Academic Support
                   </h2>
@@ -81,8 +87,14 @@ export default function TourPage() {
                   </li>
                 </ul>
               </div>
-              <div className="bg-gradient-to-br from-purple-100 to-pink-100 rounded-2xl p-8 text-center">
-                <div className="text-6xl mb-4">🎓</div>
+              <div className="bg-gradient-to-br from-purple-100 to-pink-100 rounded-2xl p-8 text-center flex flex-col items-center">
+                <div className="w-24 h-24 rounded-full overflow-hidden shadow-2xl border-4 border-white mb-4">
+                  <img
+                    src="/images/icons/learn.png"
+                    className="w-full h-full object-cover"
+                    alt="Learn"
+                  />
+                </div>
                 <p className="text-gray-700 italic">
                   &ldquo;Ask me about contract law formation
                   principles...&rdquo;
@@ -95,8 +107,14 @@ export default function TourPage() {
           <div className="mb-20">
             <div className="grid lg:grid-cols-2 gap-12 items-center">
               <div className="order-2 lg:order-1">
-                <div className="bg-gradient-to-br from-pink-100 to-red-100 rounded-2xl p-8 text-center">
-                  <div className="text-6xl mb-4">🎤</div>
+                <div className="bg-gradient-to-br from-pink-100 to-red-100 rounded-2xl p-8 text-center flex flex-col items-center">
+                  <div className="w-24 h-24 rounded-full overflow-hidden shadow-2xl border-4 border-white mb-4">
+                    <img
+                      src="/images/icons/speak.png"
+                      className="w-full h-full object-cover"
+                      alt="Speak"
+                    />
+                  </div>
                   <p className="text-gray-700 italic">
                     &ldquo;Remember our conversation about negligence last
                     week...&rdquo;
@@ -105,7 +123,13 @@ export default function TourPage() {
               </div>
               <div className="order-1 lg:order-2">
                 <div className="flex items-center mb-4">
-                  <Heart className="w-8 h-8 text-pink-600 mr-3" />
+                  <div className="w-12 h-12 rounded-full overflow-hidden shadow-lg border-2 border-pink-100 mr-4">
+                    <img
+                      src="/images/icons/speak.png"
+                      className="w-full h-full object-cover"
+                      alt="Speak"
+                    />
+                  </div>
                   <h2 className="text-3xl font-bold text-gray-900">
                     Voice Mode with Memory
                   </h2>
@@ -142,7 +166,13 @@ export default function TourPage() {
             <div className="grid lg:grid-cols-2 gap-12 items-center">
               <div>
                 <div className="flex items-center mb-4">
-                  <Shield className="w-8 h-8 text-blue-600 mr-3" />
+                  <div className="w-12 h-12 rounded-full overflow-hidden shadow-lg border-2 border-blue-100 mr-4">
+                    <img
+                      src="/images/icons/write.png"
+                      className="w-full h-full object-cover"
+                      alt="Write"
+                    />
+                  </div>
                   <h2 className="text-3xl font-bold text-gray-900">
                     Ethical Assignment Guidance
                   </h2>
@@ -169,8 +199,14 @@ export default function TourPage() {
                   </li>
                 </ul>
               </div>
-              <div className="bg-gradient-to-br from-blue-100 to-cyan-100 rounded-2xl p-8 text-center">
-                <div className="text-6xl mb-4">⚖️</div>
+              <div className="bg-gradient-to-br from-blue-100 to-cyan-100 rounded-2xl p-8 text-center flex flex-col items-center">
+                <div className="w-24 h-24 rounded-full overflow-hidden shadow-2xl border-4 border-white mb-4">
+                  <img
+                    src="/images/icons/write.png"
+                    className="w-full h-full object-cover"
+                    alt="Write"
+                  />
+                </div>
                 <p className="text-gray-700 italic">
                   &ldquo;Help me structure my tort law essay while maintaining
                   originality...&rdquo;

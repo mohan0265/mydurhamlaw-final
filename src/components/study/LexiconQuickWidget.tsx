@@ -52,8 +52,12 @@ export default function LexiconQuickWidget() {
       {/* Header */}
       <div className="p-5 border-b border-gray-50 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-xl text-white shadow-md shadow-purple-100">
-            <Book size={18} />
+          <div className="w-10 h-10 rounded-full overflow-hidden shadow-md border border-white/20 bg-white flex items-center justify-center">
+            <img
+              src="/images/icons/learn.png"
+              className="w-full h-full object-cover"
+              alt="Lexicon"
+            />
           </div>
           <div>
             <h3 className="font-bold text-gray-900 text-sm">Law Lexicon</h3>

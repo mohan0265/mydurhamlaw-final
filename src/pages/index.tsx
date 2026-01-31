@@ -265,43 +265,39 @@ export default function LandingPage() {
                 title: "Learn Law",
                 desc: "Durham Law understanding",
                 link: "/learn/durham-law-ai-study-assistant",
-                icon: (
-                  <BookOpen className="w-6 h-6 text-purple-600 dark:text-purple-400" />
-                ),
+                icon: "/images/icons/learn.png",
                 color: "purple",
               },
               {
                 title: "Write Law",
                 desc: "Structured legal writing",
                 link: "/learn/durham-law-academic-integrity-ai",
-                icon: (
-                  <FileText className="w-6 h-6 text-orange-600 dark:text-orange-400" />
-                ),
+                icon: "/images/icons/write.png",
                 color: "orange",
               },
               {
                 title: "Speak Law",
                 desc: "Legal reasoning & viva logic",
                 link: "/learn/durham-law-exam-technique",
-                icon: (
-                  <Brain className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
-                ),
+                icon: "/images/icons/speak.png",
                 color: "indigo",
               },
               {
                 title: "Live News",
                 desc: "Professional legal awareness",
                 link: "/legal/tools/legal-news-feed",
-                icon: (
-                  <TrendingUp className="w-6 h-6 text-red-600 dark:text-red-400" />
-                ),
+                icon: "/images/icons/news.png",
                 color: "red",
               },
             ].map((pillar, i) => (
               <Link key={pillar.title} href={pillar.link}>
                 <div className="h-full rounded-2xl border border-gray-100 bg-white dark:bg-white/5 dark:border-white/5 p-6 shadow-sm hover:shadow-xl hover:border-purple-200 dark:hover:border-purple-500/30 transition-all duration-300 flex flex-col group cursor-pointer">
-                  <div className="w-12 h-12 rounded-xl bg-gray-50 dark:bg-white/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                    {pillar.icon}
+                  <div className="w-16 h-16 rounded-full bg-white dark:bg-white/10 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform shadow-[0_10px_25px_-5px_rgba(0,0,0,0.2),inset_0_2px_4px_rgba(255,255,255,0.3)] dark:shadow-[0_10px_25px_-5px_rgba(0,0,0,0.4),inset_0_1px_2px_rgba(255,255,255,0.1)] border-2 border-white/50 dark:border-white/10 overflow-hidden">
+                    <img
+                      src={pillar.icon}
+                      alt={pillar.title}
+                      className="w-full h-full object-cover"
+                    />
                   </div>
                   <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">
                     {pillar.title}

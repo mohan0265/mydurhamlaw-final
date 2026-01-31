@@ -19,8 +19,14 @@ export default function WriteLawPage() {
 
       <div className="py-20 lg:py-32 bg-gray-50 border-b border-gray-100">
         <div className="max-w-4xl mx-auto px-6 text-center">
+          <div className="mx-auto w-24 h-24 rounded-full overflow-hidden shadow-2xl border-4 border-white dark:border-white/10 mb-8 transform hover:scale-105 transition-transform duration-500">
+            <img
+              src="/images/icons/write.png"
+              className="w-full h-full object-cover"
+              alt="Writing"
+            />
+          </div>
           <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-orange-50 text-orange-600 text-xs font-bold uppercase tracking-wider mb-6 border border-orange-100">
-            <FileText className="w-3.5 h-3.5" />
             Core Pillar: Writing
           </span>
           <h1 className="text-5xl lg:text-7xl font-black text-gray-900 mb-8 tracking-tight">

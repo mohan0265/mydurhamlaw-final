@@ -304,8 +304,12 @@ export default function LexiconSearchOverlay({
                 !aiDefinition &&
                 !error && (
                   <div className="p-8 text-center bg-gray-50 dark:bg-white/5 rounded-3xl border border-dashed border-gray-200 dark:border-white/10">
-                    <div className="w-16 h-16 bg-purple-100 dark:bg-purple-900/30 text-purple-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <Zap className="w-8 h-8" />
+                    <div className="w-16 h-16 rounded-full overflow-hidden shadow-xl border-2 border-white dark:border-white/10 mx-auto mb-4 bg-white">
+                      <img
+                        src="/images/icons/learn.png"
+                        className="w-full h-full object-cover"
+                        alt="Learn"
+                      />
                     </div>
                     <h3 className="text-lg font-bold text-gray-900 dark:text-white">
                       Not in your Lexicon yet?
@@ -326,9 +330,15 @@ export default function LexiconSearchOverlay({
               {isDefining && (
                 <div className="p-8 text-center">
                   <div className="flex justify-center mb-4">
-                    <div className="relative">
-                      <Book className="w-12 h-12 text-purple-200" />
-                      <Loader2 className="absolute top-0 right-0 w-12 h-12 text-purple-600 animate-spin" />
+                    <div className="relative mx-auto w-12 h-12">
+                      <div className="w-12 h-12 rounded-full overflow-hidden shadow-lg border border-purple-100 bg-white">
+                        <img
+                          src="/images/icons/learn.png"
+                          className="w-full h-full object-cover opacity-50"
+                          alt="Consulting"
+                        />
+                      </div>
+                      <Loader2 className="absolute -top-1 -right-1 w-6 h-6 text-purple-600 animate-spin" />
                     </div>
                   </div>
                   <h3 className="text-lg font-bold text-gray-900 dark:text-white animate-pulse">
