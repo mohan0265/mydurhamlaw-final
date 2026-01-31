@@ -62,7 +62,7 @@ import {
   getExpectedAdminToken,
   ADMIN_COOKIE_NAME,
 } from "@/lib/server/adminAuth";
-import { CreditCard } from "lucide-react"; // Add icon
+import { CreditCard, Copy, Link, ShieldCheck, Check } from "lucide-react"; // Add icons
 
 const COOKIE_NAME = ADMIN_COOKIE_NAME;
 
@@ -1266,7 +1266,7 @@ export default function AdminDashboard({
                           </td>
                           <td className="px-3 py-2">
                             <div className="flex flex-col gap-1">
-                              <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-2 group">
                                 <span
                                   className={
                                     r.is_test_account
@@ -1282,15 +1282,39 @@ export default function AdminDashboard({
                                     ? "***@***.***"
                                     : r.email || "-"}
                                 </span>
-                                {r.is_test_account && (
-                                  <span className="text-[10px] bg-yellow-100 text-yellow-800 px-1.5 py-0.5 rounded font-bold uppercase">
-                                    TEST
-                                  </span>
+
+                                {/* Copy Email Button */}
+                                {r.email && (
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      navigator.clipboard.writeText(r.email!);
+                                      toast.success("Copied email");
+                                    }}
+                                    className="opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-slate-600 transition-opacity"
+                                    title="Copy Email"
+                                  >
+                                    <Copy size={12} />
+                                  </button>
                                 )}
-                                {r.is_disabled && (
-                                  <span className="text-[10px] bg-red-100 text-red-800 px-1.5 py-0.5 rounded font-bold uppercase">
-                                    DISABLED
-                                  </span>
+
+                                {/* Copy Login Link (Demo Only) */}
+                                {r.role === "demo" && (
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      const url =
+                                        typeof window !== "undefined"
+                                          ? `${window.location.origin}/login`
+                                          : "/login";
+                                      navigator.clipboard.writeText(url);
+                                      toast.success("Copied login link");
+                                    }}
+                                    className="opacity-0 group-hover:opacity-100 p-1 text-blue-400 hover:text-blue-600 transition-opacity"
+                                    title="Copy /login link (share with invited testers)"
+                                  >
+                                    <Link size={12} />
+                                  </button>
                                 )}
                               </div>
                             </div>
@@ -1303,21 +1327,44 @@ export default function AdminDashboard({
                               : r.display_name || "-"}
                           </td>
                           <td className="px-3 py-2">
-                            <span
-                              className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                                r.role === "admin"
-                                  ? "bg-slate-800 text-white"
-                                  : r.role === "demo"
-                                    ? "bg-indigo-100 text-indigo-800"
-                                    : r.role === "paid"
-                                      ? "bg-green-100 text-green-800"
-                                      : r.role === "trial"
-                                        ? "bg-blue-100 text-blue-800"
-                                        : "bg-slate-100 text-slate-600"
-                              }`}
-                            >
-                              {r.role || "user"}
-                            </span>
+                            <div className="flex items-center gap-1.5">
+                              {/* Role Badges */}
+                              {r.role === "demo" ? (
+                                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-100 text-indigo-700 border border-indigo-200 uppercase tracking-wide">
+                                  DEMO
+                                </span>
+                              ) : r.is_test_account ||
+                                r.role === "test_user" ? (
+                                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-yellow-100 text-yellow-700 border border-yellow-200 uppercase tracking-wide">
+                                  TEST USER
+                                </span>
+                              ) : r.role === "admin" ? (
+                                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-800 text-white border border-slate-700 uppercase tracking-wide">
+                                  ADMIN
+                                </span>
+                              ) : (
+                                // Optional "REAL" badge or just standard style
+                                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-white text-slate-500 border border-slate-200 uppercase tracking-wide">
+                                  REAL
+                                </span>
+                              )}
+
+                              {/* Privacy Icon */}
+                              {(r.role === "demo" || r.privacy_mask_name) && (
+                                <div
+                                  className="group/privacy relative"
+                                  title="Privacy-safe: name is masked in the app"
+                                >
+                                  <ShieldCheck
+                                    size={14}
+                                    className="text-emerald-500 cursor-help"
+                                  />
+                                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden group-hover/privacy:block bg-slate-800 text-white text-[10px] px-2 py-1 rounded whitespace-nowrap z-10">
+                                    Privacy-safe: name is masked in the app
+                                  </div>
+                                </div>
+                              )}
+                            </div>
                           </td>
                           <td className="px-3 py-2">
                             {/* Connections Logic Omitted for brevity, keep existing or simplify */}

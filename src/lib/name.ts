@@ -1,6 +1,12 @@
 import { UserProfile } from "./entitlements";
+import { isDemoMode } from "./demo";
 
 export function getPublicDisplayName(profile: UserProfile | null): string {
+  // GLOBAL SAFETY OVERRIDE
+  if (isDemoMode()) {
+    return "Student";
+  }
+
   if (!profile) return "Student";
 
   // Privacy Mask Logic

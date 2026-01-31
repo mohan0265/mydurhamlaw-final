@@ -392,7 +392,7 @@ export default function LandingPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {/* Card 1: Dashboard */}
-            <Link href="/dashboard?demo=true" className="block group">
+            <Link href="/demo/dashboard?demo=1" className="block group">
               <div className="bg-white/10 rounded-2xl p-1 border border-white/10 hover:bg-white/15 transition duration-300 h-full">
                 <div className="aspect-video bg-indigo-950/50 rounded-xl relative overflow-hidden flex items-center justify-center">
                   <img
@@ -403,7 +403,7 @@ export default function LandingPage() {
                   <div className="absolute inset-0 bg-gradient-to-t from-indigo-950/80 via-transparent to-transparent"></div>
                   <div className="relative z-10 flex flex-col items-center gap-3 mt-auto mb-6">
                     <span className="text-xs font-bold uppercase tracking-widest text-indigo-200 bg-indigo-950/50 px-3 py-1 rounded-full border border-white/10 backdrop-blur-md">
-                      Dashboard Snapshot
+                      Interactive Demo
                     </span>
                   </div>
                 </div>
@@ -412,18 +412,18 @@ export default function LandingPage() {
                     Your Daily Brief
                   </h3>
                   <p className="text-sm text-indigo-200 mt-1 leading-relaxed">
-                    Start every day with a clear view of deadlines, readings,
-                    and priorities.
+                    Explore a simulated student dashboard. See how deadlines,
+                    tasks, and wellbeing track together.
+                  </p>
+                  <p className="text-[10px] text-indigo-300 mt-3 font-bold uppercase tracking-widest flex items-center justify-center gap-1">
+                    No Login Required <ArrowRight size={10} />
                   </p>
                 </div>
               </div>
             </Link>
 
             {/* Card 2: Lecture Notes */}
-            <Link
-              href="/study/lectures/eu-law-goods?demo=true"
-              className="block group"
-            >
+            <Link href="/demo/lecture-to-notes?demo=1" className="block group">
               <div className="bg-white/10 rounded-2xl p-1 border border-white/10 hover:bg-white/15 transition duration-300 h-full">
                 <div className="aspect-video bg-indigo-950/50 rounded-xl relative overflow-hidden flex items-center justify-center">
                   <img
@@ -443,15 +443,18 @@ export default function LandingPage() {
                     Instant Summaries
                   </h3>
                   <p className="text-sm text-indigo-200 mt-1 leading-relaxed">
-                    Upload audio and get structured principles, cases, and exam
-                    points in seconds.
+                    See how our AI transforms raw audio into structured,
+                    exam-ready legal notes.
+                  </p>
+                  <p className="text-[10px] text-indigo-300 mt-3 font-bold uppercase tracking-widest flex items-center justify-center gap-1">
+                    No Login Required <ArrowRight size={10} />
                   </p>
                 </div>
               </div>
             </Link>
 
             {/* Card 3: Durmah Audio */}
-            <Link href="/demo/durmah-voice?demo=true" className="block group">
+            <Link href="/demo/durmah?demo=1" className="block group">
               <div
                 className="bg-white/10 rounded-2xl p-1 border border-white/10 hover:bg-white/15 transition duration-300 h-full"
                 data-tour="home-durmah"
@@ -463,17 +466,20 @@ export default function LandingPage() {
                       <CheckCircle className="w-6 h-6 text-white" />
                     </div>
                     <span className="text-xs font-bold uppercase tracking-widest text-blue-200">
-                      Hear Durmah (10s)
+                      Try Durmah Chat
                     </span>
                   </div>
                 </div>
                 <div className="p-4 text-center">
                   <h3 className="font-bold text-white text-lg">
-                    Voice Coaching
+                    AI Tutor Logic
                   </h3>
                   <p className="text-sm text-indigo-200 mt-1 leading-relaxed">
-                    Listen to how Durmah explains complex tort principles simply
-                    and clearly.
+                    Watch Durmah break down complex legal concepts without
+                    giving away the answer.
+                  </p>
+                  <p className="text-[10px] text-indigo-300 mt-3 font-bold uppercase tracking-widest flex items-center justify-center gap-1">
+                    No Login Required <ArrowRight size={10} />
                   </p>
                 </div>
               </div>
