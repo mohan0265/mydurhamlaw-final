@@ -17,9 +17,20 @@ export const TourTooltip = ({
   const { setShouldPersist } = useTour();
   const [dontShowAgain, setDontShowAgain] = useState(false);
 
-  // Sync checkbox state with provider
+  // CRITICAL FIX: Immediately persist to localStorage when checkbox changes
+  // Don't wait for tour to finish - user might close with X button
   useEffect(() => {
     setShouldPersist(dontShowAgain);
+
+    // IMMEDIATELY save to localStorage when checkbox is clicked
+    if (dontShowAgain) {
+      console.log(
+        '[Tour] User checked "Don\'t show again" - suppressing immediately',
+      );
+      localStorage.setItem("caseway_tours_disabled_all", "true");
+      localStorage.setItem("tour_home_autolaunch_disabled", "true");
+      localStorage.setItem("tour_student_autolaunch_disabled", "true");
+    }
   }, [dontShowAgain, setShouldPersist]);
 
   return (
