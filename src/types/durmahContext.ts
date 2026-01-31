@@ -1,8 +1,9 @@
-import type { NowPacket } from '@/lib/durmah/timezone';
+import type { NowPacket } from "@/lib/durmah/timezone";
 
 export interface StudentContext {
   student: {
     displayName: string;
+    namePronunciation?: string | null;
     yearGroup: string;
     term: string;
     weekOfTerm: number;
@@ -56,14 +57,17 @@ export interface StudentContext {
   yaag?: {
     rangeStart: string;
     rangeEnd: string;
-    itemsByDay: Record<string, Array<{
-      type: string;
-      title: string;
-      start?: string;
-      end?: string;
-      allDay: boolean;
-      meta?: any;
-    }>>;
+    itemsByDay: Record<
+      string,
+      Array<{
+        type: string;
+        title: string;
+        start?: string;
+        end?: string;
+        allDay: boolean;
+        meta?: any;
+      }>
+    >;
   };
   // LECTURES: Recent lecture recordings (metadata only)
   lectures?: {
@@ -95,4 +99,10 @@ export interface StudentContext {
     ts?: string; // ISO string
     saved_at?: string | null;
   }>;
+  // SYLLABUSSHIELD coverage data
+  moduleCoverage?: {
+    coverage_pct: number;
+    missing_high_importance?: Array<{ title: string }>;
+    missing_topics?: Array<{ title: string }>;
+  };
 }

@@ -124,7 +124,26 @@ function HoverMenu({
 import { useEntitlements } from "@/components/auth/EntitlementGuards";
 import { guides as allGuides } from "@/content/articlesIndex";
 import dynamic from "next/dynamic";
-import { Search, Command } from "lucide-react";
+import {
+  Search,
+  Command,
+  User,
+  X,
+  Heart,
+  Menu as MenuIcon,
+  ChevronDown,
+  ChevronRight,
+  LogOut,
+  Settings,
+  Shield,
+  BookOpen,
+  GraduationCap,
+  Calendar,
+  LayoutDashboard,
+  FileText,
+  MessageSquare,
+  ArrowRight,
+} from "lucide-react";
 
 const LexiconSearchOverlay = dynamic(
   () => import("@/components/study/LexiconSearchOverlay"),
@@ -176,6 +195,8 @@ export default function GlobalHeader() {
     const fetchUserInfo = async () => {
       try {
         const { getSupabaseClient } = await import("@/lib/supabase/client");
+        const { getPublicDisplayName } = await import("@/lib/name"); // Logic injection
+
         const supabase = getSupabaseClient();
         if (!supabase) {
           setDisplayName(user.email?.split("@")[0] || "Student");
@@ -184,12 +205,15 @@ export default function GlobalHeader() {
 
         const { data, error } = await supabase
           .from("profiles")
-          .select("display_name, user_role")
+          .select(
+            "display_name, preferred_name, privacy_mask_name, role, user_role",
+          )
           .eq("id", user.id)
           .single();
 
-        if (data?.display_name) {
-          setDisplayName(data.display_name);
+        if (data) {
+          // Use GLOBAL logic for name resolution
+          setDisplayName(getPublicDisplayName(data));
         } else {
           setDisplayName(user.email?.split("@")[0] || "Student");
         }

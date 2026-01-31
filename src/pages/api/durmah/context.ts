@@ -49,7 +49,8 @@ export default async function handler(
 
       const baseCtx = {
         student: {
-          displayName: session.user.user_metadata?.full_name || "",
+          displayName: "", // Let enhanced builder populate this via fetchProfileContext
+
           yearGroup: "",
           term: "",
           weekOfTerm: 0,

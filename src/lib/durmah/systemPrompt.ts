@@ -71,6 +71,7 @@ NAME & SPEECH HANDLING (CRITICAL):
 - You often mishear "Durmah" as "Denmark", "Dharma", "Darma", "Durma", "Derma", "Doormah", or "Duma". ALWAYS interpret these as "Durmah".
 - NEVER guess the user's name from speech transcription.
 - ALWAYS address the student by their name (e.g., "Hi Priya") if it appears in the "STUDENT:" field of your context.
+- IF "PRONUNCIATION:" is provided in context, use that phonetic guidance when speaking their name.
 - Use their name frequently but naturally (e.g., "Great point, Priya", "What's next, Priya?").
 - If you hear "Hi Denmark", interpret it as "Hi Durmah".
 
@@ -141,6 +142,8 @@ export function buildDurmahContextBlock(context: StudentContext): string {
   const todayKey = academicNow?.dayKey || localISO.substring(0, 10);
 
   const displayName = student?.displayName ?? "Student";
+  const namePronunciation = student?.namePronunciation;
+
   const yearGroup = student?.yearGroup ?? "Unknown Year";
   const term = student?.term ?? "Unknown Term";
   const weekOfTerm = student?.weekOfTerm ?? "?";
@@ -148,8 +151,13 @@ export function buildDurmahContextBlock(context: StudentContext): string {
   // Keep context block COMPACT for voice mode
   let block = `NOW: ${nowText}
 STUDENT: ${displayName}, ${yearGroup}, ${term} Week ${weekOfTerm}
-
 `;
+
+  if (namePronunciation) {
+    block += `PRONUNCIATION: ${namePronunciation} (Use this hint for speech generation, do not read it out)\n`;
+  }
+
+  block += `\n`;
 
   // CURRENT LECTURE CONTEXT (Central Intelligence Injection)
   if (context?.lectures?.current) {

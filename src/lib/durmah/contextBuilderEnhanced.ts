@@ -335,18 +335,26 @@ export async function fetchAWYContext(
 /**
  * Fetch user profile for personalization (name, year group)
  */
+import { getPublicDisplayName } from "@/lib/name";
+
+/**
+ * Fetch user profile for personalization (name, year group)
+ */
 export async function fetchProfileContext(
   supabase: SupabaseClient,
   userId: string,
 ): Promise<{
   displayName: string | null;
+  namePronunciation: string | null;
   yearGroup: string | null;
   yearOfStudy: string | null;
   role: string;
 }> {
   const { data, error } = await supabase
     .from("profiles")
-    .select("display_name, year_group, year_of_study")
+    .select(
+      "display_name, preferred_name, privacy_mask_name, role, name_pronunciation, year_group, year_of_study",
+    )
     .eq("id", userId)
     .maybeSingle();
 
@@ -357,11 +365,15 @@ export async function fetchProfileContext(
     );
   }
 
+  // Use GLOBAL RESOLUTION for name (handles demo/privacy/preferences)
+  const publicName = data ? getPublicDisplayName(data) : null;
+
   return {
-    displayName: data?.display_name ?? null,
+    displayName: publicName,
+    namePronunciation: data?.name_pronunciation ?? null,
     yearGroup: data?.year_of_study ?? data?.year_group ?? null,
     yearOfStudy: data?.year_of_study ?? data?.year_group ?? null,
-    role: "student", // Default role
+    role: data?.role || "student",
   };
 }
 
