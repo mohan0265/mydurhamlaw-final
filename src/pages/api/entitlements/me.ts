@@ -16,6 +16,7 @@ export default async function handler(
 
   console.log("[api/entitlements/me] Fetching for user:", session.user.id);
 
+  // 1. Fetch entitlements normally
   const { data: entitlements, error } = await supabase
     .from("user_entitlements")
     .select("*")
@@ -25,6 +26,28 @@ export default async function handler(
   if (error) {
     console.error("[api/entitlements/me] DB Error:", error);
     return res.status(500).json({ error: error.message });
+  }
+
+  // 2. Fetch profile to check for ADMIN status bypass
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role, user_role")
+    .eq("id", session.user.id)
+    .maybeSingle();
+
+  const isAdmin = profile?.role === "admin" || profile?.user_role === "admin";
+
+  if (isAdmin) {
+    console.log(
+      "[api/entitlements/me] 👑 ADMIN DETECTED - Granting full access bypass",
+    );
+    return res.status(200).json({
+      entitlements: entitlements || [],
+      hasDurhamAccess: true,
+      hasLnatAccess: true,
+      voiceEnabled: true,
+      isAdmin: true,
+    });
   }
 
   console.log(
