@@ -43,15 +43,12 @@ export default function OnboardingBanner() {
     setState((prev) => (prev ? { ...prev, dismissed: true } : null));
   };
 
-  // If loading, dismissed, or missing state, hide
-  // Check localStorage too
-  if (loading) return null;
-  if (state?.dismissed) return null;
-  if (
+  // Nuke logic: If localStorage says dismissed, it stays dismissed no matter what
+  const isPermanentlyDismissed =
     typeof window !== "undefined" &&
-    localStorage.getItem("caseway:onboardingBannerDismissed")
-  )
-    return null;
+    localStorage.getItem("caseway:onboardingBannerDismissed") === "true";
+
+  if (loading || isPermanentlyDismissed || state?.dismissed) return null;
 
   const allComplete =
     state?.ics_uploaded &&

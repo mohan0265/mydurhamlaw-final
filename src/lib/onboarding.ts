@@ -82,7 +82,19 @@ export async function syncOnboardingState(
       .select()
       .single();
 
-    if (upsertError) console.error(upsertError);
+    if (upsertError) {
+      // If it's a column not found error, just log it and return the updates as if they were saved locally
+      if (
+        (upsertError as any).code === "PGRST204" ||
+        upsertError.message.includes("dismissed")
+      ) {
+        console.warn(
+          "Onboarding DB schema missing 'dismissed' column. Falling back to memory state.",
+        );
+        return updates as any;
+      }
+      console.error(upsertError);
+    }
 
     return updated;
   } catch (err) {

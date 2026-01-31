@@ -119,13 +119,16 @@ export const TourProvider: React.FC<{ children: React.ReactNode }> = ({
       setRun(false);
       setStepIndex(0);
 
-      // If "Don't show again" was checked, disable auto-launch
+      // NUCLEAR SUPPRESSION: If "Don't show again" was checked, disable auto-launch FOREVER
+      // We do this even if they just closed the tour by clicking X or Skip
       if (shouldPersist) {
-        if (isGuest) {
-          localStorage.setItem("tour_home_autolaunch_disabled", "true");
-        } else if (user) {
-          localStorage.setItem("tour_student_autolaunch_disabled", "true");
-        }
+        console.log(
+          "[Tour] Suppressing all tours permanently per user request",
+        );
+        localStorage.setItem("caseway_tours_disabled_all", "true");
+        // Also set specific keys for redundancy
+        localStorage.setItem("tour_home_autolaunch_disabled", "true");
+        localStorage.setItem("tour_student_autolaunch_disabled", "true");
       }
     }
   };
@@ -149,7 +152,10 @@ export const TourProvider: React.FC<{ children: React.ReactNode }> = ({
         localStorage.getItem("tour_student_autolaunch_disabled") === "true";
     }
 
-    if (targetTour && !isDisabled) {
+    const isAllDisabled =
+      localStorage.getItem("caseway_tours_disabled_all") === "true";
+
+    if (targetTour && !isDisabled && !isAllDisabled) {
       startTour(targetTour);
     }
   }, [currentPath, user, run]);
@@ -168,7 +174,7 @@ export const TourProvider: React.FC<{ children: React.ReactNode }> = ({
           showSkipButton
           disableOverlayClose={true}
           spotlightClicks={true}
-          // disableBeacon={true}
+          disableBeacon={true} // GLOBALLY DISABLE BEACONS (The "glowing circle")
           callback={handleJoyrideCallback}
           styles={styles}
           tooltipComponent={TourTooltip}
