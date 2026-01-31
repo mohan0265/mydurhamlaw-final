@@ -396,78 +396,88 @@ export default function LandingPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {/* Card 1: Dashboard */}
-            <div className="bg-white/10 rounded-2xl p-1 border border-white/10 hover:bg-white/15 transition duration-300">
-              <div className="aspect-video bg-indigo-950/50 rounded-xl relative overflow-hidden flex items-center justify-center group cursor-pointer">
-                {/* Placeholder Image State */}
-                <div className="absolute inset-0 bg-gradient-to-tr from-indigo-900 to-purple-900 opacity-50"></div>
-                <div className="relative z-10 flex flex-col items-center gap-3">
-                  <div className="p-3 bg-white/10 rounded-full group-hover:scale-110 transition-transform backdrop-blur-sm">
-                    <TrendingUp className="w-6 h-6 text-white" />
+            <Link href="/dashboard?demo=true" className="block group">
+              <div className="bg-white/10 rounded-2xl p-1 border border-white/10 hover:bg-white/15 transition duration-300 h-full">
+                <div className="aspect-video bg-indigo-950/50 rounded-xl relative overflow-hidden flex items-center justify-center">
+                  <div className="absolute inset-0 bg-gradient-to-tr from-indigo-900 to-purple-900 opacity-50"></div>
+                  <div className="relative z-10 flex flex-col items-center gap-3">
+                    <div className="p-3 bg-white/10 rounded-full group-hover:scale-110 transition-transform backdrop-blur-sm">
+                      <TrendingUp className="w-6 h-6 text-white" />
+                    </div>
+                    <span className="text-xs font-bold uppercase tracking-widest text-indigo-200">
+                      Dashboard Snapshot
+                    </span>
                   </div>
-                  <span className="text-xs font-bold uppercase tracking-widest text-indigo-200">
-                    Dashboard Snapshot
-                  </span>
+                </div>
+                <div className="p-4 text-center">
+                  <h3 className="font-bold text-white text-lg">
+                    Your Daily Brief
+                  </h3>
+                  <p className="text-sm text-indigo-200 mt-1 leading-relaxed">
+                    Start every day with a clear view of deadlines, readings,
+                    and priorities.
+                  </p>
                 </div>
               </div>
-              <div className="p-4 text-center">
-                <h3 className="font-bold text-white text-lg">
-                  Your Daily Brief
-                </h3>
-                <p className="text-sm text-indigo-200 mt-1 leading-relaxed">
-                  Start every day with a clear view of deadlines, readings, and
-                  priorities.
-                </p>
-              </div>
-            </div>
+            </Link>
 
             {/* Card 2: Lecture Notes */}
-            <div className="bg-white/10 rounded-2xl p-1 border border-white/10 hover:bg-white/15 transition duration-300">
-              <div className="aspect-video bg-indigo-950/50 rounded-xl relative overflow-hidden flex items-center justify-center group cursor-pointer">
-                <div className="absolute inset-0 bg-gradient-to-tr from-purple-900 to-pink-900 opacity-50"></div>
-                <div className="relative z-10 flex flex-col items-center gap-3">
-                  <div className="p-3 bg-white/10 rounded-full group-hover:scale-110 transition-transform backdrop-blur-sm">
-                    <FileText className="w-6 h-6 text-white" />
+            <Link
+              href="/study/lectures/eu-law-goods?demo=true"
+              className="block group"
+            >
+              <div className="bg-white/10 rounded-2xl p-1 border border-white/10 hover:bg-white/15 transition duration-300 h-full">
+                <div className="aspect-video bg-indigo-950/50 rounded-xl relative overflow-hidden flex items-center justify-center">
+                  <div className="absolute inset-0 bg-gradient-to-tr from-purple-900 to-pink-900 opacity-50"></div>
+                  <div className="relative z-10 flex flex-col items-center gap-3">
+                    <div className="p-3 bg-white/10 rounded-full group-hover:scale-110 transition-transform backdrop-blur-sm">
+                      <FileText className="w-6 h-6 text-white" />
+                    </div>
+                    <span className="text-xs font-bold uppercase tracking-widest text-purple-200">
+                      Lecture to Notes
+                    </span>
                   </div>
-                  <span className="text-xs font-bold uppercase tracking-widest text-purple-200">
-                    Lecture to Notes
-                  </span>
+                </div>
+                <div className="p-4 text-center">
+                  <h3 className="font-bold text-white text-lg">
+                    Instant Summaries
+                  </h3>
+                  <p className="text-sm text-indigo-200 mt-1 leading-relaxed">
+                    Upload audio and get structured principles, cases, and exam
+                    points in seconds.
+                  </p>
                 </div>
               </div>
-              <div className="p-4 text-center">
-                <h3 className="font-bold text-white text-lg">
-                  Instant Summaries
-                </h3>
-                <p className="text-sm text-indigo-200 mt-1 leading-relaxed">
-                  Upload audio and get structured principles, cases, and exam
-                  points in seconds.
-                </p>
-              </div>
-            </div>
+            </Link>
 
             {/* Card 3: Durmah Audio */}
-            <div
-              className="bg-white/10 rounded-2xl p-1 border border-white/10 hover:bg-white/15 transition duration-300"
-              data-tour="home-durmah"
-            >
-              <div className="aspect-video bg-indigo-950/50 rounded-xl relative overflow-hidden flex items-center justify-center group cursor-pointer">
-                <div className="absolute inset-0 bg-gradient-to-tr from-blue-900 to-cyan-900 opacity-50"></div>
-                <div className="relative z-10 flex flex-col items-center gap-3">
-                  <div className="p-3 bg-white/10 rounded-full group-hover:scale-110 transition-transform backdrop-blur-sm">
-                    <CheckCircle className="w-6 h-6 text-white" />
+            <Link href="/demo/durmah-voice?demo=true" className="block group">
+              <div
+                className="bg-white/10 rounded-2xl p-1 border border-white/10 hover:bg-white/15 transition duration-300 h-full"
+                data-tour="home-durmah"
+              >
+                <div className="aspect-video bg-indigo-950/50 rounded-xl relative overflow-hidden flex items-center justify-center">
+                  <div className="absolute inset-0 bg-gradient-to-tr from-blue-900 to-cyan-900 opacity-50"></div>
+                  <div className="relative z-10 flex flex-col items-center gap-3">
+                    <div className="p-3 bg-white/10 rounded-full group-hover:scale-110 transition-transform backdrop-blur-sm">
+                      <CheckCircle className="w-6 h-6 text-white" />
+                    </div>
+                    <span className="text-xs font-bold uppercase tracking-widest text-blue-200">
+                      Hear Durmah (10s)
+                    </span>
                   </div>
-                  <span className="text-xs font-bold uppercase tracking-widest text-blue-200">
-                    Hear Durmah (10s)
-                  </span>
+                </div>
+                <div className="p-4 text-center">
+                  <h3 className="font-bold text-white text-lg">
+                    Voice Coaching
+                  </h3>
+                  <p className="text-sm text-indigo-200 mt-1 leading-relaxed">
+                    Listen to how Durmah explains complex tort principles simply
+                    and clearly.
+                  </p>
                 </div>
               </div>
-              <div className="p-4 text-center">
-                <h3 className="font-bold text-white text-lg">Voice Coaching</h3>
-                <p className="text-sm text-indigo-200 mt-1 leading-relaxed">
-                  Listen to how Durmah explains complex tort principles simply
-                  and clearly.
-                </p>
-              </div>
-            </div>
+            </Link>
           </div>
         </div>
       </section>

@@ -54,7 +54,7 @@ export default function AboutPage() {
             </CardHeader>
             <CardContent>
               <p className="text-lg text-gray-700 leading-relaxed mb-4">
-                <strong>Caseway</strong> exists to ensure no Durham law student
+                <strong>CASEWAY</strong> exists to ensure no Durham law student
                 faces their academic journey alone. We believe that exceptional
                 legal education requires both intellectual rigor and emotional
                 support.
@@ -226,7 +226,7 @@ export default function AboutPage() {
             <CardContent className="space-y-4">
               <p className="text-lg text-gray-700">
                 Durham Law School has a unique culture of academic excellence
-                and collegiate support. Caseway reflects these values by
+                and collegiate support. CASEWAY reflects these values by
                 combining rigorous academic assistance with genuine care for
                 student wellbeing.
               </p>
@@ -265,21 +265,21 @@ export default function AboutPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <p className="text-lg text-gray-700">
-                Caseway began as a parent&apos;s gift to their child - a
+                CASEWAY began as a parent&apos;s gift to their child - a
                 personalized AI study companion to help navigate the challenges
                 of law school. What started as a private project has grown into
                 something much larger.
               </p>
               <p className="text-gray-600">
                 Recognizing that every Durham law student deserves this level of
-                support, we&apos;ve opened Caseway to the entire student body.
+                support, we&apos;ve opened CASEWAY to the entire student body.
                 This is our contribution to the Durham Law community - built
                 with love, shared with purpose.
               </p>
               <div className="bg-rose-100 p-4 rounded-lg border-l-4 border-rose-500">
                 <p className="text-sm text-rose-800 italic">
                   &quot;Every student deserves to feel supported, understood,
-                  and empowered to achieve their potential. Caseway is our way
+                  and empowered to achieve their potential. CASEWAY is our way
                   of ensuring that no Durham law student has to struggle
                   alone.&quot;
                 </p>
@@ -345,7 +345,7 @@ export default function AboutPage() {
               </h2>
               <p className="text-xl text-purple-100 mb-6 max-w-2xl mx-auto">
                 Whether you&apos;re just starting in Foundation Year or
-                preparing for Finals, Caseway is here for you - one voice, one
+                preparing for Finals, CASEWAY is here for you - one voice, one
                 AI companion, one journey at a time.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
@@ -359,7 +359,7 @@ export default function AboutPage() {
           {/* Footer Attribution */}
           <div className="text-center py-8 border-t border-gray-200">
             <p className="text-gray-600 mb-2">
-              © {new Date().getFullYear()} Caseway
+              © {new Date().getFullYear()} CASEWAY
             </p>
             <p className="text-sm text-gray-500">
               Built with ❤️ for the Durham Law community. Guided by justice,

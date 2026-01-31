@@ -11,8 +11,7 @@ if (!process.env.SUPABASE_DB_URL) {
 const files = [
   "supabase/migrations/20260130152400_master_glossary.sql",
   "supabase/migrations/20260130234200_glossary_source.sql",
-  "supabase/migrations/20260130235000_syllabus_shield.sql",
-  "supabase/migrations/20260131003000_glossary_manual_entries.sql",
+  "supabase/migrations/20260131120000_demo_experience_seeding.sql",
 ];
 
 async function runMigrations() {

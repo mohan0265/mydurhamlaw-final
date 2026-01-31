@@ -22,12 +22,22 @@ const GlobalDurmahSafe = dynamic(
 import { CalendarProvider } from "@/context/CalendarContext";
 import { WidgetErrorBoundary } from "@/components/common/WidgetErrorBoundary";
 
+import { DemoBanner } from "@/components/demo/DemoBanner";
+
 type Props = { children: React.ReactNode };
 
 export default function LayoutShell({ children }: Props) {
   const router = useRouter();
   const { user } = useAuth() || { user: null };
   const [mounted, setMounted] = React.useState(false);
+
+  const isDemoMode = React.useMemo(() => {
+    return (
+      router.query.demo === "true" ||
+      router.pathname.startsWith("/demo") ||
+      user?.id === "00000000-0000-0000-0000-000000000000"
+    );
+  }, [router.query.demo, router.pathname, user?.id]);
 
   React.useEffect(() => {
     setMounted(true);
@@ -57,6 +67,7 @@ export default function LayoutShell({ children }: Props) {
 
       {mounted && (
         <>
+          {isDemoMode && <DemoBanner />}
           <GlobalHeader />
           {/* Calendar state available to all pages */}
           <CalendarProvider>

@@ -93,11 +93,30 @@ function DashboardContent() {
   }, []);
 
   // Dashboard content loading logic
-  // NON-BLOCKING: We render shell even if loading
-  const isLoading = loading || !isMounted;
+  const isDemo =
+    typeof window !== "undefined" &&
+    (window.location.search.includes("demo=true") ||
+      window.location.pathname.startsWith("/demo") ||
+      user?.id === "00000000-0000-0000-0000-000000000000");
 
-  // Safe fetch wrapper
   useEffect(() => {
+    if (isDemo) {
+      const { DEMO_DATA } = require("@/lib/demo/demoData");
+      setNextAssignment(DEMO_DATA.assignment);
+      setUpcomingAssignments([DEMO_DATA.assignment]);
+      setFocusItem({
+        id: DEMO_DATA.assignment.id,
+        title: DEMO_DATA.assignment.title,
+        type: "Assignment",
+        link: `/assignments?assignmentId=${DEMO_DATA.assignment.id}&demo=true`,
+        due_date: DEMO_DATA.assignment.deadline,
+        typeLabel: "Assignment",
+        module_name: "EU Law",
+      });
+      setIsFetchingOverview(false);
+      return;
+    }
+
     if (user && !loading) {
       setIsFetchingOverview(true);
       setDashboardError(null);
@@ -252,7 +271,7 @@ function DashboardContent() {
   return (
     <>
       <Head>
-        <title>Dashboard - Caseway</title>
+        <title>Dashboard - CASEWAY</title>
       </Head>
 
       <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 space-y-8">
@@ -311,8 +330,15 @@ function DashboardContent() {
               <span className="sr-only">Dismiss</span>
               <X className="w-5 h-5" />
             </button>
-            <h2 className="text-lg font-bold text-gray-900 mb-2">
-              Welcome to Caseway - Start Here
+            <h2 className="text-lg font-bold text-gray-900 mb-2 flex items-center gap-2">
+              Welcome to{" "}
+              <Logo
+                variant="light"
+                size="sm"
+                className="h-6 w-auto inline-block"
+                href={null as any}
+              />{" "}
+              — Start Here
             </h2>
             <p className="text-gray-600 text-sm mb-4">
               You're all set. Here are your Next 3 Actions to get started:
@@ -813,12 +839,14 @@ function DashboardContent() {
           </div>
 
           {/* Right Col: Widgets */}
-          <div className="space-y-6">
+          <div className="space-y-6 flex flex-col min-h-0">
             {/* Lexicon */}
-            <LexiconQuickWidget />
+            <div className="flex-1 min-h-[400px]">
+              <LexiconQuickWidget />
+            </div>
 
             {/* Tasks */}
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 h-full">
+            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="font-bold text-gray-900">Today's Tasks</h3>
                 <Link

@@ -60,8 +60,8 @@ export const BrandTitle: React.FC<BrandTitleProps> = ({
     <Component
       className={`${sizeClasses} font-bold tracking-wide ${className}`}
     >
-      <span className={colorClasses.text}>Case</span>
-      <span className={colorClasses.highlight}>way</span>
+      <span className={colorClasses.text}>CASE</span>
+      <span className={colorClasses.highlight}>WAY</span>
     </Component>
   );
 };

@@ -11,7 +11,7 @@ function WellbeingPage() {
   return (
     <>
       <Head>
-        <title>Wellbeing - Caseway</title>
+        <title>Wellbeing - CASEWAY</title>
       </Head>
 
       <main className="min-h-screen bg-gray-50 pb-20">

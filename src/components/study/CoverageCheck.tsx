@@ -33,6 +33,28 @@ export default function CoverageCheck({
   const [dismissed, setDismissed] = useState(false);
 
   useEffect(() => {
+    // Check for Demo Mode (Client Side)
+    const isDemo =
+      typeof window !== "undefined" &&
+      (window.location.search.includes("demo=true") ||
+        window.location.pathname.startsWith("/demo"));
+
+    if (isDemo) {
+      setCoverage({
+        total_topics: 3,
+        covered_topics: 2,
+        coverage_pct: 66,
+        missing_topics: [
+          { id: "mock-est", title: "Free Movement of Establishment" },
+        ],
+        missing_high_importance: [
+          { id: "mock-est", title: "Free Movement of Establishment" },
+        ],
+      });
+      setLoading(false);
+      return;
+    }
+
     async function fetchCoverage() {
       try {
         const res = await fetch(`/api/modules/coverage?moduleId=${moduleId}`);

@@ -18,10 +18,10 @@ export default function TourPage() {
   return (
     <>
       <Head>
-        <title>How It Works - Caseway Tour</title>
+        <title>How It Works - CASEWAY Tour</title>
         <meta
           name="description"
-          content="Discover how Caseway's AI-powered platform supports Durham University law students"
+          content="Discover how CASEWAY's AI-powered platform supports Durham University law students"
         />
       </Head>
 
@@ -32,7 +32,7 @@ export default function TourPage() {
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-6">
               See How{" "}
               <span className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
-                Caseway
+                CASEWAY
               </span>{" "}
               Works
             </h1>
@@ -261,7 +261,7 @@ export default function TourPage() {
             Ready to Transform Your Law Studies?
           </h2>
           <p className="text-xl text-pink-100 mb-8">
-            Join fellow Durham Law students who are already using Caseway to
+            Join fellow Durham Law students who are already using CASEWAY to
             excel in their studies.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-6">

@@ -18,7 +18,8 @@ import { Logo } from "@/components/ui/Logo";
 import { getSupabaseClient } from "@/lib/supabase/client";
 import { useAuth } from "@/lib/supabase/AuthContext";
 import toast from "react-hot-toast";
-import { Loader2, Plus, Check } from "lucide-react";
+import { Loader2, Plus, Check, MessageSquare } from "lucide-react";
+import { GlossaryNoteSection } from "@/components/study/GlossaryNoteSection";
 
 interface GlossaryTerm {
   id: string;
@@ -110,6 +111,25 @@ export default function GlossaryPage() {
   };
 
   useEffect(() => {
+    // Check for Demo Mode (Client Side)
+    const isDemo =
+      typeof window !== "undefined" &&
+      (window.location.search.includes("demo=true") ||
+        window.location.pathname.startsWith("/demo"));
+
+    if (isDemo) {
+      const { DEMO_DATA } = require("@/lib/demo/demoData");
+      const mockTerms = DEMO_DATA.glossary.map((gt: any) => ({
+        ...gt,
+        lectures: [
+          { id: gt.source, title: "Free Movement of Goods: Art 34-36 TFEU" },
+        ],
+      }));
+      setTerms(mockTerms);
+      setLoading(false);
+      return;
+    }
+
     const fetchTerms = async () => {
       try {
         const res = await fetch("/api/study/glossary/list");
@@ -327,6 +347,8 @@ export default function GlossaryPage() {
                         </Link>
                       ))}
                     </div>
+
+                    <GlossaryNoteSection termId={t.id} />
                   </div>
                 )}
               </div>

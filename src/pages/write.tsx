@@ -9,11 +9,11 @@ export default function WriteLawPage() {
     <div className="min-h-screen bg-white">
       <Head>
         <title>
-          Write Law - Structured Legal Writing & Integrity | Caseway
+          Write Law - Structured Legal Writing & Integrity | CASEWAY
         </title>
         <meta
           name="description"
-          content="Master structured legal writing, IRAC methodology, and academic integrity with Caseway."
+          content="Master structured legal writing, IRAC methodology, and academic integrity with CASEWAY."
         />
       </Head>
 

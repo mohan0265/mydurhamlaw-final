@@ -1,4 +1,4 @@
-export const BRAND_NAME = "Caseway";
+export const BRAND_NAME = "CASEWAY";
 export const BRAND_DOMAIN =
   process.env.NEXT_PUBLIC_APP_DOMAIN || "casewaylaw.ai";
 export const BRAND_BASE_URL =
@@ -18,10 +18,10 @@ export const LEGAL_INDEPENDENCE_SHORT =
   "Independent platform — not affiliated with or endorsed by Durham University.";
 
 export const LEGAL_AI_WARNING_SHORT =
-  "AI-powered study support. Caseway AI can make mistakes; please verify independently.";
+  "AI-powered study support. CASEWAY AI can make mistakes; please verify independently.";
 
 export const LEGAL_DISCLAIMER_LONG =
-  "Caseway is an AI-powered independent study companion and is not affiliated with Durham University. Information provided should be verified against official module handbooks and primary legal sources.";
+  "CASEWAY is an AI-powered independent study companion and is not affiliated with Durham University. Information provided should be verified against official module handbooks and primary legal sources.";
 
 export const canonical = (urlPath: string) => {
   const path = urlPath.startsWith("/") ? urlPath : `/${urlPath}`;

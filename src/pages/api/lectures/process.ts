@@ -61,6 +61,7 @@ export default async function handler(
       .from("lectures")
       .update({
         status: LECTURE_STATUSES.PROCESSING,
+        processing_state: "queued",
         error_message: null,
         last_processed_at: now,
       })

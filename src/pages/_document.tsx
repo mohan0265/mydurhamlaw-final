@@ -46,20 +46,20 @@ export default function Document() {
         {/* SEO Meta Tags */}
         <meta
           name="description"
-          content="Caseway — Learn law | Write law | Speak law. Independent support for Durham students."
+          content="CASEWAY — Learn law | Write law | Speak law. Independent support for Durham students."
         />
         <meta
           name="keywords"
           content="law, study, Durham, AI, assistant, legal education, Durham University"
         />
-        <meta name="author" content="Caseway Team" />
-        <meta name="application-name" content="Caseway" />
+        <meta name="author" content="CASEWAY Team" />
+        <meta name="application-name" content="CASEWAY" />
 
         {/* Global Open Graph Defaults */}
-        <meta property="og:site_name" content="Caseway" />
+        <meta property="og:site_name" content="CASEWAY" />
         <meta
           property="og:title"
-          content="Caseway — Learn law | Write law | Speak law"
+          content="CASEWAY — Learn law | Write law | Speak law"
         />
         <meta
           property="og:description"
@@ -75,14 +75,14 @@ export default function Document() {
         <meta property="og:image:height" content="630" />
         <meta
           property="og:image:alt"
-          content="Caseway - Learn law | Write law | Speak law"
+          content="CASEWAY - Learn law | Write law | Speak law"
         />
 
         {/* Twitter Card */}
         <meta name="twitter:card" content="summary_large_image" />
         <meta
           name="twitter:title"
-          content="Caseway — Learn law | Write law | Speak law"
+          content="CASEWAY — Learn law | Write law | Speak law"
         />
         <meta
           name="twitter:description"
@@ -94,7 +94,7 @@ export default function Document() {
         />
         <meta
           name="twitter:image:alt"
-          content="Caseway - Learn law | Write law | Speak law"
+          content="CASEWAY - Learn law | Write law | Speak law"
         />
       </Head>
       <body>

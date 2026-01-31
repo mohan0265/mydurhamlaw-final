@@ -58,8 +58,17 @@ interface LectureDetail {
   module_name?: string;
   lecturer_name?: string;
   lecture_date?: string;
-  panopto_url?: string; // Added field
+  panopto_url?: string;
   status: string;
+  processing_state?:
+    | "uploaded"
+    | "queued"
+    | "processing"
+    | "processed"
+    | "verified"
+    | "failed";
+  processing_error?: any;
+  verification_results?: any;
   transcript?: string;
   word_count?: number;
   error_message?: string;
@@ -110,6 +119,23 @@ export default function LectureDetailPage() {
   useEffect(() => {
     if (!id) return;
 
+    // Check for Demo Mode (Client Side)
+    const isDemo =
+      typeof window !== "undefined" &&
+      (window.location.search.includes("demo=true") ||
+        window.location.pathname.startsWith("/demo"));
+
+    if (isDemo) {
+      const { DEMO_DATA } = require("@/lib/demo/demoData");
+      const mockLecture = DEMO_DATA.lectures.find((l: any) => l.id === id);
+      if (mockLecture) {
+        console.log("[Demo] Injecting mock lecture data:", id);
+        setLecture(mockLecture);
+        setLoading(false);
+        return;
+      }
+    }
+
     let pollInterval: NodeJS.Timeout;
 
     const fetchLecture = async (isPoll = false) => {
@@ -127,6 +153,8 @@ export default function LectureDetailPage() {
 
           // Stop polling if terminal state reached
           if (
+            data.lecture.processing_state === "verified" ||
+            data.lecture.processing_state === "failed" ||
             data.lecture.status === "ready" ||
             data.lecture.status === "error"
           ) {
@@ -310,6 +338,114 @@ export default function LectureDetailPage() {
       >
         <ArrowLeft className="w-4 h-4" /> Back to Lectures
       </Button>
+
+      {/* Processing State Banner */}
+      {lecture.processing_state === "failed" && (
+        <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6 flex items-start gap-3">
+          <AlertTriangle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <h3 className="text-red-800 font-bold text-sm">
+              Processing Failed
+            </h3>
+            <p className="text-red-700 text-sm mt-1">
+              {lecture.error_message ||
+                "An unknown error occurred during AI analysis."}
+            </p>
+            {lecture.processing_error && (
+              <details className="mt-2 text-xs text-red-600/70">
+                <summary className="cursor-pointer hover:underline">
+                  Technical Details
+                </summary>
+                <pre className="mt-1 bg-red-100/50 p-2 rounded overflow-x-auto">
+                  {JSON.stringify(lecture.processing_error, null, 2)}
+                </pre>
+              </details>
+            )}
+            <div className="mt-4">
+              <Button
+                size="sm"
+                variant="outline"
+                className="border-red-200 text-red-700 hover:bg-red-100"
+                onClick={async () => {
+                  const toastId = toast.loading("Restarting processing...");
+                  try {
+                    const res = await fetch("/api/lectures/process", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({
+                        lectureId: lecture.id,
+                        force: true,
+                      }),
+                    });
+                    if (res.ok) {
+                      toast.success("Processing restarted", { id: toastId });
+                      router.reload();
+                    } else {
+                      throw new Error("Failed to restart");
+                    }
+                  } catch (e) {
+                    toast.error("Retry failed", { id: toastId });
+                  }
+                }}
+              >
+                Try Again
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {lecture.processing_state &&
+        !["verified", "failed"].includes(lecture.processing_state) && (
+          <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Loader2 className="w-5 h-5 text-blue-600 animate-spin" />
+              <div>
+                <p className="text-blue-800 font-bold text-sm uppercase tracking-wide">
+                  {lecture.processing_state === "queued"
+                    ? "In Queue"
+                    : "Processing..."}
+                </p>
+                <p className="text-blue-700 text-xs">
+                  Generating AI summaries and exam signals.
+                </p>
+              </div>
+            </div>
+            <span className="text-xs font-bold text-blue-400 bg-blue-100/50 px-2 py-1 rounded">
+              EST. 2-3 MIN
+            </span>
+          </div>
+        )}
+
+      {lecture.processing_state === "verified" && (
+        <div className="bg-green-50 border border-green-200 rounded-xl px-4 py-2 mb-6 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <CheckCircle className="w-4 h-4 text-green-600" />
+            <span className="text-green-800 text-xs font-bold uppercase tracking-widest">
+              Platform Verified
+            </span>
+          </div>
+          {lecture.verification_results && (
+            <div className="flex gap-3">
+              {Object.entries(lecture.verification_results).map(
+                ([key, val]) => {
+                  if (typeof val === "boolean") {
+                    return (
+                      <span
+                        key={key}
+                        className="text-[10px] text-green-600/70 font-medium"
+                      >
+                        {val ? "✓" : "✗"} {key.toUpperCase()}
+                      </span>
+                    );
+                  }
+                  return null;
+                },
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Header */}
       <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6 mb-6 shadow-sm">

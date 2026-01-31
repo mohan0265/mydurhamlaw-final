@@ -57,12 +57,22 @@ exports.handler = async (event) => {
       await Promise.all([
         supabaseAdmin
           .from("lectures")
-          .update({ status: "transcribing", error_message: null })
+          .update({
+            status: "transcribing",
+            processing_state: "processing",
+            error_message: null,
+          })
           .eq("id", lectureId),
         lecture.academic_item_id
           ? supabaseAdmin
               .from("academic_items")
-              .update({ state: { status: "transcribing", progress: 0.3 } })
+              .update({
+                state: {
+                  status: "transcribing",
+                  processing_status: "processing",
+                  progress: 0.3,
+                },
+              })
               .eq("id", lecture.academic_item_id)
           : Promise.resolve(),
       ]);
@@ -120,12 +130,18 @@ exports.handler = async (event) => {
     await Promise.all([
       supabaseAdmin
         .from("lectures")
-        .update({ status: "processing" })
+        .update({ status: "processing", processing_state: "processing" })
         .eq("id", lectureId),
       lecture.academic_item_id
         ? supabaseAdmin
             .from("academic_items")
-            .update({ state: { status: "processing", progress: 0.6 } })
+            .update({
+              state: {
+                status: "processing",
+                processing_status: "processing",
+                progress: 0.6,
+              },
+            })
             .eq("id", lecture.academic_item_id)
         : Promise.resolve(),
     ]);
@@ -327,44 +343,105 @@ Respond in JSON format: { "matches": [ { "index": number, "confidence": number, 
       console.error("[background] Rollup failed:", e);
     }
 
-    // 9. Update status to ready
+    // 9. Verification Step: Ensure critical artifacts exist
+    console.log("[background] Step 9: Running verification pass");
+    const [
+      { data: transcriptExists },
+      { data: notesExists },
+      { count: glossaryCount },
+    ] = await Promise.all([
+      supabaseAdmin
+        .from("lecture_transcripts")
+        .select("lecture_id")
+        .eq("lecture_id", lectureId)
+        .single(),
+      supabaseAdmin
+        .from("lecture_notes")
+        .select("lecture_id")
+        .eq("lecture_id", lectureId)
+        .single(),
+      supabaseAdmin
+        .from("lecture_glossary_links")
+        .select("*", { count: "exact", head: true })
+        .eq("lecture_id", lectureId),
+    ]);
+
+    const verification = {
+      transcript: !!transcriptExists,
+      notes: !!notesExists,
+      glossary: (glossaryCount || 0) > 0,
+      timestamp: new Date().toISOString(),
+    };
+
+    if (!verification.transcript || !verification.notes) {
+      throw new Error(
+        `Verification failed: ${!verification.transcript ? "Transcript missing. " : ""}${!verification.notes ? "AI Notes missing." : ""}`,
+      );
+    }
+
+    // 10. Update status to ready/verified
     console.log(
-      `[background] Processing complete for ${lectureId}. Final status: ready`,
+      `[background] Processing complete for ${lectureId}. Final status: verified`,
     );
 
     await Promise.all([
       supabaseAdmin
         .from("lectures")
-        .update({ status: "ready" })
+        .update({
+          status: "ready",
+          processing_state: "verified",
+          verification_results: verification,
+          error_message: null,
+        })
         .eq("id", lectureId),
       lecture.academic_item_id
         ? supabaseAdmin
             .from("academic_items")
-            .update({ state: { status: "ready", progress: 1.0 } })
+            .update({
+              state: {
+                status: "ready",
+                processing_status: "verified",
+                progress: 1.0,
+              },
+            })
             .eq("id", lecture.academic_item_id)
         : Promise.resolve(),
     ]);
 
-    console.log(`[background] ✅ Successfully processed lecture ${lectureId}`);
+    console.log(
+      `[background] ✅ Successfully processed and verified lecture ${lectureId}`,
+    );
   } catch (error) {
     console.error("[background] Critical Error:", error);
 
-    // FETCH LECTURE AGAIN to get academic_item_id if needed (in case it wasn't fetched initially)
-    // But we probably have it in `lecture` variable if step 1 succeeded.
-    // Safety check:
     const aid = lecture?.academic_item_id;
-
-    const errMsg = `AI Processing failed: ${error.message}`;
+    const errMsg = error.message || "Unknown error";
+    const errorDetails = {
+      message: errMsg,
+      timestamp: new Date().toISOString(),
+      stack: error.stack,
+    };
 
     await Promise.all([
       supabaseAdmin
         .from("lectures")
-        .update({ status: "failed", error_message: errMsg })
+        .update({
+          status: "failed",
+          processing_state: "failed",
+          processing_error: errorDetails,
+          error_message: `AI Processing failed: ${errMsg}`,
+        })
         .eq("id", lectureId),
       aid
         ? supabaseAdmin
             .from("academic_items")
-            .update({ state: { status: "failed", error: errMsg } })
+            .update({
+              state: {
+                status: "failed",
+                processing_status: "failed",
+                error: errMsg,
+              },
+            })
             .eq("id", aid)
         : Promise.resolve(),
     ]);

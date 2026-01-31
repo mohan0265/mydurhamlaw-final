@@ -79,6 +79,7 @@ export default async function handler(
         audio_path: audioPath,
         audio_mime: audio_mime,
         status: "uploaded",
+        processing_state: "uploaded",
       })
       .select()
       .single();

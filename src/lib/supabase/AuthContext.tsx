@@ -1,13 +1,13 @@
-'use client';
+"use client";
 
-import React, { createContext, useEffect, useMemo, useState } from 'react';
-import type { Session, User } from '@supabase/supabase-js';
-import { getSupabaseClient } from './client';
+import React, { createContext, useEffect, useMemo, useState } from "react";
+import type { Session, User } from "@supabase/supabase-js";
+import { getSupabaseClient } from "./client";
 
-type AuthValue = { 
-  user: User | null; 
-  session: Session | null; 
-  loading: boolean; 
+type AuthValue = {
+  user: User | null;
+  session: Session | null;
+  loading: boolean;
   supabase: any | null;
   // Legacy properties for backward compatibility
   isLoading?: boolean;
@@ -17,60 +17,96 @@ type AuthValue = {
   realAcademicYear?: any;
 };
 
-export const AuthContext = createContext<AuthValue>({ user: null, session: null, loading: true, supabase: null, getDashboardRoute: () => '/signup', realAcademicYear: null });
+export const AuthContext = createContext<AuthValue>({
+  user: null,
+  session: null,
+  loading: true,
+  supabase: null,
+  getDashboardRoute: () => "/signup",
+  realAcademicYear: null,
+});
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [value, setValue] = useState<AuthValue>({ 
-    user: null, 
-    session: null, 
-    loading: true, 
+  const [value, setValue] = useState<AuthValue>({
+    user: null,
+    session: null,
+    loading: true,
     supabase: null,
-    getDashboardRoute: () => '/dashboard',
-    realAcademicYear: 2024
+    getDashboardRoute: () => "/dashboard",
+    realAcademicYear: 2024,
   });
 
   useEffect(() => {
     const supabase = getSupabaseClient();
-    if (!supabase) { 
-      setValue({ 
-        user: null, 
-        session: null, 
-        loading: false, 
+    if (!supabase) {
+      setValue({
+        user: null,
+        session: null,
+        loading: false,
         supabase: null,
         isLoading: false,
         userProfile: null,
         userType: undefined,
-        getDashboardRoute: () => '/signup',
-        realAcademicYear: 2024
-      }); 
-      return; 
+        getDashboardRoute: () => "/signup",
+        realAcademicYear: 2024,
+      });
+      return;
+    }
+
+    // Check for Demo Mode in URL (client-side only)
+    const isDemo =
+      typeof window !== "undefined" &&
+      (window.location.search.includes("demo=true") ||
+        window.location.pathname.startsWith("/demo"));
+
+    if (isDemo) {
+      console.log("[Auth] Demo Mode Detected: Injecting virtual session");
+      setValue({
+        user: {
+          id: "00000000-0000-0000-0000-000000000000",
+          email: "demo@casewaylaw.ai",
+        } as any,
+        session: {
+          user: { id: "00000000-0000-0000-0000-000000000000" },
+        } as any,
+        loading: false,
+        supabase: null,
+        isLoading: false,
+        userProfile: { full_name: "Visitor Demo", year: 2 },
+        userType: "student",
+        getDashboardRoute: () => "/demo/dashboard",
+        realAcademicYear: 2024,
+      });
+      return;
     }
 
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setValue({ 
-        user: session?.user ?? null, 
-        session: session ?? null, 
-        loading: false, 
+      setValue({
+        user: session?.user ?? null,
+        session: session ?? null,
+        loading: false,
         supabase,
         isLoading: false,
         userProfile: null,
         userType: undefined,
-        getDashboardRoute: () => session?.user ? '/dashboard' : '/signup',
-        realAcademicYear: 2024
+        getDashboardRoute: () => (session?.user ? "/dashboard" : "/signup"),
+        realAcademicYear: 2024,
       });
     });
 
     const { data } = supabase.auth.onAuthStateChange((_event, session) => {
-      setValue((prev) => ({ 
-        ...prev, 
-        user: session?.user ?? null, 
+      setValue((prev) => ({
+        ...prev,
+        user: session?.user ?? null,
         session: session ?? null,
-        getDashboardRoute: () => session?.user ? '/dashboard' : '/signup',
-        realAcademicYear: prev.realAcademicYear
+        getDashboardRoute: () => (session?.user ? "/dashboard" : "/signup"),
+        realAcademicYear: prev.realAcademicYear,
       }));
     });
 
-    return () => { data.subscription.unsubscribe(); };
+    return () => {
+      data.subscription.unsubscribe();
+    };
   }, []);
 
   const memo = useMemo(() => value, [value]);

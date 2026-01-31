@@ -75,7 +75,19 @@ export default function AssignmentsPage() {
   }, []);
 
   // 1. Fetch Assignments
+  const isDemo =
+    typeof window !== "undefined" &&
+    (window.location.search.includes("demo=true") ||
+      window.location.pathname.startsWith("/demo") ||
+      user?.id === "00000000-0000-0000-0000-000000000000");
+
   const fetchAssignments = async () => {
+    if (isDemo) {
+      const { DEMO_DATA } = require("@/lib/demo/demoData");
+      setAssignments([DEMO_DATA.assignment]);
+      setLoading(false);
+      return;
+    }
     if (!user?.id) return;
     const supabase = getSupabaseClient();
     if (!supabase) return;
