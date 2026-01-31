@@ -27,7 +27,7 @@ export default function WriteLawPage() {
             Write Law.
           </h1>
           <p className="text-xl text-gray-600 mb-10 max-w-2xl mx-auto leading-relaxed">
-            Legal writing is not just about grammar—it's about structure. Learn
+            Legal writing is not just about grammar-it's about structure. Learn
             to build arguments that survive scrutiny.
           </p>
           <div className="flex flex-col sm:flex-row justify-center gap-4">

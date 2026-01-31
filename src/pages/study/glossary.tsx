@@ -146,6 +146,25 @@ export default function GlossaryPage() {
     fetchTerms();
   }, []);
 
+  // Deep linking: Expand and scroll to term from query
+  useEffect(() => {
+    if (!loading && terms.length > 0 && router.query.term) {
+      const termQuery = (router.query.term as string).toLowerCase();
+      const matchedTerm = terms.find((t) => t.term.toLowerCase() === termQuery);
+
+      if (matchedTerm) {
+        setExpandedTerm(matchedTerm.id);
+        // Small delay to ensure the DOM has rendered the expansion
+        setTimeout(() => {
+          const element = document.getElementById(`term-${matchedTerm.id}`);
+          if (element) {
+            element.scrollIntoView({ behavior: "smooth", block: "center" });
+          }
+        }, 100);
+      }
+    }
+  }, [loading, terms, router.query.term]);
+
   const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
 
   const filteredTerms = useMemo(() => {
@@ -278,6 +297,7 @@ export default function GlossaryPage() {
             {filteredTerms.map((t) => (
               <div
                 key={t.id}
+                id={`term-${t.id}`}
                 className={`group bg-white dark:bg-gray-800 rounded-2xl border transition-all duration-300 overflow-hidden ${
                   expandedTerm === t.id
                     ? "ring-2 ring-purple-500 border-transparent shadow-xl"

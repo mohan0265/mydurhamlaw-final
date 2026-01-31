@@ -46,7 +46,7 @@ export default function Document() {
         {/* SEO Meta Tags */}
         <meta
           name="description"
-          content="CASEWAY — Learn law | Write law | Speak law. Independent support for Durham students."
+          content="CASEWAY - Learn law | Write law | Speak law. Independent support for Durham students."
         />
         <meta
           name="keywords"
@@ -59,11 +59,11 @@ export default function Document() {
         <meta property="og:site_name" content="CASEWAY" />
         <meta
           property="og:title"
-          content="CASEWAY — Learn law | Write law | Speak law"
+          content="CASEWAY - Learn law | Write law | Speak law"
         />
         <meta
           property="og:description"
-          content="Independent law student study platform — built for students at Durham University and beyond."
+          content="Independent law student study platform - built for students at Durham University and beyond."
         />
         <meta property="og:type" content="website" />
         <meta property="og:url" content="https://www.casewaylaw.ai/" />
@@ -82,11 +82,11 @@ export default function Document() {
         <meta name="twitter:card" content="summary_large_image" />
         <meta
           name="twitter:title"
-          content="CASEWAY — Learn law | Write law | Speak law"
+          content="CASEWAY - Learn law | Write law | Speak law"
         />
         <meta
           name="twitter:description"
-          content="Independent law student study platform — built for students at Durham University and beyond."
+          content="Independent law student study platform - built for students at Durham University and beyond."
         />
         <meta
           name="twitter:image"

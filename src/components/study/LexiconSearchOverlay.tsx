@@ -17,7 +17,8 @@ import { Button } from "@/components/ui/Button";
 import Link from "next/link";
 import { useAuth } from "@/lib/supabase/AuthContext";
 import { motion, AnimatePresence, useDragControls } from "framer-motion";
-import { GripHorizontal } from "lucide-react";
+import { GripHorizontal, MessageSquare } from "lucide-react";
+import { GlossaryNoteSection } from "./GlossaryNoteSection";
 
 interface GlossaryTerm {
   id: string;
@@ -274,6 +275,12 @@ export default function LexiconSearchOverlay({
                           <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
                             {t.definition}
                           </p>
+
+                          {/* Quick Note Entry */}
+                          <div className="scale-95 origin-top -mt-4 opacity-90">
+                            <GlossaryNoteSection termId={t.id} />
+                          </div>
+
                           <div className="mt-4 flex justify-end">
                             <Link
                               href={`/study/glossary?term=${encodeURIComponent(t.term)}`}

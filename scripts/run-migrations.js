@@ -12,6 +12,7 @@ const files = [
   "supabase/migrations/20260130152400_master_glossary.sql",
   "supabase/migrations/20260130234200_glossary_source.sql",
   "supabase/migrations/20260131120000_demo_experience_seeding.sql",
+  "supabase/migrations/20260131130000_glossary_user_notes.sql",
 ];
 
 async function runMigrations() {

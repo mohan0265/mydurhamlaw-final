@@ -1,6 +1,6 @@
 -- Create glossary_user_notes table for reinforced learning
 CREATE TABLE IF NOT EXISTS public.glossary_user_notes (
-    id UUID PRIMARY KEY DEFAULT extensions.uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
     term_id UUID NOT NULL REFERENCES public.glossary_terms(id) ON DELETE CASCADE,
     notes TEXT NOT NULL,
