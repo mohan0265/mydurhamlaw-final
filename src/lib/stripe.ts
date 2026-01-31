@@ -9,7 +9,7 @@ if (!process.env.STRIPE_SECRET_KEY) {
 export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
   apiVersion: "2025-08-27.basil" as any, // Use latest or pinned version
   appInfo: {
-    name: "Caseway / MyDurhamLaw",
+    name: "Caseway",
     version: "1.0.0",
   },
 });

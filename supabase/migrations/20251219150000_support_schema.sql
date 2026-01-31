@@ -207,7 +207,7 @@ END $$;
 -- ---------------------------------------------------------------------------
 INSERT INTO public.support_kb_articles (title, slug, body, tags)
 VALUES
-('Login issues (Google OAuth)', 'login-issues', 'If Google login loops:\n1) Clear cookies for mydurhamlaw.com\n2) Try an incognito window\n3) Ensure the same Google account used for signup\n4) If still blocked, capture the error message and browser version and open a support ticket.', ARRAY['login','auth']),
+('Login issues (Google OAuth)', 'login-issues', 'If Google login loops:\n1) Clear cookies for caseway.ai\n2) Try an incognito window\n3) Ensure the same Google account used for signup\n4) If still blocked, capture the error message and browser version and open a support ticket.', ARRAY['login','auth']),
 ('Trial activation / access', 'trial-activation', 'If trial does not activate:\n1) Sign out, sign back in\n2) Confirm email verification in Google\n3) If subscription shows Free • Inactive after refresh, open a support ticket.', ARRAY['trial','billing']),
 ('Billing / subscription / cancel', 'billing-subscription', 'Billing tips:\n1) Plan switches take up to 2 minutes to reflect\n2) To cancel, go to Manage Billing in the top bar\n3) If payment fails, try another card or contact support with last 4 digits (only).', ARRAY['billing']),
 ('Mic permissions and browser settings', 'mic-permissions', 'For voice features:\n1) In Chrome/Edge, click the mic icon in the address bar and allow mic access\n2) Ensure OS mic permissions are on\n3) If still muted, restart the browser and retry.', ARRAY['voice','mic']),

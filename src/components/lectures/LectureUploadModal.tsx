@@ -1,11 +1,24 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { X, FileAudio, Loader2, HelpCircle, ExternalLink } from "lucide-react";
+import {
+  X,
+  FileAudio,
+  Loader2,
+  HelpCircle,
+  ExternalLink,
+  AlertCircle,
+} from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { parsePanoptoTitle } from "@/lib/panopto-parser";
 import UserModulesSelect from "@/components/modules/UserModulesSelect";
 import LecturerSelect from "@/components/lecturers/LecturerSelect";
+import InterventionBanner from "@/components/forms/InterventionBanner";
+import {
+  classifyContent,
+  normalizeTitle,
+  isPanoptoUrl,
+} from "@/lib/guards/smartInputGuards";
 
 interface LectureUploadModalProps {
   isOpen: boolean;
@@ -106,6 +119,60 @@ export default function LectureUploadModal({
   const [showHelp, setShowHelp] = useState(false);
   const [isFetchingMetadata, setIsFetchingMetadata] = useState(false);
 
+  // Intervention State
+  const [intervention, setIntervention] = useState<{
+    isVisible: boolean;
+    message: string;
+    suggestion?: string;
+    actionLabel?: string;
+    onAction?: () => void;
+  }>({ isVisible: false, message: "" });
+
+  // Autosave Effect
+  useEffect(() => {
+    if (!isOpen || isEditMode) return;
+
+    // Load draft
+    const saved = localStorage.getItem("caseway_lecture_draft");
+    if (saved) {
+      try {
+        const draft = JSON.parse(saved);
+        if (draft.title || draft.transcript || draft.panoptoUrl) {
+          setIntervention({
+            isVisible: true,
+            message: "We found an unsaved draft from last time. Restore it?",
+            actionLabel: "Restore draft",
+            onAction: () => {
+              if (draft.title && !title) setTitle(draft.title);
+              if (draft.transcript && !transcript)
+                setTranscript(draft.transcript);
+              if (draft.panoptoUrl && !panoptoUrl)
+                setPanoptoUrl(draft.panoptoUrl);
+              setIntervention({ isVisible: false, message: "" });
+            },
+          });
+        }
+      } catch (e) {
+        console.warn("Failed to restore draft", e);
+      }
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (!isOpen || isEditMode) return;
+    const timer = setTimeout(() => {
+      localStorage.setItem(
+        "caseway_lecture_draft",
+        JSON.stringify({
+          title,
+          transcript,
+          panoptoUrl,
+        }),
+      );
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, [title, transcript, panoptoUrl]);
+
   if (!isOpen) return null;
 
   // Handle Update (Edit Mode)
@@ -158,9 +225,15 @@ export default function LectureUploadModal({
     }
   };
 
-  const handleAudioUpload = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedFile || !title) return;
+    if (!selectedFile || !title) {
+      setIntervention({
+        isVisible: true,
+        message: "Add at least one: audio, transcript, or a lecture link — then you can save.",
+        actionLabel: "Got it",
+        onAction: () => setIntervention({ isVisible: false, message: "" })
+      });
+      return;
+    }
 
     setUploading(true);
     setUploadProgress(10);
@@ -243,9 +316,39 @@ export default function LectureUploadModal({
     }
   };
 
-  const handlePanoptoImport = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!transcript || !title) return;
+    if (!title) {
+      setIntervention({
+        isVisible: true,
+        message: "Add a title to save this lecture.",
+        actionLabel: "Got it",
+        onAction: () => setIntervention({ isVisible: false, message: "" })
+      });
+      return;
+    }
+
+    if (!transcript && !panoptoUrl) {
+      setIntervention({
+        isVisible: true,
+        message: "Add at least one: audio, transcript, or a lecture link — then you can save.",
+        actionLabel: "Got it",
+        onAction: () => setIntervention({ isVisible: false, message: "" })
+      });
+      return;
+    }
+
+    if (transcript && transcript.length < 100 && panoptoUrl && transcript.includes(panoptoUrl)) {
+       setIntervention({
+        isVisible: true,
+        message: "Your transcript looks like it’s only a link. Move it to Link, or add transcript/audio to continue.",
+        actionLabel: "Move to Link",
+        onAction: () => {
+          setPanoptoUrl(transcript);
+          setTranscript("");
+          setIntervention({ isVisible: false, message: "" });
+        }
+      });
+      return;
+    }
 
     setUploading(true);
     setUploadProgress(10);
@@ -280,6 +383,9 @@ export default function LectureUploadModal({
         throw new Error(resData.error || "Failed to import lecture");
       }
 
+      // Clear autosave on success
+      localStorage.removeItem("caseway_lecture_draft");
+
       setUploadProgress(100);
       resetForm();
       onSuccess();
@@ -296,6 +402,42 @@ export default function LectureUploadModal({
     } finally {
       setUploading(false);
       setUploadProgress(0);
+    }
+  };
+
+  const handleTranscriptChange = (
+    e: React.ChangeEvent<HTMLTextAreaElement>,
+  ) => {
+    const val = e.target.value;
+    setTranscript(val);
+
+    // Guard: URL pasted in transcript
+    if (val.length > 10 && val.includes("http") && isPanoptoUrl(val)) {
+      setIntervention({
+        isVisible: true,
+        message: "That looks like a link. Transcript is the spoken text.",
+        suggestion:
+          "If this is the lecture link, it’s better in the Link field.",
+        actionLabel: "Move to Link",
+        onAction: () => {
+          setPanoptoUrl(val);
+          setTranscript("");
+          setIntervention({ isVisible: false, message: "" });
+        },
+      });
+    } else if (
+      intervention.isVisible &&
+      intervention.message ===
+        "That looks like a link. Transcript is the spoken text."
+    ) {
+      setIntervention({ ...intervention, isVisible: false });
+    }
+  };
+
+  const handleTitleBlur = () => {
+    const normalized = normalizeTitle(title);
+    if (normalized !== title) {
+      setTitle(normalized);
     }
   };
 
@@ -427,10 +569,9 @@ export default function LectureUploadModal({
             <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 p-3 rounded-lg flex gap-3 text-sm text-blue-800 dark:text-blue-200">
               <FileAudio className="w-5 h-5 flex-shrink-0" />
               <div>
-                <p className="font-bold mb-1">Fastest & Most Accurate Method</p>
+                <p className="font-bold mb-1">Best results: audio or a full transcript</p>
                 <p>
-                  In Panopto, verify the captions are decent, then copy and
-                  paste them below.
+                  A link alone works, but gives less detail. Paste transcript below if available.
                 </p>
               </div>
             </div>
@@ -457,6 +598,7 @@ export default function LectureUploadModal({
               type="text"
               value={title}
               onChange={handleTitleChange}
+              onBlur={handleTitleBlur}
               placeholder={
                 mode === "panopto"
                   ? "e.g., Contract Law - Week 3"
@@ -695,9 +837,20 @@ export default function LectureUploadModal({
                   </div>
                 </div>
 
+                <InterventionBanner
+                  isVisible={intervention.isVisible}
+                  message={intervention.message}
+                  suggestion={intervention.suggestion}
+                  actionLabel={intervention.actionLabel}
+                  onAction={intervention.onAction}
+                  onDismiss={() =>
+                    setIntervention({ ...intervention, isVisible: false })
+                  }
+                />
+
                 <textarea
                   value={transcript}
-                  onChange={(e) => setTranscript(e.target.value)}
+                  onChange={handleTranscriptChange}
                   placeholder="Paste captions here..."
                   className="w-full px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg font-mono text-sm h-48 focus:ring-2 focus:ring-purple-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
                   required

@@ -7,8 +7,11 @@ import {
   CheckCircle2,
   AlertCircle,
   ChevronRight,
+  Trash2,
 } from "lucide-react";
 import Link from "next/link";
+import { getSupabaseClient } from "@/lib/supabase/client";
+import toast from "react-hot-toast";
 
 interface Lecture {
   id: string;
@@ -30,6 +33,7 @@ interface Lecture {
 
 interface LectureCardProps {
   lecture: Lecture;
+  onDelete?: (id: string) => void;
 }
 
 const statusConfig: any = {
@@ -129,20 +133,54 @@ export default function LectureCard({ lecture }: LectureCardProps) {
             <div className="flex items-center justify-between mt-2">
               {/* Date */}
               <span className="text-xs text-gray-400">
-                {lecture.lecture_date
+                 {lecture.lecture_date
                   ? formatDate(lecture.lecture_date)
                   : formatDate(lecture.created_at)}
               </span>
 
-              {/* Status Badge */}
-              <span
-                className={`flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full ${status.bg} ${status.color}`}
-              >
-                <StatusIcon
-                  className={`w-3 h-3 ${isProcessing ? "animate-spin" : ""}`}
-                />
-                {status.label}
-              </span>
+              <div className="flex flex-wrap items-center gap-1.5 mt-2">
+                {/* L-STATUS chips */}
+                {/* Link Chip */}
+                {lecture.panopto_url ? (
+                  <span className="bg-blue-50 text-blue-600 text-[10px] px-1.5 py-0.5 rounded font-medium">Link added</span>
+                ) : (
+                  <span className="bg-gray-50 text-gray-400 text-[10px] px-1.5 py-0.5 rounded font-medium">No link</span>
+                )}
+                
+                {/* Audio/Transcript Status (Approximation based on available fields) */}
+                {lecture.status === 'ready' ? (
+                   <span className="bg-green-50 text-green-600 text-[10px] px-1.5 py-0.5 rounded font-medium">Transcript ready</span>
+                ) : lecture.status === 'error' ? (
+                   <span className="bg-red-50 text-red-600 text-[10px] px-1.5 py-0.5 rounded font-medium">Transcript missing</span>
+                ) : (
+                   <span className="bg-yellow-50 text-yellow-600 text-[10px] px-1.5 py-0.5 rounded font-medium">Processing...</span>
+                )}
+              </div>
+
+              <div className="flex items-center justify-between mt-2">
+                <div className="flex items-center gap-2">
+                  {onDelete && (
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      onDelete(lecture.id);
+                    }}
+                    className="p-1 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded transition-colors opacity-0 group-hover:opacity-100"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                )}
+                {/* Status Badge */}
+                <span
+                  className={`flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full ${status.bg} ${status.color}`}
+                >
+                  <StatusIcon
+                    className={`w-3 h-3 ${isProcessing ? "animate-spin" : ""}`}
+                  />
+                  {status.label}
+                </span>
+              </div>
             </div>
           </div>
         </div>

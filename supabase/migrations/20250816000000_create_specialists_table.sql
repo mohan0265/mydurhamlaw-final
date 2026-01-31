@@ -1,4 +1,4 @@
--- Create specialists table for MyDurhamLaw
+-- Create specialists table for Caseway
 
 -- Specialists table to store professional advisors
 create table if not exists specialists (

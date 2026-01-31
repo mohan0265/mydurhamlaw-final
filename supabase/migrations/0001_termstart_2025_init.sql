@@ -1,5 +1,5 @@
 
--- MyDurhamLaw Termstart 2025 - Complete Schema Migration
+-- Caseway Termstart 2025 - Complete Schema Migration
 -- This migration creates all tables required for the 72-hour upgrade
 
 -- Enable RLS

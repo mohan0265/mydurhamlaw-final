@@ -1,8 +1,9 @@
-# MyDurhamLaw - Complete Deployment Guide
+# Caseway - Complete Deployment Guide
 
 ## 🚀 Quick Start
 
 ### Prerequisites
+
 - Node.js 18.18.0 or higher
 - npm 9.0.0 or higher
 - Supabase account
@@ -11,11 +12,13 @@
 ### 1. Environment Setup
 
 1. Copy environment template:
+
 ```bash
 cp .env.example .env.local
 ```
 
 2. Configure your environment variables in `.env.local`:
+
 ```env
 # Required - Supabase Configuration
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
@@ -24,7 +27,7 @@ SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
 
 # Required - Application
 NEXT_PUBLIC_APP_URL=http://localhost:3000
-NEXT_PUBLIC_APP_NAME=MyDurhamLaw AI Study App
+NEXT_PUBLIC_APP_NAME=Caseway
 
 # Optional - AI Features
 OPENAI_API_KEY=your_openai_api_key
@@ -35,6 +38,7 @@ ELEVENLABS_API_KEY=your_elevenlabs_api_key
 
 1. Create a new Supabase project
 2. Run the migrations:
+
 ```bash
 supabase migration up
 ```
@@ -84,6 +88,7 @@ npm start
 ### Other Platforms
 
 The application is a standard Next.js app and can be deployed to:
+
 - Railway
 - Render
 - AWS Amplify
@@ -120,6 +125,7 @@ NEXTAUTH_URL=your_production_url
 ## 📱 Features Overview
 
 ### Core Features
+
 - ✅ User authentication via Supabase Auth
 - ✅ Academic calendar and planner
 - ✅ Study materials management
@@ -128,12 +134,14 @@ NEXTAUTH_URL=your_production_url
 - ✅ Legal tools and resources
 
 ### AI-Powered Features (Optional)
+
 - 🤖 AI study assistant
 - 🎙️ Voice interactions
 - 📝 Writing assistance
 - 📊 Progress analytics
 
 ### Wellbeing Features
+
 - 💚 Mental health resources
 - 🏃 Fitness tracking integration
 - 📱 Mobile-responsive design
@@ -141,6 +149,7 @@ NEXTAUTH_URL=your_production_url
 ## 🛠️ Development
 
 ### Project Structure
+
 ```
 src/
 ├── components/     # React components
@@ -176,6 +185,7 @@ npm run test:e2e     # End-to-end tests
 ### Support
 
 For technical support:
+
 1. Check the documentation
 2. Review error logs
 3. Verify environment configuration
@@ -191,5 +201,5 @@ For technical support:
 
 ---
 
-**MyDurhamLaw Team**  
-*AI-powered legal education for Durham University students*
+**Caseway Team**  
+_AI-powered legal education for Durham University students_

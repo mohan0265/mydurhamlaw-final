@@ -1,23 +1,23 @@
-CLAUDE.md — MyDurhamLaw: YAAG + Durmah Integration Plan
+CLAUDE.md — Caseway: YAAG + Durmah Integration Plan
 
 Stack
 Next.js 14 (pages/), TypeScript, Tailwind, @tanstack/react-query@^5, Supabase Auth + DB, Netlify.
 
 Repo anchors
 
-App shell: src/pages/_app.tsx, src/layout/LayoutShell.tsx
+App shell: src/pages/\_app.tsx, src/layout/LayoutShell.tsx
 
 Hooks: src/lib/hooks/useCalendarData.ts
 
 YAAG pages: src/pages/year-at-a-glance/{index.tsx,month.tsx,week.tsx}
 
-Calendar components: src/components/calendar/*
+Calendar components: src/components/calendar/\*
 
 Durham data: src/data/durham/llb
 
-Supabase bridge & auth: src/lib/supabase/* (includes supabaseBridge.ts, AuthContext.tsx)
+Supabase bridge & auth: src/lib/supabase/\* (includes supabaseBridge.ts, AuthContext.tsx)
 
-Planner (legacy): src/pages/planner/** (to be rationalized)
+Planner (legacy): src/pages/planner/\*\* (to be rationalized)
 
 Mission Objectives (P0)
 
@@ -47,7 +47,7 @@ Month View: default to October 2025 when in vacation; shows 0 “lectures” for
 
 Week View: defaults to first teaching week when in vacation; shows merged schedule (official + student-provided) and tags student items.
 
-DurmahWidget receives window.__mdlStudentContext = { userId, university:'Durham', programme:'LLB', yearGroup:'year1|year2|...', academicYear:'2025/26', modules:[...] } at mount time.
+DurmahWidget receives window.\_\_mdlStudentContext = { userId, university:'Durham', programme:'LLB', yearGroup:'year1|year2|...', academicYear:'2025/26', modules:[...] } at mount time.
 
 Contribute saves to Supabase (student_topics or similar) only after a checkbox confirmation that warns “this updates your planner everywhere”.
 
@@ -141,40 +141,39 @@ Show a success toast; list last 5 contributed items below.
 DB expectation (Claude: create if missing, SQL example for reference—DO NOT run here):
 
 table student_topics (
-  id uuid primary key default gen_random_uuid(),
-  user_id uuid not null,
-  academic_year text not null default '2025/26',
-  year_key text not null, -- foundation|year1|year2|year3
-  term text not null,     -- michaelmas|epiphany|easter
-  week int not null,
-  module_code text,
-  day text,               -- Mon|Tue|Wed|Thu|Fri
-  title text,
-  notes text,
-  location text,
-  start_time text,
-  end_time text,
-  created_at timestamptz default now()
+id uuid primary key default gen_random_uuid(),
+user_id uuid not null,
+academic_year text not null default '2025/26',
+year_key text not null, -- foundation|year1|year2|year3
+term text not null, -- michaelmas|epiphany|easter
+week int not null,
+module_code text,
+day text, -- Mon|Tue|Wed|Thu|Fri
+title text,
+notes text,
+location text,
+start_time text,
+end_time text,
+created_at timestamptz default now()
 )
 
 F) Durmah Integration (P0)
 
-Edit src/lib/supabase/supabaseBridge.ts + src/pages/_app.tsx:
+Edit src/lib/supabase/supabaseBridge.ts + src/pages/\_app.tsx:
 
 At client mount, construct and attach:
 
 // window scope
-window.__mdlStudentContext = {
-  userId: session?.user?.id || '',
-  university: 'Durham University',
-  programme: userProfile?.user_type || 'LLB',
-  yearGroup: normalizedYearGroup, // 'foundation' | 'year1' | 'year2' | 'year3'
-  academicYear: '2025/26',
-  modules: currentPlan.modules.map(m => ({ code: m.code, title: m.title, credits: m.credits }))
+window.\_\_mdlStudentContext = {
+userId: session?.user?.id || '',
+university: 'Durham University',
+programme: userProfile?.user_type || 'LLB',
+yearGroup: normalizedYearGroup, // 'foundation' | 'year1' | 'year2' | 'year3'
+academicYear: '2025/26',
+modules: currentPlan.modules.map(m => ({ code: m.code, title: m.title, credits: m.credits }))
 };
 
-
-Pass this object into DurmahWidget via prop or let widget read window.__mdlStudentContext on mount.
+Pass this object into DurmahWidget via prop or let widget read window.\_\_mdlStudentContext on mount.
 
 If no session, provide a minimal anonymous object (no writes).
 
@@ -186,17 +185,17 @@ src/pages/year-at-a-glance/{index.tsx,month.tsx,week.tsx}
 
 src/components/calendar/{YearView.tsx,MonthView.tsx,WeekView.tsx,DayDrawer.tsx,SemesterColumn.tsx,TimeBlock.tsx,ModuleGroup.tsx,TopicItem.tsx}
 
-src/pages/planner/[year]/** only if you still want deep-linked planner. Otherwise, redirect to the new YAAG.
+src/pages/planner/[year]/\*\* only if you still want deep-linked planner. Otherwise, redirect to the new YAAG.
 
 REMOVE/QUARANTINE (move to .backups/legacy-planner/)
 
-src/components/planner/{Enhanced* , YearAtAGlanceView.tsx} (old versions)
+src/components/planner/{Enhanced\* , YearAtAGlanceView.tsx} (old versions)
 
 src/pages/planner/year-at-a-glance.tsx
 
-src/pages/planner/year-at-a-glance/** (index redirect + duplicates)
+src/pages/planner/year-at-a-glance/\*\* (index redirect + duplicates)
 
-Any calendar duplicates in src/planner/* that are not used by routes
+Any calendar duplicates in src/planner/\* that are not used by routes
 
 The internal helper note: src/features/calendar/GEMINI.md (was an assistant doc; move to .backups/)
 
@@ -212,34 +211,39 @@ Optionally, add ?kind=within-term to only return teaching-week items.
 
 “Done” Checklist (for Claude to tick off)
 
- YearView columns show plan modules and filtered upcoming items
+YearView columns show plan modules and filtered upcoming items
 
- Month default jumps to October 2025 during vacation; no fake August/Sept lectures
+Month default jumps to October 2025 during vacation; no fake August/Sept lectures
 
- Week default jumps to first teaching week; merges student_topics with badge
+Week default jumps to first teaching week; merges student_topics with badge
 
- DurmahWidget receives window.__mdlStudentContext and detects programme/year correctly
+DurmahWidget receives window.\_\_mdlStudentContext and detects programme/year correctly
 
- /tools/contribute inserts into Supabase and reflects in Week/Month
+/tools/contribute inserts into Supabase and reflects in Week/Month
 
- Old planner/duplicate calendar files moved to .backups/legacy-planner/
+Old planner/duplicate calendar files moved to .backups/legacy-planner/
 
- npm run type-check and npm run build both succeed locally
+npm run type-check and npm run build both succeed locally
 
- Netlify deploy → green
+Netlify deploy → green
 
 Commands (Claude can run in “Claude Code”)
+
 # sanity
+
 npm ci
 npm run type-check
 
 # build
+
 npm run build
 
 # if Netlify warns about swc, just run locally once to patch cache
+
 npm run build
 
 # optional: create backups folder for legacy pages
+
 mkdir -p .backups/legacy-planner
 
 Notes for Claude
@@ -268,20 +272,18 @@ const programme = userProfile?.user_type || 'LLB'
 const userYearGroup = (userProfile?.year_group || 'year1').toLowerCase().replace(/\s/g, '') as 'foundation'|'year1'|'year2'|'year3'
 const plan = getDefaultPlanByStudentYear(userYearGroup)
 
-
 Filter events to a window
 
 const within = (e: { start_at?: string }, startISO: string, endISO: string) => {
-  if (!e?.start_at) return false
-  const d = new Date(e.start_at).getTime()
-  return d >= new Date(startISO).getTime() && d <= new Date(endISO).getTime()
+if (!e?.start_at) return false
+const d = new Date(e.start_at).getTime()
+return d >= new Date(startISO).getTime() && d <= new Date(endISO).getTime()
 }
-
 
 Default to October 2025
 
 const DEFAULT_MONTH = 10 // October
-const DEFAULT_YEAR  = 2025
+const DEFAULT_YEAR = 2025
 
 Escalations / Edge Cases
 
@@ -292,6 +294,7 @@ If plan is missing (shouldn’t happen), show a friendly “plan unavailable” 
 If student submits Contribute without module_code, accept it but flag “(Unspecified module)” in the UI.
 
 End of CLAUDE.md
+
 ### Data verification status
 
 - Durham LLB 2025/26: ✅ Verified and implemented (Europe/London TZ)

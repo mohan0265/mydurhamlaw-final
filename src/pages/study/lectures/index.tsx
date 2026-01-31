@@ -12,11 +12,14 @@ import {
   Plus,
   RefreshCw,
   FileAudio,
-  FileText,
   ExternalLink,
+  Trash2,
 } from "lucide-react";
 import dynamic from "next/dynamic";
 import { useStudentOnly } from "@/hooks/useStudentOnly";
+import { useUndoToast } from "@/hooks/useUndoToast";
+import { getSupabaseClient } from "@/lib/supabase/client";
+import toast from "react-hot-toast";
 import LecturerList from "@/components/lecturers/LecturerList";
 
 const LectureUploadModal = dynamic(
@@ -177,6 +180,41 @@ export default function LecturesPage() {
 
   const handleUploadSuccess = () => {
     fetchLectures();
+  };
+
+  const { showUndoToast } = useUndoToast();
+
+  const handleDelete = async (id: string) => {
+    const lectureToDelete = lectures.find((l) => l.id === id);
+    if (!lectureToDelete) return;
+
+    if (!confirm(`Are you sure you want to delete "${lectureToDelete.title}"?`))
+      return;
+
+    const supabase = getSupabaseClient();
+    try {
+      const { error } = await supabase.from("lectures").delete().eq("id", id);
+      if (error) throw error;
+
+      toast.success("Lecture removed");
+      fetchLectures();
+
+      showUndoToast(async () => {
+        const { error: restoreError } = await supabase
+          .from("lectures")
+          .insert(lectureToDelete);
+
+        if (restoreError) {
+          toast.error("Failed to restore lecture");
+        } else {
+          toast.success("Lecture restored");
+          fetchLectures();
+        }
+      });
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to delete lecture");
+    }
   };
 
   // Derived unique lecturers from ALL lectures (not just filtered)
@@ -532,7 +570,11 @@ export default function LecturesPage() {
               </div>
               <div className="space-y-3">
                 {processingLectures.map((lecture) => (
-                  <LectureCard key={lecture.id} lecture={lecture} />
+                  <LectureCard
+                    key={lecture.id}
+                    lecture={lecture}
+                    onDelete={handleDelete}
+                  />
                 ))}
               </div>
             </div>
@@ -546,7 +588,11 @@ export default function LecturesPage() {
               </h2>
               <div className="space-y-3">
                 {errorLectures.map((lecture) => (
-                  <LectureCard key={lecture.id} lecture={lecture} />
+                  <LectureCard
+                    key={lecture.id}
+                    lecture={lecture}
+                    onDelete={handleDelete}
+                  />
                 ))}
               </div>
             </div>
@@ -637,7 +683,11 @@ export default function LecturesPage() {
             ) : (
               <div className="space-y-3">
                 {readyLectures.map((lecture) => (
-                  <LectureCard key={lecture.id} lecture={lecture} />
+                  <LectureCard
+                    key={lecture.id}
+                    lecture={lecture}
+                    onDelete={handleDelete}
+                  />
                 ))}
               </div>
             )}

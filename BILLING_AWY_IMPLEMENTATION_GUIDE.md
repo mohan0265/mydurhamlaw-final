@@ -1,13 +1,13 @@
-
-# MyDurhamLaw - Billing, Trial & Enhanced AWY Implementation Guide
+# Caseway - Billing, Trial & Enhanced AWY Implementation Guide
 
 ## 🎯 Overview
 
-This implementation adds comprehensive billing, subscription management, and enhanced Always With You (AWY) features to the MyDurhamLaw application.
+This implementation adds comprehensive billing, subscription management, and enhanced Always With You (AWY) features to the Caseway application.
 
 ## 📋 Features Implemented
 
 ### 1. Billing & Subscription System
+
 - **Subscription Plans**: Free Trial, Student Basic, Student Premium, Student Pro
 - **Trial Management**: 14-day free trial with automatic expiration handling
 - **Usage Tracking**: Monitor AI chat usage, AWY connections, and other features
@@ -15,6 +15,7 @@ This implementation adds comprehensive billing, subscription management, and enh
 - **Plan Management**: Upgrade, downgrade, cancel, and reactivate subscriptions
 
 ### 2. Enhanced AWY (Always With You)
+
 - **Advanced Connections**: Relationship-based connections with permissions
 - **Real-time Presence**: Enhanced presence tracking with mood and activity status
 - **Interactions**: Wave, heart, thinking of you, and quick messages
@@ -22,6 +23,7 @@ This implementation adds comprehensive billing, subscription management, and enh
 - **Notifications**: Real-time notifications for all AWY activities
 
 ### 3. User Interface Components
+
 - **Subscription Status Widget**: Shows current plan and trial information
 - **Pricing Plans Page**: Beautiful pricing display with feature comparison
 - **Trial Banner**: Prominent trial expiration warnings
@@ -61,7 +63,7 @@ Run the SQL schema files in your Supabase dashboard:
 -- 1. First run the billing schema
 -- Execute: src/sql/billing_schema.sql
 
--- 2. Then run the enhanced AWY schema  
+-- 2. Then run the enhanced AWY schema
 -- Execute: src/sql/enhanced_awy_schema.sql
 ```
 
@@ -143,6 +145,7 @@ src/
 ## 🔧 API Endpoints
 
 ### Billing APIs
+
 - `GET /api/billing/subscription` - Get user subscription info
 - `POST /api/billing/subscription` - Start trial or create subscription
 - `PUT /api/billing/subscription` - Update subscription (cancel/reactivate)
@@ -151,6 +154,7 @@ src/
 - `POST /api/billing/usage` - Track feature usage
 
 ### AWY APIs
+
 - `GET /api/awy/connections` - Get user connections
 - `POST /api/awy/connections` - Create new connection
 - `PUT /api/awy/connections` - Update connection permissions
@@ -169,7 +173,7 @@ src/
 ### 1. Using the Subscription Hook
 
 ```tsx
-import { useSubscription } from '@/hooks/useSubscription';
+import { useSubscription } from "@/hooks/useSubscription";
 
 function MyComponent({ userId }: { userId: string }) {
   const {
@@ -177,7 +181,7 @@ function MyComponent({ userId }: { userId: string }) {
     loading,
     hasFeatureAccess,
     getTrialDaysRemaining,
-    startTrial
+    startTrial,
   } = useSubscription(userId);
 
   if (loading) return <div>Loading...</div>;
@@ -186,18 +190,16 @@ function MyComponent({ userId }: { userId: string }) {
     <div>
       <h2>Plan: {subscription?.plan_name}</h2>
       <p>Status: {subscription?.status}</p>
-      
-      {subscription?.status === 'trial' && (
+
+      {subscription?.status === "trial" && (
         <p>Trial expires in {getTrialDaysRemaining()} days</p>
       )}
-      
-      {hasFeatureAccess('Unlimited AI Chat') && (
+
+      {hasFeatureAccess("Unlimited AI Chat") && (
         <div>You have unlimited AI chat access!</div>
       )}
-      
-      {!subscription && (
-        <button onClick={startTrial}>Start Free Trial</button>
-      )}
+
+      {!subscription && <button onClick={startTrial}>Start Free Trial</button>}
     </div>
   );
 }
@@ -206,7 +208,7 @@ function MyComponent({ userId }: { userId: string }) {
 ### 2. Using the Enhanced AWY Hook
 
 ```tsx
-import { useAWYEnhanced } from '@/hooks/useAWYEnhanced';
+import { useAWYEnhanced } from "@/hooks/useAWYEnhanced";
 
 function AWYComponent({ userId }: { userId: string }) {
   const {
@@ -214,14 +216,14 @@ function AWYComponent({ userId }: { userId: string }) {
     getOnlineConnections,
     sendInteraction,
     createConnection,
-    notifications
+    notifications,
   } = useAWYEnhanced(userId);
 
   const handleSendWave = async (connectionId: string) => {
     try {
-      await sendInteraction(connectionId, 'wave');
+      await sendInteraction(connectionId, "wave");
     } catch (error) {
-      console.error('Failed to send wave:', error);
+      console.error("Failed to send wave:", error);
     }
   };
 
@@ -230,11 +232,11 @@ function AWYComponent({ userId }: { userId: string }) {
       <h2>AWY Connections</h2>
       <p>Online: {getOnlineConnections().length}</p>
       <p>Notifications: {notifications.length}</p>
-      
-      {connections.map(connection => (
+
+      {connections.map((connection) => (
         <div key={connection.id}>
           <span>{connection.relationship_label}</span>
-          {connection.status === 'active' && (
+          {connection.status === "active" && (
             <button onClick={() => handleSendWave(connection.id)}>
               Send Wave
             </button>
@@ -250,16 +252,16 @@ function AWYComponent({ userId }: { userId: string }) {
 
 ```tsx
 // In your dashboard or main layout
-import { TrialBanner } from '@/components/billing/TrialBanner';
-import { EnhancedAWYWidget } from '@/components/awy/EnhancedAWYWidget';
+import { TrialBanner } from "@/components/billing/TrialBanner";
+import { EnhancedAWYWidget } from "@/components/awy/EnhancedAWYWidget";
 
 function Dashboard({ user }) {
   return (
     <div>
-      <TrialBanner userId={user.id} onUpgrade={() => router.push('/billing')} />
-      
+      <TrialBanner userId={user.id} onUpgrade={() => router.push("/billing")} />
+
       {/* Your existing dashboard content */}
-      
+
       <EnhancedAWYWidget userId={user.id} />
     </div>
   );
@@ -269,12 +271,15 @@ function Dashboard({ user }) {
 ## 🔒 Security Considerations
 
 ### Row Level Security (RLS)
+
 All tables have RLS enabled with appropriate policies:
+
 - Users can only access their own subscription data
 - AWY connections respect privacy settings
 - Service role can manage all data for admin operations
 
 ### API Security
+
 - All APIs require authentication
 - User ID validation on all operations
 - Input sanitization and validation
@@ -283,6 +288,7 @@ All tables have RLS enabled with appropriate policies:
 ## 🚦 Testing
 
 ### 1. Database Testing
+
 ```sql
 -- Test subscription creation
 SELECT start_user_trial('user-uuid-here');
@@ -300,6 +306,7 @@ SELECT create_awy_connection(
 ```
 
 ### 2. API Testing
+
 ```bash
 # Test subscription endpoint
 curl -X GET http://localhost:3000/api/billing/subscription \
@@ -319,40 +326,43 @@ If you have existing AWY data, run this migration:
 ```sql
 -- Migrate existing parent connections to new AWY system
 INSERT INTO awy_connections (user_id, connection_email, relationship_label, display_name, status)
-SELECT 
+SELECT
   id as user_id,
   parent1_email as connection_email,
   parent1_relationship as relationship_label,
   parent1_display_name as display_name,
   'active' as status
-FROM profiles 
+FROM profiles
 WHERE parent1_email IS NOT NULL;
 
 -- Repeat for parent2 if needed
 INSERT INTO awy_connections (user_id, connection_email, relationship_label, display_name, status)
-SELECT 
+SELECT
   id as user_id,
   parent2_email as connection_email,
   parent2_relationship as relationship_label,
   parent2_display_name as display_name,
   'active' as status
-FROM profiles 
+FROM profiles
 WHERE parent2_email IS NOT NULL;
 ```
 
 ## 🎯 Next Steps
 
 ### 1. Payment Integration
+
 - Integrate Stripe for payment processing
 - Add webhook handlers for subscription events
 - Implement subscription upgrade/downgrade flows
 
 ### 2. Enhanced Features
+
 - Add usage analytics dashboard
 - Implement referral system
 - Add team/group subscriptions for study groups
 
 ### 3. AWY Enhancements
+
 - Implement WebRTC video calling
 - Add screen sharing capabilities
 - Create mobile app companion
@@ -360,6 +370,7 @@ WHERE parent2_email IS NOT NULL;
 ## 📞 Support
 
 For implementation support or questions:
+
 1. Check the API responses for detailed error messages
 2. Review the database logs in Supabase
 3. Test individual components in isolation
@@ -367,6 +378,6 @@ For implementation support or questions:
 
 ## 🎉 Conclusion
 
-This implementation provides a complete billing and enhanced AWY system for MyDurhamLaw. The modular design allows for easy customization and extension while maintaining security and performance standards.
+This implementation provides a complete billing and enhanced AWY system for Caseway. The modular design allows for easy customization and extension while maintaining security and performance standards.
 
 The system is designed to scale with your user base and can be easily extended with additional features as needed.

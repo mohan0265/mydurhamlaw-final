@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS access_allowlist (
 );
 
 -- Comments
-COMMENT ON TABLE access_allowlist IS 'Controls who can access MyDurhamLaw - Durham students only with trial management';
+COMMENT ON TABLE access_allowlist IS 'Controls who can access Caseway - Durham students only with trial management';
 COMMENT ON COLUMN access_allowlist.email IS 'Lowercase email address (must be @durham.ac.uk)';
 COMMENT ON COLUMN access_allowlist.status IS 'active = allowed, blocked = denied, pending = awaiting approval';
 COMMENT ON COLUMN access_allowlist.role IS 'student = normal user, admin = can manage allowlist';

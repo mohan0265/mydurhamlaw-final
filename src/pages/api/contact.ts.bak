@@ -42,13 +42,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Use safe defaults
     const to = process.env.CONTACT_TO || 'admin@saversmed.com';
     // NOTE: onboarding@resend.dev is allowed for testing if you haven’t verified a domain yet
-    const from = process.env.CONTACT_FROM || 'MyDurhamLaw <onboarding@resend.dev>';
-    const safeSubject = (subject || 'New enquiry from MyDurhamLaw').slice(0, 200);
+    const from = process.env.CONTACT_FROM || 'Caseway <onboarding@resend.dev>';
+    const safeSubject = (subject || 'New enquiry from Caseway').slice(0, 200);
 
     const html = `
       <div style="font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; line-height:1.6; max-width:640px; margin:auto">
         <div style="background:linear-gradient(90deg,#6d28d9,#4338ca); color:#fff; padding:18px 20px; border-radius:10px 10px 0 0">
-          <h1 style="margin:0; font-size:20px;">MyDurhamLaw – New Contact Form Message</h1>
+          <h1 style="margin:0; font-size:20px;">Caseway – New Contact Form Message</h1>
         </div>
         <div style="border:1px solid #e5e7eb; border-top:0; padding:20px;">
           <p><strong>Name:</strong> ${escapeHtml(name)}</p>
@@ -62,7 +62,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           </div>
         </div>
         <div style="color:#6b7280; font-size:12px; text-align:center; margin-top:10px">
-          Sent from the contact form on mydurhamlaw.com
+          Sent from the contact form on caseway.ai
         </div>
       </div>
     `;
@@ -71,7 +71,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const payload: any = {
       from,
       to,
-      subject: `MyDurhamLaw – ${safeSubject}`,
+      subject: `Caseway – ${safeSubject}`,
       html,
       text: stripHtml(`${name} <${email}> wrote:\n\n${message}`),
     };

@@ -168,7 +168,7 @@ export const TourProvider: React.FC<{ children: React.ReactNode }> = ({
           showSkipButton
           disableOverlayClose={true}
           spotlightClicks={true}
-          disableBeacon={true}
+          // disableBeacon={true}
           callback={handleJoyrideCallback}
           styles={styles}
           tooltipComponent={TourTooltip}

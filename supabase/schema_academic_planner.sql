@@ -1,4 +1,4 @@
--- Academic Planner schema for MyDurhamLaw
+-- Academic Planner schema for Caseway
 -- Uses integer PKs to avoid uuid extension requirements
 
 create table if not exists terms (

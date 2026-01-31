@@ -2,6 +2,7 @@
 // Creates a lecture record and returns a signed upload URL for direct client upload
 import type { NextApiRequest, NextApiResponse } from "next";
 import { createPagesServerClient } from "@supabase/auth-helpers-nextjs";
+import { normalizeTitle } from "@/lib/guards/smartInputGuards";
 
 const ALLOWED_EXTENSIONS = ["mp3", "m4a", "wav", "webm", "ogg"];
 const ALLOWED_MIMES = [
@@ -45,8 +46,9 @@ export default async function handler(
     } = req.body;
 
     // Validate required fields
-    if (!title) {
-      return res.status(400).json({ error: "Title is required" });
+    const normalizedTitle = normalizeTitle(title || "");
+    if (!normalizedTitle || normalizedTitle.length < 3) {
+      return res.status(400).json({ error: "Title is too short or invalid" });
     }
     if (!audio_ext || !audio_mime) {
       return res.status(400).json({ error: "Audio file info required" });
@@ -74,7 +76,7 @@ export default async function handler(
         module_code: module_code || null,
         module_name: module_name || null,
         lecturer_name: lecturer_name || null,
-        title,
+        title: normalizedTitle,
         lecture_date: lecture_date || null,
         audio_path: audioPath,
         audio_mime: audio_mime,

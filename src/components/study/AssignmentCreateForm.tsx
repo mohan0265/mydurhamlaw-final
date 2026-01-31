@@ -1,10 +1,25 @@
-import { useState } from 'react';
-import { getSupabaseClient } from '@/lib/supabase/client';
-import { useAuth } from '@/lib/supabase/AuthContext';
-import { Loader2, Calendar as CalendarIcon, Save, X, Upload, FileText, CheckCircle } from 'lucide-react';
-import toast from 'react-hot-toast';
+import { useState } from "react";
+import { getSupabaseClient } from "@/lib/supabase/client";
+import { useAuth } from "@/lib/supabase/AuthContext";
+import {
+  Loader2,
+  Calendar as CalendarIcon,
+  Save,
+  X,
+  Upload,
+  FileText,
+  CheckCircle,
+  AlertCircle,
+} from "lucide-react";
+import toast from "react-hot-toast";
+import InterventionBanner from "@/components/forms/InterventionBanner";
+import {
+  normalizeTitle,
+  isSuspiciousDate,
+} from "@/lib/guards/smartInputGuards";
+import { useEffect } from "react";
 
-import { Assignment } from '@/types/assignments';
+import { Assignment } from "@/types/assignments";
 
 interface AssignmentCreateFormProps {
   onCancel: () => void;
@@ -13,78 +28,156 @@ interface AssignmentCreateFormProps {
   initialData?: Assignment; // For editing
 }
 
-export default function AssignmentCreateForm({ onCancel, onSave, initialDate, initialData }: AssignmentCreateFormProps) {
+export default function AssignmentCreateForm({
+  onCancel,
+  onSave,
+  initialDate,
+  initialData,
+}: AssignmentCreateFormProps) {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [uploadedFileData, setUploadedFileData] = useState<any>(null); // Store upload result for linking
-  
+
   const [formData, setFormData] = useState({
-    title: initialData?.title || '',
-    module_code: initialData?.module_code || '',
-    module_name: initialData?.module_name || '',
-    assignment_type: initialData?.assignment_type || 'Essay',
-    due_date: initialData?.due_date 
-      ? new Date(initialData.due_date).toISOString().split('T')[0] 
-      : (initialDate ? initialDate.toISOString().split('T')[0] : ''),
-    due_time: initialData?.due_date 
-      ? new Date(initialData.due_date).toLocaleTimeString('en-GB', { timeZone: 'Europe/London', hour: '2-digit', minute:'2-digit'})
-      : '12:00',
-    question_text: initialData?.question_text || '',
-    estimated_effort_hours: initialData?.estimated_effort_hours?.toString() || '',
-    word_limit: initialData?.word_limit?.toString() || '' // NEW: Word limit field
+    title: initialData?.title || "",
+    module_code: initialData?.module_code || "",
+    module_name: initialData?.module_name || "",
+    assignment_type: initialData?.assignment_type || "Essay",
+    due_date: initialData?.due_date
+      ? new Date(initialData.due_date).toISOString().split("T")[0]
+      : initialDate
+        ? initialDate.toISOString().split("T")[0]
+        : "",
+    due_time: initialData?.due_date
+      ? new Date(initialData.due_date).toLocaleTimeString("en-GB", {
+          timeZone: "Europe/London",
+          hour: "2-digit",
+          minute: "2-digit",
+        })
+      : "12:00",
+    question_text: initialData?.question_text || "",
+    estimated_effort_hours:
+      initialData?.estimated_effort_hours?.toString() || "",
+    word_limit: initialData?.word_limit?.toString() || "", // NEW: Word limit field
   });
+
+  // Intervention State
+  const [intervention, setIntervention] = useState<{
+    isVisible: boolean;
+    message: string;
+    suggestion?: string;
+    actionLabel?: string;
+    onAction?: () => void;
+  }>({ isVisible: false, message: "" });
+
+  // Autosave Effect
+  useEffect(() => {
+    if (initialData) return;
+
+    const saved = localStorage.getItem("caseway_assignment_draft");
+    if (saved) {
+      try {
+        const draft = JSON.parse(saved);
+        if (draft.title || draft.question_text) {
+          setIntervention({
+            isVisible: true,
+            message: "We found an unsaved draft. Restore it?",
+            actionLabel: "Restore draft",
+            onAction: () => {
+              setFormData((prev) => ({
+                ...prev,
+                title: draft.title || prev.title,
+                module_code: draft.module_code || prev.module_code,
+                question_text: draft.question_text || prev.question_text,
+                word_limit: draft.word_limit || prev.word_limit,
+              }));
+              setIntervention({ isVisible: false, message: "" });
+            },
+          });
+        }
+      } catch (e) {
+        console.warn("Failed to restore assignment draft", e);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    if (initialData) return;
+    const timer = setTimeout(() => {
+      localStorage.setItem(
+        "caseway_assignment_draft",
+        JSON.stringify({
+          title: formData.title,
+          module_code: formData.module_code,
+          question_text: formData.question_text,
+          word_limit: formData.word_limit,
+        }),
+      );
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, [formData]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
-    if (!formData.title || !formData.due_date) {
-      toast.error("Please enter a title and due date");
+    if (!formData.title) {
+      setIntervention({
+        isVisible: true,
+        message:
+          "Add a title (and a due date if required) to save this assignment.",
+        actionLabel: "Got it",
+        onAction: () => setIntervention({ isVisible: false, message: "" }),
+      });
       return;
     }
 
     setLoading(true);
     const supabase = getSupabaseClient();
-    
+
     // Combine date and time
-    const dueDateTime = new Date(`${formData.due_date}T${formData.due_time || '23:59'}:00`).toISOString();
+    const dueDateTime = new Date(
+      `${formData.due_date}T${formData.due_time || "23:59"}:00`,
+    ).toISOString();
 
     try {
       let data, error;
-      
+
       const payload = {
-          user_id: user.id,
-          title: formData.title,
-          module_code: formData.module_code,
-          module_name: formData.module_name,
-          assignment_type: formData.assignment_type,
-          due_date: dueDateTime,
-          question_text: formData.question_text,
-          estimated_effort_hours: formData.estimated_effort_hours ? parseFloat(formData.estimated_effort_hours) : null,
-          word_limit: formData.word_limit ? parseInt(formData.word_limit) : null, // NEW: Save word limit
-          status: initialData ? initialData.status : 'not_started'
+        user_id: user.id,
+        title: formData.title,
+        module_code: formData.module_code,
+        module_name: formData.module_name,
+        assignment_type: formData.assignment_type,
+        due_date: dueDateTime,
+        question_text: formData.question_text,
+        estimated_effort_hours: formData.estimated_effort_hours
+          ? parseFloat(formData.estimated_effort_hours)
+          : null,
+        word_limit: formData.word_limit ? parseInt(formData.word_limit) : null, // NEW: Save word limit
+        status: initialData ? initialData.status : "not_started",
       };
 
       if (initialData) {
-         // UPDATE
-         const res = await supabase
-           .from('assignments')
-           .update({ ...payload, updated_at: new Date().toISOString() })
-           .eq('id', initialData.id)
-           .select()
-           .single();
-         data = res.data;
-         error = res.error;
+        // UPDATE
+        const res = await supabase
+          .from("assignments")
+          .update({ ...payload, updated_at: new Date().toISOString() })
+          .eq("id", initialData.id)
+          .select()
+          .single();
+        data = res.data;
+        error = res.error;
       } else {
-         // INSERT
-         const res = await supabase
-           .from('assignments')
-           .insert(payload)
-           .select()
-           .single();
-         data = res.data;
-         error = res.error;
+        // INSERT
+        const res = await supabase
+          .from("assignments")
+          .insert(payload)
+          .select()
+          .single();
+        data = res.data;
+        error = res.error;
       }
 
       if (error) throw error;
@@ -93,7 +186,7 @@ export default function AssignmentCreateForm({ onCancel, onSave, initialDate, in
       // Link uploaded file to assignment if exists
       if (newAssignment && uploadedFileData?.uploadedFile) {
         const fileData = uploadedFileData.uploadedFile;
-        await supabase.from('assignment_files').insert({
+        await supabase.from("assignment_files").insert({
           assignment_id: newAssignment.id,
           user_id: user.id,
           bucket: fileData.bucket,
@@ -104,14 +197,21 @@ export default function AssignmentCreateForm({ onCancel, onSave, initialDate, in
         });
       }
 
-      toast.success(initialData ? "Assignment updated!" : "Assignment created!");
-      
+      toast.success(
+        initialData ? "Assignment updated!" : "Assignment created!",
+      );
+
       // FIRE AND FORGET: Mark onboarding task as complete
-      fetch('/api/onboarding/complete', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ task_key: 'add_first_assignment' }),
-      }).catch(err => console.warn('[Onboarding] Failed to mark assignment complete', err));
+      fetch("/api/onboarding/complete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ task_key: "add_first_assignment" }),
+      }).catch((err) =>
+        console.warn("[Onboarding] Failed to mark assignment complete", err),
+      );
+
+      // Clear autosave on success
+      localStorage.removeItem("caseway_assignment_draft");
 
       onSave();
     } catch (err) {
@@ -122,9 +222,44 @@ export default function AssignmentCreateForm({ onCancel, onSave, initialDate, in
     }
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >,
+  ) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
+
+    // Date sanity check
+    if (name === "due_date") {
+      const check = isSuspiciousDate(value);
+      if (check.isSuspicious) {
+        setIntervention({
+          isVisible: true,
+          message:
+            check.reason === "Date in the past"
+              ? "This due date is in the past. Save anyway?"
+              : "This date looks quite far ahead. Save anyway?",
+          suggestion: "Time not set — we’ll use 23:59.",
+          actionLabel: "Save anyway",
+          onAction: () =>
+            setIntervention({ ...intervention, isVisible: false }),
+        });
+      } else if (
+        intervention.isVisible &&
+        (intervention.message.includes("past") ||
+          intervention.message.includes("far ahead"))
+      ) {
+        setIntervention({ ...intervention, isVisible: false });
+      }
+    }
+  };
+
+  const handleTitleBlur = () => {
+    const normalized = normalizeTitle(formData.title);
+    if (normalized !== formData.title) {
+      setFormData((prev) => ({ ...prev, title: normalized }));
+    }
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -132,15 +267,19 @@ export default function AssignmentCreateForm({ onCancel, onSave, initialDate, in
     if (!file) return;
 
     // Validate file type
-    const validTypes = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/msword'];
+    const validTypes = [
+      "application/pdf",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "application/msword",
+    ];
     if (!validTypes.includes(file.type)) {
-      toast.error('Please upload a PDF or Word document');
+      toast.error("Please upload a PDF or Word document");
       return;
     }
 
     // Validate file size (10MB max)
     if (file.size > 10 * 1024 * 1024) {
-      toast.error('File size must be less than 10MB');
+      toast.error("File size must be less than 10MB");
       return;
     }
 
@@ -149,19 +288,19 @@ export default function AssignmentCreateForm({ onCancel, onSave, initialDate, in
 
     try {
       const supabase = getSupabaseClient();
-      if (!supabase || !user) throw new Error('Not authenticated');
+      if (!supabase || !user) throw new Error("Not authenticated");
 
       // Get session token for Bearer auth
       const { data: sessionData } = await supabase.auth.getSession();
       const token = sessionData?.session?.access_token;
-      if (!token) throw new Error('No session token');
+      if (!token) throw new Error("No session token");
 
       // Upload file to assignment_uploads bucket
       const userId = user.id;
       const fileName = `${userId}/${crypto.randomUUID()}-${file.name}`;
-      
+
       const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('assignment-uploads')
+        .from("assignment-uploads")
         .upload(fileName, file, {
           contentType: file.type || undefined,
           upsert: false,
@@ -170,14 +309,14 @@ export default function AssignmentCreateForm({ onCancel, onSave, initialDate, in
       if (uploadError) throw uploadError;
 
       // Call ingest API with Bearer token
-      const parseResponse = await fetch('/api/assignments/ingest-upload', {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
+      const parseResponse = await fetch("/api/assignments/ingest-upload", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          bucket: 'assignment-uploads',
+          bucket: "assignment-uploads",
           path: fileName,
           originalName: file.name,
           mimeType: file.type,
@@ -187,35 +326,40 @@ export default function AssignmentCreateForm({ onCancel, onSave, initialDate, in
 
       if (!parseResponse.ok) {
         const error = await parseResponse.json();
-        throw new Error(error.error || 'Failed to process document');
+        throw new Error(error.error || "Failed to process document");
       }
 
       const result = await parseResponse.json();
-      
+
       // Auto-fill form with extracted data (API now returns extractedData instead of assignment)
       if (result.extractedData) {
         const updates: any = {
           ...formData,
         };
-        
-        if (result.extractedData.title) updates.title = result.extractedData.title;
-        if (result.extractedData.module_code) updates.module_code = result.extractedData.module_code;
-        if (result.extractedData.module_name) updates.module_name = result.extractedData.module_name;
-        if (result.extractedPreview) updates.question_text = result.extractedPreview.slice(0, 500);
-        if (result.extractedData.word_limit) updates.word_limit = result.extractedData.word_limit.toString();
-        
+
+        if (result.extractedData.title)
+          updates.title = result.extractedData.title;
+        if (result.extractedData.module_code)
+          updates.module_code = result.extractedData.module_code;
+        if (result.extractedData.module_name)
+          updates.module_name = result.extractedData.module_name;
+        if (result.extractedPreview)
+          updates.question_text = result.extractedPreview.slice(0, 500);
+        if (result.extractedData.word_limit)
+          updates.word_limit = result.extractedData.word_limit.toString();
+
         // Handle due date if extracted
         if (result.extractedData.due_date) {
           try {
             const date = new Date(result.extractedData.due_date);
             if (!isNaN(date.getTime())) {
-              updates.due_date = date.toISOString().split('T')[0]; // YYYY-MM-DD format
+              updates.due_date = date.toISOString().split("T")[0]; // YYYY-MM-DD format
             }
           } catch {
             // Ignore if can't parse
           }
         }
-        
+
         setFormData(updates);
         // Store uploaded file data for linking after assignment creation
         if (result.uploadedFile) {
@@ -223,10 +367,10 @@ export default function AssignmentCreateForm({ onCancel, onSave, initialDate, in
         }
       }
 
-      toast.success('✅ File uploaded successfully!');
+      toast.success("✅ File uploaded successfully!");
     } catch (error: any) {
-      console.error('Upload error:', error);
-      toast.error(error.message || 'Failed to parse document');
+      console.error("Upload error:", error);
+      toast.error(error.message || "Failed to parse document");
       setUploadedFile(null);
     } finally {
       setUploading(false);
@@ -241,8 +385,14 @@ export default function AssignmentCreateForm({ onCancel, onSave, initialDate, in
             <FileText className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h2 className="text-2xl font-bold text-gray-900">{initialData ? 'Edit Assignment' : 'New Assignment'}</h2>
-            <p className="text-sm text-gray-500">{initialData ? 'Update details below' : 'Add your assignment details below'}</p>
+            <h2 className="text-2xl font-bold text-gray-900">
+              {initialData ? "Edit Assignment" : "New Assignment"}
+            </h2>
+            <p className="text-sm text-gray-500">
+              {initialData
+                ? "Update details below"
+                : "Add your assignment details below"}
+            </p>
           </div>
         </div>
         <button
@@ -259,7 +409,9 @@ export default function AssignmentCreateForm({ onCancel, onSave, initialDate, in
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
               <Upload className="w-5 h-5 text-violet-600" />
-              <h3 className="font-semibold text-gray-800">Upload Assignment Brief (Optional)</h3>
+              <h3 className="font-semibold text-gray-800">
+                Upload Assignment Brief (Optional)
+              </h3>
             </div>
             {uploadedFile && (
               <div className="flex items-center gap-1 text-green-600 text-sm">
@@ -283,9 +435,9 @@ export default function AssignmentCreateForm({ onCancel, onSave, initialDate, in
             <label
               htmlFor="brief-upload"
               className={`flex items-center justify-center gap-2 w-full py-3 px-4 border-2 border-violet-300 rounded-lg font-medium transition-colors cursor-pointer ${
-                uploading 
-                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
-                  : 'bg-white text-violet-600 hover:bg-violet-50'
+                uploading
+                  ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                  : "bg-white text-violet-600 hover:bg-violet-50"
               }`}
             >
               {uploading ? (
@@ -308,12 +460,27 @@ export default function AssignmentCreateForm({ onCancel, onSave, initialDate, in
           </label>
         </div>
 
+        <InterventionBanner
+          isVisible={intervention.isVisible}
+          message={intervention.message}
+          suggestion={intervention.suggestion}
+          actionLabel={intervention.actionLabel}
+          onAction={intervention.onAction}
+          onDismiss={() =>
+            setIntervention({ ...intervention, isVisible: false })
+          }
+          actionLabelSecondary="Dismiss"
+        />
+
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Title <span className="text-red-500">*</span></label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Title <span className="text-red-500">*</span>
+          </label>
           <input
             name="title"
             value={formData.title}
             onChange={handleChange}
+            onBlur={handleTitleBlur}
             placeholder="e.g. Contract Law Essay - Frustration"
             className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-200 focus:border-violet-500 outline-none"
             required
@@ -322,7 +489,9 @@ export default function AssignmentCreateForm({ onCancel, onSave, initialDate, in
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Module Code</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Module Code
+            </label>
             <input
               name="module_code"
               value={formData.module_code}
@@ -332,7 +501,9 @@ export default function AssignmentCreateForm({ onCancel, onSave, initialDate, in
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Module Name</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Module Name
+            </label>
             <input
               name="module_name"
               value={formData.module_name}
@@ -345,7 +516,9 @@ export default function AssignmentCreateForm({ onCancel, onSave, initialDate, in
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Type
+            </label>
             <select
               name="assignment_type"
               value={formData.assignment_type}
@@ -360,7 +533,9 @@ export default function AssignmentCreateForm({ onCancel, onSave, initialDate, in
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Est. Effort (Hours)</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Est. Effort (Hours)
+            </label>
             <input
               type="number"
               name="estimated_effort_hours"
@@ -374,7 +549,9 @@ export default function AssignmentCreateForm({ onCancel, onSave, initialDate, in
 
         <div className="grid grid-cols-3 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Due Date <span className="text-red-500">*</span></label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Due Date <span className="text-red-500">*</span>
+            </label>
             <div className="relative">
               <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               <input
@@ -388,7 +565,9 @@ export default function AssignmentCreateForm({ onCancel, onSave, initialDate, in
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Time</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Time
+            </label>
             <input
               type="time"
               name="due_time"
@@ -398,7 +577,9 @@ export default function AssignmentCreateForm({ onCancel, onSave, initialDate, in
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Word Limit</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Word Limit
+            </label>
             <input
               type="number"
               name="word_limit"
@@ -411,7 +592,9 @@ export default function AssignmentCreateForm({ onCancel, onSave, initialDate, in
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Question / Brief</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Question / Brief
+          </label>
           <textarea
             name="question_text"
             value={formData.question_text}
@@ -434,7 +617,14 @@ export default function AssignmentCreateForm({ onCancel, onSave, initialDate, in
             disabled={loading}
             className="flex-1 py-2.5 bg-violet-600 text-white rounded-lg font-medium hover:bg-violet-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-70"
           >
-            {loading ? <Loader2 className="animate-spin w-5 h-5" /> : <><Save size={18} /> {initialData ? 'Update Assignment' : 'Create Assignment'}</>}
+            {loading ? (
+              <Loader2 className="animate-spin w-5 h-5" />
+            ) : (
+              <>
+                <Save size={18} />{" "}
+                {initialData ? "Update Assignment" : "Create Assignment"}
+              </>
+            )}
           </button>
         </div>
       </form>

@@ -1,6 +1,6 @@
 # ARCHITECTURE_OVERVIEW.md
 
-## Project: MyDurhamLaw
+## Project: Caseway
 
 > A world-class academic + wellbeing companion app for Durham University law students.  
 > Built on **Next.js 14 (Pages Router)** + **Supabase (Auth, Postgres, Realtime)** + **Netlify Functions**.  
@@ -166,7 +166,7 @@ End-to-end video call between two verified contacts
 Presence changes reflect within < 2s; consent recorded; GDPR/DPA compliant
 
 2) Premier Lounge — campus-wide presence + networking (opt-in directory)
-A private, moderated lounge where all Durham Law undergrads can opt-in to show their online status to fellow MyDurhamLaw members. Each student appears with name + year of study, giving everyone (same year, seniors, juniors) a safe way to request connect, send DMs, and build friendships. There’s space to express themselves, post “help wanted” messages, and support each other—especially useful for introverts who find it hard to approach peers in person.
+A private, moderated lounge where all Durham Law undergrads can opt-in to show their online status to fellow Caseway members. Each student appears with name + year of study, giving everyone (same year, seniors, juniors) a safe way to request connect, send DMs, and build friendships. There’s space to express themselves, post “help wanted” messages, and support each other—especially useful for introverts who find it hard to approach peers in person.
 
 Capabilities
 

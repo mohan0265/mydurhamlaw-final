@@ -20,7 +20,7 @@ INSERT INTO public.onboarding_docs (
 
 ## Why Import Your Lectures?
 
-MyDurhamLaw can analyze your lecture transcripts and automatically generate:
+Caseway can analyze your lecture transcripts and automatically generate:
 - 📝 **Comprehensive summaries** of the lecture content
 - 🎯 **Key points** highlighting important concepts and cases
 - 💬 **Discussion topics** for study groups and essay practice
@@ -55,9 +55,9 @@ Panopto auto-generates captions for all lectures. Here''s how to copy them:
 
 ---
 
-## Step 3: Import to MyDurhamLaw
+## Step 3: Import to Caseway
 
-1. Open **MyDurhamLaw** → **My Lectures**
+1. Open **Caseway** → **My Lectures**
 2. Click **"Add Lecture"**
 3. Switch to the **"Import from Panopto"** tab
 4. Fill in the lecture details:
@@ -138,7 +138,7 @@ Once imported, you can:
 ---
 
 **Need Help?** Ask Durmah: "How do I import Panopto lectures?" or contact support via the Help widget.',
-  'Learn how to copy lecture transcripts from Panopto and import them into MyDurhamLaw for AI-powered analysis, summaries, key points, discussion topics, and practice exam prompts.',
+  'Learn how to copy lecture transcripts from Panopto and import them into Caseway for AI-powered analysis, summaries, key points, discussion topics, and practice exam prompts.',
   ARRAY[1,2,3],
   ARRAY['panopto', 'lectures', 'transcript', 'AI analysis', 'import', 'captions', 'study', 'encore', 'blackboard'],
   ARRAY[
@@ -146,7 +146,7 @@ Once imported, you can:
     'Can I analyze lecture recordings?',
     'Where do I paste lecture captions?',
     'How do I get lecture summaries?',
-    'Panopto to MyDurhamLaw',
+    'Panopto to Caseway',
     'Copy Panopto transcript',
     'AI lecture analysis'
   ],

@@ -11,6 +11,7 @@ import {
   ExternalLink,
   History,
   Info,
+  Star,
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import Link from "next/link";
@@ -27,6 +28,7 @@ interface GlossaryTerm {
   definition: string;
   source_reference?: string;
   is_manual?: boolean;
+  importance_level?: number;
   created_by_name?: string;
   lectures: { id: string; title: string }[];
 }
@@ -110,6 +112,38 @@ export default function GlossaryPage() {
     }
   };
 
+  const handleRank = async (termId: string, currentLevel: number) => {
+    // Toggle between 0 and 1 for now (like a star)
+    const newLevel = currentLevel > 0 ? 0 : 1;
+
+    // Optimistic Update
+    setTerms((prev) =>
+      prev.map((t) =>
+        t.id === termId ? { ...t, importance_level: newLevel } : t,
+      ),
+    );
+
+    try {
+      const res = await fetch("/api/study/glossary/rank", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ termId, importanceLevel: newLevel }),
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to update rank");
+      }
+    } catch (err) {
+      // Revert on error
+      setTerms((prev) =>
+        prev.map((t) =>
+          t.id === termId ? { ...t, importance_level: currentLevel } : t,
+        ),
+      );
+      toast.error("Failed to update importance");
+    }
+  };
+
   useEffect(() => {
     // Check for Demo Mode (Client Side)
     const isDemo =
@@ -168,14 +202,23 @@ export default function GlossaryPage() {
   const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
 
   const filteredTerms = useMemo(() => {
-    return terms.filter((t) => {
-      const matchesSearch =
-        t.term.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        t.definition.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesLetter =
-        !selectedLetter || t.term.toUpperCase().startsWith(selectedLetter);
-      return matchesSearch && matchesLetter;
-    });
+    return terms
+      .filter((t) => {
+        const matchesSearch =
+          t.term.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          t.definition.toLowerCase().includes(searchQuery.toLowerCase());
+        const matchesLetter =
+          !selectedLetter || t.term.toUpperCase().startsWith(selectedLetter);
+        return matchesSearch && matchesLetter;
+      })
+      .sort((a, b) => {
+        // Sort by importance_level DESC
+        if ((b.importance_level || 0) !== (a.importance_level || 0)) {
+          return (b.importance_level || 0) - (a.importance_level || 0);
+        }
+        // Then by term ASC
+        return a.term.localeCompare(b.term);
+      });
   }, [terms, searchQuery, selectedLetter]);
 
   if (loading) {
@@ -325,14 +368,38 @@ export default function GlossaryPage() {
                         </span>
                       )}
                     </div>
-                    <p className="text-gray-600 dark:text-gray-400 mt-2 leading-relaxed">
+                    <p className="text-gray-600 dark:text-gray-300 mt-2 leading-relaxed">
                       {t.definition}
                     </p>
                   </div>
-                  <div className="ml-4 pt-1">
-                    <ChevronRight
-                      className={`w-5 h-5 text-gray-400 transition-transform duration-300 ${expandedTerm === t.id ? "rotate-90 text-purple-600" : "group-hover:text-purple-400 group-hover:translate-x-1"}`}
-                    />
+                  <div className="ml-4 flex items-center gap-3">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleRank(t.id, t.importance_level || 0);
+                      }}
+                      className={`p-2 rounded-xl transition-all duration-300 ${
+                        (t.importance_level || 0) > 0
+                          ? "bg-yellow-50 text-yellow-500 shadow-sm"
+                          : "text-gray-300 hover:text-yellow-400 hover:bg-yellow-50/50"
+                      }`}
+                      title={
+                        (t.importance_level || 0) > 0
+                          ? "Pinned to top"
+                          : "Pin for mastery"
+                      }
+                    >
+                      <Star
+                        className={`w-5 h-5 ${
+                          (t.importance_level || 0) > 0 ? "fill-yellow-500" : ""
+                        }`}
+                      />
+                    </button>
+                    <div className="pt-1">
+                      <ChevronRight
+                        className={`w-5 h-5 text-gray-400 transition-transform duration-300 ${expandedTerm === t.id ? "rotate-90 text-purple-600" : "group-hover:text-purple-400 group-hover:translate-x-1"}`}
+                      />
+                    </div>
                   </div>
                 </div>
 

@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface GlossaryTerm {
   term: string;
@@ -19,19 +20,24 @@ interface GlossaryTerm {
 }
 
 export default function LexiconQuickWidget() {
-  const [randomTerm, setRandomTerm] = useState<GlossaryTerm | null>(null);
+  const [brainstormTerms, setBrainstormTerms] = useState<GlossaryTerm[]>([]);
+  const [currentTermIndex, setCurrentTermIndex] = useState(0);
   const [recentTerms, setRecentTerms] = useState<GlossaryTerm[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchLexiconData = async () => {
     setLoading(true);
     try {
-      const [randomRes, recentRes] = await Promise.all([
-        fetch("/api/study/glossary/random"),
+      const [brainstormRes, recentRes] = await Promise.all([
+        fetch("/api/study/glossary/brainstorm"),
         fetch("/api/study/glossary/list"),
       ]);
 
-      if (randomRes.ok) setRandomTerm(await randomRes.json());
+      if (brainstormRes.ok) {
+        const terms = await brainstormRes.json();
+        setBrainstormTerms(terms);
+        setCurrentTermIndex(0);
+      }
       if (recentRes.ok) {
         const all = await recentRes.json();
         setRecentTerms(all.slice(0, 4));
@@ -42,6 +48,17 @@ export default function LexiconQuickWidget() {
       setLoading(false);
     }
   };
+
+  // Rotation Logic
+  useEffect(() => {
+    if (brainstormTerms.length <= 1) return;
+
+    const interval = setInterval(() => {
+      setCurrentTermIndex((prev) => (prev + 1) % brainstormTerms.length);
+    }, 5000); // Rotate every 5 seconds
+
+    return () => clearInterval(interval);
+  }, [brainstormTerms]);
 
   useEffect(() => {
     fetchLexiconData();
@@ -75,32 +92,43 @@ export default function LexiconQuickWidget() {
       </div>
 
       <div className="flex-1 overflow-y-auto custom-scrollbar p-5 space-y-6">
-        {/* Term of the Day / Featured */}
-        {randomTerm ? (
-          <div className="relative p-5 bg-gradient-to-br from-indigo-50/50 to-white rounded-2xl border border-indigo-100/50 overflow-hidden">
-            <div className="absolute -top-1 -right-1 opacity-10 rotate-12">
-              <Sparkles size={48} className="text-indigo-600" />
-            </div>
-            <div className="flex items-center gap-1.5 text-[10px] font-black text-indigo-500 uppercase tracking-widest mb-2">
-              <Sparkles size={10} />
-              Term Recommendation
-            </div>
-            <h4 className="text-lg font-bold text-gray-900 mb-1">
-              {randomTerm.term}
-            </h4>
-            <p className="text-xs text-gray-600 leading-relaxed italic line-clamp-2">
-              "{randomTerm.definition}"
-            </p>
-          </div>
-        ) : (
-          !loading && (
-            <div className="text-center py-6">
-              <p className="text-xs text-gray-400">
-                Add lectures to build your lexicon.
-              </p>
-            </div>
-          )
-        )}
+        {/* Term of the Day / Featured (Now Rotating Brainstorming Box) */}
+        <div className="relative min-h-[120px]">
+          <AnimatePresence mode="wait">
+            {brainstormTerms.length > 0 ? (
+              <motion.div
+                key={brainstormTerms[currentTermIndex].term}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.5 }}
+                className="relative p-5 bg-gradient-to-br from-indigo-50/50 to-white dark:from-indigo-900/10 dark:to-gray-800/50 rounded-2xl border border-indigo-100/50 dark:border-indigo-500/20 overflow-hidden"
+              >
+                <div className="absolute -top-1 -right-1 opacity-10 rotate-12">
+                  <Sparkles size={48} className="text-indigo-600" />
+                </div>
+                <div className="flex items-center gap-1.5 text-[10px] font-black text-indigo-500 dark:text-indigo-400 uppercase tracking-widest mb-2">
+                  <Sparkles size={10} />
+                  Memory Kindling
+                </div>
+                <h4 className="text-lg font-bold text-gray-900 dark:text-white mb-1">
+                  {brainstormTerms[currentTermIndex].term}
+                </h4>
+                <p className="text-xs text-gray-600 dark:text-gray-300 leading-relaxed italic line-clamp-3">
+                  "{brainstormTerms[currentTermIndex].definition}"
+                </p>
+              </motion.div>
+            ) : (
+              !loading && (
+                <div className="text-center py-6">
+                  <p className="text-xs text-gray-400">
+                    Add lectures to build your lexicon.
+                  </p>
+                </div>
+              )
+            )}
+          </AnimatePresence>
+        </div>
 
         {/* Mini List */}
         <div>

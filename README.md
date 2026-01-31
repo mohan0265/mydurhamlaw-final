@@ -1,8 +1,8 @@
-# MyDurhamLaw - AI-Powered Legal Study Assistant
+# Caseway - AI-Powered Legal Study Assistant
 
 ## 🏛️ About
 
-MyDurhamLaw is a comprehensive AI-powered study companion designed specifically for Durham University law students. It combines modern web technologies with artificial intelligence to provide personalized study assistance, academic planning, and community features.
+Caseway is a comprehensive AI-powered study companion designed specifically for Durham University law students. It combines modern web technologies with artificial intelligence to provide personalized study assistance, academic planning, and community features.
 
 ## ✨ Features
 
@@ -97,7 +97,7 @@ npm run dev
 ## 📁 Project Structure
 
 ```
-mydurhamlaw/
+caseway/
 ├── src/
 │   ├── components/        # React components
 │   │   ├── auth/         # Authentication components

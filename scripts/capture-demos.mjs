@@ -9,7 +9,7 @@ const VIEWPORT = { width: 1440, height: 900 };
 async function dismissOverlays(page) {
   // Add logic here to dismiss cookie banners or other overlays
   // Example: await page.click('#cookie-accept', { timeout: 1000 }).catch(() => {});
-  // For now, MyDurhamLaw public pages are clean, but we might wait a bit on load.
+  // For now, Caseway public pages are clean, but we might wait a bit on load.
 }
 
 async function run() {

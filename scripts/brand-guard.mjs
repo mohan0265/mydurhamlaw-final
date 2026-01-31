@@ -7,7 +7,15 @@ const __dirname = path.dirname(__filename);
 const ROOT_DIR = path.resolve(__dirname, "..");
 const SRC_DIR = path.join(ROOT_DIR, "src");
 
-const FORBIDDEN_TERMS = ["MyDurhamLaw", "mydurhamlaw", "mydurhamlaw.com"];
+const FORBIDDEN_TERMS = [
+  "DurhamLawPriya",
+  "MyDurhamLawPriya",
+  "DurmahLawPriya",
+  "mydurhamlawpriya",
+  "durhamlawpriya",
+  "MyDurhamLaw",
+  "mydurhamlaw",
+];
 const EXTENSIONS = [".tsx", ".ts", ".js", ".jsx", ".md", ".json"];
 const EXCLUDE_DIRS = ["node_modules", ".next", ".git"];
 

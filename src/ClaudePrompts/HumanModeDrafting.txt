@@ -1,5 +1,5 @@
 ✅ CLAUDE PROMPT FOR BUILDING HUMAN-MODE DRAFTING™
-You are now acting as the lead developer for the MyDurhamLaw legal study platform, with full access to a Supabase/Postgres backend, a Next.js + Tailwind frontend, and OpenAI/Claude API integration. Your task is to implement a deeply personalized assignment writing feature called:
+You are now acting as the lead developer for the Caseway legal study platform, with full access to a Supabase/Postgres backend, a Next.js + Tailwind frontend, and OpenAI/Claude API integration. Your task is to implement a deeply personalized assignment writing feature called:
 
 Human-Mode Drafting™ (Powered by Private Style Memory™)
 This feature ensures that every essay, assignment, or submission generated through the AI assistant is:

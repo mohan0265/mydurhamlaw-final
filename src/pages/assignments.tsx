@@ -190,16 +190,40 @@ export default function AssignmentsPage() {
     // Optimistically update selected if needed? fetchAssignments handles it.
   };
 
+  const { showUndoToast } = useUndoToast();
+
   const handleDelete = async () => {
     if (!selectedAssignment || !user) return;
     const supabase = getSupabaseClient();
     if (!supabase) return;
+
+    // Store data for undo
+    const assignmentToRestore = { ...selectedAssignment };
+
     try {
-      await supabase
+      const { error } = await supabase
         .from("assignments")
         .delete()
         .eq("id", selectedAssignment.id);
-      toast.success("Assignment deleted");
+
+      if (error) throw error;
+
+      toast.success("Assignment removed"); // Using "removed" to match "Removed. Undo?"
+
+      // Provide Undo Option
+      showUndoToast(async () => {
+        const { error: restoreError } = await supabase
+          .from("assignments")
+          .insert(assignmentToRestore);
+
+        if (restoreError) {
+          toast.error("Failed to restore assignment");
+        } else {
+          toast.success("Assignment restored");
+          fetchAssignments();
+        }
+      });
+
       router.push("/assignments", undefined, { shallow: true });
       fetchAssignments();
     } catch {

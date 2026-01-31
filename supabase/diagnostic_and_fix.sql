@@ -1,4 +1,4 @@
--- MyDurhamLaw Database Diagnostics & Admin Queries
+-- Caseway Database Diagnostics & Admin Queries
 -- Run these in Supabase SQL Editor to understand and fix current state
 
 -- ===================================

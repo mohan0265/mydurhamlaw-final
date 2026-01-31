@@ -1,15 +1,17 @@
 # Logo Assets
 
-This directory contains the standardized logo assets for MyDurhamLaw.
+This directory contains the standardized logo assets for Caseway.
 
 ## Files
 
 ### Scale Icon - Gold
+
 - `scale-icon-gold.png` - Raster format, 48x48px base size (2x resolution = 96x96px)
 
 ## Usage
 
 The gold scale icon is designed to be visible on both light and dark backgrounds:
+
 - Gold gradient provides good contrast on white backgrounds
 - Metallic sheen works well on dark backgrounds
 - SVG format is preferred for crisp scaling
@@ -33,6 +35,7 @@ The gold scale icon is designed to be visible on both light and dark backgrounds
 ## Implementation
 
 Used in:
+
 - Header component (all variants)
 - Logo component (all sizes)
 - Mobile navigation

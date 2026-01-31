@@ -30,7 +30,7 @@ export default async function handler(
         definition,
         source_reference,
         is_manual,
-        created_by_name,
+        importance_level,
         lecture_glossary_links (
           lecture_id,
           lectures (
@@ -40,6 +40,7 @@ export default async function handler(
       `,
       )
       .eq("user_id", user.id)
+      .order("importance_level", { ascending: false })
       .order("term", { ascending: true });
 
     if (error) throw error;
@@ -51,6 +52,7 @@ export default async function handler(
       definition: t.definition,
       source_reference: t.source_reference,
       is_manual: t.is_manual,
+      importance_level: t.importance_level || 0,
       created_by_name: t.created_by_name,
       lectures: (t.lecture_glossary_links || []).map((l: any) => ({
         id: l.lecture_id,

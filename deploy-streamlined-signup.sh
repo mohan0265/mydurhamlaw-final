@@ -253,7 +253,7 @@ show_rollback_plan() {
 
 # Main deployment flow
 main() {
-    echo "Starting MyDurhamLaw Streamlined Signup Deployment"
+    echo "Starting Caseway Streamlined Signup Deployment"
     echo "=================================================="
     echo ""
     

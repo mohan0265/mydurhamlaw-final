@@ -11,7 +11,7 @@ ALTER TABLE profiles
 -- 2. Mark specific user as test account as requested (cmcolonaive@gmail.com)
 -- We need to find their ID first. Since we are in SQL, we can only do this if we know the ID.
 -- However, we can use a subquery if the auth.users table is accessible, but for safety 
--- we will update ANY email ending in @test.mydurhamlaw.local as well.
+-- we will update ANY email ending in @test.caseway.local as well.
 UPDATE profiles 
 SET is_test_account = true 
 WHERE id IN (

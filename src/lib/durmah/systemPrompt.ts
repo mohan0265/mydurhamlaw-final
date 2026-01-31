@@ -332,12 +332,12 @@ export function generateProactiveGreeting(
   }
 
   // Priority 4: SyllabusShield™ Gaps (Proactive Warning)
-  if (
-    context.moduleCoverage &&
-    context.moduleCoverage.missing_high_importance?.length > 0
-  ) {
-    const missing = context.moduleCoverage.missing_high_importance[0];
-    return `Just a heads-up — I noticed we don't have any lectures yet covering "${missing.title}". If you're starting that tutorial or assignment, want me to help you find the reading first, or do you have a lecture to upload?`;
+  const missingHighImportance = context.moduleCoverage?.missing_high_importance;
+  if (missingHighImportance && missingHighImportance.length > 0) {
+    const missing = missingHighImportance[0];
+    if (missing) {
+      return `Just a heads-up — I noticed we don't have any lectures yet covering "${missing.title}". If you're starting that tutorial or assignment, want me to help you find the reading first, or do you have a lecture to upload?`;
+    }
   }
 
   return null; // Regular conversational opening

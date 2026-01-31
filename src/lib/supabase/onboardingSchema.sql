@@ -1,4 +1,4 @@
--- Onboarding Schema for MyDurhamLaw
+-- Onboarding Schema for Caseway
 -- Add onboarding-related columns to the existing profiles table
 
 -- Add onboarding columns to profiles table if they don't exist

@@ -6,7 +6,15 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const rootDir = path.resolve(__dirname, "..");
 
-const FORBIDDEN_STRINGS = ["DurhamLawPriya"];
+const FORBIDDEN_STRINGS = [
+  "DurhamLawPriya",
+  "MyDurhamLawPriya",
+  "DurmahLawPriya",
+  "mydurhamlawpriya",
+  "durhamlawpriya",
+  "MyDurhamLaw", // re-asserting to be safe
+  "mydurhamlaw",
+];
 const EXCLUDED_DIRS = [
   "docs",
   "node_modules",
@@ -16,14 +24,25 @@ const EXCLUDED_DIRS = [
   "coverage",
   "dist",
   "build",
-  ".claude",
   ".config",
+  ".netlify",
+  ".claude",
 ];
 const EXCLUDED_FILES = [
-  "audit-brand-strings.mjs",
   "package-lock.json",
-  "yarn.lock",
   "pnpm-lock.yaml",
+  "yarn.lock",
+  "task.md",
+  "implementation_plan.md",
+  "audit-brand-strings.mjs",
+  "brand-guard.mjs",
+  "audit-public-assets.mjs",
+  "audit-durham-language.mjs",
+  "capture-demos.mjs",
+  "_redirects",
+  "build_log.txt",
+  "build_log_v2.txt",
+  "audit_report.txt",
 ];
 
 let foundErrors = false;
@@ -42,7 +61,13 @@ function scanDirectory(dir) {
   for (const entry of entries) {
     const entryPath = path.join(dir, entry);
 
-    // Skip if in excluded dirs
+    // Skip if in excluded dirs (check entry name directly for robustness)
+    if (EXCLUDED_DIRS.includes(entry)) {
+      continue;
+    }
+
+    // Also check full path for nested exclusions if needed (optional, but above covers top-level ignores)
+    // Keep original logic for safety if needed, but the simple check above handles recursion blocking.
     if (
       EXCLUDED_DIRS.some(
         (excluded) =>
@@ -70,7 +95,13 @@ function scanDirectory(dir) {
         !entry.endsWith(".png") &&
         !entry.endsWith(".jpg") &&
         !entry.endsWith(".ico") &&
-        !entry.endsWith(".svg")
+        !entry.endsWith(".svg") &&
+        !entry.endsWith(".docx") &&
+        !entry.endsWith(".pdf") &&
+        !entry.endsWith(".pack") &&
+        !entry.endsWith(".idx") &&
+        !entry.endsWith(".map") &&
+        !entry.endsWith(".old")
       ) {
         checkFile(entryPath);
       }

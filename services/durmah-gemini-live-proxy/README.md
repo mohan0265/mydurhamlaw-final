@@ -1,17 +1,18 @@
 # Durmah Gemini Live Proxy
 
-This service acts as a secure WebSocket proxy between the MyDurhamLaw client and Google's Vertex AI Gemini Live API.
+This service acts as a secure WebSocket proxy between the Caseway client and Google's Vertex AI Gemini Live API.
 
 It handles:
+
 1.  **Authentication**: Validates Supabase JWTs sent by the client.
 2.  **Upstream Connection**: Authenticates with Google Cloud (Vertex AI) using service identity.
 3.  **Protocol Forwarding**: Tunnels the Gemini Live BidiStreaming protocol.
 
 ## Prerequisites
 
-*   Google Cloud Project with Vertex AI API enabled.
-*   Service Account with `Vertex AI User` role.
-*   Supabase Project.
+- Google Cloud Project with Vertex AI API enabled.
+- Service Account with `Vertex AI User` role.
+- Supabase Project.
 
 ## Environment Variables
 
@@ -39,6 +40,7 @@ The WebSocket client should use:
 ## Deployment (Cloud Run)
 
 1.  **Build Container**:
+
     ```bash
     gcloud builds submit --tag gcr.io/YOUR_PROJECT/durmah-gemini-live-proxy
     ```
@@ -52,14 +54,14 @@ The WebSocket client should use:
       --allow-unauthenticated \
       --set-env-vars GCP_PROJECT_ID=...,SUPABASE_URL=...,SUPABASE_SERVICE_ROLE_KEY=...
     ```
-    *Note: We allow unauthenticated at the Cloud Run ingress because the proxy itself handles application-level auth (Supabase).*
+    _Note: We allow unauthenticated at the Cloud Run ingress because the proxy itself handles application-level auth (Supabase)._
 
 ## Architecture
 
-*   **Client**: `useDurmahGeminiLive.ts` connects to this proxy.
-*   **Handshake**: First message from client must be JSON: `{ "auth": "SUPABASE_TOKEN", "setup": { ... } }`.
-*   **Proxy**:
-    *   Verifies `auth` token with Supabase.
-    *   Connects to Vertex AI via WebSocket.
-    *   Forwards `setup` payload to Vertex.
-    *   Streams audio/text bidirectionally.
+- **Client**: `useDurmahGeminiLive.ts` connects to this proxy.
+- **Handshake**: First message from client must be JSON: `{ "auth": "SUPABASE_TOKEN", "setup": { ... } }`.
+- **Proxy**:
+  - Verifies `auth` token with Supabase.
+  - Connects to Vertex AI via WebSocket.
+  - Forwards `setup` payload to Vertex.
+  - Streams audio/text bidirectionally.

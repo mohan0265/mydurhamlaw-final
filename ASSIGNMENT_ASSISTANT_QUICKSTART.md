@@ -14,6 +14,7 @@ ASSIGNMENT_AI_PROVIDER=openai
 ### 2. Run Database Migration
 
 In Supabase SQL Editor:
+
 ```sql
 -- Run: supabase/migrations/20260103_assignment_assistant.sql
 ```
@@ -21,6 +22,7 @@ In Supabase SQL Editor:
 ### 3. Create Storage Bucket
 
 Supabase Dashboard → Storage → New Bucket:
+
 - Name: `assignments`
 - Public: `false`
 - Policy: Authenticated users can upload
@@ -50,7 +52,7 @@ Netlify will auto-deploy.
 - **PDF/Word Upload**: AI parses deadline, word limit, requirements
 - **Durmah Integration**: Stage-specific tutoring
 - **OSCOLA Formatter**: Auto-citations & bibliography
-- **Academic Integrity**: Full Durham compliance with AI usage tracking
+- **Academic Integrity**: Full Caseway compliance with AI usage tracking
 
 ## 📖 Full Documentation
 
