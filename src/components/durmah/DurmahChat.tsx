@@ -84,7 +84,7 @@ export default function DurmahChat({
   const { user } = useAuth();
   const supabase = useSupabaseClient();
   const durmahCtx = useDurmah();
-  const { upcomingTasks, todaysEvents } = useDurmahDynamicContext();
+  const { upcomingTasks, todaysEvents, identity } = useDurmahDynamicContext();
   const { voiceId } = useDurmahSettings();
 
   // Voice Hook Selection
@@ -258,8 +258,10 @@ export default function DurmahChat({
     voiceId: voiceId,
     // initialMessage: initialPrompt, // Disable auto-greeting to prevent persistent duplicates
     // Pass BOTH systemInstruction (Gemini) and systemPrompt (Realtime)
-    systemInstruction: `You are Durmah, a helpful academic tutor. You are helping with the assignment: "${contextTitle}". Be concise, encouraging, and helpful. Do not write the essay for the student.`,
-    systemPrompt: `You are Durmah, a helpful academic tutor. You are helping with the assignment: "${contextTitle}". 
+    systemInstruction: `You are Durmah, a helpful academic tutor. You are helping ${identity?.publicName || "the student"}. ${identity?.pronunciationHint ? `(Pronounce name as: ${identity.pronunciationHint})` : ""} Assignment: "${contextTitle}". Be concise, encouraging, and helpful. Do not write the essay for the student.`,
+    systemPrompt: `You are Durmah, a helpful academic tutor.
+USER: ${identity?.publicName || "Student"} ${identity?.pronunciationHint ? `(Pronounce as: ${identity.pronunciationHint})` : ""}
+ASSIGNMENT: "${contextTitle}"
     
 CONTEXT:
 ${systemHint || "No specific stage context provided."}

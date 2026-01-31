@@ -8,7 +8,9 @@ if (!process.env.SUPABASE_DB_URL) {
   process.exit(1);
 }
 
-const files = ["supabase/migrations/20260201020000_onboarding_schema.sql"];
+const files = [
+  "supabase/migrations/20260201030000_profiles_identity_upgrade.sql",
+];
 
 async function runMigrations() {
   const client = new Client({

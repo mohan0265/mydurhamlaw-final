@@ -11,9 +11,16 @@ export default async function handler(
   if (!isAuthenticatedAdmin(req))
     return res.status(401).json({ error: "Unauthorized" });
 
-  const { email, password, expiryDays = 14, tags = [] } = req.body;
-  if (!email || !password)
-    return res.status(400).json({ error: "Missing email or password" });
+  const { email, password, displayName, pronunciation, preferredName } =
+    req.body;
+
+  if (!email || !password || !displayName) {
+    return res
+      .status(400)
+      .json({
+        error: "Missing required fields (email, password, displayName)",
+      });
+  }
 
   const supabase = getSupabaseAdmin();
   if (!supabase) return res.status(500).json({ error: "Server misconfigured" });
@@ -26,8 +33,9 @@ export default async function handler(
         password,
         email_confirm: true,
         user_metadata: {
-          role: "demo",
-          display_name: "Demo Student", // Internal metadata, but profile rules will override in UI
+          role: "test_user",
+          display_name: displayName,
+          first_name: displayName, // Fallback for some UIs
         },
       });
 
@@ -35,27 +43,21 @@ export default async function handler(
       throw new Error(authError?.message || "Failed to create auth user");
     }
 
-    // 2. Calculate Expiry
-    const expiryDate = new Date();
-    expiryDate.setDate(expiryDate.getDate() + expiryDays);
-
-    // 3. Update Profile
+    // 2. Update Profile
     const { error: profileError } = await supabase
       .from("profiles")
       .update({
-        role: "demo",
-        display_name: "Demo Student",
-        privacy_mask_name: true,
-        password_locked: true,
-        demo_expires_at: expiryDate.toISOString(),
+        role: "test_user",
+        display_name: displayName,
+        preferred_name: preferredName || null,
+        name_pronunciation: pronunciation || null,
+        privacy_mask_name: false,
+        password_locked: true, // Testers shouldn't change password of shared test account
         is_disabled: false,
-        name_pronunciation: null,
-        preferred_name: null,
       })
       .eq("id", authData.user.id);
 
     if (profileError) {
-      // Try cleanup
       await supabase.auth.admin.deleteUser(authData.user.id);
       throw new Error("Failed to create profile: " + profileError.message);
     }
@@ -63,10 +65,10 @@ export default async function handler(
     return res.status(200).json({
       success: true,
       email,
-      expiry: expiryDate.toISOString(),
+      id: authData.user.id,
     });
   } catch (err: any) {
-    console.error("Create Demo Error:", err);
+    console.error("Create Test User Error:", err);
     return res.status(500).json({ error: err.message });
   }
 }

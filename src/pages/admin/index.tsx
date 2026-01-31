@@ -22,6 +22,11 @@ type AdminRow = {
   role?: string; // Add role
   is_disabled?: boolean; // Add is_disabled
   demo_expires_at?: string | null; // Add demo_expires_at
+
+  // New Identity fields
+  name_pronunciation?: string | null;
+  privacy_mask_name?: boolean | null;
+  preferred_name?: string | null;
 };
 
 type AdminUser = {
@@ -102,7 +107,7 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
   const { data, error } = await adminClient
     .from("profiles")
     .select(
-      "id, display_name, user_role, role, year_of_study, year_group, trial_started_at, trial_ever_used, is_disabled",
+      "id, display_name, user_role, role, year_of_study, year_group, trial_started_at, trial_ever_used, is_disabled, demo_expires_at, name_pronunciation, privacy_mask_name, preferred_name",
     )
     .order("created_at", { ascending: false })
     .limit(200);
@@ -154,7 +159,10 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
         role: profile.role || profile.user_role || "user",
         is_disabled: profile.is_disabled || false,
         trial_ends_at: null,
-        demo_expires_at: null,
+        demo_expires_at: profile.demo_expires_at || null,
+        name_pronunciation: profile.name_pronunciation || null,
+        privacy_mask_name: profile.privacy_mask_name || false,
+        preferred_name: profile.preferred_name || null,
       }));
     }
   }
@@ -350,6 +358,7 @@ export default function AdminDashboard({
   const [showInviteStudent, setShowInviteStudent] = useState(false);
   const [showCreateStudent, setShowCreateStudent] = useState(false);
   const [showCreateDemo, setShowCreateDemo] = useState(false);
+  const [showCreateTestUser, setShowCreateTestUser] = useState(false); // New Modal
   const [showCreateLovedOne, setShowCreateLovedOne] = useState(false);
   const [activeTab, setActiveTab] = useState<
     "profiles" | "requests" | "audit" | "billing"
@@ -1961,6 +1970,48 @@ export default function AdminDashboard({
                   </button>
                 ))}
               </div>
+              {/* Quick Actions */}
+              <div className="flex flex-col gap-2 mb-6">
+                <h3 className="text-sm font-semibold text-slate-800 uppercase tracking-wide">
+                  Quick Actions
+                </h3>
+                <div className="flex flex-wrap gap-4">
+                  <div className="flex flex-col gap-1 max-w-xs">
+                    <button
+                      onClick={() => setShowCreateDemo(true)}
+                      className="px-4 py-2 bg-slate-800 text-white rounded-lg hover:bg-slate-700 text-sm font-medium w-full text-left flex justify-between items-center"
+                    >
+                      <span>+ Create Demo (Audit / Comet)</span>
+                    </button>
+                    <span className="text-xs text-slate-500 px-1">
+                      Creates a privacy-safe demo account (shows "Demo
+                      Student"). Best for audits, recordings, and Comet testing.
+                    </span>
+                  </div>
+
+                  <div className="flex flex-col gap-1 max-w-xs">
+                    <button
+                      onClick={() => setShowCreateTestUser(true)}
+                      className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 text-sm font-medium w-full text-left flex justify-between items-center"
+                    >
+                      <span>+ Create Invited Test User</span>
+                    </button>
+                    <span className="text-xs text-slate-500 px-1">
+                      Creates a real-name test account. The name appears in the
+                      header, and Durmah will greet them by name.
+                    </span>
+                  </div>
+
+                  <div className="flex flex-col gap-1 max-w-xs">
+                    <button
+                      onClick={() => setShowInviteStudent(true)}
+                      className="px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-lg hover:bg-slate-50 text-sm font-medium w-full text-left"
+                    >
+                      <span>Invite Student (Link)</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
 
             <div className="flex gap-2 mt-6">
@@ -1980,6 +2031,250 @@ export default function AdminDashboard({
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+// Minimal Components for new Modals
+function CreateTestUserModal({ isOpen, onClose, onSuccess }: any) {
+  const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    email: "",
+    displayName: "",
+    pronunciation: "",
+    password: "",
+  });
+
+  if (!isOpen) return null;
+
+  const generatePassword = () => {
+    const p =
+      Math.random().toString(36).slice(-8) +
+      Math.random().toString(36).slice(-8);
+    setFormData({ ...formData, password: p });
+  };
+
+  const handleSubmit = async (e: any) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      const res = await fetch("/api/admin/users/create-test-user", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
+      if (!res.ok) throw new Error("Failed");
+      const data = await res.json();
+      alert(
+        `Test user login details:\n\nEmail: ${formData.email}\nPassword: ${formData.password}\n\nCopy these once and share privately. You can reset the password anytime.`,
+      );
+      onSuccess();
+      onClose();
+    } catch (err: any) {
+      alert("Error creating test user");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      <div className="bg-white rounded-xl p-6 w-full max-w-md">
+        <h3 className="text-lg font-bold mb-4">Create Invited Test User</h3>
+        <p className="text-sm text-slate-500 mb-4 bg-yellow-50 p-3 rounded border border-yellow-100">
+          Their name will appear in the app header, and Durmah will greet them
+          by name. Test users cannot change their password.
+        </p>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-xs font-semibold text-slate-500 mb-1">
+              Email
+            </label>
+            <input
+              placeholder="Email"
+              className="w-full border p-2 rounded"
+              value={formData.email}
+              onChange={(e) =>
+                setFormData({ ...formData, email: e.target.value })
+              }
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-slate-500 mb-1">
+              Display Name
+            </label>
+            <input
+              placeholder="Display Name (e.g. Siobhan)"
+              className="w-full border p-2 rounded"
+              value={formData.displayName}
+              onChange={(e) =>
+                setFormData({ ...formData, displayName: e.target.value })
+              }
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-slate-500 mb-1">
+              Name Pronunciation
+            </label>
+            <input
+              placeholder="Pronunciation (e.g. Shiv-awn)"
+              className="w-full border p-2 rounded"
+              value={formData.pronunciation}
+              onChange={(e) =>
+                setFormData({ ...formData, pronunciation: e.target.value })
+              }
+            />
+            <p className="text-[10px] text-slate-400 mt-1">
+              Optional. Helps Durmah pronounce the name naturally (e.g.,
+              'RAJ-nee', 'CHAN-druh').
+            </p>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-slate-500 mb-1">
+              Password
+            </label>
+            <div className="flex gap-2">
+              <input
+                placeholder="Password"
+                className="w-full border p-2 rounded bg-slate-50"
+                readOnly
+                value={formData.password}
+                onChange={(e) =>
+                  setFormData({ ...formData, password: e.target.value })
+                }
+              />
+              <button
+                type="button"
+                onClick={generatePassword}
+                className="text-xs bg-slate-200 hover:bg-slate-300 px-3 rounded font-medium"
+              >
+                Gen
+              </button>
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-2 mt-4">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-3 py-1 text-slate-500"
+            >
+              Cancel
+            </button>
+            <button
+              disabled={loading}
+              className="px-3 py-1 bg-purple-600 text-white rounded"
+            >
+              {loading ? "Creating..." : "Create User"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function CreateDemoModal({ isOpen, onClose, onSuccess }: any) {
+  const [loading, setLoading] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  if (!isOpen) return null;
+  const generatePassword = () => {
+    const p =
+      Math.random().toString(36).slice(-8) +
+      Math.random().toString(36).slice(-8);
+    setPassword(p);
+  };
+
+  const handleSubmit = async (e: any) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      const res = await fetch("/api/admin/users/create-demo", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+      if (!res.ok) throw new Error("Failed");
+      const data = await res.json();
+      alert(
+        `Demo login details:\n\nEmail: ${email}\nPassword: ${password}\n\nCopy these once and share privately. You can reset the password anytime.`,
+      );
+      onSuccess();
+      onClose();
+    } catch (err: any) {
+      alert("Error creating demo");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      <div className="bg-white rounded-xl p-6 w-full max-w-md">
+        <h3 className="text-lg font-bold mb-4">
+          Create Demo Account (Audit / Comet)
+        </h3>
+        <p className="text-sm text-slate-500 mb-4 bg-slate-50 p-3 rounded border border-slate-200">
+          Demo accounts always display "Demo Student" and cannot change their
+          password.
+        </p>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-xs font-semibold text-slate-500 mb-1">
+              Email
+            </label>
+            <input
+              placeholder="Email (@audit.com etc)"
+              className="w-full border p-2 rounded"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-slate-500 mb-1">
+              Password
+            </label>
+            <div className="flex gap-2">
+              <input
+                placeholder="Password"
+                className="w-full border p-2 rounded bg-slate-50"
+                readOnly
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+              <button
+                type="button"
+                onClick={generatePassword}
+                className="text-xs bg-slate-200 hover:bg-slate-300 px-3 rounded font-medium"
+              >
+                Gen
+              </button>
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-2 mt-6">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-3 py-1 text-slate-500"
+            >
+              Cancel
+            </button>
+            <button
+              disabled={loading}
+              className="px-3 py-1 bg-slate-800 text-white rounded"
+            >
+              {loading ? "Creating..." : "Create Demo"}
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }

@@ -1,12 +1,26 @@
 import { User } from "@supabase/supabase-js";
 
 export interface UserProfile {
-  role?: "user" | "trial" | "paid" | "demo" | "admin";
+  role?:
+    | "user"
+    | "trial"
+    | "paid"
+    | "demo"
+    | "admin"
+    | "test_user"
+    | "loved_one";
   demo_expires_at?: string;
   is_disabled?: boolean;
   password_locked?: boolean;
   grace_until?: string | null;
   subscription_status?: string | null;
+
+  // Identity
+  display_name?: string | null;
+  preferred_name?: string | null;
+  name_pronunciation?: string | null;
+  privacy_mask_name?: boolean;
+
   [key: string]: any;
 }
 
