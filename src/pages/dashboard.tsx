@@ -27,6 +27,7 @@ import {
 
 // Components
 import { QuizMeCard } from "@/components/quiz/QuizMeCard";
+import { Logo } from "@/components/ui/Logo";
 import UpcomingDeadlines from "@/components/dashboard/UpcomingDeadlines";
 import TodaysTasksWidget from "@/components/dashboard/TodaysTasksWidget";
 import MemoryJournalWidget from "@/components/dashboard/MemoryJournalWidget";
