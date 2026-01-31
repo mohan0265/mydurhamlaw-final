@@ -1,194 +1,332 @@
-// src/pages/api/stripe/webhook.ts
-import type { NextApiRequest, NextApiResponse } from 'next';
-import { Readable } from 'node:stream';
-import Stripe from 'stripe';
-import { supabaseAdmin } from '@/lib/server/supabaseAdmin';
+import { NextApiRequest, NextApiResponse } from "next";
+import { buffer } from "micro";
+import { stripe } from "@/lib/stripe";
+import { getSupabaseAdmin } from "@/lib/server/supabaseAdmin";
+import Stripe from "stripe";
 
-/**
- * Minimal Stripe webhook: verifies events and stores a few fields.
- *
- * Env required:
- * - STRIPE_SECRET_KEY
- * - STRIPE_WEBHOOK_SECRET
- *
- * Optional tables:
- * - public.billing_events (json logging)
- * - public.profiles (column stripe_customer_id text)
- */
+export const config = {
+  api: {
+    bodyParser: false,
+  },
+};
 
-export const config = { api: { bodyParser: false } };
+const WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET;
 
-// Do NOT pin apiVersion; let the SDK use your account default to avoid TS drift.
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string);
-
-async function rawBody(readable: Readable): Promise<Buffer> {
-  const chunks: Uint8Array[] = [];
-  for await (const chunk of readable) {
-    chunks.push(typeof chunk === 'string' ? Buffer.from(chunk) : chunk);
-  }
-  return Buffer.concat(chunks);
-}
-
-function unixToIsoMaybe(v: unknown): string | null {
-  // Support either number or stringified number; tolerate missing/renamed keys.
-  const n = typeof v === 'number' ? v : typeof v === 'string' ? Number(v) : NaN;
-  return Number.isFinite(n) && n > 0 ? new Date(n * 1000).toISOString() : null;
-}
-
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (req.method !== 'POST') {
-    res.setHeader('Allow', ['POST']);
-    return res.status(405).send('Method Not Allowed');
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse,
+) {
+  if (req.method !== "POST") {
+    res.setHeader("Allow", "POST");
+    return res.status(405).send("Method Not Allowed");
   }
 
-  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET as string;
-  if (!webhookSecret) {
-    console.error('[stripe/webhook] Missing STRIPE_WEBHOOK_SECRET');
-    return res.status(500).send('Server misconfigured');
+  if (!WEBHOOK_SECRET) {
+    console.error("Missing STRIPE_WEBHOOK_SECRET");
+    return res.status(500).send("Webhook Secret Missing");
   }
 
   let event: Stripe.Event;
 
   try {
-    const buf = await rawBody(req);
-    const sig = req.headers['stripe-signature'] as string;
-    event = stripe.webhooks.constructEvent(buf, sig, webhookSecret);
+    const buf = await buffer(req);
+    const sig = req.headers["stripe-signature"] as string;
+    event = stripe.webhooks.constructEvent(buf, sig, WEBHOOK_SECRET);
   } catch (err: any) {
-    console.error('[stripe/webhook] Signature verification failed:', err?.message || err);
-    return res.status(400).send(`Webhook Error: ${err?.message || 'invalid signature'}`);
+    console.error(`Webhook signature verification failed: ${err.message}`);
+    return res.status(400).send(`Webhook Error: ${err.message}`);
+  }
+
+  const adminFn = getSupabaseAdmin();
+  if (!adminFn) {
+    console.error("Supabase Admin Client missing");
+    return res.status(500).send("Database Error");
+  }
+  const supabase = adminFn;
+
+  // Idempotency: Check if already processed
+  const { data: existing } = await supabase
+    .from("stripe_webhook_events")
+    .select("id, status")
+    .eq("stripe_event_id", event.id)
+    .single();
+
+  if (existing && existing.status === "processed") {
+    return res.status(200).send("Already processed");
+  }
+
+  // Log receipt
+  if (!existing) {
+    await supabase.from("stripe_webhook_events").insert({
+      stripe_event_id: event.id,
+      type: event.type,
+      payload: event,
+      status: "received",
+    });
   }
 
   try {
     switch (event.type) {
-      case 'checkout.session.completed': {
-        const s = event.data.object as Stripe.Checkout.Session;
-
-        const customerId = (s.customer as string) || null;
-        const subscriptionId = (s.subscription as string) || null;
-        const email = s.customer_details?.email || null;
-        const plan = s.metadata?.plan || null;
-        const parentAddOn = s.metadata?.parentAddOn === 'true';
-
-        // 1) Store stripe_customer_id on profile by email
-        if (email && customerId) {
-          try {
-            const { data: userProfile } = await supabaseAdmin
-              .from('profiles')
-              .update({ stripe_customer_id: customerId })
-              .eq('email', email)
-              .select('id')
-              .single();
-
-            // 2) Synchronize subscription state
-            if (userProfile?.id && subscriptionId && plan) {
-              const subscription = await stripe.subscriptions.retrieve(subscriptionId);
-              
-              const currentPeriodEnd = unixToIsoMaybe(subscription.current_period_end);
-
-              // Update or Insert into user_subscriptions
-              await supabaseAdmin.from('user_subscriptions').upsert({
-                user_id: userProfile.id,
-                plan_id: plan,
-                status: 'active',
-                stripe_subscription_id: subscriptionId,
-                stripe_customer_id: customerId,
-                current_period_start: new Date().toISOString(),
-                current_period_end: currentPeriodEnd || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-                updated_at: new Date().toISOString()
-              }, { onConflict: 'user_id' });
-            }
-          } catch (e) {
-            console.error('[stripe/webhook] Sync error:', e);
-          }
-        }
-
-        // Optional event log
-        try {
-          await supabaseAdmin.from('billing_events').insert([
-            {
-              type: event.type,
-              subscription_id: subscriptionId,
-              customer_id: customerId,
-              email,
-              payload: s,
-            },
-          ]);
-        } catch {
-          /* table might not exist; ignore */
-        }
+      case "checkout.session.completed":
+        await handleCheckoutSessionCompleted(
+          event.data.object as Stripe.Checkout.Session,
+          supabase,
+        );
         break;
-      }
-
-      case 'customer.subscription.updated':
-      case 'customer.subscription.deleted': {
-        const sub = event.data.object as Stripe.Subscription;
-        const customerId = (sub.customer as string) || null;
-        const status = sub.status === 'active' || sub.status === 'trailing' ? 'active' : sub.status;
-
-        const currentPeriodEndIso = unixToIsoMaybe(sub.current_period_end);
-        const plan = sub.metadata?.plan || null;
-
-        // Sync subscription state back to Supabase
-        if (customerId) {
-          try {
-            // Find user by stripe_customer_id
-            const { data: profile } = await supabaseAdmin
-              .from('profiles')
-              .select('id')
-              .eq('stripe_customer_id', customerId)
-              .maybeSingle();
-
-            if (profile?.id) {
-              const updateData: any = {
-                status: status,
-                current_period_end: currentPeriodEndIso || new Date().toISOString(),
-                updated_at: new Date().toISOString()
-              };
-              
-              if (plan) updateData.plan_id = plan;
-
-              await supabaseAdmin
-                .from('user_subscriptions')
-                .update(updateData)
-                .eq('user_id', profile.id);
-            }
-          } catch (e) {
-            console.error('[stripe/webhook] Subscription update sync error:', e);
-          }
-        }
-
-        try {
-          await supabaseAdmin.from('billing_events').insert([
-            {
-              type: event.type,
-              customer_id: customerId,
-              subscription_id: sub.id,
-              status,
-              current_period_end: currentPeriodEndIso,
-              payload: sub,
-            },
-          ]);
-        } catch {
-          /* table might not exist; ignore */
-        }
+      case "customer.subscription.created":
+      case "customer.subscription.updated":
+      case "customer.subscription.deleted":
+        await handleSubscriptionUpdated(
+          event.data.object as Stripe.Subscription,
+          supabase,
+        );
         break;
-      }
-
-      default: {
-        // Firehose (optional)
-        try {
-          await supabaseAdmin
-            .from('billing_events')
-            .insert([{ type: event.type, payload: event.data.object as any }]);
-        } catch {
-          /* ignore */
-        }
-      }
+      case "invoice.payment_succeeded":
+        await handleInvoicePaymentSucceeded(
+          event.data.object as Stripe.Invoice,
+          supabase,
+        );
+        break;
+      case "invoice.payment_failed":
+        await handleInvoicePaymentFailed(
+          event.data.object as Stripe.Invoice,
+          supabase,
+        );
+        break;
+      default:
+      // console.log(`Unhandled event type ${event.type}`);
     }
 
-    return res.status(200).json({ received: true });
+    // Mark processed
+    await supabase
+      .from("stripe_webhook_events")
+      .update({ status: "processed", processed_at: new Date().toISOString() })
+      .eq("stripe_event_id", event.id);
+
+    res.status(200).json({ received: true });
   } catch (err: any) {
-    console.error('[stripe/webhook] Handler error:', err?.message || err);
-    return res.status(500).send('Webhook handler error');
+    console.error(`Error processing webhook ${event.type}:`, err);
+
+    // Log error
+    await supabase
+      .from("stripe_webhook_events")
+      .update({ status: "failed", error: err.message })
+      .eq("stripe_event_id", event.id);
+
+    res.status(500).send(`Processing Error: ${err.message}`);
   }
+}
+
+// --- Handlers ---
+
+async function handleCheckoutSessionCompleted(
+  session: Stripe.Checkout.Session,
+  supabase: any,
+) {
+  if (!session.metadata?.user_id) return; // Should have user_id from checkout creation
+  const userId = session.metadata.user_id;
+  const customerId = session.customer as string;
+
+  // Link customer
+  await supabase.from("billing_customers").upsert(
+    {
+      user_id: userId,
+      stripe_customer_id: customerId,
+    },
+    { onConflict: "user_id" },
+  );
+
+  // Ensure profile has this (redundancy but useful)
+  await supabase
+    .from("profiles")
+    .update({
+      stripe_customer_id: customerId,
+    })
+    .eq("id", userId);
+}
+
+async function handleSubscriptionUpdated(
+  subscription: Stripe.Subscription,
+  supabase: any,
+) {
+  const customerId = subscription.customer as string;
+
+  // Find user by customer ID
+  let userId = subscription.metadata?.user_id;
+
+  if (!userId) {
+    const { data: cust } = await supabase
+      .from("billing_customers")
+      .select("user_id")
+      .eq("stripe_customer_id", customerId)
+      .single();
+    userId = cust?.user_id;
+  }
+
+  if (!userId) {
+    console.warn(
+      `No user found for subscription ${subscription.id} (cust: ${customerId})`,
+    );
+    return;
+  }
+
+  const priceId = subscription.items.data[0]?.price.id;
+
+  await supabase.from("billing_subscriptions").upsert(
+    {
+      stripe_subscription_id: subscription.id,
+      user_id: userId,
+      stripe_price_id: priceId,
+      status: subscription.status,
+      cancel_at_period_end: subscription.cancel_at_period_end,
+      current_period_start: new Date(subscription.current_period_start * 1000),
+      current_period_end: new Date(subscription.current_period_end * 1000),
+      trial_start: subscription.trial_start
+        ? new Date(subscription.trial_start * 1000)
+        : null,
+      trial_end: subscription.trial_end
+        ? new Date(subscription.trial_end * 1000)
+        : null,
+      canceled_at: subscription.canceled_at
+        ? new Date(subscription.canceled_at * 1000)
+        : null,
+      ended_at: subscription.ended_at
+        ? new Date(subscription.ended_at * 1000)
+        : null,
+    },
+    { onConflict: "stripe_subscription_id" },
+  );
+
+  // Sync to profiles for easy frontend access (Role/Entitlements)
+  let newRole = "user";
+  if (["active", "trialing"].includes(subscription.status)) {
+    newRole = "paid";
+  }
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", userId)
+    .single();
+
+  if (profile && ["admin", "demo"].includes(profile.role)) {
+    // Do not touch role
+  } else {
+    await supabase
+      .from("profiles")
+      .update({
+        role: newRole,
+        subscription_status: subscription.status,
+        trial_ends_at: subscription.trial_end
+          ? new Date(subscription.trial_end * 1000).toISOString()
+          : null,
+        current_period_end: new Date(
+          subscription.current_period_end * 1000,
+        ).toISOString(),
+      })
+      .eq("id", userId);
+  }
+}
+
+async function handleInvoicePaymentSucceeded(
+  invoice: Stripe.Invoice,
+  supabase: any,
+) {
+  if (!invoice.subscription) return; // One-off invoices?
+
+  // Upsert invoice
+  const subscriptionId = invoice.subscription as string;
+
+  // Get User ID from subscription table
+  const { data: sub } = await supabase
+    .from("billing_subscriptions")
+    .select("user_id")
+    .eq("stripe_subscription_id", subscriptionId)
+    .single();
+
+  if (!sub) return;
+  const userId = sub.user_id;
+
+  await supabase.from("billing_invoices").upsert(
+    {
+      stripe_invoice_id: invoice.id,
+      user_id: userId,
+      status: invoice.status,
+      hosted_invoice_url: invoice.hosted_invoice_url,
+      invoice_pdf: invoice.invoice_pdf,
+      amount_due: invoice.amount_due,
+      amount_paid: invoice.amount_paid,
+      currency: invoice.currency,
+    },
+    { onConflict: "stripe_invoice_id" },
+  );
+
+  // Clear grace period on subscription
+  await supabase
+    .from("billing_subscriptions")
+    .update({
+      grace_until: null,
+      latest_invoice_id: invoice.id,
+      latest_invoice_url: invoice.hosted_invoice_url,
+    })
+    .eq("stripe_subscription_id", subscriptionId);
+
+  await supabase
+    .from("profiles")
+    .update({
+      grace_until: null,
+      subscription_status: "active",
+    })
+    .eq("id", userId);
+}
+
+async function handleInvoicePaymentFailed(
+  invoice: Stripe.Invoice,
+  supabase: any,
+) {
+  if (!invoice.subscription) return;
+  const subscriptionId = invoice.subscription as string;
+
+  const { data: sub } = await supabase
+    .from("billing_subscriptions")
+    .select("user_id")
+    .eq("stripe_subscription_id", subscriptionId)
+    .single();
+  if (!sub) return;
+
+  // Upsert invoice (failed status)
+  await supabase.from("billing_invoices").upsert(
+    {
+      stripe_invoice_id: invoice.id,
+      user_id: sub.user_id,
+      status: invoice.status,
+      hosted_invoice_url: invoice.hosted_invoice_url,
+      invoice_pdf: invoice.invoice_pdf,
+      amount_due: invoice.amount_due,
+      amount_paid: invoice.amount_paid,
+      currency: invoice.currency,
+    },
+    { onConflict: "stripe_invoice_id" },
+  );
+
+  // Set Grace Period (e.g. 7 days from now)
+  const graceUntil = new Date();
+  graceUntil.setDate(graceUntil.getDate() + 7);
+
+  await supabase
+    .from("billing_subscriptions")
+    .update({
+      grace_until: graceUntil.toISOString(),
+      latest_invoice_id: invoice.id,
+      latest_invoice_url: invoice.hosted_invoice_url,
+    })
+    .eq("stripe_subscription_id", subscriptionId);
+
+  await supabase
+    .from("profiles")
+    .update({
+      grace_until: graceUntil.toISOString(),
+      subscription_status: "past_due",
+    })
+    .eq("id", sub.user_id);
 }

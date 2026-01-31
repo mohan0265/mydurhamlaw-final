@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/router";
 import { useAuth } from "@/lib/supabase/AuthContext";
 import { getSupabaseClient } from "@/lib/supabase/client";
+import { isDemoMode } from "@/lib/demo";
 
 // Icons
 import {
@@ -31,6 +32,7 @@ import { Logo } from "@/components/ui/Logo";
 import UpcomingDeadlines from "@/components/dashboard/UpcomingDeadlines";
 import TodaysTasksWidget from "@/components/dashboard/TodaysTasksWidget";
 import MemoryJournalWidget from "@/components/dashboard/MemoryJournalWidget";
+import GreetingWidget from "@/components/dashboard/GreetingWidget"; // Explicit Import
 import WellbeingTipWidget from "@/components/dashboard/WellbeingTipWidget";
 import dynamic from "next/dynamic";
 
@@ -47,6 +49,8 @@ const ModuleReadinessWidget = dynamic(
   () => import("@/components/dashboard/ModuleReadinessWidget"),
   { ssr: false },
 );
+
+import OnboardingBanner from "@/components/dashboard/OnboardingBanner";
 
 // Components
 import { RequireDurhamAccess } from "@/components/auth/EntitlementGuards";
@@ -267,7 +271,9 @@ function DashboardContent() {
     return null;
   }
 
-  const firstName = displayName || user?.user_metadata?.first_name || "Student";
+  const firstName = isDemoMode()
+    ? "Student"
+    : displayName || user?.user_metadata?.first_name || "Student";
 
   return (
     <>
@@ -861,12 +867,21 @@ function DashboardContent() {
 
           {/* Right Col: Widgets */}
           <div className="space-y-6 flex flex-col min-h-0">
+            {/* Greeting */}
+            <div className="mb-2">
+              <Logo className="w-48 h-auto mb-6 text-slate-900" />
+              <GreetingWidget />
+            </div>
+
+            {/* Onboarding Banner - Durham First */}
+            <OnboardingBanner />
+
             {/* Lexicon */}
             <div className="flex-1 min-h-[400px]">
               <LexiconQuickWidget />
             </div>
 
-            {/* Tasks */}
+            {/* Next Best Action Widget */}
             <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="font-bold text-gray-900">Today's Tasks</h3>

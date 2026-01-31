@@ -94,15 +94,40 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
     });
 
-    const { data } = supabase.auth.onAuthStateChange((_event, session) => {
-      setValue((prev) => ({
-        ...prev,
-        user: session?.user ?? null,
-        session: session ?? null,
-        getDashboardRoute: () => (session?.user ? "/dashboard" : "/signup"),
-        realAcademicYear: prev.realAcademicYear,
-      }));
-    });
+    const { data } = supabase.auth.onAuthStateChange(
+      async (_event, session) => {
+        // Check profile validity if session exists
+        if (session?.user) {
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("is_disabled, role, demo_expires_at")
+            .eq("id", session.user.id)
+            .single();
+
+          if (profile) {
+            const isDemoExpired =
+              profile.role === "demo" && profile.demo_expires_at
+                ? new Date(profile.demo_expires_at) < new Date()
+                : false;
+
+            if (profile.is_disabled || isDemoExpired) {
+              console.warn("[Auth] Access revoked or expired. Signing out.");
+              await supabase.auth.signOut();
+              window.location.href = "/login?error=access_revoked";
+              return;
+            }
+          }
+        }
+
+        setValue((prev) => ({
+          ...prev,
+          user: session?.user ?? null,
+          session: session ?? null,
+          getDashboardRoute: () => (session?.user ? "/dashboard" : "/signup"),
+          realAcademicYear: prev.realAcademicYear,
+        }));
+      },
+    );
 
     return () => {
       data.subscription.unsubscribe();

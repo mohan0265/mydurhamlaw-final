@@ -23,6 +23,7 @@ import {
 import { Logo } from "@/components/ui/Logo";
 import { getSupabaseClient } from "@/lib/supabase/client";
 import { AuthContext } from "@/lib/supabase/AuthContext";
+import { isDemoMode } from "@/lib/demo";
 
 const ENABLE_SIDEBAR = process.env.NEXT_PUBLIC_ENABLE_SIDEBAR === "true";
 
@@ -428,7 +429,7 @@ export default function ResponsiveSidebar({
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-gray-800 truncate">
-                {user.email?.split("@")[0] || "User"}
+                {isDemoMode() ? "Student" : user.email?.split("@")[0] || "User"}
               </p>
               <p className="text-xs text-gray-500">Caseway Student</p>
             </div>

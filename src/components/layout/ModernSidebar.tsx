@@ -25,6 +25,7 @@ import {
 import { Logo } from "@/components/ui/Logo";
 import { getSupabaseClient } from "@/lib/supabase/client";
 import { AuthContext } from "@/lib/supabase/AuthContext";
+import { isDemoMode } from "@/lib/demo";
 
 interface ModernSidebarProps {
   isCollapsed?: boolean;
@@ -44,6 +45,7 @@ export default function ModernSidebar({
   const [onboardingStatus, setOnboardingStatus] = useState<string | null>(null);
   const [onboardingProgress, setOnboardingProgress] = useState<number>(0);
   const [documentsUploaded, setDocumentsUploaded] = useState<any[]>([]);
+  const [userRole, setUserRole] = useState<string>("user");
 
   useEffect(() => {
     const getUser = async () => {
@@ -60,7 +62,9 @@ export default function ModernSidebar({
         try {
           const { data, error } = await supabase
             .from("profiles")
-            .select("onboarding_status, onboarding_progress, uploaded_docs")
+            .select(
+              "onboarding_status, onboarding_progress, uploaded_docs, role",
+            )
             .eq("id", session.user.id)
             .single();
 
@@ -68,6 +72,7 @@ export default function ModernSidebar({
             setOnboardingStatus(data.onboarding_status);
             setOnboardingProgress(data.onboarding_progress || 0);
             setDocumentsUploaded(data.uploaded_docs || []);
+            setUserRole(data.role || "user");
           }
         } catch (err) {
           console.error("Error fetching onboarding status:", err);
@@ -339,11 +344,13 @@ export default function ModernSidebar({
         {!isCollapsed && user && (
           <div className="flex items-center gap-3 p-3 rounded-xl bg-gray-50 mb-3">
             <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white text-sm font-semibold">
-              {user.email?.[0]?.toUpperCase() || "U"}
+              {userRole === "demo"
+                ? "D"
+                : user.email?.[0]?.toUpperCase() || "U"}
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-gray-800 truncate">
-                {user.email?.split("@")[0] || "User"}
+                {isDemoMode() ? "Student" : user.email?.split("@")[0] || "User"}
               </p>
               <p className="text-xs text-gray-500">Caseway Student</p>
             </div>
@@ -351,16 +358,18 @@ export default function ModernSidebar({
         )}
 
         <div className="space-y-1">
-          <button
-            onClick={() => router.push("/settings")}
-            className={`
-              w-full flex items-center gap-3 p-3 rounded-xl text-gray-600 hover:bg-gray-50 transition-colors duration-200 min-h-[44px]
-              ${isCollapsed ? "justify-center" : ""}
-            `}
-          >
-            <Settings className="w-5 h-5" />
-            {!isCollapsed && <span className="font-medium">Settings</span>}
-          </button>
+          {userRole !== "demo" && (
+            <button
+              onClick={() => router.push("/settings")}
+              className={`
+                w-full flex items-center gap-3 p-3 rounded-xl text-gray-600 hover:bg-gray-50 transition-colors duration-200 min-h-[44px]
+                ${isCollapsed ? "justify-center" : ""}
+              `}
+            >
+              <Settings className="w-5 h-5" />
+              {!isCollapsed && <span className="font-medium">Settings</span>}
+            </button>
+          )}
 
           <button
             onClick={handleLogout}

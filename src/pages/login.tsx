@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import Link from "next/link";
-import { BookOpen, Mail, Lock, Eye, EyeOff } from "lucide-react";
+import { BookOpen, Mail, Lock, Eye, EyeOff, Key } from "lucide-react";
 import toast from "react-hot-toast";
 
 import { getSupabaseClient } from "@/lib/supabase/client";
@@ -16,6 +16,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [showIssuedLogin, setShowIssuedLogin] = useState(false);
 
   // CRITICAL: NO SIDE EFFECTS ON LOGIN PAGE
   // NO auto-redirects
@@ -220,6 +221,66 @@ export default function LoginPage() {
               <Mail className="w-5 h-5" />
               <span>Sign in with Email</span>
             </button>
+
+            {/* Issued Access / Demo Login - Collapsible */}
+            <div className="mt-6 pt-4 border-t border-gray-100">
+              <button
+                onClick={() => setShowIssuedLogin(!showIssuedLogin)}
+                className="text-xs text-gray-500 hover:text-purple-600 font-medium flex items-center justify-center w-full gap-2 transition-colors"
+              >
+                {showIssuedLogin
+                  ? "Hide Invitation Login"
+                  : "Have an invitation / issued access?"}
+              </button>
+
+              {showIssuedLogin && (
+                <div className="mt-4 p-4 bg-gray-50 rounded-xl border border-gray-200 animate-in fade-in slide-in-from-top-2 duration-300">
+                  <div className="text-center mb-4">
+                    <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-indigo-100 text-indigo-600 mb-2">
+                      <Key className="w-4 h-4" />
+                    </span>
+                    <h3 className="text-sm font-bold text-gray-900">
+                      Issued Access
+                    </h3>
+                    <p className="text-xs text-gray-500 mt-1">
+                      For reviewers and test users
+                    </p>
+                  </div>
+
+                  <form onSubmit={handleEmailSignIn} className="space-y-3">
+                    <div>
+                      <label className="sr-only">Email</label>
+                      <input
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="Issued Email"
+                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="sr-only">Password</label>
+                      <input
+                        type="password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder="Access Code"
+                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+                        required
+                      />
+                    </div>
+                    <button
+                      type="submit"
+                      disabled={loading}
+                      className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2 rounded-lg text-sm font-bold transition-colors"
+                    >
+                      {loading ? "Verifying..." : "Log in with Issued Access"}
+                    </button>
+                  </form>
+                </div>
+              )}
+            </div>
           </>
         ) : (
           <>
