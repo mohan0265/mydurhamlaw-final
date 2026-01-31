@@ -225,12 +225,15 @@ export default function LectureUploadModal({
     }
   };
 
+  const handleAudioUpload = async (e: React.FormEvent) => {
+    e.preventDefault();
     if (!selectedFile || !title) {
       setIntervention({
         isVisible: true,
-        message: "Add at least one: audio, transcript, or a lecture link — then you can save.",
+        message:
+          "Add at least one: audio, transcript, or a lecture link — then you can save.",
         actionLabel: "Got it",
-        onAction: () => setIntervention({ isVisible: false, message: "" })
+        onAction: () => setIntervention({ isVisible: false, message: "" }),
       });
       return;
     }
@@ -316,12 +319,14 @@ export default function LectureUploadModal({
     }
   };
 
+  const handlePanoptoImport = async (e: React.FormEvent) => {
+    e.preventDefault();
     if (!title) {
       setIntervention({
         isVisible: true,
         message: "Add a title to save this lecture.",
         actionLabel: "Got it",
-        onAction: () => setIntervention({ isVisible: false, message: "" })
+        onAction: () => setIntervention({ isVisible: false, message: "" }),
       });
       return;
     }
@@ -329,23 +334,30 @@ export default function LectureUploadModal({
     if (!transcript && !panoptoUrl) {
       setIntervention({
         isVisible: true,
-        message: "Add at least one: audio, transcript, or a lecture link — then you can save.",
+        message:
+          "Add at least one: audio, transcript, or a lecture link — then you can save.",
         actionLabel: "Got it",
-        onAction: () => setIntervention({ isVisible: false, message: "" })
+        onAction: () => setIntervention({ isVisible: false, message: "" }),
       });
       return;
     }
 
-    if (transcript && transcript.length < 100 && panoptoUrl && transcript.includes(panoptoUrl)) {
-       setIntervention({
+    if (
+      transcript &&
+      transcript.length < 100 &&
+      panoptoUrl &&
+      transcript.includes(panoptoUrl)
+    ) {
+      setIntervention({
         isVisible: true,
-        message: "Your transcript looks like it’s only a link. Move it to Link, or add transcript/audio to continue.",
+        message:
+          "Your transcript looks like it’s only a link. Move it to Link, or add transcript/audio to continue.",
         actionLabel: "Move to Link",
         onAction: () => {
           setPanoptoUrl(transcript);
           setTranscript("");
           setIntervention({ isVisible: false, message: "" });
-        }
+        },
       });
       return;
     }
@@ -569,9 +581,12 @@ export default function LectureUploadModal({
             <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 p-3 rounded-lg flex gap-3 text-sm text-blue-800 dark:text-blue-200">
               <FileAudio className="w-5 h-5 flex-shrink-0" />
               <div>
-                <p className="font-bold mb-1">Best results: audio or a full transcript</p>
+                <p className="font-bold mb-1">
+                  Best results: audio or a full transcript
+                </p>
                 <p>
-                  A link alone works, but gives less detail. Paste transcript below if available.
+                  A link alone works, but gives less detail. Paste transcript
+                  below if available.
                 </p>
               </div>
             </div>
