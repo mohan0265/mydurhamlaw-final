@@ -167,13 +167,22 @@ export default function GlobalHeader() {
 
     // Listen for custom event from other components
     const handleCustomOpen = () => setIsLexiconSearchOpen(true);
+    const handleCustomOpenWithQuery = () => setIsLexiconSearchOpen(true);
 
     window.addEventListener("keydown", handleKeyDown);
     window.addEventListener("open-lexicon-search", handleCustomOpen);
+    window.addEventListener(
+      "open-lexicon-search-with-query",
+      handleCustomOpenWithQuery,
+    );
 
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
       window.removeEventListener("open-lexicon-search", handleCustomOpen);
+      window.removeEventListener(
+        "open-lexicon-search-with-query",
+        handleCustomOpenWithQuery,
+      );
     };
   }, []);
 

@@ -174,7 +174,7 @@ export const TourProvider: React.FC<{ children: React.ReactNode }> = ({
           showSkipButton
           disableOverlayClose={true}
           spotlightClicks={true}
-          disableBeacon={true} // GLOBALLY DISABLE BEACONS (The "glowing circle")
+          // disableBeacon={true} // Reverting temporarily to fix crash
           callback={handleJoyrideCallback}
           styles={styles}
           tooltipComponent={TourTooltip}

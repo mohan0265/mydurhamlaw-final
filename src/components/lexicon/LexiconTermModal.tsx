@@ -105,16 +105,34 @@ export function LexiconTermModal({
                   </section>
                 )}
 
-                <div className="pt-4 flex items-center justify-between border-t border-gray-100 dark:border-white/5">
+                <div className="pt-4 flex flex-col sm:flex-row items-center justify-between border-t border-gray-100 dark:border-white/5 gap-4">
                   <p className="text-xs text-gray-500 dark:text-gray-400 italic font-medium">
                     This term is part of your core Durham Law vocabulary.
                   </p>
-                  <Button
-                    onClick={onClose}
-                    className="bg-gray-900 dark:bg-white text-white dark:text-[#123733] hover:scale-105 transition-transform rounded-xl px-8 font-bold"
-                  >
-                    Got it, Back to Work
-                  </Button>
+                  <div className="flex items-center gap-3 w-full sm:w-auto">
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        onClose();
+                        // Trigger the overlay with this term
+                        window.dispatchEvent(
+                          new CustomEvent("open-lexicon-search-with-query", {
+                            detail: { query: term.term },
+                          }),
+                        );
+                      }}
+                      className="flex-1 sm:flex-none rounded-xl border-gray-200 dark:border-white/10 hover:bg-purple-50 hover:text-purple-600 hover:border-purple-200"
+                    >
+                      <Sparkles size={16} className="mr-2" />
+                      Add Note
+                    </Button>
+                    <Button
+                      onClick={onClose}
+                      className="flex-1 sm:flex-none bg-gray-900 dark:bg-white text-white dark:text-[#123733] hover:scale-105 transition-transform rounded-xl px-6 font-bold"
+                    >
+                      Got it, Back to Work
+                    </Button>
+                  </div>
                 </div>
               </div>
             </div>

@@ -57,11 +57,29 @@ export default function LexiconSearchOverlay({
   useEffect(() => {
     if (isOpen) {
       setTimeout(() => inputRef.current?.focus(), 100);
-      setSearchQuery("");
-      setAiDefinition(null);
-      setSourceRef("");
+
+      // Check for pre-filled query from custom event or props
+      const handlePreFill = (e: any) => {
+        if (e.detail?.query) {
+          setSearchQuery(e.detail.query);
+        }
+      };
+
+      window.addEventListener(
+        "open-lexicon-search-with-query",
+        handlePreFill as any,
+      );
+
       setError(null);
       setSaveSuccess(false);
+      setAiDefinition(null);
+
+      return () => {
+        window.removeEventListener(
+          "open-lexicon-search-with-query",
+          handlePreFill as any,
+        );
+      };
     }
   }, [isOpen]);
 

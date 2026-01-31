@@ -877,13 +877,8 @@ function DashboardContent() {
               <GreetingWidget />
             </div>
 
-            {/* Onboarding Banner - Durham First */}
-            <OnboardingBanner />
-
-            {/* Lexicon */}
-            <div className="flex-1 min-h-[400px]">
-              <LexiconQuickWidget />
-            </div>
+            {/* REMOVED: Redundant OnboardingBanner and LexiconQuickWidget to resolve overstacking */}
+            {/* The new LexiconRotatingBanner and OnboardingBanner are now at the Top Level of the mainland */}
 
             {/* Next Best Action Widget */}
             <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">

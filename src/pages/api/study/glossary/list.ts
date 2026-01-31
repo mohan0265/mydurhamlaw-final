@@ -62,9 +62,13 @@ export default async function handler(
 
     return res.status(200).json(results);
   } catch (error: any) {
-    console.error("[glossary/list] Error:", error);
+    console.error("[glossary/list] CRITICAL ERROR:", error);
+    console.error("[glossary/list] Stack:", error.stack);
     return res
       .status(500)
-      .json({ error: error.message || "Internal server error" });
+      .json({
+        error: error.message || "Internal server error",
+        details: error.toString(),
+      });
   }
 }
