@@ -205,4 +205,3 @@ export function LexiconTermModal({
     </AnimatePresence>
   );
 }
-```
