@@ -338,7 +338,7 @@ function DashboardContent() {
                 className="h-6 w-auto inline-block"
                 href={null as any}
               />{" "}
-              — Start Here
+              - Start Here
             </h2>
             <p className="text-gray-600 text-sm mb-4">
               You're all set. Here are your Next 3 Actions to get started:
