@@ -56,20 +56,25 @@ ALTER TABLE public.module_topics ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.lecture_topic_coverage ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.module_coverage_rollups ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Users can manage their own module topics" ON public.module_topics;
 CREATE POLICY "Users can manage their own module topics" ON public.module_topics
     FOR ALL USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can manage their own lecture coverage" ON public.lecture_topic_coverage;
 CREATE POLICY "Users can manage their own lecture coverage" ON public.lecture_topic_coverage
     FOR ALL USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can manage their own coverage rollups" ON public.module_coverage_rollups;
 CREATE POLICY "Users can manage their own coverage rollups" ON public.module_coverage_rollups
     FOR ALL USING (auth.uid() = user_id);
 
 -- updated_at Trigger
+DROP TRIGGER IF EXISTS update_module_topics_updated_at ON public.module_topics;
 CREATE TRIGGER update_module_topics_updated_at
     BEFORE UPDATE ON public.module_topics
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_module_coverage_rollups_updated_at ON public.module_coverage_rollups;
 CREATE TRIGGER update_module_coverage_rollups_updated_at
     BEFORE UPDATE ON public.module_coverage_rollups
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();

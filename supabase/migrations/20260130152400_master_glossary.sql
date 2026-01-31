@@ -27,10 +27,12 @@ ALTER TABLE glossary_terms ENABLE ROW LEVEL SECURITY;
 ALTER TABLE lecture_glossary_links ENABLE ROW LEVEL SECURITY;
 
 -- 4. Policies
+DROP POLICY IF EXISTS "Users can manage their own glossary terms" ON glossary_terms;
 CREATE POLICY "Users can manage their own glossary terms"
     ON glossary_terms FOR ALL
     USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can manage their own glossary links" ON lecture_glossary_links;
 CREATE POLICY "Users can manage their own glossary links"
     ON lecture_glossary_links FOR ALL
     USING (
@@ -42,7 +44,7 @@ CREATE POLICY "Users can manage their own glossary links"
     );
 
 -- 5. Indexes for performance
-CREATE INDEX idx_glossary_user ON glossary_terms(user_id);
-CREATE INDEX idx_glossary_term_search ON glossary_terms USING gin(term gin_trgm_ops); -- Assuming pg_trgm is enabled
-CREATE INDEX idx_glossary_links_lecture ON lecture_glossary_links(lecture_id);
-CREATE INDEX idx_glossary_links_term ON lecture_glossary_links(term_id);
+CREATE INDEX IF NOT EXISTS idx_glossary_user ON glossary_terms(user_id);
+CREATE INDEX IF NOT EXISTS idx_glossary_term_search ON glossary_terms USING gin(term gin_trgm_ops); -- Assuming pg_trgm is enabled
+CREATE INDEX IF NOT EXISTS idx_glossary_links_lecture ON lecture_glossary_links(lecture_id);
+CREATE INDEX IF NOT EXISTS idx_glossary_links_term ON lecture_glossary_links(term_id);
